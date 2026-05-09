@@ -16,6 +16,7 @@
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_debug_projection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
@@ -9212,130 +9213,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       super_dispatch_method_family_replay_key,
       super_dispatch_method_family_contract, runtime_link_host_link_replay_key,
       runtime_link_host_link_contract);
-  ir_frontend_metadata.lowering_async_continuation_replay_key =
-      concurrency_async_continuation_lowering_replay_key;
-  ir_frontend_metadata.async_continuation_lowering_sites =
-      concurrency_async_continuation_lowering_contract.async_continuation_sites;
-  ir_frontend_metadata.async_continuation_lowering_async_keyword_sites =
-      concurrency_async_continuation_lowering_contract.async_keyword_sites;
-  ir_frontend_metadata.async_continuation_lowering_async_function_sites =
-      concurrency_async_continuation_lowering_contract.async_function_sites;
-  ir_frontend_metadata
-      .async_continuation_lowering_continuation_allocation_sites =
-      concurrency_async_continuation_lowering_contract.continuation_allocation_sites;
-  ir_frontend_metadata.async_continuation_lowering_continuation_resume_sites =
-      concurrency_async_continuation_lowering_contract.continuation_resume_sites;
-  ir_frontend_metadata.async_continuation_lowering_continuation_suspend_sites =
-      concurrency_async_continuation_lowering_contract.continuation_suspend_sites;
-  ir_frontend_metadata.async_continuation_lowering_async_state_machine_sites =
-      concurrency_async_continuation_lowering_contract.async_state_machine_sites;
-  ir_frontend_metadata.async_continuation_lowering_normalized_sites =
-      concurrency_async_continuation_lowering_contract.normalized_sites;
-  ir_frontend_metadata.async_continuation_lowering_gate_blocked_sites =
-      concurrency_async_continuation_lowering_contract.gate_blocked_sites;
-  ir_frontend_metadata.async_continuation_lowering_contract_violation_sites =
-      concurrency_async_continuation_lowering_contract.contract_violation_sites;
-  ir_frontend_metadata.deterministic_async_continuation_lowering_handoff =
-      concurrency_async_continuation_lowering_contract.deterministic;
-  ir_frontend_metadata.lowering_await_lowering_suspension_state_replay_key =
-      concurrency_await_lowering_suspension_state_lowering_replay_key;
-  ir_frontend_metadata.await_lowering_suspension_state_lowering_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .await_suspension_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_await_keyword_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .await_keyword_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_await_suspension_point_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .await_suspension_point_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_await_resume_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract.await_resume_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_await_state_machine_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .await_state_machine_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_await_continuation_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .await_continuation_sites;
-  ir_frontend_metadata.await_lowering_suspension_state_lowering_normalized_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract.normalized_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_gate_blocked_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract.gate_blocked_sites;
-  ir_frontend_metadata
-      .await_lowering_suspension_state_lowering_contract_violation_sites =
-      concurrency_await_lowering_suspension_state_lowering_contract
-          .contract_violation_sites;
-  ir_frontend_metadata
-      .deterministic_await_lowering_suspension_state_lowering_handoff =
-      concurrency_await_lowering_suspension_state_lowering_contract.deterministic;
-  ir_frontend_metadata.lowering_actor_isolation_sendability_replay_key =
-      concurrency_actor_isolation_sendability_lowering_replay_key;
-  ir_frontend_metadata.actor_isolation_sendability_lowering_sites =
-      concurrency_actor_isolation_sendability_lowering_contract.actor_isolation_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_sendability_check_sites =
-      concurrency_actor_isolation_sendability_lowering_contract
-          .sendability_check_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_cross_actor_hop_sites =
-      concurrency_actor_isolation_sendability_lowering_contract.cross_actor_hop_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_non_sendable_capture_sites =
-      concurrency_actor_isolation_sendability_lowering_contract
-          .non_sendable_capture_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_sendable_transfer_sites =
-      concurrency_actor_isolation_sendability_lowering_contract
-          .sendable_transfer_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_isolation_boundary_sites =
-      concurrency_actor_isolation_sendability_lowering_contract
-          .isolation_boundary_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_guard_blocked_sites =
-      concurrency_actor_isolation_sendability_lowering_contract.guard_blocked_sites;
-  ir_frontend_metadata
-      .actor_isolation_sendability_lowering_contract_violation_sites =
-      concurrency_actor_isolation_sendability_lowering_contract
-          .contract_violation_sites;
-  ir_frontend_metadata.deterministic_actor_isolation_sendability_lowering_handoff =
-      concurrency_actor_isolation_sendability_lowering_contract.deterministic;
-  ir_frontend_metadata.lowering_actor_lowering_metadata_replay_key =
-      concurrency_actor_lowering_metadata_replay_key;
-  // implementation anchor: the deterministic actor-lowering
-  // contract now feeds helper-backed actor thunk/hop/nonisolated rewrites in
-  // IR rather than staying metadata-only.
-  ir_frontend_metadata.actor_lowering_metadata_actor_interface_sites =
-      concurrency_actor_lowering_metadata_contract.actor_interface_sites;
-  ir_frontend_metadata.actor_lowering_metadata_actor_method_sites =
-      concurrency_actor_lowering_metadata_contract.actor_method_sites;
-  ir_frontend_metadata.actor_lowering_metadata_actor_metadata_record_sites =
-      concurrency_actor_lowering_metadata_contract.actor_metadata_record_sites;
-  ir_frontend_metadata.actor_lowering_metadata_nonisolated_entry_sites =
-      concurrency_actor_lowering_metadata_contract.nonisolated_entry_sites;
-  ir_frontend_metadata.actor_lowering_metadata_executor_affinity_sites =
-      concurrency_actor_lowering_metadata_contract.executor_affinity_sites;
-  ir_frontend_metadata.actor_lowering_metadata_actor_hop_artifact_sites =
-      concurrency_actor_lowering_metadata_contract.actor_hop_artifact_sites;
-  ir_frontend_metadata.actor_lowering_metadata_actor_isolation_thunk_sites =
-      concurrency_actor_lowering_metadata_contract.actor_isolation_thunk_sites;
-  ir_frontend_metadata.actor_lowering_metadata_replay_proof_dependency_sites =
-      concurrency_actor_lowering_metadata_contract.replay_proof_dependency_sites;
-  ir_frontend_metadata.actor_lowering_metadata_race_guard_dependency_sites =
-      concurrency_actor_lowering_metadata_contract.race_guard_dependency_sites;
-  ir_frontend_metadata.actor_lowering_metadata_task_handoff_sites =
-      concurrency_actor_lowering_metadata_contract.task_handoff_sites;
-  ir_frontend_metadata.actor_lowering_metadata_guard_blocked_sites =
-      concurrency_actor_lowering_metadata_contract.guard_blocked_sites;
-  ir_frontend_metadata.actor_lowering_metadata_contract_violation_sites =
-      concurrency_actor_lowering_metadata_contract.contract_violation_sites;
-  ir_frontend_metadata.deterministic_actor_lowering_metadata_handoff =
-      concurrency_actor_lowering_metadata_contract.deterministic;
+  objc3::artifacts::frontend::ApplyObjc3FrontendConcurrencyMetadata(
+      ir_frontend_metadata, concurrency_async_continuation_lowering_replay_key,
+      concurrency_async_continuation_lowering_contract,
+      concurrency_await_lowering_suspension_state_lowering_replay_key,
+      concurrency_await_lowering_suspension_state_lowering_contract,
+      concurrency_actor_isolation_sendability_lowering_replay_key,
+      concurrency_actor_isolation_sendability_lowering_contract,
+      concurrency_actor_lowering_metadata_replay_key,
+      concurrency_actor_lowering_metadata_contract);
   ir_frontend_metadata.lowering_dispatch_dispatch_control_replay_key =
       dispatch_dispatch_control_lowering_replay_key;
   ir_frontend_metadata.lowering_metaprogramming_expansion_replay_key =
