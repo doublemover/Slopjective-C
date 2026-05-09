@@ -64,6 +64,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_record_parsing.h
   runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
+  objc3_final_readiness_gate_surface_owners.h
   readiness/objc3_final_readiness_gate_failure_reasons.h
   objc3_frontend_pipeline.h
   objc3_ir_emission_core_feature_implementation_surface.h
@@ -79,6 +80,9 @@ add_library(objc3c_pipeline STATIC
   objc3_ir_emission_core_feature_surface_failure_reasons.cpp
   objc3_ir_emission_core_feature_surface_readiness_publication.cpp
   objc3_final_readiness_gate_core_feature_implementation_surface.cpp
+  objc3_final_readiness_gate_surface_evidence.cpp
+  objc3_final_readiness_gate_surface_failure_reasons.cpp
+  objc3_final_readiness_gate_surface_readiness_publication.cpp
   objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.cpp
   objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.cpp
   objc3_lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface.cpp
