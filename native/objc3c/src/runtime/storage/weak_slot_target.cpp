@@ -1,4 +1,4 @@
-#include "runtime/storage/weak_slots.h"
+#include "runtime/storage/weak_slot_target.h"
 
 namespace objc3c::runtime {
 

@@ -1,5 +1,7 @@
 #include "runtime/storage/weak_slots.h"
 
+#include "runtime/storage/weak_slot_ref_match.h"
+
 #include <algorithm>
 #include <vector>
 
@@ -21,8 +23,8 @@ void RemoveWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
       std::remove_if(
           refs.begin(), refs.end(),
           [&](const RuntimeWeakSlotRef &ref) {
-            return ref.owner_receiver == owner_receiver &&
-                   ref.offset == offset && ref.size == size;
+            return RuntimeWeakSlotRefMatchesStorage(ref, owner_receiver,
+                                                    offset, size);
           }),
       refs.end());
   if (refs.empty()) {
@@ -40,8 +42,8 @@ void RegisterWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
       state.weak_slot_refs_by_target_receiver[target_receiver];
   const auto duplicate =
       std::find_if(refs.begin(), refs.end(), [&](const RuntimeWeakSlotRef &ref) {
-        return ref.owner_receiver == owner_receiver && ref.offset == offset &&
-               ref.size == size;
+        return RuntimeWeakSlotRefMatchesStorage(ref, owner_receiver, offset,
+                                                size);
       });
   if (duplicate == refs.end()) {
     refs.push_back(RuntimeWeakSlotRef{owner_receiver, offset, size});
@@ -55,7 +57,8 @@ void RemoveWeakSlotRefsOwnedByReceiverUnlocked(RuntimeState &state,
     auto &refs = it->second;
     refs.erase(std::remove_if(refs.begin(), refs.end(),
                               [&](const RuntimeWeakSlotRef &ref) {
-                                return ref.owner_receiver == owner_receiver;
+                                return RuntimeWeakSlotRefIsOwnedByReceiver(
+                                    ref, owner_receiver);
                               }),
                refs.end());
     if (refs.empty()) {

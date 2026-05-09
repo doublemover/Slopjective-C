@@ -173,9 +173,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_value_storage.h
   storage/runtime_instance_records.h
   storage/storage_accessor_snapshot.cpp
+  storage/weak_slot_ref_match.cpp
+  storage/weak_slot_ref_match.h
   storage/weak_slot_registry.cpp
+  storage/weak_slot_target.cpp
+  storage/weak_slot_target.h
   storage/weak_slot_zeroing.cpp
-  storage/weak_slots.cpp
   storage/weak_slots.h
 )
 objc3c_apply_build_defaults(${OBJC3_RUNTIME_LIBRARY_TARGET})

@@ -1,6 +1,7 @@
 #include "runtime/storage/weak_slots.h"
 
 #include "runtime/storage/runtime_instance_records.h"
+#include "runtime/storage/weak_slot_ref_match.h"
 
 #include <algorithm>
 
@@ -23,7 +24,7 @@ void ZeroWeakSlotRefsForTargetUnlocked(RuntimeState &state,
       continue;
     }
     RuntimeInstanceRecord &owner = owner_it->second;
-    if (ref.size == 0u || ref.offset + ref.size > owner.storage_bytes.size()) {
+    if (!RuntimeWeakSlotRefIsAddressableInOwner(ref, owner)) {
       continue;
     }
     std::fill(owner.storage_bytes.begin() +
