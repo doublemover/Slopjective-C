@@ -3,6 +3,11 @@
 #include <cstddef>
 
 #include "pipeline/objc3_frontend_types.h"
+#include "support/objc3_runtime_metadata_category_reference_counts.h"
+#include "support/objc3_runtime_metadata_class_reference_counts.h"
+#include "support/objc3_runtime_metadata_method_reference_counts.h"
+#include "support/objc3_runtime_metadata_property_reference_counts.h"
+#include "support/objc3_runtime_metadata_protocol_reference_counts.h"
 
 namespace objc3c::support {
 
@@ -10,33 +15,19 @@ inline std::size_t CountRuntimeMetadataSourceRecordSetReferences(
     const Objc3RuntimeMetadataSourceRecordSet &record_set) {
   std::size_t references = 0;
   for (const auto &class_record : record_set.classes_lexicographic) {
-    if (class_record.has_super && !class_record.super_name.empty()) {
-      ++references;
-    }
-    references += class_record.adopted_protocols_lexicographic.size();
+    references += CountRuntimeMetadataClassRecordReferences(class_record);
   }
   for (const auto &protocol_record : record_set.protocols_lexicographic) {
-    references += protocol_record.inherited_protocols_lexicographic.size();
+    references += CountRuntimeMetadataProtocolRecordReferences(protocol_record);
   }
   for (const auto &category_record : record_set.categories_lexicographic) {
-    references += category_record.adopted_protocols_lexicographic.size();
+    references += CountRuntimeMetadataCategoryRecordReferences(category_record);
   }
   for (const auto &property_record : record_set.properties_lexicographic) {
-    if (!property_record.effective_getter_selector.empty()) {
-      ++references;
-    }
-    if (property_record.effective_setter_available &&
-        !property_record.effective_setter_selector.empty()) {
-      ++references;
-    }
-    if (!property_record.ivar_binding_symbol.empty()) {
-      ++references;
-    }
+    references += CountRuntimeMetadataPropertyRecordReferences(property_record);
   }
   for (const auto &method_record : record_set.methods_lexicographic) {
-    if (!method_record.selector.empty()) {
-      ++references;
-    }
+    references += CountRuntimeMetadataMethodRecordReferences(method_record);
   }
   return references;
 }

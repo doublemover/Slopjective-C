@@ -62,7 +62,12 @@ add_library(objc3c_support STATIC
   objc3_profile_token_match.h
   objc3_runtime_dispatch_symbol.cpp
   objc3_runtime_dispatch_symbol.h
+  objc3_runtime_metadata_category_reference_counts.h
+  objc3_runtime_metadata_class_reference_counts.h
   objc3_runtime_metadata_declaration_counts.h
+  objc3_runtime_metadata_method_reference_counts.h
+  objc3_runtime_metadata_property_reference_counts.h
+  objc3_runtime_metadata_protocol_reference_counts.h
   objc3_runtime_metadata_reference_counts.h
   objc3_runtime_metadata_record_set.h
   objc3_string_predicates.cpp
