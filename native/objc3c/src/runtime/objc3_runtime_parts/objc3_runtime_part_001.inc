@@ -123,6 +123,3 @@ using objc3c::runtime::ResolveMethodSlowPathUnlocked;
 using objc3c::runtime::SeedDispatchIntentFastPathCacheUnlocked;
 using objc3c::runtime::StoreDispatchResultContractUnlocked;
 using objc3c::runtime::WriteRuntimeManagedPropertyValueUnlocked;
-
-const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
-                           std::uint64_t index);

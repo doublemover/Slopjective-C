@@ -1,9 +1,3 @@
-int objc3_runtime_replay_registered_images_for_testing(void) {
-  RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  return ReplayRegisteredImagesForTestingUnlocked(state, RegisterImageUnlocked);
-}
-
 // optional/key-path runtime-helper freeze anchor: the live Part 3
 // runtime helper boundary intentionally remains minimal here. Optional sends
 // execute through objc3_runtime_lookup_selector plus checked runtime dispatch
