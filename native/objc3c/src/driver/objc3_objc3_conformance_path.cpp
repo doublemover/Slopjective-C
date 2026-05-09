@@ -7,6 +7,8 @@
 
 #include "ast/objc3_ast.h"
 #include "driver/objc3_driver_conformance_surface.h"
+#include "driver/objc3_driver_conformance_validation_paths.h"
+#include "driver/objc3_driver_conformance_validation_publication.h"
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_file_io.h"
@@ -19,41 +21,6 @@
 #include "pipeline/objc3_runtime_import_surface.h"
 
 namespace fs = std::filesystem;
-
-namespace {
-
-bool TryDeriveConformancePublicationPath(const fs::path &report_path,
-                                         fs::path &publication_path) {
-  const std::string report_name = report_path.filename().string();
-  const std::string suffix =
-      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
-  if (report_name.size() <= suffix.size() ||
-      report_name.rfind(suffix) != report_name.size() - suffix.size()) {
-    return false;
-  }
-  const std::string emit_prefix =
-      report_name.substr(0u, report_name.size() - suffix.size());
-  publication_path =
-      BuildConformancePublicationArtifactPath(report_path.parent_path(),
-                                             emit_prefix);
-  return true;
-}
-
-bool TryDeriveConformanceEmitPrefix(const fs::path &report_path,
-                                    std::string &emit_prefix) {
-  const std::string report_name = report_path.filename().string();
-  const std::string suffix =
-      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
-  if (report_name.size() <= suffix.size() ||
-      report_name.rfind(suffix) != report_name.size() - suffix.size()) {
-    emit_prefix.clear();
-    return false;
-  }
-  emit_prefix = report_name.substr(0u, report_name.size() - suffix.size());
-  return true;
-}
-
-}  // namespace
 
 // error-model conformance gate anchor: lane-E freezes the current
 // Part 6 slice by consuming the canonical integrated proof surface already
@@ -115,13 +82,13 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
 
   fs::path publication_path;
   std::string emit_prefix;
-  if (!TryDeriveConformanceEmitPrefix(cli_options.validate_conformance_report_path,
-                                      emit_prefix)) {
+  if (!TryDeriveObjc3DriverConformanceEmitPrefix(
+          cli_options.validate_conformance_report_path, emit_prefix)) {
     std::cerr << "validated artifact must end with "
               << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
     return 125;
   }
-  if (!TryDeriveConformancePublicationPath(
+  if (!TryDeriveObjc3DriverConformancePublicationPath(
           cli_options.validate_conformance_report_path, publication_path)) {
     std::cerr << "validated artifact must end with "
               << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
@@ -143,154 +110,10 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   const std::string report_json =
       ReadText(cli_options.validate_conformance_report_path);
   const std::string publication_json = ReadText(publication_path);
-  std::string validation_artifact_json;
-  std::string validation_error;
-  if (!TryBuildObjc3ConformanceClaimValidationArtifact(
-          {.report_artifact_path =
-               cli_options.validate_conformance_report_path.filename().string(),
-           .publication_artifact_path =
-               publication_path.filename().string()},
-          report_json,
-          publication_json,
-          validation_artifact_json,
-          validation_error)) {
-    std::cerr << validation_error << "\n";
-    return 125;
-  }
 
   // versioning/conformance truth-gate anchor: this validation mode
   // is the integrated operator-side consumer of the D001 publication sidecar
   // and the C001/C002 lowered/runtime capability reports.
-  WriteConformanceValidationArtifact(cli_options.out_dir,
-                                     cli_options.emit_prefix,
-                                     validation_artifact_json);
-
-  std::string release_evidence_operation_json;
-  std::string release_evidence_operation_error;
-  if (!TryBuildObjc3ReleaseEvidenceOperationArtifact(
-          {.report_artifact_path =
-               cli_options.validate_conformance_report_path.filename().string(),
-           .publication_artifact_path = publication_path.filename().string(),
-           .validation_artifact_path =
-               BuildConformanceValidationArtifactPath(cli_options.out_dir,
-                                                     cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .dashboard_artifact_path =
-               BuildDashboardStatusArtifactPath(cli_options.out_dir,
-                                               cli_options.emit_prefix)
-                   .filename()
-                   .string()},
-          report_json,
-          publication_json,
-          validation_artifact_json,
-          release_evidence_operation_json,
-          release_evidence_operation_error)) {
-    std::cerr << release_evidence_operation_error << "\n";
-    return 125;
-  }
-  WriteReleaseEvidenceOperationArtifact(cli_options.out_dir,
-                                        cli_options.emit_prefix,
-                                        release_evidence_operation_json);
-
-  std::string dashboard_status_json;
-  std::string dashboard_status_error;
-  if (!TryBuildObjc3DashboardStatusArtifact(
-          {.report_artifact_path =
-               cli_options.validate_conformance_report_path.filename().string(),
-           .publication_artifact_path = publication_path.filename().string(),
-           .validation_artifact_path =
-               BuildConformanceValidationArtifactPath(cli_options.out_dir,
-                                                     cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .release_evidence_operation_artifact_path =
-               BuildReleaseEvidenceOperationArtifactPath(
-                   cli_options.out_dir, cli_options.emit_prefix)
-                   .filename()
-                   .string()},
-          report_json,
-          publication_json,
-          validation_artifact_json,
-          release_evidence_operation_json,
-          dashboard_status_json,
-          dashboard_status_error)) {
-    std::cerr << dashboard_status_error << "\n";
-    return 125;
-  }
-  WriteDashboardStatusArtifact(cli_options.out_dir,
-                               cli_options.emit_prefix,
-                               dashboard_status_json);
-  std::string advanced_feature_gate_artifact_json;
-  std::string advanced_feature_gate_error;
-  if (!TryBuildObjc3AdvancedFeatureGateArtifact(
-          {.surface_kind = "native-cli-validation",
-           .report_artifact_path =
-               cli_options.validate_conformance_report_path.filename().string(),
-           .publication_artifact_path = publication_path.filename().string(),
-           .validation_artifact_path =
-               BuildConformanceValidationArtifactPath(cli_options.out_dir,
-                                                     cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .release_evidence_operation_artifact_path =
-               BuildReleaseEvidenceOperationArtifactPath(
-                   cli_options.out_dir, cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .dashboard_artifact_path =
-               BuildDashboardStatusArtifactPath(cli_options.out_dir,
-                                               cli_options.emit_prefix)
-                   .filename()
-                   .string()},
-          report_json,
-          publication_json,
-          advanced_feature_gate_artifact_json,
-          advanced_feature_gate_error)) {
-    std::cerr << advanced_feature_gate_error << "\n";
-    return 125;
-  }
-  WriteAdvancedFeatureGateArtifact(cli_options.out_dir,
-                                   cli_options.emit_prefix,
-                                   advanced_feature_gate_artifact_json);
-
-  std::string release_candidate_matrix_artifact_json;
-  std::string release_candidate_matrix_error;
-  if (!TryBuildObjc3ReleaseCandidateMatrixArtifact(
-          {.surface_kind = "native-cli-validation",
-           .report_artifact_path =
-               cli_options.validate_conformance_report_path.filename().string(),
-           .publication_artifact_path = publication_path.filename().string(),
-           .advanced_feature_gate_artifact_path =
-               BuildAdvancedFeatureGateArtifactPath(cli_options.out_dir,
-                                                   cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .validation_artifact_path =
-               BuildConformanceValidationArtifactPath(cli_options.out_dir,
-                                                     cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .release_evidence_operation_artifact_path =
-               BuildReleaseEvidenceOperationArtifactPath(
-                   cli_options.out_dir, cli_options.emit_prefix)
-                   .filename()
-                   .string(),
-           .dashboard_artifact_path =
-               BuildDashboardStatusArtifactPath(cli_options.out_dir,
-                                               cli_options.emit_prefix)
-                   .filename()
-                   .string()},
-          report_json,
-          publication_json,
-          advanced_feature_gate_artifact_json,
-          release_candidate_matrix_artifact_json,
-          release_candidate_matrix_error)) {
-    std::cerr << release_candidate_matrix_error << "\n";
-    return 125;
-  }
-  WriteReleaseCandidateMatrixArtifact(cli_options.out_dir,
-                                      cli_options.emit_prefix,
-                                      release_candidate_matrix_artifact_json);
-  return 0;
+  return PublishObjc3DriverConformanceValidationArtifacts(
+      cli_options, publication_path, report_json, publication_json);
 }
