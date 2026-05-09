@@ -137,6 +137,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/selector_table.cpp
   selectors/selector_table.h
   storage/current_property_binding.cpp
+  storage/current_property_binding_resolution.cpp
+  storage/current_property_binding_resolution.h
   storage/current_property_context.h
   storage/current_property_value.cpp
   storage/current_property_weak.cpp
