@@ -40,8 +40,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/protocol_conformance.h
   concurrency/actor.cpp
   concurrency/actor.h
+  concurrency/actor_isolation.cpp
+  concurrency/actor_mailbox.cpp
+  concurrency/actor_snapshot.cpp
   concurrency/actor_state.cpp
   concurrency/actor_state.h
+  concurrency/actor_state_store.h
   concurrency/continuation_state.cpp
   concurrency/continuation_state.h
   concurrency/executor.cpp
@@ -50,8 +54,13 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/runtime_debug.h
   concurrency/task.cpp
   concurrency/task.h
+  concurrency/task_cancellation.cpp
+  concurrency/task_group_state.cpp
+  concurrency/task_lifecycle.cpp
+  concurrency/task_snapshot.cpp
   concurrency/task_state.cpp
   concurrency/task_state.h
+  concurrency/task_state_store.h
   dispatch/builtin_methods.cpp
   dispatch/builtin_methods.h
   dispatch/dispatch_result_state.cpp
