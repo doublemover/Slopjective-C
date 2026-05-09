@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/lowering_ownership_contracts.h"
 
 #include <cstddef>
 #include <string>
@@ -27,6 +28,11 @@ struct Objc3TypedSemaToLoweringBoundary {
   bool all_callable_returns_typed = false;
   bool all_params_have_concrete_type_surface = false;
   bool diagnostics_clear = false;
+  std::string typed_semantic_handoff_owner = kObjc3TypedSemanticHandoffOwner;
+  std::string strict_contract_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  bool owner_split_explicit = false;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   bool ready = false;
   std::string replay_key;
 };

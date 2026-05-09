@@ -76,11 +76,42 @@ bool StageResultFailed(const StageResult &result) {
          result.diagnostics.has_fatal;
 }
 
+bool FrontendPipelineOwnerIsExplicit(const std::string &owner) {
+  return !owner.empty() && owner.rfind("native.", 0) == 0;
+}
+
+bool FrontendPipelineOwnerModelIsStrict(const std::string &owner_model) {
+  return owner_model == kFrontendPipelineNoFallbackOwnerModel;
+}
+
+bool StageResultOwnerSplitIsReady(const StageResult &result) {
+  return FrontendPipelineOwnerIsExplicit(result.stage_input_owner) &&
+         FrontendPipelineOwnerIsExplicit(result.stage_output_owner) &&
+         FrontendPipelineOwnerIsExplicit(result.diagnostic_handoff_owner) &&
+         FrontendPipelineOwnerModelIsStrict(result.owner_model) &&
+         result.strict_no_fallback && result.strict_no_compatibility;
+}
+
+std::string StageResultOwnerReplayKey(const StageResult &result) {
+  return "stage_input_owner=" + result.stage_input_owner +
+         ";stage_output_owner=" + result.stage_output_owner +
+         ";diagnostic_handoff_owner=" + result.diagnostic_handoff_owner +
+         ";owner_model=" + result.owner_model +
+         ";strict_no_fallback=" +
+         (result.strict_no_fallback ? "true" : "false") +
+         ";strict_no_compatibility=" +
+         (result.strict_no_compatibility ? "true" : "false") +
+         ";owner_split_explicit=" +
+         (result.owner_split_explicit ? "true" : "false");
+}
+
 DiagnosticsEnvelope BuildDiagnosticsEnvelope(
     StageId stage,
     std::vector<DiagnosticRecord> diagnostics) {
   DiagnosticsEnvelope envelope;
   envelope.stage = stage;
+  envelope.diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
+  envelope.owner_model = kFrontendPipelineNoFallbackOwnerModel;
   envelope.diagnostics = std::move(diagnostics);
   for (const DiagnosticRecord &diagnostic : envelope.diagnostics) {
     switch (diagnostic.severity) {
@@ -112,6 +143,9 @@ StageResult BuildSkippedStageResult(StageId stage,
   result.skip_reason = reason;
   result.failure_reason = std::move(failure_reason);
   result.diagnostics.stage = stage;
+  result.owner_split_explicit = StageResultOwnerSplitIsReady(result);
+  result.diagnostics.diagnostic_handoff_owner = result.diagnostic_handoff_owner;
+  result.diagnostics.owner_model = result.owner_model;
   return result;
 }
 

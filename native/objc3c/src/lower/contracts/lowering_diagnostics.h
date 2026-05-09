@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lower/contracts/lowering_ownership_contracts.h"
+
 #include <string>
 
 enum class Objc3LoweringDiagnosticSeverity {
@@ -15,6 +17,10 @@ struct Objc3LoweringDiagnostic {
   std::string message;
   unsigned line = 1;
   unsigned column = 1;
+  std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
+  std::string diagnostic_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   std::string replay_key;
 };
 

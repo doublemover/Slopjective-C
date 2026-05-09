@@ -12,12 +12,17 @@ struct Objc3LoweringBackendHandoff {
   bool deterministic_paths = false;
   bool object_backend_route_ready = false;
   bool artifact_publication_route_ready = false;
+  bool owner_split_explicit = false;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   std::string output_directory;
   std::string emit_prefix;
   std::string ir_relative_path;
   std::string object_relative_path;
   std::string manifest_relative_path;
   std::string runtime_metadata_relative_path;
+  std::string backend_handoff_owner = kObjc3LoweringBackendHandoffOwner;
+  std::string backend_handoff_owner_model = kObjc3LoweringNoFallbackOwnerModel;
   std::string replay_key;
 };
 

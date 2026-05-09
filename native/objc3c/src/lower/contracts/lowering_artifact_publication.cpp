@@ -29,7 +29,18 @@ Objc3LoweringArtifactPlan Objc3BuildLoweringArtifactPlan(
       BuildRelativeArtifactPath(plan.emit_prefix, ".manifest.json");
   plan.runtime_metadata_relative_path =
       BuildRelativeArtifactPath(plan.emit_prefix, ".runtime-metadata.bin");
+  plan.publication_owner_explicit =
+      Objc3LoweringArtifactPlanPublicationOwnerIsReady(plan);
   return plan;
+}
+
+bool Objc3LoweringArtifactPlanPublicationOwnerIsReady(
+    const Objc3LoweringArtifactPlan &plan) {
+  return Objc3LoweringStrictOwnerModelIsReady(
+      plan.publication_owner,
+      plan.publication_owner_model,
+      plan.strict_no_fallback,
+      plan.strict_no_compatibility);
 }
 
 std::string Objc3LoweringArtifactPlanReplayKey(
@@ -44,6 +55,13 @@ std::string Objc3LoweringArtifactPlanReplayKey(
       << ";ir_path=" << plan.ir_relative_path
       << ";object_path=" << plan.object_relative_path
       << ";manifest_path=" << plan.manifest_relative_path
-      << ";runtime_metadata_path=" << plan.runtime_metadata_relative_path;
+      << ";runtime_metadata_path=" << plan.runtime_metadata_relative_path
+      << ";publication_owner_explicit="
+      << (plan.publication_owner_explicit ? "true" : "false") << ";"
+      << Objc3LoweringOwnerReplayKey(
+             plan.publication_owner,
+             plan.publication_owner_model,
+             plan.strict_no_fallback,
+             plan.strict_no_compatibility);
   return out.str();
 }

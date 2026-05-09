@@ -21,6 +21,10 @@ bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
         input.runtime_dispatch_symbol;
     return false;
   }
+  if (!Objc3RuntimeDispatchLoweringOwnerIsReady()) {
+    error = "runtime dispatch lowering owner contract is not hard-cutover ready";
+    return false;
+  }
   normalized.max_message_send_args = input.max_message_send_args;
   normalized.runtime_dispatch_symbol = input.runtime_dispatch_symbol;
   return true;
@@ -44,7 +48,8 @@ std::string Objc3LoweringIRBoundaryReplayKey(
   return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +
          ";runtime_dispatch_arg_slots=" +
          std::to_string(boundary.runtime_dispatch_arg_slots) +
-         ";selector_global_ordering=" + boundary.selector_global_ordering;
+         ";selector_global_ordering=" + boundary.selector_global_ordering +
+         ";" + Objc3RuntimeDispatchLoweringOwnerReplayKey();
 }
 
 bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(

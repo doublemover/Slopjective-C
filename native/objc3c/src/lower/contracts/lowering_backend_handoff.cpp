@@ -45,7 +45,13 @@ Objc3LoweringBackendHandoff Objc3BuildLoweringBackendHandoff(
   handoff.object_backend_route_ready =
       !handoff.object_requested || !handoff.object_relative_path.empty();
   handoff.artifact_publication_route_ready =
-      !handoff.ir_requested || !handoff.ir_relative_path.empty();
+      (!handoff.ir_requested || !handoff.ir_relative_path.empty()) &&
+      Objc3LoweringArtifactPlanPublicationOwnerIsReady(plan);
+  handoff.owner_split_explicit = Objc3LoweringStrictOwnerModelIsReady(
+      handoff.backend_handoff_owner,
+      handoff.backend_handoff_owner_model,
+      handoff.strict_no_fallback,
+      handoff.strict_no_compatibility);
   handoff.replay_key = Objc3LoweringBackendHandoffReplayKey(handoff);
   return handoff;
 }
@@ -53,7 +59,13 @@ Objc3LoweringBackendHandoff Objc3BuildLoweringBackendHandoff(
 bool Objc3LoweringBackendHandoffIsReady(
     const Objc3LoweringBackendHandoff &handoff) {
   return handoff.deterministic_paths && handoff.object_backend_route_ready &&
-         handoff.artifact_publication_route_ready;
+         handoff.artifact_publication_route_ready &&
+         handoff.owner_split_explicit &&
+         Objc3LoweringStrictOwnerModelIsReady(
+             handoff.backend_handoff_owner,
+             handoff.backend_handoff_owner_model,
+             handoff.strict_no_fallback,
+             handoff.strict_no_compatibility);
 }
 
 std::string Objc3LoweringBackendHandoffReplayKey(
@@ -73,11 +85,19 @@ std::string Objc3LoweringBackendHandoffReplayKey(
       << (handoff.object_backend_route_ready ? "true" : "false")
       << ";artifact_publication_route_ready="
       << (handoff.artifact_publication_route_ready ? "true" : "false")
+      << ";owner_split_explicit="
+      << (handoff.owner_split_explicit ? "true" : "false")
       << ";out=" << handoff.output_directory
       << ";prefix=" << handoff.emit_prefix
       << ";ir_path=" << handoff.ir_relative_path
       << ";object_path=" << handoff.object_relative_path
       << ";manifest_path=" << handoff.manifest_relative_path
-      << ";runtime_metadata_path=" << handoff.runtime_metadata_relative_path;
+      << ";runtime_metadata_path=" << handoff.runtime_metadata_relative_path
+      << ";"
+      << Objc3LoweringOwnerReplayKey(
+             handoff.backend_handoff_owner,
+             handoff.backend_handoff_owner_model,
+             handoff.strict_no_fallback,
+             handoff.strict_no_compatibility);
   return out.str();
 }

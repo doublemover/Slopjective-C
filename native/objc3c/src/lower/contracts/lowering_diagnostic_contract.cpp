@@ -26,6 +26,11 @@ std::string Objc3LoweringDiagnosticReplayKey(
   out << "code=" << diagnostic.code
       << ";severity=" << Objc3LoweringDiagnosticSeverityName(diagnostic.severity)
       << ";line=" << diagnostic.line << ";column=" << diagnostic.column
-      << ";message=" << diagnostic.message;
+      << ";message=" << diagnostic.message << ";"
+      << Objc3LoweringOwnerReplayKey(
+             diagnostic.diagnostic_handoff_owner,
+             diagnostic.diagnostic_owner_model,
+             diagnostic.strict_no_fallback,
+             diagnostic.strict_no_compatibility);
   return out.str();
 }

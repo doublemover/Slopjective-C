@@ -12,6 +12,16 @@
 inline constexpr std::uint32_t kObjc3SemaPassManagerContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaPassManagerContractVersionMinor = 0;
 inline constexpr std::uint32_t kObjc3SemaPassManagerContractVersionPatch = 0;
+inline constexpr const char *kObjc3SemaOwnerSplitContractId =
+    "objc3c.sema.pass-manager.owner-split.hard-cutover.v1";
+inline constexpr const char *kObjc3SemaStageInputOwner =
+    "native.frontend.sema.stage-input";
+inline constexpr const char *kObjc3SemaTypedSemanticHandoffOwner =
+    "native.frontend.sema.typed-handoff";
+inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
+    "native.frontend.sema.diagnostic-handoff";
+inline constexpr const char *kObjc3SemaNoFallbackOwnerModel =
+    "strict-hard-cutover-no-fallback-no-compatibility-shim";
 
 enum class Objc3SemaPassId {
   BuildIntegrationSurface = 0,
@@ -78,9 +88,34 @@ struct Objc3SemaPassFlowSummary {
   bool symbol_flow_counts_consistent = false;
   std::uint64_t pass_execution_fingerprint = 1469598103934665603ull;
   std::string deterministic_handoff_key;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner = kObjc3SemaTypedSemanticHandoffOwner;
+  std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool owner_split_explicit = false;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   bool replay_key_deterministic = false;
   bool deterministic = false;
 };
+
+inline bool Objc3SemaOwnerIsExplicit(const std::string &owner) {
+  return !owner.empty() && owner.rfind("native.", 0) == 0;
+}
+
+inline bool Objc3SemaOwnerSplitIsReady(
+    const std::string &stage_input_owner,
+    const std::string &typed_semantic_handoff_owner,
+    const std::string &diagnostic_handoff_owner,
+    const std::string &owner_model,
+    bool strict_no_fallback,
+    bool strict_no_compatibility) {
+  return Objc3SemaOwnerIsExplicit(stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(typed_semantic_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(diagnostic_handoff_owner) &&
+         owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         strict_no_fallback && strict_no_compatibility;
+}
 
 inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summary) {
   return summary.pass_order_matches_contract &&
@@ -109,6 +144,14 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.symbol_flow_counts_consistent &&
          summary.pass_execution_fingerprint != 1469598103934665603ull &&
          !summary.deterministic_handoff_key.empty() &&
+         summary.owner_split_explicit &&
+         Objc3SemaOwnerSplitIsReady(
+             summary.stage_input_owner,
+             summary.typed_semantic_handoff_owner,
+             summary.diagnostic_handoff_owner,
+             summary.owner_model,
+             summary.strict_no_fallback,
+             summary.strict_no_compatibility) &&
          summary.replay_key_deterministic &&
          summary.symbol_globals_count == summary.type_metadata_global_entries &&
          summary.symbol_functions_count == summary.type_metadata_function_entries &&
@@ -119,6 +162,10 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
 
 struct Objc3SemaDiagnosticsBus {
   std::vector<std::string> *diagnostics = nullptr;
+  std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 
   void Publish(const std::string &diagnostic) const {
     if (diagnostics == nullptr) {
@@ -149,6 +196,11 @@ struct Objc3SemaPassManagerInput {
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
   Objc3SemaCanonicalLiteralRejectionCounts canonical_literal_rejection_counts;
   Objc3SemaDiagnosticsBus diagnostics_bus;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner = kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 };
 
 struct Objc3ParserSemaConformanceMatrix {

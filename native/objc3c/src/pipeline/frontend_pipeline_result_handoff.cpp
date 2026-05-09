@@ -32,6 +32,16 @@ void PopulateObjc3FrontendSemaInputHandoff(
       result.canonical_literal_rejection_counts.null_literal_sites;
   sema_input.diagnostics_bus.diagnostics =
       &result.stage_diagnostics.semantic;
+  sema_input.stage_input_owner = kObjc3SemaStageInputOwner;
+  sema_input.typed_semantic_handoff_owner = kObjc3SemaTypedSemanticHandoffOwner;
+  sema_input.owner_model = kObjc3SemaNoFallbackOwnerModel;
+  sema_input.strict_no_fallback = true;
+  sema_input.strict_no_compatibility = true;
+  sema_input.diagnostics_bus.diagnostic_handoff_owner =
+      kObjc3SemaDiagnosticHandoffOwner;
+  sema_input.diagnostics_bus.owner_model = kObjc3SemaNoFallbackOwnerModel;
+  sema_input.diagnostics_bus.strict_no_fallback = true;
+  sema_input.diagnostics_bus.strict_no_compatibility = true;
 }
 
 void AdoptObjc3FrontendSemaResult(Objc3FrontendPipelineResult &result,

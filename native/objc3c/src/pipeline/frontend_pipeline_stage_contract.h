@@ -11,6 +11,18 @@ namespace objc3c::pipeline {
 inline constexpr std::uint32_t kFrontendPipelineContractVersionMajor = 1;
 inline constexpr std::uint32_t kFrontendPipelineContractVersionMinor = 0;
 inline constexpr std::uint32_t kFrontendPipelineContractVersionPatch = 0;
+inline constexpr const char *kFrontendPipelineOwnerSplitContractId =
+    "objc3c.frontend.pipeline.owner-split.hard-cutover.v1";
+inline constexpr const char *kFrontendPipelineStageInputOwner =
+    "native.frontend.pipeline.stage-input";
+inline constexpr const char *kFrontendPipelineStageOutputOwner =
+    "native.frontend.pipeline.stage-output";
+inline constexpr const char *kFrontendPipelineDiagnosticHandoffOwner =
+    "native.frontend.pipeline.diagnostic-handoff";
+inline constexpr const char *kFrontendPipelineBackendHandoffOwner =
+    "native.frontend.pipeline.backend-handoff";
+inline constexpr const char *kFrontendPipelineNoFallbackOwnerModel =
+    "strict-hard-cutover-no-fallback-no-compatibility-shim";
 
 enum class StageId : std::uint8_t {
   Lex = 0,
@@ -63,6 +75,8 @@ struct DiagnosticRecord {
 
 struct DiagnosticsEnvelope {
   StageId stage = StageId::Lex;
+  std::string diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
+  std::string owner_model = kFrontendPipelineNoFallbackOwnerModel;
   std::vector<DiagnosticRecord> diagnostics;
   std::size_t note_count = 0;
   std::size_t warning_count = 0;
@@ -78,6 +92,13 @@ struct StageResult {
   StageSkipReason skip_reason = StageSkipReason::None;
   bool no_throw = true;
   bool fail_closed = true;
+  std::string stage_input_owner = kFrontendPipelineStageInputOwner;
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
+  std::string diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
+  std::string owner_model = kFrontendPipelineNoFallbackOwnerModel;
+  bool owner_split_explicit = false;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   DiagnosticsEnvelope diagnostics;
   std::string failure_reason;
 };
@@ -89,6 +110,11 @@ struct StageResult {
 [[nodiscard]] const char *DiagnosticSeverityName(DiagnosticSeverity severity);
 [[nodiscard]] bool StageStatusIsTerminal(StageStatus status);
 [[nodiscard]] bool StageResultFailed(const StageResult &result);
+[[nodiscard]] bool FrontendPipelineOwnerIsExplicit(const std::string &owner);
+[[nodiscard]] bool FrontendPipelineOwnerModelIsStrict(
+    const std::string &owner_model);
+[[nodiscard]] bool StageResultOwnerSplitIsReady(const StageResult &result);
+[[nodiscard]] std::string StageResultOwnerReplayKey(const StageResult &result);
 [[nodiscard]] DiagnosticsEnvelope BuildDiagnosticsEnvelope(
     StageId stage,
     std::vector<DiagnosticRecord> diagnostics);

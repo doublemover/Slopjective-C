@@ -19,12 +19,24 @@ struct Objc3LoweringPhaseInput {
   Objc3TypedSemaToLoweringBoundary typed_boundary;
   Objc3RuntimeMetadataLoweringHandoff runtime_metadata_handoff;
   Objc3LoweringBackendHandoff backend_handoff;
+  std::string stage_input_owner = kObjc3TypedSemanticHandoffOwner;
+  std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
+  std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
+  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  bool owner_split_explicit = false;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 };
 
 struct Objc3LoweringPhaseOutput {
   bool ready = false;
   std::vector<Objc3LoweringDiagnostic> diagnostics;
   Objc3LoweringArtifactPlan artifacts;
+  std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
+  std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
+  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
   std::string replay_key;
 };
 

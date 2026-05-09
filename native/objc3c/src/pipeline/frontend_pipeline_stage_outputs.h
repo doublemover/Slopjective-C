@@ -4,15 +4,18 @@
 #include <string>
 
 #include "pipeline/frontend_pipeline_defaults.h"
+#include "pipeline/frontend_pipeline_stage_contract.h"
 
 namespace objc3c::pipeline {
 
 struct LexStageOutput {
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
   std::size_t token_count = 0;
   bool eof_token_present = false;
 };
 
 struct ParseStageOutput {
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
   std::size_t ast_node_count = 0;
   std::size_t declared_globals = 0;
   std::size_t declared_functions = 0;
@@ -28,6 +31,8 @@ struct FunctionSignatureSurface {
 };
 
 struct SemaStageOutput {
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
+  std::string typed_semantic_handoff_owner = "native.frontend.sema.typed-handoff";
   bool semantic_surface_built = false;
   bool semantic_skipped = false;
   std::size_t resolved_global_symbols = 0;
@@ -36,6 +41,8 @@ struct SemaStageOutput {
 };
 
 struct LowerStageOutput {
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
+  std::string runtime_dispatch_lowering_owner = "native.lower.runtime-dispatch";
   bool ir_emitted = false;
   std::string ir_path;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
@@ -44,6 +51,8 @@ struct LowerStageOutput {
 };
 
 struct EmitStageOutput {
+  std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
+  std::string backend_handoff_owner = kFrontendPipelineBackendHandoffOwner;
   bool diagnostics_written = false;
   bool manifest_written = false;
   bool object_written = false;

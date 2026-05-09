@@ -17,6 +17,22 @@ Objc3LoweringPhaseInput Objc3BuildLoweringPhaseInput(
   input.runtime_metadata_handoff =
       Objc3BuildRuntimeMetadataLoweringHandoff(program);
   input.backend_handoff = Objc3BuildLoweringBackendHandoff(artifacts);
+  input.owner_split_explicit =
+      Objc3LoweringStrictOwnerModelIsReady(
+          input.stage_input_owner,
+          input.owner_model,
+          input.strict_no_fallback,
+          input.strict_no_compatibility) &&
+      Objc3LoweringStrictOwnerModelIsReady(
+          input.stage_output_owner,
+          input.owner_model,
+          input.strict_no_fallback,
+          input.strict_no_compatibility) &&
+      Objc3LoweringStrictOwnerModelIsReady(
+          input.diagnostic_handoff_owner,
+          input.owner_model,
+          input.strict_no_fallback,
+          input.strict_no_compatibility);
   return input;
 }
 
@@ -24,6 +40,7 @@ bool Objc3LoweringPhaseInputIsReady(const Objc3LoweringPhaseInput &input) {
   return input.program != nullptr && !input.module_name.empty() &&
          Objc3TypedSemaToLoweringBoundaryIsReady(input.typed_boundary) &&
          Objc3LoweringBackendHandoffIsReady(input.backend_handoff) &&
+         input.owner_split_explicit &&
          (!input.artifacts.emit_ir || !input.artifacts.ir_relative_path.empty()) &&
          (!input.artifacts.emit_object ||
           !input.artifacts.object_relative_path.empty()) &&
@@ -49,7 +66,17 @@ std::string Objc3LoweringPhaseInputReplayKey(
              input.runtime_metadata_handoff)
       << ";backend_handoff="
       << Objc3LoweringBackendHandoffReplayKey(input.backend_handoff)
-      << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(input.artifacts);
+      << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(input.artifacts)
+      << ";owner_split_explicit="
+      << (input.owner_split_explicit ? "true" : "false")
+      << ";stage_input_owner=" << input.stage_input_owner
+      << ";stage_output_owner=" << input.stage_output_owner
+      << ";diagnostic_handoff_owner=" << input.diagnostic_handoff_owner
+      << ";owner_model=" << input.owner_model
+      << ";strict_no_fallback="
+      << (input.strict_no_fallback ? "true" : "false")
+      << ";strict_no_compatibility="
+      << (input.strict_no_compatibility ? "true" : "false");
   return out.str();
 }
 
@@ -58,7 +85,14 @@ std::string Objc3LoweringPhaseOutputReplayKey(
   std::ostringstream out;
   out << "ready=" << (output.ready ? "true" : "false")
       << ";diagnostics=" << output.diagnostics.size()
-      << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(output.artifacts);
+      << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(output.artifacts)
+      << ";stage_output_owner=" << output.stage_output_owner
+      << ";diagnostic_handoff_owner=" << output.diagnostic_handoff_owner
+      << ";owner_model=" << output.owner_model
+      << ";strict_no_fallback="
+      << (output.strict_no_fallback ? "true" : "false")
+      << ";strict_no_compatibility="
+      << (output.strict_no_compatibility ? "true" : "false");
   for (const Objc3LoweringDiagnostic &diagnostic : output.diagnostics) {
     out << ";diagnostic={"
         << Objc3LoweringDiagnosticReplayKey(diagnostic) << "}";

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "lower/contracts/lowering_ownership_contracts.h"
+
 #include <cstddef>
+#include <string>
 
 inline constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
 inline constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
@@ -83,6 +86,24 @@ inline constexpr const char
         "resolved-runtime-call-or-hard-diagnostic-error-only";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
     "direct-dispatch-remains-fail-closed-after-live-cutover";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringOwnerModel =
+    kObjc3LoweringNoFallbackOwnerModel;
+
+inline bool Objc3RuntimeDispatchLoweringOwnerIsReady() {
+  return Objc3LoweringStrictOwnerModelIsReady(
+      kObjc3RuntimeDispatchLoweringOwner,
+      kObjc3RuntimeDispatchLoweringOwnerModel,
+      true,
+      true);
+}
+
+inline std::string Objc3RuntimeDispatchLoweringOwnerReplayKey() {
+  return Objc3LoweringOwnerReplayKey(
+      kObjc3RuntimeDispatchLoweringOwner,
+      kObjc3RuntimeDispatchLoweringOwnerModel,
+      true,
+      true);
+}
 
 inline constexpr const char *kObjc3RuntimeDispatchCallAbiGenerationContractId =
     "objc3c.runtime.call.abi.instance.class.dispatch.v1";

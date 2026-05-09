@@ -61,6 +61,13 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.transition_edge_count + 1u == summary.executed_pass_count &&
       summary.diagnostics_after_pass_monotonic &&
       summary.diagnostics_emission_totals_consistent;
+  summary.owner_split_explicit = Objc3SemaOwnerSplitIsReady(
+      summary.stage_input_owner,
+      summary.typed_semantic_handoff_owner,
+      summary.diagnostic_handoff_owner,
+      summary.owner_model,
+      summary.strict_no_fallback,
+      summary.strict_no_compatibility);
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -109,7 +116,15 @@ void FinalizeObjc3SemaPassFlowSummary(
               << summary.executed_pass_count << "/" << summary.configured_pass_count
               << ":compat=canonical"
               << ":diag=" << summary.diagnostics_total
-              << ":fp=" << summary.pass_execution_fingerprint;
+              << ":fp=" << summary.pass_execution_fingerprint
+              << ":stage_input_owner=" << summary.stage_input_owner
+              << ":typed_handoff_owner=" << summary.typed_semantic_handoff_owner
+              << ":diagnostic_owner=" << summary.diagnostic_handoff_owner
+              << ":owner_model=" << summary.owner_model
+              << ":strict_no_fallback="
+              << (summary.strict_no_fallback ? "true" : "false")
+              << ":strict_no_compatibility="
+              << (summary.strict_no_compatibility ? "true" : "false");
   summary.deterministic_handoff_key = handoff_key.str();
   summary.replay_key_deterministic =
       summary.deterministic_handoff_key.rfind("sema-pass-flow:v1:", 0) == 0 &&
@@ -129,6 +144,7 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.pass_execution_fingerprint != 1469598103934665603ull &&
       !summary.deterministic_handoff_key.empty() &&
       summary.replay_key_deterministic &&
+      summary.owner_split_explicit &&
       deterministic_semantic_diagnostics &&
       deterministic_type_metadata_handoff;
 }
