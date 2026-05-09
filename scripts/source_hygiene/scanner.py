@@ -12,7 +12,10 @@ from .config import (
     REPORT_SCHEMA_VERSION,
 )
 from .files import is_excluded, iter_scan_files, normalize_path
-from .generated_reports import tracked_generated_reports
+from .generated_reports import (
+    generated_truth_boundary_report,
+    tracked_generated_reports,
+)
 from .guardrails import is_canonical_guardrail_context
 from .pattern_model import ForbiddenPattern
 from .patterns import FORBIDDEN_PATTERNS
@@ -28,6 +31,7 @@ __all__ = [
     "iter_scan_files",
     "normalize_path",
     "scan_forbidden_patterns",
+    "generated_truth_boundary_report",
     "tracked_generated_reports",
     "write_reports",
 ]
@@ -94,6 +98,8 @@ def build_report(
 ) -> dict[str, Any]:
     findings = scan_forbidden_patterns(root, scan_roots, excludes)
     generated_reports = tracked_generated_reports(root)
+    generated_truth = generated_truth_boundary_report(root)
+    generated_truth_findings = generated_truth["findings"]
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -104,10 +110,15 @@ def build_report(
         "findings": findings,
         "active_findings": findings,
         "tracked_generated_reports": generated_reports,
+        "generated_truth_boundaries": generated_truth["boundaries"],
+        "generated_truth_boundary_findings": generated_truth_findings,
         "stats": {
             "finding_count": len(findings),
             "active_finding_count": len(findings),
             "tracked_generated_report_count": len(generated_reports),
+            "generated_truth_boundary_finding_count": len(generated_truth_findings),
         },
-        "ok": len(findings) == 0 and not generated_reports,
+        "ok": len(findings) == 0
+        and not generated_reports
+        and not generated_truth_findings,
     }

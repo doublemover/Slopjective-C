@@ -19,7 +19,13 @@ def write_reports(report: dict[str, Any], json_path: Path, text_path: Path) -> N
         f"ok: {str(report['ok']).lower()}",
         f"active_findings: {report['stats']['active_finding_count']}",
         f"tracked_generated_reports: {report['stats']['tracked_generated_report_count']}",
+        "generated_truth_boundary_findings: "
+        f"{report['stats']['generated_truth_boundary_finding_count']}",
     ]
     for finding in report["active_findings"][:100]:
         lines.append(format_finding(finding))
+    for finding in report["generated_truth_boundary_findings"][:100]:
+        lines.append(
+            f"{finding['path']}: generated-truth-boundary: {finding['description']}"
+        )
     text_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

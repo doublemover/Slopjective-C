@@ -1,13 +1,12 @@
 #include "runtime/blocks/block_invocation.h"
 
+#include "runtime/blocks/block_invocation_plan.h"
 #include "runtime/blocks/block_runtime_records.h"
 #include "runtime/blocks/block_runtime_state.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
 
-#include <cstdint>
 #include <mutex>
-#include <vector>
 
 namespace objc3c::runtime {
 
@@ -18,23 +17,16 @@ int InvokeRuntimeBlockI32(int block_handle, int a0, int a1, int a2, int a3) {
       RuntimeBlockDebugStateForCurrentThread();
   ++debug_state.invoke_call_count;
   debug_state.last_invoked_block_handle = block_handle;
-  RuntimeBlockInvokeFn invoke = nullptr;
-  std::vector<std::uint64_t> storage_words;
+  RuntimeBlockInvocationPlan plan;
   {
     RuntimeState &state = ProcessRuntimeState();
     std::lock_guard<std::mutex> lock(state.mutex);
-    const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
-    if (block_it == state.runtime_blocks_by_handle.end() ||
-        block_it->second.invoke == nullptr) {
-      return 0;
-    }
-    invoke = block_it->second.invoke;
-    storage_words = block_it->second.storage_words;
+    plan = BuildRuntimeBlockInvocationPlanUnlocked(state, block_handle);
   }
-  if (invoke == nullptr || storage_words.empty()) {
+  if (!RuntimeBlockInvocationPlanIsRunnable(plan)) {
     return 0;
   }
-  const int result = invoke(storage_words.data(), a0, a1, a2, a3);
+  const int result = InvokeRuntimeBlockInvocationPlan(plan, a0, a1, a2, a3);
   debug_state.last_block_invoke_result = result;
   return result;
 }
