@@ -1,6 +1,7 @@
 #include "io/json/json_schema_object_validation.h"
 
 #include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_object_properties_validation.h"
 #include "io/json/json_schema_object_required_validation.h"
 #include "io/json/json_schema_validation.h"
 
@@ -15,24 +16,8 @@ void ValidateJsonSchemaObjectFields(const JsonValue &schema_root,
                                     JsonSchemaResult &result) {
   ValidateJsonSchemaRequiredProperties(schema, payload, instance_path,
                                        schema_path, result);
-  if (properties != nullptr) {
-    if (!properties->IsObject()) {
-      AddJsonSchemaContractError(
-          result, "invalid_properties",
-          JsonSchemaKeywordPath(schema_path, "properties"),
-          "properties must be an object of property schemas");
-    } else if (payload.IsObject()) {
-      for (const auto &[key, property_schema] : properties->AsObject()) {
-        const JsonValue *property = payload.Find(key);
-        if (property != nullptr) {
-          ValidateJsonSchemaNode(schema_root, property_schema, *property,
-                                 JsonInstancePropertyPath(instance_path, key),
-                                 JsonSchemaPropertySchemaPath(schema_path, key),
-                                 result);
-        }
-      }
-    }
-  }
+  ValidateJsonSchemaDeclaredProperties(schema_root, payload, properties,
+                                       instance_path, schema_path, result);
   const JsonValue *additional_properties = schema.Find("additionalProperties");
   if (additional_properties != nullptr && payload.IsObject()) {
     if (!additional_properties->IsBool() &&
