@@ -6,20 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "parse/objc3_parser_contract_fingerprints.h"
 #include "parse/objc3_parser_contract_types.h"
-
-inline std::uint64_t MixObjc3ParserContractFingerprint(const std::uint64_t fingerprint, const std::uint64_t value) {
-  constexpr std::uint64_t kMixConstant = 1099511628211ull;
-  return (fingerprint ^ value) * kMixConstant;
-}
-
-inline std::uint64_t MixObjc3ParserContractFingerprintString(std::uint64_t fingerprint, const std::string &value) {
-  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(value.size()));
-  for (const unsigned char c : value) {
-    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(c));
-  }
-  return fingerprint;
-}
 
 inline std::uint64_t BuildObjc3ParsedProgramAstShapeFingerprint(const Objc3ParsedProgram &program) {
   constexpr std::uint64_t kInitialFingerprint = 1469598103934665603ull;
