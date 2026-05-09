@@ -21,7 +21,9 @@ diagnostic expectations.
 - `parser_split/`, `lexer_split/`, and `driver_split/`: fixture-only source
   surfaces for compiler boundary validation.
 - `library_cli_parity/` and `parity_baseline/`: fixture data for native
-  command/library parity and baseline comparison. These may describe external
-  interoperability, but they must not claim drop-in compatibility.
+  command/library parity and baseline comparison. These may record external
+  observations only as provenance for canonical fixtures; they must not define
+  interoperability, drop-in compatibility, fallback acceptance, or alternate
+  success paths.
 
 Use `fixture_family_catalog.json` for machine-readable boundary ownership.

@@ -97,7 +97,7 @@
         "tests/tooling/fixtures/native/parity_baseline"
       ],
       "metadata": "fixture data for command/library parity and comparison baselines",
-      "hard_cutover_rule": "baseline comparison is descriptive evidence, not a compatibility guarantee"
+      "hard_cutover_rule": "baseline comparison is provenance-only evidence, not interoperability, drop-in compatibility, fallback acceptance, or an alternate success path"
     }
   ]
 }
