@@ -4,12 +4,7 @@ add_subdirectory(config)
 # by `scripts/check_objc3c_dependency_boundaries.py`. The hard-cutover graph uses
 # concrete stage targets below while module extraction continues.
 
-add_executable(objc3c-native
-  main.cpp
-)
-objc3c_apply_build_defaults(objc3c-native)
-objc3c_apply_llvm_direct_config(objc3c-native)
-objc3c_apply_runtime_output(objc3c-native)
+add_subdirectory(cli)
 
 add_subdirectory(diag)
 add_subdirectory(lex)
