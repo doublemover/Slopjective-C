@@ -18,6 +18,9 @@
   Objc3SemaSelectorPropertyTypeAnnotationReadinessRecord
       selector_property_type_annotation_readiness_record;
   bool deterministic_selector_property_type_annotation_readiness_record = false;
+  Objc3SemaTypeBoundarySummaryReadinessRecord
+      type_boundary_summary_readiness_record;
+  bool deterministic_type_boundary_summary_readiness_record = false;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;

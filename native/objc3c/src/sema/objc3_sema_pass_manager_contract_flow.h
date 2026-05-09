@@ -39,6 +39,8 @@ inline constexpr const char *kObjc3SemaCoreSemanticSummaryReadinessOwner =
     "native.frontend.sema.core-semantic-summary-readiness";
 inline constexpr const char *kObjc3SemaSelectorPropertyTypeAnnotationReadinessOwner =
     "native.frontend.sema.selector-property-type-annotation-readiness";
+inline constexpr const char *kObjc3SemaTypeBoundarySummaryReadinessOwner =
+    "native.frontend.sema.type-boundary-summary-readiness";
 inline constexpr const char *kObjc3SemaModuleSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.module-semantic-parity-publication-readiness";
 inline constexpr const char *kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner =
@@ -1199,6 +1201,35 @@ inline bool IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
          record.type_annotation_surface_ready && record.deterministic;
 }
 
+struct Objc3SemaTypeBoundarySummaryReadinessRecord {
+  std::string type_boundary_summary_readiness_owner =
+      kObjc3SemaTypeBoundarySummaryReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool lightweight_generic_constraint_ready = false;
+  bool nullability_flow_warning_precision_ready = false;
+  bool protocol_qualified_object_type_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
+    const Objc3SemaTypeBoundarySummaryReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.type_boundary_summary_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.lightweight_generic_constraint_ready &&
+         record.nullability_flow_warning_precision_ready &&
+         record.protocol_qualified_object_type_ready &&
+         record.deterministic;
+}
+
 struct Objc3ParserSemaConformanceMatrix {
   std::size_t parser_top_level_declaration_count = 0;
   std::size_t ast_top_level_declaration_count = 0;
@@ -2138,6 +2169,8 @@ struct Objc3SemaParityContractSurface {
       core_semantic_summary_readiness_record;
   Objc3SemaSelectorPropertyTypeAnnotationReadinessRecord
       selector_property_type_annotation_readiness_record;
+  Objc3SemaTypeBoundarySummaryReadinessRecord
+      type_boundary_summary_readiness_record;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
@@ -2599,6 +2632,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_core_semantic_parity_publication_readiness_record = false;
   bool deterministic_core_semantic_summary_readiness_record = false;
   bool deterministic_selector_property_type_annotation_readiness_record = false;
+  bool deterministic_type_boundary_summary_readiness_record = false;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
   bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   bool deterministic_concurrency_parity_publication_readiness_record = false;
@@ -2942,6 +2976,124 @@ BuildObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
       record.selector_normalization_ready &&
       record.property_attribute_ready &&
       record.type_annotation_surface_ready;
+  return record;
+}
+
+inline Objc3SemaTypeBoundarySummaryReadinessRecord
+BuildObjc3SemaTypeBoundarySummaryReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaTypeBoundarySummaryReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.lightweight_generic_constraint_ready =
+      surface.deterministic_lightweight_generic_constraint_handoff &&
+      surface.lightweight_generic_constraint_summary.generic_constraint_sites ==
+          surface.lightweight_generic_constraint_sites_total &&
+      surface.lightweight_generic_constraint_summary.generic_suffix_sites ==
+          surface.lightweight_generic_constraint_generic_suffix_sites_total &&
+      surface.lightweight_generic_constraint_summary.object_pointer_type_sites ==
+          surface
+              .lightweight_generic_constraint_object_pointer_type_sites_total &&
+      surface.lightweight_generic_constraint_summary
+              .terminated_generic_suffix_sites ==
+          surface
+              .lightweight_generic_constraint_terminated_generic_suffix_sites_total &&
+      surface.lightweight_generic_constraint_summary.pointer_declarator_sites ==
+          surface.lightweight_generic_constraint_pointer_declarator_sites_total &&
+      surface.lightweight_generic_constraint_summary.normalized_constraint_sites ==
+          surface.lightweight_generic_constraint_normalized_sites_total &&
+      surface.lightweight_generic_constraint_summary.contract_violation_sites ==
+          surface
+              .lightweight_generic_constraint_contract_violation_sites_total &&
+      surface.lightweight_generic_constraint_summary
+              .terminated_generic_suffix_sites <=
+          surface.lightweight_generic_constraint_summary.generic_suffix_sites &&
+      surface.lightweight_generic_constraint_summary.normalized_constraint_sites <=
+          surface.lightweight_generic_constraint_summary
+              .generic_constraint_sites &&
+      surface.lightweight_generic_constraint_summary.contract_violation_sites <=
+          surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
+      surface.lightweight_generic_constraint_summary.deterministic;
+  record.nullability_flow_warning_precision_ready =
+      surface.deterministic_nullability_flow_warning_precision_handoff &&
+      surface.nullability_flow_warning_precision_summary.nullability_flow_sites ==
+          surface.nullability_flow_sites_total &&
+      surface.nullability_flow_warning_precision_summary
+              .object_pointer_type_sites ==
+          surface.nullability_flow_object_pointer_type_sites_total &&
+      surface.nullability_flow_warning_precision_summary
+              .nullability_suffix_sites ==
+          surface.nullability_flow_nullability_suffix_sites_total &&
+      surface.nullability_flow_warning_precision_summary.nullable_suffix_sites ==
+          surface.nullability_flow_nullable_suffix_sites_total &&
+      surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites ==
+          surface.nullability_flow_nonnull_suffix_sites_total &&
+      surface.nullability_flow_warning_precision_summary.normalized_sites ==
+          surface.nullability_flow_normalized_sites_total &&
+      surface.nullability_flow_warning_precision_summary.contract_violation_sites ==
+          surface.nullability_flow_contract_violation_sites_total &&
+      surface.nullability_flow_warning_precision_summary.normalized_sites <=
+          surface.nullability_flow_warning_precision_summary
+              .nullability_flow_sites &&
+      surface.nullability_flow_warning_precision_summary.contract_violation_sites <=
+          surface.nullability_flow_warning_precision_summary
+              .nullability_flow_sites &&
+      surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+          surface.nullability_flow_warning_precision_summary
+              .nullable_suffix_sites +
+              surface.nullability_flow_warning_precision_summary
+                  .nonnull_suffix_sites &&
+      surface.nullability_flow_warning_precision_summary.deterministic;
+  record.protocol_qualified_object_type_ready =
+      surface.deterministic_protocol_qualified_object_type_handoff &&
+      surface.protocol_qualified_object_type_summary
+              .protocol_qualified_object_type_sites ==
+          surface.protocol_qualified_object_type_sites_total &&
+      surface.protocol_qualified_object_type_summary.protocol_composition_sites ==
+          surface
+              .protocol_qualified_object_type_protocol_composition_sites_total &&
+      surface.protocol_qualified_object_type_summary.object_pointer_type_sites ==
+          surface
+              .protocol_qualified_object_type_object_pointer_type_sites_total &&
+      surface.protocol_qualified_object_type_summary
+              .terminated_protocol_composition_sites ==
+          surface
+              .protocol_qualified_object_type_terminated_protocol_composition_sites_total &&
+      surface.protocol_qualified_object_type_summary.pointer_declarator_sites ==
+          surface
+              .protocol_qualified_object_type_pointer_declarator_sites_total &&
+      surface.protocol_qualified_object_type_summary
+              .normalized_protocol_composition_sites ==
+          surface
+              .protocol_qualified_object_type_normalized_protocol_composition_sites_total &&
+      surface.protocol_qualified_object_type_summary.contract_violation_sites ==
+          surface
+              .protocol_qualified_object_type_contract_violation_sites_total &&
+      surface.protocol_qualified_object_type_summary
+              .terminated_protocol_composition_sites <=
+          surface.protocol_qualified_object_type_summary
+              .protocol_composition_sites &&
+      surface.protocol_qualified_object_type_summary
+              .normalized_protocol_composition_sites <=
+          surface.protocol_qualified_object_type_summary
+              .protocol_qualified_object_type_sites &&
+      surface.protocol_qualified_object_type_summary.contract_violation_sites <=
+          surface.protocol_qualified_object_type_summary
+              .protocol_qualified_object_type_sites &&
+      surface.protocol_qualified_object_type_summary.deterministic;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(record.type_boundary_summary_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.lightweight_generic_constraint_ready &&
+      record.nullability_flow_warning_precision_ready &&
+      record.protocol_qualified_object_type_ready;
   return record;
 }
 
@@ -6010,57 +6162,6 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_selector_property_type_annotation_readiness_record &&
          IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
              surface.selector_property_type_annotation_readiness_record) &&
-         surface.lightweight_generic_constraint_summary.generic_constraint_sites ==
-             surface.lightweight_generic_constraint_sites_total &&
-         surface.lightweight_generic_constraint_summary.generic_suffix_sites ==
-             surface.lightweight_generic_constraint_generic_suffix_sites_total &&
-         surface.lightweight_generic_constraint_summary.object_pointer_type_sites ==
-             surface.lightweight_generic_constraint_object_pointer_type_sites_total &&
-         surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites ==
-             surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total &&
-         surface.lightweight_generic_constraint_summary.pointer_declarator_sites ==
-             surface.lightweight_generic_constraint_pointer_declarator_sites_total &&
-         surface.lightweight_generic_constraint_summary.normalized_constraint_sites ==
-             surface.lightweight_generic_constraint_normalized_sites_total &&
-         surface.lightweight_generic_constraint_summary.contract_violation_sites ==
-             surface.lightweight_generic_constraint_contract_violation_sites_total &&
-         surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites <=
-             surface.lightweight_generic_constraint_summary.generic_suffix_sites &&
-         surface.lightweight_generic_constraint_summary.normalized_constraint_sites <=
-             surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
-         surface.lightweight_generic_constraint_summary.contract_violation_sites <=
-             surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
-         surface.lightweight_generic_constraint_summary.deterministic &&
-         surface.deterministic_lightweight_generic_constraint_handoff &&
-         surface.nullability_flow_warning_precision_summary.nullability_flow_sites ==
-             surface.nullability_flow_sites_total &&
-         surface.nullability_flow_warning_precision_summary.object_pointer_type_sites ==
-             surface.nullability_flow_object_pointer_type_sites_total &&
-         surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
-             surface.nullability_flow_nullability_suffix_sites_total &&
-         surface.nullability_flow_warning_precision_summary.nullable_suffix_sites ==
-             surface.nullability_flow_nullable_suffix_sites_total &&
-         surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites ==
-             surface.nullability_flow_nonnull_suffix_sites_total &&
-         surface.nullability_flow_warning_precision_summary.normalized_sites ==
-             surface.nullability_flow_normalized_sites_total &&
-         surface.nullability_flow_warning_precision_summary.contract_violation_sites ==
-             surface.nullability_flow_contract_violation_sites_total &&
-         surface.nullability_flow_warning_precision_summary.normalized_sites <=
-             surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
-         surface.nullability_flow_warning_precision_summary.contract_violation_sites <=
-             surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
-         surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
-             surface.nullability_flow_warning_precision_summary.nullable_suffix_sites +
-                 surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
-         surface.nullability_flow_warning_precision_summary.deterministic &&
-         surface.deterministic_nullability_flow_warning_precision_handoff &&
-         surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites ==
-             surface.protocol_qualified_object_type_sites_total &&
-         surface.protocol_qualified_object_type_summary.protocol_composition_sites ==
-             surface.protocol_qualified_object_type_protocol_composition_sites_total &&
-         surface.protocol_qualified_object_type_summary.object_pointer_type_sites ==
-             surface.protocol_qualified_object_type_object_pointer_type_sites_total &&
-         surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites ==
-             surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total &&
-         surface.protocol_qualified_object_type_summary.pointer_declarator_sites ==
+         surface.deterministic_type_boundary_summary_readiness_record &&
+         IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
+             surface.type_boundary_summary_readiness_record) &&

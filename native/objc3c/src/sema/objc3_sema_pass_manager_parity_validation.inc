@@ -304,6 +304,16 @@
   result.parity_surface
       .deterministic_selector_property_type_annotation_readiness_record =
       result.deterministic_selector_property_type_annotation_readiness_record;
+  result.type_boundary_summary_readiness_record =
+      BuildObjc3SemaTypeBoundarySummaryReadinessRecord(
+          input, result.parity_surface);
+  result.deterministic_type_boundary_summary_readiness_record =
+      IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
+          result.type_boundary_summary_readiness_record);
+  result.parity_surface.type_boundary_summary_readiness_record =
+      result.type_boundary_summary_readiness_record;
+  result.parity_surface.deterministic_type_boundary_summary_readiness_record =
+      result.deterministic_type_boundary_summary_readiness_record;
   result.parity_surface.ready =
       result.parity_surface
           .deterministic_parity_closeout_publication_readiness_record &&
@@ -322,3 +332,7 @@
       IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
           result.parity_surface
               .selector_property_type_annotation_readiness_record) &&
+      result.parity_surface
+          .deterministic_type_boundary_summary_readiness_record &&
+      IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
+          result.parity_surface.type_boundary_summary_readiness_record) &&
