@@ -5347,50 +5347,32 @@ BuildObjc3ParserSemaContractReadinessRecord(
   return record;
 }
 
+#include "sema/objc3_sema_pass_manager_closeout_readiness.inc"
+
 inline Objc3SemaParityCloseoutPublicationReadinessRecord
 BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
     const Objc3SemaPassManagerInput &input,
     bool pass_manager_executed,
     const Objc3SemaParityContractSurface &surface) {
+  const Objc3SemaParityCloseoutReadinessInputs readiness =
+      BuildObjc3SemaParityCloseoutReadinessInputs(surface);
   Objc3SemaParityCloseoutPublicationReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
   record.strict_no_fallback = input.strict_no_fallback;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.pass_manager_executed = pass_manager_executed;
-  record.parser_sema_contract_ready =
-      surface.deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          surface.parser_sema_contract_readiness_record);
-  record.pass_flow_summary_ready =
-      IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary);
-  record.publication_records_ready =
-      surface.deterministic_pass_manager_publication_record &&
-      IsReadyObjc3SemaPassManagerPublicationRecord(
-          surface.pass_manager_publication_record) &&
-      surface.deterministic_type_metadata_publication_record &&
-      IsReadyObjc3SemaTypeMetadataPublicationRecord(
-          surface.type_metadata_publication_record);
+  record.parser_sema_contract_ready = readiness.parser_sema_contract_ready;
+  record.pass_flow_summary_ready = readiness.pass_flow_summary_ready;
+  record.publication_records_ready = readiness.publication_records_ready;
   record.diagnostics_publication_ready =
-      surface.deterministic_diagnostics_publication_record &&
-      IsReadyObjc3SemaDiagnosticsPublicationRecord(
-          surface.diagnostics_publication_record);
-  record.pass_flow_recovery_ready =
-      surface.deterministic_pass_flow_recovery_record &&
-      IsReadyObjc3SemaPassFlowRecoveryRecord(surface.pass_flow_recovery_record);
+      readiness.diagnostics_publication_ready;
+  record.pass_flow_recovery_ready = readiness.pass_flow_recovery_ready;
   record.type_metadata_cardinality_ready =
-      surface.deterministic_type_metadata_mapping_readiness_record &&
-      surface.type_metadata_mapping_readiness_record
-          .type_metadata_handoff_ready &&
-      surface.type_metadata_mapping_readiness_record.cardinality_consistent;
+      readiness.type_metadata_cardinality_ready;
   record.typed_semantic_handoffs_ready =
-      surface.deterministic_typed_semantic_handoff_record &&
-      IsReadyObjc3SemaTypedSemanticHandoffRecord(
-          surface.typed_semantic_handoff_record);
-  record.mapping_summaries_ready =
-      surface.deterministic_type_metadata_mapping_readiness_record &&
-      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-          surface.type_metadata_mapping_readiness_record);
+      readiness.typed_semantic_handoffs_ready;
+  record.mapping_summaries_ready = readiness.mapping_summaries_ready;
   record.deterministic =
       Objc3SemaOwnerIsExplicit(
           record.parity_closeout_publication_readiness_owner) &&
@@ -5405,12 +5387,8 @@ BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
           record.parser_sema_contract_readiness_owner) &&
       record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
       record.strict_no_fallback && record.strict_no_compatibility &&
-      record.pass_manager_executed && record.parser_sema_contract_ready &&
-      record.pass_flow_summary_ready && record.publication_records_ready &&
-      record.diagnostics_publication_ready &&
-      record.pass_flow_recovery_ready &&
-      record.type_metadata_cardinality_ready &&
-      record.typed_semantic_handoffs_ready && record.mapping_summaries_ready;
+      record.pass_manager_executed &&
+      IsReadyObjc3SemaParityCloseoutReadinessInputs(readiness);
   return record;
 }
 
@@ -5418,84 +5396,44 @@ inline Objc3SemaCloseoutSurfaceReadinessRecord
 BuildObjc3SemaCloseoutSurfaceReadinessRecord(
     const Objc3SemaPassManagerInput &input,
     const Objc3SemaParityContractSurface &surface) {
+  const Objc3SemaCloseoutSurfaceReadinessInputs readiness =
+      BuildObjc3SemaCloseoutSurfaceReadinessInputs(surface);
   Objc3SemaCloseoutSurfaceReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
   record.strict_no_fallback = input.strict_no_fallback;
   record.strict_no_compatibility = input.strict_no_compatibility;
-  record.parser_sema_contract_ready =
-      surface.deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          surface.parser_sema_contract_readiness_record);
+  record.parser_sema_contract_ready = readiness.parser_sema_contract_ready;
   record.parser_sema_conformance_evidence_ready =
-      surface.deterministic_parser_sema_conformance_evidence_record &&
-      IsReadyObjc3ParserSemaConformanceEvidenceRecord(
-          surface.parser_sema_conformance_evidence_record);
+      readiness.parser_sema_conformance_evidence_ready;
   record.diagnostics_publication_ready =
-      surface.deterministic_diagnostics_publication_record &&
-      IsReadyObjc3SemaDiagnosticsPublicationRecord(
-          surface.diagnostics_publication_record);
-  record.pass_flow_recovery_ready =
-      surface.deterministic_pass_flow_recovery_record &&
-      IsReadyObjc3SemaPassFlowRecoveryRecord(surface.pass_flow_recovery_record);
+      readiness.diagnostics_publication_ready;
+  record.pass_flow_recovery_ready = readiness.pass_flow_recovery_ready;
   record.pass_manager_publication_ready =
-      surface.deterministic_pass_manager_publication_record &&
-      IsReadyObjc3SemaPassManagerPublicationRecord(
-          surface.pass_manager_publication_record);
+      readiness.pass_manager_publication_ready;
   record.type_metadata_publication_ready =
-      surface.deterministic_type_metadata_publication_record &&
-      IsReadyObjc3SemaTypeMetadataPublicationRecord(
-          surface.type_metadata_publication_record);
-  record.type_metadata_mapping_ready =
-      surface.deterministic_type_metadata_mapping_readiness_record &&
-      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-          surface.type_metadata_mapping_readiness_record);
+      readiness.type_metadata_publication_ready;
+  record.type_metadata_mapping_ready = readiness.type_metadata_mapping_ready;
   record.typed_semantic_handoff_ready =
-      surface.deterministic_typed_semantic_handoff_record &&
-      IsReadyObjc3SemaTypedSemanticHandoffRecord(
-          surface.typed_semantic_handoff_record);
+      readiness.typed_semantic_handoff_ready;
   record.parity_closeout_publication_ready =
-      surface.deterministic_parity_closeout_publication_readiness_record &&
-      IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
-          surface.parity_closeout_publication_readiness_record);
-  record.parity_validation_ready =
-      surface.deterministic_parity_validation_record &&
-      IsReadyObjc3SemaParityValidationRecord(surface.parity_validation_record);
+      readiness.parity_closeout_publication_ready;
+  record.parity_validation_ready = readiness.parity_validation_ready;
   record.core_semantic_publication_ready =
-      surface.deterministic_core_semantic_parity_publication_readiness_record &&
-      IsReadyObjc3SemaCoreSemanticParityPublicationReadinessRecord(
-          surface.core_semantic_parity_publication_readiness_record);
+      readiness.core_semantic_publication_ready;
   record.module_semantic_publication_ready =
-      surface.deterministic_module_semantic_parity_publication_readiness_record &&
-      IsReadyObjc3SemaModuleSemanticParityPublicationReadinessRecord(
-          surface.module_semantic_parity_publication_readiness_record);
+      readiness.module_semantic_publication_ready;
   record.intermodule_flow_publication_ready =
-      surface
-          .deterministic_intermodule_flow_parity_publication_readiness_record &&
-      IsReadyObjc3SemaIntermoduleFlowParityPublicationReadinessRecord(
-          surface.intermodule_flow_parity_publication_readiness_record);
-  record.concurrency_publication_ready =
-      surface.deterministic_concurrency_parity_publication_readiness_record &&
-      IsReadyObjc3SemaConcurrencyParityPublicationReadinessRecord(
-          surface.concurrency_parity_publication_readiness_record);
+      readiness.intermodule_flow_publication_ready;
+  record.concurrency_publication_ready = readiness.concurrency_publication_ready;
   record.unsafe_error_validation_ready =
-      surface.deterministic_unsafe_error_parity_validation_readiness_record &&
-      IsReadyObjc3SemaUnsafeErrorParityValidationReadinessRecord(
-          surface.unsafe_error_parity_validation_readiness_record);
+      readiness.unsafe_error_validation_ready;
   record.control_binding_validation_ready =
-      surface.deterministic_control_binding_parity_validation_readiness_record &&
-      IsReadyObjc3SemaControlBindingParityValidationReadinessRecord(
-          surface.control_binding_parity_validation_readiness_record);
+      readiness.control_binding_validation_ready;
   record.async_block_message_validation_ready =
-      surface
-          .deterministic_async_block_message_parity_validation_readiness_record &&
-      IsReadyObjc3SemaAsyncBlockMessageParityValidationReadinessRecord(
-          surface.async_block_message_parity_validation_readiness_record);
+      readiness.async_block_message_validation_ready;
   record.dispatch_runtime_arc_validation_ready =
-      surface
-          .deterministic_dispatch_runtime_arc_parity_validation_readiness_record &&
-      IsReadyObjc3SemaDispatchRuntimeArcParityValidationReadinessRecord(
-          surface.dispatch_runtime_arc_parity_validation_readiness_record);
+      readiness.dispatch_runtime_arc_validation_ready;
   record.deterministic =
       Objc3SemaOwnerIsExplicit(record.closeout_surface_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
@@ -5508,24 +5446,7 @@ BuildObjc3SemaCloseoutSurfaceReadinessRecord(
       Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
       record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
       record.strict_no_fallback && record.strict_no_compatibility &&
-      record.parser_sema_contract_ready &&
-      record.parser_sema_conformance_evidence_ready &&
-      record.diagnostics_publication_ready &&
-      record.pass_flow_recovery_ready &&
-      record.pass_manager_publication_ready &&
-      record.type_metadata_publication_ready &&
-      record.type_metadata_mapping_ready &&
-      record.typed_semantic_handoff_ready &&
-      record.parity_closeout_publication_ready &&
-      record.parity_validation_ready &&
-      record.core_semantic_publication_ready &&
-      record.module_semantic_publication_ready &&
-      record.intermodule_flow_publication_ready &&
-      record.concurrency_publication_ready &&
-      record.unsafe_error_validation_ready &&
-      record.control_binding_validation_ready &&
-      record.async_block_message_validation_ready &&
-      record.dispatch_runtime_arc_validation_ready;
+      IsReadyObjc3SemaCloseoutSurfaceReadinessInputs(readiness);
   return record;
 }
 
@@ -5553,44 +5474,9 @@ inline Objc3SemaCloseoutSignoffRecord BuildObjc3SemaCloseoutSignoffRecord(
       closeout_readiness.typed_semantic_handoffs_ready);
 }
 
+#include "sema/objc3_sema_pass_manager_surface_readiness.inc"
+
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
-  return surface.ready &&
-         surface.deterministic_parity_closeout_publication_readiness_record &&
-         IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
-             surface.parity_closeout_publication_readiness_record) &&
-         surface.deterministic_parity_validation_record &&
-         IsReadyObjc3SemaParityValidationRecord(
-             surface.parity_validation_record) &&
-         surface.deterministic_closeout_surface_readiness_record &&
-         IsReadyObjc3SemaCloseoutSurfaceReadinessRecord(
-             surface.closeout_surface_readiness_record) &&
-         surface.deterministic_closeout_signoff_record &&
-         IsReadyObjc3SemaCloseoutSignoffRecord(
-             surface.closeout_signoff_record) &&
-         IsReadyObjc3BootstrapLegalityFailureContractSummary(
-             surface.bootstrap_legality_failure_contract_summary) &&
-         IsReadyObjc3BootstrapLegalitySemanticsSummary(
-             surface.bootstrap_legality_semantics_summary) &&
-         IsReadyObjc3BootstrapFailureRestartSemanticsSummary(
-             surface.bootstrap_failure_restart_semantics_summary) &&
-         IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
-             surface.compatibility_strictness_claim_semantics_summary) &&
-         surface.deterministic_core_semantic_summary_readiness_record &&
-         IsReadyObjc3SemaCoreSemanticSummaryReadinessRecord(
-             surface.core_semantic_summary_readiness_record) &&
-         surface.deterministic_selector_property_type_annotation_readiness_record &&
-         IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
-             surface.selector_property_type_annotation_readiness_record) &&
-         surface.deterministic_type_boundary_summary_readiness_record &&
-         IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
-             surface.type_boundary_summary_readiness_record) &&
-         surface.deterministic_module_type_abi_summary_readiness_record &&
-         IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
-             surface.module_type_abi_summary_readiness_record) &&
-         surface.deterministic_module_boundary_summary_readiness_record &&
-         IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
-             surface.module_boundary_summary_readiness_record) &&
-         surface.deterministic_intermodule_flow_summary_readiness_record &&
-         IsReadyObjc3SemaIntermoduleFlowSummaryReadinessRecord(
-             surface.intermodule_flow_summary_readiness_record);
+  return IsReadyObjc3SemaParityContractSurfaceReadinessGates(
+      BuildObjc3SemaParityContractSurfaceReadinessGates(surface));
 }
