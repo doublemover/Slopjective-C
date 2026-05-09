@@ -7,36 +7,27 @@ import sys
 from ..commands import run, workflow_command
 from ..composite_validation import run_composite_validation
 from ..environment import ROOT
+from .release_governance_foundation import (
+    action_build_release_manifest,
+    action_check_release_foundation_surface,
+    action_publish_release_provenance,
+    action_validate_release_foundation,
+)
+from .release_governance_public_conformance import (
+    action_build_public_conformance_scorecard,
+    action_check_public_conformance_reporting_surface,
+    action_publish_public_conformance_report,
+    action_validate_public_conformance_reporting,
+    action_validate_public_conformance_reporting_end_to_end,
+    action_validate_public_conformance_reporting_integration,
+)
 from .schema_surfaces import (
     DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY,
     PACKAGING_CHANNELS_SCHEMA_SURFACE_PY,
-    PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY,
-    RELEASE_FOUNDATION_SCHEMA_SURFACE_PY,
     RELEASE_OPERATIONS_SCHEMA_SURFACE_PY,
     SECURITY_HARDENING_SCHEMA_SURFACE_PY,
 )
 
-PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY = (
-    ROOT / "scripts" / "check_public_conformance_reporting_source_surface.py"
-)
-PUBLIC_CONFORMANCE_SCORECARD_PY = (
-    ROOT / "scripts" / "build_objc3c_public_conformance_scorecard.py"
-)
-PUBLIC_CONFORMANCE_REPORT_PY = (
-    ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
-)
-PUBLIC_CONFORMANCE_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_public_conformance_reporting_integration.py"
-)
-PUBLIC_CONFORMANCE_END_TO_END_PY = (
-    ROOT / "scripts" / "check_objc3c_public_conformance_reporting_end_to_end.py"
-)
-RELEASE_FOUNDATION_SOURCE_SURFACE_PY = (
-    ROOT / "scripts" / "check_release_foundation_source_surface.py"
-)
-RELEASE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_release_manifest.py"
-RELEASE_PROVENANCE_PY = ROOT / "scripts" / "publish_objc3c_release_provenance.py"
-RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
 PACKAGING_CHANNELS_SOURCE_SURFACE_PY = (
     ROOT / "scripts" / "check_packaging_channels_source_surface.py"
 )
@@ -93,89 +84,6 @@ SECURITY_HARDENING_PUBLICATION_PY = (
 SECURITY_HARDENING_END_TO_END_PY = (
     ROOT / "scripts" / "check_objc3c_security_hardening_end_to_end.py"
 )
-
-
-def action_check_public_conformance_reporting_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY)])
-
-
-def action_build_public_conformance_scorecard(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_SCORECARD_PY)])
-
-
-def action_publish_public_conformance_report(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_REPORT_PY)])
-
-
-def action_validate_public_conformance_reporting(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-public-conformance-reporting",
-        [
-            (
-                "check-public-conformance-reporting-surface",
-                [sys.executable, str(PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY)],
-            ),
-            (
-                "check-public-conformance-schema-surface",
-                [sys.executable, str(PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY)],
-            ),
-            (
-                "build-public-conformance-scorecard",
-                [sys.executable, str(PUBLIC_CONFORMANCE_SCORECARD_PY)],
-            ),
-            (
-                "publish-public-conformance-report",
-                [sys.executable, str(PUBLIC_CONFORMANCE_REPORT_PY)],
-            ),
-        ],
-    )
-
-
-def action_validate_public_conformance_reporting_integration(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_INTEGRATION_PY)])
-
-
-def action_validate_public_conformance_reporting_end_to_end(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_END_TO_END_PY)])
-
-
-def action_check_release_foundation_surface(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)])
-
-
-def action_build_release_manifest(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_MANIFEST_PY)])
-
-
-def action_publish_release_provenance(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_PROVENANCE_PY)])
-
-
-def action_validate_release_foundation(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-release-foundation",
-        [
-            ("validate-performance-governance", workflow_command("validate-performance-governance")),
-            ("validate-runnable-release-candidate", workflow_command("validate-runnable-release-candidate")),
-            (
-                "check-release-evidence",
-                [sys.executable, str(RELEASE_EVIDENCE_PY)],
-            ),
-            (
-                "check-release-foundation-surface",
-                [sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)],
-            ),
-            (
-                "check-release-foundation-schema-surface",
-                [sys.executable, str(RELEASE_FOUNDATION_SCHEMA_SURFACE_PY)],
-            ),
-            ("build-release-manifest", [sys.executable, str(RELEASE_MANIFEST_PY)]),
-            (
-                "publish-release-provenance",
-                [sys.executable, str(RELEASE_PROVENANCE_PY)],
-            ),
-        ],
-    )
 
 
 def action_check_packaging_channels_surface(_: list[str]) -> int:
