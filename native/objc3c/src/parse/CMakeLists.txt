@@ -8,6 +8,7 @@ add_library(objc3c_parse STATIC
   objc3_message_send_runtime_profiles.cpp
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
+  objc3_parser_actor_isolation_sendability_profiles.cpp
   objc3_parser_async_continuation_profiles.cpp
   objc3_parser_attributes.cpp
   objc3_parser_await_suspension_profiles.cpp
