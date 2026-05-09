@@ -82,6 +82,26 @@ def test_governance_sustainability_schema_surface_rejects_unregistered_surface_p
     assert not checker.SUMMARY_PATH.exists()
 
 
+def test_governance_sustainability_schema_surface_rejects_broken_registered_draft(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    original_load_schema = checker.load_schema
+
+    def broken_load_schema(schema_id: str) -> dict[str, Any]:
+        payload = deepcopy(original_load_schema(schema_id))
+        if schema_id == "objc3c-governance-budget-summary-v1":
+            payload["$schema"] = "https://json-schema.org/draft/2019-09/schema"
+        return payload
+
+    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
 def test_governance_sustainability_schema_surface_rejects_broken_registered_schema_id(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

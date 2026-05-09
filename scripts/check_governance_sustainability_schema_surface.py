@@ -17,23 +17,26 @@ SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainab
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "schema-surface" / "governance_schema_surface_summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.governance.sustainability.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
-EXPECTED_SCHEMAS = {
-    "budget_summary_schema": (
+EXPECTED_SCHEMAS = (
+    (
+        "budget_summary_schema",
         "objc3c-governance-budget-summary-v1",
         "schemas/objc3c-governance-budget-summary-v1.schema.json",
         "objc3c.governance.sustainability.budget.summary.v1",
     ),
-    "anti_regression_summary_schema": (
+    (
+        "anti_regression_summary_schema",
         "objc3c-governance-anti-regression-summary-v1",
         "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
         "objc3c.governance.sustainability.anti_regression.summary.v1",
     ),
-    "governance_evidence_schema": (
+    (
+        "governance_evidence_schema",
         "objc3c-governance-sustainability-evidence-v1",
         "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
         "objc3c.governance.sustainability.evidence.v1",
     ),
-}
+)
 
 
 def fail(message: str) -> int:
@@ -66,11 +69,12 @@ def main() -> int:
     checked_paths: list[str] = []
     schema_ids: list[str] = []
     schema_refs: dict[str, str] = {}
-    for surface_key, (
+    for (
+        surface_key,
         schema_id,
         expected_schema_id,
         expected_contract_id,
-    ) in EXPECTED_SCHEMAS.items():
+    ) in EXPECTED_SCHEMAS:
         expected_schema = repo_rel(schema_path(schema_id))
         published_schema = surface.get(surface_key)
         if published_schema != expected_schema:
