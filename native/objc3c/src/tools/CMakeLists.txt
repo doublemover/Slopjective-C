@@ -15,12 +15,16 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_options.cpp
   objc3c_frontend_c_api_runner_output_contract.cpp
   objc3c_frontend_c_api_runner_output_contract_core.cpp
+  objc3c_frontend_c_api_runner_output_contract_corpus_json.cpp
   objc3c_frontend_c_api_runner_output_contract_failure.cpp
   objc3c_frontend_c_api_runner_output_contract_hardening.cpp
   objc3c_frontend_c_api_runner_output_contract_json.cpp
+  objc3c_frontend_c_api_runner_output_contract_matrix_json.cpp
   objc3c_frontend_c_api_runner_output_paths.cpp
   objc3c_frontend_c_api_runner_playground_repro_json.cpp
   objc3c_frontend_c_api_runner_public_result.cpp
+  objc3c_frontend_c_api_runner_public_result_backend.cpp
+  objc3c_frontend_c_api_runner_public_result_ownership.cpp
   objc3c_frontend_c_api_runner_read_command.cpp
   objc3c_frontend_c_api_runner_result_contract.cpp
   objc3c_frontend_c_api_runner_result_lifetime.cpp
@@ -28,6 +32,8 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_runtime_inspector_json.cpp
   objc3c_frontend_c_api_runner_session.cpp
   objc3c_frontend_c_api_runner_session_output.cpp
+  objc3c_frontend_c_api_runner_session_publication.cpp
+  objc3c_frontend_c_api_runner_session_summary.cpp
   objc3c_frontend_c_api_runner_shell_quote.cpp
   objc3c_frontend_c_api_runner_stage_selection.cpp
   objc3c_frontend_c_api_runner_stage_shape.cpp

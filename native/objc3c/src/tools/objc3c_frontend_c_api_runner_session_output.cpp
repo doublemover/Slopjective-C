@@ -1,58 +1,27 @@
 #include "tools/objc3c_frontend_c_api_runner_session_output.h"
 
-#include <iostream>
-
-#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
-#include "tools/objc3c_frontend_c_api_runner_dump_actions.h"
-#include "tools/objc3c_frontend_c_api_runner_output_contract.h"
-#include "tools/objc3c_frontend_c_api_runner_summary_io.h"
-#include "tools/objc3c_frontend_c_api_runner_summary_json.h"
+#include "tools/objc3c_frontend_c_api_runner_session_publication.h"
+#include "tools/objc3c_frontend_c_api_runner_session_summary.h"
 
 bool EmitFrontendCApiRunnerSessionOutput(
     const FrontendCApiRunnerOptions &options,
     const std::filesystem::path &summary_path,
     const FrontendCApiRunnerCompileSession &compile_session,
     std::string &error) {
-  FrontendCApiRunnerOutputContract output_contract;
-  if (!BuildFrontendCApiRunnerOutputContract(
+  FrontendCApiRunnerSessionSummary summary;
+  if (!BuildFrontendCApiRunnerSessionSummary(
           options,
           summary_path,
-          compile_session.result,
-          output_contract,
+          compile_session,
+          summary,
           error)) {
     return false;
   }
 
-  const FrontendCApiRunnerArtifactPathView artifact_paths =
-      BuildFrontendCApiRunnerArtifactPathView(
-          compile_session.result,
-          summary_path);
-  const std::string summary_json = BuildFrontendCApiRunnerSummaryJson(
+  return PublishFrontendCApiRunnerSessionSummary(
       options,
       summary_path,
-      compile_session.status,
-      compile_session.result,
-      compile_session.last_error,
-      compile_session.result_error_message,
-      output_contract);
-  if (!WriteFrontendCApiRunnerSummaryFile(summary_path,
-                                          summary_json,
-                                          error)) {
-    return false;
-  }
-
-  if (ShouldEmitFrontendCApiRunnerDumpActions(options)) {
-    EmitFrontendCApiRunnerDumpActions(
-        options,
-        summary_path,
-        compile_session.result,
-        compile_session.status,
-        compile_session.result_error_message,
-        artifact_paths.runtime_metadata_binary,
-        summary_json);
-  } else {
-    std::cout << "wrote summary: " << summary_path.generic_string() << "\n";
-  }
-  error.clear();
-  return true;
+      compile_session,
+      summary,
+      error);
 }

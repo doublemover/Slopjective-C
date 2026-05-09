@@ -6,15 +6,7 @@
 #include "libobjc3c_frontend/c_api.h"
 #include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_options.h"
-
-struct FrontendCApiRunnerCOwnershipView {
-  bool result_owned_error_message = false;
-  bool diagnostics_path_borrowed = false;
-  bool manifest_path_borrowed = false;
-  bool ir_path_borrowed = false;
-  bool object_path_borrowed = false;
-  bool runtime_metadata_path_borrowed = false;
-};
+#include "tools/objc3c_frontend_c_api_runner_public_result_ownership.h"
 
 struct FrontendCApiRunnerPublicResultView {
   const char *backend_name = "clang";
