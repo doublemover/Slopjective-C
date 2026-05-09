@@ -23,10 +23,6 @@ from objc3c_tooling.public_workflow_output import extract_public_workflow_report
 
 from scripts.objc3c_workflow.action_spec import ActionHandler, ActionSpec
 from scripts.objc3c_workflow.actions.application_surfaces import (
-    CONFORMANCE_CORPUS_INTEGRATION_PY,
-    STDLIB_ADVANCED_INTEGRATION_PY,
-    STDLIB_FOUNDATION_INTEGRATION_PY,
-    STDLIB_PROGRAM_INTEGRATION_PY,
     action_check_showcase_surface,
     action_check_stdlib_surface,
     action_materialize_canonical_application_workspace,
@@ -47,8 +43,6 @@ from scripts.objc3c_workflow.actions.application_surfaces import (
     action_validate_stdlib_program,
 )
 from scripts.objc3c_workflow.actions.developer_tooling import (
-    BONUS_EXPERIENCE_INTEGRATION_PY,
-    DEVELOPER_TOOLING_INTEGRATION_PY,
     action_check_llvm_capabilities,
     action_format_objc3c,
     action_inspect_bonus_tool_integration,
@@ -97,7 +91,6 @@ from scripts.objc3c_workflow.actions.ecosystem_publication import (
     action_validate_runnable_package_ecosystem,
 )
 from scripts.objc3c_workflow.actions.hygiene import (
-    TASK_HYGIENE_PY,
     action_check_dependency_boundaries,
     action_check_release_evidence,
     action_check_repo_superclean_surface,
@@ -224,6 +217,20 @@ from scripts.objc3c_workflow.actions.stress import (
     action_validate_stress_end_to_end,
     action_validate_stress_integration,
 )
+from scripts.objc3c_workflow.actions.test_orchestration import (
+    action_test_behavior_matrix,
+    action_test_ci,
+    action_test_compile_wrapper_self_audit,
+    action_test_execution_replay,
+    action_test_execution_replay_focused,
+    action_test_execution_smoke,
+    action_test_fixture_matrix,
+    action_test_full,
+    action_test_negative_expectations,
+    action_test_nightly,
+    action_test_recovery,
+    action_test_smoke,
+)
 from scripts.objc3c_workflow.actions.validation_timing import (
     action_inspect_validation_timing,
     collect_child_timing,
@@ -232,9 +239,7 @@ from scripts.objc3c_workflow.actions.validation_timing import (
     validation_budget_violations,
     validation_speed_budget_mode,
 )
-from scripts.objc3c_workflow.commands import pwsh_file, run, workflow_command
 from scripts.objc3c_workflow.environment import (
-    PWSH,
     WORKFLOW_COMMAND_TEXT,
     WORKFLOW_RUNNER_MODE,
     WORKFLOW_RUNNER_SURFACE,
@@ -243,16 +248,6 @@ from scripts.objc3c_workflow.npm_surface import describe_package_script_payload
 from scripts.objc3c_workflow.registry import ACTION_SPECS
 from scripts.objc3c_workflow.reports import emit_json
 
-COMPILE_WRAPPER_SELF_AUDIT_PY = (
-    ROOT / "scripts" / "check_objc3c_compile_wrapper_self_audit.py"
-)
-SMOKE_PS1 = ROOT / "scripts" / "check_objc3c_native_execution_smoke.ps1"
-REPLAY_PS1 = ROOT / "scripts" / "check_objc3c_execution_replay_proof.ps1"
-RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
-MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
-NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
-BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
-RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 def run_steps(actions: Sequence[str]) -> int:
     for action in actions:
@@ -761,103 +756,6 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
     if isinstance(report_payload, dict) and report_payload.get("status") != "PASS":
         return 1
     return 0
-
-
-def action_test_behavior_matrix(_: list[str]) -> int:
-    return run([sys.executable, str(BEHAVIOR_MATRIX_PY)])
-
-
-def action_test_smoke(_: list[str]) -> int:
-    return run_composite_validation(
-        "test-smoke",
-        [
-            ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
-            ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
-            ("test-execution-replay-focused", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1), "-Limit", "1"]),
-        ],
-    )
-
-
-def action_test_ci(_: list[str]) -> int:
-    return run_composite_validation(
-        "test-ci",
-        [
-            ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
-            ("validate-developer-tooling", [sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)]),
-            ("validate-bonus-experiences", [sys.executable, str(BONUS_EXPERIENCE_INTEGRATION_PY)]),
-            ("validate-stdlib-foundation", [sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)]),
-            ("validate-stdlib-advanced", [sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)]),
-            ("validate-stdlib-program", [sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)]),
-            ("validate-performance-governance", workflow_command("validate-performance-governance")),
-            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
-            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
-            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
-        ],
-    )
-
-
-def action_test_recovery(rest: list[str]) -> int:
-    return pwsh_file(RECOVERY_PS1, *rest)
-
-
-def action_test_execution_smoke(rest: list[str]) -> int:
-    return pwsh_file(SMOKE_PS1, *rest)
-
-
-def action_test_execution_replay(rest: list[str]) -> int:
-    return pwsh_file(REPLAY_PS1, *rest)
-
-
-def action_test_execution_replay_focused(_: list[str]) -> int:
-    return pwsh_file(REPLAY_PS1, "-Limit", "1")
-
-
-def action_test_compile_wrapper_self_audit(_: list[str]) -> int:
-    return run([sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)])
-
-
-def action_test_fixture_matrix(rest: list[str]) -> int:
-    return pwsh_file(MATRIX_PS1, *rest)
-
-
-def action_test_negative_expectations(rest: list[str]) -> int:
-    return pwsh_file(NEGATIVE_EXPECTATIONS_PS1, *rest)
-
-
-def action_test_full(_: list[str]) -> int:
-    return run_composite_validation(
-        "test-full",
-        [
-            ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
-            ("test-compile-wrapper-self-audit", [sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)]),
-            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "24"]),
-            ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
-            ("test-execution-replay-focused", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1), "-Limit", "1"]),
-        ],
-    )
-
-
-def action_test_nightly(_: list[str]) -> int:
-    return run_composite_validation(
-        "test-nightly",
-        [
-            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
-            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
-            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
-            ("validate-conformance-corpus", [sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)]),
-            ("validate-stress", workflow_command("validate-stress")),
-            ("validate-external-validation", workflow_command("validate-external-validation")),
-            ("validate-public-conformance-reporting", workflow_command("validate-public-conformance-reporting")),
-            ("validate-performance-governance", workflow_command("validate-performance-governance")),
-            ("validate-release-foundation", workflow_command("validate-release-foundation")),
-            ("validate-packaging-channels", workflow_command("validate-packaging-channels")),
-            ("validate-release-operations", workflow_command("validate-release-operations")),
-            ("validate-distribution-credibility", workflow_command("validate-distribution-credibility")),
-            ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
-            ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
-            ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
-        ],
-    )
 
 
 ACTION_HANDLERS: dict[str, ActionHandler] = {
