@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from scripts.objc3c_workflow.action_handler_sections import merge_action_handler_sections
 from scripts.objc3c_workflow.action_spec import ActionHandler
 from scripts.objc3c_workflow.actions import (
     application_surfaces,
@@ -29,7 +30,7 @@ def action_test_default(_: list[str]) -> int:
     return test_orchestration.action_test_smoke([])
 
 
-ACTION_HANDLERS: dict[str, ActionHandler] = {
+CORE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-default": action_build_default,
     "build-native-binaries": native_build.action_build_native_binaries,
     "build-native-contracts": native_build.action_build_native_contracts,
@@ -66,6 +67,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-documentation-surface": docs.action_validate_documentation_surface,
     "validate-repo-superclean": hygiene.action_validate_repo_superclean,
     "compile-objc3c": native_build.action_compile_objc3c,
+}
+
+APPLICATION_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "materialize-playground-workspace": developer_tooling.action_materialize_playground_workspace,
     "materialize-stdlib-workspace": application_surfaces.action_materialize_stdlib_workspace,
     "validate-stdlib-foundation": application_surfaces.action_validate_stdlib_foundation,
@@ -74,6 +78,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runnable-stdlib-advanced": application_surfaces.action_validate_runnable_stdlib_advanced,
     "validate-runnable-stdlib-foundation": application_surfaces.action_validate_runnable_stdlib_foundation,
     "validate-runnable-stdlib-program": application_surfaces.action_validate_runnable_stdlib_program,
+}
+
+DEVELOPER_AND_PERFORMANCE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-capability-explorer": developer_tooling.action_inspect_capability_explorer,
     "inspect-playground-repro": developer_tooling.action_inspect_playground_repro,
     "inspect-compile-observability": developer_tooling.action_inspect_compile_observability,
@@ -91,6 +98,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "benchmark-comparative-baselines": performance.action_benchmark_comparative_baselines,
     "validate-runnable-performance": performance.action_validate_runnable_performance,
     "validate-performance-foundation": performance.action_validate_performance_foundation,
+}
+
+REPORTING_RELEASE_AND_SECURITY_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-conformance-corpus": application_surfaces.action_validate_conformance_corpus,
     "check-conformance-minima": application_surfaces.action_check_conformance_minima,
     "validate-runnable-conformance-corpus": application_surfaces.action_validate_runnable_conformance_corpus,
@@ -153,6 +163,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "publish-security-advisories": release_governance.action_publish_security_advisories,
     "validate-security-hardening": release_governance.action_validate_security_hardening,
     "validate-security-hardening-end-to-end": release_governance.action_validate_security_hardening_end_to_end,
+}
+
+TOOLING_ECOSYSTEM_AND_TEST_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-bonus-tool-integration": developer_tooling.action_inspect_bonus_tool_integration,
     "inspect-validation-timing": validation_timing.action_inspect_validation_timing,
     "materialize-project-template": developer_tooling.action_materialize_project_template,
@@ -221,3 +234,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "package-runnable-toolchain": native_build.action_package_runnable_toolchain,
     "proof-objc3c": native_build.action_proof_objc3c,
 }
+
+ACTION_HANDLERS: dict[str, ActionHandler] = merge_action_handler_sections(
+    CORE_ACTION_HANDLERS,
+    APPLICATION_ACTION_HANDLERS,
+    DEVELOPER_AND_PERFORMANCE_ACTION_HANDLERS,
+    REPORTING_RELEASE_AND_SECURITY_ACTION_HANDLERS,
+    TOOLING_ECOSYSTEM_AND_TEST_ACTION_HANDLERS,
+)
