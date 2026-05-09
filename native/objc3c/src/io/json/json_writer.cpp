@@ -4,56 +4,10 @@
 #include <sstream>
 #include <string_view>
 
+#include "io/json/json_value_writer.h"
 #include "io/objc3_json.h"
 
 namespace objc3::io::json {
-namespace {
-
-void WriteValue(std::ostream &out, const JsonValue &value) {
-  switch (value.kind()) {
-    case JsonValue::Kind::kNull:
-      out << "null";
-      return;
-    case JsonValue::Kind::kBool:
-      out << (value.AsBool() ? "true" : "false");
-      return;
-    case JsonValue::Kind::kNumber:
-      out << std::setprecision(17) << value.AsNumber();
-      return;
-    case JsonValue::Kind::kString:
-      objc3::io::WriteJsonString(out, value.AsString());
-      return;
-    case JsonValue::Kind::kArray: {
-      out << '[';
-      const auto &array = value.AsArray();
-      for (std::size_t i = 0; i < array.size(); ++i) {
-        if (i > 0) {
-          out << ',';
-        }
-        WriteValue(out, array[i]);
-      }
-      out << ']';
-      return;
-    }
-    case JsonValue::Kind::kObject: {
-      out << '{';
-      bool first = true;
-      for (const auto &[key, item] : value.AsObject()) {
-        if (!first) {
-          out << ',';
-        }
-        first = false;
-        objc3::io::WriteJsonString(out, key);
-        out << ':';
-        WriteValue(out, item);
-      }
-      out << '}';
-      return;
-    }
-  }
-}
-
-}  // namespace
 
 JsonObjectWriter::JsonObjectWriter(std::ostream &out) : out_(out) {
   out_ << '{';
@@ -182,27 +136,12 @@ void JsonArrayWriter::End() {
 }
 
 void WriteJson(std::ostream &out, const JsonValue &value) {
-  WriteValue(out, value);
+  WriteJsonValue(out, value);
 }
 
 std::string RenderJson(const JsonValue &value) {
   std::ostringstream out;
   WriteJson(out, value);
-  return out.str();
-}
-
-void WriteJsonStringArray(std::ostream &out,
-                          const std::vector<std::string> &values) {
-  JsonArrayWriter array(out);
-  for (const std::string &value : values) {
-    array.StringValue(value);
-  }
-  array.End();
-}
-
-std::string RenderJsonStringArray(const std::vector<std::string> &values) {
-  std::ostringstream out;
-  WriteJsonStringArray(out, values);
   return out.str();
 }
 
