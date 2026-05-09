@@ -115,12 +115,12 @@ using objc3c::runtime::BorrowRuntimeCString;
 using objc3c::runtime::ClearMethodCacheStateUnlocked;
 using objc3c::runtime::ClearRealizedClassGraphUnlocked;
 using objc3c::runtime::ClearRuntimeInstanceStateUnlocked;
+using objc3c::runtime::LookupSelectorUnlocked;
+using objc3c::runtime::MaterializeSelectorLookupEntryUnlocked;
 using objc3c::runtime::RecordPostResolutionStrictDispatchFailure;
 using objc3c::runtime::RecordTypedDispatchSuccess;
 using objc3c::runtime::StoreDispatchResultContractUnlocked;
 using objc3c::runtime::WriteRuntimeManagedPropertyValueUnlocked;
-
-const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
