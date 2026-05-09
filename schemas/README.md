@@ -25,6 +25,9 @@ canonical support truth.
 | `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
 | `objc3c-package-lock-v1.schema.json` | Package lock provenance with npm-bridge replay commands. |
 | `objc3c-package-offline-mirror-index-v1.schema.json` | Offline package mirror metadata with npm-bridge replay commands. |
+| `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands and canonical bootstrap entrypoints. |
+| `objc3c-platform-support-matrix-v1.schema.json` | Platform publication surfaces constrained to npm-bridge commands. |
+| `objc3c-compiler-throughput-summary-v1.schema.json` | Compiler throughput summaries keyed to the objc3c bridge. |
 
 The canonical data files are:
 

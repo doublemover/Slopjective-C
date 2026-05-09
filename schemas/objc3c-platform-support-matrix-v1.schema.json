@@ -123,33 +123,39 @@
       ],
       "properties": {
         "inspect_support_matrix_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "package_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "package_channels_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "packaging_validation_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "packaging_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "platform_hardening_validation_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "platform_hardening_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "release_operations_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "release_operations_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         }
       }
+    }
+  },
+  "$defs": {
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
     }
   }
 }
