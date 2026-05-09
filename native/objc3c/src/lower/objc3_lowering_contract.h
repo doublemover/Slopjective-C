@@ -5,6 +5,7 @@
 #include "lower/contracts/function_method_lowering_state.h"
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
+#include "lower/contracts/ownership_runtime_lowering_contracts.h"
 #include "lower/contracts/runtime_dispatch_lowering_contracts.h"
 #include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
@@ -153,106 +154,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimePropertyMetadataReflectionFailClosedModel =
         "no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout";
-// runtime-backed object ownership attribute surface anchor: lane-A
-// upgrades the frozen ownership boundary into an emitted property/member
-// metadata capability by carrying sema-approved property attribute,
-// lifetime/runtime-hook, and accessor ownership profiles directly in the
-// runtime-facing property descriptor payload rather than leaving them manifest-
-// only evidence.
-inline constexpr const char
-    *kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId =
-        "objc3c.runtime.backed.object.ownership.attribute.surface.v1";
-inline constexpr const char
-    *kObjc3RuntimeBackedObjectOwnershipAttributeSourceModel =
-        "runtime-backed-property-source-surface-publishes-attribute-lifetime-hook-and-accessor-ownership-profiles";
-inline constexpr const char
-    *kObjc3RuntimeBackedObjectOwnershipAttributeDescriptorModel =
-        "emitted-property-descriptor-records-carry-attribute-lifetime-hook-and-accessor-ownership-strings";
-inline constexpr const char
-    *kObjc3RuntimeBackedObjectOwnershipAttributeRuntimeModel =
-        "runtime-backed-property-metadata-consumes-emitted-ownership-strings-without-source-rediscovery";
-inline constexpr const char
-    *kObjc3RuntimeBackedObjectOwnershipAttributeFailClosedModel =
-        "no-manifest-only-ownership-proof-no-source-recovery-no-live-arc-hook-emission-yet";
-// retainable-object semantic-rule freeze anchor: lane-B freezes the
-// truthful semantic boundary around runtime-backed object ownership by making
-// it explicit that property/member ownership metadata is now live while
-// retain/release legality, autoreleasepool execution, and destruction-order
-// behavior remain summary-driven and fail-closed until later work.
-inline constexpr const char
-    *kObjc3RetainableObjectSemanticRulesFreezeContractId =
-        "objc3c.retainable.object.semantic.rules.freeze.v1";
-inline constexpr const char
-    *kObjc3RetainableObjectSemanticRulesSemanticModel =
-        "runtime-backed-object-semantic-rules-freeze-property-member-ownership-metadata-while-retain-release-remains-summary-driven-and-runtime-backed-storage-legality-is-live-sema-enforced";
-inline constexpr const char
-    *kObjc3RetainableObjectSemanticRulesDestructionModel =
-        "destruction-order-autoreleasepool-and-live-arc-execution-stay-fail-closed-outside-runtime-backed-storage-legality";
-inline constexpr const char
-    *kObjc3RetainableObjectSemanticRulesFailClosedModel =
-        "fail-closed-on-retainable-object-semantic-drift-or-premature-live-storage-legality-claim";
-// runtime-backed storage ownership legality anchor: lane-B upgrades
-// the frozen B001 boundary into live semantic enforcement for runtime-backed
-// object properties by rejecting conflicting explicit ownership
-// qualifier/modifier combinations while preserving the truthful owned/weak/
-// unowned storage profiles the runtime already consumes.
-inline constexpr const char
-    *kObjc3RuntimeBackedStorageOwnershipLegalityContractId =
-        "objc3c.runtime.backed.storage.ownership.legality.v1";
-inline constexpr const char
-    *kObjc3RuntimeBackedStorageOwnershipOwnedStorageModel =
-        "explicit-strong-object-property-qualifiers-remain-legal-for-owned-runtime-backed-storage-while-conflicting-weak-or-unowned-modifiers-fail-closed";
-inline constexpr const char
-    *kObjc3RuntimeBackedStorageOwnershipWeakUnownedModel =
-        "explicit-weak-and-unsafe-unretained-object-property-qualifiers-bind-runtime-backed-storage-legality-and-reject-conflicting-property-modifiers";
-inline constexpr const char
-    *kObjc3RuntimeBackedStorageOwnershipFailClosedModel =
-        "fail-closed-on-runtime-backed-object-property-ownership-qualifier-modifier-drift";
-// autoreleasepool/destruction-order semantic expansion anchor:
-// lane-B keeps autoreleasepool scopes fail-closed but now distinguishes the
-// ownership-sensitive case where owned runtime-backed object or synthesized
-// property storage would require deferred destruction-order semantics.
-inline constexpr const char
-    *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderContractId =
-        "objc3c.runtime.backed.autoreleasepool.destruction.order.semantics.v1";
-inline constexpr const char
-    *kObjc3RuntimeBackedAutoreleasepoolModel =
-        "autoreleasepool-scopes-remain-fail-closed-while-owned-runtime-backed-object-storage-publishes-destruction-order-edge-diagnostics";
-inline constexpr const char
-    *kObjc3RuntimeBackedDestructionOrderModel =
-        "owned-runtime-backed-object-or-synthesized-property-storage-inside-autoreleasepool-requires-deferred-destruction-order-runtime-support";
-inline constexpr const char
-    *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderFailClosedModel =
-        "fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage";
-// ownership-lowering baseline freeze anchor: lane-C freezes the
-// current lowering boundary where runtime-backed ownership metadata and sema
-// legality are live, but executable retain/release/autorelease/weak behavior
-// still remains represented by legacy lowering summaries rather than emitted
-// runtime hooks.
-inline constexpr const char *kObjc3OwnershipLoweringBaselineContractId =
-    "objc3c.ownership.lowering.baseline.freeze.v1";
-inline constexpr const char *kObjc3OwnershipLoweringBaselineQualifierModel =
-    "ownership-qualifier-lowering-remains-legacy-summary-driven-for-runtime-backed-object-metadata";
-inline constexpr const char *kObjc3OwnershipLoweringBaselineRuntimeHookModel =
-    "retain-release-autorelease-and-weak-lowering-stays-summary-only-without-live-runtime-hook-emission";
-inline constexpr const char *kObjc3OwnershipLoweringBaselineAutoreleasepoolModel =
-    "autoreleasepool-lowering-remains-summary-only-without-emitted-push-pop-hooks";
-inline constexpr const char *kObjc3OwnershipLoweringBaselineFailClosedModel =
-    "no-live-ownership-runtime-hooks-no-arc-weak-side-table-entrypoints-no-destruction-lowering-yet";
-// runtime hook emission anchor: lane-C replaces the C001 summary-only
-// baseline with emitted runtime helper calls for retain/release/autorelease and
-// weak property paths while preserving the existing synthesized accessor
-// descriptor/storage artifact surface from the earlier runtime step.
-inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionContractId =
-    "objc3c.ownership.runtime.hook.emission.v1";
-inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionAccessorModel =
-    "synthesized-accessors-call-runtime-owned-current-property-and-ownership-hook-entrypoints";
-inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionPropertyContextModel =
-    "runtime-dispatch-frame-selects-current-receiver-property-accessor-and-autorelease-queue";
-inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionAutoreleaseModel =
-    "autorelease-values-drain-at-runtime-dispatch-return";
-inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionFailClosedModel =
-    "owned-and-weak-runtime-backed-accessors-may-not-fall-back-to-summary-only-lowering";
 inline constexpr const char
     *kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId =
         "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1";
@@ -262,12 +163,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3AccessorStorageLoweringHelperSelectionModel =
         "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers";
-inline constexpr const char *kObjc3RuntimeReadCurrentPropertyI32Symbol =
-    "objc3_runtime_read_current_property_i32";
-inline constexpr const char *kObjc3RuntimeWriteCurrentPropertyI32Symbol =
-    "objc3_runtime_write_current_property_i32";
-inline constexpr const char *kObjc3RuntimeExchangeCurrentPropertyI32Symbol =
-    "objc3_runtime_exchange_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreThrownErrorI32Symbol =
     "objc3_runtime_store_thrown_error_i32";
 inline constexpr const char *kObjc3RuntimeLoadThrownErrorI32Symbol =
@@ -317,16 +212,6 @@ inline constexpr const char *kObjc3RuntimeActorMailboxEnqueueI32Symbol =
     "objc3_runtime_actor_mailbox_enqueue_i32";
 inline constexpr const char *kObjc3RuntimeActorMailboxDrainNextI32Symbol =
     "objc3_runtime_actor_mailbox_drain_next_i32";
-inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
-    "objc3_runtime_load_weak_current_property_i32";
-inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =
-    "objc3_runtime_store_weak_current_property_i32";
-inline constexpr const char *kObjc3RuntimeRetainI32Symbol =
-    "objc3_runtime_retain_i32";
-inline constexpr const char *kObjc3RuntimeReleaseI32Symbol =
-    "objc3_runtime_release_i32";
-inline constexpr const char *kObjc3RuntimeAutoreleaseI32Symbol =
-    "objc3_runtime_autorelease_i32";
 inline constexpr const char *kObjc3RuntimePromoteBlockI32Symbol =
     "objc3_runtime_promote_block_i32";
 inline constexpr const char *kObjc3RuntimeInvokeBlockI32Symbol =
@@ -663,51 +548,6 @@ inline constexpr const char *kObjc3RunnableArcCloseoutSmokeModel =
 inline constexpr const char *kObjc3RunnableArcCloseoutFailClosedModel =
     "fail-closed-on-runnable-arc-closeout-drift-or-runbook-mismatch";
 std::string Objc3RunnableArcCloseoutSummary();
-inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
-    "objc3_runtime_push_autoreleasepool_scope";
-inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
-    "objc3_runtime_pop_autoreleasepool_scope";
-// runtime memory-management API freeze anchor: the stable public
-// runtime ABI remains register/lookup/dispatch only, while lowered
-// retain/release/autorelease/current-property/weak helper entrypoints stay on
-// the private bootstrap-internal surface until later runtime work decides
-// whether any of that memory-management API should become public.
-inline constexpr const char *kObjc3RuntimeMemoryManagementApiContractId =
-    "objc3c.runtime.memory.management.api.freeze.v1";
-inline constexpr const char *kObjc3RuntimeMemoryManagementApiReferenceModel =
-    "public-runtime-abi-stays-register-lookup-dispatch-while-reference-counting-helpers-remain-private-runtime-entrypoints";
-inline constexpr const char *kObjc3RuntimeMemoryManagementApiWeakModel =
-    "weak-storage-remains-served-through-private-runtime-helper-entrypoints-and-runtime-side-tables";
-inline constexpr const char *kObjc3RuntimeMemoryManagementApiAutoreleasepoolModel =
-    "no-public-autoreleasepool-push-pop-api-yet-autorelease-helper-drains-only-on-dispatch-frame-return";
-inline constexpr const char *kObjc3RuntimeMemoryManagementApiFailClosedModel =
-    "no-public-memory-management-header-widening-no-user-facing-arc-entrypoints-yet";
-// runtime memory-management implementation anchor: runtime-backed
-// objects now execute refcount, weak-table, and autoreleasepool semantics
-// through private runtime helpers while preserving the frozen D001 public ABI.
-inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationContractId =
-    "objc3c.runtime.memory.management.implementation.v1";
-inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationRefcountModel =
-    "runtime-managed-instance-retain-counts-destroy-strong-owned-storage-on-final-release";
-inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationWeakModel =
-    "weak-side-table-tracks-runtime-storage-observers-and-zeroes-them-on-final-release";
-inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationAutoreleasepoolModel =
-    "private-autoreleasepool-push-pop-scopes-retain-autoreleased-runtime-values-until-lifo-drain";
-inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationFailClosedModel =
-    "memory-management-runtime-support-remains-private-lowered-and-runtime-probe-driven";
-// ownership-runtime-gate freeze anchor: lane-E now freezes the
-// supported ownership runtime baseline and its non-goals so later integration
-// issues cannot silently claim ARC-, block-, or public-ABI-level support.
-inline constexpr const char *kObjc3OwnershipRuntimeGateContractId =
-    "objc3c.ownership.runtime.gate.freeze.v1";
-inline constexpr const char *kObjc3OwnershipRuntimeGateSupportedModel =
-    "runtime-backed-object-baseline-proves-strong-weak-and-autoreleasepool-behavior-through-private-runtime-hooks";
-inline constexpr const char *kObjc3OwnershipRuntimeGateEvidenceModel =
-    "gate-consumes-ownership-runtime-contract-summaries-and-runtime-probe-evidence";
-inline constexpr const char *kObjc3OwnershipRuntimeGateNonGoalModel =
-    "no-arc-automation-no-block-ownership-runtime-no-public-ownership-api-widening";
-inline constexpr const char *kObjc3OwnershipRuntimeGateFailClosedModel =
-    "integration-gate-must-not-claim-more-than-the-supported-runtime-backed-ownership-baseline";
 // executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1369,35 +1209,6 @@ inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionSurfa
     "objc_ownership_borrowed_pointer_and_retainable_family_abi_completion";
 inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionLaneContract =
     "objc3c.ownership.borrowed.retainable.family.abi.completion.v1";
-// runtime/helper-freeze anchor: lane-D does not invent a second
-// Part 8 runtime subsystem. Cleanup execution, resource invalidation, and
-// retainable-family helper integration freeze the already-live private ARC /
-// autorelease / snapshot helper slice plus the existing packaged runtime
-// archive path. Borrowed lifetime runtime enforcement and escaping
-// cleanup/resource ownership transfer remain later work.
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeContractId =
-    "objc3c.ownership.system.helper.runtime.contract.v1";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeSourceModel =
-    "cleanup-resource-invalidation-and-retainable-family-runtime-proof-reuses-existing-private-arc-autorelease-and-snapshot-helpers";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeAbiModel =
-    "private-retain-release-autorelease-autoreleasepool-and-testing-snapshot-helper-cluster";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimePackagingModel =
-    "same-packaged-runtime-archive-no-public-runtime-header-widening-and-no-new-ownership-import-surface";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeFailClosedModel =
-    "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
-// live runtime-integration anchor: the supported Part 8 cleanup /
-// retainable-family slice now proves actual linked execution through the same
-// private helper cluster frozen in D001 plus emitted scope-exit cleanup calls.
-inline constexpr const char *kObjc3OwnershipLiveCleanupRetainableIntegrationContractId =
-    "objc3c.ownership.live.cleanup.retainable.runtime.integration.v1";
-inline constexpr const char *kObjc3OwnershipLiveCleanupRetainableIntegrationSourceModel =
-    "supported-ownership-cleanup-resource-and-retainable-family-sites-now-link-and-execute-through-emitted-cleanup-calls-and-the-private-helper-cluster";
-inline constexpr const char *kObjc3OwnershipLiveCleanupRetainableIntegrationExecutionModel =
-    "linked-native-probes-execute-lifo-cleanup-resource-invalidation-and-retainable-family-helper-traffic-on-the-supported-slice";
-inline constexpr const char *kObjc3OwnershipLiveCleanupRetainableIntegrationPackagingModel =
-    "linked-module-object-plus-existing-runtime-support-archive-no-new-runtime-package-surface";
-inline constexpr const char *kObjc3OwnershipLiveCleanupRetainableIntegrationFailClosedModel =
-    "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "objc3c.task.runtime.interop.cancellation.lowering.v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
@@ -2171,15 +1982,6 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
 std::string Objc3RuntimePropertyLayoutConsumptionSummary();
 std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
 std::string Objc3RuntimePropertyMetadataReflectionSummary();
-std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
-std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
-std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
-std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
-std::string Objc3OwnershipLoweringBaselineSummary();
-std::string Objc3OwnershipRuntimeHookEmissionSummary();
-std::string Objc3RuntimeMemoryManagementApiSummary();
-std::string Objc3RuntimeMemoryManagementImplementationSummary();
-std::string Objc3OwnershipRuntimeGateSummary();
 std::string Objc3ExecutableBlockSourceClosureSummary();
 std::string Objc3ExecutableBlockSourceModelCompletionSummary();
 std::string Objc3ExecutableBlockSourceStorageAnnotationSummary();
@@ -2257,8 +2059,6 @@ std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
 std::string Objc3ToolingCorpusShardingReleaseEvidencePackagingLoweringSummary();
 std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
-std::string Objc3OwnershipSystemHelperRuntimeContractSummary();
-std::string Objc3OwnershipLiveCleanupRetainableIntegrationSummary();
 bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract);
 std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract);
 Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindingContract(
