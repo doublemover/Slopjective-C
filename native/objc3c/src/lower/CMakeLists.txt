@@ -5,11 +5,14 @@ add_library(objc3c_lower STATIC
   contracts/cross_module_lowering_contracts.cpp
   contracts/dispatch_surface_contracts.cpp
   contracts/function_method_lowering_state.cpp
+  contracts/lowering_concurrency_contracts.cpp
   contracts/lowering_arc_contracts.cpp
   contracts/lowering_backend_handoff.cpp
   contracts/lowering_extended_contracts.cpp
   contracts/lowering_artifact_publication.cpp
+  contracts/lowering_diagnostic_contract.cpp
   contracts/lowering_diagnostics.cpp
+  contracts/lowering_error_diagnostic_contracts.cpp
   contracts/lowering_phase_io.cpp
   contracts/lowering_contract_validators.cpp
   contracts/lowering_summary_contracts.cpp
@@ -19,6 +22,8 @@ add_library(objc3c_lower STATIC
   contracts/runtime_dispatch_boundary_contracts.cpp
   contracts/runtime_metadata_handoff.cpp
   contracts/typed_sema_lowering_boundary.cpp
+  contracts/typed_sema_lowering_boundary_counts.cpp
+  contracts/typed_sema_lowering_boundary_replay.cpp
   contracts/type_system_lowering_contracts.cpp
   core/lowering_primitive_ops.cpp
   metadata/lowering_metadata_helpers.cpp

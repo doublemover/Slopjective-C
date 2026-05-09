@@ -13,6 +13,7 @@ add_library(objc3c_sema STATIC
   objc3_sema_pass_manager_contract_flow.h
   objc3_sema_pass_manager_contract_results.h
   objc3_sema_pass_manager_contract_surface_validation.h
+  objc3_sema_diagnostic_publication.h
   objc3_semantic_collection_helpers.cpp
   objc3_semantic_context.cpp
   objc3_semantic_feature_claim_context.cpp
@@ -23,6 +24,7 @@ add_library(objc3c_sema STATIC
   objc3_semantic_type_lowering_contract.h
   objc3_sema_control_flow_equivalence.cpp
   objc3_sema_diagnostic_contract.cpp
+  objc3_sema_diagnostic_publication.cpp
   objc3_sema_dispatch_ownership_equivalence.cpp
   objc3_semantic_type_helpers.h
   objc3_sema_diagnostics_bus.cpp

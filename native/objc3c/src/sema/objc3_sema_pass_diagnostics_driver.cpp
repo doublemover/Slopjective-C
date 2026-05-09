@@ -3,7 +3,7 @@
 #include <numeric>
 #include <vector>
 
-#include "sema/objc3_sema_diagnostic_contract.h"
+#include "sema/objc3_sema_diagnostic_publication.h"
 #include "sema/objc3_sema_diagnostics_bus.h"
 #include "sema/objc3_sema_pass_flow_scaffold.h"
 #include "sema/objc3_semantic_passes.h"
