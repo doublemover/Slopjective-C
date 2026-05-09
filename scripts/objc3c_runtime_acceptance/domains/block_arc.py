@@ -8,14 +8,12 @@ from objc3c_runtime_acceptance.domains.block_arc_automation_cases import (
 from objc3c_runtime_acceptance.domains.block_arc_capture_cases import (
     check_escaping_block_capture_legality_case,
 )
-from objc3c_runtime_acceptance.domains.block_arc_helper_runtime_cases import (
-    check_block_helper_runtime_execution_case,
-)
 from objc3c_runtime_acceptance.domains.block_arc_property_cases import (
     check_arc_property_helper_case,
 )
 from objc3c_runtime_acceptance.domains.block_arc_runtime_cases import (
     check_block_arc_runtime_abi_case,
+    check_block_helper_runtime_execution_case,
 )
 from objc3c_runtime_acceptance.domains.block_arc_surfaces import (
     build_runtime_block_arc_lowering_helper_surface,
