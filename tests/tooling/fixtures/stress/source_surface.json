@@ -47,6 +47,16 @@
       "phase": "e2e",
       "path": "tests/tooling/fixtures/stress/behavior_owner_splits/e2e.json",
       "boundary": "compile-link-run, mixed-module differential, and replay-backed end-to-end stress inputs"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "stress fallback, shim, old-mode, migration, generated-only, report-only, compatibility, unsupported, strict-error, and alternate acceptance claims"
+    },
+    {
+      "phase": "stress_fixture_provenance",
+      "path": "tests/tooling/fixtures/stress/behavior_owner_splits/stress_fixture_provenance.json",
+      "boundary": "stress source-surface rows, manifest rows, workflow labels, replay artifacts, generated evidence, and owner split routing metadata"
     }
   ],
   "source_families": [

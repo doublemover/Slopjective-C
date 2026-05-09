@@ -746,7 +746,9 @@
         "lowering",
         "ir",
         "runtime",
-        "e2e"
+        "e2e",
+        "canonical_rejection",
+        "stress_fixture_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/stress/behavior_owner_splits/index.json",
@@ -755,9 +757,11 @@
         "tests/tooling/fixtures/stress/behavior_owner_splits/lowering.json",
         "tests/tooling/fixtures/stress/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/stress/behavior_owner_splits/runtime.json",
-        "tests/tooling/fixtures/stress/behavior_owner_splits/e2e.json"
+        "tests/tooling/fixtures/stress/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/stress/behavior_owner_splits/stress_fixture_provenance.json"
       ],
-      "retired_disposition": "mixed stress manifests are resolved through behavior-first phase indexes before any stress fixture is cited as parser, sema, lowering, IR, runtime, or e2e support; compatibility-looking mixed-module stress names remain provenance-only or strict-error evidence"
+      "retired_disposition": "mixed stress manifests, source-surface rows, source-family coverage goals, source paths, case ids, fixture group labels, surface contract labels, workflow commands, tmp artifacts, replay outputs, generated-only rows, report-only rows, and migration-only rows are resolved through behavior-first phase indexes and stress fixture provenance before any stress fixture is cited as parser, sema, lowering, IR, runtime, or e2e support; compatibility-looking mixed-module stress names, fallback, shim, old-mode, migration-only, generated-only, report-only, unsupported-feature, unresolved-dispatch, strict-error, report-output-only, replay-output-only, and alternate acceptance stress cases remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
       "family": "conformance_corpus_owner_split_indexes",
@@ -1228,6 +1232,8 @@
     "tests/tooling/fixtures/stress/behavior_owner_splits/ir.json",
     "tests/tooling/fixtures/stress/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/stress/behavior_owner_splits/e2e.json",
+    "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/stress/behavior_owner_splits/stress_fixture_provenance.json",
     "tests/conformance/behavior_owner_splits/index.json",
     "tests/conformance/behavior_owner_splits/parser.json",
     "tests/conformance/behavior_owner_splits/sema.json",

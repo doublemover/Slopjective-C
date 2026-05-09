@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "lowering",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "lowering stress fixtures own canonical lowering, ABI handoff, and strict link-error provenance for required runtime symbols",
+  "support_boundary": "lowering stress fixtures own canonical lowering, ABI handoff, and strict link-error provenance for required runtime symbols only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, or compatibility provenance",
   "source_families": [
     "lowering-runtime-stress",
     "mixed-module-differential",
@@ -38,5 +38,5 @@
     }
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime fallback and alternate lowering paths remain strict-error or rejected provenance"
+  "retired_surface_rule": "runtime fallback lowering, shim lowering, old-mode lowering, compatibility lowering, alternate lowering paths, generated-only lowering rows, report-only lowering rows, and migration-only lowering claims remain strict-error, canonical rejection, or provenance-only evidence"
 }

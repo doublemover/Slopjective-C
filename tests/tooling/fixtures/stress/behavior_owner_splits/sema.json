@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "sema",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "semantic stress fixtures own type flow, effects, ownership diagnostics, conservative control-flow rejection, and unsupported feature claims",
+  "support_boundary": "semantic stress fixtures own type flow, effects, ownership diagnostics, conservative control-flow rejection, and unsupported feature diagnostics only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, or compatibility provenance",
   "source_families": [
     "parser-sema-fuzz",
     "lowering-runtime-stress",
@@ -37,5 +37,5 @@
     }
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "unsupported feature and compatibility-looking claims are semantic diagnostics or absent support"
+  "retired_surface_rule": "unsupported feature claims, compatibility-looking claims, semantic shims, semantic fallback gates, old-mode semantic rows, generated-only diagnostics, report-only diagnostics, and migration-only semantic rows are semantic diagnostics, strict-error, absent support, or provenance-only evidence"
 }

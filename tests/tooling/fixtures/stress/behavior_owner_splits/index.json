@@ -3,10 +3,11 @@
   "catalog": "objc3c-stress-behavior-owner-split-index",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
   "split_policy": {
-    "primary_axis": "behavior phase before stress family name",
-    "positive_rule": "stress fixtures are provenance for canonical Objective-C 3 behavior only after a phase owner index claims them",
-    "retired_surface_rule": "compatibility-looking, fallback-looking, shim-looking, old-mode, and alternate acceptance path stress cases are rejection, strict-error, or provenance-only evidence",
-    "generated_artifact_rule": "tmp stress artifacts and replay outputs are machine-owned evidence and cannot create positive behavior support"
+    "primary_axis": "behavior phase before stress family name, source-surface row, manifest case id, workflow label, generated artifact, report-only row, migration-only row, compatibility row, or retired-surface claim",
+    "positive_rule": "stress fixtures can cite canonical Objective-C 3 behavior only through parser, sema, lowering, IR, runtime, or e2e owners; source-surface rows, manifest case ids, workflow labels, replay outputs, and provenance rows are not behavior support by themselves",
+    "provenance_rule": "stress source-surface rows, family coverage goals, source paths, manifest rows, case ids, fixture group names, surface contract labels, workflow commands, replay artifacts, generated-only rows, report-only rows, and migration-only rows are provenance until a phase owner claims behavior",
+    "retired_surface_rule": "compatibility-looking, fallback-looking, shim-looking, old-mode, migration-only, generated-only, report-only, unsupported-feature, and alternate acceptance path stress cases are canonical rejection, strict-error, or provenance-only evidence",
+    "generated_artifact_rule": "tmp stress artifacts, replay outputs, module.ll outputs, module.manifest.json outputs, generated-only rows, and report-only rows are machine-owned evidence and cannot create positive behavior support"
   },
   "owner_splits": [
     {
@@ -38,6 +39,16 @@
       "owner_phase": "e2e",
       "path": "tests/tooling/fixtures/stress/behavior_owner_splits/e2e.json",
       "boundary": "compile-link-run, mixed-module differential, and replay-backed end-to-end stress inputs"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "stress fallback, shim, old-mode, migration, generated-only, report-only, compatibility, unsupported, strict-error, and alternate acceptance claims"
+    },
+    {
+      "owner_phase": "stress_fixture_provenance",
+      "path": "tests/tooling/fixtures/stress/behavior_owner_splits/stress_fixture_provenance.json",
+      "boundary": "stress source-surface rows, manifest rows, workflow labels, replay artifacts, generated evidence, and owner split routing metadata"
     }
   ]
 }
