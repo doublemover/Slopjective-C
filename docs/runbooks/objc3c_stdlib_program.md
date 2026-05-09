@@ -121,14 +121,11 @@ of inventing a second examples tree inside `stdlib/`.
 ## Live Workflow Surface
 
 The live stdlib publish and adoption workflow is currently a composition of
-existing public actions, with dedicated top-level wrappers now exposed for the
-full program surface.
+existing npm-bridge actions exposed through the single package script.
 
 Top-level workflow entrypoints:
 
 - `npm run objc3c -- validate-stdlib-program`
-- `npm run objc3c -- validate-stdlib-program`
-- `npm run objc3c -- validate-runnable-stdlib-program`
 - `npm run objc3c -- validate-runnable-stdlib-program`
 
 Integration flow:
@@ -154,22 +151,13 @@ Report roots:
 ## Exact Live Commands
 
 - `npm run objc3c -- check-documentation-surface`
-- `npm run objc3c -- check-documentation-surface`
-- `npm run objc3c -- check-showcase-surface`
 - `npm run objc3c -- check-showcase-surface`
 - `npm run objc3c -- validate-getting-started`
-- `npm run objc3c -- validate-getting-started`
-- `npm run objc3c -- validate-showcase`
 - `npm run objc3c -- validate-showcase`
 - `npm run objc3c -- validate-runnable-showcase`
-- `npm run objc3c -- validate-runnable-showcase`
-- `npm run objc3c -- validate-stdlib-program`
 - `npm run objc3c -- validate-stdlib-program`
 - `npm run objc3c -- validate-runnable-stdlib-program`
-- `npm run objc3c -- validate-runnable-stdlib-program`
 - `npm run objc3c -- inspect-capability-explorer`
-- `npm run objc3c -- inspect-capability-explorer`
-- `npm run objc3c -- package-runnable-toolchain`
 - `npm run objc3c -- package-runnable-toolchain`
 
 ## Working Rules For Downstream Issues
