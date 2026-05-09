@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "lower/contracts/block_abi_lowering_contract_records.h"
+#include "lower/contracts/block_source_closure_contracts.h"
 #include "lower/contracts/lowering_arc_contracts.h"
 #include "lower/contracts/ownership_system_extension_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
@@ -29,6 +31,26 @@ BuildWeakUnownedSemanticsLoweringContract(
 
 [[nodiscard]] Objc3ArcDiagnosticsFixitLoweringContract
 BuildArcDiagnosticsFixitLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3BlockLiteralCaptureLoweringContract
+BuildBlockLiteralCaptureLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3BlockAbiInvokeTrampolineLoweringContract
+BuildBlockAbiInvokeTrampolineLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3BlockStorageEscapeLoweringContract
+BuildBlockStorageEscapeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3BlockCopyDisposeLoweringContract
+BuildBlockCopyDisposeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3BlockDeterminismPerfBaselineLoweringContract
+BuildBlockDeterminismPerfBaselineLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface);
 
 [[nodiscard]] std::string

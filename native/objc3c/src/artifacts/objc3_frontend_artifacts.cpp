@@ -270,6 +270,12 @@ using objc3::artifacts::frontend::
     BuildOwnershipCleanupResourceCaptureSourceCompletionSummaryJson;
 using objc3::artifacts::frontend::
     BuildOwnershipBorrowedPointerEscapeAnalysisSummaryJson;
+using objc3::artifacts::frontend::BuildBlockAbiInvokeTrampolineLoweringContract;
+using objc3::artifacts::frontend::BuildBlockCopyDisposeLoweringContract;
+using objc3::artifacts::frontend::
+    BuildBlockDeterminismPerfBaselineLoweringContract;
+using objc3::artifacts::frontend::BuildBlockLiteralCaptureLoweringContract;
+using objc3::artifacts::frontend::BuildBlockStorageEscapeLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummaryJson;
 using objc3::artifacts::frontend::BuildOwnershipQualifierLoweringContract;
@@ -1935,31 +1941,6 @@ Objc3IdClassSelObjectPointerTypecheckContract BuildIdClassSelObjectPointerTypech
   return contract;
 }
 
-Objc3BlockLiteralCaptureLoweringContract BuildBlockLiteralCaptureLoweringContract(
-    const Objc3SemaParityContractSurface &sema_parity_surface) {
-  Objc3BlockLiteralCaptureLoweringContract contract;
-  contract.block_literal_sites =
-      sema_parity_surface.block_literal_capture_semantics_sites_total;
-  contract.block_parameter_entries =
-      sema_parity_surface.block_literal_capture_semantics_parameter_entries_total;
-  contract.block_capture_entries =
-      sema_parity_surface.block_literal_capture_semantics_capture_entries_total;
-  contract.block_body_statement_entries =
-      sema_parity_surface.block_literal_capture_semantics_body_statement_entries_total;
-  contract.block_empty_capture_sites =
-      sema_parity_surface.block_literal_capture_semantics_empty_capture_sites_total;
-  contract.block_nondeterministic_capture_sites =
-      sema_parity_surface.block_literal_capture_semantics_nondeterministic_capture_sites_total;
-  contract.block_non_normalized_sites =
-      sema_parity_surface.block_literal_capture_semantics_non_normalized_sites_total;
-  contract.contract_violation_sites =
-      sema_parity_surface.block_literal_capture_semantics_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.block_literal_capture_semantics_summary.deterministic &&
-      sema_parity_surface.deterministic_block_literal_capture_semantics_handoff;
-  return contract;
-}
-
 bool IsStrictlySortedUniqueStrings(const std::vector<std::string> &entries) {
   if (!std::is_sorted(entries.begin(), entries.end())) {
     return false;
@@ -2375,128 +2356,6 @@ Objc3BlockSourceStorageAnnotationContract BuildBlockSourceStorageAnnotationContr
 
   contract.deterministic = contract.non_normalized_sites == 0u &&
                            contract.contract_violation_sites == 0u;
-  return contract;
-}
-
-Objc3BlockAbiInvokeTrampolineLoweringContract BuildBlockAbiInvokeTrampolineLoweringContract(
-    const Objc3SemaParityContractSurface &sema_parity_surface) {
-  Objc3BlockAbiInvokeTrampolineLoweringContract contract;
-  contract.block_literal_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_sites_total;
-  contract.invoke_argument_slots_total =
-      sema_parity_surface.block_abi_invoke_trampoline_invoke_argument_slots_total;
-  contract.capture_word_count_total =
-      sema_parity_surface.block_abi_invoke_trampoline_capture_word_count_total;
-  contract.parameter_entries_total =
-      sema_parity_surface.block_abi_invoke_trampoline_parameter_entries_total;
-  contract.capture_entries_total =
-      sema_parity_surface.block_abi_invoke_trampoline_capture_entries_total;
-  contract.body_statement_entries_total =
-      sema_parity_surface.block_abi_invoke_trampoline_body_statement_entries_total;
-  contract.descriptor_symbolized_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total;
-  contract.invoke_trampoline_symbolized_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total;
-  contract.missing_invoke_trampoline_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_missing_invoke_sites_total;
-  contract.non_normalized_layout_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total;
-  contract.contract_violation_sites =
-      sema_parity_surface.block_abi_invoke_trampoline_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
-      sema_parity_surface.deterministic_block_abi_invoke_trampoline_handoff;
-  return contract;
-}
-
-Objc3BlockStorageEscapeLoweringContract BuildBlockStorageEscapeLoweringContract(
-    const Objc3SemaParityContractSurface &sema_parity_surface) {
-  Objc3BlockStorageEscapeLoweringContract contract;
-  contract.block_literal_sites = sema_parity_surface.block_storage_escape_sites_total;
-  contract.mutable_capture_count_total =
-      sema_parity_surface.block_storage_escape_mutable_capture_count_total;
-  contract.byref_slot_count_total =
-      sema_parity_surface.block_storage_escape_byref_slot_count_total;
-  contract.parameter_entries_total =
-      sema_parity_surface.block_storage_escape_parameter_entries_total;
-  contract.capture_entries_total =
-      sema_parity_surface.block_storage_escape_capture_entries_total;
-  contract.body_statement_entries_total =
-      sema_parity_surface.block_storage_escape_body_statement_entries_total;
-  contract.requires_byref_cells_sites =
-      sema_parity_surface.block_storage_escape_requires_byref_cells_sites_total;
-  contract.escape_analysis_enabled_sites =
-      sema_parity_surface.block_storage_escape_escape_analysis_enabled_sites_total;
-  contract.escape_to_heap_sites =
-      sema_parity_surface.block_storage_escape_escape_to_heap_sites_total;
-  contract.escape_profile_normalized_sites =
-      sema_parity_surface.block_storage_escape_escape_profile_normalized_sites_total;
-  contract.byref_layout_symbolized_sites =
-      sema_parity_surface.block_storage_escape_byref_layout_symbolized_sites_total;
-  contract.contract_violation_sites =
-      sema_parity_surface.block_storage_escape_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.block_storage_escape_semantics_summary.deterministic &&
-      sema_parity_surface.deterministic_block_storage_escape_handoff;
-  return contract;
-}
-
-Objc3BlockCopyDisposeLoweringContract BuildBlockCopyDisposeLoweringContract(
-    const Objc3SemaParityContractSurface &sema_parity_surface) {
-  Objc3BlockCopyDisposeLoweringContract contract;
-  contract.block_literal_sites = sema_parity_surface.block_copy_dispose_sites_total;
-  contract.mutable_capture_count_total =
-      sema_parity_surface.block_copy_dispose_mutable_capture_count_total;
-  contract.byref_slot_count_total =
-      sema_parity_surface.block_copy_dispose_byref_slot_count_total;
-  contract.parameter_entries_total =
-      sema_parity_surface.block_copy_dispose_parameter_entries_total;
-  contract.capture_entries_total =
-      sema_parity_surface.block_copy_dispose_capture_entries_total;
-  contract.body_statement_entries_total =
-      sema_parity_surface.block_copy_dispose_body_statement_entries_total;
-  contract.copy_helper_required_sites =
-      sema_parity_surface.block_copy_dispose_copy_helper_required_sites_total;
-  contract.dispose_helper_required_sites =
-      sema_parity_surface.block_copy_dispose_dispose_helper_required_sites_total;
-  contract.profile_normalized_sites =
-      sema_parity_surface.block_copy_dispose_profile_normalized_sites_total;
-  contract.copy_helper_symbolized_sites =
-      sema_parity_surface.block_copy_dispose_copy_helper_symbolized_sites_total;
-  contract.dispose_helper_symbolized_sites =
-      sema_parity_surface.block_copy_dispose_dispose_helper_symbolized_sites_total;
-  contract.contract_violation_sites =
-      sema_parity_surface.block_copy_dispose_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.block_copy_dispose_semantics_summary.deterministic &&
-      sema_parity_surface.deterministic_block_copy_dispose_handoff;
-  return contract;
-}
-
-Objc3BlockDeterminismPerfBaselineLoweringContract BuildBlockDeterminismPerfBaselineLoweringContract(
-    const Objc3SemaParityContractSurface &sema_parity_surface) {
-  Objc3BlockDeterminismPerfBaselineLoweringContract contract;
-  contract.block_literal_sites =
-      sema_parity_surface.block_determinism_perf_baseline_sites_total;
-  contract.baseline_weight_total =
-      sema_parity_surface.block_determinism_perf_baseline_weight_total;
-  contract.parameter_entries_total =
-      sema_parity_surface.block_determinism_perf_baseline_parameter_entries_total;
-  contract.capture_entries_total =
-      sema_parity_surface.block_determinism_perf_baseline_capture_entries_total;
-  contract.body_statement_entries_total =
-      sema_parity_surface.block_determinism_perf_baseline_body_statement_entries_total;
-  contract.deterministic_capture_sites =
-      sema_parity_surface.block_determinism_perf_baseline_deterministic_capture_sites_total;
-  contract.heavy_tier_sites =
-      sema_parity_surface.block_determinism_perf_baseline_heavy_tier_sites_total;
-  contract.normalized_profile_sites =
-      sema_parity_surface.block_determinism_perf_baseline_normalized_profile_sites_total;
-  contract.contract_violation_sites =
-      sema_parity_surface.block_determinism_perf_baseline_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.block_determinism_perf_baseline_summary.deterministic &&
-      sema_parity_surface.deterministic_block_determinism_perf_baseline_handoff;
   return contract;
 }
 
