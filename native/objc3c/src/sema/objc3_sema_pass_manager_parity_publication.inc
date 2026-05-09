@@ -634,6 +634,10 @@
       result.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(
           result.parity_surface.pass_manager_publication_record);
+  result.parity_surface.deterministic_type_metadata_publication_record =
+      result.deterministic_type_metadata_publication_record &&
+      IsReadyObjc3SemaTypeMetadataPublicationRecord(
+          result.parity_surface.type_metadata_publication_record);
   result.parity_surface.deterministic_parser_sema_conformance_matrix =
       result.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic;

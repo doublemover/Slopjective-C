@@ -105,6 +105,9 @@
       result.parity_surface.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(
           result.parity_surface.pass_manager_publication_record) &&
+      result.parity_surface.deterministic_type_metadata_publication_record &&
+      IsReadyObjc3SemaTypeMetadataPublicationRecord(
+          result.parity_surface.type_metadata_publication_record) &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&

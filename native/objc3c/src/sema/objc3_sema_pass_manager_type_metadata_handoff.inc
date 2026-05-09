@@ -957,6 +957,19 @@
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
+  result.type_metadata_publication_record =
+      BuildObjc3SemaTypeMetadataPublicationRecord(
+          input,
+          result.integration_surface,
+          result.type_metadata_handoff,
+          result.deterministic_type_metadata_handoff,
+          result.deterministic_interface_implementation_handoff,
+          result.deterministic_protocol_category_composition_handoff,
+          result.deterministic_class_protocol_category_linking_handoff,
+          result.deterministic_selector_normalization_handoff);
+  result.deterministic_type_metadata_publication_record =
+      IsReadyObjc3SemaTypeMetadataPublicationRecord(
+          result.type_metadata_publication_record);
   PublishObjc3SemaPassFlowSummary(
       handoff_publication,
       diagnostics_run,
@@ -997,6 +1010,8 @@
   result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;
   result.parity_surface.pass_manager_publication_record =
       result.pass_manager_publication_record;
+  result.parity_surface.type_metadata_publication_record =
+      result.type_metadata_publication_record;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
   result.parity_surface.diagnostics_total = result.diagnostics.size();
