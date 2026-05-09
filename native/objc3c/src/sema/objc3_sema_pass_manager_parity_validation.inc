@@ -273,6 +273,16 @@
       result.parity_validation_record;
   result.parity_surface.deterministic_parity_validation_record =
       result.deterministic_parity_validation_record;
+  result.closeout_surface_readiness_record =
+      BuildObjc3SemaCloseoutSurfaceReadinessRecord(
+          input, result.parity_surface);
+  result.deterministic_closeout_surface_readiness_record =
+      IsReadyObjc3SemaCloseoutSurfaceReadinessRecord(
+          result.closeout_surface_readiness_record);
+  result.parity_surface.closeout_surface_readiness_record =
+      result.closeout_surface_readiness_record;
+  result.parity_surface.deterministic_closeout_surface_readiness_record =
+      result.deterministic_closeout_surface_readiness_record;
   result.parity_surface.ready =
       result.parity_surface
           .deterministic_parity_closeout_publication_readiness_record &&

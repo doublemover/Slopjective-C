@@ -93,6 +93,8 @@
   bool deterministic_parity_closeout_publication_readiness_record = false;
   Objc3SemaParityValidationRecord parity_validation_record;
   bool deterministic_parity_validation_record = false;
+  Objc3SemaCloseoutSurfaceReadinessRecord closeout_surface_readiness_record;
+  bool deterministic_closeout_surface_readiness_record = false;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
   bool deterministic_closeout_signoff_record = false;
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
