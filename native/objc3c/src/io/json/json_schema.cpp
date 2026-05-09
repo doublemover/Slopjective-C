@@ -10,6 +10,7 @@
 #include "io/json/json_schema_contract_validation.h"
 #include "io/json/json_schema_enum_contract_validation.h"
 #include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_numeric_contract_validation.h"
 #include "io/json/json_schema_required_contract_validation.h"
 #include "io/json/json_schema_type_contract_validation.h"
 #include "io/json/json_schema_validation.h"
@@ -40,36 +41,6 @@ bool IsSupportedJsonSchemaKeyword(std::string_view key) {
   return IsJsonSchemaAnnotationKeyword(key) ||
          IsJsonSchemaApplicatorKeyword(key) ||
          IsJsonSchemaAssertionKeyword(key);
-}
-
-void ValidateJsonSchemaNumberKeyword(const JsonValue &schema,
-                                     std::string_view keyword,
-                                     const std::string &schema_path,
-                                     JsonSchemaResult &result) {
-  const JsonValue *value = schema.Find(keyword);
-  if (value != nullptr && !value->IsNumber()) {
-    AddJsonSchemaContractError(
-        result, "invalid_numeric_keyword",
-        JsonSchemaKeywordPath(schema_path, keyword),
-        std::string(keyword) + " must be a number");
-  }
-}
-
-void ValidateJsonSchemaNonnegativeNumberKeyword(const JsonValue &schema,
-                                                std::string_view keyword,
-                                                const std::string &schema_path,
-                                                JsonSchemaResult &result) {
-  const JsonValue *value = schema.Find(keyword);
-  if (value == nullptr) {
-    return;
-  }
-  ValidateJsonSchemaNumberKeyword(schema, keyword, schema_path, result);
-  if (value->IsNumber() && value->AsNumber() < 0.0) {
-    AddJsonSchemaContractError(
-        result, "invalid_nonnegative_keyword",
-        JsonSchemaKeywordPath(schema_path, keyword),
-        std::string(keyword) + " must be zero or greater");
-  }
 }
 
 }  // namespace
@@ -125,16 +96,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
     ValidateJsonSchemaEnumContract(
         *enum_values, JsonSchemaKeywordPath(schema_path, "enum"), result);
   }
-  ValidateJsonSchemaNumberKeyword(schema, "minimum", schema_path, result);
-  ValidateJsonSchemaNumberKeyword(schema, "maximum", schema_path, result);
-  ValidateJsonSchemaNonnegativeNumberKeyword(schema, "minLength", schema_path,
-                                             result);
-  ValidateJsonSchemaNonnegativeNumberKeyword(schema, "maxLength", schema_path,
-                                             result);
-  ValidateJsonSchemaNonnegativeNumberKeyword(schema, "minItems", schema_path,
-                                             result);
-  ValidateJsonSchemaNonnegativeNumberKeyword(schema, "maxItems", schema_path,
-                                             result);
+  ValidateJsonSchemaNumericAssertionContracts(schema, schema_path, result);
   if (const JsonValue *unique = schema.Find("uniqueItems");
       unique != nullptr && !unique->IsBool()) {
     AddJsonSchemaContractError(

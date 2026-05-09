@@ -22,6 +22,7 @@ add_library(objc3c_json STATIC
   json/json_schema_enum_contract_validation.cpp
   json/json_schema_errors.cpp
   json/json_schema_node_preflight_validation.cpp
+  json/json_schema_numeric_contract_validation.cpp
   json/json_schema_numeric_constraint_validation.cpp
   json/json_schema_object_additional_properties_validation.cpp
   json/json_schema_object_properties_validation.cpp
