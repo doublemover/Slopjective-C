@@ -138,6 +138,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_function_manifest.h
   objc3_frontend_artifact_interop_lowering_plan.cpp
   objc3_frontend_artifact_interop_lowering_plan.h
+  objc3_frontend_artifact_metaprogramming_metadata.cpp
+  objc3_frontend_artifact_metaprogramming_metadata.h
   objc3_frontend_artifact_metadata_mode.cpp
   objc3_frontend_artifact_metadata_mode.h
   objc3_frontend_artifact_module_lowering_plan.cpp
