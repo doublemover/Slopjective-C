@@ -20,6 +20,7 @@
 #include "artifacts/json/runtime_metadata_manifest_json.h"
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
@@ -745,91 +746,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     record_post_pipeline_failure(initial_post_pipeline_failure.code.c_str(),
                                  initial_post_pipeline_failure.message);
   }
-  std::vector<const FunctionDecl *> manifest_functions;
-  manifest_functions.reserve(program.functions.size());
-  std::unordered_set<std::string> manifest_function_names;
-  for (const auto &fn : program.functions) {
-    if (manifest_function_names.insert(fn.name).second) {
-      manifest_functions.push_back(&fn);
-    }
-  }
-
-  std::size_t scalar_return_i32 = 0;
-  std::size_t scalar_return_bool = 0;
-  std::size_t scalar_return_void = 0;
-  std::size_t scalar_param_i32 = 0;
-  std::size_t scalar_param_bool = 0;
-  std::size_t vector_signature_functions = 0;
-  std::size_t vector_return_signatures = 0;
-  std::size_t vector_param_signatures = 0;
-  std::size_t vector_i32_signatures = 0;
-  std::size_t vector_bool_signatures = 0;
-  std::size_t vector_lane2_signatures = 0;
-  std::size_t vector_lane4_signatures = 0;
-  std::size_t vector_lane8_signatures = 0;
-  std::size_t vector_lane16_signatures = 0;
-  for (const auto &entry : pipeline_result.integration_surface.functions) {
-    const FunctionInfo &signature = entry.second;
-    if (signature.return_type == ValueType::Bool) {
-      ++scalar_return_bool;
-    } else if (signature.return_type == ValueType::Void) {
-      ++scalar_return_void;
-    } else {
-      ++scalar_return_i32;
-    }
-    for (const ValueType param_type : signature.param_types) {
-      if (param_type == ValueType::Bool) {
-        ++scalar_param_bool;
-      } else {
-        ++scalar_param_i32;
-      }
-    }
-  }
-  for (const FunctionDecl *fn : manifest_functions) {
-    bool has_vector_signature = false;
-    if (fn->return_vector_spelling) {
-      has_vector_signature = true;
-      ++vector_return_signatures;
-      if (fn->return_vector_base_spelling == kObjc3SimdVectorBaseBool) {
-        ++vector_bool_signatures;
-      } else {
-        ++vector_i32_signatures;
-      }
-      if (fn->return_vector_lane_count == 2u) {
-        ++vector_lane2_signatures;
-      } else if (fn->return_vector_lane_count == 4u) {
-        ++vector_lane4_signatures;
-      } else if (fn->return_vector_lane_count == 8u) {
-        ++vector_lane8_signatures;
-      } else if (fn->return_vector_lane_count == 16u) {
-        ++vector_lane16_signatures;
-      }
-    }
-    for (const FuncParam &param : fn->params) {
-      if (!param.vector_spelling) {
-        continue;
-      }
-      has_vector_signature = true;
-      ++vector_param_signatures;
-      if (param.vector_base_spelling == kObjc3SimdVectorBaseBool) {
-        ++vector_bool_signatures;
-      } else {
-        ++vector_i32_signatures;
-      }
-      if (param.vector_lane_count == 2u) {
-        ++vector_lane2_signatures;
-      } else if (param.vector_lane_count == 4u) {
-        ++vector_lane4_signatures;
-      } else if (param.vector_lane_count == 8u) {
-        ++vector_lane8_signatures;
-      } else if (param.vector_lane_count == 16u) {
-        ++vector_lane16_signatures;
-      }
-    }
-    if (has_vector_signature) {
-      ++vector_signature_functions;
-    }
-  }
+  const Objc3FrontendArtifactFunctionManifest function_manifest =
+      BuildObjc3FrontendArtifactFunctionManifest(program, pipeline_result);
+  const std::vector<const FunctionDecl *> &manifest_functions =
+      function_manifest.manifest_functions;
+  const std::size_t scalar_return_i32 = function_manifest.scalar_return_i32;
+  const std::size_t scalar_return_bool = function_manifest.scalar_return_bool;
+  const std::size_t scalar_return_void = function_manifest.scalar_return_void;
+  const std::size_t scalar_param_i32 = function_manifest.scalar_param_i32;
+  const std::size_t scalar_param_bool = function_manifest.scalar_param_bool;
+  const std::size_t vector_signature_functions =
+      function_manifest.vector_signature_functions;
+  const std::size_t vector_return_signatures =
+      function_manifest.vector_return_signatures;
+  const std::size_t vector_param_signatures =
+      function_manifest.vector_param_signatures;
+  const std::size_t vector_i32_signatures =
+      function_manifest.vector_i32_signatures;
+  const std::size_t vector_bool_signatures =
+      function_manifest.vector_bool_signatures;
+  const std::size_t vector_lane2_signatures =
+      function_manifest.vector_lane2_signatures;
+  const std::size_t vector_lane4_signatures =
+      function_manifest.vector_lane4_signatures;
+  const std::size_t vector_lane8_signatures =
+      function_manifest.vector_lane8_signatures;
+  const std::size_t vector_lane16_signatures =
+      function_manifest.vector_lane16_signatures;
   const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff = pipeline_result.sema_type_metadata_handoff;
   const Objc3InterfaceImplementationSummary &interface_implementation_summary =
       type_metadata_handoff.interface_implementation_summary;

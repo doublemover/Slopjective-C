@@ -126,6 +126,8 @@ target_link_libraries(objc3c_artifacts_reports PUBLIC
 add_library(objc3c_artifacts STATIC
   objc3_frontend_actor_semantic_artifacts.cpp
   objc3_frontend_actor_semantic_artifacts.h
+  objc3_frontend_artifact_function_manifest.cpp
+  objc3_frontend_artifact_function_manifest.h
   objc3_frontend_artifact_metadata_mode.cpp
   objc3_frontend_artifact_metadata_mode.h
   objc3_frontend_artifacts.cpp
