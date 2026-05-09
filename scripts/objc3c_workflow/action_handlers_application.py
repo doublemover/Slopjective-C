@@ -1,0 +1,17 @@
+"""Application and stdlib workspace action handlers."""
+
+from __future__ import annotations
+
+from scripts.objc3c_workflow.action_spec import ActionHandler
+from scripts.objc3c_workflow.actions import application_surfaces, developer_tooling
+
+APPLICATION_ACTION_HANDLERS: dict[str, ActionHandler] = {
+    "materialize-playground-workspace": developer_tooling.action_materialize_playground_workspace,
+    "materialize-stdlib-workspace": application_surfaces.action_materialize_stdlib_workspace,
+    "validate-stdlib-foundation": application_surfaces.action_validate_stdlib_foundation,
+    "validate-stdlib-advanced": application_surfaces.action_validate_stdlib_advanced,
+    "validate-stdlib-program": application_surfaces.action_validate_stdlib_program,
+    "validate-runnable-stdlib-advanced": application_surfaces.action_validate_runnable_stdlib_advanced,
+    "validate-runnable-stdlib-foundation": application_surfaces.action_validate_runnable_stdlib_foundation,
+    "validate-runnable-stdlib-program": application_surfaces.action_validate_runnable_stdlib_program,
+}
