@@ -137,6 +137,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   strings/borrowed_string.h
   storage/instance_storage.cpp
   storage/instance_storage.h
+  storage/ivar_storage_span.cpp
+  storage/ivar_storage_span.h
   storage/ivar_layout.cpp
   storage/ivar_layout.h
   storage/property_accessor_profiles.cpp

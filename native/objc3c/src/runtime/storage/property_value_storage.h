@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include "runtime/storage/ivar_storage_span.h"
 
 namespace objc3c::runtime {
 
@@ -8,8 +8,6 @@ struct RealizedPropertyAccessor;
 struct RuntimeInstanceRecord;
 struct RuntimeState;
 
-std::size_t EffectiveIvarOffset(const RealizedPropertyAccessor &accessor);
-std::size_t EffectiveIvarSize(const RealizedPropertyAccessor &accessor);
 bool ReadRuntimeManagedPropertyValueRaw(
     const RuntimeInstanceRecord &instance,
     const RealizedPropertyAccessor &accessor,
