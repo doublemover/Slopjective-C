@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `4bbdc5c26`. It does not assert validation, remote issue
+refreshes through source commit `ea5924980`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -371,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `4bbdc5c26` without running validation, GitHub commands, push, or remote
+to source commit `ea5924980` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -394,6 +394,8 @@ issue edits. It groups the latest owner evidence as follows:
 - executable metadata graph readiness owners: `b5b2891c1`
 - ID/class/selector typecheck owners: `918aed5d4`
 - runtime performance behavior owners: `4bbdc5c26`
+- concurrency lowering contract owners: `9dde116dc`
+- final readiness failure-reason owners: `ea5924980`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
