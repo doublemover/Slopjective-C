@@ -1,4 +1,4 @@
-"""Command-line entrypoint for the objc3c workflow action registry."""
+"""Module entrypoint for `python -m scripts.objc3c_workflow`."""
 
 from __future__ import annotations
 

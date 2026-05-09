@@ -27,6 +27,8 @@ from scripts.objc3c_workflow.arguments import (
     parse_workflow_args,
 )
 from scripts.objc3c_workflow.command_result_completion import completed_action
+from scripts.objc3c_workflow.entrypoint_module import main as module_entrypoint_main
+from scripts.objc3c_workflow.entrypoint_script import main as script_entrypoint_main
 from scripts.objc3c_workflow.path_bootstrap import WORKFLOW_IMPORT_ROOTS
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
 from scripts.objc3c_workflow.registry_schema_index import (
@@ -140,3 +142,7 @@ def test_workflow_path_roots_are_owned_by_package_module() -> None:
     assert WORKFLOW_IMPORT_ROOTS == workflow_import_roots()
     assert SCRIPT_ROOT.name == "scripts"
     assert ROOT == SCRIPT_ROOT.parent
+
+
+def test_workflow_entrypoints_have_separate_owners() -> None:
+    assert module_entrypoint_main is not script_entrypoint_main

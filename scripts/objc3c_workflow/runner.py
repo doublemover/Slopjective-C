@@ -13,11 +13,11 @@ else:
 
 install_workflow_import_roots()
 
-from scripts.objc3c_workflow import cli
+from scripts.objc3c_workflow.entrypoint_script import main as script_main
 
 
 def main(argv: Sequence[str]) -> int:
-    return cli.main(argv)
+    return script_main(argv)
 
 
 if __name__ == "__main__":
