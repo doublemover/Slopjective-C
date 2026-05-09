@@ -122,6 +122,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/runtime_resolution_records.h
   dispatch/runtime_method_shape.cpp
   dispatch/runtime_method_shape.h
+  dispatch/strict_dispatch_execution.cpp
+  dispatch/strict_dispatch_execution.h
   dispatch/typed_dispatch_contract.cpp
   dispatch/typed_dispatch_contract.h
   dispatch/typed_dispatch_error.cpp

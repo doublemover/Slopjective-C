@@ -1,39 +1,25 @@
 #include "runtime/dispatch/dispatch_api.h"
 
-#include "runtime/dispatch/builtin_methods.h"
 #include "runtime/dispatch/dispatch_result_state.h"
+#include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/dispatch_target_resolution.h"
-#include "runtime/dispatch/method_invocation.h"
-#include "runtime/dispatch/typed_dispatch_result.h"
-#include "runtime/memory/arc_value_lifetime.h"
-#include "runtime/memory/dispatch_frame_state.h"
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/dispatch/strict_dispatch_execution.h"
 #include "runtime/public/objc3_runtime_api.h"
-#include "runtime/public/objc3_runtime_result_contract.h"
+#include "runtime/public/objc3_runtime_result_materialization_contract.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <mutex>
-#include <vector>
 
 extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
-  using objc3c::runtime::InvokeRuntimeBuiltinMethod;
-  using objc3c::runtime::InvokeRuntimeMethodImplementation;
-  using objc3c::runtime::NormalizeRuntimeTypedDispatchResult;
-  using objc3c::runtime::PopRuntimeDispatchFrameAutoreleaseValues;
+  using objc3c::runtime::ExecuteResolvedRuntimeDispatchTargetStrict;
   using objc3c::runtime::ProcessRuntimeState;
-  using objc3c::runtime::PushRuntimeDispatchFrame;
-  using objc3c::runtime::RecordPostResolutionStrictDispatchFailure;
-  using objc3c::runtime::RecordTypedDispatchSuccess;
-  using objc3c::runtime::ReleaseRuntimeValueUnlocked;
-  using objc3c::runtime::RuntimeBuiltinKind;
   using objc3c::runtime::RuntimeDispatchTarget;
   using objc3c::runtime::RuntimeDispatchStatusIsSuccess;
   using objc3c::runtime::RuntimeState;
-  using objc3c::runtime::RuntimeTypedDispatchResult;
   using objc3c::runtime::ResolveRuntimeDispatchTargetUnlocked;
   using objc3c::runtime::StoreDispatchResultContractUnlocked;
 
@@ -44,67 +30,9 @@ extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     dispatch_target =
         ResolveRuntimeDispatchTargetUnlocked(state, receiver, selector);
   }
-  if (dispatch_target.resolved_live_method &&
-      dispatch_target.implementation != nullptr) {
-    PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
-                             dispatch_target.runtime_property_accessor);
-    const RuntimeTypedDispatchResult result =
-        NormalizeRuntimeTypedDispatchResult(InvokeRuntimeMethodImplementation(
-            dispatch_target.implementation, dispatch_target.return_kind,
-            dispatch_target.parameter_count, a0, a1, a2, a3));
-    const std::vector<int> autorelease_values =
-        PopRuntimeDispatchFrameAutoreleaseValues();
-    if (!autorelease_values.empty()) {
-      std::lock_guard<std::mutex> lock(state.mutex);
-      for (int value : autorelease_values) {
-        ReleaseRuntimeValueUnlocked(state, value);
-      }
-    }
-    if (!RuntimeDispatchStatusIsSuccess(result.status_code)) {
-      RecordPostResolutionStrictDispatchFailure(
-          state, result.status_code, result.return_kind,
-          "resolved-method-invocation-error");
-      return objc3c::runtime::MakeRuntimeDispatchI32Result(result.status_code,
-                                                          0);
-    }
-    RecordTypedDispatchSuccess(state, result.return_kind);
-    return objc3c::runtime::MakeRuntimeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
-  }
-  if (dispatch_target.resolved_live_method &&
-      dispatch_target.builtin_kind != RuntimeBuiltinKind::None) {
-    PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
-                             dispatch_target.runtime_property_accessor);
-    const RuntimeTypedDispatchResult result =
-        NormalizeRuntimeTypedDispatchResult(InvokeRuntimeBuiltinMethod(
-            state, dispatch_target.builtin_kind, receiver,
-            dispatch_target.receiver_base_identity,
-            dispatch_target.runtime_property_accessor, a0, a1, a2, a3));
-    const std::vector<int> autorelease_values =
-        PopRuntimeDispatchFrameAutoreleaseValues();
-    if (!autorelease_values.empty()) {
-      std::lock_guard<std::mutex> lock(state.mutex);
-      for (int value : autorelease_values) {
-        ReleaseRuntimeValueUnlocked(state, value);
-      }
-    }
-    if (!RuntimeDispatchStatusIsSuccess(result.status_code)) {
-      RecordPostResolutionStrictDispatchFailure(
-          state, result.status_code, result.return_kind,
-          "runtime-builtin-invocation-error");
-      return objc3c::runtime::MakeRuntimeDispatchI32Result(result.status_code,
-                                                          0);
-    }
-    RecordTypedDispatchSuccess(state, result.return_kind);
-    return objc3c::runtime::MakeRuntimeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
-  }
   if (dispatch_target.resolved_live_method) {
-    RecordPostResolutionStrictDispatchFailure(
-        state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
-        dispatch_target.return_kind, "resolved-method-missing-callable-error");
-    return objc3c::runtime::MakeRuntimeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
+    return ExecuteResolvedRuntimeDispatchTargetStrict(
+        state, receiver, dispatch_target, a0, a1, a2, a3);
   }
   {
     std::lock_guard<std::mutex> lock(state.mutex);
