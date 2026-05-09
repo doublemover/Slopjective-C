@@ -29,6 +29,7 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_final_readiness_gate_failure_reasons.cpp
   readiness/objc3_long_tail_grammar_readiness_keys.cpp
   readiness/objc3_parse_lowering_conformance_keys.cpp
+  readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.cpp
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation.cpp
