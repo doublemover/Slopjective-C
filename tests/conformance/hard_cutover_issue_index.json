@@ -733,8 +733,10 @@
       ],
       "evidence_paths": [
         "native/objc3c/src/driver/objc3_cli_option_application.cpp",
+        "native/objc3c/src/driver/objc3_cli_parse.cpp",
+        "native/objc3c/src/driver/objc3_cli_toolchain_options.cpp",
         "native/objc3c/src/driver/objc3_cli_option_validation.cpp",
-        "native/objc3c/src/driver/objc3_cli_options.cpp"
+        "native/objc3c/src/driver/objc3_cli_usage.cpp"
       ]
     },
     {
