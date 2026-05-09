@@ -13,7 +13,10 @@ from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.public_runner import (
     public_workflow_action_payloads,
     public_workflow_list_payload,
-    public_workflow_package_bridge_payload,
+)
+from scripts.objc3c_workflow.actions.command_facades_inventory import (
+    package_bridge_inventory_fields,
+    package_bridge_payloads_from_scripts,
 )
 
 sys.dont_write_bytecode = True
@@ -37,12 +40,9 @@ def build_contract() -> dict[str, object]:
     list_payload = public_workflow_list_payload()
     package_scripts = package['scripts']
 
-    package_bridge_names = sorted(name for name in package_scripts if name == 'objc3c')
-    missing_package_bridge = [] if package_bridge_names == ['objc3c'] else ['objc3c']
-    unexpected_package_bridges = sorted(name for name in package_scripts if name != 'objc3c')
-
+    bridge_inventory = package_bridge_inventory_fields(package_scripts)
     action_payloads = sorted(public_workflow_action_payloads(), key=lambda payload: str(payload.get('action')))
-    package_bridge_payloads = [public_workflow_package_bridge_payload(script_name) for script_name in package_bridge_names]
+    package_bridge_payloads = package_bridge_payloads_from_scripts(package_scripts)
     operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
     maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 
@@ -52,13 +52,13 @@ def build_contract() -> dict[str, object]:
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
-        'package_bridge_count': len(package_bridge_names),
+        'package_bridge_count': bridge_inventory['package_bridge_count'],
         'workflow_action_count': list_payload['action_count'],
         'internal_action_count': list_payload['internal_action_count'],
         'operator_action_count': operator_action_count,
         'maintainer_action_count': maintainer_action_count,
-        'missing_package_bridge': missing_package_bridge,
-        'unexpected_package_bridges': unexpected_package_bridges,
+        'missing_package_bridge': bridge_inventory['missing_package_bridge'],
+        'unexpected_package_bridges': bridge_inventory['unexpected_package_bridges'],
         'actions': action_payloads,
         'package_bridges': package_bridge_payloads,
     }

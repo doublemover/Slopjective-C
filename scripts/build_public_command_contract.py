@@ -5,7 +5,10 @@ from objc3c_tooling.json_io import load_json_any as load_json, write_text_file a
 from objc3c_tooling.public_runner import (
     public_workflow_action_payloads,
     public_workflow_list_payload,
-    public_workflow_package_bridge_payload,
+)
+from scripts.objc3c_workflow.actions.command_facades_inventory import (
+    package_bridge_inventory_fields,
+    package_bridge_payloads_from_scripts,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,12 +29,9 @@ def main() -> None:
     list_payload = public_workflow_list_payload()
     package_scripts = package['scripts']
 
-    package_bridge_names = sorted(name for name in package_scripts if name == 'objc3c')
-    missing_package_bridge = [] if package_bridge_names == ['objc3c'] else ['objc3c']
-    unexpected_package_bridges = sorted(name for name in package_scripts if name != 'objc3c')
-
+    bridge_inventory = package_bridge_inventory_fields(package_scripts)
     action_payloads = sorted(public_workflow_action_payloads(), key=lambda payload: str(payload.get('action')))
-    package_bridge_payloads = [public_workflow_package_bridge_payload(script_name) for script_name in package_bridge_names]
+    package_bridge_payloads = package_bridge_payloads_from_scripts(package_scripts)
     operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
     maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 
@@ -41,13 +41,13 @@ def main() -> None:
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
-        'package_bridge_count': len(package_bridge_names),
+        'package_bridge_count': bridge_inventory['package_bridge_count'],
         'workflow_action_count': list_payload['action_count'],
         'internal_action_count': list_payload['internal_action_count'],
         'operator_action_count': operator_action_count,
         'maintainer_action_count': maintainer_action_count,
-        'missing_package_bridge': missing_package_bridge,
-        'unexpected_package_bridges': unexpected_package_bridges,
+        'missing_package_bridge': bridge_inventory['missing_package_bridge'],
+        'unexpected_package_bridges': bridge_inventory['unexpected_package_bridges'],
         'actions': action_payloads,
         'package_bridges': package_bridge_payloads,
         'next_issue': 'workflow-api-implementation',
@@ -67,15 +67,15 @@ def main() -> None:
         f"- schema: `{SCHEMA_PATH.relative_to(ROOT).as_posix()}`",
         '',
         '## Drift checks',
-        f"- missing_package_bridge: `{len(missing_package_bridge)}`",
-        f"- unexpected_package_bridges: `{len(unexpected_package_bridges)}`",
+        f"- missing_package_bridge: `{len(contract['missing_package_bridge'])}`",
+        f"- unexpected_package_bridges: `{len(contract['unexpected_package_bridges'])}`",
         '',
         '## Package bridges',
     ]
     for payload in package_bridge_payloads:
         lines.append(f"- `{payload['package_bridge']}` -> `{payload['backend']}`")
     lines.extend(['', '## Contract status'])
-    status = 'PASS' if not missing_package_bridge and not unexpected_package_bridges else 'FAIL'
+    status = 'PASS' if not contract['missing_package_bridge'] and not contract['unexpected_package_bridges'] else 'FAIL'
     lines.append(f'- status: `{status}`')
     lines.extend(['', 'Next issue: `workflow-api-implementation`', ''])
     markdown = '\n'.join(lines)

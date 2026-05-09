@@ -4,6 +4,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from scripts.objc3c_workflow.actions.command_facades_inventory import (
+    command_facade_inventory_contract,
+    package_bridge_names_from_scripts,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -17,27 +21,19 @@ def main() -> None:
     package_json = load_json(PACKAGE_JSON_PATH)
     scripts = package_json['scripts']
 
-    package_bridge_names = sorted(name for name in scripts if name == "objc3c")
+    package_bridge_names = package_bridge_names_from_scripts(scripts)
     public_actions = public_workflow_action_names()
     internal_actions: list[str] = []
-    missing_package_bridge = [] if package_bridge_names == ["objc3c"] else ["objc3c"]
-    unexpected_package_bridges = sorted(name for name in scripts if name != "objc3c")
 
     payload = {
+        **command_facade_inventory_contract(
+            scripts,
+            workflow_action_count=len(public_actions),
+            public_action_count=len(public_actions),
+            internal_action_count=len(internal_actions),
+        ),
         'issue': 'workflow-command-surface-inventory',
         'generated_at': datetime.now(timezone.utc).isoformat(),
-        'package_bridge_count': len(package_bridge_names),
-        'workflow_action_count': len(public_actions),
-        'public_action_count': len(public_actions),
-        'internal_action_count': len(internal_actions),
-        'missing_package_bridge': missing_package_bridge,
-        'unexpected_package_bridges': unexpected_package_bridges,
-        'orchestration_model': {
-            'package_bridge_owner': 'package.json scripts.objc3c -> scripts.objc3c_workflow',
-            'internal_action_owner': 'ACTION_SPECS actions are reached through the objc3c package bridge',
-            'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
-        },
-        'package_bridges': package_bridge_names,
         'next_issue': 'workflow-simplification-policy',
     }
     write_json_file(OUTPUT_JSON_PATH, payload)
@@ -57,7 +53,7 @@ def main() -> None:
     for script_name in package_bridge_names:
         lines.append(f"- `{script_name}`")
     lines.extend(['', '## Unexpected package bridges'])
-    for script_name in unexpected_package_bridges:
+    for script_name in payload['unexpected_package_bridges']:
         lines.append(f"- `{script_name}`")
     lines.extend(['', 'Next issue: `workflow-simplification-policy`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
