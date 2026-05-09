@@ -1,13 +1,27 @@
 #include "runtime/strings/borrowed_string.h"
 
+#include "runtime/strings/borrowed_string_contract.h"
+
 namespace objc3c::runtime {
 
+bool RuntimeCStringSnapshotHasValue(const std::string &text) {
+  return RuntimeCStringSnapshotHasStoredValue(text);
+}
+
 const char *BorrowRuntimeCString(const std::string &text) {
-  return text.empty() ? nullptr : text.c_str();
+  return BorrowRuntimeCStringData(text);
 }
 
 const char *RuntimeCStringSnapshotOwnershipModel() {
-  return "runtime-owned-borrowed-c-string-valid-until-next-runtime-mutation";
+  return RuntimeCStringSnapshotOwnershipModelLiteral();
+}
+
+const char *RuntimeStringPoolSnapshotBorrowingModel() {
+  return RuntimeStringPoolSnapshotBorrowingModelLiteral();
+}
+
+const char *RuntimeCStringNullSnapshotModel() {
+  return RuntimeCStringNullSnapshotModelLiteral();
 }
 
 }  // namespace objc3c::runtime
