@@ -102,6 +102,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/arc_value_lifetime.h
   memory/autorelease_pool.cpp
   memory/autorelease_pool.h
+  memory/autorelease_pool_state.cpp
+  memory/autorelease_pool_state.h
   memory/dispatch_frame_state.cpp
   memory/dispatch_frame_state.h
   memory/memory_management_snapshot.cpp
