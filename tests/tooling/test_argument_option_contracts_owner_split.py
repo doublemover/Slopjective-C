@@ -16,6 +16,7 @@ from scripts.objc3c_workflow.argument_request_model import (
     DescribePackageScriptRequest,
     ListActionsRequest,
 )
+from scripts.objc3c_workflow.argument_usage import usage_contract_payload, usage_text
 from scripts.objc3c_workflow.argument_usage_error import WorkflowUsageError
 
 
@@ -55,3 +56,17 @@ def test_argument_parser_uses_owned_option_contracts() -> None:
         assert exc.message == "usage: npm run objc3c -- <action> --list-json"
     else:
         raise AssertionError("list option arity must fail closed")
+
+
+def test_argument_usage_text_is_owned_by_option_contracts() -> None:
+    payload = usage_contract_payload()
+
+    assert payload["contract_id"] == "objc3c-workflow-argument-usage-v1"
+    assert payload["option_contract_id"] == ARGUMENT_OPTION_CONTRACT_ID
+    assert payload["retired_option_metadata_allowed"] is False
+    assert usage_text() == (
+        "usage: npm run objc3c -- <action> <action> [args...]\n"
+        "       npm run objc3c -- <action> --list-json\n"
+        "       npm run objc3c -- <action> --describe <action>\n"
+        "       npm run objc3c -- <action> --describe-script <package-script>"
+    )

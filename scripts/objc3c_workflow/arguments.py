@@ -23,12 +23,19 @@ from .argument_requests import (
     WorkflowRequest,
     WorkflowUsageError,
 )
-from .argument_usage import usage_text
+from .argument_usage import (
+    ARGUMENT_USAGE_CONTRACT_ID,
+    ARGUMENT_USAGE_OWNER_SURFACE,
+    usage_contract_payload,
+    usage_text,
+)
 
 
 __all__ = [
     "ARGUMENT_OPTION_CONTRACT_ID",
     "ARGUMENT_OPTION_OWNER_SURFACE",
+    "ARGUMENT_USAGE_CONTRACT_ID",
+    "ARGUMENT_USAGE_OWNER_SURFACE",
     "DescribeActionRequest",
     "DescribePackageScriptRequest",
     "DESCRIBE_ACTION_OPTION",
@@ -41,6 +48,7 @@ __all__ = [
     "WorkflowRequest",
     "WorkflowUsageError",
     "parse_workflow_args",
+    "usage_contract_payload",
     "usage_text",
     "workflow_argument_option",
     "workflow_argument_option_usage",
