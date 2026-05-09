@@ -1,11 +1,7 @@
 #include "driver/objc3_cli_option_application.h"
 
 #include "diagnostics/modes/objc3_removed_mode_options.h"
-#include "driver/objc3_cli_conformance_options.h"
-#include "driver/objc3_cli_language_options.h"
-#include "driver/objc3_cli_output_options.h"
-#include "driver/objc3_cli_runtime_options.h"
-#include "driver/objc3_cli_toolchain_options.h"
+#include "driver/objc3_cli_option_groups.h"
 
 bool ApplyObjc3CliOption(int &index,
                          int argc,
@@ -14,14 +10,7 @@ bool ApplyObjc3CliOption(int &index,
                          std::string &error) {
   const std::string flag = argv[index];
   bool matched = false;
-  if (!TryApplyObjc3CliLanguageOption(
-          flag, index, argc, argv, options, error, matched)) {
-    return false;
-  }
-  if (matched) {
-    return true;
-  }
-  if (!TryApplyObjc3CliOutputOption(
+  if (!TryApplyObjc3CliPrimaryOptionGroup(
           flag, index, argc, argv, options, error, matched)) {
     return false;
   }
@@ -32,21 +21,7 @@ bool ApplyObjc3CliOption(int &index,
                                                                    error)) {
     return false;
   }
-  if (!TryApplyObjc3CliConformanceOption(
-          flag, index, argc, argv, options, error, matched)) {
-    return false;
-  }
-  if (matched) {
-    return true;
-  }
-  if (!TryApplyObjc3CliRuntimeOption(
-          flag, index, argc, argv, options, error, matched)) {
-    return false;
-  }
-  if (matched) {
-    return true;
-  }
-  if (!TryApplyObjc3CliToolchainOption(
+  if (!TryApplyObjc3CliExtendedOptionGroup(
           flag, index, argc, argv, options, error, matched)) {
     return false;
   }

@@ -3,22 +3,7 @@
 #include <filesystem>
 #include <string>
 
-#include "diag/objc3_diag_utils.h"
-
 namespace fs = std::filesystem;
-
-Objc3DriverInputKind ClassifyObjc3DriverInput(const fs::path &input) {
-  const std::string extension = ToLower(input.extension().string());
-  return extension == ".objc3" ? Objc3DriverInputKind::kObjc3Language : Objc3DriverInputKind::kObjectiveCTranslationUnit;
-}
-
-bool NeedsObjc3DriverClangPath(Objc3DriverInputKind input_kind, Objc3IrObjectBackend ir_object_backend) {
-  return input_kind != Objc3DriverInputKind::kObjc3Language || ir_object_backend == Objc3IrObjectBackend::kClang;
-}
-
-bool NeedsObjc3DriverLlcPath(Objc3DriverInputKind input_kind, Objc3IrObjectBackend ir_object_backend) {
-  return input_kind == Objc3DriverInputKind::kObjc3Language && ir_object_backend == Objc3IrObjectBackend::kLLVMDirect;
-}
 
 bool ValidateObjc3DriverShellInputs(const Objc3CliOptions &cli_options,
                                     Objc3DriverInputKind input_kind,

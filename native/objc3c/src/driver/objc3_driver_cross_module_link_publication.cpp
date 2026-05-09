@@ -3,9 +3,8 @@
 #include <cstddef>
 #include <filesystem>
 #include <string>
-#include <utility>
-#include <vector>
 
+#include "driver/objc3_driver_cross_module_imported_surfaces.h"
 #include "driver/objc3_driver_cross_module_imported_input.h"
 #include "driver/objc3_driver_cross_module_link_plan_inputs.h"
 #include "driver/objc3_driver_diagnostic_output.h"
@@ -13,8 +12,6 @@
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 #include "pipeline/objc3_runtime_import_surface.h"
-
-namespace fs = std::filesystem;
 
 int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
     const Objc3CliOptions &cli_options,
@@ -26,35 +23,15 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
     return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   }
 
-  std::vector<Objc3ImportedRuntimeModuleSurface> imported_surfaces;
-  imported_surfaces.reserve(cli_options.imported_runtime_surface_paths.size());
-  std::vector<Objc3ImportedRuntimeModulePackagingPeerArtifacts>
-      imported_peer_artifacts;
-  imported_peer_artifacts.reserve(
-      cli_options.imported_runtime_surface_paths.size());
-
-  for (const auto &import_path : cli_options.imported_runtime_surface_paths) {
-    Objc3ImportedRuntimeModuleSurface imported_surface;
-    std::string import_surface_error;
-    const fs::path absolute_import_path =
-        fs::absolute(import_path).lexically_normal();
-    if (!TryLoadObjc3ImportedRuntimeModuleSurface(
-            absolute_import_path, imported_surface, import_surface_error)) {
-      EmitObjc3DriverError(import_surface_error);
-      return Objc3DriverStatusValue(
-          Objc3DriverStatusCode::kHardCutoverContractFailure);
-    }
-
-    Objc3ImportedRuntimeModulePackagingPeerArtifacts peer_artifacts;
-    std::string peer_artifacts_error;
-    if (!TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
-            imported_surface, peer_artifacts, peer_artifacts_error)) {
-      EmitObjc3DriverError(peer_artifacts_error);
-      return Objc3DriverStatusValue(
-          Objc3DriverStatusCode::kHardCutoverContractFailure);
-    }
-    imported_surfaces.push_back(std::move(imported_surface));
-    imported_peer_artifacts.push_back(std::move(peer_artifacts));
+  Objc3DriverCrossModuleImportedSurfaces imported_surfaces;
+  std::string imported_surfaces_error;
+  if (!TryLoadObjc3DriverCrossModuleImportedSurfaces(
+          cli_options.imported_runtime_surface_paths,
+          imported_surfaces,
+          imported_surfaces_error)) {
+    EmitObjc3DriverError(imported_surfaces_error);
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
 
   Objc3CrossModuleRuntimeLinkPlanArtifactInputs link_plan_inputs =
@@ -63,11 +40,12 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
           artifacts,
           linker_retention_artifacts,
           object_out);
-  for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
+  for (std::size_t index = 0; index < imported_surfaces.surfaces.size();
+       ++index) {
     AppendObjc3DriverCrossModuleRuntimeImportedInput(
         link_plan_inputs,
-        imported_surfaces[index],
-        imported_peer_artifacts[index]);
+        imported_surfaces.surfaces[index],
+        imported_surfaces.peer_artifacts[index]);
   }
 
   std::string link_plan_json;

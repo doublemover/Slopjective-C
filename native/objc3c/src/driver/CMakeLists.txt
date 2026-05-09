@@ -11,6 +11,7 @@ add_library(objc3c_driver STATIC
   objc3_cli_parse.cpp
   objc3_cli_runtime_options.cpp
   objc3_cli_integer_parsers.cpp
+  objc3_cli_option_groups.cpp
   objc3_cli_toolchain_options.cpp
   objc3_cli_option_validation.cpp
   objc3_cli_ir_backend_options.cpp
@@ -22,6 +23,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_cross_module_imported_input_metaprogramming.cpp
   objc3_driver_cross_module_imported_input_storage.cpp
   objc3_driver_cross_module_imported_input.cpp
+  objc3_driver_cross_module_imported_surfaces.cpp
   objc3_driver_cross_module_link_plan_base_inputs.cpp
   objc3_driver_cross_module_link_plan_expected_contracts.cpp
   objc3_driver_cross_module_link_plan_local_feature_inputs.cpp
@@ -33,6 +35,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_conformance_publication_sidecar.cpp
   objc3_driver_conformance_release_artifact_publication.cpp
   objc3_driver_conformance_surface.cpp
+  objc3_driver_conformance_validation_artifact_names.cpp
   objc3_driver_frontend_diagnostic_artifact_publication.cpp
   objc3_driver_frontend_error_bridge_artifact_publication.cpp
   objc3_driver_frontend_manifest_artifact_publication.cpp
@@ -46,9 +49,11 @@ add_library(objc3c_driver STATIC
   objc3_driver_object_backend.cpp
   objc3_driver_runtime_import_artifact_publication.cpp
   objc3_driver_runtime_import_artifact_readiness.cpp
+  objc3_driver_runtime_bootstrap_manifest_inputs.cpp
   objc3_driver_runtime_registration_accessor_surface.cpp
   objc3_driver_runtime_registration_command_surface.cpp
   objc3_driver_runtime_registration_descriptor_inputs.cpp
+  objc3_driver_runtime_registration_manifest_summary_inputs.cpp
   objc3_driver_runtime_registration_manifest_inputs.cpp
   objc3_driver_runtime_registration_publication.cpp
   objc3_driver_status_codes.cpp
@@ -57,6 +62,8 @@ add_library(objc3c_driver STATIC
   objc3_driver_toolchain_runtime_gate.cpp
   objc3_driver_main.cpp
   objc3_driver_shell.cpp
+  objc3_driver_shell_paths.cpp
+  objc3_llvm_capability_summary.cpp
   objc3_frontend_options.cpp
   objc3_llvm_capability_routing.cpp
   objc3_objectivec_symbol_manifest.cpp

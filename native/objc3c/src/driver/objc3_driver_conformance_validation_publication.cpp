@@ -1,73 +1,27 @@
 #include "driver/objc3_driver_conformance_validation_publication.h"
 
+#include "driver/objc3_driver_conformance_validation_artifact_names.h"
 #include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 
-namespace {
-
-std::string Objc3DriverValidationReportArtifactName(
-    const Objc3CliOptions &cli_options) {
-  return cli_options.validate_conformance_report_path.filename().string();
-}
-
-std::string Objc3DriverValidationArtifactName(
-    const Objc3CliOptions &cli_options) {
-  return BuildConformanceValidationArtifactPath(cli_options.out_dir,
-                                                cli_options.emit_prefix)
-      .filename()
-      .string();
-}
-
-std::string Objc3DriverReleaseEvidenceOperationArtifactName(
-    const Objc3CliOptions &cli_options) {
-  return BuildReleaseEvidenceOperationArtifactPath(cli_options.out_dir,
-                                                  cli_options.emit_prefix)
-      .filename()
-      .string();
-}
-
-std::string Objc3DriverDashboardStatusArtifactName(
-    const Objc3CliOptions &cli_options) {
-  return BuildDashboardStatusArtifactPath(cli_options.out_dir,
-                                          cli_options.emit_prefix)
-      .filename()
-      .string();
-}
-
-std::string Objc3DriverAdvancedFeatureGateArtifactName(
-    const Objc3CliOptions &cli_options) {
-  return BuildAdvancedFeatureGateArtifactPath(cli_options.out_dir,
-                                             cli_options.emit_prefix)
-      .filename()
-      .string();
-}
-
-}  // namespace
-
 int PublishObjc3DriverConformanceValidationArtifacts(
     const Objc3CliOptions &cli_options,
     const std::filesystem::path &publication_path,
     const std::string &report_json,
     const std::string &publication_json) {
-  const std::string report_artifact_path =
-      Objc3DriverValidationReportArtifactName(cli_options);
-  const std::string publication_artifact_path =
-      publication_path.filename().string();
-  const std::string validation_artifact_path =
-      Objc3DriverValidationArtifactName(cli_options);
-  const std::string release_evidence_operation_artifact_path =
-      Objc3DriverReleaseEvidenceOperationArtifactName(cli_options);
-  const std::string dashboard_artifact_path =
-      Objc3DriverDashboardStatusArtifactName(cli_options);
+  const Objc3DriverConformanceValidationArtifactNames artifact_names =
+      BuildObjc3DriverConformanceValidationArtifactNames(cli_options,
+                                                         publication_path);
 
   std::string validation_artifact_json;
   std::string validation_error;
   if (!TryBuildObjc3ConformanceClaimValidationArtifact(
-          {.report_artifact_path = report_artifact_path,
-           .publication_artifact_path = publication_artifact_path},
+          {.report_artifact_path = artifact_names.report_artifact_path,
+           .publication_artifact_path =
+               artifact_names.publication_artifact_path},
           report_json,
           publication_json,
           validation_artifact_json,
@@ -83,10 +37,12 @@ int PublishObjc3DriverConformanceValidationArtifacts(
   std::string release_evidence_operation_json;
   std::string release_evidence_operation_error;
   if (!TryBuildObjc3ReleaseEvidenceOperationArtifact(
-          {.report_artifact_path = report_artifact_path,
-           .publication_artifact_path = publication_artifact_path,
-           .validation_artifact_path = validation_artifact_path,
-           .dashboard_artifact_path = dashboard_artifact_path},
+          {.report_artifact_path = artifact_names.report_artifact_path,
+           .publication_artifact_path =
+               artifact_names.publication_artifact_path,
+           .validation_artifact_path =
+               artifact_names.validation_artifact_path,
+           .dashboard_artifact_path = artifact_names.dashboard_artifact_path},
           report_json,
           publication_json,
           validation_artifact_json,
@@ -103,11 +59,13 @@ int PublishObjc3DriverConformanceValidationArtifacts(
   std::string dashboard_status_json;
   std::string dashboard_status_error;
   if (!TryBuildObjc3DashboardStatusArtifact(
-          {.report_artifact_path = report_artifact_path,
-           .publication_artifact_path = publication_artifact_path,
-           .validation_artifact_path = validation_artifact_path,
+          {.report_artifact_path = artifact_names.report_artifact_path,
+           .publication_artifact_path =
+               artifact_names.publication_artifact_path,
+           .validation_artifact_path =
+               artifact_names.validation_artifact_path,
            .release_evidence_operation_artifact_path =
-               release_evidence_operation_artifact_path},
+               artifact_names.release_evidence_operation_artifact_path},
           report_json,
           publication_json,
           validation_artifact_json,
@@ -126,12 +84,14 @@ int PublishObjc3DriverConformanceValidationArtifacts(
   std::string advanced_feature_gate_error;
   if (!TryBuildObjc3AdvancedFeatureGateArtifact(
           {.surface_kind = "native-cli-validation",
-           .report_artifact_path = report_artifact_path,
-           .publication_artifact_path = publication_artifact_path,
-           .validation_artifact_path = validation_artifact_path,
+           .report_artifact_path = artifact_names.report_artifact_path,
+           .publication_artifact_path =
+               artifact_names.publication_artifact_path,
+           .validation_artifact_path =
+               artifact_names.validation_artifact_path,
            .release_evidence_operation_artifact_path =
-               release_evidence_operation_artifact_path,
-           .dashboard_artifact_path = dashboard_artifact_path},
+               artifact_names.release_evidence_operation_artifact_path,
+           .dashboard_artifact_path = artifact_names.dashboard_artifact_path},
           report_json,
           publication_json,
           advanced_feature_gate_artifact_json,
@@ -148,14 +108,16 @@ int PublishObjc3DriverConformanceValidationArtifacts(
   std::string release_candidate_matrix_error;
   if (!TryBuildObjc3ReleaseCandidateMatrixArtifact(
           {.surface_kind = "native-cli-validation",
-           .report_artifact_path = report_artifact_path,
-           .publication_artifact_path = publication_artifact_path,
+           .report_artifact_path = artifact_names.report_artifact_path,
+           .publication_artifact_path =
+               artifact_names.publication_artifact_path,
            .advanced_feature_gate_artifact_path =
-               Objc3DriverAdvancedFeatureGateArtifactName(cli_options),
-           .validation_artifact_path = validation_artifact_path,
+               artifact_names.advanced_feature_gate_artifact_path,
+           .validation_artifact_path =
+               artifact_names.validation_artifact_path,
            .release_evidence_operation_artifact_path =
-               release_evidence_operation_artifact_path,
-           .dashboard_artifact_path = dashboard_artifact_path},
+               artifact_names.release_evidence_operation_artifact_path,
+           .dashboard_artifact_path = artifact_names.dashboard_artifact_path},
           report_json,
           publication_json,
           advanced_feature_gate_artifact_json,
