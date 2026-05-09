@@ -18,4 +18,11 @@ namespace objc3::artifacts::frontend {
 [[nodiscard]] std::string BuildInteropSwiftInteropIsolationSummaryJson(
     const Objc3InteropSwiftInteropIsolationSummary &summary);
 
+[[nodiscard]] std::string
+BuildInteropForeignSurfaceInterfacePreservationSummaryJson(
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary &summary);
+
+[[nodiscard]] std::string BuildInteropHeaderModuleBridgeGenerationSummaryJson(
+    const Objc3InteropHeaderModuleBridgeGenerationSummary &summary);
+
 }  // namespace objc3::artifacts::frontend
