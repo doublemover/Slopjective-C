@@ -41,6 +41,8 @@ inline constexpr const char *kObjc3SemaSelectorPropertyTypeAnnotationReadinessOw
     "native.frontend.sema.selector-property-type-annotation-readiness";
 inline constexpr const char *kObjc3SemaTypeBoundarySummaryReadinessOwner =
     "native.frontend.sema.type-boundary-summary-readiness";
+inline constexpr const char *kObjc3SemaModuleTypeAbiSummaryReadinessOwner =
+    "native.frontend.sema.module-type-abi-summary-readiness";
 inline constexpr const char *kObjc3SemaModuleSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.module-semantic-parity-publication-readiness";
 inline constexpr const char *kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner =
@@ -1230,6 +1232,34 @@ inline bool IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
          record.deterministic;
 }
 
+struct Objc3SemaModuleTypeAbiSummaryReadinessRecord {
+  std::string module_type_abi_summary_readiness_owner =
+      kObjc3SemaModuleTypeAbiSummaryReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool variance_bridge_cast_ready = false;
+  bool generic_metadata_abi_ready = false;
+  bool module_import_graph_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
+    const Objc3SemaModuleTypeAbiSummaryReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.module_type_abi_summary_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.variance_bridge_cast_ready &&
+         record.generic_metadata_abi_ready &&
+         record.module_import_graph_ready && record.deterministic;
+}
+
 struct Objc3ParserSemaConformanceMatrix {
   std::size_t parser_top_level_declaration_count = 0;
   std::size_t ast_top_level_declaration_count = 0;
@@ -2171,6 +2201,8 @@ struct Objc3SemaParityContractSurface {
       selector_property_type_annotation_readiness_record;
   Objc3SemaTypeBoundarySummaryReadinessRecord
       type_boundary_summary_readiness_record;
+  Objc3SemaModuleTypeAbiSummaryReadinessRecord
+      module_type_abi_summary_readiness_record;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
@@ -2633,6 +2665,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_core_semantic_summary_readiness_record = false;
   bool deterministic_selector_property_type_annotation_readiness_record = false;
   bool deterministic_type_boundary_summary_readiness_record = false;
+  bool deterministic_module_type_abi_summary_readiness_record = false;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
   bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   bool deterministic_concurrency_parity_publication_readiness_record = false;
@@ -3094,6 +3127,103 @@ BuildObjc3SemaTypeBoundarySummaryReadinessRecord(
       record.lightweight_generic_constraint_ready &&
       record.nullability_flow_warning_precision_ready &&
       record.protocol_qualified_object_type_ready;
+  return record;
+}
+
+inline Objc3SemaModuleTypeAbiSummaryReadinessRecord
+BuildObjc3SemaModuleTypeAbiSummaryReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaModuleTypeAbiSummaryReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.variance_bridge_cast_ready =
+      surface.deterministic_variance_bridge_cast_handoff &&
+      surface.variance_bridge_cast_summary.variance_bridge_cast_sites ==
+          surface.variance_bridge_cast_sites_total &&
+      surface.variance_bridge_cast_summary.protocol_composition_sites ==
+          surface.variance_bridge_cast_protocol_composition_sites_total &&
+      surface.variance_bridge_cast_summary.ownership_qualifier_sites ==
+          surface.variance_bridge_cast_ownership_qualifier_sites_total &&
+      surface.variance_bridge_cast_summary.object_pointer_type_sites ==
+          surface.variance_bridge_cast_object_pointer_type_sites_total &&
+      surface.variance_bridge_cast_summary.pointer_declarator_sites ==
+          surface.variance_bridge_cast_pointer_declarator_sites_total &&
+      surface.variance_bridge_cast_summary.normalized_sites ==
+          surface.variance_bridge_cast_normalized_sites_total &&
+      surface.variance_bridge_cast_summary.contract_violation_sites ==
+          surface.variance_bridge_cast_contract_violation_sites_total &&
+      surface.variance_bridge_cast_summary.protocol_composition_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.normalized_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.contract_violation_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.deterministic;
+  record.generic_metadata_abi_ready =
+      surface.deterministic_generic_metadata_abi_handoff &&
+      surface.generic_metadata_abi_summary.generic_metadata_abi_sites ==
+          surface.generic_metadata_abi_sites_total &&
+      surface.generic_metadata_abi_summary.generic_suffix_sites ==
+          surface.generic_metadata_abi_generic_suffix_sites_total &&
+      surface.generic_metadata_abi_summary.protocol_composition_sites ==
+          surface.generic_metadata_abi_protocol_composition_sites_total &&
+      surface.generic_metadata_abi_summary.ownership_qualifier_sites ==
+          surface.generic_metadata_abi_ownership_qualifier_sites_total &&
+      surface.generic_metadata_abi_summary.object_pointer_type_sites ==
+          surface.generic_metadata_abi_object_pointer_type_sites_total &&
+      surface.generic_metadata_abi_summary.pointer_declarator_sites ==
+          surface.generic_metadata_abi_pointer_declarator_sites_total &&
+      surface.generic_metadata_abi_summary.normalized_sites ==
+          surface.generic_metadata_abi_normalized_sites_total &&
+      surface.generic_metadata_abi_summary.contract_violation_sites ==
+          surface.generic_metadata_abi_contract_violation_sites_total &&
+      surface.generic_metadata_abi_summary.generic_suffix_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.protocol_composition_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.normalized_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.contract_violation_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.deterministic;
+  record.module_import_graph_ready =
+      surface.deterministic_module_import_graph_handoff &&
+      surface.module_import_graph_summary.module_import_graph_sites ==
+          surface.module_import_graph_sites_total &&
+      surface.module_import_graph_summary.import_edge_candidate_sites ==
+          surface.module_import_graph_import_edge_candidate_sites_total &&
+      surface.module_import_graph_summary.namespace_segment_sites ==
+          surface.module_import_graph_namespace_segment_sites_total &&
+      surface.module_import_graph_summary.object_pointer_type_sites ==
+          surface.module_import_graph_object_pointer_type_sites_total &&
+      surface.module_import_graph_summary.pointer_declarator_sites ==
+          surface.module_import_graph_pointer_declarator_sites_total &&
+      surface.module_import_graph_summary.normalized_sites ==
+          surface.module_import_graph_normalized_sites_total &&
+      surface.module_import_graph_summary.contract_violation_sites ==
+          surface.module_import_graph_contract_violation_sites_total &&
+      surface.module_import_graph_summary.import_edge_candidate_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.namespace_segment_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.normalized_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.contract_violation_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.deterministic;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.module_type_abi_summary_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.variance_bridge_cast_ready &&
+      record.generic_metadata_abi_ready && record.module_import_graph_ready;
   return record;
 }
 
@@ -6165,3 +6295,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_type_boundary_summary_readiness_record &&
          IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
              surface.type_boundary_summary_readiness_record) &&
+         surface.deterministic_module_type_abi_summary_readiness_record &&
+         IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
+             surface.module_type_abi_summary_readiness_record);
+}
