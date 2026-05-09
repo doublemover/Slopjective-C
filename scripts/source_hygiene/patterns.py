@@ -66,6 +66,14 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"|(?<![A-Za-z0-9_])publicScripts(?![A-Za-z0-9_])",
     ),
     ForbiddenPattern(
+        "retired-workflow-action-registry-facade",
+        "Workflow actions must use the canonical action catalog, not the retired registry.py facade.",
+        r"scripts[\\/]+objc3c_workflow[\\/]+registry\.py\b"
+        r"|scripts\.objc3c_workflow\.registry\b"
+        r"|from\s+\.{1,2}registry\s+import\s+ACTION_SPECS"
+        r"|from\s+scripts\.objc3c_workflow\.registry\s+import\s+ACTION_SPECS",
+    ),
+    ForbiddenPattern(
         "legacy-language-profile-enum",
         "Language profile enums are canonical-only and must not retain legacy values.",
         r"\bkLegacy\b|\bLegacy\s*=\s*1\b|\bObjc3\w*LanguageProfile::k?Legacy\b",

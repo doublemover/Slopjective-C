@@ -297,6 +297,34 @@ def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
     ]
 
 
+def test_hard_cutover_gate_rejects_retired_workflow_registry_facade(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/runbooks/commands.md",
+        "Action source: scripts/objc3c_workflow/registry.py\n",
+    )
+    write(
+        tmp_path / "scripts/objc3c_workflow/actions/docs.py",
+        "from ..registry import ACTION_SPECS\n",
+    )
+    write(
+        tmp_path / "tests/tooling/test_objc3c_workflow_runner_decomposition.py",
+        "from scripts.objc3c_workflow.registry import ACTION_SPECS\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs", "scripts", "tests"), excludes=())
+
+    assert report["ok"] is False
+    assert {
+        finding["path"]: finding["pattern_id"] for finding in report["active_findings"]
+    } == {
+        "docs/runbooks/commands.md": "retired-workflow-action-registry-facade",
+        "scripts/objc3c_workflow/actions/docs.py": "retired-workflow-action-registry-facade",
+        "tests/tooling/test_objc3c_workflow_runner_decomposition.py": "retired-workflow-action-registry-facade",
+    }
+
+
 def test_hard_cutover_default_roots_cover_public_command_truth_surfaces() -> None:
     assert "README.md" in DEFAULT_SCAN_ROOTS
     assert "CONTRIBUTING.md" in DEFAULT_SCAN_ROOTS
