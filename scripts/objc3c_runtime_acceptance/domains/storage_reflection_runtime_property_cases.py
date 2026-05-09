@@ -7,6 +7,8 @@ from objc3c_runtime_acceptance.domains.storage_reflection_runtime_ownership_case
 )
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_property_execution_cases import (
     check_property_execution_case,
+)
+from objc3c_runtime_acceptance.domains.storage_reflection_runtime_property_reflection_cases import (
     check_property_reflection_case,
 )
 
