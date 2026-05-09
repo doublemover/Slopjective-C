@@ -973,12 +973,11 @@ def main(argv: list[str] | None = None) -> int:
     from objc3c_runtime_acceptance.domains import interop_packaging as interop_packaging_domain
     from objc3c_runtime_acceptance.domains import metaprogramming as metaprogramming_domain
     from objc3c_runtime_acceptance.domains import object_model as object_model_domain
-    from objc3c_runtime_acceptance.domains import object_model_cases as object_model_cases_domain
     from objc3c_runtime_acceptance.domains import registration as registration_domain
     from objc3c_runtime_acceptance.domains import storage_reflection as storage_reflection_domain
 
     case_factories: list[tuple[str, Callable[[], CaseResult]]] = [
-        ("runtime-library", lambda: object_model_cases_domain.check_runtime_library_case(clangxx, run_dir)),
+        ("runtime-library", lambda: object_model_domain.check_runtime_library_case(clangxx, run_dir)),
         (
             "runtime-probe-helper-support",
             lambda: check_runtime_probe_helper_support_case(clangxx, run_dir),
@@ -1041,11 +1040,11 @@ def main(argv: list[str] | None = None) -> int:
         ("cross-module-block-ownership-artifact-preservation", lambda: check_cross_module_block_ownership_artifact_preservation_case(run_dir)),
         ("cross-module-storage-reflection-artifact-preservation", lambda: storage_reflection_domain.check_cross_module_storage_reflection_artifact_preservation_case(run_dir)),
         ("imported-runtime-packaging-replay", lambda: interop_packaging_domain.check_imported_runtime_packaging_replay_case(clangxx, run_dir)),
-        ("canonical-dispatch", lambda: object_model_cases_domain.check_canonical_dispatch_case(clangxx, run_dir)),
-        ("metaclass-graph-root-class", lambda: object_model_cases_domain.check_metaclass_graph_root_class_case(clangxx, run_dir)),
-        ("canonical-sample-set", lambda: object_model_cases_domain.check_canonical_sample_set_case(clangxx, run_dir)),
-        ("realization-lookup-reflection-runtime", lambda: object_model_cases_domain.check_realization_lookup_reflection_runtime_case(clangxx, run_dir)),
-        ("live-dispatch-fast-path", lambda: object_model_cases_domain.check_live_dispatch_fast_path_case(clangxx, run_dir)),
+        ("canonical-dispatch", lambda: object_model_domain.check_canonical_dispatch_case(clangxx, run_dir)),
+        ("metaclass-graph-root-class", lambda: object_model_domain.check_metaclass_graph_root_class_case(clangxx, run_dir)),
+        ("canonical-sample-set", lambda: object_model_domain.check_canonical_sample_set_case(clangxx, run_dir)),
+        ("realization-lookup-reflection-runtime", lambda: object_model_domain.check_realization_lookup_reflection_runtime_case(clangxx, run_dir)),
+        ("live-dispatch-fast-path", lambda: object_model_domain.check_live_dispatch_fast_path_case(clangxx, run_dir)),
         ("storage-ownership-reflection", lambda: storage_reflection_domain.check_storage_ownership_reflection_case(clangxx, run_dir)),
         ("property-ivar-ordering-semantics", lambda: storage_reflection_domain.check_property_ivar_ordering_semantics_case(run_dir)),
         ("accessor-storage-lowering-metadata-surface", lambda: storage_reflection_domain.check_accessor_storage_lowering_metadata_surface_case(run_dir)),

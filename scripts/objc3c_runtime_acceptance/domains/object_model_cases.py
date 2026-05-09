@@ -1009,3 +1009,6 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
             "strict_error_second_strict_dispatch_error_count": payload.get("strict_error_second_state_strict_dispatch_error_count"),
         },
     )
+
+
+__all__ = [*_EXPORTED_CASE_NAMES, "exported_case_names"]
