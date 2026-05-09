@@ -6,6 +6,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_metadata_handoff_ordering.cpp
+  frontend_phase_publication_helpers.cpp
   frontend_pipeline_pragma_contracts.cpp
   frontend_pipeline_sema_stage_runner.cpp
   frontend_pipeline_stage_contract.cpp
@@ -24,6 +25,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_outputs.h
   frontend_pipeline_stage_contract.h
   frontend_pipeline_stage_runner.h
+  frontend_phase_publication_helpers.h
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
