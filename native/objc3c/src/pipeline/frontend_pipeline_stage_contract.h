@@ -82,4 +82,19 @@ struct StageResult {
   std::string failure_reason;
 };
 
+[[nodiscard]] const std::array<StageId, 5> &FrontendPipelineStageOrder();
+[[nodiscard]] const char *StageIdName(StageId stage);
+[[nodiscard]] const char *StageStatusName(StageStatus status);
+[[nodiscard]] const char *StageSkipReasonName(StageSkipReason reason);
+[[nodiscard]] const char *DiagnosticSeverityName(DiagnosticSeverity severity);
+[[nodiscard]] bool StageStatusIsTerminal(StageStatus status);
+[[nodiscard]] bool StageResultFailed(const StageResult &result);
+[[nodiscard]] DiagnosticsEnvelope BuildDiagnosticsEnvelope(
+    StageId stage,
+    std::vector<DiagnosticRecord> diagnostics);
+[[nodiscard]] StageResult BuildSkippedStageResult(
+    StageId stage,
+    StageSkipReason reason,
+    std::string failure_reason);
+
 }  // namespace objc3c::pipeline
