@@ -91,7 +91,13 @@ from scripts.objc3c_workflow.entrypoint_script import main as script_entrypoint_
 from scripts.objc3c_workflow.environment import MARKDOWN_GLOBS
 from scripts.objc3c_workflow.environment_markdown import MARKDOWN_GLOBS as OWNED_MARKDOWN_GLOBS
 from scripts.objc3c_workflow.path_bootstrap import WORKFLOW_IMPORT_ROOTS
-from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
+from scripts.objc3c_workflow.path_imports import install_import_roots
+from scripts.objc3c_workflow.paths import (
+    ROOT,
+    SCRIPT_ROOT,
+    ensure_workflow_import_paths,
+    workflow_import_roots,
+)
 from scripts.objc3c_workflow.registry_schema_index import (
     ACTION_REGISTRY_SCHEMA_ID,
     WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
@@ -290,6 +296,8 @@ def test_workflow_path_roots_are_owned_by_package_module() -> None:
     assert WORKFLOW_IMPORT_ROOTS == workflow_import_roots()
     assert SCRIPT_ROOT.name == "scripts"
     assert ROOT == SCRIPT_ROOT.parent
+    assert callable(install_import_roots)
+    assert callable(ensure_workflow_import_paths)
 
 
 def test_workflow_entrypoints_have_separate_owners() -> None:

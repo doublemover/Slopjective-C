@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
+
+from .path_imports import install_import_roots
 
 
 WORKFLOW_PACKAGE_ROOT = Path(__file__).resolve().parent
@@ -16,7 +17,13 @@ def workflow_import_roots() -> tuple[Path, Path]:
 
 
 def ensure_workflow_import_paths() -> None:
-    for import_root in workflow_import_roots():
-        import_root_text = str(import_root)
-        if import_root_text not in sys.path:
-            sys.path.insert(0, import_root_text)
+    install_import_roots(workflow_import_roots())
+
+
+__all__ = [
+    "ROOT",
+    "SCRIPT_ROOT",
+    "WORKFLOW_PACKAGE_ROOT",
+    "ensure_workflow_import_paths",
+    "workflow_import_roots",
+]
