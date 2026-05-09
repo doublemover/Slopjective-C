@@ -17,6 +17,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.h
   blocks/block_record.cpp
   blocks/block_record.h
+  blocks/block_runtime_records.h
   classes/category_attachment.cpp
   classes/category_attachment.h
   classes/class_graph.cpp
