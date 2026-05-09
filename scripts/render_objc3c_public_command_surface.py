@@ -12,6 +12,7 @@ from typing import Sequence
 
 from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.reports import markdown_table
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
@@ -28,7 +29,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 
 def load_contract(contract_path: Path) -> dict[str, object]:
-    subprocess.run([sys.executable, str(CONTRACT_BUILDER), '--output', str(contract_path)], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(CONTRACT_BUILDER, '--output', contract_path), cwd=ROOT, check=True)
     return json.loads(contract_path.read_text(encoding='utf-8'))
 
 

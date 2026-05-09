@@ -4,10 +4,9 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed as run_command
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gate"
@@ -18,126 +17,125 @@ PROPOSAL_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "
 COMMANDS = [
     {
         "name": "governance-budget-inventory",
-        "command": [sys.executable, "scripts/build_governance_budget_inventory_summary.py"],
+        "command": python_script_command("scripts/build_governance_budget_inventory_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-policy",
-        "command": [sys.executable, "scripts/build_governance_policy_summary.py"],
+        "command": python_script_command("scripts/build_governance_policy_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-maintainer-review",
-        "command": [sys.executable, "scripts/build_governance_maintainer_review_summary.py"],
+        "command": python_script_command("scripts/build_governance_maintainer_review_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-extension-policy",
-        "command": [sys.executable, "scripts/build_governance_extension_review_policy_summary.py"],
+        "command": python_script_command("scripts/build_governance_extension_review_policy_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-extension-workflow",
-        "command": [sys.executable, "scripts/build_governance_extension_review_workflow_summary.py"],
+        "command": python_script_command("scripts/build_governance_extension_review_workflow_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-stewardship-semantics",
-        "command": [sys.executable, "scripts/build_governance_stewardship_semantics_summary.py"],
+        "command": python_script_command("scripts/build_governance_stewardship_semantics_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-schema-surface",
-        "command": [sys.executable, "scripts/check_governance_sustainability_schema_surface.py"],
+        "command": python_script_command("scripts/check_governance_sustainability_schema_surface.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-artifact-contract",
-        "command": [sys.executable, "scripts/build_governance_artifact_contract_summary.py"],
+        "command": python_script_command("scripts/build_governance_artifact_contract_summary.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-budget-enforcement",
-        "command": [sys.executable, "scripts/check_governance_sustainability_budget_enforcement.py"],
+        "command": python_script_command("scripts/check_governance_sustainability_budget_enforcement.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "public-command-contract",
-        "command": [sys.executable, "scripts/build_objc3c_public_command_contract.py", "--check"],
+        "command": python_script_command("scripts/build_objc3c_public_command_contract.py", "--check"),
         "summary_path": None,
     },
     {
         "name": "public-command-surface",
-        "command": [sys.executable, "scripts/render_objc3c_public_command_surface.py", "--check"],
+        "command": python_script_command("scripts/render_objc3c_public_command_surface.py", "--check"),
         "summary_path": None,
     },
     {
         "name": "public-command-budget",
-        "command": [sys.executable, "scripts/check_objc3c_public_command_budget.py"],
+        "command": python_script_command("scripts/check_objc3c_public_command_budget.py"),
         "summary_path": None,
     },
     {
         "name": "task-hygiene-gate",
-        "command": [sys.executable, "scripts/ci/run_task_hygiene_gate.py"],
+        "command": python_script_command("scripts/ci/run_task_hygiene_gate.py"),
         "summary_path": None,
     },
     {
         "name": "governance-integration",
-        "command": [sys.executable, "scripts/check_objc3c_governance_sustainability_integration.py"],
+        "command": python_script_command("scripts/check_objc3c_governance_sustainability_integration.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-evidence",
-        "command": [sys.executable, "scripts/build_objc3c_governance_sustainability_evidence.py"],
+        "command": python_script_command("scripts/build_objc3c_governance_sustainability_evidence.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/evidence-summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-publication",
-        "command": [sys.executable, "scripts/publish_objc3c_governance_sustainability_metadata.py"],
+        "command": python_script_command("scripts/publish_objc3c_governance_sustainability_metadata.py"),
         "summary_path": ROOT / "tmp/reports/governance-sustainability/publication-summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "new-work-proposal-render",
-        "command": [
-            sys.executable,
+        "command": python_script_command(
             "scripts/publish_new_work_proposal.py",
             "--proposal",
             "tests/tooling/fixtures/governance_sustainability/new_work_proposal_sample.json",
             "--output-dir",
             str(PROPOSAL_OUTPUT_DIR.relative_to(ROOT)).replace('\\', '/'),
-        ],
+        ),
         "summary_path": PROPOSAL_OUTPUT_DIR / "publication_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "documentation-surface",
-        "command": [sys.executable, "scripts/check_documentation_surface.py"],
+        "command": python_script_command("scripts/check_documentation_surface.py"),
         "summary_path": None,
     },
     {
         "name": "repo-superclean-surface",
-        "command": [sys.executable, "scripts/check_repo_superclean_surface.py"],
+        "command": python_script_command("scripts/check_repo_superclean_surface.py"),
         "summary_path": None,
     },
 ]

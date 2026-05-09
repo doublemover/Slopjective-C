@@ -4,14 +4,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -119,7 +117,7 @@ def collect_child_report_paths(public_workflow_report: dict[str, Any]) -> list[s
 
 def main() -> int:
     result = run_capture(
-        [sys.executable, str(HARNESS_SCRIPT), "--run-suite", "public-test-smoke"]
+        python_script_command(HARNESS_SCRIPT, "--run-suite", "public-test-smoke")
     )
     if result.returncode != 0:
         raise RuntimeError("shared executable acceptance harness failed for public-test-smoke")

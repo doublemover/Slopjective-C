@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_workflow.registry_views import action_names
+from objc3c_tooling.public_runner import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,7 +37,7 @@ def main() -> int:
     package_bridge = str(policy["package_bridge"])
     package_bridge_exists = package_bridge in package_scripts
     required_actions = [str(name) for name in policy["required_actions"]]
-    registered_actions = set(action_names())
+    registered_actions = set(public_workflow_action_names())
     missing_actions = [name for name in required_actions if name not in registered_actions]
     resolver_stages = policy.get("resolver_stages", [])
     lock_required_fields = policy.get("lock_required_fields", [])

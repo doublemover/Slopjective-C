@@ -4,12 +4,11 @@ from __future__ import annotations
 import json
 import platform
 import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.public_runner import public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json"
@@ -35,7 +34,7 @@ def host_matches_supported_platform(default_platform_id: str) -> bool:
 
 
 def main() -> int:
-    run_capture([sys.executable, str(MATRIX_GENERATOR)])
+    run_capture(python_script_command(MATRIX_GENERATOR))
     contract = read_json(CONTRACT_PATH)
     matrix = read_json(MATRIX_PATH)
 
@@ -50,10 +49,10 @@ def main() -> int:
 
     steps: list[dict[str, Any]] = []
     command_map = {
-        "build-native-binaries": [sys.executable, str(ROOT / "scripts" / "objc3c_workflow" / "runner.py"), "build-native-binaries"],
-        "package-runnable-toolchain": [sys.executable, str(ROOT / "scripts" / "objc3c_workflow" / "runner.py"), "package-runnable-toolchain"],
-        "build-package-channels": [sys.executable, str(ROOT / "scripts" / "build_objc3c_package_channels.py")],
-        "check-packaging-channels-end-to-end": [sys.executable, str(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py")],
+        "build-native-binaries": public_workflow_command("build-native-binaries"),
+        "package-runnable-toolchain": public_workflow_command("package-runnable-toolchain"),
+        "build-package-channels": python_script_command(ROOT / "scripts" / "build_objc3c_package_channels.py"),
+        "check-packaging-channels-end-to-end": python_script_command(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"),
     }
     for step_name in contract["required_steps"]:
         command = command_map[step_name]

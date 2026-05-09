@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,8 +29,8 @@ def run(command: list[str]) -> None:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    run([sys.executable, str(ROOT / "scripts" / "check_platform_hardening_build_package_validation.py")])
-    run([sys.executable, str(ROOT / "scripts" / "check_platform_hardening_toolchain_range_replay.py")])
+    run(python_script_command(ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"))
+    run(python_script_command(ROOT / "scripts" / "check_platform_hardening_toolchain_range_replay.py"))
 
     matrix = read_json(ROOT / "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json")
     build_package = read_json(ROOT / "tmp/reports/platform-hardening/build-package-validation-summary.json")

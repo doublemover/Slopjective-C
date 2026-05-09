@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,18 +35,18 @@ EXTERNAL_VALIDATION_INTEGRATION = ROOT / "tmp" / "reports" / "external-validatio
 PUBLIC_CONFORMANCE_INTEGRATION = ROOT / "tmp" / "reports" / "public-conformance" / "integration-summary.json"
 
 STEPS = [
-    ("boundary-inventory", [sys.executable, "scripts/build_long_horizon_operations_boundary_inventory_summary.py"]),
-    ("deprecation-policy", [sys.executable, "scripts/build_long_horizon_operations_deprecation_policy_summary.py"]),
-    ("migration-rollback-support-window", [sys.executable, "scripts/build_long_horizon_operations_migration_rollback_summary.py"]),
-    ("aging-cadence", [sys.executable, "scripts/build_long_horizon_operations_aging_cadence_summary.py"]),
-    ("artifact-contract", [sys.executable, "scripts/build_long_horizon_operations_artifact_contract_summary.py"]),
-    ("package-ecosystem-integration", [sys.executable, "scripts/check_objc3c_package_ecosystem_integration.py"]),
-    ("application-architecture-integration", [sys.executable, "scripts/check_objc3c_application_architecture_integration.py"]),
-    ("performance-governance-integration", [sys.executable, "scripts/check_objc3c_performance_governance_integration.py"]),
-    ("conformance-corpus-integration", [sys.executable, "scripts/check_objc3c_conformance_corpus_integration.py"]),
-    ("stress-integration", [sys.executable, "scripts/check_objc3c_stress_integration.py"]),
-    ("external-validation-integration", [sys.executable, "scripts/check_objc3c_external_validation_integration.py"]),
-    ("public-conformance-integration", [sys.executable, "scripts/check_objc3c_public_conformance_reporting_integration.py"]),
+    ("boundary-inventory", python_script_command("scripts/build_long_horizon_operations_boundary_inventory_summary.py")),
+    ("deprecation-policy", python_script_command("scripts/build_long_horizon_operations_deprecation_policy_summary.py")),
+    ("migration-rollback-support-window", python_script_command("scripts/build_long_horizon_operations_migration_rollback_summary.py")),
+    ("aging-cadence", python_script_command("scripts/build_long_horizon_operations_aging_cadence_summary.py")),
+    ("artifact-contract", python_script_command("scripts/build_long_horizon_operations_artifact_contract_summary.py")),
+    ("package-ecosystem-integration", python_script_command("scripts/check_objc3c_package_ecosystem_integration.py")),
+    ("application-architecture-integration", python_script_command("scripts/check_objc3c_application_architecture_integration.py")),
+    ("performance-governance-integration", python_script_command("scripts/check_objc3c_performance_governance_integration.py")),
+    ("conformance-corpus-integration", python_script_command("scripts/check_objc3c_conformance_corpus_integration.py")),
+    ("stress-integration", python_script_command("scripts/check_objc3c_stress_integration.py")),
+    ("external-validation-integration", python_script_command("scripts/check_objc3c_external_validation_integration.py")),
+    ("public-conformance-integration", python_script_command("scripts/check_objc3c_public_conformance_reporting_integration.py")),
 ]
 
 

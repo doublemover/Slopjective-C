@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +44,7 @@ def require_json(path: Path, *, kind: str) -> dict[str, Any]:
 
 def ensure_release_evidence_index() -> dict[str, Any]:
     if not RELEASE_EVIDENCE_INDEX.is_file():
-        result = run_capture([sys.executable, str(RELEASE_EVIDENCE_CHECK)])
+        result = run_capture(python_script_command(RELEASE_EVIDENCE_CHECK))
         if result.returncode != 0:
             raise RuntimeError("failed to generate release-evidence index")
     return require_json(RELEASE_EVIDENCE_INDEX, kind="release-evidence index")

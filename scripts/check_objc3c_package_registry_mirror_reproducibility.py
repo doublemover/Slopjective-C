@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
-from objc3c_workflow.registry_views import action_names
+from objc3c_tooling.public_runner import public_workflow_action_names
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,7 +46,7 @@ def main() -> int:
         raise RuntimeError("package.json scripts field drifted from an object")
 
     result = subprocess.run(
-        [sys.executable, "scripts/build_objc3c_package_mirror.py"],
+        python_script_command("scripts/build_objc3c_package_mirror.py"),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -69,7 +70,7 @@ def main() -> int:
     package_bridge = str(contract["package_bridge"])
     package_bridge_exists = package_bridge in package_scripts
     required_actions = [str(name) for name in contract["required_actions"]]
-    missing_actions = [name for name in required_actions if name not in set(action_names())]
+    missing_actions = [name for name in required_actions if name not in set(public_workflow_action_names())]
 
     lock_ids = package_ids(lock)
     mirror_ids = package_ids(mirror)

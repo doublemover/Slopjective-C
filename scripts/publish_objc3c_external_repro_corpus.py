@@ -3,14 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +30,7 @@ def ensure_replay_summary(path: Path) -> dict[str, Any]:
         payload = load_json(path)
         if payload.get("status") == "PASS":
             return payload
-    result = run_capture([sys.executable, str(INTAKE_REPLAY_SCRIPT)])
+    result = run_capture(python_script_command(INTAKE_REPLAY_SCRIPT))
     expect(result.returncode == 0, "external intake replay summary generation failed during publication")
     payload = load_json(path)
     expect(payload.get("status") == "PASS", "external intake replay summary did not pass")

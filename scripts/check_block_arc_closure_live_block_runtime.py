@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/check_objc3c_runnable_block_arc_end_to_end.py"
@@ -26,7 +27,7 @@ def expect(condition: bool, message: str) -> None:
 def main() -> int:
     if os.environ.get("OBJC3C_SKIP_BLOCK_ARC_E2E_RERUN") != "1":
         result = subprocess.run(
-            [sys.executable, str(RUNNER)],
+            python_script_command(RUNNER),
             cwd=ROOT,
             check=False,
             text=True,

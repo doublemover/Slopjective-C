@@ -12,7 +12,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.json_io import load_json_object as load_json, write_text_file as write_text, write_json_file
 from objc3c_tooling.paths import repo_rel
 
@@ -183,11 +183,11 @@ def main() -> int:
     load_json(INSTALLER_POLICY)
     metadata_surface = load_json(METADATA_SURFACE)
     load_json(SCHEMA_SURFACE)
-    run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_BUILD)])
+    run(python_script_command(PLATFORM_SUPPORT_MATRIX_BUILD))
     platform_support_matrix = load_json(PLATFORM_SUPPORT_MATRIX_ARTIFACT)
 
-    run([sys.executable, str(RELEASE_MANIFEST_PY)])
-    run([sys.executable, str(RELEASE_PROVENANCE_PY)])
+    run(python_script_command(RELEASE_MANIFEST_PY))
+    run(python_script_command(RELEASE_PROVENANCE_PY))
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     package_root = ROOT / "tmp" / "pkg" / "objc3c-package-channels" / run_id / "runnable"

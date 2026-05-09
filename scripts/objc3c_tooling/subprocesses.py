@@ -63,6 +63,14 @@ def command_text(command: Sequence[object]) -> str:
     return " ".join(str(part) for part in command)
 
 
+def python_script_command(script_path: Path | str, *args: object) -> list[str]:
+    return [sys.executable, str(script_path), *(str(arg) for arg in args)]
+
+
+def python_script_command_tuple(script_path: Path | str, *args: object) -> tuple[str, ...]:
+    return tuple(python_script_command(script_path, *args))
+
+
 def bounded_text(value: str, limit: int = DEFAULT_SNIPPET_CHARS) -> str:
     if limit <= 0 or len(value) <= limit:
         return value

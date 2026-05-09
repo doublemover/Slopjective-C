@@ -11,7 +11,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
@@ -126,7 +126,7 @@ def main() -> int:
     payload_policy = load_json(PAYLOAD_POLICY)
     reproducibility_policy = load_json(REPRO_POLICY)
 
-    run([sys.executable, str(RELEASE_EVIDENCE_PY)])
+    run(python_script_command(RELEASE_EVIDENCE_PY))
     if not EVIDENCE_INDEX_PATH.is_file():
         raise RuntimeError(f"missing release evidence index {repo_rel(EVIDENCE_INDEX_PATH)}")
 

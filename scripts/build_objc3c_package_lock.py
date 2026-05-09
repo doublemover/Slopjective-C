@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import command_text, python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,10 @@ def provenance_id(package_id: str) -> str:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    build_lock_command = command_text(python_script_command("scripts/build_objc3c_package_lock.py"))
+    authoring_check_command = command_text(
+        python_script_command("scripts/check_objc3c_package_authoring_workflow.py")
+    )
     sources = contract["package_sources"]
     module_inventory = load_json(ROOT / str(sources["stdlib_module_inventory"]))
     package_surface = load_json(ROOT / str(sources["stdlib_package_surface"]))
@@ -71,7 +76,7 @@ def main() -> int:
                 "provenance_id": provenance_id(package_id),
                 "source_path": source,
                 "generator": "scripts/build_objc3c_package_lock.py",
-                "replay_command": "python scripts/build_objc3c_package_lock.py",
+                "replay_command": build_lock_command,
             }
         )
         digest_inputs.append(source)
@@ -92,7 +97,7 @@ def main() -> int:
                 "provenance_id": provenance_id(package_id),
                 "source_path": source,
                 "generator": "scripts/build_objc3c_package_lock.py",
-                "replay_command": "python scripts/build_objc3c_package_lock.py",
+                "replay_command": build_lock_command,
             }
         )
         digest_inputs.append(source)
@@ -122,8 +127,8 @@ def main() -> int:
         "digest_inputs": digest_inputs,
         "replay": {
             "commands": [
-                "python scripts/build_objc3c_package_lock.py",
-                "python scripts/check_objc3c_package_authoring_workflow.py",
+                build_lock_command,
+                authoring_check_command,
             ]
         },
     }

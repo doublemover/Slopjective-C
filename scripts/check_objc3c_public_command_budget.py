@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
@@ -29,9 +30,9 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def main(argv: Sequence[str]) -> int:
     args = parse_args(argv)
-    subprocess.run([sys.executable, str(CONTRACT_BUILDER), '--output', str(DEFAULT_CONTRACT)], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(CONTRACT_BUILDER, '--output', DEFAULT_CONTRACT), cwd=ROOT, check=True)
     contract = json.loads(DEFAULT_CONTRACT.read_text(encoding='utf-8'))
-    subprocess.run([sys.executable, str(COMMAND_SURFACE_PY), '--check'], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(COMMAND_SURFACE_PY, '--check'), cwd=ROOT, check=True)
 
     package_bridges = [entry['package_bridge'] for entry in contract['package_bridges']]
     failures: list[str] = []

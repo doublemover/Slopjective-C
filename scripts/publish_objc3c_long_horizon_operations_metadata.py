@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,7 +35,7 @@ def ensure_integration() -> None:
         if summary.get("status") == "PASS" and EVIDENCE_ARTIFACT.is_file():
             return
     result = subprocess.run(
-        [sys.executable, str(INTEGRATION_CHECK)],
+        python_script_command(INTEGRATION_CHECK),
         cwd=ROOT,
         text=True,
         capture_output=True,

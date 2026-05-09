@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.public_runner import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,6 @@ CONTRACT_PATH = ROOT / "tests/tooling/fixtures/concurrency_runtime_closure/lower
 ACCEPTANCE_SCRIPT = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
 ACCEPTANCE_REPORT = ROOT / "tmp/reports/runtime/acceptance/summary.json"
 FRONTEND_ARTIFACTS = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
-WORKFLOW_RUNNER = ROOT / "scripts/objc3c_workflow/runner.py"
 OUT_DIR = ROOT / "tmp/reports/concurrency-runtime-closure/lowering-runtime-abi"
 JSON_OUT = OUT_DIR / "concurrency_lowering_runtime_abi_summary.json"
 MD_OUT = OUT_DIR / "concurrency_lowering_runtime_abi_summary.md"
@@ -26,7 +26,6 @@ def main() -> int:
     acceptance_text = ACCEPTANCE_SCRIPT.read_text(encoding="utf-8")
     acceptance_report = read_json(ACCEPTANCE_REPORT)
     frontend_text = FRONTEND_ARTIFACTS.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_RUNNER.read_text(encoding="utf-8")
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_concurrency_runtime_closure_artifact_summary.py",
@@ -44,8 +43,8 @@ def main() -> int:
         "frontend_surface_fields_are_emitted": all(
             field in frontend_text for field in contract["frontend_surface_fields"]
         ),
-        "workflow_runner_exports_required_actions": all(
-            f"def {name}(" in workflow_text for name in contract["required_public_workflow_actions"]
+        "workflow_runner_exports_required_actions": public_workflow_has_action_identifiers(
+            contract["required_public_workflow_actions"]
         ),
     }
 

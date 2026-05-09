@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
-from objc3c_workflow.registry_views import action_names
+from objc3c_tooling.public_runner import public_workflow_action_names, public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-security-hardening.json"
 WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "workflow_surface.json"
 SOURCE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "source-surface-summary.json"
@@ -45,7 +45,7 @@ def expect(condition: bool, message: str) -> None:
 
 def ensure_workflow_report() -> dict[str, Any]:
     completed = subprocess.run(
-        [sys.executable, str(RUNNER), "validate-security-hardening"],
+        public_workflow_command("validate-security-hardening"),
         cwd=ROOT,
         check=False,
         text=True,
@@ -76,7 +76,7 @@ def main() -> int:
         expect(payload.get("status") == "PASS", f"security artifact did not pass: {repo_rel(path)}")
 
     integration = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "check_objc3c_security_hardening_integration.py")],
+        python_script_command(ROOT / "scripts" / "check_objc3c_security_hardening_integration.py"),
         cwd=ROOT,
         check=False,
         text=True,
@@ -98,7 +98,7 @@ def main() -> int:
     expect(isinstance(package_scripts, dict), "package.json scripts drifted from object")
     package_bridge = str(workflow_surface["package_bridge"])
     expect(package_bridge in package_scripts, f"package.json missing package bridge {package_bridge}")
-    registered_actions = set(action_names())
+    registered_actions = set(public_workflow_action_names())
     for action in workflow_surface["required_actions"]:
         expect(str(action) in registered_actions, f"workflow registry missing action {action}")
 

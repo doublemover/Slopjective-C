@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,9 +21,9 @@ STDLIB_PROGRAM_SUMMARY = ROOT / "tmp" / "reports" / "stdlib" / "program-integrat
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "integration-summary.json"
 
 STEPS = [
-    ("package-authoring-workflow", [sys.executable, "scripts/check_objc3c_package_authoring_workflow.py"]),
-    ("application-architecture-integration", [sys.executable, "scripts/check_objc3c_application_architecture_integration.py"]),
-    ("stdlib-program-integration", [sys.executable, "scripts/check_objc3c_stdlib_program_integration.py"]),
+    ("package-authoring-workflow", python_script_command("scripts/check_objc3c_package_authoring_workflow.py")),
+    ("application-architecture-integration", python_script_command("scripts/check_objc3c_application_architecture_integration.py")),
+    ("stdlib-program-integration", python_script_command("scripts/check_objc3c_stdlib_program_integration.py")),
 ]
 
 

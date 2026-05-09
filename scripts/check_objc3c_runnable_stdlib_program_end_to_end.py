@@ -3,14 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,11 +30,11 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    stdlib_result = run_capture([sys.executable, str(RUNNABLE_STDLIB_FOUNDATION_E2E_PY)])
+    stdlib_result = run_capture(python_script_command(RUNNABLE_STDLIB_FOUNDATION_E2E_PY))
     if stdlib_result.returncode != 0:
         raise RuntimeError("runnable stdlib foundation validation failed")
 
-    showcase_result = run_capture([sys.executable, str(RUNNABLE_SHOWCASE_E2E_PY)])
+    showcase_result = run_capture(python_script_command(RUNNABLE_SHOWCASE_E2E_PY))
     if showcase_result.returncode != 0:
         raise RuntimeError("runnable showcase validation failed")
 

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,11 +31,11 @@ MIGRATION_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "migratio
 ARTIFACT_CONTRACT_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "artifact-contract-summary.json"
 
 STEPS = [
-    ("boundary-inventory", [sys.executable, "scripts/build_adoption_legibility_boundary_inventory_summary.py"]),
-    ("public-claim-policy", [sys.executable, "scripts/build_adoption_legibility_public_claim_policy_summary.py"]),
-    ("capability-comparison", [sys.executable, "scripts/build_adoption_legibility_capability_comparison_summary.py"]),
-    ("migration-playbook", [sys.executable, "scripts/build_adoption_legibility_migration_playbook_summary.py"]),
-    ("artifact-contract", [sys.executable, "scripts/build_adoption_legibility_artifact_contract_summary.py"]),
+    ("boundary-inventory", python_script_command("scripts/build_adoption_legibility_boundary_inventory_summary.py")),
+    ("public-claim-policy", python_script_command("scripts/build_adoption_legibility_public_claim_policy_summary.py")),
+    ("capability-comparison", python_script_command("scripts/build_adoption_legibility_capability_comparison_summary.py")),
+    ("migration-playbook", python_script_command("scripts/build_adoption_legibility_migration_playbook_summary.py")),
+    ("artifact-contract", python_script_command("scripts/build_adoption_legibility_artifact_contract_summary.py")),
 ]
 
 

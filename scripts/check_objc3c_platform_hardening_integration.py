@@ -3,16 +3,15 @@
 
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.public_runner import public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PACKAGE_MANIFEST = ROOT / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
 PACKAGED_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "platform_hardening" / "packaged_smoke_integration_contract.json"
 BUILD_PACKAGE_VALIDATION_PY = ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"
@@ -83,10 +82,10 @@ def main() -> int:
         return 0
 
     steps = [
-        run_step("build-platform-support-matrix", [sys.executable, str(PUBLIC_RUNNER), "build-platform-support-matrix"]),
-        run_step("check-platform-hardening-build-package-validation", [sys.executable, str(BUILD_PACKAGE_VALIDATION_PY)]),
-        run_step("check-platform-hardening-toolchain-range-replay", [sys.executable, str(TOOLCHAIN_RANGE_REPLAY_PY)]),
-        run_step("check-platform-hardening-install-matrix-integration", [sys.executable, str(INSTALL_MATRIX_INTEGRATION_PY)]),
+        run_step("build-platform-support-matrix", public_workflow_command("build-platform-support-matrix")),
+        run_step("check-platform-hardening-build-package-validation", python_script_command(BUILD_PACKAGE_VALIDATION_PY)),
+        run_step("check-platform-hardening-toolchain-range-replay", python_script_command(TOOLCHAIN_RANGE_REPLAY_PY)),
+        run_step("check-platform-hardening-install-matrix-integration", python_script_command(INSTALL_MATRIX_INTEGRATION_PY)),
     ]
     failures: list[str] = []
     step_summary_paths = {

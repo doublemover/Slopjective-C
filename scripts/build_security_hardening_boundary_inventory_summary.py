@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
-from objc3c_workflow.registry_views import action_names
+from objc3c_tooling.public_runner import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +32,7 @@ def read_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    registered_actions = set(action_names())
+    registered_actions = set(public_workflow_action_names())
     missing_actions = [
         str(action)
         for action in contract["public_actions"]

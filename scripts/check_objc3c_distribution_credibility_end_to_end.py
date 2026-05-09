@@ -11,11 +11,11 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TRUST_REPORT_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 TRUST_REPORT_MD = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.md"
 DASHBOARD_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "dashboard" / "distribution-credibility-dashboard.json"
@@ -32,7 +32,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    result = run_capture([sys.executable, str(RUNNER), "validate-distribution-credibility"])
+    result = run_capture(public_workflow_command("validate-distribution-credibility"))
     if result.returncode != 0:
         raise RuntimeError("validate-distribution-credibility failed")
 

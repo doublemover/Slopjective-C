@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.public_runner import public_workflow_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 VALIDATE_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-external-validation.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "external-validation" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.external_validation.integration.summary.v1"
@@ -41,7 +41,7 @@ def ensure_validate_report() -> dict[str, Any]:
         if report.get("status") == "PASS":
             return report
     completed = subprocess.run(
-        [sys.executable, str(RUNNER), "validate-external-validation"],
+        public_workflow_command("validate-external-validation"),
         cwd=ROOT,
         check=False,
         text=True,

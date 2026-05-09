@@ -7,14 +7,13 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +50,7 @@ def main() -> int:
     install_root = work_root / "install-root"
     offline_install_root = work_root / "offline-install-root"
 
-    build_result = run_capture([sys.executable, str(BUILD_PACKAGE_CHANNELS_PY)], cwd=ROOT, capture_output=False)
+    build_result = run_capture(python_script_command(BUILD_PACKAGE_CHANNELS_PY), cwd=ROOT, capture_output=False)
     if build_result.returncode != 0:
         raise RuntimeError("package-channels build failed")
 

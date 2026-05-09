@@ -10,11 +10,11 @@ import subprocess
 import sys
 from pathlib import Path
 from objc3c_tooling.json_io import write_report_json
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_completed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
 GUIDED_WALKTHROUGH = ROOT / "showcase" / "tutorial_walkthrough.json"
 WORKSPACE_CONTRACT_ID = "objc3c.showcase.example.workspace.v1"
@@ -291,7 +291,7 @@ def main() -> int:
     if not selected_examples:
         return fail("selection produced no showcase examples")
 
-    if run([sys.executable, str(RUNNER), "build-native-binaries"]) != 0:
+    if run(public_workflow_command("build-native-binaries")) != 0:
         return fail("build-native-binaries failed")
 
     machine_output_root = ROOT / "tmp" / "artifacts" / "showcase"
@@ -319,16 +319,14 @@ def main() -> int:
         if workspace_payload.get("module_name") != module_match.group(1):
             return fail(f"workspace manifest module_name drifted for {example_id}")
         out_dir = machine_output_root / example_id
-        command = [
-            sys.executable,
-            str(RUNNER),
+        command = public_workflow_command(
             "compile-objc3c",
             source,
             "--out-dir",
             str(out_dir),
             "--emit-prefix",
             "module",
-        ]
+        )
         if run(command) != 0:
             return fail(f"compile failed for showcase example {example_id}")
         required_artifacts = {

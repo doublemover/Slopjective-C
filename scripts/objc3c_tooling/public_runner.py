@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,72 @@ for import_root in (ROOT, SCRIPT_ROOT):
 
 def public_workflow_command(*args: str) -> list[str]:
     return [sys.executable, "-m", WORKFLOW_MODULE, *args]
+
+
+def public_workflow_command_tuple(*args: str) -> tuple[str, ...]:
+    return tuple(public_workflow_command(*args))
+
+
+def public_workflow_list_command() -> list[str]:
+    return public_workflow_command("--list-json")
+
+
+def public_workflow_describe_command(action: str) -> list[str]:
+    return public_workflow_command("--describe", action)
+
+
+def public_workflow_action_names() -> list[str]:
+    from scripts.objc3c_workflow.registry_views import action_names
+
+    return action_names()
+
+
+def public_workflow_action_count() -> int:
+    from scripts.objc3c_workflow.registry_views import action_count
+
+    return action_count()
+
+
+def public_workflow_action_identifiers() -> set[str]:
+    identifiers: set[str] = set()
+    for action in public_workflow_action_names():
+        function_stem = action.replace("-", "_")
+        identifiers.add(action)
+        identifiers.add(function_stem)
+        identifiers.add(f"action_{function_stem}")
+    return identifiers
+
+
+def public_workflow_has_actions(actions: Iterable[str]) -> bool:
+    available = set(public_workflow_action_names())
+    return all(action in available for action in actions)
+
+
+def public_workflow_has_action_identifiers(identifiers: Iterable[str]) -> bool:
+    available = public_workflow_action_identifiers()
+    return all(identifier in available for identifier in identifiers)
+
+
+def public_workflow_list_payload() -> dict[str, object]:
+    from scripts.objc3c_workflow.action_payloads import list_actions_payload
+
+    return list_actions_payload()
+
+
+def public_workflow_action_payload(action: str) -> dict[str, object]:
+    from scripts.objc3c_workflow.action_payloads import describe_action_payload
+
+    return describe_action_payload(action)
+
+
+def public_workflow_action_payloads() -> list[dict[str, object]]:
+    return [public_workflow_action_payload(action) for action in public_workflow_action_names()]
+
+
+def public_workflow_package_bridge_payload(script_name: str) -> dict[str, object]:
+    from scripts.objc3c_workflow.npm_surface import describe_package_script_payload
+
+    return describe_package_script_payload(script_name)
 
 
 def load_public_workflow_runner(

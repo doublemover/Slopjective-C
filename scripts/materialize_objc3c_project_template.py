@@ -13,13 +13,13 @@ from typing import Sequence
 
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import display_path
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
 TEMPLATE_REPORT_ROOT = ROOT / "tmp" / "reports" / "project-template"
 TEMPLATE_CONTRACT_ID = "objc3c.project.template.surface.v1"
@@ -170,25 +170,21 @@ def main() -> int:
 
     integration_step = run_step(
         "inspect-bonus-tool-integration",
-        [sys.executable, str(PUBLIC_RUNNER), "inspect-bonus-tool-integration"],
+        public_workflow_command("inspect-bonus-tool-integration"),
     )
     playground_step = run_step(
         "materialize-playground-workspace",
-        [
-            sys.executable,
-            str(PUBLIC_RUNNER),
+        public_workflow_command(
             "materialize-playground-workspace",
             display_path(template_source),
-        ],
+        ),
     )
     benchmark_step = run_step(
         "benchmark-runtime-inspector",
-        [
-            sys.executable,
-            str(PUBLIC_RUNNER),
+        public_workflow_command(
             "benchmark-runtime-inspector",
             display_path(template_source),
-        ],
+        ),
     )
 
     failures: list[str] = []

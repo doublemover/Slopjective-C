@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
+from objc3c_tooling.public_runner import public_workflow_list_command
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -17,8 +19,8 @@ CATALOG_JSON_PATH = PLAN_DIR / 'validation_harness_catalog.json'
 CATALOG_MD_PATH = PLAN_DIR / 'validation_harness_catalog.md'
 SUMMARY_JSON_PATH = REPORT_DIR / 'validation_harness_catalog.json'
 SUMMARY_MD_PATH = REPORT_DIR / 'validation_harness_catalog.md'
-HARNESS_LIST_COMMAND = ['python', 'scripts/shared_compiler_runtime_acceptance_harness.py', '--list-suites']
-WORKFLOW_LIST_COMMAND = ['python', '-m', 'scripts.objc3c_workflow', '--list-json']
+HARNESS_LIST_COMMAND = python_script_command('scripts/shared_compiler_runtime_acceptance_harness.py', '--list-suites')
+WORKFLOW_LIST_COMMAND = public_workflow_list_command()
 PUBLIC_NPM_BRIDGE = 'npm run objc3c -- '
 DEFAULT_POLICY = {
     'policy_id': 'objc3c.validation_consolidation_policy.v1',

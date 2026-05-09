@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 COMPATIBILITY_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-compatibility-report.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-summary.json"
@@ -66,7 +66,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise RuntimeError(f"unexpected arguments: {args}")
 
     if not skip_upstream:
-        result = run_capture([sys.executable, str(RUNNER), "validate-release-operations"], capture_output=False)
+        result = run_capture(public_workflow_command("validate-release-operations"), capture_output=False)
         if result.returncode != 0:
             raise RuntimeError("validate-release-operations failed")
 

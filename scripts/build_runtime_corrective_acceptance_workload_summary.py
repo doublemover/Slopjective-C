@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.subprocesses import run_completed as run_command
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json"
@@ -31,14 +30,14 @@ def main() -> int:
     suite_payloads: dict[str, dict[str, Any]] = {}
     suite_ok = True
     for suite_id in contract["suite_ids"]:
-        result = run_command([sys.executable, str(HARNESS_PATH), "--show-suite", suite_id])
+        result = run_command(python_script_command(HARNESS_PATH, "--show-suite", suite_id))
         if result.returncode != 0:
             suite_ok = False
             continue
         payload = json.loads(result.stdout)
         suite_payloads[suite_id] = payload
 
-    catalog_result = run_command([sys.executable, str(HARNESS_PATH), "--check-catalog"])
+    catalog_result = run_command(python_script_command(HARNESS_PATH, "--check-catalog"))
     catalog_payload = json.loads(catalog_result.stdout) if catalog_result.returncode == 0 else {}
 
     dispatch_probe_paths = [ROOT / path for path in contract["dispatch_focus"]["authoritative_probe_paths"]]

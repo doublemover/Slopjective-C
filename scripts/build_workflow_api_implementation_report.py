@@ -5,12 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
+from objc3c_tooling.public_runner import public_workflow_action_payload
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-api-implementation'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
-RUNNER = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 PLAN_JSON_PATH = PLAN_DIR / 'workflow_api_implementation.json'
 PLAN_MD_PATH = PLAN_DIR / 'workflow_api_implementation.md'
@@ -19,15 +20,10 @@ REPORT_MD_PATH = REPORT_DIR / 'workflow_api_implementation_report.md'
 
 
 
-def read_json_from_command(command: list[str]) -> dict[str, object]:
-    result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
-    return json.loads(result.stdout)
-
-
 def main() -> None:
-    subprocess.run([sys.executable, str(CONTRACT_BUILDER)], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(CONTRACT_BUILDER), cwd=ROOT, check=True)
     contract = json.loads(DEFAULT_CONTRACT_PATH.read_text(encoding='utf-8'))
-    describe_lint = read_json_from_command([sys.executable, str(RUNNER), '--describe', 'lint'])
+    describe_lint = public_workflow_action_payload('lint')
 
     payload = {
         'issue': 'workflow-api-implementation',

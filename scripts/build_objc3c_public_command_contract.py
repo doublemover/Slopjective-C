@@ -7,16 +7,19 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.public_runner import load_public_workflow_runner
+from objc3c_tooling.public_runner import (
+    public_workflow_action_payloads,
+    public_workflow_list_payload,
+    public_workflow_package_bridge_payload,
+)
 
 sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_JSON = ROOT / 'package.json'
-DISPATCH_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'action_dispatch.py'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
 DEFAULT_OUTPUT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 
@@ -28,27 +31,18 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-
-def load_runner() -> Any:
-    return load_public_workflow_runner(
-        runner_path=DISPATCH_PATH,
-        module_name='scripts.objc3c_workflow.action_dispatch',
-    )
-
-
 def build_contract() -> dict[str, object]:
     package = load_json(PACKAGE_JSON)
     schema = load_json(SCHEMA_PATH)
-    runner = load_runner()
-    list_payload = runner.list_actions_payload()
+    list_payload = public_workflow_list_payload()
     package_scripts = package['scripts']
 
     package_bridge_names = sorted(name for name in package_scripts if name == 'objc3c')
     missing_package_bridge = [] if package_bridge_names == ['objc3c'] else ['objc3c']
     unexpected_package_bridges = sorted(name for name in package_scripts if name != 'objc3c')
 
-    action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
-    package_bridge_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_bridge_names]
+    action_payloads = sorted(public_workflow_action_payloads(), key=lambda payload: str(payload.get('action')))
+    package_bridge_payloads = [public_workflow_package_bridge_payload(script_name) for script_name in package_bridge_names]
     operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
     maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 

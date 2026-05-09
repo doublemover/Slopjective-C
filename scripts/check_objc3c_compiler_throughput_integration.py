@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "compiler_throughput" / "artifact_surface.json"
 SUMMARY = ROOT / "tmp" / "reports" / "compiler-throughput" / "benchmark-summary.json"
 REPORT = ROOT / "tmp" / "reports" / "compiler-throughput" / "integration-summary.json"
@@ -30,7 +30,7 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 
 def main() -> int:
-    step = run_capture([sys.executable, str(RUNNER), "benchmark-compiler-throughput"])
+    step = run_capture(public_workflow_command("benchmark-compiler-throughput"))
     failures: list[str] = []
     expect(step.returncode == 0, "benchmark-compiler-throughput failed", failures)
     expect(ARTIFACT_SURFACE.is_file(), f"missing artifact surface: {repo_rel(ARTIFACT_SURFACE)}", failures)

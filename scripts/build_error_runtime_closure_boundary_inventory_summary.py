@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.public_runner import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,6 @@ DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_error_runtime_closure.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 PACKAGE_PATH = ROOT / "package.json"
-WORKFLOW_RUNNER_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -28,7 +28,6 @@ def main() -> int:
     doc_text = DOC_PATH.read_text(encoding="utf-8")
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     package_text = PACKAGE_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_RUNNER_PATH.read_text(encoding="utf-8")
 
     code_paths = [ROOT / path for path in contract["authoritative_code_paths"]]
     probe_paths = [ROOT / path for path in contract["authoritative_probe_paths"]]
@@ -47,7 +46,7 @@ def main() -> int:
         "docs_publish_error_runtime_impl_surface": "## Error Propagation Catch And Cleanup Runtime Implementation Surface" in doc_text,
         "runbook_mentions_private_runtime_helper_constraint": "error behavior stays on the private runtime-owned helper and snapshot surfaces" in runbook_text,
         "public_command_surfaces_exist": all(command in package_text for command in contract["public_command_surfaces"]),
-        "public_workflow_actions_exist": all(action in workflow_text for action in contract["public_workflow_actions"]),
+        "public_workflow_actions_exist": public_workflow_has_action_identifiers(contract["public_workflow_actions"]),
     }
 
     symbol_occurrence_counts = {

@@ -4,9 +4,9 @@ from __future__ import annotations
 from objc3c_tooling.json_io import write_json_file
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import command_text, python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts/generate_conformance_evidence_index.py"
@@ -28,17 +28,19 @@ def normalize(path: Path) -> str:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
+    expected_generator_command = command_text(
+        python_script_command("scripts/generate_conformance_evidence_index.py")
+    )
     result = subprocess.run(
-        [
-            sys.executable,
-            str(GENERATOR),
+        python_script_command(
+            GENERATOR,
             "--input-root",
             normalize(INPUT_ROOT),
             "--output",
             normalize(INDEX_OUTPUT),
             "--release-label",
             "v0.11",
-        ],
+        ),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -58,14 +60,14 @@ def main() -> int:
         "required_envelope_fields_present": isinstance(envelope, dict)
         and all(field in envelope for field in required_fields),
         "contract_provenance_class_matches_output": envelope.get("provenance_class") == contract["provenance_class"],
-        "contract_generator_family_matches_output": envelope.get("generator_or_compile_path") in contract["generator_families"],
+        "generator_command_matches_canonical_helper": envelope.get("generator_or_compile_path") == expected_generator_command,
         "output_path_under_allowed_roots": any(
             envelope.get("output_path", "").startswith(root) for root in contract["output_roots"]
         ),
         "input_root_matches_reports_conformance": envelope.get("input_root") == "reports/conformance",
         "output_path_matches_release_evidence_index": envelope.get("output_path") == "tmp/reports/release_evidence/evidence-index.json",
         "replay_uses_canonical_generator": isinstance(command, list)
-        and command[:2] == ["python", "scripts/generate_conformance_evidence_index.py"],
+        and command[:2] == python_script_command("scripts/generate_conformance_evidence_index.py"),
         "replay_includes_input_and_output_paths": isinstance(command, list)
         and "--input-root" in command
         and "--output" in command,

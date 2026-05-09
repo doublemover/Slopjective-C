@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,10 +39,10 @@ def main() -> int:
     contract = read_json(CONTRACT_PATH)
     probe_summary = ROOT / contract["toolchain_probe_summary"].replace("/", "\\")
 
-    run([sys.executable, str(MATRIX_GENERATOR)])
-    run([sys.executable, str(PROBE_SCRIPT), "--summary-out", repo_rel(probe_summary)])
-    run([sys.executable, str(UPDATE_MANIFEST_SCRIPT)])
-    run([sys.executable, str(PUBLICATION_SCRIPT)])
+    run(python_script_command(MATRIX_GENERATOR))
+    run(python_script_command(PROBE_SCRIPT, "--summary-out", repo_rel(probe_summary)))
+    run(python_script_command(UPDATE_MANIFEST_SCRIPT))
+    run(python_script_command(PUBLICATION_SCRIPT))
 
     matrix = read_json(MATRIX_PATH)
     capabilities = read_json(probe_summary)

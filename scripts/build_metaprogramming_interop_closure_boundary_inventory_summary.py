@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.public_runner import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,6 @@ def main() -> int:
     interop_report = read_json(INTEROP_REPORT)
     runtime_text = (ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp").read_text(encoding="utf-8")
     package_text = (ROOT / "package.json").read_text(encoding="utf-8")
-    workflow_text = (ROOT / "scripts/objc3c_workflow/runner.py").read_text(encoding="utf-8")
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
@@ -52,7 +52,7 @@ def main() -> int:
             for key in contract["authoritative_interop_surface_keys"]
         ),
         "package_json_preserves_public_commands": all(command in package_text for command in contract["public_commands"]),
-        "workflow_runner_preserves_public_actions": all(action.replace("-", "_") in workflow_text for action in contract["public_workflows"]),
+        "workflow_runner_preserves_public_actions": public_workflow_has_action_identifiers(contract["public_workflows"]),
     }
 
     summary = {

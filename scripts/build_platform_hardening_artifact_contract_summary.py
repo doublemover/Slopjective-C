@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json"
@@ -31,7 +32,11 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_objc3c_platform_support_matrix.py")], cwd=ROOT, check=True)
+    subprocess.run(
+        python_script_command(ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"),
+        cwd=ROOT,
+        check=True,
+    )
     contract = read_json(CONTRACT_PATH)
     schema = read_json(SCHEMA_PATH)
     artifact = read_json(resolve_repo_path(contract["generated_artifact_path"]))

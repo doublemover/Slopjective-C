@@ -9,7 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed
+from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
@@ -45,9 +45,9 @@ def main() -> int:
     metadata_surface = load_json(METADATA_SURFACE)
 
     if not PACKAGE_CHANNELS_SUMMARY.is_file() or not RELEASE_MANIFEST.is_file():
-        run([sys.executable, str(PACKAGE_CHANNELS_BUILD)])
+        run(python_script_command(PACKAGE_CHANNELS_BUILD))
     if not PLATFORM_SUPPORT_MATRIX.is_file():
-        run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_BUILD)])
+        run(python_script_command(PLATFORM_SUPPORT_MATRIX_BUILD))
 
     package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY)
     release_manifest = load_json(RELEASE_MANIFEST)

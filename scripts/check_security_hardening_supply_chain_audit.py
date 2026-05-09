@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.subprocesses import run_completed as run_step
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_step
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,15 +13,15 @@ CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" /
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "supply-chain-audit-summary.json"
 
 STEP_COMMANDS = {
-    "build_security_hardening_response_policy_summary": [sys.executable, "scripts/build_security_hardening_response_policy_summary.py"],
-    "build_security_hardening_macro_trust_policy_summary": [sys.executable, "scripts/build_security_hardening_macro_trust_policy_summary.py"],
-    "build_security_hardening_release_key_policy_summary": [sys.executable, "scripts/build_security_hardening_release_key_policy_summary.py"],
-    "check_release_evidence": [sys.executable, "scripts/check_release_evidence.py"],
-    "check_source_hygiene_authenticity": [sys.executable, "scripts/check_source_hygiene_authenticity.py"],
-    "publish_objc3c_release_provenance": [sys.executable, "scripts/publish_objc3c_release_provenance.py"],
-    "build_objc3c_update_manifest": [sys.executable, "scripts/build_objc3c_update_manifest.py"],
-    "publish_objc3c_release_operations_metadata": [sys.executable, "scripts/publish_objc3c_release_operations_metadata.py"],
-    "publish_objc3c_distribution_trust_report": [sys.executable, "scripts/publish_objc3c_distribution_trust_report.py"]
+    "build_security_hardening_response_policy_summary": python_script_command("scripts/build_security_hardening_response_policy_summary.py"),
+    "build_security_hardening_macro_trust_policy_summary": python_script_command("scripts/build_security_hardening_macro_trust_policy_summary.py"),
+    "build_security_hardening_release_key_policy_summary": python_script_command("scripts/build_security_hardening_release_key_policy_summary.py"),
+    "check_release_evidence": python_script_command("scripts/check_release_evidence.py"),
+    "check_source_hygiene_authenticity": python_script_command("scripts/check_source_hygiene_authenticity.py"),
+    "publish_objc3c_release_provenance": python_script_command("scripts/publish_objc3c_release_provenance.py"),
+    "build_objc3c_update_manifest": python_script_command("scripts/build_objc3c_update_manifest.py"),
+    "publish_objc3c_release_operations_metadata": python_script_command("scripts/publish_objc3c_release_operations_metadata.py"),
+    "publish_objc3c_distribution_trust_report": python_script_command("scripts/publish_objc3c_distribution_trust_report.py")
 }
 
 

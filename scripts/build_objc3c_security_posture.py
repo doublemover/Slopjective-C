@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,7 +41,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "security-postu
 
 def ensure_success(path: Path, script: Path) -> dict[str, Any]:
     if not path.is_file():
-        result = run_capture([sys.executable, str(script)])
+        result = run_capture(python_script_command(script))
         if result.returncode != 0:
             raise RuntimeError(f"failed to build required report via {repo_rel(script)}")
     payload = load_json(path)

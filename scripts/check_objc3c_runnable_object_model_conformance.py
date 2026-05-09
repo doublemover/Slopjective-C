@@ -4,14 +4,12 @@
 from __future__ import annotations
 
 import os
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -99,7 +97,7 @@ def expect(condition: bool, message: str) -> None:
 def main() -> int:
     if os.environ.get("OBJC3C_SKIP_INTEGRATION_RERUN") != "1":
         integration_result = run_capture(
-            [sys.executable, str(INTEGRATION_SCRIPT)]
+            python_script_command(INTEGRATION_SCRIPT)
         )
         if integration_result.returncode != 0:
             raise RuntimeError("runtime architecture integration workflow failed")

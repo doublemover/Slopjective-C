@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.subprocesses import command_text, python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCRIPT = ROOT / "scripts" / "generate_conformance_evidence_index.py"
@@ -62,7 +63,7 @@ def main() -> int:
 
     if REPORTS_CONFORMANCE_ROOT.is_dir():
         claim_drift_result = subprocess.run(
-            [sys.executable, str(PUBLIC_CLAIM_DRIFT_SCRIPT), "--check"],
+            python_script_command(PUBLIC_CLAIM_DRIFT_SCRIPT, "--check"),
             cwd=ROOT,
             text=True,
             capture_output=True,
@@ -95,16 +96,15 @@ def main() -> int:
         )
 
     INDEX_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    index_command = [
-        sys.executable,
-        str(INDEX_SCRIPT),
+    index_command = python_script_command(
+        INDEX_SCRIPT,
         "--input-root",
         input_root_arg,
         "--output",
         str(INDEX_OUTPUT),
         "--release-label",
         "v0.11",
-    ]
+    )
     if allow_empty_index:
         index_command.append("--allow-empty")
     result = subprocess.run(
@@ -141,7 +141,9 @@ def main() -> int:
         "surface_id": "objc3c.public_conformance.evidence_index.v1",
         "artifact_family_id": "objc3c.genuine_generated_output.conformance_evidence_index.v1",
         "report_family_id": "objc3c.genuine_generated_output.release_evidence_index_report.v1",
-        "generator_or_compile_path": "python scripts/generate_conformance_evidence_index.py",
+        "generator_or_compile_path": command_text(
+            python_script_command("scripts/generate_conformance_evidence_index.py")
+        ),
         "input_root": input_root_arg,
         "output_path": "tmp/reports/release_evidence/evidence-index.json",
     }
@@ -156,7 +158,8 @@ def main() -> int:
     replay_command = replay.get("command")
     if replay.get("cwd") != ".":
         return fail("generated index replay instructions must set cwd to repository root")
-    if not isinstance(replay_command, list) or replay_command[:2] != ["python", "scripts/generate_conformance_evidence_index.py"]:
+    expected_replay_prefix = python_script_command("scripts/generate_conformance_evidence_index.py")
+    if not isinstance(replay_command, list) or replay_command[:2] != expected_replay_prefix:
         return fail("generated index replay instructions must invoke the canonical generator")
 
     artifact_paths = {

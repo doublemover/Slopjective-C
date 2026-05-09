@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.public_runner import WORKFLOW_MODULE, public_workflow_action_payload
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -14,7 +16,6 @@ REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integra
 TOPOLOGY_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
-WORKFLOW_MODULE = '.'.join(('scripts', 'objc3c_workflow'))
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 TOPOLOGY_BUILDER = ROOT / 'scripts' / 'build_validation_ci_topology.py'
 PUBLIC_NPM_BRIDGE = 'npm run objc3c -- '
@@ -24,20 +25,13 @@ EXPECTED_PACKAGE_BRIDGE_SCRIPT = ' '.join(('python', '-m', WORKFLOW_MODULE))
 
 
 def describe_action(action: str) -> dict[str, Any]:
-    result = subprocess.run(
-        [sys.executable, '-m', WORKFLOW_MODULE, '--describe', action],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return json.loads(result.stdout)
+    return public_workflow_action_payload(action)
 
 
 def ensure_topology() -> None:
     if TOPOLOGY_PATH.is_file():
         return
-    subprocess.run(['python', str(TOPOLOGY_BUILDER)], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(TOPOLOGY_BUILDER), cwd=ROOT, check=True)
 
 
 def main() -> None:

@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.public_runner import public_workflow_list_payload
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "tmp" / "reports" / "m313" / "validation-surface-inventory"
 JSON_OUT = REPORT_DIR / "validation_surface_inventory.json"
 MD_OUT = REPORT_DIR / "validation_surface_inventory.md"
 PACKAGE_JSON = ROOT / "package.json"
-WORKFLOW_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TASK_HYGIENE_GATE = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 ACCEPTANCE_HARNESS = ROOT / "scripts" / "shared_compiler_runtime_acceptance_harness.py"
 CHECK_ROOTS = [ROOT / "scripts", ROOT / "tests", ROOT / "native", ROOT / "docs", ROOT / "showcase", ROOT / "stdlib"]
@@ -147,7 +148,7 @@ def package_scripts() -> dict[str, str]:
 
 
 def acceptance_harness_catalog() -> dict[str, Any]:
-    return run_json(["python", str(ACCEPTANCE_HARNESS), "--list-suites"])
+    return run_json(python_script_command(ACCEPTANCE_HARNESS, "--list-suites"))
 
 
 def classify_check_py(rel: str) -> dict[str, str]:
@@ -217,7 +218,12 @@ def referenced_by(package: dict[str, str], workflow_text: str, hygiene_text: str
 def main() -> int:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     package = package_scripts()
-    workflow_text = WORKFLOW_RUNNER.read_text(encoding="utf-8")
+    workflow_payload = public_workflow_list_payload()
+    workflow_text = "\n".join(
+        str(action.get("backend", ""))
+        for action in workflow_payload.get("actions", [])
+        if isinstance(action, dict)
+    )
     hygiene_text = TASK_HYGIENE_GATE.read_text(encoding="utf-8")
     acceptance_catalog = acceptance_harness_catalog()
 

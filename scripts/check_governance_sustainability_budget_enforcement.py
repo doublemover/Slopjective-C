@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.public_runner import public_workflow_action_count
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability"
@@ -32,10 +33,6 @@ def read_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeError(f"JSON object expected at {path}")
     return payload
-
-
-def count_action_definitions(path: Path) -> int:
-    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("def action_"))
 
 
 def iter_live_files(roots: list[Path]):
@@ -96,7 +93,7 @@ def main() -> int:
         "package_bridge_count": package_bridge_count,
         "package_bridge_budget": int(re.search(r"PACKAGE_BRIDGE_BUDGET = (\d+)", task_hygiene_text).group(1)),
         "package_bridge": "objc3c" if package_bridge_count else "",
-        "public_workflow_action_count": count_action_definitions(ROOT / "scripts" / "objc3c_workflow" / "runner.py"),
+        "public_workflow_action_count": public_workflow_action_count(),
         "runbook_count": len(list((ROOT / "docs" / "runbooks").glob("*.md"))),
         "schema_count": len(list((ROOT / "schemas").glob("*.json"))),
         "live_check_script_count": len(list((ROOT / "scripts").rglob("check_*.py"))),

@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
+from objc3c_tooling.public_runner import public_workflow_action_payload, public_workflow_has_actions
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "stress" / "integration-summary.json"
 COMMAND_SURFACE = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 PACKAGE_JSON = ROOT / "package.json"
@@ -52,7 +53,7 @@ def ensure_integration_report() -> dict[str, Any]:
         if report.get("status") == "PASS":
             return report
     run_checked(
-        [sys.executable, str(ROOT / "scripts" / "check_objc3c_stress_integration.py")],
+        python_script_command(ROOT / "scripts" / "check_objc3c_stress_integration.py"),
         "stress integration validator failed during end-to-end validation",
     )
     return load_json(INTEGRATION_REPORT)
@@ -62,11 +63,7 @@ def main() -> int:
     integration_report = ensure_integration_report()
     expect(integration_report.get("status") == "PASS", "stress integration report did not pass")
 
-    describe = run_checked(
-        [sys.executable, str(RUNNER), "--describe", "test-nightly"],
-        "failed to describe test-nightly",
-    )
-    nightly_payload = json.loads(describe.stdout)
+    nightly_payload = public_workflow_action_payload("test-nightly")
     expect(nightly_payload.get("action") == "test-nightly", "test-nightly describe payload drifted")
     expect(nightly_payload.get("validation_tier") == "nightly", "test-nightly validation_tier drifted")
 
@@ -75,19 +72,17 @@ def main() -> int:
     expect(isinstance(scripts, dict), "package.json scripts drifted from object form")
     expect("objc3c" in scripts, "package.json missing objc3c package bridge")
 
-    runner_text = RUNNER.read_text(encoding="utf-8")
-    nightly_block = runner_text.partition("def action_test_nightly(_: list[str]) -> int:")[2].partition(
-        "\n\ndef action_package_runnable_toolchain"
-    )[0]
-    expect(nightly_block, "failed to locate action_test_nightly definition in public runner")
-    expect('"validate-stress"' in nightly_block, "test-nightly no longer wires validate-stress into the nightly composite")
+    expect(
+        public_workflow_has_actions(["test-nightly", "validate-stress"]),
+        "workflow registry no longer exposes test-nightly and validate-stress",
+    )
 
     run_checked(
-        [sys.executable, str(RENDER_COMMAND_SURFACE), "--check"],
+        python_script_command(RENDER_COMMAND_SURFACE, "--check"),
         "public command surface check failed during stress end-to-end validation",
     )
     run_checked(
-        [sys.executable, str(TASK_HYGIENE_GATE)],
+        python_script_command(TASK_HYGIENE_GATE),
         "task hygiene gate failed during stress end-to-end validation",
     )
 

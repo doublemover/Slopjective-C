@@ -4,9 +4,9 @@ from __future__ import annotations
 from objc3c_tooling.json_io import write_json_file
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_SCRIPT = ROOT / "scripts/check_source_hygiene_authenticity.py"
@@ -22,7 +22,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     result = subprocess.run(
-        [sys.executable, str(AUDIT_SCRIPT)],
+        python_script_command(AUDIT_SCRIPT),
         cwd=ROOT,
         text=True,
         capture_output=True,

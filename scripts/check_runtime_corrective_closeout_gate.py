@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.subprocesses import run_completed as run_command
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "tmp/reports/runtime-corrective/closeout-gate"
@@ -15,37 +14,37 @@ RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 COMMANDS = [
     {
         "name": "dispatch-lowering-proof",
-        "command": ["python", "scripts/check_runtime_corrective_dispatch_lowering.py"],
+        "command": python_script_command("scripts/check_runtime_corrective_dispatch_lowering.py"),
         "summary_path": ROOT / "tmp/reports/runtime-corrective/dispatch-lowering-proof/dispatch_lowering_implementation_summary.json",
     },
     {
         "name": "synthesized-accessor-lowering-proof",
-        "command": ["python", "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"],
+        "command": python_script_command("scripts/check_runtime_corrective_synthesized_accessor_lowering.py"),
         "summary_path": ROOT / "tmp/reports/runtime-corrective/synthesized-accessor-lowering-proof/synthesized_accessor_lowering_implementation_summary.json",
     },
     {
         "name": "executable-proof-contract",
-        "command": ["python", "scripts/build_runtime_corrective_executable_proof_summary.py"],
+        "command": python_script_command("scripts/build_runtime_corrective_executable_proof_summary.py"),
         "summary_path": ROOT / "tmp/reports/runtime-corrective/executable-proof-abi/executable_proof_abi_contract_summary.json",
     },
     {
         "name": "live-dispatch-runtime-proof",
-        "command": ["python", "scripts/check_runtime_corrective_live_dispatch_runtime.py"],
+        "command": python_script_command("scripts/check_runtime_corrective_live_dispatch_runtime.py"),
         "summary_path": ROOT / "tmp/reports/runtime-corrective/live-dispatch-runtime/live_dispatch_runtime_summary.json",
     },
     {
         "name": "synthesized-accessor-runtime-proof",
-        "command": ["python", "scripts/check_runtime_corrective_synthesized_accessor_runtime.py"],
+        "command": python_script_command("scripts/check_runtime_corrective_synthesized_accessor_runtime.py"),
         "summary_path": ROOT / "tmp/reports/runtime-corrective/live-synthesized-accessor-runtime/synthesized_accessor_runtime_summary.json",
     },
     {
         "name": "documentation-surface",
-        "command": ["python", "scripts/check_documentation_surface.py"],
+        "command": python_script_command("scripts/check_documentation_surface.py"),
         "summary_path": None,
     },
     {
         "name": "repo-superclean-surface",
-        "command": ["python", "scripts/check_repo_superclean_surface.py"],
+        "command": python_script_command("scripts/check_repo_superclean_surface.py"),
         "summary_path": None,
     },
 ]

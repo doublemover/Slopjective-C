@@ -9,7 +9,6 @@ import os
 import platform
 import socket
 import statistics
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -17,11 +16,11 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import display_path, repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file as write_json
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PORTFOLIO_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_portfolio.json"
 MEASUREMENT_POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "measurement_policy.json"
 BENCHMARK_PARAMETERS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_parameters.json"
@@ -124,16 +123,14 @@ def benchmark_compile_workload(
     for warmup_index in range(warmup_runs):
         out_dir = compile_root / workload_id / f"warmup-{warmup_index + 1}"
         step = run_timed_step(
-            [
-                sys.executable,
-                str(PUBLIC_RUNNER),
+            public_workflow_command(
                 "compile-objc3c",
                 source,
                 "--out-dir",
                 out_dir.relative_to(ROOT).as_posix(),
                 "--emit-prefix",
                 "module",
-            ]
+            )
         )
         expect(step["exit_code"] == 0, f"{workload_id} compile warmup failed", failures)
 
@@ -142,16 +139,14 @@ def benchmark_compile_workload(
     for sample_index in range(measured_runs):
         out_dir = compile_root / workload_id / f"sample-{sample_index + 1}"
         step = run_timed_step(
-            [
-                sys.executable,
-                str(PUBLIC_RUNNER),
+            public_workflow_command(
                 "compile-objc3c",
                 source,
                 "--out-dir",
                 out_dir.relative_to(ROOT).as_posix(),
                 "--emit-prefix",
                 "module",
-            ]
+            )
         )
         expect(step["exit_code"] == 0, f"{workload_id} compile sample failed", failures)
         raw_samples.append(
@@ -202,13 +197,11 @@ def benchmark_runtime_workload(
 
     for _ in range(warmup_runs):
         step = run_timed_step(
-            [
-                sys.executable,
-                str(PUBLIC_RUNNER),
+            public_workflow_command(
                 "validate-showcase-runtime",
                 "--example",
                 workload_id,
-            ]
+            )
         )
         expect(step["exit_code"] == 0, f"{workload_id} runtime warmup failed", failures)
 
@@ -216,13 +209,11 @@ def benchmark_runtime_workload(
     durations: list[float] = []
     for sample_index in range(measured_runs):
         step = run_timed_step(
-            [
-                sys.executable,
-                str(PUBLIC_RUNNER),
+            public_workflow_command(
                 "validate-showcase-runtime",
                 "--example",
                 workload_id,
-            ]
+            )
         )
         expect(step["exit_code"] == 0, f"{workload_id} runtime sample failed", failures)
         raw_samples.append(
@@ -276,7 +267,7 @@ def main() -> int:
     compile_root = ROOT / "tmp" / "artifacts" / "performance" / "compile"
     compile_root.mkdir(parents=True, exist_ok=True)
 
-    build_result = run_capture([sys.executable, str(PUBLIC_RUNNER), "build-native-binaries"])
+    build_result = run_capture(public_workflow_command("build-native-binaries"))
     if build_result.returncode != 0:
         raise RuntimeError("build-native-binaries failed before benchmarking")
 

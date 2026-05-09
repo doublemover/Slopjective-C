@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
+from objc3c_tooling.subprocesses import command_text, python_script_command
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_ROOT = Path("reports/conformance")
 DEFAULT_GLOBS = ("**/*.json",)
@@ -23,7 +25,9 @@ ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 EVIDENCE_INDEX_SURFACE_ID = "objc3c.public_conformance.evidence_index.v1"
 EVIDENCE_INDEX_ARTIFACT_FAMILY_ID = "objc3c.genuine_generated_output.conformance_evidence_index.v1"
 EVIDENCE_INDEX_REPORT_FAMILY_ID = "objc3c.genuine_generated_output.release_evidence_index_report.v1"
-GENERATOR_PATH = "python scripts/generate_conformance_evidence_index.py"
+GENERATOR_SCRIPT = "scripts/generate_conformance_evidence_index.py"
+GENERATOR_COMMAND = python_script_command(GENERATOR_SCRIPT)
+GENERATOR_PATH = command_text(GENERATOR_COMMAND)
 UNKNOWN_PROFILE = "unknown-profile"
 UNKNOWN_RELEASE = "unknown-release"
 
@@ -519,8 +523,7 @@ def build_index_payload(
         payload["replay"] = {
             "cwd": ".",
             "command": [
-                "python",
-                "scripts/generate_conformance_evidence_index.py",
+                *GENERATOR_COMMAND,
                 "--input-root",
                 normalize_repo_path(input_root),
                 "--output",
@@ -548,11 +551,11 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python scripts/generate_conformance_evidence_index.py \\\n"
+            f"  {GENERATOR_PATH} \\\n"
             "    --output reports/conformance/evidence-index.v0.11.sample.json \\\n"
             "    --release-label v0.11 \\\n"
             "    --generated-at 2026-02-23T00:00:00Z\n\n"
-            "  SOURCE_DATE_EPOCH=1767139200 python scripts/generate_conformance_evidence_index.py \\\n"
+            f"  SOURCE_DATE_EPOCH=1767139200 {GENERATOR_PATH} \\\n"
             "    --output reports/conformance/evidence-index.v0.11.json \\\n"
             "    --release-label v0.11"
         ),

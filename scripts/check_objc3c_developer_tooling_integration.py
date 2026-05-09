@@ -8,11 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.public_runner import public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 FORMATTER_DEBUG_SURFACE_PY = ROOT / "scripts" / "check_developer_tooling_formatter_debug_surface.py"
 WORKSPACE_INTEGRATION_PY = ROOT / "scripts" / "check_developer_tooling_workspace_integration.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
@@ -42,35 +42,35 @@ def main() -> int:
     steps = [
         run_step(
             "inspect-compile-observability",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-compile-observability"],
+            public_workflow_command("inspect-compile-observability"),
         ),
         run_step(
             "inspect-runtime-inspector",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-runtime-inspector"],
+            public_workflow_command("inspect-runtime-inspector"),
         ),
         run_step(
             "inspect-editor-tooling",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-editor-tooling"],
+            public_workflow_command("inspect-editor-tooling"),
         ),
         run_step(
             "check-formatter-debug-surface",
-            [sys.executable, str(FORMATTER_DEBUG_SURFACE_PY)],
+            python_script_command(FORMATTER_DEBUG_SURFACE_PY),
         ),
         run_step(
             "check-workspace-editor-debug-surface",
-            [sys.executable, str(WORKSPACE_INTEGRATION_PY)],
+            python_script_command(WORKSPACE_INTEGRATION_PY),
         ),
         run_step(
             "inspect-capability-explorer",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-capability-explorer"],
+            public_workflow_command("inspect-capability-explorer"),
         ),
         run_step(
             "benchmark-runtime-inspector",
-            [sys.executable, str(PUBLIC_RUNNER), "benchmark-runtime-inspector"],
+            public_workflow_command("benchmark-runtime-inspector"),
         ),
         run_step(
             "trace-compile-stages",
-            [sys.executable, str(PUBLIC_RUNNER), "trace-compile-stages"],
+            public_workflow_command("trace-compile-stages"),
         ),
     ]
     failures: list[str] = []

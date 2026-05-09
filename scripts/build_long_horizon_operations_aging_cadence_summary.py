@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_workflow.registry_views import action_names
+from objc3c_tooling.public_runner import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,7 +35,7 @@ def main() -> int:
         raise RuntimeError("package.json scripts field drifted from an object")
     package_bridge = str(criteria["package_bridge"])
     package_bridge_exists = package_bridge in scripts
-    registered_actions = set(action_names())
+    registered_actions = set(public_workflow_action_names())
 
     failures: list[str] = []
     for raw_path in criteria.get("depends_on", []):

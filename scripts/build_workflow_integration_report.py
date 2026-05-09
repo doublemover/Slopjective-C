@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
-from typing import Any
 from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
-from objc3c_tooling.public_runner import load_public_workflow_runner
+from objc3c_tooling.public_runner import (
+    public_workflow_action_payload,
+    public_workflow_command,
+    public_workflow_package_bridge_payload,
+)
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-integration'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
-DISPATCH_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'action_dispatch.py'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 MAINTAINER_RUNBOOK_PATH = ROOT / 'docs' / 'runbooks' / 'objc3c_maintainer_workflows.md'
@@ -23,34 +24,25 @@ REPORT_JSON_PATH = REPORT_DIR / 'workflow_integration_report.json'
 REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 
 
-
-def load_runner() -> Any:
-    return load_public_workflow_runner(
-        runner_path=DISPATCH_PATH,
-        module_name='objc3c_workflow_runner_m314_d001',
-    )
-
-
 def main() -> None:
-    subprocess.run([sys.executable, str(CONTRACT_BUILDER)], cwd=ROOT, check=True)
-    subprocess.run([sys.executable, str(RUNNER_PATH), 'check-public-command-budget'], cwd=ROOT, check=True)
+    subprocess.run(python_script_command(CONTRACT_BUILDER), cwd=ROOT, check=True)
+    subprocess.run(public_workflow_command('check-public-command-budget'), cwd=ROOT, check=True)
 
-    runner = load_runner()
     contract = json.loads(DEFAULT_CONTRACT_PATH.read_text(encoding='utf-8'))
     maintainer_runbook = MAINTAINER_RUNBOOK_PATH.read_text(encoding='utf-8')
     readme = README_PATH.read_text(encoding='utf-8')
 
-    package_bridge = runner.describe_package_script_payload('objc3c')
+    package_bridge = public_workflow_package_bridge_payload('objc3c')
     operator_examples = {
-        action: runner.describe_action_payload(action)
+        action: public_workflow_action_payload(action)
         for action in ('build-public-command-surface', 'check-public-command-surface', 'validate-repo-superclean')
     }
     maintainer_public_examples = {
-        action: runner.describe_action_payload(action)
+        action: public_workflow_action_payload(action)
         for action in ('check-dependency-boundaries', 'check-task-hygiene', 'lint')
     }
     internal_maintainer_actions = {
-        action: runner.describe_action_payload(action)
+        action: public_workflow_action_payload(action)
         for action in ('build-public-command-contract', 'check-public-command-contract', 'check-public-command-budget')
     }
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +31,7 @@ PACKAGE_BRIDGE = "objc3c"
 
 def ensure_evidence() -> None:
     result = subprocess.run(
-        [sys.executable, str(EVIDENCE_BUILDER)],
+        python_script_command(EVIDENCE_BUILDER),
         cwd=ROOT,
         text=True,
         capture_output=True,

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.json_io import write_text_file
 from objc3c_tooling.paths import display_path, resolve_repo_path
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import command_text, python_script_command, run_timed
 from objc3c_tooling.public_workflow_output import normalize_newlines
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -316,7 +316,7 @@ def build_extractor_exclude_paths(
 
 
 def run_command(spec: CommandSpec) -> CommandResult:
-    command = [sys.executable, str(spec.script_path), *spec.actual_args]
+    command = python_script_command(spec.script_path, *spec.actual_args)
     execution = run_timed(command, cwd=ROOT, timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS)
     exit_code = EXIT_RUNNER_ERROR if execution.timeout_seconds is not None else int(execution.returncode)
     return CommandResult(
@@ -344,13 +344,7 @@ def render_command_log(title: str, result: CommandResult) -> str:
 
 
 def render_contract_check_transcript(result: CommandResult) -> str:
-    command_line = " ".join(
-        [
-            "python",
-            display_path(result.spec.script_path),
-            *list(result.spec.display_args),
-        ]
-    )
+    command_line = command_text(python_script_command(display_path(result.spec.script_path), *result.spec.display_args))
     lines = [
         "# open_blocker_audit contract check transcript",
         "",
@@ -374,11 +368,7 @@ def render_contract_check_transcript(result: CommandResult) -> str:
 
 def summarize_command(result: CommandResult) -> dict[str, Any]:
     return {
-        "argv": [
-            "python",
-            display_path(result.spec.script_path),
-            *list(result.spec.display_args),
-        ],
+        "argv": python_script_command(display_path(result.spec.script_path), *result.spec.display_args),
         "exit_code": result.exit_code,
         "stdout_bytes": len(result.stdout.encode("utf-8")),
         "stderr_bytes": len(result.stderr.encode("utf-8")),

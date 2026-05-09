@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,32 +74,34 @@ def main() -> int:
     failures: list[str] = []
     step_results = []
 
+    template_command = python_script_command(TEMPLATE_HARNESS_PY)
     template_summary = require_or_reuse_summary(
         name="template-harness",
-        command=[sys.executable, str(TEMPLATE_HARNESS_PY)],
+        command=template_command,
         summary_path=TEMPLATE_SUMMARY_PATH,
         failures=failures,
     )
     step_results.append(
         {
             "name": "template-harness",
-            "command": [sys.executable, str(TEMPLATE_HARNESS_PY)],
+            "command": template_command,
             "summary_path": repo_rel(TEMPLATE_SUMMARY_PATH),
             "mode": "executed",
             "summary_ok": summary_passes(template_summary) if isinstance(template_summary, dict) else False,
             "summary_status": template_summary.get("status", template_summary.get("ok")) if isinstance(template_summary, dict) else None,
         }
     )
+    canonical_command = python_script_command(CANONICAL_WORKSPACE_PY)
     canonical_summary = require_or_reuse_summary(
         name="canonical-workspace",
-        command=[sys.executable, str(CANONICAL_WORKSPACE_PY)],
+        command=canonical_command,
         summary_path=CANONICAL_SUMMARY_PATH,
         failures=failures,
     )
     step_results.append(
         {
             "name": "canonical-workspace",
-            "command": [sys.executable, str(CANONICAL_WORKSPACE_PY)],
+            "command": canonical_command,
             "summary_path": repo_rel(CANONICAL_SUMMARY_PATH),
             "mode": "executed",
             "summary_ok": summary_passes(canonical_summary) if isinstance(canonical_summary, dict) else False,
@@ -120,12 +122,13 @@ def main() -> int:
             }
         )
     else:
-        result = run_capture([sys.executable, str(SHOWCASE_INTEGRATION_PY)])
+        showcase_command = python_script_command(SHOWCASE_INTEGRATION_PY)
+        result = run_capture(showcase_command)
         showcase_summary = load_json(SHOWCASE_SUMMARY_PATH) if SHOWCASE_SUMMARY_PATH.is_file() else {}
         step_results.append(
             {
                 "name": "showcase-integration",
-                "command": [sys.executable, str(SHOWCASE_INTEGRATION_PY)],
+                "command": showcase_command,
                 "exit_code": result.returncode,
                 "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
                 "mode": "executed",
@@ -150,12 +153,13 @@ def main() -> int:
             }
         )
     else:
-        result = run_capture([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
+        stdlib_program_command = python_script_command(STDLIB_PROGRAM_INTEGRATION_PY)
+        result = run_capture(stdlib_program_command)
         stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY_PATH) if STDLIB_PROGRAM_SUMMARY_PATH.is_file() else {}
         step_results.append(
             {
                 "name": "stdlib-program-integration",
-                "command": [sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)],
+                "command": stdlib_program_command,
                 "exit_code": result.returncode,
                 "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
                 "mode": "executed",

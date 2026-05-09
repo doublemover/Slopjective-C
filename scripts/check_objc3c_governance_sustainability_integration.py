@@ -3,14 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,52 +17,52 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "integra
 STEPS = [
     (
         "budget-inventory",
-        [sys.executable, "scripts/build_governance_budget_inventory_summary.py"],
+        python_script_command("scripts/build_governance_budget_inventory_summary.py"),
         "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
     ),
     (
         "sustainable-progress-policy",
-        [sys.executable, "scripts/build_governance_policy_summary.py"],
+        python_script_command("scripts/build_governance_policy_summary.py"),
         "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
     ),
     (
         "maintainer-review",
-        [sys.executable, "scripts/build_governance_maintainer_review_summary.py"],
+        python_script_command("scripts/build_governance_maintainer_review_summary.py"),
         "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
     ),
     (
         "extension-review-policy",
-        [sys.executable, "scripts/build_governance_extension_review_policy_summary.py"],
+        python_script_command("scripts/build_governance_extension_review_policy_summary.py"),
         "tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json",
     ),
     (
         "extension-review-workflow",
-        [sys.executable, "scripts/build_governance_extension_review_workflow_summary.py"],
+        python_script_command("scripts/build_governance_extension_review_workflow_summary.py"),
         "tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json",
     ),
     (
         "stewardship-semantics",
-        [sys.executable, "scripts/build_governance_stewardship_semantics_summary.py"],
+        python_script_command("scripts/build_governance_stewardship_semantics_summary.py"),
         "tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json",
     ),
     (
         "schema-surface",
-        [sys.executable, "scripts/check_governance_sustainability_schema_surface.py"],
+        python_script_command("scripts/check_governance_sustainability_schema_surface.py"),
         "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
     ),
     (
         "artifact-contract",
-        [sys.executable, "scripts/build_governance_artifact_contract_summary.py"],
+        python_script_command("scripts/build_governance_artifact_contract_summary.py"),
         "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
     ),
     (
         "budget-enforcement",
-        [sys.executable, "scripts/check_governance_sustainability_budget_enforcement.py"],
+        python_script_command("scripts/check_governance_sustainability_budget_enforcement.py"),
         "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
     ),
     (
         "anti-regression",
-        [sys.executable, "scripts/build_governance_anti_regression_summary.py"],
+        python_script_command("scripts/build_governance_anti_regression_summary.py"),
         "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
     ),
 ]

@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.public_runner import public_workflow_command_tuple
+from objc3c_tooling.subprocesses import python_script_command_tuple
 from check_objc3c_runtime_acceptance import (
 
     COMPILE_PROVENANCE_CONTRACT_ID,
@@ -610,7 +612,7 @@ SUITES: tuple[SuiteEntry, ...] = (
         suite_id="runtime-acceptance",
         summary="direct runtime acceptance suite over the live compile and runtime path",
         execution_kind="direct-executable-suite",
-        command=(sys.executable, "scripts/check_objc3c_runtime_acceptance.py"),
+        command=python_script_command_tuple("scripts/check_objc3c_runtime_acceptance.py"),
         report_path="tmp/reports/runtime/acceptance/summary.json",
         guarantee_owner="runtime acceptance and compile-coupled runtime publication proof",
         validation_owner="scripts/check_objc3c_runtime_acceptance.py",
@@ -620,7 +622,7 @@ SUITES: tuple[SuiteEntry, ...] = (
         suite_id="public-test-smoke",
         summary="composite smoke public workflow carrying runtime acceptance surfaces forward",
         execution_kind="composite-executable-suite",
-        command=(sys.executable, "-m", "scripts.objc3c_workflow", "test-smoke"),
+        command=public_workflow_command_tuple("test-smoke"),
         report_path="tmp/reports/objc3c-public-workflow/test-smoke.json",
         guarantee_owner="behavior smoke, runtime acceptance, and replay through the public entrypoint",
         validation_owner="scripts.objc3c_workflow",
@@ -630,7 +632,7 @@ SUITES: tuple[SuiteEntry, ...] = (
         suite_id="public-test-full",
         summary="composite full developer workflow carrying runtime acceptance surfaces forward",
         execution_kind="composite-executable-suite",
-        command=(sys.executable, "-m", "scripts.objc3c_workflow", "test-full"),
+        command=public_workflow_command_tuple("test-full"),
         report_path="tmp/reports/objc3c-public-workflow/test-full.json",
         guarantee_owner="full developer validation without recovery fan-out",
         validation_owner="scripts.objc3c_workflow",

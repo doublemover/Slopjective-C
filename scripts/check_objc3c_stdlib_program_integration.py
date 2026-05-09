@@ -3,14 +3,12 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,29 +36,28 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    documentation_result = run_capture([sys.executable, str(DOCUMENTATION_SURFACE_PY)])
+    documentation_result = run_capture(python_script_command(DOCUMENTATION_SURFACE_PY))
     if documentation_result.returncode != 0:
         raise RuntimeError("documentation surface validation failed")
 
-    showcase_result = run_capture([sys.executable, str(SHOWCASE_INTEGRATION_PY)])
+    showcase_result = run_capture(python_script_command(SHOWCASE_INTEGRATION_PY))
     if showcase_result.returncode != 0:
         raise RuntimeError("showcase integration validation failed")
 
-    getting_started_result = run_capture([sys.executable, str(GETTING_STARTED_INTEGRATION_PY)])
+    getting_started_result = run_capture(python_script_command(GETTING_STARTED_INTEGRATION_PY))
     if getting_started_result.returncode != 0:
         raise RuntimeError("getting-started integration validation failed")
 
-    stdlib_foundation_result = run_capture([sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)])
+    stdlib_foundation_result = run_capture(python_script_command(STDLIB_FOUNDATION_INTEGRATION_PY))
     if stdlib_foundation_result.returncode != 0:
         raise RuntimeError("stdlib foundation integration validation failed")
 
     capability_result = run_capture(
-        [
-            sys.executable,
-            str(LLVM_CAPABILITIES_PROBE_PY),
+        python_script_command(
+            LLVM_CAPABILITIES_PROBE_PY,
             "--summary-out",
             str(CAPABILITY_REPORT_PATH),
-        ]
+        )
     )
     if capability_result.returncode != 0:
         raise RuntimeError("capability explorer validation failed")
