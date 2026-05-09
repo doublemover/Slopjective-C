@@ -8,13 +8,13 @@ from ..commands import run
 from ..composite_validation import run_composite_validation
 from .external_validation_targets import (
     EXTERNAL_VALIDATION_INTEGRATION_PY,
-    EXTERNAL_VALIDATION_TARGETS,
     VALIDATE_EXTERNAL_VALIDATION_CHILD_ACTIONS,
+    external_validation_target,
 )
 
 
 def external_validation_command(action_name: str) -> list[str]:
-    target = EXTERNAL_VALIDATION_TARGETS[action_name]
+    target = external_validation_target(action_name)
     return [sys.executable, str(target.script)]
 
 

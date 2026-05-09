@@ -10,6 +10,14 @@
   "publishable_trust_states": [
     "accepted"
   ],
+  "capability_truth_trust_states": [
+    "accepted"
+  ],
+  "forbidden_capability_truth_states": [
+    "candidate",
+    "quarantined",
+    "rejected"
+  ],
   "required_provenance_fields": [
     "origin",
     "captured_at_utc",
@@ -21,7 +29,9 @@
     "fixtures with missing provenance stay quarantined or rejected",
     "fixtures with nondeterministic replay stay quarantined until normalized replay passes",
     "fixtures with unresolved security or disclosure uncertainty cannot reach accepted state",
-    "ecosystem-facing credibility claims are only publishable for accepted fixtures"
+    "ecosystem-facing credibility claims are only publishable for accepted fixtures",
+    "local-only replay and report-only summaries never establish capability truth",
+    "missing owner contracts block trust promotion instead of falling back to local judgment"
   ],
   "triage_priorities": {
     "p0-security-or-license": "security licensing or disclosure uncertainty blocks acceptance immediately",

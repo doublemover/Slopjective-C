@@ -5,6 +5,7 @@
   "source_check_action": "check-external-validation-surface",
   "validate_action": "validate-external-validation",
   "integration_action": "validate-external-validation-integration",
+  "owner_contracts": "tests/tooling/fixtures/external_validation/owner_contracts.json",
   "required_actions": [
     "check-external-validation-surface",
     "test-external-validation-replay",
@@ -21,6 +22,11 @@
     "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
     "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
     "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1"
+  },
+  "required_capability_truth_reports": {
+    "tmp/reports/external-validation/intake-replay-summary.json": "accepted external evidence replayed through live proof scripts",
+    "tmp/reports/external-validation/publication-summary.json": "public credibility claims published only from accepted fixtures",
+    "tmp/reports/external-validation/integration-summary.json": "source, replay, publication, trust, quarantine, and artifact contracts are coherent"
   },
   "report_paths": [
     "tmp/reports/external-validation/source-surface-summary.json",

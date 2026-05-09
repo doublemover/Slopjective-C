@@ -1,0 +1,94 @@
+{
+  "contract_id": "objc3c.external_validation.owner.contracts.v1",
+  "schema_version": 1,
+  "source_owner": "external-validation-source-surface",
+  "trust_policy_owner": "external-validation-trust-policy",
+  "intake_owner": "external-validation-intake",
+  "quarantine_owner": "external-validation-quarantine",
+  "artifact_owner": "external-validation-artifacts",
+  "workflow_owner": "external-validation-workflow",
+  "public_claim_owner": "external-validation-public-claims",
+  "owned_actions": [
+    "check-external-validation-surface",
+    "test-external-validation-replay",
+    "publish-external-repro-corpus",
+    "validate-external-validation",
+    "validate-external-validation-integration"
+  ],
+  "validate_child_actions": [
+    "check-external-validation-surface",
+    "test-external-validation-replay",
+    "publish-external-repro-corpus"
+  ],
+  "accepted_trust_states": [
+    "accepted"
+  ],
+  "quarantine_trust_states": [
+    "quarantined",
+    "rejected"
+  ],
+  "required_report_contracts": {
+    "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
+    "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
+    "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1",
+    "tmp/reports/external-validation/integration-summary.json": "objc3c.external_validation.integration.summary.v1"
+  },
+  "hard_cutover_guardrails": {
+    "fallback_trust_route_allowed": false,
+    "local_only_validation_claim_allowed": false,
+    "report_only_validation_claim_allowed": false,
+    "wrapper_only_action_surface_allowed": false,
+    "unaccepted_fixture_publication_allowed": false,
+    "quarantined_fixture_capability_truth_allowed": false,
+    "artifact_owner_required_for_public_claim": true,
+    "intake_owner_required_for_trust_promotion": true,
+    "quarantine_owner_required_for_blocking_evidence": true
+  },
+  "action_owner_map": {
+    "check-external-validation-surface": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    },
+    "test-external-validation-replay": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    },
+    "publish-external-repro-corpus": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    },
+    "validate-external-validation": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    },
+    "validate-external-validation-integration": {
+      "source_owner": "external-validation-source-surface",
+      "trust_policy_owner": "external-validation-trust-policy",
+      "intake_owner": "external-validation-intake",
+      "quarantine_owner": "external-validation-quarantine",
+      "artifact_owner": "external-validation-artifacts",
+      "workflow_owner": "external-validation-workflow",
+      "public_claim_owner": "external-validation-public-claims"
+    }
+  }
+}
