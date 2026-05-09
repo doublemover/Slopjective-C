@@ -59,6 +59,8 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface.cpp
   objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface.cpp
   objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
+  objc3_lowering_pipeline_pass_graph_core_feature_keys.cpp
+  objc3_lowering_pipeline_pass_graph_core_feature_readiness.cpp
   objc3_lowering_pipeline_pass_graph_scaffold.cpp
 )
 objc3c_apply_build_defaults(objc3c_pipeline)
