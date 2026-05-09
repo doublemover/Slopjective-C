@@ -9,6 +9,10 @@
     "generated_at_utc",
     "current_version",
     "default_channel",
+    "default_platform_id",
+    "platform_support_matrix",
+    "supported_platform_ids",
+    "support_tiers",
     "channels",
     "compatibility_report"
   ],
@@ -17,6 +21,18 @@
     "generated_at_utc": { "type": "string" },
     "current_version": { "type": "string" },
     "default_channel": { "type": "string" },
+    "default_platform_id": { "type": "string" },
+    "platform_support_matrix": { "type": "string" },
+    "supported_platform_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "support_tiers": {
+      "type": "array",
+      "items": { "type": "object" },
+      "minItems": 1
+    },
     "channels": {
       "type": "array",
       "minItems": 1,

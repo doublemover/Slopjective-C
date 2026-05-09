@@ -8,6 +8,10 @@
     "contract_id",
     "generated_at_utc",
     "current_version",
+    "default_platform_id",
+    "platform_support_matrix",
+    "supported_platform_ids",
+    "support_tiers",
     "support_windows",
     "upgrade_paths",
     "warnings",
@@ -17,6 +21,18 @@
     "contract_id": { "const": "objc3c.release.operations.compatibility-report.v1" },
     "generated_at_utc": { "type": "string" },
     "current_version": { "type": "string" },
+    "default_platform_id": { "type": "string" },
+    "platform_support_matrix": { "type": "string" },
+    "supported_platform_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "support_tiers": {
+      "type": "array",
+      "items": { "type": "object" },
+      "minItems": 1
+    },
     "support_windows": { "type": "object" },
     "upgrade_paths": {
       "type": "array",
