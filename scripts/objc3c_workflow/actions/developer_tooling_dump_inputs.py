@@ -3,16 +3,8 @@
 from __future__ import annotations
 
 from ..environment import ROOT
+from .developer_tooling_dump_contracts import MANAGED_DEVELOPER_TOOLING_DUMP_FLAGS
 from .developer_tooling_paths import DEFAULT_DEVELOPER_TOOLING_SOURCE
-
-MANAGED_DEVELOPER_TOOLING_DUMP_FLAGS = (
-    "--summary-out",
-    "--dump-summary-json",
-    "--dump-observability-json",
-    "--dump-playground-repro-json",
-    "--dump-runtime-inspector-json",
-    "--dump-stage-trace-json",
-)
 
 
 def parse_developer_tooling_invocation(rest: list[str]) -> tuple[str, list[str]]:

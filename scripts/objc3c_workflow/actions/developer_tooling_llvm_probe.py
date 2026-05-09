@@ -9,31 +9,22 @@ from objc3c_tooling.json_io import load_json_object as load_json
 
 from ..commands import run
 from ..environment import ROOT
+from .developer_tooling_llvm_contracts import (
+    default_llvm_capabilities_command,
+    hosted_llvm_probe_command,
+)
 from .developer_tooling_paths import (
     HOSTED_LLVM_CAPABILITIES_SUMMARY,
-    LLVM_CAPABILITIES_PROBE_PY,
 )
 
 
 def action_check_llvm_capabilities(_: list[str]) -> int:
-    return run(
-        [
-            sys.executable,
-            str(LLVM_CAPABILITIES_PROBE_PY),
-            "--summary-out",
-            "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
-        ]
-    )
+    return run(default_llvm_capabilities_command())
 
 
 def run_hosted_llvm_probe() -> tuple[int, dict[str, object]]:
     result = subprocess.run(
-        [
-            sys.executable,
-            str(LLVM_CAPABILITIES_PROBE_PY),
-            "--summary-out",
-            str(HOSTED_LLVM_CAPABILITIES_SUMMARY.relative_to(ROOT).as_posix()),
-        ],
+        hosted_llvm_probe_command(),
         cwd=ROOT,
         capture_output=True,
         text=True,

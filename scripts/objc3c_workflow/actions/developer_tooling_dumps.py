@@ -11,6 +11,9 @@ from .developer_tooling_dump_inputs import (
     parse_developer_tooling_invocation as _parse_developer_tooling_invocation,
 )
 from .developer_tooling_dump_runner import (
+    dump_payload_path as _dump_payload_path,
+    dump_summary_path as _dump_summary_path,
+    frontend_dump_command as _frontend_dump_command,
     run_developer_tooling_dump as _run_developer_tooling_dump,
     write_json_capture as _write_json_capture,
 )

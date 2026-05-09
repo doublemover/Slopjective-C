@@ -48,3 +48,13 @@ def test_tooling_developer_handler_preserves_owner_aggregation() -> None:
     assert "inspect-bonus-tool-integration" in DEVELOPER_ECOSYSTEM_ACTION_HANDLERS
     assert "validate-package-ecosystem" in DEVELOPER_ECOSYSTEM_ACTION_HANDLERS
     assert "lint-spec" in DEVELOPER_ECOSYSTEM_ACTION_HANDLERS
+
+
+def test_inspection_handler_sections_do_not_dispatch_through_tooling_facade() -> None:
+    for handler_module in (
+        "action_handlers_developer_inspection.py",
+        "action_handlers_tooling_inspection.py",
+    ):
+        source = (WORKFLOW_ROOT / handler_module).read_text(encoding="utf-8")
+        assert "from scripts.objc3c_workflow.actions import developer_tooling" not in source
+        assert "developer_tooling.action_" not in source

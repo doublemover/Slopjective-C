@@ -2,7 +2,24 @@
 
 from __future__ import annotations
 
+from .actions.developer_tooling_dump_contracts import (
+    COMPILE_STAGE_TRACE_DUMP,
+    DeveloperToolingDumpContract,
+)
+
 from .action_spec import ActionSpec
+
+
+def _dump_action_spec(contract: DeveloperToolingDumpContract) -> ActionSpec:
+    return ActionSpec(
+        contract.action,
+        contract.summary,
+        contract.backend,
+        validation_tier=contract.validation_tier,
+        guarantee_owner=contract.guarantee_owner,
+        pass_through_args=contract.pass_through_args,
+    )
+
 
 TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-bonus-tool-integration": ActionSpec(
@@ -25,15 +42,5 @@ TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
             "profiles stay explainable from generated suite reports"
         ),
     ),
-    "trace-compile-stages": ActionSpec(
-        "trace-compile-stages",
-        "compile one source through the frontend C API runner and dump the stage trace object",
-        "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe",
-        validation_tier="repo",
-        guarantee_owner=(
-            "developer-facing compile stage traces stay tied to the real frontend runner "
-            "stage summaries and process exit semantics"
-        ),
-        pass_through_args=True,
-    ),
+    "trace-compile-stages": _dump_action_spec(COMPILE_STAGE_TRACE_DUMP),
 }

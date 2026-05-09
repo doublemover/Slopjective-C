@@ -34,7 +34,8 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
         )
         return probe_exit or 1
     print(
-        "Hosted runner does not provide llc --filetype=obj capability; "
-        "continuing via capability-routed parity validation."
+        "Hosted runner policy accepted clang availability without "
+        "llc --filetype=obj; capability-routed source parity remains gated by "
+        "the recorded capability summary."
     )
     return 0

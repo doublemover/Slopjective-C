@@ -63,3 +63,13 @@ def test_tooling_developer_catalog_preserves_owner_order() -> None:
         "validate-runnable-bonus-experiences",
         "lint-spec",
     )
+
+
+def test_tooling_inspection_trace_uses_dump_contract_owner() -> None:
+    source = (WORKFLOW_ROOT / "action_catalog_tooling_inspection.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "COMPILE_STAGE_TRACE_DUMP" in source
+    assert '"--dump-stage-trace-json"' not in source
+    assert '"compile-stage-trace.json"' not in source

@@ -9,6 +9,10 @@ from pathlib import Path
 from objc3c_tooling.subprocesses import run_capture
 
 from ..environment import ROOT
+from .developer_tooling_dump_contracts import (
+    DeveloperToolingDumpContract,
+    SUMMARY_OUT_FLAG,
+)
 from .developer_tooling_dump_inputs import parse_developer_tooling_invocation
 from .developer_tooling_paths import FRONTEND_C_API_RUNNER_EXE, PUBLIC_WORKFLOW_REPORT_ROOT
 from .developer_tooling_playground import ensure_frontend_runner_ready
@@ -28,10 +32,32 @@ def write_json_capture(path: Path, stdout: str) -> int:
     return 0
 
 
+def dump_summary_path(contract: DeveloperToolingDumpContract) -> Path:
+    return PUBLIC_WORKFLOW_REPORT_ROOT / f"{contract.action}-summary.json"
+
+
+def dump_payload_path(contract: DeveloperToolingDumpContract) -> Path:
+    return PUBLIC_WORKFLOW_REPORT_ROOT / contract.dump_filename
+
+
+def frontend_dump_command(
+    contract: DeveloperToolingDumpContract,
+    source_text: str,
+    summary_path: Path,
+    passthrough: list[str],
+) -> list[str]:
+    return [
+        str(FRONTEND_C_API_RUNNER_EXE),
+        source_text,
+        SUMMARY_OUT_FLAG,
+        str(summary_path),
+        contract.dump_flag,
+        *passthrough,
+    ]
+
+
 def run_developer_tooling_dump(
-    action_name: str,
-    dump_flag: str,
-    dump_filename: str,
+    contract: DeveloperToolingDumpContract,
     rest: list[str],
 ) -> int:
     try:
@@ -42,16 +68,9 @@ def run_developer_tooling_dump(
     rc = ensure_frontend_runner_ready()
     if rc != 0:
         return rc
-    summary_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action_name}-summary.json"
-    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / dump_filename
-    command = [
-        str(FRONTEND_C_API_RUNNER_EXE),
-        source_text,
-        "--summary-out",
-        str(summary_path),
-        dump_flag,
-        *passthrough,
-    ]
+    summary_path = dump_summary_path(contract)
+    dump_path = dump_payload_path(contract)
+    command = frontend_dump_command(contract, source_text, summary_path, passthrough)
     result = run_capture(command)
     if result.returncode != 0:
         return result.returncode
