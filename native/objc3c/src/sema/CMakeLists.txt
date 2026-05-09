@@ -1,6 +1,7 @@
 add_library(objc3c_sema STATIC
   objc3_parser_sema_handoff_contract.h
   objc3_parser_sema_handoff_scaffold.h
+  objc3_sema_canonical_literal_contract.h
   objc3_sema_contract.h
   objc3_sema_contract_core.h
   objc3_sema_contract_feature_surfaces.h
@@ -16,6 +17,7 @@ add_library(objc3c_sema STATIC
   objc3_semantic_feature_claims.cpp
   objc3_semantic_body_validation.h
   objc3_semantic_integration_surface.h
+  objc3_semantic_type_lowering_contract.h
   objc3_sema_control_flow_equivalence.cpp
   objc3_sema_diagnostic_contract.cpp
   objc3_sema_dispatch_ownership_equivalence.cpp
