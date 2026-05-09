@@ -408,6 +408,43 @@
         "native/objc3c/src/runtime/images/registration.cpp",
         "native/objc3c/src/runtime/images/registration.h"
       ]
+    },
+    {
+      "ref": "faf7363ae",
+      "summary": "HC split frontend C API runner session owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_session.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_session_output.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_summary_path.cpp"
+      ]
+    },
+    {
+      "ref": "1854669de",
+      "summary": "HC split artifact schema contract table",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.h"
+      ]
+    },
+    {
+      "ref": "2f1a954ad",
+      "summary": "HC split frontend pipeline stage contracts",
+      "issues": [
+        "#8138",
+        "#8140"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.cpp",
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.h"
+      ]
     }
   ],
   "global_policy": {

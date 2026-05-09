@@ -273,6 +273,30 @@
         "#8133",
         "#8143"
       ]
+    },
+    {
+      "ref": "faf7363ae",
+      "summary": "HC split frontend C API runner session owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "1854669de",
+      "summary": "HC split artifact schema contract table",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "2f1a954ad",
+      "summary": "HC split frontend pipeline stage contracts",
+      "issues": [
+        "#8138",
+        "#8140"
+      ]
     }
   ],
   "hard_cutover_disposition": {

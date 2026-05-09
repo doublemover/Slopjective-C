@@ -73,6 +73,12 @@ pass:
 - `12787c606` adds receiver support profile evidence for `#8138` and `#8146`.
 - `1897efd7a` adds runtime registration owner evidence for `#8133` and
   `#8143`.
+- `faf7363ae` adds frontend C API runner session-owner evidence for `#8140`
+  and `#8141`.
+- `1854669de` adds artifact schema contract table evidence for `#8138` and
+  `#8148`.
+- `2f1a954ad` adds frontend pipeline stage contract evidence for `#8138` and
+  `#8140`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
