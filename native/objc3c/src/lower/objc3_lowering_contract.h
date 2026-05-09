@@ -8,6 +8,7 @@
 #include "lower/contracts/diagnostic_recovery_lowering_contracts.h"
 #include "lower/contracts/dispatch_control_lowering_contracts.h"
 #include "lower/contracts/error_handling_lowering_contracts.h"
+#include "lower/contracts/executable_layout_lowering_contracts.h"
 #include "lower/contracts/function_method_lowering_state.h"
 #include "lower/contracts/interop_lowering_contracts.h"
 #include "lower/contracts/lowering_concurrency_contracts.h"
@@ -21,233 +22,13 @@
 #include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
+#include "lower/contracts/runtime_object_support_contracts.h"
 #include "lower/contracts/type_system_generic_lowering_contracts.h"
 #include "lower/contracts/unsafe_intrinsic_governance_contracts.h"
 
 #include <cstddef>
 #include <string>
 
-// executable object artifact lowering freeze anchor: lane-C now
-// freezes the current binding surface where realized class/category metadata
-// records consume owner-scoped method-list refs and implementation-backed
-// method entries may point at concrete LLVM definition symbols. Later
-// implementation must extend this one executable object surface rather than
-// rediscovering bodies or realization edges out-of-band.
-inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringContractId =
-    "objc3c.executable.object.artifact.lowering.v1";
-inline constexpr const char
-    *kObjc3ExecutableObjectArtifactLoweringMethodBodyBindingModel =
-        "implementation-owner-identity-to-llvm-definition-symbol";
-inline constexpr const char
-    *kObjc3ExecutableObjectArtifactLoweringRealizationRecordModel =
-        "class-metaclass-and-category-descriptor-bundles-point-to-owner-scoped-method-list-ref-records";
-inline constexpr const char
-    *kObjc3ExecutableObjectArtifactLoweringMethodEntryPayloadModel =
-        "selector-owner-return-arity-implementation-symbol-has-body-direct-flag-final-flag";
-inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
-    "parser-source-identities-sema-realization-closure-ir-object-binding";
-inline constexpr const char
-    *kObjc3ExecutableObjectArtifactLoweringFailClosedModel =
-        "no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families";
-// accessor/layout lowering freeze anchor: lane-C now freezes the
-// current property/ivar lowering surface where sema-approved property
-// descriptor bundles, ivar layout symbols/slots/sizes/alignment, and
-// synthesized binding identities are serialized into emitted metadata/object
-// artifacts without yet synthesizing accessor bodies or runtime storage.
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringContractId =
-        "objc3c.executable.property.accessor.layout.lowering.v1";
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel =
-        "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records";
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel =
-        "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records";
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel =
-        "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis";
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel =
-        "ast-sema-property-layout-handoff-ir-object-metadata-publication";
-inline constexpr const char
-    *kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel =
-        "no-synthesized-accessor-bodies-no-runtime-storage-allocation-no-layout-rederivation";
-// ivar offset/layout emission anchor: lane-C extends the frozen
-// accessor/layout handoff into real object payloads by emitting per-ivar
-// offset globals, per-owner layout tables, and descriptor records that carry
-// the sema-approved slot/offset/size/alignment tuple without yet allocating
-// runtime instances or synthesizing accessor bodies.
-inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionContractId =
-    "objc3c.executable.ivar.layout.emission.v1";
-inline constexpr const char *kObjc3ExecutableIvarLayoutDescriptorModel =
-    "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering";
-inline constexpr const char *kObjc3ExecutableIvarOffsetGlobalModel =
-    "one-retained-i64-offset-global-per-emitted-ivar-binding";
-inline constexpr const char *kObjc3ExecutableIvarLayoutTableModel =
-    "declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size";
-inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionScopeModel =
-    "sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation";
-inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionFailClosedModel =
-    "no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis";
-// synthesized accessor/property lowering anchor: lane-C upgrades the
-// frozen property/layout handoff into executable accessor support by
-// materializing missing implementation-owned getter/setter method entries,
-// emitting deterministic storage globals keyed by synthesized binding symbols,
-// and widening property descriptor payloads with effective accessor and layout
-// attachment records while still deferring true runtime instance allocation to
-// later lane-D work.
-inline constexpr const char
-    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId =
-        "objc3c.executable.synthesized.accessor.property.lowering.v1";
-inline constexpr const char
-    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel =
-        "implementation-owned-properties-synthesize-missing-effective-instance-accessors-into-emitted-method-lists";
-inline constexpr const char
-    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel =
-        "synthesized-getter-setter-bodies-lower-directly-to-runtime-current-property-helper-calls-without-storage-globals";
-inline constexpr const char
-    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel =
-        "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
-inline constexpr const char
-    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
-        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-shared-storage-bypasses";
-// runtime property/layout consumption freeze anchor: lane-D now
-// freezes the truthful runtime boundary above C003. Runtime consumes emitted
-// synthesized accessor implementation pointers plus property/layout attachment
-// records through the existing lookup/dispatch ABI, but alloc/new still
-// materialize one canonical realized instance identity per class and accessor
-// execution still uses the lane-C storage globals until D002 introduces real
-// per-instance slot allocation.
-inline constexpr const char *kObjc3RuntimePropertyLayoutConsumptionContractId =
-    "objc3c.runtime.property.layout.consumption.freeze.v1";
-inline constexpr const char
-    *kObjc3RuntimePropertyLayoutConsumptionDescriptorModel =
-        "runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery";
-inline constexpr const char
-    *kObjc3RuntimePropertyLayoutConsumptionAllocatorModel =
-        "alloc-new-consume-realized-class-layout-and-handoff-directly-to-runtime-owned-instance-slot-allocation";
-inline constexpr const char
-    *kObjc3RuntimePropertyLayoutConsumptionStorageModel =
-        "synthesized-accessor-execution-consumes-runtime-owned-per-instance-slots-selected-by-the-dispatch-frame-property-context";
-inline constexpr const char
-    *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
-        "no-layout-rederivation-no-shared-storage-bypasses-no-reflective-property-registration";
-// instance-allocation-layout-runtime anchor: lane-D upgrades the
-// frozen D001 runtime-consumption boundary into true per-instance allocation
-// backed by realized class layout, emitted ivar offsets, and runtime-owned slot
-// storage without reopening source-driven layout recovery.
-inline constexpr const char
-    *kObjc3RuntimeInstanceAllocationLayoutSupportContractId =
-        "objc3c.runtime.instance.allocation.layout.support.v1";
-inline constexpr const char
-    *kObjc3RuntimeInstanceAllocationLayoutSupportDescriptorModel =
-        "runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery";
-inline constexpr const char
-    *kObjc3RuntimeInstanceAllocationLayoutSupportAllocatorModel =
-        "alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout";
-inline constexpr const char
-    *kObjc3RuntimeInstanceAllocationLayoutSupportStorageModel =
-        "synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records";
-inline constexpr const char
-    *kObjc3RuntimeInstanceAllocationLayoutSupportFailClosedModel =
-        "no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet";
-// property-metadata-reflection anchor: lane-D now freezes the
-// private reflective helper surface over the realized property metadata graph
-// so diagnostics and tests can query property/accessor/layout facts without
-// widening the public runtime ABI or rediscovering metadata from source.
-inline constexpr const char
-    *kObjc3RuntimePropertyMetadataReflectionContractId =
-        "objc3c.runtime.property.metadata.reflection.v1";
-inline constexpr const char
-    *kObjc3RuntimePropertyMetadataReflectionRegistrationModel =
-        "runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery";
-inline constexpr const char
-    *kObjc3RuntimePropertyMetadataReflectionQueryModel =
-        "private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts";
-inline constexpr const char
-    *kObjc3RuntimePropertyMetadataReflectionFailClosedModel =
-        "no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout";
-inline constexpr const char
-    *kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId =
-        "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1";
-inline constexpr const char
-    *kObjc3AccessorStorageLoweringMetadataModel =
-        "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path";
-inline constexpr const char
-    *kObjc3AccessorStorageLoweringHelperSelectionModel =
-        "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers";
-// executable method-body binding implementation anchor: lane-C now
-// hardens the existing executable object surface so implementation-owned
-// method entries must bind to exactly one concrete LLVM definition symbol and
-// object emission fails closed when that attachment is missing or ambiguous.
-inline constexpr const char *kObjc3ExecutableMethodBodyBindingContractId =
-    "objc3c.executable.method.body.binding.v1";
-inline constexpr const char *kObjc3ExecutableMethodBodyBindingSourceModel =
-    "implementation-owned-method-entry-owner-identity-selects-one-llvm-definition-symbol";
-inline constexpr const char *kObjc3ExecutableMethodBodyBindingRuntimeModel =
-    "emitted-method-entry-implementation-pointer-dispatches-through-objc3_runtime_dispatch_i32";
-inline constexpr const char *kObjc3ExecutableMethodBodyBindingFailClosedModel =
-    "error-on-missing-or-duplicate-implementation-binding";
-// executable realization-record expansion anchor: lane-C extends the
-// executable object surface with realization-ready class, protocol, and
-// category records that preserve the frontend-owned owner/super/adoption edges
-// directly in emitted artifacts instead of forcing later runtime work to
-// recover them out-of-band.
-inline constexpr const char *kObjc3ExecutableRealizationRecordsContractId =
-    "objc3c.executable.realization.records.v1";
-inline constexpr const char *kObjc3ExecutableRealizationClassRecordModel =
-    "class-and-metaclass-records-carry-bundle-object-and-super-owner-identities-plus-method-list-refs";
-inline constexpr const char *kObjc3ExecutableRealizationProtocolRecordModel =
-    "protocol-records-carry-owner-inherited-protocol-edges-and-split-instance-class-method-counts";
-inline constexpr const char *kObjc3ExecutableRealizationCategoryRecordModel =
-    "category-records-carry-explicit-class-and-category-owner-identities-plus-attachment-and-adopted-protocol-edges";
-inline constexpr const char *kObjc3ExecutableRealizationFailClosedModel =
-    "no-identity-edge-elision-no-out-of-band-graph-reconstruction";
-// class-realization-runtime freeze anchor: lane-D now freezes the
-// current runtime-owned class realization surface that consumes emitted
-// realization records, walks class/metaclass chains, attaches preferred
-// category implementation records, and uses protocol records as
-// declaration-aware negative lookup evidence only.
-inline constexpr const char *kObjc3RuntimeClassRealizationContractId =
-    "objc3c.runtime.class.realization.freeze.v1";
-inline constexpr const char *kObjc3RuntimeClassRealizationModel =
-    "registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name";
-inline constexpr const char *kObjc3RuntimeMetaclassGraphModel =
-    "known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain";
-inline constexpr const char *kObjc3RuntimeClassRealizationCategoryAttachmentModel =
-    "preferred-category-implementation-records-attach-after-class-bundle-resolution";
-inline constexpr const char *kObjc3RuntimeProtocolCheckModel =
-    "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks";
-inline constexpr const char *kObjc3RuntimeClassRealizationFailClosedModel =
-    "invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed";
-// metaclass-graph-root-class anchor: lane-D now promotes the frozen
-// D001 runtime boundary into a runtime-owned realized class graph keyed by
-// stable receiver identities, with explicit root-class publication and
-// metaclass-edge inventory available to later runtime lanes.
-inline constexpr const char *kObjc3RuntimeMetaclassGraphRootClassContractId =
-    "objc3c.runtime.metaclass.graph.root.class.baseline.v1";
-inline constexpr const char *kObjc3RuntimeRealizedClassGraphModel =
-    "runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records";
-inline constexpr const char *kObjc3RuntimeRootClassBaselineModel =
-    "root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch";
-inline constexpr const char *kObjc3RuntimeRealizedClassGraphFailClosedModel =
-    "missing-receiver-bindings-or-broken-realized-superclass-links-publish-strict-dispatch-error";
-inline constexpr const char *kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId =
-    "objc3c.runtime.category.attachment.protocol.conformance.v1";
-inline constexpr const char *kObjc3RuntimeCategoryAttachmentRealizedGraphModel =
-    "realized-class-nodes-own-preferred-category-attachments-after-registration";
-inline constexpr const char *kObjc3RuntimeProtocolConformanceQueryModel =
-    "runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures";
-inline constexpr const char *kObjc3RuntimeAttachmentConformanceFailClosedModel =
-    "invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries";
-inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectSampleSupportContractId =
-    "objc3c.runtime.canonical.runnable.object.sample.support.v1";
-inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectExecutionModel =
-    "canonical-object-samples-use-runtime-owned-alloc-new-init-and-realized-class-dispatch";
-inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectProbeSplitModel =
-    "metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits";
-inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectFailClosedModel =
-    "metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open";
 // binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -682,19 +463,6 @@ bool RequiresFailClosedObjc3RuntimeDispatchError(
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family);
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary);
-std::string Objc3ExecutableObjectArtifactLoweringSummary();
-std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
-std::string Objc3ExecutableIvarLayoutEmissionSummary();
-std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
-std::string Objc3RuntimePropertyLayoutConsumptionSummary();
-std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
-std::string Objc3RuntimePropertyMetadataReflectionSummary();
-std::string Objc3ExecutableMethodBodyBindingSummary();
-std::string Objc3ExecutableRealizationRecordsSummary();
-std::string Objc3RuntimeClassRealizationSummary();
-std::string Objc3RuntimeMetaclassGraphRootClassSummary();
-std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary();
-std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary();
 std::string Objc3ManifestObjectIrTruthGateSummary();
 std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
