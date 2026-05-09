@@ -3,11 +3,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
-import re
-import subprocess
 import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -21,11 +18,29 @@ for import_root in (ROOT, SCRIPT_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_public_workflow_report_paths as extract_report_paths
 
 from scripts.objc3c_workflow.action_spec import ActionHandler, ActionSpec
+from scripts.objc3c_workflow.actions.developer_tooling import (
+    BONUS_EXPERIENCE_INTEGRATION_PY,
+    DEVELOPER_TOOLING_INTEGRATION_PY,
+    action_check_llvm_capabilities,
+    action_format_objc3c,
+    action_inspect_bonus_tool_integration,
+    action_inspect_capability_explorer,
+    action_inspect_compile_observability,
+    action_inspect_editor_tooling,
+    action_inspect_playground_repro,
+    action_inspect_runtime_inspector,
+    action_materialize_playground_workspace,
+    action_materialize_project_template,
+    action_trace_compile_stages,
+    action_validate_bonus_experiences,
+    action_validate_developer_tooling,
+    action_validate_runnable_bonus_experiences,
+    action_validate_runnable_developer_tooling,
+)
 from scripts.objc3c_workflow.actions.docs import (
     action_build_native_docs,
     action_build_public_command_contract,
@@ -167,11 +182,10 @@ from scripts.objc3c_workflow.actions.validation_timing import (
     validation_budget_violations,
     validation_speed_budget_mode,
 )
-from scripts.objc3c_workflow.commands import extract_output_line, pwsh_file, run, workflow_command
+from scripts.objc3c_workflow.commands import pwsh_file, run, workflow_command
 from scripts.objc3c_workflow.environment import (
     PWSH,
     WORKFLOW_COMMAND_TEXT,
-    WORKFLOW_MODULE,
     WORKFLOW_RUNNER_MODE,
     WORKFLOW_RUNNER_SURFACE,
 )
@@ -193,11 +207,6 @@ SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
 SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
-DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
-RUNNABLE_DEVELOPER_TOOLING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_developer_tooling_end_to_end.py"
-EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
-FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
-BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
@@ -208,7 +217,6 @@ STDLIB_PROGRAM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_program_
 RUNNABLE_STDLIB_FOUNDATION_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_foundation_end_to_end.py"
 RUNNABLE_STDLIB_ADVANCED_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_advanced_end_to_end.py"
 RUNNABLE_STDLIB_PROGRAM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_program_end_to_end.py"
-PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_canonical_application_workspace.py"
 APPLICATION_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_application_architecture_integration.py"
 RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_application_architecture_end_to_end.py"
@@ -225,26 +233,15 @@ GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_gove
 GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_governance_sustainability_metadata.py"
 PLANNING_ISSUE_PUBLISHER_PY = ROOT / "scripts" / "publish_objc3c_planning_issues.py"
 PLANNING_PUBLICATION_AUDIT_PY = ROOT / "scripts" / "audit_objc3c_planning_publication.py"
-LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
 SOURCE_HYGIENE_AUTHENTICITY_PY = ROOT / "scripts" / "check_source_hygiene_authenticity.py"
 SOURCE_HYGIENE_HARD_CUTOVER_PY = ROOT / "scripts" / "check_source_hygiene_hard_cutover.py"
-RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
-FRONTEND_C_API_RUNNER_EXE = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
-DEFAULT_DEVELOPER_TOOLING_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
-DEFAULT_PLAYGROUND_SOURCE = DEFAULT_DEVELOPER_TOOLING_SOURCE
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
-PLAYGROUND_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "playground"
-PLAYGROUND_REPORT_ROOT = ROOT / "tmp" / "reports" / "playground"
-PLAYGROUND_WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
-REPO_SUPERCLEAN_SOURCE_OF_TRUTH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_source_of_truth.json"
-SHOWCASE_PORTFOLIO_JSON = ROOT / "showcase" / "portfolio.json"
-SHOWCASE_TUTORIAL_WALKTHROUGH_JSON = ROOT / "showcase" / "tutorial_walkthrough.json"
 def run_steps(actions: Sequence[str]) -> int:
     for action in actions:
         rc = execute_registered_action(action, [])
@@ -259,17 +256,6 @@ def action_build_default(_: list[str]) -> int:
 
 def action_check_dependency_boundaries(_: list[str]) -> int:
     return run([sys.executable, str(DEPENDENCY_BOUNDARIES_PY), "--strict"])
-
-
-def action_check_llvm_capabilities(_: list[str]) -> int:
-    return run(
-        [
-            sys.executable,
-            str(LLVM_CAPABILITIES_PROBE_PY),
-            "--summary-out",
-            "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
-        ]
-    )
 
 
 def action_check_release_evidence(_: list[str]) -> int:
@@ -415,401 +401,12 @@ def action_validate_repo_superclean(_: list[str]) -> int:
     )
 
 
-def _parse_developer_tooling_invocation(rest: list[str]) -> tuple[str, list[str]]:
-    if rest and not rest[0].startswith("--"):
-        source_text = rest[0]
-        passthrough = rest[1:]
-    else:
-        source_text = str(DEFAULT_DEVELOPER_TOOLING_SOURCE.relative_to(ROOT).as_posix())
-        passthrough = rest
-    for forbidden in (
-        "--summary-out",
-        "--dump-summary-json",
-        "--dump-observability-json",
-        "--dump-playground-repro-json",
-        "--dump-runtime-inspector-json",
-        "--dump-stage-trace-json",
-    ):
-        if forbidden in passthrough:
-            raise ValueError(f"{forbidden} is managed by the public developer-tooling action")
-    return source_text, passthrough
-
-
-def _parse_playground_invocation(rest: list[str]) -> tuple[str, list[str]]:
-    if rest and not rest[0].startswith("--"):
-        source_text = rest[0]
-        passthrough = rest[1:]
-    else:
-        source_text = str(DEFAULT_PLAYGROUND_SOURCE.relative_to(ROOT).as_posix())
-        passthrough = rest
-    for forbidden in (
-        "--out-dir",
-        "--emit-prefix",
-        "--summary-out",
-        "--dump-summary-json",
-        "--dump-observability-json",
-        "--dump-playground-repro-json",
-        "--dump-runtime-inspector-json",
-        "--dump-stage-trace-json",
-    ):
-        if forbidden in passthrough:
-            raise ValueError(f"{forbidden} is managed by the public playground action")
-    return source_text, passthrough
-
-
-def _resolve_source_path(source_text: str) -> tuple[Path, str]:
-    candidate = Path(source_text)
-    resolved = candidate if candidate.is_absolute() else ROOT / candidate
-    resolved = resolved.resolve()
-    if not resolved.is_file():
-        raise FileNotFoundError(f"playground source not found: {source_text}")
-    try:
-        display = resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        display = resolved.as_posix()
-    return resolved, display
-
-
-def _slugify_playground_workspace(source_display: str) -> str:
-    safe_stem = re.sub(r"[^a-z0-9]+", "-", Path(source_display).stem.lower()).strip("-")
-    if not safe_stem:
-        safe_stem = "source"
-    digest = hashlib.sha256(source_display.encode("utf-8")).hexdigest()[:12]
-    return f"{safe_stem}-{digest}"
-
-
-def _ensure_frontend_runner_ready() -> int:
-    if not (ROOT / "native" / "objc3c" / "src" / "main.cpp").is_file() and FRONTEND_C_API_RUNNER_EXE.is_file():
-        return 0
-    return execute_registered_action("build-native-binaries", [])
-
-
-def _run_playground_workspace(
-    rest: list[str],
-    *,
-    emit_payload: bool,
-) -> int:
-    try:
-        source_text, passthrough = _parse_playground_invocation(rest)
-        _, source_display = _resolve_source_path(source_text)
-    except (ValueError, FileNotFoundError) as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
-
-    rc = _ensure_frontend_runner_ready()
-    if rc != 0:
-        return rc
-
-    workspace_id = _slugify_playground_workspace(source_display)
-    workspace_root = PLAYGROUND_ARTIFACT_ROOT / workspace_id
-    artifact_root = workspace_root / "build"
-    report_root = PLAYGROUND_REPORT_ROOT / workspace_id
-    workspace_manifest_path = workspace_root / "workspace.json"
-    summary_path = report_root / "compile-summary.json"
-    dump_path = report_root / "playground-repro.json"
-
-    artifact_root.mkdir(parents=True, exist_ok=True)
-    report_root.mkdir(parents=True, exist_ok=True)
-
-    artifact_root_rel = artifact_root.relative_to(ROOT).as_posix()
-    summary_path_rel = summary_path.relative_to(ROOT).as_posix()
-
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(
-        [
-            str(FRONTEND_C_API_RUNNER_EXE),
-            source_display,
-            "--out-dir",
-            artifact_root_rel,
-            "--emit-prefix",
-            "module",
-            "--summary-out",
-            summary_path_rel,
-            "--dump-playground-repro-json",
-            *passthrough,
-        ],
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-    if result.returncode != 0:
-        if result.stdout:
-            sys.stdout.write(result.stdout)
-        return result.returncode
-
-    try:
-        playground_payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        print(f"playground-workspace: invalid JSON from frontend runner: {exc}", file=sys.stderr)
-        return 1
-
-    dump_path.write_text(json.dumps(playground_payload, indent=2) + "\n", encoding="utf-8")
-
-    editor_result = subprocess.run(
-        [sys.executable, str(EDITOR_TOOLING_SURFACE_PY), source_display],
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
-    if editor_result.stdout:
-        sys.stdout.write(editor_result.stdout)
-    if editor_result.stderr:
-        sys.stderr.write(editor_result.stderr)
-    if editor_result.returncode != 0:
-        return editor_result.returncode
-
-    editor_surface_path_text = extract_output_line(editor_result.stdout, "dump_path:")
-    capabilities_path_text = extract_output_line(editor_result.stdout, "capabilities_path:")
-    navigation_path_text = extract_output_line(editor_result.stdout, "navigation_path:")
-    formatter_path_text = extract_output_line(editor_result.stdout, "formatter_path:")
-    debug_path_text = extract_output_line(editor_result.stdout, "debug_path:")
-    if not editor_surface_path_text:
-        print("playground-workspace: editor tooling action did not publish dump_path", file=sys.stderr)
-        return 1
-    editor_surface_path = ROOT / editor_surface_path_text
-    if not editor_surface_path.is_file():
-        print(f"playground-workspace: missing editor tooling surface {editor_surface_path_text}", file=sys.stderr)
-        return 1
-    editor_surface_payload = load_json(editor_surface_path)
-    formatter_payload = editor_surface_payload.get("formatter", {})
-    debug_payload = editor_surface_payload.get("debug", {})
-    workspace_drill_commands = {
-        "inspect_editor_tooling": f"{WORKFLOW_COMMAND_TEXT} inspect-editor-tooling {source_display}",
-        "format_preview": f"{WORKFLOW_COMMAND_TEXT} format-objc3c {source_display}",
-        "object_symbol_inventory": str(debug_payload.get("object_symbol_inventory_command", "")),
-    }
-
-    workspace_payload = {
-        "contract_id": PLAYGROUND_WORKSPACE_CONTRACT_ID,
-        "schema_version": 1,
-        "workspace_id": workspace_id,
-        "source_path": source_display,
-        "workspace_root": workspace_root.relative_to(ROOT).as_posix(),
-        "artifact_root": artifact_root.relative_to(ROOT).as_posix(),
-        "report_root": report_root.relative_to(ROOT).as_posix(),
-        "emit_prefix": "module",
-        "summary_path": summary_path.relative_to(ROOT).as_posix(),
-        "playground_payload_path": dump_path.relative_to(ROOT).as_posix(),
-        "playground_payload_contract_id": playground_payload.get("contract_id"),
-        "public_actions": [
-            "materialize-playground-workspace",
-            "compile-objc3c",
-            "inspect-playground-repro",
-            "inspect-compile-observability",
-            "inspect-editor-tooling",
-            "format-objc3c",
-            "trace-compile-stages",
-            "validate-developer-tooling",
-        ],
-        "compile_profile": playground_payload.get("compile_profile", {}),
-        "artifact_paths": playground_payload.get("artifact_paths", {}),
-        "showcase_examples": playground_payload.get("showcase_examples", []),
-        "repro_command": playground_payload.get("dump_commands", {}).get("repro_runner", ""),
-        "editor_tooling": {
-            "editor_surface_path": editor_surface_path_text,
-            "language_server_capabilities_path": capabilities_path_text,
-            "navigation_path": navigation_path_text,
-            "formatter_path": formatter_path_text,
-            "debug_path": debug_path_text,
-            "formatted_output_path": formatter_payload.get("formatted_output_path"),
-            "format_preview_supported": formatter_payload.get("supported"),
-            "debugger_model": debug_payload.get("debugger_model", ""),
-            "declaration_breakpoint_anchor_count": debug_payload.get("declaration_breakpoint_anchor_count", 0),
-            "statement_level_stepping": debug_payload.get("statement_level_stepping"),
-        },
-        "workspace_drill_commands": workspace_drill_commands,
-    }
-    workspace_manifest_path.write_text(
-        json.dumps(workspace_payload, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-    if emit_payload:
-        sys.stdout.write(json.dumps(playground_payload, indent=2) + "\n")
-    print(f"workspace_path: {workspace_manifest_path.relative_to(ROOT).as_posix()}")
-    print(f"summary_path: {summary_path.relative_to(ROOT).as_posix()}")
-    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
-    print(f"artifact_root: {artifact_root.relative_to(ROOT).as_posix()}")
-    return 0
-
-
-def _write_json_capture(path: Path, stdout: str) -> int:
-    try:
-        payload = json.loads(stdout)
-    except json.JSONDecodeError as exc:
-        print(f"developer-tooling-dump: invalid JSON from frontend runner: {exc}", file=sys.stderr)
-        return 1
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    return 0
-
-
-def _run_developer_tooling_dump(action_name: str,
-                                dump_flag: str,
-                                dump_filename: str,
-                                rest: list[str]) -> int:
-    try:
-        source_text, passthrough = _parse_developer_tooling_invocation(rest)
-    except ValueError as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
-    rc = _ensure_frontend_runner_ready()
-    if rc != 0:
-        return rc
-    summary_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action_name}-summary.json"
-    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / dump_filename
-    command = [
-        str(FRONTEND_C_API_RUNNER_EXE),
-        source_text,
-        "--summary-out",
-        str(summary_path),
-        dump_flag,
-        *passthrough,
-    ]
-    result = run_capture(command)
-    if result.returncode != 0:
-        return result.returncode
-    rc = _write_json_capture(dump_path, result.stdout)
-    if rc != 0:
-        return rc
-    print(f"summary_path: {summary_path.relative_to(ROOT).as_posix()}")
-    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
-    return 0
-
-
-def action_inspect_compile_observability(rest: list[str]) -> int:
-    return _run_developer_tooling_dump(
-        "inspect-compile-observability",
-        "--dump-observability-json",
-        "compile-observability.json",
-        rest,
-    )
-
-
-def action_inspect_runtime_inspector(rest: list[str]) -> int:
-    return _run_developer_tooling_dump(
-        "inspect-runtime-inspector",
-        "--dump-runtime-inspector-json",
-        "runtime-inspector.json",
-        rest,
-    )
-
-
-def action_inspect_editor_tooling(rest: list[str]) -> int:
-    rc = _ensure_frontend_runner_ready()
-    if rc != 0:
-        return rc
-    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
-
-
-def action_format_objc3c(rest: list[str]) -> int:
-    return run([sys.executable, str(FORMAT_OBJC3C_SOURCE_PY), *rest])
-
-
-def action_inspect_capability_explorer(rest: list[str]) -> int:
-    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json"
-    dump_path.parent.mkdir(parents=True, exist_ok=True)
-    rc = run(
-        [
-            sys.executable,
-            str(LLVM_CAPABILITIES_PROBE_PY),
-            "--summary-out",
-            str(dump_path),
-            *rest,
-        ]
-    )
-    if rc == 0:
-        print(f"summary_path: {dump_path.relative_to(ROOT).as_posix()}")
-        print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
-    return rc
-
-
-def action_inspect_playground_repro(rest: list[str]) -> int:
-    return _run_playground_workspace(rest, emit_payload=True)
-
-
-def action_materialize_playground_workspace(rest: list[str]) -> int:
-    return _run_playground_workspace(rest, emit_payload=False)
-
-
-def action_trace_compile_stages(rest: list[str]) -> int:
-    return _run_developer_tooling_dump(
-        "trace-compile-stages",
-        "--dump-stage-trace-json",
-        "compile-stage-trace.json",
-        rest,
-    )
-
-
-def action_validate_developer_tooling(_: list[str]) -> int:
-    return run([sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)])
-
-
-def action_validate_runnable_developer_tooling(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_DEVELOPER_TOOLING_E2E_PY)])
-
-
-def action_validate_bonus_experiences(_: list[str]) -> int:
-    return run([sys.executable, str(BONUS_EXPERIENCE_INTEGRATION_PY)])
-
-
 def action_validate_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
 
 
 def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
-
-
-def action_inspect_bonus_tool_integration(_: list[str]) -> int:
-    native_main = ROOT / "native" / "objc3c" / "src" / "main.cpp"
-    if native_main.is_file():
-        rc = execute_registered_action("build-native-contracts", [])
-        if rc != 0:
-            return rc
-    if not REPO_SUPERCLEAN_SOURCE_OF_TRUTH.is_file():
-        print(
-            f"missing source-of-truth artifact: {REPO_SUPERCLEAN_SOURCE_OF_TRUTH.relative_to(ROOT).as_posix()}",
-            file=sys.stderr,
-        )
-        return 1
-    source_of_truth = json.loads(REPO_SUPERCLEAN_SOURCE_OF_TRUTH.read_text(encoding="utf-8"))
-    portfolio = json.loads(SHOWCASE_PORTFOLIO_JSON.read_text(encoding="utf-8"))
-    walkthrough = json.loads(SHOWCASE_TUTORIAL_WALKTHROUGH_JSON.read_text(encoding="utf-8"))
-    integration_surface = source_of_truth.get("bonus_tool_integration_surface")
-    if not isinstance(integration_surface, dict):
-        print("repo superclean artifact missing bonus_tool_integration_surface", file=sys.stderr)
-        return 1
-    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / "bonus-tool-integration.json"
-    dump_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "contract_id": "objc3c.bonus.tool.integration.surface.v1",
-        "schema_version": 1,
-        "source_of_truth_artifact": REPO_SUPERCLEAN_SOURCE_OF_TRUTH.relative_to(ROOT).as_posix(),
-        "integration_surface": integration_surface,
-        "bonus_experience_surfaces": source_of_truth.get("bonus_experience_surfaces", {}),
-        "showcase_portfolio_contract_id": portfolio.get("contract_id"),
-        "guided_walkthrough_contract_id": walkthrough.get("contract_id"),
-    }
-    dump_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"summary_path: {dump_path.relative_to(ROOT).as_posix()}")
-    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
-    return 0
-
-
-def action_materialize_project_template(rest: list[str]) -> int:
-    return run([sys.executable, str(PROJECT_TEMPLATE_MATERIALIZER_PY), *rest])
-
-
-def action_validate_runnable_bonus_experiences(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_BONUS_EXPERIENCE_E2E_PY)])
 
 
 def action_validate_runnable_stdlib_foundation(_: list[str]) -> int:
