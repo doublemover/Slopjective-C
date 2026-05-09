@@ -11,6 +11,7 @@ add_library(objc3c_diag STATIC
   objc3_diag_sort.cpp
   objc3_diag_catalog.cpp
   objc3_diag_catalog_contract.cpp
+  objc3_diag_catalog_data.cpp
   objc3_diag_catalog_table.cpp
   objc3_diag_parse.cpp
   objc3_diag_text.cpp
