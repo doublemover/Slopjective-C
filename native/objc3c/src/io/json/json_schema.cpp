@@ -1,16 +1,16 @@
 #include "io/json/json_schema.h"
 
-#include <cstddef>
 #include <regex>
 #include <string_view>
 
-#include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
 #include "io/json/json_schema_annotation_contract_validation.h"
 #include "io/json/json_schema_applicator_contract_validation.h"
 #include "io/json/json_schema_composition_contract_validation.h"
 #include "io/json/json_schema_contract_validation.h"
+#include "io/json/json_schema_enum_contract_validation.h"
 #include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_required_contract_validation.h"
 #include "io/json/json_schema_type_contract_validation.h"
 #include "io/json/json_schema_validation.h"
 
@@ -69,54 +69,6 @@ void ValidateJsonSchemaNonnegativeNumberKeyword(const JsonValue &schema,
         result, "invalid_nonnegative_keyword",
         JsonSchemaKeywordPath(schema_path, keyword),
         std::string(keyword) + " must be zero or greater");
-  }
-}
-
-void ValidateJsonSchemaEnumContract(const JsonValue &enum_values,
-                                    const std::string &schema_path,
-                                    JsonSchemaResult &result) {
-  if (!enum_values.IsArray()) {
-    AddJsonSchemaContractError(result, "invalid_enum", schema_path,
-                               "enum must be an array");
-    return;
-  }
-  for (std::size_t i = 0; i < enum_values.AsArray().size(); ++i) {
-    for (std::size_t j = i + 1; j < enum_values.AsArray().size(); ++j) {
-      if (JsonEquals(enum_values.AsArray()[i], enum_values.AsArray()[j])) {
-        AddJsonSchemaContractError(
-            result, "duplicate_enum",
-            JsonInstanceArrayElementPath(schema_path, j),
-            "enum values must be unique");
-      }
-    }
-  }
-}
-
-void ValidateJsonSchemaRequiredContract(const JsonValue &required,
-                                        const std::string &schema_path,
-                                        JsonSchemaResult &result) {
-  if (!required.IsArray()) {
-    AddJsonSchemaContractError(result, "invalid_required", schema_path,
-                               "required must be an array of strings");
-    return;
-  }
-  for (std::size_t i = 0; i < required.AsArray().size(); ++i) {
-    const JsonValue &entry = required.AsArray()[i];
-    const std::string entry_path = JsonInstanceArrayElementPath(schema_path, i);
-    if (!entry.IsString()) {
-      AddJsonSchemaContractError(result, "invalid_required_entry", entry_path,
-                                 "required entries must be strings");
-      continue;
-    }
-    for (std::size_t j = i + 1; j < required.AsArray().size(); ++j) {
-      if (required.AsArray()[j].IsString() &&
-          required.AsArray()[j].AsString() == entry.AsString()) {
-        AddJsonSchemaContractError(
-            result, "duplicate_required",
-            JsonInstanceArrayElementPath(schema_path, j),
-            "required property names must be unique");
-      }
-    }
   }
 }
 
