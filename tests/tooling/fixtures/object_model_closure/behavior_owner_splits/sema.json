@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-object-model-closure-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+  "support_boundary": "semantic ownership covers class, metaclass, category, protocol, property, ivar, selector, private-query, and aggregate object-model meaning before lowering, runtime, or e2e owners cite executable closure",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:object_model_semantic_owner",
+    "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+    "frozen_semantic_models:runtime-owned-realized-object-graph-is-the-only-truth-surface",
+    "frozen_semantic_models:aggregate-object-model-query-must-agree-with-live-dispatch-and-property-lookups",
+    "frozen_semantic_models:reflection-coherence-is-defined-against-observed-runtime-behavior",
+    "claim_narrowing_constraints:no-public-reflection-abi-claim",
+    "claim_narrowing_constraints:no-source-only-metadata-equals-runtime-truth-claim"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "source-only metadata equality, public reflection ABI claims, universal selector success claims, compatibility shims, and fallback-positive semantic claims are diagnostics, canonical rejection, or provenance-only evidence"
+}

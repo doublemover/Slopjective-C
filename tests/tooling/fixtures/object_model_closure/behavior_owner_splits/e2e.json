@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-object-model-closure-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+  "support_boundary": "e2e ownership covers runnable object-model and storage-reflection command surfaces, workflow actions, cross-module loader replay, packaged executable proof, and full object-model closure evidence only after lower phase owners have claimed their behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:object_model_workload_owner",
+    "source_owner_contracts:object_model_executable_proof_owner",
+    "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json",
+    "tests/tooling/fixtures/object_model_closure/executable_proof_abi_contract.json",
+    "workloads:cross-module-loader-replay",
+    "workloads:category-attachment-and-merged-dispatch",
+    "workloads:protocol-conformance-and-aggregate-query-coherence",
+    "public_command_surfaces:test:objc3c:object-model-conformance",
+    "public_command_surfaces:test:objc3c:storage-reflection-conformance",
+    "public_command_surfaces:test:objc3c:runnable-object-model",
+    "public_command_surfaces:test:objc3c:runnable-storage-reflection"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "report-only public command success, workflow-label-only acceptance, generated-report-only support, milestone-local parallel acceptance scaffolding, and public ABI widening are canonical rejection or provenance-only evidence"
+}

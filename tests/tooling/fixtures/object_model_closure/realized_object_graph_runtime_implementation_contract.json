@@ -5,6 +5,13 @@
   "issue": "M319-B003",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
   "summary_implementation_anchor": "scripts/build_object_model_closure_runtime_implementation_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "runtime",
+    "canonical_rejection"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
   "authoritative_runtime_symbols": [
     "objc3_runtime_register_image",
     "objc3_runtime_dispatch_i32",
@@ -19,7 +26,7 @@
   ],
   "implementation_invariants": [
     "registration-publishes-runtime-backed-class-graph-before-dispatch-and-query",
-    "attached-categories-contribute-instance-methods-and-protocol-edges-before-lookup-fallback",
+    "attached-categories-contribute-instance-methods-and-protocol-edges-before-any-unresolved-lookup-fallback-is-classified-as-strict-error",
     "aggregate-object-model-query-state-is-derived-from-the-same-runtime-state-as-live-dispatch-and-supporting-query-snapshots",
     "full-object-model-closure-does-not-widen-the-public-runtime-abi"
   ],

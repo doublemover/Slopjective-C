@@ -5,6 +5,14 @@
   "issue": "M319-D001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
   "summary_implementation_anchor": "scripts/build_object_model_closure_executable_proof_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "runtime",
+    "e2e",
+    "provenance",
+    "canonical_rejection"
+  ],
+  "support_boundary": "public commands and workflow actions are executable proof routing only; they do not widen public runtime ABI or turn report-only/generated-report-only rows into positive support",
   "public_command_surfaces": [
     "test:objc3c:object-model-conformance",
     "test:objc3c:storage-reflection-conformance",

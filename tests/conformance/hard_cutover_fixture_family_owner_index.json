@@ -579,6 +579,36 @@
       "retired_disposition": "metaprogramming and interop closure source-owner contracts, compatibility-named interop surfaces, runtime acceptance reports, runnable conformance/e2e summaries, generated bridge payloads, package artifacts, runtime-import artifacts, and cache snapshots are resolved through behavior-first phase indexes before any closure row is cited as support; compatibility, shim, fallback, old-mode, unsupported property-behavior, unsupported foreign-loader, public-ABI-widening, stale-acceptance, report-only, and generated-report-only semantics remain canonical rejection, strict-error, or provenance-only evidence"
     },
     {
+      "family": "object_model_closure_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits",
+      "acceptance_area": "runtime_dispatch_registration",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+      ],
+      "retired_disposition": "object-model closure source-owner contracts, loader/category/protocol workload maps, private runtime query snapshots, generated compile artifacts, runtime-registration descriptors, public command surfaces, workflow labels, and generated reports are resolved through behavior-first phase indexes before any object-model row is cited as support; unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, compatibility, shim, old-mode, report-only, generated-report-only, and milestone-local alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
+    },
+    {
       "family": "issue_closeout_evidence",
       "kind": "issue_evidence_index_family",
       "source": "docs/issues",
@@ -694,6 +724,14 @@
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/parser.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/sema.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/lowering.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/ir.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/runtime.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/e2e.json",
+    "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
     "docs/issues/hard_cutover_8132_8150_evidence.json",
     "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
   ]

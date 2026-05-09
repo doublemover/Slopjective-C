@@ -5,9 +5,16 @@
   "issue": "M319-B002",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
   "summary_implementation_anchor": "scripts/build_object_model_closure_workload_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
   "workloads": [
     {
       "workload_id": "cross-module-loader-replay",
+      "behavior_owner_phases": [
+        "parser",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "cross-module replay is e2e/runtime evidence only after parser and runtime owners claim the imported fixtures and registered image behavior",
       "required_case_ids": [
         "imported-runtime-packaging-replay"
       ],
@@ -21,6 +28,12 @@
     },
     {
       "workload_id": "category-attachment-and-merged-dispatch",
+      "behavior_owner_phases": [
+        "parser",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "category attachment and merged dispatch remain runtime/e2e support only for canonical fixtures; unresolved dispatch fallback remains strict-error evidence",
       "required_case_ids": [
         "canonical-dispatch",
         "canonical-sample-set"
@@ -37,6 +50,13 @@
     },
     {
       "workload_id": "protocol-conformance-and-aggregate-query-coherence",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "protocol conformance and aggregate query coherence are semantic/runtime claims; universal selector success and unresolved dispatch miss fallback are canonical rejection or strict-error evidence",
       "required_case_ids": [
         "realization-lookup-reflection-runtime",
         "dispatch-fast-path"

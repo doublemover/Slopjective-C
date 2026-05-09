@@ -5,6 +5,12 @@
   "issue": "M319-C001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
   "summary_implementation_anchor": "scripts/build_object_model_closure_artifact_registration_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "provenance"
+  ],
   "compile_manifest_surface_keys": [
     "runtime_realization_lowering_reflection_artifact_surface",
     "runtime_dispatch_table_reflection_record_lowering_surface",
