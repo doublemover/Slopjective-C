@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "ast/objc3_ast_core.h"
 #include "token/objc3_token_contract.h"
@@ -22,6 +23,26 @@ std::unique_ptr<Expr> BuildObjc3ConditionalExpr(
 std::unique_ptr<Expr> BuildObjc3NumericLiteralExpr(
     int value,
     const Objc3LexToken &token);
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExpr(
+    bool value,
+    const Objc3LexToken &token);
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExprAt(
+    bool value,
+    unsigned line,
+    unsigned column);
+
+std::unique_ptr<Expr> BuildObjc3NilLiteralExpr(const Objc3LexToken &token);
+
+std::unique_ptr<Expr> BuildObjc3IdentifierExpr(
+    const std::string &identifier,
+    const Objc3LexToken &token);
+
+std::unique_ptr<Expr> BuildObjc3TypedKeyPathLiteralExpr(
+    const Objc3LexToken &keypath_token,
+    const Objc3LexToken &root_token,
+    std::vector<std::string> components);
 
 std::unique_ptr<Expr> BuildObjc3UnaryLoweringBinaryExpr(
     const Objc3LexToken &op,

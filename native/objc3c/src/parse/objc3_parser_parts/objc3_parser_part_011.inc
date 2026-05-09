@@ -157,31 +157,23 @@
 
   std::unique_ptr<Expr> ParsePrimary() {
     if (Match(TokenKind::Number)) {
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::Number;
-      expr->line = Previous().line;
-      expr->column = Previous().column;
-      if (!ParseIntegerLiteralValue(Previous().text, expr->number)) {
-        diagnostics_.push_back(MakeDiag(expr->line, expr->column, "O3P103",
-                                        "invalid numeric literal '" + Previous().text + "'"));
+      int value = 0;
+      const Token &number_token = Previous();
+      if (!ParseIntegerLiteralValue(number_token.text, value)) {
+        diagnostics_.push_back(MakeDiag(
+            number_token.line, number_token.column, "O3P103",
+            "invalid numeric literal '" + number_token.text + "'"));
         return nullptr;
       }
-      return expr;
+      return BuildObjc3NumericLiteralExpr(value, number_token);
     }
     if (Match(TokenKind::KwTrue) || Match(TokenKind::KwFalse)) {
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::BoolLiteral;
-      expr->line = Previous().line;
-      expr->column = Previous().column;
-      expr->bool_value = Previous().kind == TokenKind::KwTrue;
-      return expr;
+      const Token &bool_token = Previous();
+      return BuildObjc3BoolLiteralExpr(
+          bool_token.kind == TokenKind::KwTrue, bool_token);
     }
     if (Match(TokenKind::KwNil)) {
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::NilLiteral;
-      expr->line = Previous().line;
-      expr->column = Previous().column;
-      return expr;
+      return BuildObjc3NilLiteralExpr(Previous());
     }
     if (Match(TokenKind::Caret)) {
       return ParseBlockLiteralExpression();
@@ -224,27 +216,12 @@
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after @keypath"));
         return nullptr;
       }
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::Identifier;
-      expr->ident = "__objc3_keypath_literal";
-      expr->line = keypath_token.line;
-      expr->column = keypath_token.column;
-      expr->typed_keypath_literal_enabled = true;
-      expr->typed_keypath_root_is_self = root.text == "self";
-      expr->typed_keypath_root_name = root.text;
-      expr->typed_keypath_components = std::move(components);
-      expr->typed_keypath_literal_profile = BuildTypedKeyPathLiteralProfile(
-          expr->typed_keypath_root_name, expr->typed_keypath_root_is_self, expr->typed_keypath_components);
-      expr->typed_keypath_literal_is_normalized = !expr->typed_keypath_components.empty();
-      return expr;
+      return BuildObjc3TypedKeyPathLiteralExpr(
+          keypath_token, root, std::move(components));
     }
     if (Match(TokenKind::Identifier)) {
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::Identifier;
-      expr->line = Previous().line;
-      expr->column = Previous().column;
-      expr->ident = Previous().text;
-      return expr;
+      const Token &identifier = Previous();
+      return BuildObjc3IdentifierExpr(identifier.text, identifier);
     }
     if (Match(TokenKind::LParen)) {
       auto expr = ParseExpression();

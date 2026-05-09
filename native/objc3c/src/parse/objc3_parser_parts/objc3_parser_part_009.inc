@@ -365,50 +365,16 @@
     return body;
   }
 
-  static const char *TryOperatorKindSpelling(Expr::TryOperatorKind kind) {
-    switch (kind) {
-    case Expr::TryOperatorKind::Propagate:
-      return "try";
-    case Expr::TryOperatorKind::Optional:
-      return "try?";
-    case Expr::TryOperatorKind::Forced:
-      return "try!";
-    case Expr::TryOperatorKind::None:
-    default:
-      return "none";
-    }
-  }
-
   std::string BuildTryExpressionProfile(const Expr &expr) {
-    std::ostringstream out;
-    out << "try-expression:kind="
-        << TryOperatorKindSpelling(expr.try_operator_kind)
-        << ";requires_throwing_context="
-        << (expr.try_expression_requires_throwing_context ? "true" : "false")
-        << ";normalized=" << (expr.try_expression_is_normalized ? "true" : "false");
-    return out.str();
+    return objc3c::parse::BuildObjc3TryExpressionProfile(expr);
   }
 
   std::string BuildThrowStatementProfile(const Expr &expr) {
-    std::ostringstream out;
-    out << "throw-statement:normalized="
-        << (expr.throw_statement_is_normalized ? "true" : "false");
-    return out.str();
+    return objc3c::parse::BuildObjc3ThrowStatementProfile(expr);
   }
 
   std::string BuildDoCatchProfile(const BlockStmt &block) {
-    std::ostringstream out;
-    out << "do-catch:clauses=" << block.catch_clauses.size()
-        << ";catch_all_sites=";
-    std::size_t catch_all_sites = 0;
-    for (const auto &clause : block.catch_clauses) {
-      if (clause.catch_all) {
-        ++catch_all_sites;
-      }
-    }
-    out << catch_all_sites
-        << ";normalized=" << (block.do_catch_is_normalized ? "true" : "false");
-    return out.str();
+    return objc3c::parse::BuildObjc3DoCatchProfile(block);
   }
 
   bool ParseCatchClause(BlockStmt::CatchClause &clause) {
@@ -455,55 +421,15 @@
   }
 
   void SynchronizeTopLevel() {
-    while (!At(TokenKind::Eof)) {
-      if (Match(TokenKind::Semicolon)) {
-        return;
-      }
-      if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern) || At(TokenKind::KwAsync) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
-          At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty)) {
-        return;
-      }
-      Advance();
-    }
+    objc3c::parse::SynchronizeObjc3ParserTopLevel(tokens_, index_);
   }
 
   void SynchronizeFunctionTail() {
-    if (At(TokenKind::LBrace)) {
-      int depth = 0;
-      while (!At(TokenKind::Eof)) {
-        if (Match(TokenKind::LBrace)) {
-          ++depth;
-          continue;
-        }
-        if (Match(TokenKind::RBrace)) {
-          --depth;
-          if (depth <= 0) {
-            return;
-          }
-          continue;
-        }
-        Advance();
-      }
-      return;
-    }
-    SynchronizeTopLevel();
+    objc3c::parse::SynchronizeObjc3ParserFunctionTail(tokens_, index_);
   }
 
   void SynchronizeStatement() {
-    while (!At(TokenKind::Eof)) {
-      if (Match(TokenKind::Semicolon)) {
-        return;
-      }
-      if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwGuard) ||
-          At(TokenKind::KwDefer) || At(TokenKind::KwDo) || At(TokenKind::KwMatch) ||
-          At(TokenKind::KwFor) || At(TokenKind::KwSwitch) || At(TokenKind::KwWhile) || At(TokenKind::KwBreak) ||
-          At(TokenKind::KwContinue) || At(TokenKind::KwAtAutoreleasePool) || AtIdentifierAssignment() ||
-          AtIdentifierUpdate() || AtPrefixUpdate() || At(TokenKind::RBrace)) {
-        return;
-      }
-      Advance();
-    }
+    objc3c::parse::SynchronizeObjc3ParserStatement(tokens_, index_);
   }
 
   std::unique_ptr<Stmt> ParseStatement() {
@@ -687,11 +613,8 @@
         }
         stmt->if_stmt->optional_binding_surface_enabled = true;
         stmt->if_stmt->optional_binding_clause_count = clauses.size();
-        stmt->if_stmt->condition = std::make_unique<Expr>();
-        stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
-        stmt->if_stmt->condition->bool_value = true;
-        stmt->if_stmt->condition->line = stmt->line;
-        stmt->if_stmt->condition->column = stmt->column;
+        stmt->if_stmt->condition =
+            BuildObjc3BoolLiteralExprAt(true, stmt->line, stmt->column);
         auto user_then_body = ParseControlBody();
         if (block_failed_) {
           block_failed_ = false;
@@ -765,11 +688,8 @@
         return nullptr;
       }
       stmt->if_stmt->guard_condition_list_surface_enabled = true;
-      stmt->if_stmt->condition = std::make_unique<Expr>();
-      stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
-      stmt->if_stmt->condition->bool_value = false;
-      stmt->if_stmt->condition->line = stmt->line;
-      stmt->if_stmt->condition->column = stmt->column;
+      stmt->if_stmt->condition =
+          BuildObjc3BoolLiteralExprAt(false, stmt->line, stmt->column);
       for (auto &clause : clauses) {
         if (clause.kind == ParsedGuardConditionClause::Kind::OptionalBinding) {
           stmt->if_stmt->optional_binding_surface_enabled = true;

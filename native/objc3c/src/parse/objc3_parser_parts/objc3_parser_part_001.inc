@@ -9,6 +9,7 @@
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_message_send_profiles.h"
 #include "parse/objc3_parse_support.h"
+#include "parse/objc3_parser_attributes.h"
 #include "parse/objc3_parser_block_literal_source.h"
 #include "parse/objc3_parser_cstyle_type_parser.h"
 #include "parse/objc3_parser_cursor.h"
@@ -17,7 +18,9 @@
 #include "parse/objc3_parser_expression_nodes.h"
 #include "parse/objc3_parser_expression_surface.h"
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_recovery.h"
 #include "parse/objc3_parser_statement_nodes.h"
+#include "parse/objc3_parser_statement_profiles.h"
 #include "parse/objc3_parser_statement_surface.h"
 #include "parse/objc3_parser_token_metadata.h"
 #include "parse/objc3_parser_type_surface.h"
@@ -62,7 +65,6 @@ using objc3c::parse::BuildPublicPrivateApiPartitionProfile;
 using objc3c::parse::BuildRuntimeLinkHostLinkSymbol;
 using objc3c::parse::BuildSuperDispatchSymbol;
 using objc3c::parse::BuildThrowsDeclarationProfile;
-using objc3c::parse::BuildTypedKeyPathLiteralProfile;
 using objc3c::parse::BuildNullabilityFlowProfile;
 using objc3c::parse::BuildVarianceBridgeCastProfile;
 using objc3c::parse::ComputeDispatchAbiArgumentPaddingSlots;

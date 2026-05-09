@@ -1,37 +1,11 @@
 #include "parse/objc3_parser_expression_nodes.h"
 
-#include <sstream>
 #include <utility>
 
+#include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_statement_profiles.h"
+
 namespace objc3c::parse {
-namespace {
-
-const char *TryOperatorKindSpelling(Expr::TryOperatorKind kind) {
-  switch (kind) {
-  case Expr::TryOperatorKind::Propagate:
-    return "try";
-  case Expr::TryOperatorKind::Optional:
-    return "try?";
-  case Expr::TryOperatorKind::Forced:
-    return "try!";
-  case Expr::TryOperatorKind::None:
-  default:
-    return "none";
-  }
-}
-
-std::string BuildObjc3TryExpressionProfile(const Expr &expr) {
-  std::ostringstream out;
-  out << "try-expression:kind="
-      << TryOperatorKindSpelling(expr.try_operator_kind)
-      << ";requires_throwing_context="
-      << (expr.try_expression_requires_throwing_context ? "true" : "false")
-      << ";normalized="
-      << (expr.try_expression_is_normalized ? "true" : "false");
-  return out.str();
-}
-
-}  // namespace
 
 std::unique_ptr<Expr> BuildObjc3BinaryExpr(
     const Objc3LexToken &op,
@@ -71,6 +45,65 @@ std::unique_ptr<Expr> BuildObjc3NumericLiteralExpr(
   literal->line = token.line;
   literal->column = token.column;
   return literal;
+}
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExpr(
+    bool value,
+    const Objc3LexToken &token) {
+  return BuildObjc3BoolLiteralExprAt(value, token.line, token.column);
+}
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExprAt(
+    bool value,
+    unsigned line,
+    unsigned column) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::BoolLiteral;
+  literal->bool_value = value;
+  literal->line = line;
+  literal->column = column;
+  return literal;
+}
+
+std::unique_ptr<Expr> BuildObjc3NilLiteralExpr(const Objc3LexToken &token) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::NilLiteral;
+  literal->line = token.line;
+  literal->column = token.column;
+  return literal;
+}
+
+std::unique_ptr<Expr> BuildObjc3IdentifierExpr(
+    const std::string &identifier,
+    const Objc3LexToken &token) {
+  auto expr = std::make_unique<Expr>();
+  expr->kind = Expr::Kind::Identifier;
+  expr->line = token.line;
+  expr->column = token.column;
+  expr->ident = identifier;
+  return expr;
+}
+
+std::unique_ptr<Expr> BuildObjc3TypedKeyPathLiteralExpr(
+    const Objc3LexToken &keypath_token,
+    const Objc3LexToken &root_token,
+    std::vector<std::string> components) {
+  auto expr = std::make_unique<Expr>();
+  expr->kind = Expr::Kind::Identifier;
+  expr->ident = "__objc3_keypath_literal";
+  expr->line = keypath_token.line;
+  expr->column = keypath_token.column;
+  expr->typed_keypath_literal_enabled = true;
+  expr->typed_keypath_root_is_self = root_token.text == "self";
+  expr->typed_keypath_root_name = root_token.text;
+  expr->typed_keypath_components = std::move(components);
+  expr->typed_keypath_literal_profile = BuildTypedKeyPathLiteralProfile(
+      expr->typed_keypath_root_name,
+      expr->typed_keypath_root_is_self,
+      expr->typed_keypath_components);
+  expr->typed_keypath_literal_is_normalized =
+      !expr->typed_keypath_components.empty();
+  return expr;
 }
 
 std::unique_ptr<Expr> BuildObjc3UnaryLoweringBinaryExpr(
