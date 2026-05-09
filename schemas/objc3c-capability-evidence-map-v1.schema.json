@@ -7,6 +7,7 @@
     "schema_version",
     "matrix_path",
     "matrix_schema_path",
+    "evidence_policy",
     "rows"
   ],
   "properties": {
@@ -20,6 +21,44 @@
     "matrix_schema_path": {
       "type": "string",
       "const": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    "evidence_policy": {
+      "type": "object",
+      "required": [
+        "public_command_surface",
+        "command_required_for",
+        "command_forbidden_for",
+        "row_role_rule"
+      ],
+      "properties": {
+        "public_command_surface": {
+          "type": "string",
+          "const": "npm run objc3c -- <action>"
+        },
+        "command_required_for": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "command_forbidden_for": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "row_role_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
     },
     "rows": {
       "type": "array",

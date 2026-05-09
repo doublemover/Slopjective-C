@@ -13,6 +13,12 @@ capability matrix schema is `schemas/objc3c-capability-matrix-v1.schema.json`.
 Example rows and anti-examples live in
 `docs/support/capability_schema_examples.md`.
 
+`evidence_policy` in the JSON file is part of the contract. A command cell is
+only for replayable implemented behavior evidence through `npm run objc3c --
+<action>`. Blank command cells identify owner files, schemas, diagnostics, or
+documentation boundaries; they do not create public workflow surface or widen a
+capability state.
+
 | Capability ID                                | Support claim                                      | Evidence kind | Path                                                                                                      | Command                                  |
 | -------------------------------------------- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `compiler.parser.core-declarations`          | `objc3c.behavior.parser.canonical-syntax`          | test          | `tests/native/parser/positive/canonical_module_main.objc3`                                                | `npm run objc3c -- test-behavior-matrix` |

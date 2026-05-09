@@ -2,6 +2,19 @@
   "schema_version": "objc3c-capability-evidence-map-v1",
   "matrix_path": "docs/support/capability_matrix.json",
   "matrix_schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
+  "evidence_policy": {
+    "public_command_surface": "npm run objc3c -- <action>",
+    "command_required_for": [
+      "replayable implemented behavior evidence"
+    ],
+    "command_forbidden_for": [
+      "source ownership rows",
+      "schema ownership rows",
+      "doc boundary rows",
+      "diagnostic inventory rows that are not public replay commands"
+    ],
+    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state."
+  },
   "rows": [
     {
       "capability_id": "compiler.parser.core-declarations",

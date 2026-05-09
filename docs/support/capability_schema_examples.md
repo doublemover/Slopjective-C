@@ -101,6 +101,33 @@ Rules shown by this row:
 - `support_claim` uses the `objc3c.behavior.*` namespace.
 - `command` is present only for public npm-bridge replay commands.
 
+## Evidence Policy
+
+```json
+{
+  "public_command_surface": "npm run objc3c -- <action>",
+  "command_required_for": [
+    "replayable implemented behavior evidence"
+  ],
+  "command_forbidden_for": [
+    "source ownership rows",
+    "schema ownership rows",
+    "doc boundary rows",
+    "diagnostic inventory rows that are not public replay commands"
+  ],
+  "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state."
+}
+```
+
+Rules shown by this policy:
+
+- A source, schema, doc, or diagnostic row can support a boundary without
+  becoming a public action.
+- Replayable behavior evidence uses the npm bridge and keeps the command on the
+  exact row it replays.
+- A blank command cell is intentional; consumers must not infer hidden helper
+  commands from it.
+
 ## Anti-Examples
 
 These are not valid support claims:

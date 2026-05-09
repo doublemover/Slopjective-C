@@ -40,6 +40,8 @@ can distinguish source truth from reader-facing summaries.
 - Use only `implemented`, `rejected`, `reserved`, and `internal` as capability
   states.
 - Public replay commands must use `npm run objc3c -- <action>`.
+- Evidence-map rows without commands are ownership or boundary rows only; they
+  must not be treated as public workflow actions.
 - Keep retired wording in `retired_surface_terms`; active rows must use current
   canonical capability names.
 - Retired alternate surfaces are diagnostics, history, or anti-examples; they
