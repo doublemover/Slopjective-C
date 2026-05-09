@@ -17,7 +17,9 @@ add_library(objc3c_diag STATIC
   objc3_diag_catalog_runtime_api_data.cpp
   objc3_diag_catalog_summary.cpp
   objc3_diag_catalog_table.cpp
-  objc3_diag_parse.cpp
+  objc3_diag_parse_coordinate_code.cpp
+  objc3_diag_parse_rendered.cpp
+  objc3_diag_parse_segments.cpp
   objc3_diag_subsystem.cpp
   objc3_diag_text.cpp
 )
