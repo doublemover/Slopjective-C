@@ -24,6 +24,7 @@
   "absent_retired_positive_paths": [
     "tests/tooling/fixtures/native/legacy_canonical_migration_positive.objc3",
     "tests/tooling/fixtures/native/legacy_canonical_migration_negative.objc3",
+    "tests/tooling/fixtures/native/frontend_migration_canonicalization_positive.objc3",
     "tests/tooling/fixtures/native/execution/positive/objc_literal_aliases_globals.objc3",
     "tests/tooling/fixtures/native/recovery/positive/objc_literal_aliases_globals.objc3"
   ],

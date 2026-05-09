@@ -419,14 +419,25 @@ def test_legacy_migration_pair_no_longer_lives_as_tooling_root_residue() -> None
 
 def test_tooling_positive_fixture_names_do_not_claim_retired_surfaces() -> None:
     positive_roots = (
+        ROOT / "tests" / "tooling" / "fixtures" / "native",
         ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive",
         ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "positive",
     )
-    retired_name_tokens = ("legacy", "old_mode", "old-mode", "shim", "compat", "compatibility")
+    retired_name_tokens = (
+        "legacy",
+        "old_mode",
+        "old-mode",
+        "shim",
+        "compat",
+        "compatibility",
+        "migration",
+    )
 
     for root in positive_roots:
         for path in root.rglob("*"):
             if not path.is_file():
+                continue
+            if "_positive" not in path.stem.lower():
                 continue
             normalized_name = path.name.lower()
             for token in retired_name_tokens:
