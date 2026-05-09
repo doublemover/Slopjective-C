@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER_CPP = ROOT / "native" / "objc3c" / "src" / "tools" / "objc3c_frontend_c_api_runner.cpp"
+C_API_RUNNER_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "native" / "frontend_c_api_runner_contract.json"
 
 
 def _read(path: Path) -> str:
@@ -18,6 +20,10 @@ def test_c_api_runner_uses_c_shim_compile_path() -> None:
     assert "objc3c_frontend_c_compile_file(context, &compile_options, &result)" in source
     assert "objc3c_frontend_c_copy_last_error(context, nullptr, 0)" in source
     assert "objc3c_frontend_c_context_destroy(context);" in source
+    assert "CompileResultGuard result_guard{&result};" in source
+    assert "objc3c_frontend_c_result_destroy(result);" in source
+    assert "ValidateResultAccessors(" in source
+    assert '"frontend C API accessor contract fail-closed: "' in source
 
 
 def test_c_api_runner_reports_summary_and_cli_contract() -> None:
@@ -41,6 +47,19 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
     assert "compile_options.migration_assist = options.migration_assist ? 1u : 0u;" not in source
     assert "compile_options.ir_object_backend = options.ir_object_backend;" in source
     assert "ExitCodeFromStatus" in source
+    assert '\\"result_error_message\\": \\"' in source
+    assert '\\"c_api_ownership\\": {' in source
+    assert '\\"result_owned_error_message\\": ' in source
+    assert '\\"diagnostics_path_borrowed\\": ' in source
+    assert '\\"manifest_path_borrowed\\": ' in source
+    assert '\\"ir_path_borrowed\\": ' in source
+    assert '\\"object_path_borrowed\\": ' in source
+    assert '\\"runtime_metadata_path_borrowed\\": ' in source
+    assert "ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS)" in source
+    assert "ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST)" in source
+    assert "ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR)" in source
+    assert "ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT)" in source
+    assert "ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA)" in source
 
 
 def test_c_api_runner_reports_observability_surface() -> None:
@@ -56,6 +75,47 @@ def test_c_api_runner_reports_observability_surface() -> None:
     assert "BuildDiagnosticTotals" in source
     assert "BuildPowerShellReadCommand" in source
     assert "Get-Content -Raw " in source
+
+
+def test_c_api_runner_fails_closed_on_stage_and_result_accessor_drift() -> None:
+    source = _read(RUNNER_CPP)
+
+    assert "StageSummaryShapeReady(result.lex, OBJC3C_FRONTEND_STAGE_LEX)" in source
+    assert "StageSummaryShapeReady(result.parse, OBJC3C_FRONTEND_STAGE_PARSE)" in source
+    assert "StageSummaryShapeReady(result.sema, OBJC3C_FRONTEND_STAGE_SEMA)" in source
+    assert "StageSummaryShapeReady(result.lower, OBJC3C_FRONTEND_STAGE_LOWER)" in source
+    assert "StageSummaryShapeReady(result.emit, OBJC3C_FRONTEND_STAGE_EMIT)" in source
+    assert '"compile status does not match result.status"' in source
+    assert '"successful compile did not set result.success"' in source
+    assert '"failing compile left result.success set"' in source
+    assert '"successful compile published a result-owned error message"' in source
+    assert '"successful compile published a context last_error"' in source
+    assert '"failing compile published no result-owned error message"' in source
+    assert '"context last_error and result-owned error_message differ"' in source
+    assert "const bool stage_report_output_contract_ready = StageReportShapeReady(result);" in source
+    assert "stage_report_output_contract_ready);" in source
+    assert "return 2;" in source
+
+
+def test_c_api_runner_contract_fixture_tracks_summary_ownership_fields() -> None:
+    source = _read(RUNNER_CPP)
+    contract = json.loads(_read(C_API_RUNNER_CONTRACT))
+
+    assert contract["contract_id"] == "objc3c.frontend.c_api.runner.contract.v1"
+    assert contract["runner"] == "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+    assert contract["summary_mode"] == "objc3c-frontend-c-api-runner-v1"
+    for field in contract["required_summary_fields"]:
+        assert f'\\"{field}\\"' in source or f'"{field}"' in source
+    for field in contract["required_ownership_fields"]:
+        assert f'\\"{field}\\"' in source
+    for field in contract["required_path_fields"]:
+        assert f'\\"{field}\\"' in source
+    for stage in contract["required_stage_fields"]:
+        assert f'WriteStageSummaryJson(out, "{stage}", result.{stage}' in source
+    for field in contract["required_stage_summary_fields"]:
+        assert f'\\"{field}\\"' in source
+    for message in contract["fail_closed_reasons"]:
+        assert message in source
 
 
 def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:

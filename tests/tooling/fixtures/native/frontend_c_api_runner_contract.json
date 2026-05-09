@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.frontend.c_api.runner.contract.v1",
+  "surface_kind": "frontend-public-c-api-runner-fixture-contract",
+  "runner": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
+  "source_path": "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+  "summary_mode": "objc3c-frontend-c-api-runner-v1",
+  "required_summary_fields": [
+    "mode",
+    "input_path",
+    "out_dir",
+    "emit_prefix",
+    "ir_object_backend",
+    "status",
+    "process_exit_code",
+    "success",
+    "semantic_skipped",
+    "paths",
+    "last_error",
+    "result_error_message",
+    "c_api_ownership",
+    "stages",
+    "observability",
+    "runtime_inspector",
+    "bonus_experiences",
+    "output_contract"
+  ],
+  "required_ownership_fields": [
+    "result_owned_error_message",
+    "diagnostics_path_borrowed",
+    "manifest_path_borrowed",
+    "ir_path_borrowed",
+    "object_path_borrowed",
+    "runtime_metadata_path_borrowed"
+  ],
+  "required_path_fields": [
+    "summary",
+    "diagnostics",
+    "manifest",
+    "ir",
+    "object",
+    "runtime_metadata_binary"
+  ],
+  "required_stage_fields": [
+    "lex",
+    "parse",
+    "sema",
+    "lower",
+    "emit"
+  ],
+  "required_stage_summary_fields": [
+    "stage",
+    "attempted",
+    "skipped",
+    "diagnostics_total",
+    "diagnostics_notes",
+    "diagnostics_warnings",
+    "diagnostics_errors",
+    "diagnostics_fatals"
+  ],
+  "fail_closed_reasons": [
+    "compile status does not match result.status",
+    "successful compile did not set result.success",
+    "failing compile left result.success set",
+    "successful compile published a result-owned error message",
+    "successful compile published a context last_error",
+    "failing compile published no result-owned error message",
+    "context last_error and result-owned error_message differ",
+    "frontend C API accessor contract fail-closed"
+  ],
+  "ownership_expectations": [
+    "compile result storage is caller-owned and destroyed through objc3c_frontend_c_result_destroy",
+    "result-owned error strings are reported separately from context last_error and must match on failures",
+    "artifact path access is mediated by objc3c_frontend_c_result_has_artifact and borrowed path strings",
+    "all five stage summaries are checked through objc3c_frontend_c_stage_summary_is_well_formed before summary publication"
+  ]
+}

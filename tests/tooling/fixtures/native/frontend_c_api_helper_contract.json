@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.frontend.c_api.helper.contract.v1",
+  "surface_kind": "frontend-public-c-api-result-string-stage-helper-contract",
+  "header_path": "native/objc3c/src/libobjc3c_frontend/c_api.h",
+  "source_path": "native/objc3c/src/libobjc3c_frontend/c_api.cpp",
+  "required_type_aliases": [
+    "objc3c_frontend_c_context_t",
+    "objc3c_frontend_c_compile_options_t",
+    "objc3c_frontend_c_compile_result_t",
+    "objc3c_frontend_c_artifact_kind_t",
+    "objc3c_frontend_c_string_t",
+    "objc3c_frontend_c_string_view_t",
+    "objc3c_frontend_c_stage_summary_t",
+    "objc3c_frontend_c_version_t"
+  ],
+  "required_helpers": [
+    "objc3c_frontend_c_result_destroy",
+    "objc3c_frontend_c_result_artifact_path",
+    "objc3c_frontend_c_result_artifact_path_view",
+    "objc3c_frontend_c_result_has_artifact",
+    "objc3c_frontend_c_result_error_message",
+    "objc3c_frontend_c_result_error_message_view",
+    "objc3c_frontend_c_string_view",
+    "objc3c_frontend_c_string_release",
+    "objc3c_frontend_c_stage_summary_is_well_formed",
+    "objc3c_frontend_c_stage_summary_has_diagnostics",
+    "objc3c_frontend_c_stage_summary_has_errors"
+  ],
+  "required_header_ownership_phrases": [
+    "compile_result storage is caller-owned",
+    "result payload strings are released only by objc3c_frontend_c_result_destroy()",
+    "result_destroy releases only result-owned payload strings, then zeros the result",
+    "result_* accessors return borrowed pointers/views valid until result_destroy",
+    "string_release is for standalone owned strings only",
+    "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0"
+  ],
+  "required_source_fail_closed_snippets": [
+    "objc3c_frontend_result_destroy(result);",
+    "objc3c_frontend_c_string_view(",
+    "objc3c_frontend_c_result_artifact_path(result, artifact_kind)",
+    "return view.data != nullptr && view.size != 0u ? 1u : 0u;",
+    "if (summary == nullptr || summary->stage != expected_stage)",
+    "summary->attempted > 1u || summary->skipped > 1u",
+    "summary->attempted != 0u && summary->skipped != 0u",
+    "severity_total == summary->diagnostics_total ? 1u : 0u",
+    "summary != nullptr && summary->diagnostics_total != 0u ? 1u : 0u",
+    "summary != nullptr &&"
+  ],
+  "null_and_error_expectations": [
+    "null result artifact helpers return null, empty view, or false",
+    "null error-message helpers return null or an empty view",
+    "invalid stage ids are rejected before summary shape inspection",
+    "stage attempted and skipped flags are mutually exclusive",
+    "stage severity counts must add up to diagnostics_total"
+  ]
+}

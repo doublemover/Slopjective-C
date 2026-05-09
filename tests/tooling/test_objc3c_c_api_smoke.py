@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -21,6 +22,7 @@ STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
 C_API_CPP = SRC_ROOT / "libobjc3c_frontend" / "c_api.cpp"
 ANCHOR_PART_001 = SRC_ROOT / "libobjc3c_frontend" / "frontend_anchor_parts" / "frontend_anchor_part_001.inc"
+C_API_HELPER_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "native" / "frontend_c_api_helper_contract.json"
 
 
 def _read(path: Path) -> str:
@@ -66,12 +68,31 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header
     assert "typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;" in header
+    assert "typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;" in header
+    assert "typedef objc3c_frontend_artifact_kind_t objc3c_frontend_c_artifact_kind_t;" in header
+    assert "typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;" in header
+    assert "typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;" in header
+    assert "typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;" in header
 
     assert "uint32_t objc3c_frontend_c_api_abi_version(void);" in header
     assert "uint8_t objc3c_frontend_c_is_abi_compatible(" in header
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(" in header
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(" in header
     assert "size_t objc3c_frontend_c_copy_last_error(" in header
+    assert "void objc3c_frontend_c_result_destroy(" in header
+    assert "objc3c_frontend_c_result_artifact_path(" in header
+    assert "objc3c_frontend_c_result_artifact_path_view(" in header
+    assert "objc3c_frontend_c_result_has_artifact(" in header
+    assert "objc3c_frontend_c_result_error_message(" in header
+    assert "objc3c_frontend_c_result_error_message_view(" in header
+    assert "objc3c_frontend_c_string_view(" in header
+    assert "void objc3c_frontend_c_string_release(" in header
+    assert "objc3c_frontend_c_stage_summary_is_well_formed(" in header
+    assert "objc3c_frontend_c_stage_summary_has_diagnostics(" in header
+    assert "objc3c_frontend_c_stage_summary_has_errors(" in header
+    assert "compile_result storage is caller-owned" in header
+    assert "result payload strings are released only by objc3c_frontend_c_result_destroy()" in header
+    assert "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0" in header
     assert "objc3c_frontend_string_t *diagnostics_path;" in result_header
     assert "const char *diagnostics_path;" not in result_header
     assert "callers must not release them directly." in result_header
@@ -130,6 +151,52 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     assert "return objc3c_frontend_compile_file(context, options, result);" in source
     assert "return objc3c_frontend_compile_source(context, options, result);" in source
     assert "return objc3c_frontend_copy_last_error(context, buffer, buffer_size);" in source
+    assert "static_assert(std::is_same_v<objc3c_frontend_c_string_t, objc3c_frontend_string_t>" in source
+    assert "static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t, objc3c_frontend_stage_summary_t>" in source
+    assert "objc3c_frontend_c_result_destroy(" in source
+    assert "objc3c_frontend_result_destroy(result);" in source
+    assert "objc3c_frontend_c_result_artifact_path(" in source
+    assert "return objc3c_frontend_result_artifact_path(result, artifact_kind);" in source
+    assert "objc3c_frontend_c_result_artifact_path_view(" in source
+    assert "objc3c_frontend_c_result_has_artifact(" in source
+    assert "return view.data != nullptr && view.size != 0u ? 1u : 0u;" in source
+    assert "objc3c_frontend_c_result_error_message(" in source
+    assert "return objc3c_frontend_result_error_message(result);" in source
+    assert "objc3c_frontend_c_result_error_message_view(" in source
+    assert "objc3c_frontend_c_string_view(" in source
+    assert "return objc3c_frontend_string_view(string);" in source
+    assert "objc3c_frontend_c_string_release(" in source
+    assert "objc3c_frontend_string_release(string);" in source
+    assert "objc3c_frontend_c_stage_summary_is_well_formed(" in source
+    assert "if (summary == nullptr || summary->stage != expected_stage)" in source
+    assert "summary->attempted > 1u || summary->skipped > 1u" in source
+    assert "severity_total == summary->diagnostics_total ? 1u : 0u" in source
+    assert "objc3c_frontend_c_stage_summary_has_diagnostics(" in source
+    assert "objc3c_frontend_c_stage_summary_has_errors(" in source
+
+
+def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helpers() -> None:
+    header = _read(C_API_H)
+    source = _read(C_API_CPP)
+    contract = json.loads(_read(C_API_HELPER_CONTRACT))
+
+    assert contract["contract_id"] == "objc3c.frontend.c_api.helper.contract.v1"
+    assert contract["header_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.h"
+    assert contract["source_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.cpp"
+
+    for alias in contract["required_type_aliases"]:
+        assert alias in header
+        assert f"std::is_same_v<{alias}," in source
+
+    for helper in contract["required_helpers"]:
+        assert f"{helper}(" in header
+        assert f"{helper}(" in source
+
+    for phrase in contract["required_header_ownership_phrases"]:
+        assert phrase in header
+
+    for snippet in contract["required_source_fail_closed_snippets"]:
+        assert snippet in source
 
 
 def test_frontend_anchor_releases_immutable_owned_strings() -> None:
@@ -155,6 +222,25 @@ def test_c_api_header_compiles_from_c_when_compiler_available(tmp_path: Path) ->
             [
                 '#include "libobjc3c_frontend/c_api.h"',
                 "static int smoke(void) {",
+                "  objc3c_frontend_c_compile_result_t result = {0};",
+                "  objc3c_frontend_c_string_view_t empty_error =",
+                "      objc3c_frontend_c_result_error_message_view(&result);",
+                "  objc3c_frontend_c_string_view_t missing_artifact =",
+                "      objc3c_frontend_c_result_artifact_path_view(",
+                "          &result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);",
+                "  objc3c_frontend_c_stage_summary_t lex = {0};",
+                "  lex.stage = OBJC3C_FRONTEND_STAGE_LEX;",
+                "  lex.skipped = 1u;",
+                "  if (empty_error.data != 0 || empty_error.size != 0u) return 2;",
+                "  if (missing_artifact.data != 0 || missing_artifact.size != 0u) return 3;",
+                "  if (objc3c_frontend_c_result_has_artifact(",
+                "          &result, OBJC3C_FRONTEND_ARTIFACT_OBJECT) != 0u) return 4;",
+                "  if (objc3c_frontend_c_stage_summary_is_well_formed(",
+                "          &lex, OBJC3C_FRONTEND_STAGE_LEX) == 0u) return 5;",
+                "  if (objc3c_frontend_c_stage_summary_has_diagnostics(&lex) != 0u) return 6;",
+                "  if (objc3c_frontend_c_stage_summary_has_errors(&lex) != 0u) return 7;",
+                "  objc3c_frontend_c_result_destroy(&result);",
+                "  objc3c_frontend_c_string_release(0);",
                 "  return (int)objc3c_frontend_c_api_abi_version();",
                 "}",
                 "",
