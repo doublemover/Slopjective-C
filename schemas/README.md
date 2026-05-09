@@ -26,6 +26,11 @@ canonical support truth.
 
 ## Release And Adoption Schemas
 
+These schemas are shared-registry entries owned by
+`scripts/objc3c_shared/schema_registry.py`. Docs and runbooks cite the
+registry-backed schema files and must not copy their JSON shapes into local
+tables or examples.
+
 | Schema | Owns |
 | ------ | ---- |
 | `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, and claim-audit evidence without retired-surface support claims. |

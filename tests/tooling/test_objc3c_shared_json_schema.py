@@ -157,6 +157,30 @@ def test_schema_registry_includes_conformance_evidence_schemas() -> None:
         assert summary[schema_id] == expected_path
 
 
+def test_schema_registry_includes_release_adoption_schemas() -> None:
+    release_adoption_schemas = {
+        "objc3c-adoption-legibility-evidence-v1": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
+        "objc3c-long-horizon-operations-evidence-v1": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json",
+        "objc3c-upgrade-support-report-v1": "schemas/objc3c-upgrade-support-report-v1.schema.json",
+        "objc3c-update-manifest-v1": "schemas/objc3c-update-manifest-v1.schema.json",
+        "objc3c-package-channels-manifest-v1": "schemas/objc3c-package-channels-manifest-v1.schema.json",
+        "objc3c-package-lock-v1": "schemas/objc3c-package-lock-v1.schema.json",
+        "objc3c-package-offline-mirror-index-v1": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+        "objc3c-package-install-receipt-v1": "schemas/objc3c-package-install-receipt-v1.schema.json",
+        "objc3c-platform-support-matrix-v1": "schemas/objc3c-platform-support-matrix-v1.schema.json",
+        "objc3c-compiler-throughput-summary-v1": "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
+        "objc3c-performance-telemetry-v1": "schemas/objc3c-performance-telemetry-v1.schema.json",
+    }
+    summary = schema_registry_summary()
+
+    for schema_id, expected_path in release_adoption_schemas.items():
+        schema = load_schema(schema_id)
+        assert schema_id in schema_ids()
+        assert schema_path(schema_id).as_posix().endswith(expected_path)
+        assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+        assert summary[schema_id] == expected_path
+
+
 def test_capability_docs_validate_against_schema_and_evidence() -> None:
     validator = _load_validator()
 

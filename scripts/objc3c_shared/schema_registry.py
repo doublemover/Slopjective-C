@@ -29,12 +29,34 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-governance-sustainability-evidence-v1": ROOT
     / "schemas"
     / "objc3c-governance-sustainability-evidence-v1.schema.json",
+    "objc3c-adoption-legibility-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-adoption-legibility-evidence-v1.schema.json",
+    "objc3c-long-horizon-operations-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-long-horizon-operations-evidence-v1.schema.json",
+    "objc3c-upgrade-support-report-v1": ROOT
+    / "schemas"
+    / "objc3c-upgrade-support-report-v1.schema.json",
     "objc3c-package-channels-manifest-v1": ROOT
     / "schemas"
     / "objc3c-package-channels-manifest-v1.schema.json",
+    "objc3c-package-lock-v1": ROOT / "schemas" / "objc3c-package-lock-v1.schema.json",
+    "objc3c-package-offline-mirror-index-v1": ROOT
+    / "schemas"
+    / "objc3c-package-offline-mirror-index-v1.schema.json",
     "objc3c-package-install-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-install-receipt-v1.schema.json",
+    "objc3c-platform-support-matrix-v1": ROOT
+    / "schemas"
+    / "objc3c-platform-support-matrix-v1.schema.json",
+    "objc3c-compiler-throughput-summary-v1": ROOT
+    / "schemas"
+    / "objc3c-compiler-throughput-summary-v1.schema.json",
+    "objc3c-performance-telemetry-v1": ROOT
+    / "schemas"
+    / "objc3c-performance-telemetry-v1.schema.json",
     "objc3c-compatibility-report-v1": ROOT / "schemas" / "objc3c-compatibility-report-v1.schema.json",
     "objc3c-performance-dashboard-summary-v1": ROOT
     / "schemas"

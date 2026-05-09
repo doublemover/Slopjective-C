@@ -115,6 +115,7 @@ The canonical adoption and legibility artifact contract is checked in at:
 Schema surface:
 
 - `schemas/objc3c-adoption-legibility-evidence-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Replay it with:
 

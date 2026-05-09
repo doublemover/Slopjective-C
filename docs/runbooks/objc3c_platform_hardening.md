@@ -224,6 +224,7 @@ The checked-in schema and contract surfaces for that artifact are:
 
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The generated summary/report family for this milestone lives under:
 

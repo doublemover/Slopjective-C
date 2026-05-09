@@ -192,6 +192,7 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
   - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
   - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
+  - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Helper implementations remain action-registry anchors for the public
 commands above.

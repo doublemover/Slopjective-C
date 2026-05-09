@@ -145,6 +145,7 @@ Schema surfaces:
 
 - `schemas/objc3c-package-lock-v1.schema.json`
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Machine-owned generated outputs stay under:
 
