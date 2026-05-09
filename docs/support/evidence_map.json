@@ -319,6 +319,11 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "source",
+      "path": "scripts/objc3c_shared/schema_registry.py"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/io/json/json_parser.cpp"
     },
     {

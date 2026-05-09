@@ -41,8 +41,9 @@ The human-readable projections are:
 - `docs/support/evidence_map.md`
 
 Schema files under `schemas/` are the only schema source of truth. Support
-directory JSON files consume these schemas directly; they must not carry local
-schema mirrors or copied schema fragments.
+directory JSON files consume these schemas through
+`scripts/objc3c_shared/schema_registry.py`; they must not carry local schema
+mirrors or copied schema fragments.
 
 ## Hard-Cutover Rules
 

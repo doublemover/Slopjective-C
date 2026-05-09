@@ -119,17 +119,25 @@ def test_report_envelope_rejects_invalid_shape() -> None:
         )
 
 
-def test_schema_registry_includes_capability_matrix() -> None:
-    assert "objc3c-capability-matrix-v1" in schema_ids()
-    assert schema_path("objc3c-capability-matrix-v1").as_posix().endswith(
-        "schemas/objc3c-capability-matrix-v1.schema.json"
-    )
-    assert load_schema("objc3c-capability-matrix-v1")["type"] == "object"
-    validate_registered_schema(
-        load_json_object(ROOT / "docs" / "support" / "capability_matrix.json"),
-        "objc3c-capability-matrix-v1",
-    )
-    assert "objc3c-capability-matrix-v1" in schema_registry_summary()
+def test_schema_registry_includes_capability_truth_schemas() -> None:
+    capability_truth_schemas = {
+        "objc3c-capability-matrix-v1": (
+            "schemas/objc3c-capability-matrix-v1.schema.json",
+            ROOT / "docs" / "support" / "capability_matrix.json",
+        ),
+        "objc3c-capability-evidence-map-v1": (
+            "schemas/objc3c-capability-evidence-map-v1.schema.json",
+            ROOT / "docs" / "support" / "evidence_map.json",
+        ),
+    }
+    summary = schema_registry_summary()
+
+    for schema_id, (expected_path, payload_path) in capability_truth_schemas.items():
+        assert schema_id in schema_ids()
+        assert schema_path(schema_id).as_posix().endswith(expected_path)
+        assert load_schema(schema_id)["type"] == "object"
+        validate_registered_schema(load_json_object(payload_path), schema_id)
+        assert summary[schema_id] == expected_path
 
 
 def test_capability_docs_validate_against_schema_and_evidence() -> None:

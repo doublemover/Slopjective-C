@@ -23,15 +23,17 @@ truth. They must point back to committed branch surfaces in the files above:
 - `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
 - `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
 
-The canonical schema registry entries live under `schemas/`:
+The canonical schema registry entries live under `schemas/` and are registered
+through `scripts/objc3c_shared/schema_registry.py`:
 
 - `schemas/objc3c-capability-matrix-v1.schema.json`
 - `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - `schemas/README.md`
+- `scripts/objc3c_shared/schema_registry.py`
 
 There is no support-directory schema mirror. Capability matrix consumers load
-`schemas/objc3c-capability-matrix-v1.schema.json` directly so schema ownership
-cannot drift between a local copy and the checked-in registry entry.
+the matrix and evidence-map schemas through the shared registry so schema
+ownership cannot drift between local copies and checked-in registry entries.
 
 `capability_matrix.json` also carries `projection_policy`. That object names
 the authoritative data files, schema sources, and human projections so consumers

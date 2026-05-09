@@ -493,6 +493,7 @@
       "owner_modules": [
         "schemas/objc3c-capability-matrix-v1.schema.json",
         "schemas/objc3c-capability-evidence-map-v1.schema.json",
+        "scripts/objc3c_shared/schema_registry.py",
         "native/objc3c/src/io/json/json_parser.cpp",
         "native/objc3c/src/io/json/json_writer.cpp",
         "native/objc3c/src/io/json/json_schema.cpp",
@@ -528,6 +529,10 @@
         {
           "kind": "doc",
           "path": "docs/support/capability_schema_examples.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_shared/schema_registry.py"
         },
         {
           "kind": "source",
