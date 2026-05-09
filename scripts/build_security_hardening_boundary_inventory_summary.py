@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
-from objc3c_workflow.registry import action_names
+from objc3c_workflow.registry_views import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]

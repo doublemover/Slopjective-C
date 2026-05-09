@@ -5,7 +5,7 @@ from objc3c_tooling.json_io import write_json_file
 import json
 from pathlib import Path
 from typing import Any
-from objc3c_workflow.registry import action_names
+from objc3c_workflow.registry_views import action_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json"
