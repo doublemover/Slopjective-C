@@ -14,6 +14,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_runtime_contracts.h"
+#include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emission_prologue.h"
@@ -2349,49 +2350,6 @@ class Objc3IREmitter {
   }
 
  private:
-  static int StablePositiveAsyncTag(const std::string &text) {
-    std::uint32_t hash = 2166136261u;
-    for (unsigned char ch : text) {
-      hash ^= static_cast<std::uint32_t>(ch);
-      hash *= 16777619u;
-    }
-    return static_cast<int>((hash % 2147483646u) + 1u);
-  }
-
-  static int ExecutorAffinityTag(const FunctionDecl &fn) {
-    if (!fn.executor_affinity_declared) {
-      return 0;
-    }
-    if (fn.executor_affinity_kind == "main") {
-      return 1;
-    }
-    if (fn.executor_affinity_named && !fn.executor_affinity_name.empty()) {
-      return StablePositiveAsyncTag("executor:" + fn.executor_affinity_name);
-    }
-    return StablePositiveAsyncTag("executor-kind:" + fn.executor_affinity_kind);
-  }
-
-  static int ExecutorAffinityTag(const Objc3MethodDecl &method) {
-    if (!method.executor_affinity_declared) {
-      return 0;
-    }
-    if (method.executor_affinity_kind == "main") {
-      return 1;
-    }
-    if (method.executor_affinity_named && !method.executor_affinity_name.empty()) {
-      return StablePositiveAsyncTag("executor:" + method.executor_affinity_name);
-    }
-    return StablePositiveAsyncTag("executor-kind:" + method.executor_affinity_kind);
-  }
-
-  static int AsyncResumeEntryTag(const FunctionDecl &fn) {
-    return StablePositiveAsyncTag("resume-entry:function:" + fn.name);
-  }
-
-  static int AsyncResumeEntryTag(const Objc3IRMethodDefinition &method_def) {
-    return StablePositiveAsyncTag("resume-entry:method:" + method_def.symbol);
-  }
-
   bool IsActorImplementation(const std::string &name) const {
     if (name.empty()) {
       return false;
@@ -8846,9 +8804,9 @@ class Objc3IREmitter {
     FunctionContext ctx;
     ctx.return_type = fn.return_type;
     ctx.async_runtime_helper_enabled =
-        fn.async_declared && ExecutorAffinityTag(fn) != 0;
-    ctx.async_resume_entry_tag = AsyncResumeEntryTag(fn);
-    ctx.async_executor_tag = ExecutorAffinityTag(fn);
+        fn.async_declared && Objc3IRExecutorAffinityTag(fn) != 0;
+    ctx.async_resume_entry_tag = Objc3IRAsyncResumeEntryTag(fn);
+    ctx.async_executor_tag = Objc3IRExecutorAffinityTag(fn);
     if (fn.throws_declared) {
       ctx.function_error_out_param = "%error_out";
     }
@@ -8917,7 +8875,7 @@ class Objc3IREmitter {
     FunctionContext ctx;
     ctx.return_type = method.return_type;
     ctx.async_runtime_helper_enabled =
-        method.async_declared && ExecutorAffinityTag(method) != 0;
+        method.async_declared && Objc3IRExecutorAffinityTag(method) != 0;
     ctx.actor_runtime_helper_enabled =
         IsActorImplementation(method_def.implementation_name);
     ctx.actor_nonisolated_entry_enabled =
@@ -8925,8 +8883,8 @@ class Objc3IREmitter {
     ctx.current_implementation_name = method_def.implementation_name;
     ctx.current_superclass_name = method_def.superclass_name;
     ctx.current_method_is_class_method = method.is_class_method;
-    ctx.async_resume_entry_tag = AsyncResumeEntryTag(method_def);
-    ctx.async_executor_tag = ExecutorAffinityTag(method);
+    ctx.async_resume_entry_tag = Objc3IRAsyncResumeEntryTag(method_def);
+    ctx.async_executor_tag = Objc3IRExecutorAffinityTag(method);
     if (method.throws_declared) {
       ctx.function_error_out_param = "%error_out";
     }
