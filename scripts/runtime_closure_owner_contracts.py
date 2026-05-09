@@ -4,6 +4,28 @@ import json
 from pathlib import Path
 from typing import Any
 
+REQUIRED_BOUNDARY_FAILURE_KEYS = (
+    "missing_owner_split_contract",
+    "missing_authoritative_code_path",
+    "missing_authoritative_runtime_symbol",
+    "missing_authoritative_probe_path",
+    "missing_authoritative_fixture_path",
+    "missing_public_workflow_action",
+    "missing_executable_proof",
+)
+
+REQUIRED_CLOSURE_PUBLICATION_CONTRACT = {
+    "source_owner_role": "semantic_model_owner",
+    "runtime_owner_role": "runtime_abi_owner",
+    "executable_proof_owner_role": "executable_proof_owner",
+    "claim_publication_mode": "checked-in-owner-contract-plus-executable-proof",
+    "missing_artifact_behavior": "fail-closed",
+    "report_only_executable_proof_claims_allowed": False,
+    "fallback_runtime_semantics_allowed": False,
+    "compatibility_runtime_semantics_allowed": False,
+    "wrapper_only_runnable_actions_allowed": False,
+}
+
 REQUIRED_OWNER_ROLES = (
     "semantic_model_owner",
     "lowering_abi_owner",
@@ -55,6 +77,9 @@ def runtime_closure_owner_checks(
     policy = owner_contract.get("owner_policy")
     hard_cutover = owner_contract.get("hard_cutover_requirements")
     blocked_claims = owner_contract.get("blocked_claim_shapes")
+    publication_contract = owner_contract.get("closure_publication_contract")
+    boundary_failures = boundary_contract.get("fail_closed_boundary_inventory")
+    public_workflow_actions = boundary_contract.get("public_workflow_actions")
 
     source_paths: list[str] = []
     summary_scripts: list[str] = []
@@ -89,6 +114,36 @@ def runtime_closure_owner_checks(
         "all_summary_scripts_are_checked_in": all((root / path).is_file() for path in summary_scripts),
         "owner_policy_is_fail_closed": isinstance(policy, dict)
         and all(policy.get(key) == value for key, value in REQUIRED_OWNER_POLICY.items()),
+        "closure_publication_contract_is_hard_cutover": isinstance(
+            publication_contract, dict
+        )
+        and all(
+            publication_contract.get(key) == value
+            for key, value in REQUIRED_CLOSURE_PUBLICATION_CONTRACT.items()
+        ),
+        "closure_publication_roles_are_checked_in": isinstance(
+            publication_contract, dict
+        )
+        and isinstance(roles, dict)
+        and all(
+            publication_contract.get(role_key) in roles
+            for role_key in (
+                "source_owner_role",
+                "runtime_owner_role",
+                "executable_proof_owner_role",
+            )
+        ),
+        "boundary_inventory_failure_modes_are_fail_closed": isinstance(
+            boundary_failures, dict
+        )
+        and all(
+            boundary_failures.get(key) == "fail-closed"
+            for key in REQUIRED_BOUNDARY_FAILURE_KEYS
+        ),
+        "boundary_inventory_publishes_workflow_actions": isinstance(
+            public_workflow_actions, list
+        )
+        and all(isinstance(action, str) and action for action in public_workflow_actions),
         "hard_cutover_requirements_forbid_fallbacks": isinstance(hard_cutover, list)
         and "no-fallback-runtime-closure-claims" in hard_cutover
         and "no-report-only-runtime-closure-publication" in hard_cutover
@@ -103,6 +158,7 @@ def runtime_closure_owner_checks(
 def runtime_closure_owner_summary(owner_contract: dict[str, Any]) -> dict[str, Any]:
     roles = owner_contract.get("role_contracts")
     policy = owner_contract.get("owner_policy")
+    publication_contract = owner_contract.get("closure_publication_contract")
     return {
         "owner_contract_id": owner_contract.get("contract_id"),
         "owner_family": owner_contract.get("family"),
@@ -117,10 +173,22 @@ def runtime_closure_owner_summary(owner_contract: dict[str, Any]) -> dict[str, A
         "missing_artifact_behavior": (
             policy.get("missing_artifact_behavior") if isinstance(policy, dict) else None
         ),
+        "claim_publication_mode": (
+            publication_contract.get("claim_publication_mode")
+            if isinstance(publication_contract, dict)
+            else None
+        ),
+        "wrapper_only_runnable_actions_allowed": (
+            publication_contract.get("wrapper_only_runnable_actions_allowed")
+            if isinstance(publication_contract, dict)
+            else None
+        ),
     }
 
 
 __all__ = [
+    "REQUIRED_BOUNDARY_FAILURE_KEYS",
+    "REQUIRED_CLOSURE_PUBLICATION_CONTRACT",
     "REQUIRED_OWNER_POLICY",
     "REQUIRED_OWNER_ROLES",
     "load_runtime_closure_owner_contract",

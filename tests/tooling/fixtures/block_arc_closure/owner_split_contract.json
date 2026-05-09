@@ -12,6 +12,17 @@
     "generated_reports_are_source": false,
     "public_claims_require_executable_proof": true
   },
+  "closure_publication_contract": {
+    "source_owner_role": "semantic_model_owner",
+    "runtime_owner_role": "runtime_abi_owner",
+    "executable_proof_owner_role": "executable_proof_owner",
+    "claim_publication_mode": "checked-in-owner-contract-plus-executable-proof",
+    "missing_artifact_behavior": "fail-closed",
+    "report_only_executable_proof_claims_allowed": false,
+    "fallback_runtime_semantics_allowed": false,
+    "compatibility_runtime_semantics_allowed": false,
+    "wrapper_only_runnable_actions_allowed": false
+  },
   "role_contracts": {
     "semantic_model_owner": {
       "owner": "block-arc-escaping-block-byref-semantic-model",

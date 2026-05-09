@@ -7,6 +7,15 @@
   "owner_split_contract": "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json",
   "summary_implementation_anchor": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m320/M320-A001",
+  "fail_closed_boundary_inventory": {
+    "missing_owner_split_contract": "fail-closed",
+    "missing_authoritative_code_path": "fail-closed",
+    "missing_authoritative_runtime_symbol": "fail-closed",
+    "missing_authoritative_probe_path": "fail-closed",
+    "missing_authoritative_fixture_path": "fail-closed",
+    "missing_public_workflow_action": "fail-closed",
+    "missing_executable_proof": "fail-closed"
+  },
   "focus": [
     "escaping-block-promotion-and-invoke-runtime-closure",
     "byref-forwarding-copy-dispose-and-heap-promotion-closure",
@@ -69,6 +78,14 @@
     "docs/objc3c-native.md",
     "tests/tooling/runtime/README.md",
     "docs/runbooks/objc3c_public_command_surface.md"
+  ],
+  "public_command_surfaces": [
+    "test:objc3c:block-arc-conformance",
+    "test:objc3c:runnable-block-arc"
+  ],
+  "public_workflow_actions": [
+    "validate-block-arc-conformance",
+    "validate-runnable-block-arc"
   ],
   "current_closure_gaps": [
     {

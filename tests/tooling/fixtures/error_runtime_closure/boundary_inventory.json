@@ -70,6 +70,15 @@
     "validate-error-conformance",
     "validate-runnable-error"
   ],
+  "fail_closed_boundary_inventory": {
+    "missing_owner_split_contract": "fail-closed",
+    "missing_authoritative_code_path": "fail-closed",
+    "missing_authoritative_runtime_symbol": "fail-closed",
+    "missing_authoritative_probe_path": "fail-closed",
+    "missing_authoritative_fixture_path": "fail-closed",
+    "missing_public_workflow_action": "fail-closed",
+    "missing_executable_proof": "fail-closed"
+  },
   "current_gaps": [
     "shared conformance and packaged e2e reports exist, but shared closure artifacts still need to tie semantic, lowering, runtime ABI, and cross-module propagation claims together",
     "public claims must stay narrower than the private runtime helper ABI and snapshot evidence already published",

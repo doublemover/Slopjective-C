@@ -99,6 +99,15 @@
     "validate-concurrency-conformance",
     "validate-runnable-concurrency"
   ],
+  "fail_closed_boundary_inventory": {
+    "missing_owner_split_contract": "fail-closed",
+    "missing_authoritative_code_path": "fail-closed",
+    "missing_authoritative_runtime_symbol": "fail-closed",
+    "missing_authoritative_probe_path": "fail-closed",
+    "missing_authoritative_fixture_path": "fail-closed",
+    "missing_public_workflow_action": "fail-closed",
+    "missing_executable_proof": "fail-closed"
+  },
   "current_gaps": [
     "shared conformance and packaged e2e reports exist, but there is no checked-in milestone runbook or closure contract tying task runtime, actor runtime, scheduler/executor behavior, and isolation claims together",
     "the docs currently freeze source, normalization, and lowering boundaries, but they do not publish a matching runtime-closure runbook for the live concurrency helper cluster",

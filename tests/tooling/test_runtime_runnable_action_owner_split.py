@@ -17,6 +17,11 @@ from scripts.objc3c_workflow.action_handlers_runtime_runnable_e2e import (
 )
 from scripts.objc3c_workflow.actions import runtime_runnable_conformance
 from scripts.objc3c_workflow.actions import runtime_runnable_e2e
+from scripts.objc3c_workflow.actions.runtime_runnable_groups import (
+    RUNTIME_CLOSURE_CLAIM_KIND,
+    RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES,
+    RUNTIME_CLOSURE_PUBLICATION_MODE,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 ACTION_ROOT = ROOT / "scripts" / "objc3c_workflow" / "actions"
@@ -154,6 +159,39 @@ EXPECTED_CONFORMANCE_ACTIONS = [
     "validate-release-candidate-conformance",
 ]
 
+RUNTIME_CLOSURE_OWNER_METADATA = {
+    "validate-block-arc-conformance": (
+        "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+    ),
+    "validate-runnable-block-arc": (
+        "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+    ),
+    "validate-concurrency-conformance": (
+        "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+    ),
+    "validate-runnable-concurrency": (
+        "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+    ),
+    "validate-error-conformance": (
+        "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+    ),
+    "validate-runnable-error": (
+        "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json",
+        "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+        "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+    ),
+}
+
 
 def test_runtime_runnable_facades_delegate_to_domain_owners() -> None:
     for facade_name in ("runtime_runnable_conformance", "runtime_runnable_e2e"):
@@ -244,3 +282,29 @@ def test_runtime_runnable_catalogs_and_handlers_derive_from_action_groups() -> N
         assert spec.validation_tier == "full"
         assert spec.backend.startswith("python:scripts/check_objc3c_runnable_")
         assert RUNTIME_RUNNABLE_CONFORMANCE_ACTION_HANDLERS[action]
+
+
+def test_runtime_closure_runnable_actions_publish_owner_contract_metadata() -> None:
+    groups = {
+        group.action: group
+        for group in (
+            *runtime_runnable_conformance.RUNTIME_RUNNABLE_CONFORMANCE_ACTION_GROUPS,
+            *runtime_runnable_e2e.RUNTIME_RUNNABLE_E2E_ACTION_GROUPS,
+        )
+    }
+
+    for action, (
+        owner_contract,
+        boundary_inventory,
+        executable_proof_contract,
+    ) in RUNTIME_CLOSURE_OWNER_METADATA.items():
+        group = groups[action]
+
+        assert group.owner_contract == owner_contract
+        assert group.boundary_inventory == boundary_inventory
+        assert group.executable_proof_contract == executable_proof_contract
+        assert group.claim_kind == RUNTIME_CLOSURE_CLAIM_KIND
+        assert group.claim_publication_mode == RUNTIME_CLOSURE_PUBLICATION_MODE
+        assert set(RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES).issubset(
+            group.forbidden_claim_shapes
+        )
