@@ -24,6 +24,20 @@ Retired hard-cutover surfaces are documented this way:
 - migration lane as behavior support: absent from public support and not a
   positive fixture class
 
+Additional local commits folded into this evidence map after the first index
+pass:
+
+- `645e9c25f` indexes issue evidence and retired-surface absence for `#8144`
+  and `#8150`.
+- `7e743549d` adds parser recovery diagnostics and AST type owner evidence for
+  `#8132`, `#8134`, and `#8146`.
+- `062da3dbc`, `1da2a515b`, `68f793396`, and `3c335bfae` add IR
+  serialization, synthesized-property accessor, control-flow lowering, and
+  runtime-helper owner evidence for `#8137` and `#8147`.
+- `ffb2a715d` adds config truth-table evidence for `#8138` and `#8148`.
+- `e435cdea9` and `e04c6cf4a` add parser contract/shard evidence for `#8134`.
+- `8dead58b3` adds diagnostic catalog table evidence for `#8135` and `#8145`.
+
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
 | `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, and schema split commits. |
@@ -49,3 +63,5 @@ Retired hard-cutover surfaces are documented this way:
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into
 `tests/conformance/hard_cutover_issue_index.json` for test/fixture ownership.
+Per-issue tracker-ready closeout notes live in
+`docs/issues/hard_cutover_8132_8150_closeout/payloads.md`.

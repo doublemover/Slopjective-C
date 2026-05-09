@@ -19,6 +19,86 @@
     "docs/support/capability_matrix.json",
     "docs/support/evidence_map.json"
   ],
+  "post_index_local_commit_refresh": [
+    {
+      "ref": "645e9c25f",
+      "summary": "HC index hard-cutover issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ]
+    },
+    {
+      "ref": "7e743549d",
+      "summary": "HC split parser recovery diagnostics and AST type owners",
+      "issues": [
+        "#8132",
+        "#8134",
+        "#8146"
+      ]
+    },
+    {
+      "ref": "062da3dbc",
+      "summary": "HC split IR surface serialization owner",
+      "issues": [
+        "#8137"
+      ]
+    },
+    {
+      "ref": "1da2a515b",
+      "summary": "HC split IR synthesized property accessor owner",
+      "issues": [
+        "#8137"
+      ]
+    },
+    {
+      "ref": "e04c6cf4a",
+      "summary": "HC move parser shard core into parse namespace",
+      "issues": [
+        "#8134"
+      ]
+    },
+    {
+      "ref": "ffb2a715d",
+      "summary": "HC split config truth tables",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "e435cdea9",
+      "summary": "HC split parser contract fingerprint owner",
+      "issues": [
+        "#8134"
+      ]
+    },
+    {
+      "ref": "68f793396",
+      "summary": "HC split IR control flow lowering owner",
+      "issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "8dead58b3",
+      "summary": "HC split diagnostic catalog table",
+      "issues": [
+        "#8135",
+        "#8145"
+      ]
+    },
+    {
+      "ref": "3c335bfae",
+      "summary": "HC split IR runtime helper call owner",
+      "issues": [
+        "#8137",
+        "#8147"
+      ]
+    }
+  ],
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",

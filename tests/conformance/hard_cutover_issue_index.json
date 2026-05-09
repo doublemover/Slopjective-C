@@ -2,6 +2,129 @@
   "schema_version": 1,
   "program": "objc3-hard-cutover-8132-8150",
   "source_basis": "local commits on hard-cutover/hc-000-full-program as indexed on 2026-05-09; validation and GitHub updates intentionally not run by this worker",
+  "post_index_local_commit_refresh": [
+    {
+      "ref": "645e9c25f",
+      "summary": "HC index hard-cutover issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ]
+    },
+    {
+      "ref": "7e743549d",
+      "summary": "HC split parser recovery diagnostics and AST type owners",
+      "issues": [
+        "#8132",
+        "#8134",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ast/objc3_ast_scope_surface.cpp",
+        "native/objc3c/src/ast/objc3_ast_signature_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_recovery_boundaries.cpp",
+        "native/objc3c/src/parse/objc3_type_generic_profiles.cpp"
+      ]
+    },
+    {
+      "ref": "062da3dbc",
+      "summary": "HC split IR surface serialization owner",
+      "issues": [
+        "#8137"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_surface_serialization.cpp",
+        "native/objc3c/src/ir/objc3_ir_surface_serialization.h"
+      ]
+    },
+    {
+      "ref": "1da2a515b",
+      "summary": "HC split IR synthesized property accessor owner",
+      "issues": [
+        "#8137"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_synthesized_property_accessors.cpp",
+        "native/objc3c/src/ir/objc3_ir_synthesized_property_accessors.h"
+      ]
+    },
+    {
+      "ref": "e04c6cf4a",
+      "summary": "HC move parser shard core into parse namespace",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_parts/objc3_parser_part_001.inc",
+        "native/objc3c/src/parse/objc3_parser_parts/objc3_parser_part_011.inc"
+      ]
+    },
+    {
+      "ref": "ffb2a715d",
+      "summary": "HC split config truth tables",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/config/objc3_feature_state_tables.cpp",
+        "native/objc3c/src/config/objc3_removed_command_option_table.cpp"
+      ]
+    },
+    {
+      "ref": "e435cdea9",
+      "summary": "HC split parser contract fingerprint owner",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_contract_fingerprints.h"
+      ]
+    },
+    {
+      "ref": "68f793396",
+      "summary": "HC split IR control flow lowering owner",
+      "issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_control_flow_ops.cpp",
+        "native/objc3c/src/lower/objc3_lowering_contract.h"
+      ]
+    },
+    {
+      "ref": "8dead58b3",
+      "summary": "HC split diagnostic catalog table",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.h"
+      ]
+    },
+    {
+      "ref": "3c335bfae",
+      "summary": "HC split IR runtime helper call owner",
+      "issues": [
+        "#8137",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.h"
+      ]
+    }
+  ],
   "global_policy": {
     "public_command_bridge": "npm run objc3c -- <action>",
     "positive_behavior_rule": "positive fixtures prove canonical Objective-C 3 behavior only",
