@@ -35,6 +35,7 @@
 #include "ir/objc3_ir_prototype_declarations.h"
 #include "ir/objc3_ir_receiver_dispatch_policy.h"
 #include "ir/objc3_ir_receiver_identity_contracts.h"
+#include "ir/objc3_ir_runtime_artifact_emission.h"
 #include "ir/objc3_ir_runtime_dispatch_calls.h"
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
@@ -4676,41 +4677,6 @@ class Objc3IREmitter {
           emit_retained(aggregate_symbol);
         };
 
-    const auto emit_canonical_pool_section =
-        [&](const std::map<std::string, std::string> &pool_globals,
-            const std::string &aggregate_symbol,
-            const std::string &logical_section) {
-          const std::string emitted_section_name =
-              Objc3RuntimeMetadataHostSectionForLogicalName(logical_section);
-          for (const auto &entry : pool_globals) {
-            const std::string &value = entry.first;
-            const std::string &symbol = entry.second;
-            out << symbol << " = private unnamed_addr constant ["
-                << (value.size() + 1u) << " x i8] c\""
-                << EscapeCStringLiteral(value) << "\\00\", section \""
-                << emitted_section_name << "\", align 1\n";
-          }
-          out << aggregate_symbol << " = internal "
-              << (pool_globals.empty() ? "constant " : "global ");
-          if (pool_globals.empty()) {
-            out << "{ i64 } { i64 0 }";
-          } else {
-            out << "{ i64, [" << pool_globals.size()
-                << " x ptr] } { i64 " << pool_globals.size() << ", ["
-                << pool_globals.size() << " x ptr] [";
-            std::size_t index = 0;
-            for (const auto &entry : pool_globals) {
-              if (index++ != 0) {
-                out << ", ";
-              }
-              out << "ptr " << entry.second;
-            }
-            out << "] }";
-          }
-          out << ", section \"" << emitted_section_name << "\", align 8\n";
-          emit_retained(aggregate_symbol);
-        };
-
     for (const auto &family : layout_policy.families) {
       if (emit_member_table_payloads &&
           (family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily ||
@@ -4749,134 +4715,28 @@ class Objc3IREmitter {
       }
     }
 
-    const bool emit_selector_string_pools =
-        !selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty();
-    if (emit_selector_string_pools) {
-      emit_canonical_pool_section(selector_pool_globals_,
-                                  "@__objc3_sec_selector_pool",
-                                  kObjc3RuntimeSelectorPoolLogicalSection);
-      emit_canonical_pool_section(runtime_string_pool_globals_,
-                                  "@__objc3_sec_string_pool",
-                                  kObjc3RuntimeStringPoolLogicalSection);
-    }
-
-    const bool emit_typed_keypath_artifacts = !typed_keypath_artifacts_.empty();
-    if (emit_typed_keypath_artifacts) {
-      const std::string emitted_section_name =
-          Objc3RuntimeMetadataHostSectionForLogicalName(
-              kObjc3RuntimeKeypathDescriptorLogicalSection);
-      const std::string generic_metadata_replay_key_symbol =
-          frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()
-              ? "null"
-              : runtime_string_pool_globals_.find(
-                        frontend_metadata_.lowering_generic_metadata_abi_replay_key)
-                        ->second;
-      std::vector<std::string> descriptor_symbols;
-      descriptor_symbols.reserve(typed_keypath_artifacts_.size());
-      for (const auto &entry : typed_keypath_artifacts_) {
-        const TypedKeyPathArtifact &artifact = entry.second;
-        const auto root_it = runtime_string_pool_globals_.find(artifact.root_name);
-        const auto component_it =
-            runtime_string_pool_globals_.find(artifact.component_path);
-        const auto profile_it = runtime_string_pool_globals_.find(artifact.profile);
-        if (root_it == runtime_string_pool_globals_.end() ||
-            component_it == runtime_string_pool_globals_.end() ||
-            profile_it == runtime_string_pool_globals_.end()) {
-          if (!unsupported_fail_closed_path_triggered_) {
-            unsupported_fail_closed_path_triggered_ = true;
-            unsupported_fail_closed_path_reason_ =
-                "typed key-path artifact string-pool registration failed";
-          }
-          return;
-        }
-        descriptor_symbols.push_back(artifact.descriptor_symbol);
-        out << artifact.descriptor_symbol
-            << " = private global { i64, ptr, ptr, ptr, ptr, i1 } { i64 "
-            << static_cast<unsigned long long>(artifact.ordinal + 1u)
-            << ", ptr " << root_it->second << ", ptr " << component_it->second
-            << ", ptr " << profile_it->second << ", ptr "
-            << generic_metadata_replay_key_symbol << ", i1 "
-            << (artifact.root_is_self ? 1 : 0) << " }, section \""
-            << emitted_section_name << "\", align 8\n";
+    std::string artifact_error;
+    if (!EmitObjc3IRRuntimeArtifacts(
+            Objc3IRRuntimeArtifactEmissionOptions{
+                program_.module_name,
+                frontend_metadata_,
+                runtime_metadata_symbols_,
+                layout_policy,
+                selector_pool_globals_,
+                runtime_string_pool_globals_,
+                typed_keypath_artifacts_,
+                image_info_symbol,
+                RuntimeMetadataDiscoveryRootSymbol(),
+                RuntimeMetadataLinkerAnchorSymbol(),
+                ShouldEmitRuntimeBootstrapLowering(),
+                ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()},
+            out, retained_globals, artifact_error)) {
+      if (!unsupported_fail_closed_path_triggered_) {
+        unsupported_fail_closed_path_triggered_ = true;
+        unsupported_fail_closed_path_reason_ = artifact_error;
       }
-      out << "@__objc3_sec_keypath_descriptors = internal global { i64, ["
-          << descriptor_symbols.size() << " x ptr] } { i64 "
-          << descriptor_symbols.size() << ", [" << descriptor_symbols.size()
-          << " x ptr] [";
-      for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
-        if (i != 0) {
-          out << ", ";
-        }
-        out << "ptr " << descriptor_symbols[i];
-      }
-      out << "] }, section \"" << emitted_section_name << "\", align 8\n";
-      emit_retained("@__objc3_sec_keypath_descriptors");
+      return;
     }
-
-    std::vector<std::string> discovery_root_targets;
-    discovery_root_targets.reserve(layout_policy.families.size() + 3);
-    discovery_root_targets.push_back(image_info_symbol);
-    for (const auto &family : layout_policy.families) {
-      discovery_root_targets.push_back("@" + family.aggregate_symbol_name);
-    }
-    if (emit_selector_string_pools) {
-      discovery_root_targets.push_back("@__objc3_sec_selector_pool");
-      discovery_root_targets.push_back("@__objc3_sec_string_pool");
-    }
-    if (emit_typed_keypath_artifacts) {
-      discovery_root_targets.push_back("@__objc3_sec_keypath_descriptors");
-    }
-
-    const std::string discovery_root_symbol =
-        "@" + RuntimeMetadataDiscoveryRootSymbol();
-    const std::string linker_anchor_symbol =
-        "@" + RuntimeMetadataLinkerAnchorSymbol();
-    out << discovery_root_symbol << " = dso_local constant { i64, ["
-        << discovery_root_targets.size() << " x ptr] } { i64 "
-        << discovery_root_targets.size() << ", ["
-        << discovery_root_targets.size() << " x ptr] [";
-    for (std::size_t i = 0; i < discovery_root_targets.size(); ++i) {
-      if (i != 0) {
-        out << ", ";
-      }
-      out << "ptr " << discovery_root_targets[i];
-    }
-    out << "] }, section \""
-        << Objc3RuntimeMetadataHostSectionForLogicalName(
-               kObjc3RuntimeLinkerDiscoveryRootLogicalSection)
-        << "\", align 8\n";
-    out << linker_anchor_symbol << " = dso_local global ptr "
-        << discovery_root_symbol << ", section \""
-        << Objc3RuntimeMetadataHostSectionForLogicalName(
-               kObjc3RuntimeLinkerAnchorLogicalSection)
-        << "\", align 8\n";
-    emit_retained(discovery_root_symbol);
-    emit_retained(linker_anchor_symbol);
-
-    if (ShouldEmitRuntimeBootstrapLowering()) {
-      Objc3IRRuntimeBootstrapGlobalEmissionOptions bootstrap_options;
-      bootstrap_options.module_name = program_.module_name;
-      bootstrap_options.discovery_root_symbol = discovery_root_symbol;
-      bootstrap_options.linker_anchor_symbol = linker_anchor_symbol;
-      bootstrap_options.emit_selector_string_pools = emit_selector_string_pools;
-      bootstrap_options.emit_typed_keypath_artifacts =
-          emit_typed_keypath_artifacts;
-      bootstrap_options.emit_registration_descriptor_image_root =
-          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering();
-      EmitObjc3IRRuntimeBootstrapGlobals(
-          frontend_metadata_, runtime_metadata_symbols_, bootstrap_options, out,
-          retained_globals);
-    }
-
-    out << "@llvm.used = appending global [" << retained_globals.size()
-        << " x ptr] [";
-    for (std::size_t i = 0; i < retained_globals.size(); ++i) {
-      if (i != 0) {
-        out << ", ";
-      }
-      out << "ptr " << retained_globals[i];
-    }
-    out << "], section \"llvm.metadata\"\n\n";
   }
 
   std::string NewTemp(FunctionContext &ctx) const { return "%t" + std::to_string(ctx.temp_counter++); }
