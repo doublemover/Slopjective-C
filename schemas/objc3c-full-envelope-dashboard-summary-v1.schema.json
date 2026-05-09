@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
   "title": "objc3c Full Envelope Dashboard Summary",
   "type": "object",
   "required": [

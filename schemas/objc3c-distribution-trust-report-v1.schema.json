@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-distribution-trust-report-v1.schema.json",
   "title": "objc3c Distribution Trust Report",
   "type": "object",
   "required": [

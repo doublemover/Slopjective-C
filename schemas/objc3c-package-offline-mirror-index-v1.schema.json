@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "objc3c-package-offline-mirror-index-v1",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-offline-mirror-index-v1.schema.json",
   "title": "objc3c Package Offline Mirror Index",
   "type": "object",
   "required": [

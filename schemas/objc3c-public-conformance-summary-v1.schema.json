@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3c-public-conformance-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-public-conformance-summary-v1.schema.json",
   "title": "ObjC 3 Public Conformance Summary (v1)",
   "description": "Machine-readable public summary that translates live conformance evidence into a third-party-legible report skeleton.",
   "x-objc3c-artifact-contract": {

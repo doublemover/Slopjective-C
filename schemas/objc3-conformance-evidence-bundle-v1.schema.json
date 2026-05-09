@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3-conformance-evidence-bundle-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3-conformance-evidence-bundle-v1.schema.json",
   "title": "Objective-C 3 Conformance Evidence Bundle",
   "description": "Machine-readable aggregation of conformance manifests, profile claims, test evidence, and known deviations for v0.11 publication.",
   "type": "object",

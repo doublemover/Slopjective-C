@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.objc3.dev/conformance/objc3-runtime-2025Q4.manifest.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3-runtime-2025Q4.manifest.schema.json",
   "title": "objc3-runtime-2025Q4 Manifest (Schema Fragment)",
   "description": "JSON Schema fragment for the objc3-runtime-2025Q4 artifact manifest used by conformance reporting.",
   "$comment": "Issue #115 (v0.11-A01). Runtime-specific fragment intended for composition into a broader artifact-manifest schema.",

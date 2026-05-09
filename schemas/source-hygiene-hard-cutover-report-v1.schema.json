@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "source-hygiene-hard-cutover-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/source-hygiene-hard-cutover-report-v1.schema.json",
   "title": "Source Hygiene Hard Cutover Report",
   "type": "object",
   "required": [

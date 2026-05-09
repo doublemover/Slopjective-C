@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-performance-public-report-v1.schema.json",
   "title": "ObjC 3 Performance Public Report Summary (v1)",
   "description": "Machine-readable performance public report projection over the live performance governance dashboard.",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3-abi-2025Q4.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3-abi-2025Q4.schema.json",
   "title": "Objective-C 3 ABI Manifest (2025Q4)",
   "description": "Schema fragment for ABI manifest payloads keyed by manifest_schema=objc3-abi-2025Q4.",
   "type": "object",

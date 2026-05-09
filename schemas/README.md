@@ -4,10 +4,9 @@ Checked-in schemas are part of the hard-cutover support contract. Docs, spec,
 site pages, and report-producing tools should cite these files instead of
 restating local JSON shapes in prose.
 
-New and repaired schema identifiers use
-`https://objc3c.dev/schemas/<file-name>`. Historical schemas with deliberate
-published IDs may keep their existing IDs, but placeholder domains and relative
-`schemas/...` identifiers should be retired when the file is touched.
+Schema identifiers use `https://objc3c.dev/schemas/<file-name>`. Placeholder
+domains, product-host aliases, relative IDs, and local-only schema IDs are not
+canonical support truth.
 
 ## Capability Truth Schemas
 

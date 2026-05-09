@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://objc3.dev/schemas/objc3c-security-posture-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-security-posture-v1.schema.json",
   "title": "objc3c Security Posture",
   "type": "object",
   "required": [

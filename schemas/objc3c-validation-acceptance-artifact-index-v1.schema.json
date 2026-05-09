@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/schemas/objc3c-validation-acceptance-artifact-index-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-validation-acceptance-artifact-index-v1.schema.json",
   "title": "ObjC3C Validation Acceptance Artifact Index v1",
   "x-objc3c-artifact-contract": {
     "schema_id": "objc3c-validation-acceptance-artifact-index-v1",
