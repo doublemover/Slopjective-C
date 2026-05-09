@@ -33,4 +33,8 @@ def test_request_error_facades_delegate_to_owned_output_policy(capsys) -> None:
 
     captured = capsys.readouterr()
     assert captured.out == ""
-    assert captured.err == "unknown action: missing\nbad usage\n"
+    assert captured.err == (
+        "unknown action: missing; expected command shape: "
+        "npm run objc3c -- <action>\n"
+        "bad usage\n"
+    )
