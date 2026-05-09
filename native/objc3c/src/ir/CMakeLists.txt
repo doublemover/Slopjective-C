@@ -26,6 +26,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_message_send_lowering.cpp
   objc3_ir_message_send_validation.cpp
   objc3_ir_method_definition_plan.cpp
+  objc3_ir_prototype_declarations.cpp
   objc3_ir_receiver_dispatch_policy.cpp
   objc3_ir_receiver_identity_contracts.cpp
   objc3_ir_runtime_dispatch_calls.cpp
