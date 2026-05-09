@@ -19,6 +19,12 @@ class PackageBridgeSpec:
     mode: str
     runner_path: str
     public_entrypoint: str
+    invocation_template: str
+    constants_owner_surface: str
+    invocation_owner_surface: str
+    payload_owner_surface: str
+    registry_owner_surface: str
+    capability_truth_scope: str
 
 
 __all__ = ["PackageBridgeSpec"]

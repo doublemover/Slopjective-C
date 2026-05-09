@@ -8,7 +8,12 @@
     "schema_id",
     "schema_path",
     "owner_surface",
+    "constants_owner_surface",
+    "model_owner_surface",
+    "catalog_owner_surface",
+    "index_facade_surface",
     "capability_truth_schema_ids",
+    "capability_truth",
     "schemas"
   ],
   "properties": {
@@ -17,11 +22,35 @@
     "schema_path": {
       "const": "scripts/objc3c_workflow/schemas/schema-index-v1.schema.json"
     },
-    "owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+    "owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+    "constants_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_constants.py" },
+    "model_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_model.py" },
+    "catalog_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_catalog.py" },
+    "index_facade_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
     "capability_truth_schema_ids": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "minItems": 2
+    },
+    "capability_truth": {
+      "type": "object",
+      "required": ["scope", "machine_readable", "owner_surface", "owned_fields", "schema_ids"],
+      "properties": {
+        "scope": { "const": "workflow-schema-index" },
+        "machine_readable": { "const": true },
+        "owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+        "owned_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "schema_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2
+        }
+      },
+      "additionalProperties": false
     },
     "schemas": {
       "type": "array",
@@ -33,7 +62,12 @@
           "payload_surface",
           "owner_surface",
           "capability_truth_scope",
-          "public_contract"
+          "public_contract",
+          "constants_owner_surface",
+          "model_owner_surface",
+          "catalog_owner_surface",
+          "payload_owner_surface",
+          "index_facade_surface"
         ],
         "properties": {
           "schema_id": { "type": "string", "minLength": 1 },
@@ -41,7 +75,12 @@
           "payload_surface": { "type": "string", "minLength": 1 },
           "owner_surface": { "type": "string", "minLength": 1 },
           "capability_truth_scope": { "type": "string", "minLength": 1 },
-          "public_contract": { "type": "boolean" }
+          "public_contract": { "type": "boolean" },
+          "constants_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_constants.py" },
+          "model_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_model.py" },
+          "catalog_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_catalog.py" },
+          "payload_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+          "index_facade_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" }
         },
         "additionalProperties": false
       },

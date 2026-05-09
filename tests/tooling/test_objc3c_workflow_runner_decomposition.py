@@ -160,6 +160,7 @@ def test_action_payloads_keep_single_public_package_bridge() -> None:
     )
     assert payload["schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert payload["package_bridge_count"] == 1
+    assert payload["package_bridge_invocations"] == ["npm run objc3c -- <action>"]
     assert payload["public_action_count"] == payload["action_count"]
     assert payload["internal_action_count"] == 0
     assert describe_action_payload("lint")["runner_path"] == payload["runner_path"]
@@ -191,6 +192,9 @@ def test_action_registry_payload_publishes_schema_index_and_capability_truth() -
     assert lint_payload["payload_schema_ref"] == f"{ACTION_REGISTRY_SCHEMA_ID}#/$defs/action"
     assert lint_payload["registry_schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert lint_payload["capability_truth"]["schema_ids"] == capability_truth_schema_ids()
+    assert lint_payload["payload_field_owner_map"]["public_invocation"] == (
+        "scripts/objc3c_workflow/action_payload_public_fields.py"
+    )
 
 
 def test_workflow_report_json_helpers_emit_canonical_json(tmp_path, capsys) -> None:

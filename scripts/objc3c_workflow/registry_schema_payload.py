@@ -6,6 +6,11 @@ from dataclasses import asdict
 
 from .registry_schema_catalog import WORKFLOW_SCHEMA_SPECS
 from .registry_schema_constants import (
+    REGISTRY_SCHEMA_CATALOG_OWNER_SURFACE,
+    REGISTRY_SCHEMA_CONSTANTS_OWNER_SURFACE,
+    REGISTRY_SCHEMA_INDEX_FACADE_SURFACE,
+    REGISTRY_SCHEMA_MODEL_OWNER_SURFACE,
+    REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE,
     WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
     WORKFLOW_SCHEMA_INDEX_SCHEMA_PATH,
 )
@@ -28,7 +33,18 @@ def workflow_schema_index_payload() -> dict[str, object]:
         "schema_version": WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
         "schema_id": WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
         "schema_path": WORKFLOW_SCHEMA_INDEX_SCHEMA_PATH,
-        "owner_surface": "scripts/objc3c_workflow/registry_schema_index.py",
+        "owner_surface": REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE,
+        "constants_owner_surface": REGISTRY_SCHEMA_CONSTANTS_OWNER_SURFACE,
+        "model_owner_surface": REGISTRY_SCHEMA_MODEL_OWNER_SURFACE,
+        "catalog_owner_surface": REGISTRY_SCHEMA_CATALOG_OWNER_SURFACE,
+        "index_facade_surface": REGISTRY_SCHEMA_INDEX_FACADE_SURFACE,
         "capability_truth_schema_ids": capability_truth_schema_ids(),
+        "capability_truth": {
+            "scope": "workflow-schema-index",
+            "machine_readable": True,
+            "owner_surface": REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE,
+            "owned_fields": ["capability_truth_schema_ids", "schemas"],
+            "schema_ids": capability_truth_schema_ids(),
+        },
         "schemas": workflow_schema_index_entries(),
     }

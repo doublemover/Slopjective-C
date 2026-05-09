@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from .action_payload_field_owners import (
+    ACTION_PAYLOAD_CAPABILITY_TRUTH_OWNER_SURFACE,
+)
 from .registry_schema_index import capability_truth_schema_ids
 
 
@@ -11,7 +14,8 @@ def action_capability_truth_fields(action: str) -> dict[str, object]:
             "scope": "workflow-action",
             "action": action,
             "machine_readable": True,
-            "owner_surface": "scripts/objc3c_workflow/action_payload_fields.py",
+            "owner_surface": ACTION_PAYLOAD_CAPABILITY_TRUTH_OWNER_SURFACE,
+            "owned_fields": ["capability_truth"],
             "schema_ids": capability_truth_schema_ids(),
         },
     }

@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from .public_bridge_constants import (
+    PUBLIC_BRIDGE_CAPABILITY_TRUTH_SCOPE,
+    PUBLIC_BRIDGE_CONSTANTS_OWNER_SURFACE,
+    PUBLIC_BRIDGE_INVOCATION_OWNER_SURFACE,
+    PUBLIC_BRIDGE_PAYLOAD_OWNER_SURFACE,
+    PUBLIC_BRIDGE_REGISTRY_OWNER_SURFACE,
     PUBLIC_ENTRYPOINT_KIND,
     WORKFLOW_BRIDGE_SCRIPT,
-    WORKFLOW_PUBLIC_COMMAND_PREFIX,
+    WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
     WORKFLOW_RUNNER_MODE,
     WORKFLOW_RUNNER_SURFACE,
 )
@@ -18,7 +23,7 @@ OBJC3C_PACKAGE_BRIDGE = PackageBridgeSpec(
     summary="canonical npm bridge for the objc3c workflow action registry",
     audience="operator",
     category="bridge",
-    backend=f"{WORKFLOW_PUBLIC_COMMAND_PREFIX} <action>",
+    backend=WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
     validation_tier="repo",
     guarantee_owner=(
         "GitHub Actions and local npm users route workflow actions through one package bridge"
@@ -27,6 +32,12 @@ OBJC3C_PACKAGE_BRIDGE = PackageBridgeSpec(
     mode=WORKFLOW_RUNNER_MODE,
     runner_path=WORKFLOW_RUNNER_SURFACE,
     public_entrypoint=PUBLIC_ENTRYPOINT_KIND,
+    invocation_template=WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
+    constants_owner_surface=PUBLIC_BRIDGE_CONSTANTS_OWNER_SURFACE,
+    invocation_owner_surface=PUBLIC_BRIDGE_INVOCATION_OWNER_SURFACE,
+    payload_owner_surface=PUBLIC_BRIDGE_PAYLOAD_OWNER_SURFACE,
+    registry_owner_surface=PUBLIC_BRIDGE_REGISTRY_OWNER_SURFACE,
+    capability_truth_scope=PUBLIC_BRIDGE_CAPABILITY_TRUTH_SCOPE,
 )
 
 PACKAGE_BRIDGES: dict[str, PackageBridgeSpec] = {

@@ -16,7 +16,20 @@ def test_registry_bridge_fields_keep_single_public_bridge_contract() -> None:
 
     assert fields["package_bridge_count"] == 1
     assert fields["single_package_bridge_only"] is True
-    assert fields["package_bridges"] == ["npm run objc3c -- <action>"]
+    assert fields["package_bridges"] == ["objc3c"]
+    assert fields["package_bridge_invocations"] == ["npm run objc3c -- <action>"]
+    assert fields["public_bridge_owners"] == {
+        "constants": "scripts/objc3c_workflow/public_bridge_constants.py",
+        "invocation": "scripts/objc3c_workflow/public_bridge_invocation.py",
+        "payload": "scripts/objc3c_workflow/public_bridge_payloads.py",
+        "registry": "scripts/objc3c_workflow/public_bridge_registry.py",
+    }
+    assert fields["public_bridge_capability_truth"]["owned_fields"] == [
+        "package_bridge_count",
+        "package_bridges",
+        "package_bridge_invocations",
+        "single_package_bridge_only",
+    ]
 
 
 def test_registry_capability_truth_fields_use_schema_owner_ref() -> None:
@@ -25,6 +38,7 @@ def test_registry_capability_truth_fields_use_schema_owner_ref() -> None:
     assert fields["scope"] == "workflow-action-registry"
     assert fields["machine_readable"] is True
     assert fields["action_payload_schema_ref"] == ACTION_PAYLOAD_SCHEMA_REF
+    assert fields["owned_fields"] == ["capability_truth"]
 
 
 def test_registry_payload_composes_owner_fields() -> None:
@@ -45,3 +59,7 @@ def test_registry_payload_composes_owner_fields() -> None:
         "capability_truth"
     ]
     assert payload["actions"][0]["action"] == "sample-action"
+    assert payload["actions"][0]["payload_owner_action"] == "sample-action"
+    assert payload["actions"][0]["payload_field_owner_map"]["public_command"] == (
+        "scripts/objc3c_workflow/action_payload_public_fields.py"
+    )

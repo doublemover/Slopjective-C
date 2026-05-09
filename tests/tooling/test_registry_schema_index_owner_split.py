@@ -7,6 +7,10 @@ from scripts.objc3c_workflow.registry_schema_catalog import WORKFLOW_SCHEMA_SPEC
 from scripts.objc3c_workflow.registry_schema_constants import (
     ACTION_PAYLOAD_SCHEMA_REF,
     ACTION_REGISTRY_SCHEMA_ID,
+    REGISTRY_SCHEMA_CATALOG_OWNER_SURFACE,
+    REGISTRY_SCHEMA_INDEX_FACADE_SURFACE,
+    REGISTRY_SCHEMA_MODEL_OWNER_SURFACE,
+    REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE,
 )
 from scripts.objc3c_workflow.registry_schema_index import (
     ACTION_PAYLOAD_SCHEMA_REF as PUBLIC_ACTION_PAYLOAD_SCHEMA_REF,
@@ -57,5 +61,13 @@ def test_registry_schema_payload_preserves_capability_truth_ids() -> None:
     assert payload["capability_truth_schema_ids"] == [
         "objc3c-capability-matrix-v1",
         "objc3c-capability-evidence-map-v1",
+    ]
+    assert payload["owner_surface"] == REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE
+    assert payload["model_owner_surface"] == REGISTRY_SCHEMA_MODEL_OWNER_SURFACE
+    assert payload["catalog_owner_surface"] == REGISTRY_SCHEMA_CATALOG_OWNER_SURFACE
+    assert payload["index_facade_surface"] == REGISTRY_SCHEMA_INDEX_FACADE_SURFACE
+    assert payload["capability_truth"]["owned_fields"] == [
+        "capability_truth_schema_ids",
+        "schemas",
     ]
     assert len(payload["schemas"]) == len(WORKFLOW_SCHEMA_SPECS)

@@ -13,3 +13,8 @@ class WorkflowSchemaSpec:
     owner_surface: str
     capability_truth_scope: str
     public_contract: bool
+    constants_owner_surface: str
+    model_owner_surface: str
+    catalog_owner_surface: str
+    payload_owner_surface: str
+    index_facade_surface: str
