@@ -2,6 +2,13 @@
   "schema_version": 1,
   "source_of_truth": "tests/native",
   "policy": "retired old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and typed runtime-dispatch projection surfaces are never positive fixtures",
+  "owner_split_index": "tests/native/retired_surface_owner_splits/index.json",
+  "owner_splits": [
+    "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
+    "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
+    "tests/native/retired_surface_owner_splits/fallback_dispatch_strict_error.json",
+    "tests/native/retired_surface_owner_splits/migration_report_only_provenance.json"
+  ],
   "entries": [
     {
       "surface": "legacy-literal-aliases",

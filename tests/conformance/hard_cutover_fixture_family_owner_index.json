@@ -100,7 +100,31 @@
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
-      "retired_disposition": "retired surfaces are explicit rejection, strict-error, or absent-support evidence"
+      "retired_disposition": "retired surfaces are resolved through behavior/provenance owner splits before any matrix row is cited; old-mode, shim, fallback, compatibility, migration, report-only, unsupported-feature, and typed runtime-dispatch projection surfaces are explicit rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
+      "family": "retired_surface_matrix_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/retired_surface_owner_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "old_mode_parser_rejection",
+        "shim_compatibility_rejection",
+        "fallback_dispatch_strict_error",
+        "migration_report_only_provenance"
+      ],
+      "index_evidence": [
+        "tests/native/retired_surface_owner_splits/index.json",
+        "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
+        "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
+        "tests/native/retired_surface_owner_splits/fallback_dispatch_strict_error.json",
+        "tests/native/retired_surface_owner_splits/migration_report_only_provenance.json"
+      ],
+      "retired_disposition": "old-mode parser flags and literals, compatibility modes, shim gates, fallback flags, runtime-dispatch projections, migration lanes, report-only rows, audit-only rows, generated-output-only rows, unsupported-feature rows, and absent-support claims are split into canonical rejection, strict-error, or provenance-only boundaries; none are positive behavior truth"
     },
     {
       "family": "parser_behavior",
@@ -887,6 +911,11 @@
     "tests/conformance/hard_cutover_retired_surface_absence.json",
     "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "tests/native/retired_surface_owner_splits/index.json",
+    "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
+    "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
+    "tests/native/retired_surface_owner_splits/fallback_dispatch_strict_error.json",
+    "tests/native/retired_surface_owner_splits/migration_report_only_provenance.json",
     "tests/fixtures/generated/behavior_owner_splits/index.json",
     "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
     "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",

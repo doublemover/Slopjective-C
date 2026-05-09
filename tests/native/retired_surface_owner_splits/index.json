@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-retired-surface-matrix-behavior-provenance-split-index",
+  "source_matrix": "tests/native/retired_surface_matrix.json",
+  "source_contracts": [
+    "tests/native/retired_surface_matrix.json",
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json"
+  ],
+  "split_policy": {
+    "primary_axis": "retired surface disposition before fixture phase, diagnostic stage, report row, or provenance label",
+    "positive_rule": "retired old-mode, shim, fallback, compatibility, migration, unsupported-feature, typed runtime-dispatch projection, and report-only surfaces never define positive behavior truth",
+    "canonical_rejection_rule": "retired surfaces with checked-in fixture paths are canonical rejection or strict-error evidence owned by the phase that produces the diagnostic",
+    "provenance_rule": "migration-lane, report-only, audit-only, generated-output-only, and absent-support surfaces remain provenance-only unless a canonical rejection or strict-error fixture is added",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration, report-only, unsupported, and typed runtime-dispatch projection claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "old_mode_parser_rejection",
+      "path": "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json"
+    },
+    {
+      "owner_boundary": "shim_compatibility_rejection",
+      "path": "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json"
+    },
+    {
+      "owner_boundary": "fallback_dispatch_strict_error",
+      "path": "tests/native/retired_surface_owner_splits/fallback_dispatch_strict_error.json"
+    },
+    {
+      "owner_boundary": "migration_report_only_provenance",
+      "path": "tests/native/retired_surface_owner_splits/migration_report_only_provenance.json"
+    }
+  ]
+}
