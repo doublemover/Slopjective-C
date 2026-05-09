@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-ir-behavior-family-owner-split-index",
+  "source_family": "tests/native/ir",
+  "source_contracts": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+  ],
+  "split_policy": {
+    "primary_axis": "IR fixture role before fixture path convenience, diagnostic sidecar, conformance manifest row, generated artifact pointer, runtime-dispatch symbol, or retired-surface tag",
+    "positive_rule": "IR positives are hand-authored tests/native/ir fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
+    "strict_error_rule": "non-nil runtime helper calls and unresolved runtime-dispatch symbols are strict-error/linkage evidence; they are not positive IR support",
+    "docs_evidence_rule": "owner index rows, phase contracts, module-roundtrip manifests, lowering-ABI manifests, report pointers, generated artifact pointers, and metadata field names are provenance unless tied to an IR fixture sidecar",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only IR rows are rejection or provenance-only evidence",
+    "omitted_phase_rule": "this family has no parser, sema, lowering, runtime, or e2e behavior contracts"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "ir",
+      "path": "tests/native/ir/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_boundary": "docs_evidence",
+      "path": "tests/native/ir/behavior_owner_splits/docs_evidence.json"
+    },
+    {
+      "owner_boundary": "rejection_provenance",
+      "path": "tests/native/ir/behavior_owner_splits/rejection_provenance.json"
+    }
+  ],
+  "omitted_boundaries": [
+    "parser",
+    "sema",
+    "lowering",
+    "runtime",
+    "e2e"
+  ]
+}

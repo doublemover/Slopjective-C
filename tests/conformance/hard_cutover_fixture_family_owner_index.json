@@ -340,7 +340,37 @@
       "rejection_evidence": [
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
       ],
-      "retired_disposition": "non-nil runtime helper calls are strict-error/linkage evidence, not fallback support"
+      "retired_disposition": "IR behavior rows are resolved through IR-family owner splits before any IR fixture is cited; canonical IR positives remain hand-authored IR fixtures, non-nil runtime helper calls remain strict-error/linkage evidence, and old-mode, shim, fallback, generated-only, report-only, or migration-only IR claims remain rejection or provenance-only rather than positive behavior truth"
+    },
+    {
+      "family": "ir_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/ir/behavior_owner_splits",
+      "acceptance_area": "lowering_and_ir",
+      "owning_issues": [
+        "#8137",
+        "#8144",
+        "#8147"
+      ],
+      "owned_boundaries": [
+        "ir",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "runtime",
+        "e2e"
+      ],
+      "index_evidence": [
+        "tests/native/ir/behavior_owner_splits/index.json",
+        "tests/native/ir/behavior_owner_splits/ir.json",
+        "tests/native/ir/behavior_owner_splits/docs_evidence.json",
+        "tests/native/ir/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "IR fixture positives, strict-error/linkage negatives, module-roundtrip and lowering-ABI contract pointers, and IR-family index rows are split into IR behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only IR claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "runtime_behavior",
@@ -1058,6 +1088,10 @@
     "tests/native/lowering/behavior_owner_splits/lowering.json",
     "tests/native/lowering/behavior_owner_splits/docs_evidence.json",
     "tests/native/lowering/behavior_owner_splits/rejection_provenance.json",
+    "tests/native/ir/behavior_owner_splits/index.json",
+    "tests/native/ir/behavior_owner_splits/ir.json",
+    "tests/native/ir/behavior_owner_splits/docs_evidence.json",
+    "tests/native/ir/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-ir-behavior-family-owner-split",
+  "owner_boundary": "ir",
+  "source_family": "tests/native/ir",
+  "support_boundary": "IR ownership covers canonical module, function, metadata, and nil-message runtime-call IR positives under tests/native/ir only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "module/basic_i32_return_main.objc3",
+    "module/basic_i32_return_main.meta.json:fixture_kind=positive",
+    "function/helper_function_emission.objc3",
+    "function/helper_function_emission.meta.json:fixture_kind=positive",
+    "function/block_literal_helper_function_contract.objc3",
+    "function/block_literal_helper_function_contract.meta.json:fixture_kind=positive",
+    "metadata/module_metadata_name.objc3",
+    "metadata/module_metadata_name.meta.json:fixture_kind=positive",
+    "metadata/actor_executor_metadata_contract.objc3",
+    "metadata/actor_executor_metadata_contract.meta.json:fixture_kind=positive",
+    "runtime_calls/nil_message_send_runtime_call_contract.objc3",
+    "runtime_calls/nil_message_send_runtime_call_contract.meta.json:fixture_kind=positive"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "positive IR truth is limited to hand-authored canonical IR fixtures with retired_positive_surface=false; non-nil runtime helper/linkage rows are strict-error evidence and never generated-only, report-only, migration, old-mode, shim, or fallback support"
+}
