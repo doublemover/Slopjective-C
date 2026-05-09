@@ -25,6 +25,7 @@
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
@@ -281,7 +282,6 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::BuildCrossModuleConformanceLoweringContract;
 using objc3::artifacts::frontend::
     BuildIncrementalModuleCacheInvalidationLoweringContract;
-using objc3::artifacts::frontend::BuildModuleImportGraphLoweringContract;
 using objc3::artifacts::frontend::
     BuildNamespaceCollisionShadowingLoweringContract;
 using objc3::artifacts::frontend::
@@ -350,8 +350,6 @@ using objc3::artifacts::frontend::BuildRuntimeAwareImportModuleSurfaceSummaryJso
 using objc3::artifacts::frontend::
     BuildRuntimeAwareImportModuleFrontendClosureReplayKey;
 using objc3::artifacts::frontend::
-    BuildRuntimeAwareImportModuleFrontendClosureSummary;
-using objc3::artifacts::frontend::
     BuildRuntimeAwareImportModuleFrontendClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyActorMailboxRuntimeImportSummary;
@@ -366,35 +364,13 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildRuntimeStorageReflectionArtifactPreservationSummaryJson;
 using objc3::artifacts::frontend::
-    BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey;
-using objc3::artifacts::frontend::
-    BuildCrossModuleRuntimeMetadataSemanticPreservationSummary;
-using objc3::artifacts::frontend::
     BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson;
-using objc3::artifacts::frontend::
-    BuildImportedRuntimeMetadataSemanticRulesReplayKey;
-using objc3::artifacts::frontend::
-    BuildImportedRuntimeMetadataSemanticRulesSummary;
 using objc3::artifacts::frontend::
     BuildImportedRuntimeMetadataSemanticRulesSummaryJson;
 using objc3::artifacts::frontend::
-    BuildSerializedRuntimeMetadataImportLoweringReplayKey;
-using objc3::artifacts::frontend::
-    BuildSerializedRuntimeMetadataImportLoweringSummary;
-using objc3::artifacts::frontend::
     BuildSerializedRuntimeMetadataImportLoweringSummaryJson;
 using objc3::artifacts::frontend::
-    BuildSerializedRuntimeMetadataArtifactReuseReplayKey;
-using objc3::artifacts::frontend::
-    BuildSerializedRuntimeMetadataArtifactReuseSummary;
-using objc3::artifacts::frontend::
     BuildSerializedRuntimeMetadataArtifactReuseSummaryJson;
-using objc3::artifacts::frontend::BuildSerializedRuntimeMetadataReuseRecordSet;
-using objc3::artifacts::frontend::BuildSerializedRuntimeMetadataReusedModuleNames;
-using objc3::artifacts::frontend::
-    BuildCrossModuleBuildRuntimeOrchestrationReplayKey;
-using objc3::artifacts::frontend::
-    BuildCrossModuleBuildRuntimeOrchestrationSummary;
 using objc3::artifacts::frontend::
     BuildCrossModuleBuildRuntimeOrchestrationSummaryJson;
 using objc3::artifacts::reports::
@@ -1433,138 +1409,49 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           type_system_lowering_plan.generic_metadata_abi_lowering_contract;
   const std::string &generic_metadata_abi_lowering_replay_key =
       type_system_lowering_plan.generic_metadata_abi_lowering_replay_key;
-  const Objc3ModuleImportGraphLoweringContract module_import_graph_lowering_contract =
-      BuildModuleImportGraphLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3ModuleImportGraphLoweringContract(
-          module_import_graph_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid module import graph lowering contract");
+  const Objc3FrontendArtifactRuntimeImportPlan runtime_import_plan =
+      BuildObjc3FrontendArtifactRuntimeImportPlan(
+          program,
+          pipeline_result,
+          options,
+          runtime_metadata_source_records,
+          runtime_translation_unit_registration_manifest,
+          !post_pipeline_failure_code.empty());
+  for (const auto &failure : runtime_import_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string module_import_graph_lowering_replay_key =
-      Objc3ModuleImportGraphLoweringReplayKey(
-          module_import_graph_lowering_contract);
+  const Objc3ModuleImportGraphLoweringContract
+      &module_import_graph_lowering_contract =
+          runtime_import_plan.module_import_graph_lowering_contract;
+  const std::string &module_import_graph_lowering_replay_key =
+      runtime_import_plan.module_import_graph_lowering_replay_key;
   const Objc3RuntimeAwareImportModuleFrontendClosureSummary
-      runtime_aware_import_module_frontend_closure =
-          BuildRuntimeAwareImportModuleFrontendClosureSummary(
-              program,
-              pipeline_result.parser_contract_snapshot,
-              module_import_graph_lowering_contract,
-              runtime_metadata_source_records);
+      &runtime_aware_import_module_frontend_closure =
+          runtime_import_plan.runtime_aware_import_module_frontend_closure;
   const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary
-      cross_module_runtime_metadata_semantic_preservation =
-          BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
-              runtime_aware_import_module_frontend_closure,
-              runtime_metadata_source_records);
-  std::vector<Objc3ImportedRuntimeModuleSurface> imported_runtime_module_surfaces;
-  imported_runtime_module_surfaces.reserve(
-      options.imported_runtime_surface_paths.size());
-  {
-    std::unordered_set<std::string> normalized_input_paths;
-    std::unordered_set<std::string> imported_module_names;
-    for (const auto &input_path_text : options.imported_runtime_surface_paths) {
-      const std::filesystem::path raw_input_path(input_path_text);
-      const std::filesystem::path absolute_input_path =
-          std::filesystem::absolute(raw_input_path);
-      const std::string normalized_input_path =
-          absolute_input_path.lexically_normal().generic_string();
-      if (!normalized_input_paths.insert(normalized_input_path).second) {
-        record_post_pipeline_failure(
-            "O3S264",
-            "imported runtime surface path was provided more than once: " +
-                normalized_input_path);
-        break;
-      }
-      Objc3ImportedRuntimeModuleSurface imported_surface;
-      std::string import_surface_error;
-      if (!TryLoadObjc3ImportedRuntimeModuleSurface(absolute_input_path,
-                                                   imported_surface,
-                                                   import_surface_error)) {
-        record_post_pipeline_failure(
-            "O3S264",
-            "imported runtime surface load failed: " + import_surface_error);
-        break;
-      }
-      const std::string &module_name =
-          imported_surface.frontend_closure_summary.module_name;
-      if (!imported_module_names.insert(module_name).second) {
-        record_post_pipeline_failure(
-            "O3S264",
-            "imported runtime surface module name was provided more than once: " +
-                module_name);
-        break;
-      }
-      imported_runtime_module_surfaces.push_back(std::move(imported_surface));
-    }
-  }
+      &cross_module_runtime_metadata_semantic_preservation =
+          runtime_import_plan
+              .cross_module_runtime_metadata_semantic_preservation;
+  const std::vector<Objc3ImportedRuntimeModuleSurface>
+      &imported_runtime_module_surfaces =
+          runtime_import_plan.imported_runtime_module_surfaces;
   const Objc3ImportedRuntimeMetadataSemanticRulesSummary
-      imported_runtime_metadata_semantic_rules =
-          BuildImportedRuntimeMetadataSemanticRulesSummary(
-              cross_module_runtime_metadata_semantic_preservation,
-              imported_runtime_module_surfaces,
-              options.imported_runtime_surface_paths.size());
+      &imported_runtime_metadata_semantic_rules =
+          runtime_import_plan.imported_runtime_metadata_semantic_rules;
   const bool has_imported_runtime_surface_inputs =
-      !options.imported_runtime_surface_paths.empty();
-  if (post_pipeline_failure_code.empty() &&
-      has_imported_runtime_surface_inputs &&
-      !IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
-          imported_runtime_metadata_semantic_rules)) {
-    record_post_pipeline_failure(
-        "O3S264",
-        "imported runtime metadata semantic rules are incomplete: " +
-            imported_runtime_metadata_semantic_rules.failure_reason);
-  }
+      runtime_import_plan.has_imported_runtime_surface_inputs;
   const Objc3SerializedRuntimeMetadataImportLoweringSummary
-      serialized_runtime_metadata_import_lowering =
-          BuildSerializedRuntimeMetadataImportLoweringSummary(
-              imported_runtime_metadata_semantic_rules);
-  if (post_pipeline_failure_code.empty() &&
-      has_imported_runtime_surface_inputs &&
-      !IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
-          serialized_runtime_metadata_import_lowering)) {
-    record_post_pipeline_failure(
-        "O3S265",
-        "serialized runtime metadata import/lowering boundary is incomplete: " +
-            serialized_runtime_metadata_import_lowering.failure_reason);
-  }
-  const std::vector<std::string> serialized_runtime_metadata_reused_module_names =
-      BuildSerializedRuntimeMetadataReusedModuleNames(
-          runtime_aware_import_module_frontend_closure.module_name,
-          imported_runtime_module_surfaces);
+      &serialized_runtime_metadata_import_lowering =
+          runtime_import_plan.serialized_runtime_metadata_import_lowering;
   const Objc3RuntimeMetadataSourceRecordSet
-      serialized_runtime_metadata_reuse_records =
-          BuildSerializedRuntimeMetadataReuseRecordSet(
-              runtime_metadata_source_records, imported_runtime_module_surfaces);
+      &serialized_runtime_metadata_reuse_records =
+          runtime_import_plan.serialized_runtime_metadata_reuse_records;
   const Objc3SerializedRuntimeMetadataArtifactReuseSummary
-      serialized_runtime_metadata_artifact_reuse =
-          BuildSerializedRuntimeMetadataArtifactReuseSummary(
-              serialized_runtime_metadata_import_lowering,
-              runtime_aware_import_module_frontend_closure.module_name,
-              serialized_runtime_metadata_reuse_records,
-              serialized_runtime_metadata_reused_module_names);
-  if (post_pipeline_failure_code.empty() &&
-      has_imported_runtime_surface_inputs &&
-      !IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(
-          serialized_runtime_metadata_artifact_reuse)) {
-    record_post_pipeline_failure(
-        "O3S266",
-        "serialized runtime metadata artifact reuse is incomplete: " +
-            serialized_runtime_metadata_artifact_reuse.failure_reason);
-  }
+      &serialized_runtime_metadata_artifact_reuse =
+          runtime_import_plan.serialized_runtime_metadata_artifact_reuse;
   const Objc3CrossModuleBuildRuntimeOrchestrationSummary
-      cross_module_build_runtime_orchestration =
-          BuildCrossModuleBuildRuntimeOrchestrationSummary(
-              serialized_runtime_metadata_artifact_reuse,
-              imported_runtime_metadata_semantic_rules,
-              runtime_translation_unit_registration_manifest,
-              options.imported_runtime_surface_paths.size());
-  if (post_pipeline_failure_code.empty() &&
-      has_imported_runtime_surface_inputs &&
-      !IsReadyObjc3CrossModuleBuildRuntimeOrchestrationSummary(
-          cross_module_build_runtime_orchestration)) {
-    record_post_pipeline_failure(
-        "O3S267",
-        "cross-module build/runtime orchestration contract is incomplete: " +
-            cross_module_build_runtime_orchestration.failure_reason);
-  }
+      &cross_module_build_runtime_orchestration =
+          runtime_import_plan.cross_module_build_runtime_orchestration;
   const Objc3NamespaceCollisionShadowingLoweringContract
       namespace_collision_shadowing_lowering_contract =
           BuildNamespaceCollisionShadowingLoweringContract(
