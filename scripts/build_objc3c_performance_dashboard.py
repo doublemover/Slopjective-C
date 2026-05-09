@@ -13,11 +13,13 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance"
+SOURCE_SURFACE_PATH = FIXTURE_ROOT / "source_surface.json"
 BUDGET_MODEL_PATH = FIXTURE_ROOT / "budget_model.json"
 CLAIM_POLICY_PATH = FIXTURE_ROOT / "claim_policy.json"
 TRIAGE_POLICY_PATH = FIXTURE_ROOT / "breach_triage_policy.json"
 LAB_POLICY_PATH = FIXTURE_ROOT / "lab_policy.json"
 WAIVERS_PATH = FIXTURE_ROOT / "waivers.json"
+WORKFLOW_SURFACE_PATH = FIXTURE_ROOT / "workflow_surface.json"
 PERFORMANCE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "performance" / "benchmark-summary.json"
 PERFORMANCE_INTEGRATION_PATH = ROOT / "tmp" / "reports" / "performance" / "integration-summary.json"
 COMPARATIVE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "performance" / "comparative-baselines-summary.json"
@@ -28,6 +30,40 @@ RUNTIME_INTEGRATION_PATH = ROOT / "tmp" / "reports" / "runtime-performance" / "i
 OUTPUT_PATH = ROOT / "tmp" / "reports" / "performance-governance" / "dashboard-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.performance.governance.dashboard.summary.v1"
 
+EXPECTED_POLICY_CONTRACTS = {
+    "source_surface": "objc3c.performance.governance.source.surface.v1",
+    "budget_model": "objc3c.performance.governance.budget.model.v1",
+    "claim_policy": "objc3c.performance.governance.claim.policy.v1",
+    "breach_triage_policy": "objc3c.performance.governance.breach.triage.policy.v1",
+    "lab_policy": "objc3c.performance.governance.lab.policy.v1",
+    "waiver_registry": "objc3c.performance.governance.waiver.registry.v1",
+    "workflow_surface": "objc3c.performance.governance.workflow.surface.v1",
+}
+
+EXPECTED_UPSTREAM_REPORT_CONTRACTS = {
+    "performance_summary": "objc3c.performance.benchmark.summary.v1",
+    "performance_integration": "objc3c.performance.integration.summary.v1",
+    "comparative_summary": "objc3c.performance.comparative.baselines.summary.v1",
+    "compiler_summary": "objc3c.compiler.throughput.summary.v1",
+    "compiler_integration": "objc3c.compiler.throughput.integration.summary.v1",
+    "runtime_summary": "objc3c.runtime.performance.summary.v1",
+    "runtime_integration": "objc3c.runtime.performance.integration.summary.v1",
+}
+
+EXPECTED_CLAIM_STATUS_REQUIREMENTS = {
+    "release-ready": [
+        "all_required_budget_families_pass",
+        "no_blocking_breach",
+        "no_expired_waiver",
+    ],
+    "caution": [
+        "all_required_budget_families_present",
+        "no_blocking_environment_drift",
+    ],
+    "blocked": [
+        "blocked-when-any-release-blocking-condition-is-met",
+    ],
+}
 
 
 
@@ -35,6 +71,22 @@ def require_json(path: Path, *, kind: str) -> dict[str, Any]:
     if not path.is_file():
         raise RuntimeError(f"missing {kind}: {repo_rel(path)}")
     return load_json(path)
+
+
+def contract_id(payload: dict[str, Any]) -> str:
+    return str(payload.get("contract_id", ""))
+
+
+def validate_contracts(
+    observed: dict[str, str],
+    expected: dict[str, str],
+    failures: list[str],
+    *,
+    label: str,
+) -> None:
+    for key, expected_contract in expected.items():
+        if observed.get(key) != expected_contract:
+            failures.append(f"{label} contract drifted for {key}")
 
 
 def parse_timestamp(raw_value: Any) -> datetime:
@@ -162,11 +214,13 @@ def apply_waiver(
 
 def main() -> int:
     try:
+        source_surface = require_json(SOURCE_SURFACE_PATH, kind="source surface")
         budget_model = require_json(BUDGET_MODEL_PATH, kind="budget model")
         claim_policy = require_json(CLAIM_POLICY_PATH, kind="claim policy")
         triage_policy = require_json(TRIAGE_POLICY_PATH, kind="breach triage policy")
         lab_policy = require_json(LAB_POLICY_PATH, kind="lab policy")
         waivers_payload = require_json(WAIVERS_PATH, kind="waiver registry")
+        workflow_surface = require_json(WORKFLOW_SURFACE_PATH, kind="workflow surface")
         performance_summary = require_json(PERFORMANCE_SUMMARY_PATH, kind="performance benchmark summary")
         performance_integration = require_json(PERFORMANCE_INTEGRATION_PATH, kind="performance integration summary")
         comparative_summary = require_json(COMPARATIVE_SUMMARY_PATH, kind="comparative baseline summary")
@@ -179,6 +233,48 @@ def main() -> int:
         return 1
 
     failures: list[str] = []
+    policy_contracts = {
+        "source_surface": contract_id(source_surface),
+        "budget_model": contract_id(budget_model),
+        "claim_policy": contract_id(claim_policy),
+        "breach_triage_policy": contract_id(triage_policy),
+        "lab_policy": contract_id(lab_policy),
+        "waiver_registry": contract_id(waivers_payload),
+        "workflow_surface": contract_id(workflow_surface),
+    }
+    upstream_report_contracts = {
+        "performance_summary": contract_id(performance_summary),
+        "performance_integration": contract_id(performance_integration),
+        "comparative_summary": contract_id(comparative_summary),
+        "compiler_summary": contract_id(compiler_summary),
+        "compiler_integration": contract_id(compiler_integration),
+        "runtime_summary": contract_id(runtime_summary),
+        "runtime_integration": contract_id(runtime_integration),
+    }
+    validate_contracts(
+        policy_contracts,
+        EXPECTED_POLICY_CONTRACTS,
+        failures,
+        label="performance governance policy",
+    )
+    validate_contracts(
+        upstream_report_contracts,
+        EXPECTED_UPSTREAM_REPORT_CONTRACTS,
+        failures,
+        label="upstream performance report",
+    )
+
+    claim_status_requirements = {
+        str(entry.get("status", "")): entry.get("requires", [])
+        for entry in claim_policy.get("claim_statuses", [])
+        if isinstance(entry, dict)
+    }
+    if claim_status_requirements != EXPECTED_CLAIM_STATUS_REQUIREMENTS:
+        failures.append("claim policy status requirements drifted from hard-cutover release gates")
+    for requirements in claim_status_requirements.values():
+        if isinstance(requirements, list) and any("fallback" in str(item) for item in requirements):
+            failures.append("claim policy reintroduced fallback wording")
+
     waivers = waivers_payload.get("waivers", [])
     if not isinstance(waivers, list):
         failures.append("waiver registry waivers field drifted")
@@ -333,6 +429,8 @@ def main() -> int:
                         "observed_value": observed_value,
                         "allowed_value": allowed_value,
                     }
+                    if isinstance(allowed_value, (int, float)) and float(allowed_value) != 0.0:
+                        breach["ratio"] = round(float(observed_value) / float(allowed_value), 6)
                     breach = apply_waiver(breach, waivers, taxonomy_lookup)
                     metric_summary["breach_id"] = breach["breach_id"]
                     breaches.append(breach)
@@ -361,13 +459,25 @@ def main() -> int:
         breaches.append(env_breach)
 
     expired_waivers: list[dict[str, Any]] = []
+    required_waiver_fields = [
+        "waiver_id",
+        "budget_id",
+        "breach_id",
+        "owner",
+        "expires_at_utc",
+        "evidence_paths",
+    ]
     for waiver in waivers:
         if not isinstance(waiver, dict):
             failures.append("waiver entry drifted")
             continue
+        for field_name in required_waiver_fields:
+            if field_name not in waiver:
+                failures.append(f"waiver entry missing required field {field_name}")
         try:
             expires_at = parse_timestamp(waiver.get("expires_at_utc"))
         except RuntimeError:
+            failures.append("waiver entry has invalid expires_at_utc")
             continue
         status = "active" if expires_at >= now else "expired"
         waiver["status"] = status
@@ -395,6 +505,10 @@ def main() -> int:
         "claim_policy_path": repo_rel(CLAIM_POLICY_PATH),
         "breach_triage_policy_path": repo_rel(TRIAGE_POLICY_PATH),
         "lab_policy_path": repo_rel(LAB_POLICY_PATH),
+        "source_surface_path": repo_rel(SOURCE_SURFACE_PATH),
+        "workflow_surface_path": repo_rel(WORKFLOW_SURFACE_PATH),
+        "policy_contracts": policy_contracts,
+        "upstream_report_contracts": upstream_report_contracts,
         "upstream_reports": {
             "performance_summary": repo_rel(PERFORMANCE_SUMMARY_PATH),
             "performance_integration": repo_rel(PERFORMANCE_INTEGRATION_PATH),
@@ -406,6 +520,14 @@ def main() -> int:
         },
         "release_status": release_status,
         "claim_ready": release_status == "release-ready",
+        "owner_split": source_surface.get("owner_split", {}),
+        "workflow_actions": {
+            "validate_action": workflow_surface.get("validate_action"),
+            "integration_action": workflow_surface.get("integration_action"),
+            "end_to_end_action": workflow_surface.get("end_to_end_action"),
+            "required_actions": workflow_surface.get("required_actions", []),
+            "upstream_validate_actions": workflow_surface.get("upstream_validate_actions", []),
+        },
         "budget_family_summaries": budget_family_summaries,
         "breaches": breaches,
         "waivers": waivers,

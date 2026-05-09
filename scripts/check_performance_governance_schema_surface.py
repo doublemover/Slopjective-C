@@ -22,13 +22,13 @@ EXPECTED_SCHEMAS = (
     (
         "dashboard_summary_schema",
         "objc3c-performance-dashboard-summary-v1",
-        "https://schemas.slopjective.local/objc3c-performance-dashboard-summary-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-performance-dashboard-summary-v1.schema.json",
         "objc3c.performance.governance.dashboard.summary.v1",
     ),
     (
         "public_report_schema",
         "objc3c-performance-public-report-v1",
-        "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-performance-public-report-v1.schema.json",
         "objc3c.performance.governance.public.summary.v1",
     ),
 )

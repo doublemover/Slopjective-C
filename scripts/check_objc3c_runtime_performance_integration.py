@@ -15,7 +15,9 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "source_surface.json"
 WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json"
+ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
 BENCHMARK_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "benchmark-summary.json"
 RUNNABLE_SUMMARY = ROOT / "tmp" / "reports" / "runtime-performance" / "runnable-end-to-end-summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime-performance" / "integration-summary.json"
@@ -31,7 +33,9 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 
 def main() -> int:
+    source_surface = load_json(SOURCE_SURFACE)
     manifest = load_json(WORKLOAD_MANIFEST)
+    artifact_surface = load_json(ARTIFACT_SURFACE)
     expected_workload_ids = [
         str(row["workload_id"])
         for row in manifest.get("workload_families", [])
@@ -63,6 +67,16 @@ def main() -> int:
     for name, result in steps:
         expect(result.returncode == 0, f"{name} failed", failures)
 
+    expect(
+        source_surface.get("contract_id") == "objc3c.runtime.performance.source.surface.v1",
+        "unexpected runtime-performance source surface contract id",
+        failures,
+    )
+    expect(
+        artifact_surface.get("contract_id") == "objc3c.runtime.performance.artifact.surface.v1",
+        "unexpected runtime-performance artifact surface contract id",
+        failures,
+    )
     expect(BENCHMARK_SUMMARY.is_file(), f"missing runtime benchmark summary: {repo_rel(BENCHMARK_SUMMARY)}", failures)
     expect(RUNNABLE_SUMMARY.is_file(), f"missing runnable runtime benchmark summary: {repo_rel(RUNNABLE_SUMMARY)}", failures)
 
@@ -92,9 +106,19 @@ def main() -> int:
     )
     packet_paths = benchmark_summary.get("packet_paths", [])
     expect(isinstance(packet_paths, list) and len(packet_paths) == len(expected_workload_ids), "runtime benchmark summary did not publish one packet path per workload", failures)
+    packet_payloads: list[dict[str, Any]] = []
     for packet_path in packet_paths:
         if isinstance(packet_path, str):
             expect((ROOT / packet_path).is_file(), f"runtime benchmark packet missing on disk: {packet_path}", failures)
+            if (ROOT / packet_path).is_file():
+                packet_payloads.append(load_json(ROOT / packet_path))
+    for required_field in artifact_surface.get("required_packet_fields", []):
+        for packet in packet_payloads:
+            expect(
+                required_field in packet,
+                f"runtime telemetry packet missing required field '{required_field}'",
+                failures,
+            )
     workloads = benchmark_summary.get("workloads", [])
     expect(isinstance(workloads, list) and len(workloads) == len(expected_workload_ids), "runtime benchmark summary did not publish one workload summary per workload ID", failures)
     for workload in workloads:
@@ -119,11 +143,16 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/check_objc3c_runtime_performance_integration.py",
+        "source_surface_path": repo_rel(SOURCE_SURFACE),
+        "workload_manifest_path": repo_rel(WORKLOAD_MANIFEST),
+        "artifact_surface_path": repo_rel(ARTIFACT_SURFACE),
         "child_report_paths": [
             repo_rel(BENCHMARK_SUMMARY),
             repo_rel(RUNNABLE_SUMMARY),
         ],
         "expected_workload_ids": expected_workload_ids,
+        "hot_path_families": source_surface.get("hot_path_families", []),
+        "required_packet_fields": artifact_surface.get("required_packet_fields", []),
         "failures": failures,
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

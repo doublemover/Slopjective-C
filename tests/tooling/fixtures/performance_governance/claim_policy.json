@@ -23,7 +23,7 @@
       "status": "blocked",
       "minimum_score": 0,
       "requires": [
-        "fallback-when-any-release-blocking-condition-is-met"
+        "blocked-when-any-release-blocking-condition-is-met"
       ]
     }
   ],

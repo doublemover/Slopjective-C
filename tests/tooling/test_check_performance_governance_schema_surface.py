@@ -52,8 +52,8 @@ def test_performance_governance_schema_surface_uses_registered_schemas() -> None
             schema_path("objc3c-performance-public-report-v1").relative_to(ROOT).as_posix(),
         ]
         assert summary["schema_ids"] == [
-            "https://schemas.slopjective.local/objc3c-performance-dashboard-summary-v1.schema.json",
-            "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-performance-dashboard-summary-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-performance-public-report-v1.schema.json",
         ]
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)
@@ -104,7 +104,7 @@ def test_performance_governance_schema_surface_rejects_broken_registered_schema_
         payload = deepcopy(original_load_schema(schema_id))
         if schema_id == "objc3c-performance-public-report-v1":
             payload["$id"] = (
-                "https://schemas.slopjective.local/objc3c-performance-public-report-broken.schema.json"
+                "https://objc3c.dev/schemas/objc3c-performance-public-report-broken.schema.json"
             )
         return payload
 

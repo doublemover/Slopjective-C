@@ -18,7 +18,11 @@
     "claim_ready",
     "headline",
     "summary_lines",
-    "evidence_paths"
+    "evidence_paths",
+    "policy_paths",
+    "upstream_reports",
+    "owner_split",
+    "publication_contracts"
   ],
   "properties": {
     "contract_id": {
@@ -79,6 +83,34 @@
       "minItems": 3,
       "items": {
         "$ref": "#/$defs/repoPath"
+      }
+    },
+    "policy_paths": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "upstream_reports": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/repoPath"
+        }
+      }
+    },
+    "publication_contracts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 3
       }
     }
   },

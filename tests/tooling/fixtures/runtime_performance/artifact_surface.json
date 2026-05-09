@@ -14,7 +14,8 @@
     "tmp/reports/runtime-performance/startup-installation",
     "tmp/reports/runtime-performance/dispatch-cache",
     "tmp/reports/runtime-performance/reflection-query",
-    "tmp/reports/runtime-performance/ownership-helpers"
+    "tmp/reports/runtime-performance/ownership-helpers",
+    "tmp/reports/runtime-performance/storage-ownership-reflection"
   ],
   "required_packet_fields": [
     "contract_id",

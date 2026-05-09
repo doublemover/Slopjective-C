@@ -19,6 +19,10 @@ class PerformanceReportModel:
     headline: str
     summary_lines: list[str]
     evidence_paths: list[str]
+    policy_paths: dict[str, str]
+    upstream_reports: dict[str, str]
+    owner_split: dict[str, list[str]]
+    publication_contracts: dict[str, str]
 
 
 def release_headline(release_status: str) -> str:
@@ -57,6 +61,54 @@ def build_evidence_paths(paths: PerformanceReportPaths, dashboard: dict[str, Any
     ]
 
 
+def build_upstream_reports(dashboard: dict[str, Any]) -> dict[str, str]:
+    return {
+        str(key): str(value)
+        for key, value in require_dashboard_upstream_reports(dashboard).items()
+    }
+
+
+def build_policy_paths(dashboard: dict[str, Any]) -> dict[str, str]:
+    path_fields = {
+        "budget_model": "budget_model_path",
+        "claim_policy": "claim_policy_path",
+        "breach_triage_policy": "breach_triage_policy_path",
+        "lab_policy": "lab_policy_path",
+        "source_surface": "source_surface_path",
+        "workflow_surface": "workflow_surface_path",
+    }
+    return {
+        key: str(dashboard[field_name])
+        for key, field_name in path_fields.items()
+        if isinstance(dashboard.get(field_name), str)
+    }
+
+
+def build_publication_contracts(dashboard: dict[str, Any]) -> dict[str, str]:
+    contracts = {
+        "dashboard_summary": str(dashboard["contract_id"]),
+        "public_summary": SUMMARY_CONTRACT_ID,
+    }
+    policy_contracts = dashboard.get("policy_contracts", {})
+    if isinstance(policy_contracts, dict):
+        contracts.update({f"policy.{key}": str(value) for key, value in policy_contracts.items()})
+    upstream_contracts = dashboard.get("upstream_report_contracts", {})
+    if isinstance(upstream_contracts, dict):
+        contracts.update({f"upstream.{key}": str(value) for key, value in upstream_contracts.items()})
+    return contracts
+
+
+def build_owner_split(dashboard: dict[str, Any]) -> dict[str, list[str]]:
+    owner_split = dashboard.get("owner_split", {})
+    if not isinstance(owner_split, dict):
+        return {}
+    normalized: dict[str, list[str]] = {}
+    for owner_name, paths in owner_split.items():
+        if isinstance(paths, list):
+            normalized[str(owner_name)] = [str(path) for path in paths]
+    return normalized
+
+
 def build_performance_report_model(paths: PerformanceReportPaths, dashboard: dict[str, Any]) -> PerformanceReportModel:
     release_status = str(dashboard["release_status"])
     claim_ready = bool(dashboard["claim_ready"])
@@ -77,6 +129,10 @@ def build_performance_report_model(paths: PerformanceReportPaths, dashboard: dic
             dashboard=dashboard,
         ),
         evidence_paths=build_evidence_paths(paths, dashboard),
+        policy_paths=build_policy_paths(dashboard),
+        upstream_reports=build_upstream_reports(dashboard),
+        owner_split=build_owner_split(dashboard),
+        publication_contracts=build_publication_contracts(dashboard),
     )
 
 
@@ -110,4 +166,8 @@ def public_summary_payload(
         "headline": model.headline,
         "summary_lines": model.summary_lines,
         "evidence_paths": model.evidence_paths,
+        "policy_paths": model.policy_paths,
+        "upstream_reports": model.upstream_reports,
+        "owner_split": model.owner_split,
+        "publication_contracts": model.publication_contracts,
     }

@@ -44,6 +44,10 @@ EXPECTED_CHECKED_IN_SOURCES = (
     "docs/runbooks/objc3c_compiler_throughput.md",
     "docs/runbooks/objc3c_runtime_performance.md",
     EXPECTED_RUNBOOK,
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+    "tests/tooling/fixtures/performance_governance/lab_policy.json",
     "tests/tooling/fixtures/performance_governance/schema_surface.json",
     "tests/tooling/fixtures/performance_governance/workflow_surface.json",
     "tests/tooling/fixtures/performance_governance/waivers.json",
@@ -59,6 +63,37 @@ EXPECTED_BUILD_SCRIPTS = (
     "scripts/check_objc3c_performance_governance_integration.py",
     "scripts/check_objc3c_performance_governance_end_to_end.py",
 )
+
+EXPECTED_OWNER_SPLIT = {
+    "performance_governance": [
+        "tests/tooling/fixtures/performance_governance/budget_model.json",
+        "tests/tooling/fixtures/performance_governance/claim_policy.json",
+        "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+        "tests/tooling/fixtures/performance_governance/lab_policy.json",
+        "tests/tooling/fixtures/performance_governance/waivers.json",
+        "tests/tooling/fixtures/performance_governance/workflow_surface.json",
+    ],
+    "compiler_throughput": [
+        "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+        "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+        "tests/tooling/fixtures/compiler_throughput/validation_tier_map.json",
+        "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
+        "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
+    ],
+    "runtime_performance": [
+        "tests/tooling/fixtures/runtime_performance/source_surface.json",
+        "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+        "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+        "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+    ],
+    "public_performance_report": [
+        "scripts/objc3c_performance_report/model.py",
+        "scripts/objc3c_performance_report/publication.py",
+        "scripts/objc3c_performance_report/rendering.py",
+        "schemas/objc3c-performance-dashboard-summary-v1.schema.json",
+        "schemas/objc3c-performance-public-report-v1.schema.json",
+    ],
+}
 
 EXPECTED_MACHINE_OWNED_OUTPUT_ROOTS = (
     "tmp/reports/performance-governance",
@@ -114,6 +149,13 @@ def require_exact_list(
     return expected_items
 
 
+def require_exact_owner_split(source_surface: dict[str, object]) -> dict[str, list[str]] | None:
+    if source_surface.get("owner_split") != EXPECTED_OWNER_SPLIT:
+        fail("owner_split drifted from required performance ownership boundaries")
+        return None
+    return EXPECTED_OWNER_SPLIT
+
+
 def main() -> int:
     if not SOURCE_SURFACE.is_file():
         return fail(f"missing source surface contract: {repo_rel(SOURCE_SURFACE)}")
@@ -145,6 +187,7 @@ def main() -> int:
         "machine_owned_output_roots",
         EXPECTED_MACHINE_OWNED_OUTPUT_ROOTS,
     )
+    owner_split = require_exact_owner_split(surface)
     explicit_non_goals = require_exact_list(
         surface,
         "explicit_non_goals",
@@ -155,6 +198,7 @@ def main() -> int:
         or build_scripts is None
         or upstream_reports is None
         or machine_owned_output_roots is None
+        or owner_split is None
         or explicit_non_goals is None
     ):
         return 1
@@ -166,6 +210,12 @@ def main() -> int:
     ):
         for relative_path in items:
             if not require_path(relative_path, kind=list_name):
+                return 1
+            checked_paths.append(relative_path)
+
+    for owner_name, owner_paths in owner_split.items():
+        for relative_path in owner_paths:
+            if not require_path(relative_path, kind=f"{owner_name} owner_split"):
                 return 1
             checked_paths.append(relative_path)
 
@@ -183,6 +233,7 @@ def main() -> int:
         "schema_surface": EXPECTED_REQUIRED_PATHS["schema_surface"],
         "checked_in_sources": list(checked_in_sources),
         "checked_in_roots": list(EXPECTED_CHECKED_IN_ROOTS),
+        "owner_split": owner_split,
         "build_scripts": list(build_scripts),
         "upstream_reports": list(upstream_reports),
         "machine_owned_output_roots": list(machine_owned_output_roots),

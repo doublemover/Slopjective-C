@@ -49,6 +49,7 @@ def test_performance_governance_source_surface_writes_named_summary_fields() -> 
         assert summary["schema_surface"] == checker.EXPECTED_REQUIRED_PATHS["schema_surface"]
         assert summary["checked_in_sources"] == list(checker.EXPECTED_CHECKED_IN_SOURCES)
         assert summary["checked_in_roots"] == list(checker.EXPECTED_CHECKED_IN_ROOTS)
+        assert summary["owner_split"] == checker.EXPECTED_OWNER_SPLIT
         assert summary["build_scripts"] == list(checker.EXPECTED_BUILD_SCRIPTS)
         assert summary["upstream_reports"] == list(checker.EXPECTED_UPSTREAM_REPORTS)
         assert summary["machine_owned_output_roots"] == list(
@@ -65,6 +66,23 @@ def test_performance_governance_source_surface_rejects_path_drift(tmp_path: Path
     surface = load_json_object(checker.SOURCE_SURFACE)
     surface["budget_model"] = (
         "tests/tooling/fixtures/performance_governance/budget_model_legacy.json"
+    )
+
+    checker.SOURCE_SURFACE = tmp_path / "source_surface.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_json_file(checker.SOURCE_SURFACE, surface, sort_keys=True)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_performance_governance_source_surface_rejects_owner_split_drift(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    surface = load_json_object(checker.SOURCE_SURFACE)
+    surface["owner_split"]["runtime_performance"].append(
+        "tests/tooling/fixtures/runtime_performance/legacy_adapter.json"
     )
 
     checker.SOURCE_SURFACE = tmp_path / "source_surface.json"
