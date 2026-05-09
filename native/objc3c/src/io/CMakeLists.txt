@@ -13,6 +13,8 @@ add_library(objc3c_json STATIC
   json/json_schema_array_items_validation.cpp
   json/json_schema_array_uniqueness_validation.cpp
   json/json_schema_array_validation.cpp
+  json/json_schema_all_of_validation.cpp
+  json/json_schema_any_of_validation.cpp
   json/json_schema_composition_validation.cpp
   json/json_schema_errors.cpp
   json/json_schema_node_preflight_validation.cpp
