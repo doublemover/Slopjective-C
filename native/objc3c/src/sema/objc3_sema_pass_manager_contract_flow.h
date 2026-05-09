@@ -37,6 +37,8 @@ inline constexpr const char *kObjc3SemaCoreSemanticParityPublicationReadinessOwn
     "native.frontend.sema.core-semantic-parity-publication-readiness";
 inline constexpr const char *kObjc3SemaModuleSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.module-semantic-parity-publication-readiness";
+inline constexpr const char *kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner =
+    "native.frontend.sema.intermodule-flow-parity-publication-readiness";
 inline constexpr const char *kObjc3ParserSemaHandoffScaffoldReadinessOwner =
     "native.frontend.parser-sema.handoff-scaffold-readiness";
 inline constexpr const char *kObjc3ParserSemaContractReadinessOwner =
@@ -1372,6 +1374,38 @@ inline bool IsReadyObjc3SemaModuleSemanticParityPublicationReadinessRecord(
          record.deterministic;
 }
 
+struct Objc3SemaIntermoduleFlowParityPublicationReadinessRecord {
+  std::string intermodule_flow_parity_publication_readiness_owner =
+      kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  std::size_t required_publication_count = 2u;
+  std::size_t passed_publication_count = 0;
+  std::size_t failed_publication_count = 0;
+  bool cross_module_conformance_ready = false;
+  bool throws_propagation_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaIntermoduleFlowParityPublicationReadinessRecord(
+    const Objc3SemaIntermoduleFlowParityPublicationReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.intermodule_flow_parity_publication_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.required_publication_count == 2u &&
+         record.passed_publication_count == record.required_publication_count &&
+         record.failed_publication_count == 0u &&
+         record.cross_module_conformance_ready &&
+         record.throws_propagation_ready && record.deterministic;
+}
+
 struct Objc3ParserSemaHandoffScaffoldReadinessRecord {
   std::string handoff_scaffold_readiness_owner =
       kObjc3ParserSemaHandoffScaffoldReadinessOwner;
@@ -1647,6 +1681,8 @@ struct Objc3SemaParityContractSurface {
       core_semantic_parity_publication_readiness_record;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
+  Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
+      intermodule_flow_parity_publication_readiness_record;
   Objc3ParserSemaContractReadinessRecord
       parser_sema_contract_readiness_record;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
@@ -2088,6 +2124,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_parity_publication_readiness_record = false;
   bool deterministic_core_semantic_parity_publication_readiness_record = false;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
+  bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   bool deterministic_parser_sema_contract_readiness_record = false;
   bool deterministic_diagnostics_publication_record = false;
   bool deterministic_pass_flow_recovery_record = false;
@@ -3013,6 +3050,116 @@ BuildObjc3SemaModuleSemanticParityPublicationReadinessRecord(
       record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
       record.strict_no_fallback && record.strict_no_compatibility &&
       record.required_publication_count == 5u &&
+      record.passed_publication_count == record.required_publication_count &&
+      record.failed_publication_count == 0u;
+  return record;
+}
+
+inline Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
+BuildObjc3SemaIntermoduleFlowParityPublicationReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface,
+    bool deterministic_cross_module_conformance_handoff,
+    bool deterministic_throws_propagation_handoff) {
+  Objc3SemaIntermoduleFlowParityPublicationReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.cross_module_conformance_ready =
+      deterministic_cross_module_conformance_handoff &&
+      surface.cross_module_conformance_summary.cross_module_conformance_sites ==
+          surface.cross_module_conformance_sites_total &&
+      surface.cross_module_conformance_summary.namespace_segment_sites ==
+          surface.cross_module_conformance_namespace_segment_sites_total &&
+      surface.cross_module_conformance_summary.import_edge_candidate_sites ==
+          surface
+              .cross_module_conformance_import_edge_candidate_sites_total &&
+      surface.cross_module_conformance_summary.object_pointer_type_sites ==
+          surface.cross_module_conformance_object_pointer_type_sites_total &&
+      surface.cross_module_conformance_summary.pointer_declarator_sites ==
+          surface.cross_module_conformance_pointer_declarator_sites_total &&
+      surface.cross_module_conformance_summary.normalized_sites ==
+          surface.cross_module_conformance_normalized_sites_total &&
+      surface.cross_module_conformance_summary
+              .cache_invalidation_candidate_sites ==
+          surface
+              .cross_module_conformance_cache_invalidation_candidate_sites_total &&
+      surface.cross_module_conformance_summary.contract_violation_sites ==
+          surface.cross_module_conformance_contract_violation_sites_total &&
+      surface.cross_module_conformance_summary.namespace_segment_sites <=
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary.import_edge_candidate_sites <=
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary.normalized_sites <=
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary
+              .cache_invalidation_candidate_sites <=
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary.normalized_sites +
+              surface.cross_module_conformance_summary
+                  .cache_invalidation_candidate_sites ==
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary.contract_violation_sites <=
+          surface.cross_module_conformance_summary
+              .cross_module_conformance_sites &&
+      surface.cross_module_conformance_summary.deterministic;
+  record.throws_propagation_ready =
+      deterministic_throws_propagation_handoff &&
+      surface.throws_propagation_summary.throws_propagation_sites ==
+          surface.throws_propagation_sites_total &&
+      surface.throws_propagation_summary.namespace_segment_sites ==
+          surface.throws_propagation_namespace_segment_sites_total &&
+      surface.throws_propagation_summary.import_edge_candidate_sites ==
+          surface.throws_propagation_import_edge_candidate_sites_total &&
+      surface.throws_propagation_summary.object_pointer_type_sites ==
+          surface.throws_propagation_object_pointer_type_sites_total &&
+      surface.throws_propagation_summary.pointer_declarator_sites ==
+          surface.throws_propagation_pointer_declarator_sites_total &&
+      surface.throws_propagation_summary.normalized_sites ==
+          surface.throws_propagation_normalized_sites_total &&
+      surface.throws_propagation_summary.cache_invalidation_candidate_sites ==
+          surface
+              .throws_propagation_cache_invalidation_candidate_sites_total &&
+      surface.throws_propagation_summary.contract_violation_sites ==
+          surface.throws_propagation_contract_violation_sites_total &&
+      surface.throws_propagation_summary.namespace_segment_sites <=
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.import_edge_candidate_sites <=
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.normalized_sites <=
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.cache_invalidation_candidate_sites <=
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.normalized_sites +
+              surface.throws_propagation_summary
+                  .cache_invalidation_candidate_sites ==
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.contract_violation_sites <=
+          surface.throws_propagation_summary.throws_propagation_sites &&
+      surface.throws_propagation_summary.deterministic;
+  record.passed_publication_count =
+      Objc3SemaEvidenceCount(record.cross_module_conformance_ready) +
+      Objc3SemaEvidenceCount(record.throws_propagation_ready);
+  record.failed_publication_count =
+      record.required_publication_count >= record.passed_publication_count
+          ? (record.required_publication_count -
+             record.passed_publication_count)
+          : record.required_publication_count;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.intermodule_flow_parity_publication_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.required_publication_count == 2u &&
       record.passed_publication_count == record.required_publication_count &&
       record.failed_publication_count == 0u;
   return record;

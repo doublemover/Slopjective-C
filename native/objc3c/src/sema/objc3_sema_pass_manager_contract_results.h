@@ -15,6 +15,9 @@
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
+  Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
+      intermodule_flow_parity_publication_readiness_record;
+  bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   bool deterministic_parser_sema_docs_runbook_sync = false;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
