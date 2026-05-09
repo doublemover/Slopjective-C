@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <string>
 
+#include "lower/contracts/runtime_artifact_retention_contracts.h"
+
 // Runtime metadata emission owns the lower/IR object-file boundary: source and
 // semantic facts reach the IR emitter as normalized lowering records, not as
 // emitter-local section decisions.
@@ -230,9 +232,6 @@ std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
 std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
-std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
-std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
-std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
