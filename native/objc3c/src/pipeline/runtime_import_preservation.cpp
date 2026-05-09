@@ -1708,6 +1708,12 @@ bool TryLoadObjc3ImportedRuntimeModuleSurface(
     error = path.generic_string() + ": " + parse_error;
     return false;
   }
+  if (!IsReadyObjc3ImportedRuntimeModuleSurfaceCrossModuleContract(
+          parsed_surface)) {
+    error = path.generic_string() +
+            ": imported runtime module surface is not ready for cross-module consumption";
+    return false;
+  }
   surface = std::move(parsed_surface);
   return true;
 }
@@ -1829,6 +1835,11 @@ bool TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
   parsed_artifacts.linker_response_artifact_path =
       link_plan.linker_response_artifact_path;
   parsed_artifacts.object_artifact_path = object_artifact_path;
+  if (!IsReadyObjc3ImportedRuntimeModulePackagingLinkPlan(parsed_artifacts)) {
+    error = surface.source_path.generic_string() +
+            ": imported runtime module packaging peer artifacts are not ready for link-plan consumption";
+    return false;
+  }
   artifacts = std::move(parsed_artifacts);
   return true;
 }
