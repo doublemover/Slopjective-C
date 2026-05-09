@@ -13,12 +13,14 @@ from .config import (
 from .files import is_excluded, iter_scan_files, normalize_path
 from .gate_contracts import build_gate_stats, gate_contract_summary
 from .generated_reports import (
+    GENERATED_TRUTH_BOUNDARIES,
     generated_truth_boundary_report,
     tracked_generated_reports,
 )
 from .guardrails import is_canonical_guardrail_context
 from .pattern_model import ForbiddenPattern
 from .patterns import FORBIDDEN_PATTERNS
+from .owners import source_hygiene_owner_contract_summary
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
 from .scan_config import (
@@ -114,6 +116,15 @@ def build_report(
         tracked_generated_report_count=len(generated_reports),
         generated_truth_boundary_finding_count=len(generated_truth_findings),
     )
+    owner_contract = source_hygiene_owner_contract_summary(
+        scan_roots=config.scan_roots,
+        pattern_owner_surfaces=(
+            pattern.owner_surface for pattern in config.patterns
+        ),
+        generated_truth_outputs=(
+            boundary.output_path for boundary in GENERATED_TRUTH_BOUNDARIES
+        ),
+    )
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -121,6 +132,8 @@ def build_report(
         "scan_roots": list(config.scan_roots),
         "excluded_globs": list(config.excludes),
         "gate_contract": gate_contract_summary(),
+        "owner_contract": owner_contract,
+        "blocker_metadata": owner_contract["blocker_metadata"],
         "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,
         "active_findings": findings,

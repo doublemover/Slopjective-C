@@ -46,6 +46,10 @@ from scripts.objc3c_workflow.action_handlers_core_site_docs import (
 from scripts.objc3c_workflow.actions import docs_documentation
 from scripts.objc3c_workflow.actions import docs_paths
 from scripts.objc3c_workflow.actions import docs_public_commands
+from scripts.check_documentation_surface_model import (
+    DOCUMENTATION_SURFACE_MODEL,
+    DOCUMENTATION_SURFACE_OWNER,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = ROOT / "scripts" / "objc3c_workflow"
@@ -238,3 +242,16 @@ def test_core_docs_public_commands_and_paths_are_explicit_owner_surface() -> Non
         "scripts/render_objc3c_public_command_surface.py",
         "scripts/check_documentation_surface.py",
     )
+
+
+def test_documentation_surface_model_declares_owner_contract() -> None:
+    owner_contract = DOCUMENTATION_SURFACE_MODEL.owner_contract()
+
+    assert owner_contract["owner_id"] == DOCUMENTATION_SURFACE_OWNER
+    assert owner_contract["blocker_metadata"]["blocker_contract"] == (
+        "hard-cutover-docs-surface-fail-closed"
+    )
+    assert "README.md" in owner_contract["checked_sources"]
+    assert "docs/runbooks/objc3c_public_command_surface.md" in owner_contract[
+        "checked_sources"
+    ]

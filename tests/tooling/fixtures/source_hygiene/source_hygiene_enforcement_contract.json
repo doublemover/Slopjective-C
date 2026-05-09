@@ -4,15 +4,29 @@
   "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
   "classification_contract": "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
   "genuine_provenance_contract": "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
-  "future_archive_boundary_contract": "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json",
-  "future_live_audit_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
+  "archive_boundary_contract": "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json",
+  "live_audit_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
   "package_bridge": "objc3c",
   "generated_report_root": "tmp/reports/source_hygiene",
+  "owner_surfaces": {
+    "scan_root_owner": "scripts/source_hygiene/roots.py",
+    "pattern_owner": "scripts/source_hygiene/patterns.py",
+    "generated_report_owner": "scripts/source_hygiene/generated_reports.py",
+    "docs_surface_owner": "scripts/check_documentation_surface_model.py",
+    "capability_truth_owner": "scripts/capability_docs_validator/validation.py",
+    "public_claim_drift_owner": "scripts/check_objc3c_public_claim_drift.py"
+  },
+  "blocker_metadata": {
+    "blocker_contract": "hard-cutover-source-hygiene-fail-closed",
+    "blocker_scope": "source-hygiene-docs-capability-truth",
+    "blocker_owner": "source-hygiene.enforcement-contract-owner",
+    "blocker_owner_surface": "tests/tooling/fixtures/source_hygiene/source_hygiene_enforcement_contract.json"
+  },
   "enforcement_checks": [
     {
       "check_id": "product_surface_residue_zero",
       "workflow_action": "check-source-hygiene-authenticity",
-      "command": "npm run objc3c -- check-source-hygiene-authenticity",
+      "entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
       "implementation_anchor": "scripts/build_product_decontamination_report.py",
       "expected_report": "tmp/reports/source-hygiene/product-decontamination/product_decontamination_report.json",
       "required_ok_field": "ok",
@@ -21,7 +35,7 @@
     {
       "check_id": "synthetic_fixture_classification_surface",
       "workflow_action": "check-source-hygiene-authenticity",
-      "command": "npm run objc3c -- check-source-hygiene-authenticity",
+      "entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
       "implementation_anchor": "scripts/build_artifact_authenticity_classification_summary.py",
       "expected_report": "tmp/reports/source-hygiene/artifact-authenticity-classification/artifact_authenticity_classification_summary.json",
       "required_ok_field": "ok",
@@ -30,7 +44,7 @@
     {
       "check_id": "genuine_generated_output_provenance",
       "workflow_action": "check-source-hygiene-authenticity",
-      "command": "npm run objc3c -- check-source-hygiene-authenticity",
+      "entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
       "implementation_anchor": "scripts/build_genuine_artifact_provenance_implementation_summary.py",
       "expected_report": "tmp/reports/source-hygiene/genuine-artifact-provenance-implementation/genuine_artifact_provenance_implementation_summary.json",
       "required_ok_field": "ok",
@@ -39,7 +53,7 @@
     {
       "check_id": "replay_fixture_labeling",
       "workflow_action": "check-source-hygiene-authenticity",
-      "command": "npm run objc3c -- check-source-hygiene-authenticity",
+      "entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
       "implementation_anchor": "scripts/sync_replay_fixture_authenticity.py",
       "implementation_args": ["--check"],
       "expected_report": "tmp/reports/source-hygiene/synthetic-fixture-labeling/synthetic_fixture_labeling_summary.json",
@@ -55,6 +69,6 @@
   ],
   "notes": [
     "d001 defines the stable contract only; d002 is responsible for the live audit implementation and runner integration",
-    "archive-boundary compatibility is intentionally split into d003 so historical references can be preserved without weakening the main proof-hygiene gate"
+    "archive-boundary ownership is intentionally split into d003 so historical references can be preserved without weakening the main proof-hygiene gate"
   ]
 }

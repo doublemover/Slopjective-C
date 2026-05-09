@@ -4,12 +4,19 @@ import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from .owners import (
+    SOURCE_HYGIENE_GENERATED_REPORT_OWNER,
+    SOURCE_HYGIENE_GENERATED_REPORT_OWNER_SURFACE,
+)
+
 
 @dataclass(frozen=True)
 class GeneratedTruthBoundary:
     output_path: str
     source_paths: tuple[str, ...]
     generator_path: str
+    owner_id: str = SOURCE_HYGIENE_GENERATED_REPORT_OWNER
+    owner_surface: str = SOURCE_HYGIENE_GENERATED_REPORT_OWNER_SURFACE
 
 
 GENERATED_TRUTH_BOUNDARIES: tuple[GeneratedTruthBoundary, ...] = (

@@ -21,6 +21,8 @@ def build_pattern_violation(
         "excerpt": line.strip()[:240],
         "residue_class": pattern.residue_class,
         "gate_contract": pattern.gate_contract,
+        "pattern_owner": pattern.owner_id,
+        "pattern_owner_surface": pattern.owner_surface,
     }
 
 

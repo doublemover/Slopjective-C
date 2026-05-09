@@ -8,6 +8,14 @@ from typing import Any
 import pytest
 
 from capability_docs_validator.cli import build_parser
+from capability_docs_validator.constants import (
+    CAPABILITY_DOCS_SURFACE_OWNER,
+    CAPABILITY_EVIDENCE_OWNER,
+    CAPABILITY_MANIFEST_OWNER,
+    CAPABILITY_MATRIX_OWNER,
+    CAPABILITY_TRUTH_OWNER,
+    capability_truth_owner_contract,
+)
 from capability_docs_validator.docs import _validate_docs_reference_rows
 from capability_docs_validator.errors import CapabilityDocsError
 from capability_docs_validator.manifest import _manifest_support_claims
@@ -15,6 +23,10 @@ from capability_docs_validator.matrix import _require_matrix_shape
 from capability_docs_validator.support_links import (
     _row_support_claims,
     _validate_support_claim_links,
+)
+from scripts.check_objc3c_public_claim_drift import (
+    PUBLIC_CLAIM_DRIFT_OWNER,
+    public_claim_drift_owner_contract,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,6 +95,36 @@ def test_matrix_shape_claim_links_and_manifest_validation_are_separate_owners() 
         "owner_phase"
     ] == "parser"
     _validate_support_claim_links(rows, _manifest(_claim()))
+
+
+def test_capability_truth_contract_declares_matrix_evidence_and_blocker_owners() -> None:
+    owner_contract = capability_truth_owner_contract()
+
+    assert owner_contract["truth_owner"]["owner_id"] == CAPABILITY_TRUTH_OWNER
+    assert owner_contract["matrix_owner"]["owner_id"] == CAPABILITY_MATRIX_OWNER
+    assert owner_contract["evidence_owner"]["owner_id"] == CAPABILITY_EVIDENCE_OWNER
+    assert owner_contract["manifest_owner"]["owner_id"] == CAPABILITY_MANIFEST_OWNER
+    assert (
+        owner_contract["docs_surface_owner"]["owner_id"]
+        == CAPABILITY_DOCS_SURFACE_OWNER
+    )
+    assert owner_contract["blocker_metadata"]["blocker_contract"] == (
+        "hard-cutover-capability-truth-fail-closed"
+    )
+
+
+def test_public_claim_drift_contract_declares_surface_owner_and_blockers() -> None:
+    owner_contract = public_claim_drift_owner_contract(
+        public_surfaces={"README.md"},
+        scan_paths=["README.md", "docs/support/capability_matrix.md"],
+    )
+
+    assert owner_contract["owner_id"] == PUBLIC_CLAIM_DRIFT_OWNER
+    assert owner_contract["public_claim_surface_count"] == 1
+    assert owner_contract["scan_path_count"] == 2
+    assert owner_contract["blocker_metadata"]["blocker_contract"] == (
+        "hard-cutover-public-claim-drift-fail-closed"
+    )
 
 
 def test_claim_link_owner_rejects_duplicate_matrix_claim_links() -> None:

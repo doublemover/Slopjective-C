@@ -28,6 +28,12 @@ from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_
 from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
+from scripts.source_hygiene.owners import (
+    SOURCE_HYGIENE_BLOCKER_METADATA_OWNER,
+    SOURCE_HYGIENE_GENERATED_REPORT_OWNER,
+    SOURCE_HYGIENE_PATTERN_OWNER,
+    SOURCE_HYGIENE_SCAN_ROOT_OWNER,
+)
 
 
 def write(path: Path, text: str) -> None:
@@ -459,6 +465,32 @@ def test_hard_cutover_report_declares_allowlist_free_contract(tmp_path: Path) ->
     for retired_key in RETIRED_ALLOWLIST_REPORT_FIELDS:
         assert retired_key not in report
         assert retired_key not in report["stats"]
+
+
+def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Backward-compatible aliases remain available.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+    owner_contract = report["owner_contract"]
+
+    assert owner_contract["scan_root_owner"]["owner_id"] == SOURCE_HYGIENE_SCAN_ROOT_OWNER
+    assert owner_contract["pattern_owner"]["owner_id"] == SOURCE_HYGIENE_PATTERN_OWNER
+    assert (
+        owner_contract["generated_report_owner"]["owner_id"]
+        == SOURCE_HYGIENE_GENERATED_REPORT_OWNER
+    )
+    assert (
+        owner_contract["blocker_metadata"]["blocker_owner"]
+        == SOURCE_HYGIENE_BLOCKER_METADATA_OWNER
+    )
+    assert report["active_findings"][0]["pattern_owner"] == SOURCE_HYGIENE_PATTERN_OWNER
+    assert "pattern_owner_surface" in report["active_findings"][0]
+    assert {
+        boundary["owner_id"] for boundary in report["generated_truth_boundaries"]
+    } == {SOURCE_HYGIENE_GENERATED_REPORT_OWNER}
 
 
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:

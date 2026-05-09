@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .owners import SOURCE_HYGIENE_BLOCKER_METADATA
+
 
 HARD_CUTOVER_GATE_ID = "source-hygiene-hard-cutover"
 CLOSURE_ISSUES: tuple[str, ...] = ("8149", "8150")
@@ -29,6 +31,7 @@ def gate_contract_summary() -> dict[str, Any]:
         "closure_issues": list(CLOSURE_ISSUES),
         "required_residue_classes": list(REQUIRED_RESIDUE_CLASSES),
         "retired_allowlist_report_fields": list(RETIRED_ALLOWLIST_REPORT_FIELDS),
+        "blocker_metadata": dict(SOURCE_HYGIENE_BLOCKER_METADATA),
     }
 
 

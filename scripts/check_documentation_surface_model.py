@@ -9,6 +9,14 @@ from pathlib import Path
 
 CHECKER_NAME = "documentation-surface"
 ROOT = Path(__file__).resolve().parents[1]
+DOCUMENTATION_SURFACE_OWNER = "documentation-surface.owner"
+DOCUMENTATION_SURFACE_OWNER_SURFACE = "scripts/check_documentation_surface_model.py"
+DOCUMENTATION_SURFACE_BLOCKER_METADATA = {
+    "blocker_contract": "hard-cutover-docs-surface-fail-closed",
+    "blocker_scope": "reader-facing-docs-and-machine-appendix-boundary",
+    "blocker_owner": DOCUMENTATION_SURFACE_OWNER,
+    "blocker_owner_surface": DOCUMENTATION_SURFACE_OWNER_SURFACE,
+}
 
 README_PATH = ROOT / "README.md"
 CONTRIBUTING_PATH = ROOT / "CONTRIBUTING.md"
@@ -42,6 +50,8 @@ class DocumentationSurfaceSource:
     path: Path
     required_tokens: tuple[str, ...] = ()
     forbidden_tokens: tuple[str, ...] = ()
+    owner_id: str = DOCUMENTATION_SURFACE_OWNER
+    owner_surface: str = DOCUMENTATION_SURFACE_OWNER_SURFACE
 
     @property
     def report_path(self) -> str:
@@ -63,6 +73,7 @@ class DocumentationSurfaceSource:
 class DocumentationSurfaceReport:
     checker_name: str
     errors: tuple[str, ...]
+    owner_contract: dict[str, object]
 
     @property
     def passed(self) -> bool:
@@ -85,11 +96,24 @@ class DocumentationSurfaceReportWriter:
 class DocumentationSurfaceModel:
     sources: tuple[DocumentationSurfaceSource, ...]
 
+    def owner_contract(self) -> dict[str, object]:
+        return {
+            "owner_id": DOCUMENTATION_SURFACE_OWNER,
+            "owner_surface": DOCUMENTATION_SURFACE_OWNER_SURFACE,
+            "checked_source_count": len(self.sources),
+            "checked_sources": [source.report_path for source in self.sources],
+            "blocker_metadata": dict(DOCUMENTATION_SURFACE_BLOCKER_METADATA),
+        }
+
     def validate(self) -> DocumentationSurfaceReport:
         errors: list[str] = []
         for source in self.sources:
             errors.extend(source.validate())
-        return DocumentationSurfaceReport(CHECKER_NAME, tuple(errors))
+        return DocumentationSurfaceReport(
+            CHECKER_NAME,
+            tuple(errors),
+            self.owner_contract(),
+        )
 
 
 def _source(
@@ -102,6 +126,8 @@ def _source(
         path=path,
         required_tokens=required_tokens,
         forbidden_tokens=forbidden_tokens,
+        owner_id=DOCUMENTATION_SURFACE_OWNER,
+        owner_surface=DOCUMENTATION_SURFACE_OWNER_SURFACE,
     )
 
 

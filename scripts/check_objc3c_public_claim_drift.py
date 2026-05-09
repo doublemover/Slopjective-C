@@ -38,6 +38,14 @@ DEFAULT_MD_OUT = (
 )
 
 SUMMARY_CONTRACT_ID = "objc3c.public.claim.drift.summary.v1"
+PUBLIC_CLAIM_DRIFT_OWNER = "public-claim-drift.owner"
+PUBLIC_CLAIM_DRIFT_OWNER_SURFACE = "scripts/check_objc3c_public_claim_drift.py"
+PUBLIC_CLAIM_DRIFT_BLOCKER_METADATA = {
+    "blocker_contract": "hard-cutover-public-claim-drift-fail-closed",
+    "blocker_scope": "public-claim-surfaces-and-support-evidence-mapping",
+    "blocker_owner": PUBLIC_CLAIM_DRIFT_OWNER,
+    "blocker_owner_surface": PUBLIC_CLAIM_DRIFT_OWNER_SURFACE,
+}
 
 CLAIM_KEYWORD_RE = re.compile(
     r"\b("
@@ -221,6 +229,22 @@ def load_support_summary(path: Path, root: Path) -> dict[str, Any]:
     return summary
 
 
+def public_claim_drift_owner_contract(
+    *,
+    public_surfaces: set[str],
+    scan_paths: list[str],
+) -> dict[str, Any]:
+    return {
+        "owner_id": PUBLIC_CLAIM_DRIFT_OWNER,
+        "owner_surface": PUBLIC_CLAIM_DRIFT_OWNER_SURFACE,
+        "public_claim_surface_count": len(public_surfaces),
+        "scan_path_count": len(scan_paths),
+        "public_claim_surfaces": sorted(public_surfaces),
+        "scan_paths": list(scan_paths),
+        "blocker_metadata": dict(PUBLIC_CLAIM_DRIFT_BLOCKER_METADATA),
+    }
+
+
 def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines()
 
@@ -355,6 +379,10 @@ def build_summary(support_summary_path: Path, root: Path) -> dict[str, Any]:
             "public claim drift source truth must not use tmp: "
             + ", ".join(tmp_source_truth_paths)
         )
+    owner_contract = public_claim_drift_owner_contract(
+        public_surfaces=public_surfaces,
+        scan_paths=scan_paths,
+    )
 
     claim_mappings: list[dict[str, Any]] = []
     findings: list[dict[str, Any]] = []
@@ -398,6 +426,8 @@ def build_summary(support_summary_path: Path, root: Path) -> dict[str, Any]:
         "support_summary_path": repo_rel(support_summary_path, root=root),
         "support_summary_contract_id": support_summary.get("contract_id"),
         "support_summary_sha256": stable_digest(support_summary_path),
+        "owner_contract": owner_contract,
+        "blocker_metadata": owner_contract["blocker_metadata"],
         "scanned_surface_count": len(scan_paths),
         "public_claim_surface_count": len(public_surfaces),
         "claim_mapping_count": len(claim_mappings),
