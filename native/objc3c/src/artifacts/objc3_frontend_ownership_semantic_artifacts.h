@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "lower/contracts/lowering_arc_contracts.h"
 #include "lower/contracts/ownership_system_extension_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
@@ -9,6 +10,26 @@ namespace objc3::artifacts::frontend {
 
 [[nodiscard]] std::string BuildEffectsOwnershipSemanticModelSummaryJson(
     const Objc3EffectsOwnershipSemanticModelSummary &summary);
+
+[[nodiscard]] Objc3OwnershipQualifierLoweringContract
+BuildOwnershipQualifierLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3RetainReleaseOperationLoweringContract
+BuildRetainReleaseOperationLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3AutoreleasePoolScopeLoweringContract
+BuildAutoreleasePoolScopeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3WeakUnownedSemanticsLoweringContract
+BuildWeakUnownedSemanticsLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3ArcDiagnosticsFixitLoweringContract
+BuildArcDiagnosticsFixitLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
 
 [[nodiscard]] std::string
 BuildOwnershipSystemExtensionSemanticModelSummaryJson(

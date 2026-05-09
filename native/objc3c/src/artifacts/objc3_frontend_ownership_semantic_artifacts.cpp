@@ -100,6 +100,108 @@ std::string BuildEffectsOwnershipSemanticModelSummaryJson(
   return out.str();
 }
 
+Objc3OwnershipQualifierLoweringContract BuildOwnershipQualifierLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3OwnershipQualifierLoweringContract contract;
+  contract.ownership_qualifier_sites =
+      sema_parity_surface.type_annotation_ownership_qualifier_sites_total;
+  contract.invalid_ownership_qualifier_sites =
+      sema_parity_surface.type_annotation_invalid_ownership_qualifier_sites_total;
+  contract.object_pointer_type_annotation_sites =
+      sema_parity_surface.type_annotation_object_pointer_type_sites_total;
+  contract.deterministic =
+      sema_parity_surface.type_annotation_surface_summary.deterministic &&
+      sema_parity_surface.deterministic_type_annotation_surface_handoff;
+  return contract;
+}
+
+Objc3RetainReleaseOperationLoweringContract
+BuildRetainReleaseOperationLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3RetainReleaseOperationLoweringContract contract;
+  contract.ownership_qualified_sites =
+      sema_parity_surface.retain_release_operation_ownership_qualified_sites_total;
+  contract.retain_insertion_sites =
+      sema_parity_surface.retain_release_operation_retain_insertion_sites_total;
+  contract.release_insertion_sites =
+      sema_parity_surface.retain_release_operation_release_insertion_sites_total;
+  contract.autorelease_insertion_sites =
+      sema_parity_surface
+          .retain_release_operation_autorelease_insertion_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.retain_release_operation_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.retain_release_operation_summary.deterministic &&
+      sema_parity_surface.deterministic_retain_release_operation_handoff;
+  return contract;
+}
+
+Objc3AutoreleasePoolScopeLoweringContract
+BuildAutoreleasePoolScopeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3AutoreleasePoolScopeLoweringContract contract;
+  contract.scope_sites = sema_parity_surface.autoreleasepool_scope_sites_total;
+  contract.scope_symbolized_sites =
+      sema_parity_surface.autoreleasepool_scope_symbolized_sites_total;
+  contract.max_scope_depth =
+      sema_parity_surface.autoreleasepool_scope_max_depth_total;
+  contract.scope_entry_transition_sites =
+      sema_parity_surface.autoreleasepool_scope_sites_total;
+  contract.scope_exit_transition_sites =
+      sema_parity_surface.autoreleasepool_scope_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.autoreleasepool_scope_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.autoreleasepool_scope_summary.deterministic &&
+      sema_parity_surface.deterministic_autoreleasepool_scope_handoff;
+  return contract;
+}
+
+Objc3WeakUnownedSemanticsLoweringContract
+BuildWeakUnownedSemanticsLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3WeakUnownedSemanticsLoweringContract contract;
+  contract.ownership_candidate_sites =
+      sema_parity_surface.weak_unowned_semantics_ownership_candidate_sites_total;
+  contract.weak_reference_sites =
+      sema_parity_surface.weak_unowned_semantics_weak_reference_sites_total;
+  contract.unowned_reference_sites =
+      sema_parity_surface.weak_unowned_semantics_unowned_reference_sites_total;
+  contract.unowned_safe_reference_sites =
+      sema_parity_surface
+          .weak_unowned_semantics_unowned_safe_reference_sites_total;
+  contract.weak_unowned_conflict_sites =
+      sema_parity_surface.weak_unowned_semantics_conflict_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.weak_unowned_semantics_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.weak_unowned_semantics_summary.deterministic &&
+      sema_parity_surface.deterministic_weak_unowned_semantics_handoff;
+  return contract;
+}
+
+Objc3ArcDiagnosticsFixitLoweringContract BuildArcDiagnosticsFixitLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3ArcDiagnosticsFixitLoweringContract contract;
+  contract.ownership_arc_diagnostic_candidate_sites =
+      sema_parity_surface.ownership_arc_diagnostic_candidate_sites_total;
+  contract.ownership_arc_fixit_available_sites =
+      sema_parity_surface.ownership_arc_fixit_available_sites_total;
+  contract.ownership_arc_profiled_sites =
+      sema_parity_surface.ownership_arc_profiled_sites_total;
+  contract.ownership_arc_weak_unowned_conflict_diagnostic_sites =
+      sema_parity_surface
+          .ownership_arc_weak_unowned_conflict_diagnostic_sites_total;
+  contract.ownership_arc_empty_fixit_hint_sites =
+      sema_parity_surface.ownership_arc_empty_fixit_hint_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.ownership_arc_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.arc_diagnostics_fixit_summary.deterministic &&
+      sema_parity_surface.deterministic_arc_diagnostics_fixit_handoff;
+  return contract;
+}
+
 std::string BuildOwnershipSystemExtensionSemanticModelSummaryJson(
     const Objc3OwnershipSystemExtensionSemanticModelSummary &summary) {
   std::ostringstream out;
