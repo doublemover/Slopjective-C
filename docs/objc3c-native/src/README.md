@@ -60,13 +60,14 @@ adding sidecar scaffolding:
 Use these naming rules when downstream cleanup work renames or consolidates
 repo surfaces:
 
-- user-facing package entrypoints come from the `package.json` bridge:
+- user-facing package entrypoints come from the `package.json` `objc3c`
+  script:
   `npm run objc3c -- <action>`
 - checked-in generated docs keep one source root each:
   - `site/index.md` <= `site/src/`
   - `docs/objc3c-native.md` <= `docs/objc3c-native/src/`
   - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json`
-    bridge: `npm run objc3c -- <action>`
+    public command surface: `npm run objc3c -- <action>`
 - implementation paths stay under `native/objc3c/`, `scripts/`, and `tests/`
 - transient outputs stay under `tmp/`
 - published binaries and libraries stay under `artifacts/`
@@ -75,7 +76,7 @@ Explicit non-goals for naming cleanup:
 
 - inventing second source-of-truth directories,
 - promoting `tmp/` or `artifacts/` paths into canonical doc inputs,
-- reintroducing milestone-coded, stage-coded, or compatibility-alias names as
+- reintroducing milestone-coded, stage-coded, or retired alias names as
   first-class command surfaces.
 
 ## Generated Doc And Machine-Appendix Surface
@@ -121,9 +122,11 @@ Explicit non-goals for this fragment tree:
 ## Include Rules
 
 - Keep these fragments focused on the current live surface.
+- Keep large `35-runtime-architecture.md` additions under its section-owner
+  groups instead of adding unknown fragment files.
 - Put historical planning and closeout material under `tmp/archive/`.
 - Avoid milestone-coded sections and issue-era command chains here.
-- Do not reintroduce workflow registry facades, fallback shims, old source
+- Do not reintroduce workflow registry facades, adapter layers, old source
   modes, or direct helper commands as supported public paths.
 
 ## Contract Validation

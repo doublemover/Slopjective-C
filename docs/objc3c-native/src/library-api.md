@@ -49,8 +49,10 @@ or publish artifacts, but they are not package-facing C ABI headers.
 - append-only growth for public structs
 - zero-initialize option and result structs before use
 
-## Compatibility and Versioning
+## ABI Version Gate
 
 - version macros live in `objc3c_frontend_version.h`
 - use `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
 - `objc3c_frontend_version().abi_version` must match `objc3c_frontend_abi_version()`
+- mismatched ABI versions are unsupported; callers must use the current header
+  and library pair rather than relying on adapter layers or retired aliases

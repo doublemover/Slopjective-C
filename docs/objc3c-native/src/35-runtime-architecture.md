@@ -5,6 +5,22 @@
 The live executable path is a single compile-to-runtime pipeline. Later runtime
 closure work must extend this path, not bypass it.
 
+## Runtime Architecture Section Owners
+
+This chapter is the single stitched runtime-architecture fragment. Keep large
+additions inside these owner sections so source-surface changes stay reviewable
+without adding fragment files that the stitcher contract does not know about.
+
+| Owner section               | Covered headings                                                        | Primary owner       |
+| --------------------------- | ----------------------------------------------------------------------- | ------------------- |
+| Pipeline and bootstrap      | working boundary, execution flow, state publication, bootstrap, startup | runtime/compiler    |
+| Metaprogramming             | source, package/provenance, semantics, lowering, cache, runtime ABI     | compiler/semantics  |
+| Concurrency                 | source, normalization, lowering, metadata                               | runtime/concurrency |
+| Error handling              | source, catch/finalization, propagation, unwind diagnostics, ABI        | runtime/errors      |
+| Blocks and ARC              | source, ownership transfer, lowering, helper ABI, preservation          | runtime/memory      |
+| Object model and reflection | property/ivar/accessor, realization, dispatch, reflection, lookup       | runtime/classes     |
+| Installation and validation | loader lifecycle, acceptance suite, shared harness, evidence, claims    | compiler/qa         |
+
 ## Working Boundary
 
 - compiler-owned compile path:
@@ -263,7 +279,7 @@ packet instead of inventing a second package/provenance inventory.
   - `frontend.pipeline.semantic_surface.objc_metaprogramming_expansion_and_behavior_semantic_model`
 - authoritative semantic contract:
   - `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`
-- authoritative semantic/cache compatibility contracts:
+- authoritative semantic/cache preservation contracts:
   - `objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1`
   - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
 - authoritative source dependencies:
@@ -297,7 +313,7 @@ packet instead of inventing a second package/provenance inventory.
 
 This is the authoritative compile-coupled semantic boundary for derive markers,
 macro package/provenance markers, property-behavior source completion, and the
-live macro-safety/host-cache compatibility packet. It freezes the one truthful
+live macro-safety/host-cache preservation packet. It freezes the one truthful
 semantic packet plus the fail-closed sandbox/provenance diagnostics and
 deterministic host-cache artifact contract before lowering, deeper cache
 integration, or runtime hooks so downstream metaprogramming issues extend a
@@ -359,7 +375,7 @@ sidecars or release-scope summaries.
 This is the authoritative cross-module preservation boundary for metaprogramming
 artifacts. It freezes the provider runtime-import packet and the consumer
 cross-module runtime link plan together so derived methods, macro/property
-artifacts, and host-cache compatibility survive separate compilation without
+artifacts, and host-cache preservation state survives separate compilation without
 being reconstructed from local-only manifest state.
 
 ## Metaprogramming Runtime ABI And Cache Surface
@@ -396,7 +412,7 @@ being reconstructed from local-only manifest state.
 This is the authoritative runtime ABI boundary for metaprogramming host/cache
 state. It freezes the private runtime snapshots that publish the fail-closed
 expansion boundary and the live host-process cache integration state together
-with the emitted host-cache artifact and imported-surface compatibility facts,
+with the emitted host-cache artifact and imported-surface preservation facts,
 so later runnable metaprogramming work must consume one truthful runtime ABI
 surface instead of inventing a second host/cache model from local probe notes.
 
@@ -641,7 +657,7 @@ of hand-waving over what is already enforced in the compiler.
     - `tests/tooling/fixtures/native/bridge_legality_bad_status_return_negative.objc3`
 
 This is the authoritative diagnostics boundary for bridged error callables and
-their unwind compatibility rules. It freezes the live legality model, the
+their unwind legality rules. It freezes the live legality model, the
 native fail-closed lowering boundary, and the exact negative diagnostic corpus
 so later lowering and runtime work cannot silently relax or reinterpret the
 compiler contract.
