@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+from .action_catalog_spec_lint import SPEC_LINT_ACTION_SPECS
+from .action_catalog_tooling_inspection import TOOLING_INSPECTION_ACTION_SPECS
+from .action_catalog_tooling_materialization import (
+    TOOLING_MATERIALIZATION_ACTION_SPECS,
+)
+from .action_catalog_tooling_parity import TOOLING_PARITY_ACTION_SPECS
+from .action_catalog_tooling_validation import TOOLING_VALIDATION_ACTION_SPECS
 from .action_spec import ActionSpec
 
 TOOLING_DEVELOPER_ACTION_SPECS: dict[str, ActionSpec] = {
-    "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
-    "inspect-validation-timing": ActionSpec("inspect-validation-timing", "build the local validation-speed dashboard from latest generated timing reports", "runner-internal + tmp timing reports", validation_tier="repo", guarantee_owner="validation timing, warning budgets, child reports, and issue-specific profiles stay explainable from generated suite reports"),
-    "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
-    "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
-    "test-capability-routed-source-parity": ActionSpec("test-capability-routed-source-parity", "validate live library/CLI source parity when hosted llc object emission is available", "python:scripts/check_objc3c_library_cli_parity.py --route-cli-backend-from-capabilities", validation_tier="ci", guarantee_owner="hosted CI parity validation follows the llvm capability probe instead of duplicating helper commands in workflow action definitions"),
-    "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
-    "validate-bonus-experiences": ActionSpec("validate-bonus-experiences", "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces", "python:scripts/check_objc3c_bonus_experience_integration.py", validation_tier="repo", guarantee_owner="bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces"),
-    "validate-runnable-bonus-experiences": ActionSpec("validate-runnable-bonus-experiences", "validate template-derived bonus experiences end to end from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_bonus_experience_end_to_end.py", validation_tier="full", guarantee_owner="staged runnable toolchain bundles preserve bonus-experience template compilation runtime execution and capability-probe semantics"),
-    "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py"),
+    **TOOLING_INSPECTION_ACTION_SPECS,
+    **TOOLING_MATERIALIZATION_ACTION_SPECS,
+    **TOOLING_PARITY_ACTION_SPECS,
+    **TOOLING_VALIDATION_ACTION_SPECS,
+    **SPEC_LINT_ACTION_SPECS,
 }
+
+__all__ = ["TOOLING_DEVELOPER_ACTION_SPECS"]
