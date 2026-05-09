@@ -23,6 +23,7 @@
 #include "ir/objc3_ir_emission_readiness_publication.h"
 #include "ir/objc3_ir_entry_point_emission.h"
 #include "ir/objc3_ir_emitter_context.h"
+#include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_definition_emission.h"
 #include "ir/objc3_ir_message_send_emission.h"
@@ -6234,297 +6235,62 @@ class Objc3IREmitter {
   }
 
   std::string EmitExpr(const Expr *expr, FunctionContext &ctx) const {
-    if (expr == nullptr) {
-      return EmitUnsupportedI32Value("null expression reached IR lowering");
-    }
-    switch (expr->kind) {
-      case Expr::Kind::Number:
-        return std::to_string(expr->number);
-      case Expr::Kind::BoolLiteral:
-        return expr->bool_value ? "1" : "0";
-      case Expr::Kind::NilLiteral:
-        return "0";
-      case Expr::Kind::BlockLiteral:
-        if (BlockLiteralSupportsEscapingRuntimeHookLowering(*expr)) {
-          const std::string storage_ptr = EmitBlockLiteralStorage(*expr, ctx);
-          if (storage_ptr == "poison") {
-            return storage_ptr;
-          }
-          return EmitPromotedBlockHandle(*expr, storage_ptr, ctx);
-        }
-        return EmitUnsupportedI32Value(
-            "block literal values must be bound to a local name before use");
-      case Expr::Kind::Identifier: {
-        if (expr->typed_keypath_literal_enabled) {
-          return EmitTypedKeyPathLiteralValue(*expr);
-        }
-        return EmitIdentifierValue(expr->ident, ctx);
-      }
-      case Expr::Kind::Binary: {
-        if (expr->op == "&&" || expr->op == "||") {
-          const std::string lhs = EmitExpr(expr->left.get(), ctx);
-          const std::string lhs_i1 = NewTemp(ctx);
-          const std::string rhs_label = NewLabel(ctx, expr->op == "&&" ? "and_rhs_" : "or_rhs_");
-          const std::string rhs_done_label = NewLabel(ctx, expr->op == "&&" ? "and_rhs_done_" : "or_rhs_done_");
-          const std::string short_label = NewLabel(ctx, expr->op == "&&" ? "and_short_" : "or_short_");
-          const std::string merge_label = NewLabel(ctx, expr->op == "&&" ? "and_merge_" : "or_merge_");
-          const std::string rhs_i1 = NewTemp(ctx);
-          const std::string logical_i1 = NewTemp(ctx);
-          const std::string out_i32 = NewTemp(ctx);
-          const std::string short_value = expr->op == "&&" ? "0" : "1";
-
-          ctx.code_lines.push_back("  " + lhs_i1 + " = icmp ne i32 " + lhs + ", 0");
-          if (expr->op == "&&") {
-            ctx.code_lines.push_back(
-                "  br i1 " + lhs_i1 + ", label %" + rhs_label + ", label %" + short_label);
-          } else {
-            ctx.code_lines.push_back(
-                "  br i1 " + lhs_i1 + ", label %" + short_label + ", label %" + rhs_label);
-          }
-
-          ctx.code_lines.push_back(rhs_label + ":");
-          const std::string rhs = EmitExpr(expr->right.get(), ctx);
-          ctx.code_lines.push_back("  br label %" + rhs_done_label);
-          ctx.code_lines.push_back(rhs_done_label + ":");
-          ctx.code_lines.push_back("  " + rhs_i1 + " = icmp ne i32 " + rhs + ", 0");
-          ctx.code_lines.push_back("  br label %" + merge_label);
-
-          ctx.code_lines.push_back(short_label + ":");
-          ctx.code_lines.push_back("  br label %" + merge_label);
-
-          ctx.code_lines.push_back(merge_label + ":");
-          ctx.code_lines.push_back("  " + logical_i1 + " = phi i1 [" + short_value + ", %" + short_label +
-                                   "], [" + rhs_i1 + ", %" + rhs_done_label + "]");
-          ctx.code_lines.push_back("  " + out_i32 + " = zext i1 " + logical_i1 + " to i32");
-          return out_i32;
-        }
-        if (expr->op == "??") {
-          const std::string lhs = EmitExpr(expr->left.get(), ctx);
-          const std::string lhs_i1 = NewTemp(ctx);
-          const std::string rhs_label = NewLabel(ctx, "coalesce_rhs_");
-          const std::string lhs_label = NewLabel(ctx, "coalesce_lhs_");
-          const std::string merge_label = NewLabel(ctx, "coalesce_merge_");
-          const std::string rhs_value_name = NewTemp(ctx);
-          const std::string out_value = NewTemp(ctx);
-          ctx.code_lines.push_back("  " + lhs_i1 + " = icmp ne i32 " + lhs +
-                                   ", 0");
-          ctx.code_lines.push_back("  br i1 " + lhs_i1 + ", label %" +
-                                   lhs_label + ", label %" + rhs_label);
-          ctx.code_lines.push_back(rhs_label + ":");
-          const std::string rhs = EmitExpr(expr->right.get(), ctx);
-          ctx.code_lines.push_back("  " + rhs_value_name + " = add i32 " + rhs +
-                                   ", 0");
-          ctx.code_lines.push_back("  br label %" + merge_label);
-          ctx.code_lines.push_back(lhs_label + ":");
-          ctx.code_lines.push_back("  br label %" + merge_label);
-          ctx.code_lines.push_back(merge_label + ":");
-          ctx.code_lines.push_back("  " + out_value + " = phi i32 [" + lhs +
-                                   ", %" + lhs_label + "], [" + rhs_value_name +
-                                   ", %" + rhs_label + "]");
-          return out_value;
-        }
-
-        const std::string lhs = EmitExpr(expr->left.get(), ctx);
-        const std::string rhs = EmitExpr(expr->right.get(), ctx);
-        if (expr->op == "+" || expr->op == "-" || expr->op == "*" || expr->op == "/" || expr->op == "%") {
-          const std::string tmp = NewTemp(ctx);
-          std::string op = "add";
-          if (expr->op == "+") {
-            op = "add";
-          } else if (expr->op == "-") {
-            op = "sub";
-          } else if (expr->op == "*") {
-            op = "mul";
-          } else if (expr->op == "/") {
-            op = "sdiv";
-          } else if (expr->op == "%") {
-            op = "srem";
-          }
-          ctx.code_lines.push_back("  " + tmp + " = " + op + " i32 " + lhs + ", " + rhs);
-          return tmp;
-        }
-
-        if (expr->op == "&" || expr->op == "|" || expr->op == "^" || expr->op == "<<" || expr->op == ">>") {
-          const std::string tmp = NewTemp(ctx);
-          std::string op = "and";
-          if (expr->op == "&") {
-            op = "and";
-          } else if (expr->op == "|") {
-            op = "or";
-          } else if (expr->op == "^") {
-            op = "xor";
-          } else if (expr->op == "<<") {
-            op = "shl";
-          } else if (expr->op == ">>") {
-            op = "ashr";
-          }
-          ctx.code_lines.push_back("  " + tmp + " = " + op + " i32 " + lhs + ", " + rhs);
-          return tmp;
-        }
-
-        std::string pred;
-        if (expr->op == "==") {
-          pred = "eq";
-        } else if (expr->op == "!=") {
-          pred = "ne";
-        } else if (expr->op == "<") {
-          pred = "slt";
-        } else if (expr->op == "<=") {
-          pred = "sle";
-        } else if (expr->op == ">") {
-          pred = "sgt";
-        } else if (expr->op == ">=") {
-          pred = "sge";
-        } else {
-          return EmitUnsupportedI32Value("unsupported binary operator '" + expr->op + "'");
-        }
-        const std::string cmp_i1 = NewTemp(ctx);
-        const std::string out_i32 = NewTemp(ctx);
-        ctx.code_lines.push_back("  " + cmp_i1 + " = icmp " + pred + " i32 " + lhs + ", " + rhs);
-        ctx.code_lines.push_back("  " + out_i32 + " = zext i1 " + cmp_i1 + " to i32");
-        return out_i32;
-      }
-      case Expr::Kind::Conditional: {
-        const std::string cond_value = EmitExpr(expr->left.get(), ctx);
-        const std::string cond_i1 = NewTemp(ctx);
-        const std::string true_label = NewLabel(ctx, "cond_true_");
-        const std::string false_label = NewLabel(ctx, "cond_false_");
-        const std::string merge_label = NewLabel(ctx, "cond_merge_");
-        const std::string result_ptr = "%cond.addr." + std::to_string(ctx.temp_counter++);
-        ctx.entry_lines.push_back("  " + result_ptr + " = alloca i32, align 4");
-        ctx.code_lines.push_back("  " + cond_i1 + " = icmp ne i32 " + cond_value + ", 0");
-        ctx.code_lines.push_back("  br i1 " + cond_i1 + ", label %" + true_label + ", label %" + false_label);
-
-        ctx.code_lines.push_back(true_label + ":");
-        const std::string true_value = EmitExpr(expr->right.get(), ctx);
-        ctx.code_lines.push_back("  store i32 " + true_value + ", ptr " + result_ptr + ", align 4");
-        ctx.code_lines.push_back("  br label %" + merge_label);
-
-        ctx.code_lines.push_back(false_label + ":");
-        const std::string false_value = EmitExpr(expr->third.get(), ctx);
-        ctx.code_lines.push_back("  store i32 " + false_value + ", ptr " + result_ptr + ", align 4");
-        ctx.code_lines.push_back("  br label %" + merge_label);
-
-        ctx.code_lines.push_back(merge_label + ":");
-        const std::string out_value = NewTemp(ctx);
-        ctx.code_lines.push_back("  " + out_value + " = load i32, ptr " + result_ptr + ", align 4");
-        return out_value;
-      }
-      case Expr::Kind::Call: {
-        if (expr->ident == "__objc3_throw_stmt") {
-          const std::string error_value =
-              expr->args.empty() ? "1" : EmitExpr(expr->args.front().get(), ctx);
-          EmitPropagateThrownError(error_value, ctx);
-          return "0";
-        }
-        if (expr->ident == "__objc3_try_expr") {
-          const Expr *operand =
-              !expr->args.empty() ? expr->args.front().get() : expr->left.get();
-          if (operand == nullptr || operand->kind != Expr::Kind::Call) {
-            return EmitUnsupportedI32Value(
-                "try lowering expected callable operand");
-          }
-          const LoweredFunctionSignature *operand_signature =
-              LookupFunctionSignature(operand->ident);
-          if (operand_signature == nullptr) {
-            return EmitUnsupportedI32Value(
-                "try lowering requires declared callable signature");
-          }
-          const std::string result_ptr =
-              "%try.result.addr." + std::to_string(ctx.temp_counter++);
-          const std::string error_slot =
-              BuildThrowsErrorSlotAlloca(ctx, "try");
-          ctx.entry_lines.push_back("  " + result_ptr + " = alloca i32, align 4");
-          const std::string merged_label = NewLabel(ctx, "try_merge_");
-          const std::string failure_label = NewLabel(ctx, "try_fail_");
-          const std::string success_label = NewLabel(ctx, "try_success_");
-          ctx.code_lines.push_back("  store i32 0, ptr " + error_slot + ", align 4");
-          bool bridge_failed = false;
-          std::string bridge_error_value = "0";
-          std::string result = EmitDirectFunctionCall(
-              operand, operand_signature, ctx, error_slot,
-              &bridge_failed, &bridge_error_value);
-          std::string actual_result = result;
-          std::string failure_cond;
-          if (bridge_failed) {
-            const std::size_t marker = result.rfind('|');
-            actual_result = result.substr(0, marker);
-            failure_cond = result.substr(marker + 1);
-          } else if (operand_signature->throws_declared) {
-            const std::string loaded_error = NewTemp(ctx);
-            const std::string has_error = NewTemp(ctx);
-            ctx.code_lines.push_back("  " + loaded_error + " = load i32, ptr " +
-                                     error_slot + ", align 4");
-            ctx.code_lines.push_back("  " + has_error + " = icmp ne i32 " +
-                                     loaded_error + ", 0");
-            failure_cond = has_error;
-            bridge_error_value = loaded_error;
-          } else {
-            return EmitUnsupportedI32Value(
-                "try lowering requires throwing or bridged operand");
-          }
-          ctx.code_lines.push_back("  br i1 " + failure_cond + ", label %" +
-                                   failure_label + ", label %" + success_label);
-          ctx.code_lines.push_back(success_label + ":");
-          ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
-                                   result_ptr + ", align 4");
-          ctx.code_lines.push_back("  br label %" + merged_label);
-          ctx.code_lines.push_back(failure_label + ":");
-          switch (expr->try_operator_kind) {
-          case Expr::TryOperatorKind::Optional:
-            ctx.code_lines.push_back("  store i32 0, ptr " + result_ptr +
-                                     ", align 4");
-            ctx.code_lines.push_back("  br label %" + merged_label);
-            break;
-          case Expr::TryOperatorKind::Forced:
-            ctx.code_lines.push_back("  call void @abort()");
-            ctx.code_lines.push_back("  unreachable");
-            break;
-          case Expr::TryOperatorKind::Propagate:
-            EmitPropagateThrownError(bridge_error_value, ctx);
-            break;
-          case Expr::TryOperatorKind::None:
-            ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
-                                     result_ptr + ", align 4");
-            ctx.code_lines.push_back("  br label %" + merged_label);
-            break;
-          }
-          if (expr->try_operator_kind == Expr::TryOperatorKind::Forced ||
-              expr->try_operator_kind == Expr::TryOperatorKind::Propagate) {
-            // The failure arm terminates, but the success arm still flows
-            // through the merged result block.
-            ctx.terminated = false;
-          }
-          ctx.code_lines.push_back(merged_label + ":");
-          const std::string loaded = NewTemp(ctx);
-          ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
-                                   result_ptr + ", align 4");
-          return loaded;
-        }
-        const auto local_block_it = ctx.block_bindings.find(expr->ident);
-        if (local_block_it != ctx.block_bindings.end()) {
-          return EmitBlockInvokeCall(local_block_it->second, expr, ctx);
-        }
-        const LoweredFunctionSignature *signature = LookupFunctionSignature(expr->ident);
-        if (signature != nullptr && signature->throws_declared) {
-          const std::string ignored_error_slot =
-              BuildThrowsErrorSlotAlloca(ctx, "ignored");
-          ctx.code_lines.push_back("  store i32 0, ptr " + ignored_error_slot +
-                                   ", align 4");
-          return EmitDirectFunctionCall(expr, signature, ctx, ignored_error_slot);
-        }
-        // implementation anchor: supported await-marked expressions
-        // currently reach native IR through the operand's direct-call lowering
-        // path. This emits runnable IR/object code for the non-suspending happy
-        // slice without materializing continuation allocation or a state
-        // machine; those surfaces remain later work.
-        return EmitDirectFunctionCall(expr, signature, ctx, "");
-      }
-      case Expr::Kind::MessageSend: {
-        return EmitMessageSendExpr(expr, ctx);
-      }
-    }
-    return EmitUnsupportedI32Value("unsupported expression kind reached IR lowering");
+    return EmitObjc3IRExpr(
+        expr, ctx,
+        Objc3IRExpressionEmissionCallbacks{
+            [this](FunctionContext &callback_ctx) {
+              return NewTemp(callback_ctx);
+            },
+            [this](FunctionContext &callback_ctx,
+                   const std::string &prefix) {
+              return NewLabel(callback_ctx, prefix);
+            },
+            [this](const std::string &reason) {
+              return EmitUnsupportedI32Value(reason);
+            },
+            [this](const std::string &name, FunctionContext &callback_ctx) {
+              return EmitIdentifierValue(name, callback_ctx);
+            },
+            [this](const Expr &callback_expr) {
+              return EmitTypedKeyPathLiteralValue(callback_expr);
+            },
+            [this](const Expr &callback_expr, FunctionContext &callback_ctx) {
+              return EmitBlockLiteralStorage(callback_expr, callback_ctx);
+            },
+            [this](const Expr &callback_expr,
+                   const std::string &storage_ptr,
+                   FunctionContext &callback_ctx) {
+              return EmitPromotedBlockHandle(callback_expr, storage_ptr,
+                                             callback_ctx);
+            },
+            [this](const BlockBinding &binding, const Expr *call_expr,
+                   FunctionContext &callback_ctx) {
+              return EmitBlockInvokeCall(binding, call_expr, callback_ctx);
+            },
+            [this](const std::string &name) {
+              return LookupFunctionSignature(name);
+            },
+            [this](const Expr *call_expr,
+                   const LoweredFunctionSignature *signature,
+                   FunctionContext &callback_ctx,
+                   const std::string &throws_error_slot_ptr,
+                   bool *bridge_failed_out,
+                   std::string *bridge_error_value_out) {
+              return EmitDirectFunctionCall(
+                  call_expr, signature, callback_ctx, throws_error_slot_ptr,
+                  bridge_failed_out, bridge_error_value_out);
+            },
+            [this](FunctionContext &callback_ctx,
+                   const std::string &prefix) {
+              return BuildThrowsErrorSlotAlloca(callback_ctx, prefix);
+            },
+            [this](const std::string &error_value,
+                   FunctionContext &callback_ctx) {
+              EmitPropagateThrownError(error_value, callback_ctx);
+            },
+            [this](const Expr *message_expr, FunctionContext &callback_ctx) {
+              return EmitMessageSendExpr(message_expr, callback_ctx);
+            }});
   }
 
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
