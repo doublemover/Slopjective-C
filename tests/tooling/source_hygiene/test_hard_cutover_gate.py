@@ -38,6 +38,7 @@ from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_
 from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
+from scripts.source_hygiene.scan_config import SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID
 from scripts.source_hygiene.report_writer import (
     REPORT_SUMMARY_FIELDS,
     REPORT_WRITER_CONTRACT_ID,
@@ -499,8 +500,14 @@ def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> 
 
     report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
     owner_contract = report["owner_contract"]
+    scan_config_contract = report["scan_config_contract"]
 
     assert owner_contract["scan_root_owner"]["owner_id"] == SOURCE_HYGIENE_SCAN_ROOT_OWNER
+    assert scan_config_contract["contract_id"] == SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID
+    assert scan_config_contract["path_scope_is_fail_closed"] is True
+    assert scan_config_contract["compiled_patterns_are_case_insensitive"] is True
+    assert scan_config_contract["scan_roots"] == report["scan_roots"]
+    assert scan_config_contract["pattern_count"] == len(report["forbidden_patterns"])
     assert owner_contract["pattern_owner"]["owner_id"] == SOURCE_HYGIENE_PATTERN_OWNER
     assert (
         owner_contract["generated_report_owner"]["owner_id"]

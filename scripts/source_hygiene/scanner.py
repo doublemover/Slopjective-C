@@ -27,6 +27,7 @@ from .scan_config import (
     SourceHygieneScanConfig,
     compile_policy_patterns,
     pattern_in_scope,
+    scan_config_contract_summary,
 )
 from .violations import build_pattern_violation
 
@@ -133,6 +134,7 @@ def build_report(
         "excluded_globs": list(config.excludes),
         "gate_contract": gate_contract_summary(),
         "owner_contract": owner_contract,
+        "scan_config_contract": scan_config_contract_summary(config),
         "blocker_metadata": owner_contract["blocker_metadata"],
         "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,
