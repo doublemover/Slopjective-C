@@ -51,8 +51,8 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ),
     ForbiddenPattern(
         "direct-workflow-module-doc-command",
-        "Documentation must expose the npm workflow bridge instead of direct scripts.objc3c_workflow module commands.",
-        r"`python\s+-m\s+scripts\.objc3c_workflow\b",
+        "Public workflow instructions must expose the npm bridge instead of direct scripts.objc3c_workflow module commands.",
+        r"(?<![A-Za-z0-9_.-])python\s+-m\s+scripts\.objc3c_workflow\b",
     ),
     ForbiddenPattern(
         "legacy-language-profile-enum",
