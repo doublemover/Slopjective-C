@@ -1,49 +1,28 @@
-"""Stdlib workspace and validation workflow actions."""
+"""Stdlib workspace and validation workflow action facade."""
 
 from __future__ import annotations
 
-import sys
-
-from ..commands import run
-from .application_surface_paths import (
-    MATERIALIZE_STDLIB_PY,
-    RUNNABLE_STDLIB_ADVANCED_E2E_PY,
-    RUNNABLE_STDLIB_FOUNDATION_E2E_PY,
-    RUNNABLE_STDLIB_PROGRAM_E2E_PY,
-    STDLIB_ADVANCED_INTEGRATION_PY,
-    STDLIB_FOUNDATION_INTEGRATION_PY,
-    STDLIB_PROGRAM_INTEGRATION_PY,
-    STDLIB_SURFACE_PY,
+from .application_stdlib_integrations import (
+    action_validate_stdlib_advanced,
+    action_validate_stdlib_foundation,
+    action_validate_stdlib_program,
 )
+from .application_stdlib_runnable import (
+    action_validate_runnable_stdlib_advanced,
+    action_validate_runnable_stdlib_foundation,
+    action_validate_runnable_stdlib_program,
+)
+from .application_stdlib_surface import action_check_stdlib_surface
+from .application_stdlib_workspace import action_materialize_stdlib_workspace
 
 
-def action_check_stdlib_surface(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_SURFACE_PY)])
-
-
-def action_materialize_stdlib_workspace(rest: list[str]) -> int:
-    return run([sys.executable, str(MATERIALIZE_STDLIB_PY), *rest])
-
-
-def action_validate_stdlib_foundation(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)])
-
-
-def action_validate_stdlib_advanced(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)])
-
-
-def action_validate_stdlib_program(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
-
-
-def action_validate_runnable_stdlib_foundation(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_FOUNDATION_E2E_PY)])
-
-
-def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_ADVANCED_E2E_PY)])
-
-
-def action_validate_runnable_stdlib_program(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_PROGRAM_E2E_PY)])
+__all__ = [
+    "action_check_stdlib_surface",
+    "action_materialize_stdlib_workspace",
+    "action_validate_runnable_stdlib_advanced",
+    "action_validate_runnable_stdlib_foundation",
+    "action_validate_runnable_stdlib_program",
+    "action_validate_stdlib_advanced",
+    "action_validate_stdlib_foundation",
+    "action_validate_stdlib_program",
+]
