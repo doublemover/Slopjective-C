@@ -24,6 +24,9 @@
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   bool deterministic_parser_sema_integration_closeout_signoff = false;
+  Objc3ParserSemaConformanceEvidenceRecord
+      parser_sema_conformance_evidence_record;
+  bool deterministic_parser_sema_conformance_evidence_record = false;
   Objc3ParserSemaContractReadinessRecord
       parser_sema_contract_readiness_record;
   bool deterministic_parser_sema_contract_readiness_record = false;

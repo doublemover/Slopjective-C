@@ -1184,6 +1184,15 @@
       result.typed_semantic_handoff_record;
   result.parity_surface.deterministic_typed_semantic_handoff_record =
       result.deterministic_typed_semantic_handoff_record;
+  result.parser_sema_conformance_evidence_record =
+      BuildObjc3ParserSemaConformanceEvidenceRecord(input, result.parity_surface);
+  result.deterministic_parser_sema_conformance_evidence_record =
+      IsReadyObjc3ParserSemaConformanceEvidenceRecord(
+          result.parser_sema_conformance_evidence_record);
+  result.parity_surface.parser_sema_conformance_evidence_record =
+      result.parser_sema_conformance_evidence_record;
+  result.parity_surface.deterministic_parser_sema_conformance_evidence_record =
+      result.deterministic_parser_sema_conformance_evidence_record;
   result.parser_sema_contract_readiness_record =
       BuildObjc3ParserSemaContractReadinessRecord(input, result.parity_surface);
   result.deterministic_parser_sema_contract_readiness_record =
@@ -1269,7 +1278,3 @@
       result.parity_surface.deterministic_type_metadata_publication_record &&
       IsReadyObjc3SemaTypeMetadataPublicationRecord(
           result.parity_surface.type_metadata_publication_record) &&
-      result.parity_surface
-          .deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          result.parity_surface.parser_sema_contract_readiness_record) &&

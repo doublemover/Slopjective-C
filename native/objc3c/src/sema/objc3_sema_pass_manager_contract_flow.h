@@ -25,6 +25,8 @@ inline constexpr const char *kObjc3ParserSemaSnapshotNormalizationOwner =
     "native.frontend.parser-sema.snapshot-normalization";
 inline constexpr const char *kObjc3ParserSemaCanonicalRejectionOwner =
     "native.frontend.parser-sema.canonical-rejection";
+inline constexpr const char *kObjc3ParserSemaConformanceEvidenceOwner =
+    "native.frontend.parser-sema.conformance-evidence";
 inline constexpr const char *kObjc3ParserSemaContractReadinessOwner =
     "native.frontend.parser-sema.contract-readiness";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
@@ -1026,6 +1028,58 @@ struct Objc3ParserSemaConformanceCorpus {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaConformanceEvidenceRecord {
+  std::string parser_sema_conformance_evidence_owner =
+      kObjc3ParserSemaConformanceEvidenceOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string parser_sema_contract_handoff_owner =
+      kObjc3ParserSemaContractHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  std::size_t required_matrix_evidence_count = 30u;
+  std::size_t passed_matrix_evidence_count = 0;
+  std::size_t required_corpus_case_count = 5u;
+  std::size_t passed_corpus_case_count = 0;
+  std::size_t failed_corpus_case_count = 0;
+  bool conformance_matrix_deterministic = false;
+  bool conformance_corpus_deterministic = false;
+  bool declaration_count_evidence_ready = false;
+  bool member_count_evidence_ready = false;
+  bool category_function_evidence_ready = false;
+  bool fingerprint_evidence_ready = false;
+  bool parser_budget_replay_evidence_ready = false;
+  bool corpus_inventory_ready = false;
+  bool corpus_cases_passed = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3ParserSemaConformanceEvidenceRecord(
+    const Objc3ParserSemaConformanceEvidenceRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.parser_sema_conformance_evidence_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.required_matrix_evidence_count == 30u &&
+         record.passed_matrix_evidence_count ==
+             record.required_matrix_evidence_count &&
+         record.required_corpus_case_count == 5u &&
+         record.passed_corpus_case_count == record.required_corpus_case_count &&
+         record.failed_corpus_case_count == 0u &&
+         record.conformance_matrix_deterministic &&
+         record.conformance_corpus_deterministic &&
+         record.declaration_count_evidence_ready &&
+         record.member_count_evidence_ready &&
+         record.category_function_evidence_ready &&
+         record.fingerprint_evidence_ready &&
+         record.parser_budget_replay_evidence_ready &&
+         record.corpus_inventory_ready && record.corpus_cases_passed &&
+         record.deterministic;
+}
+
 struct Objc3ParserSemaPerformanceQualityGuardrails {
   std::size_t conformance_matrix_builder_max_lines = 0;
   std::size_t conformance_corpus_builder_max_lines = 0;
@@ -1184,6 +1238,7 @@ struct Objc3ParserSemaContractReadinessRecord {
   std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
   bool strict_no_fallback = true;
   bool strict_no_compatibility = true;
+  bool conformance_evidence_ready = false;
   bool conformance_matrix_ready = false;
   bool conformance_corpus_ready = false;
   bool performance_quality_guardrails_ready = false;
@@ -1213,6 +1268,7 @@ inline bool IsReadyObjc3ParserSemaContractReadinessRecord(
          Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
          record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
          record.strict_no_fallback && record.strict_no_compatibility &&
+         record.conformance_evidence_ready &&
          record.conformance_matrix_ready && record.conformance_corpus_ready &&
          record.performance_quality_guardrails_ready &&
          record.cross_lane_integration_sync_ready &&
@@ -1233,6 +1289,8 @@ inline bool IsReadyObjc3ParserSemaContractReadinessRecord(
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
+  Objc3ParserSemaConformanceEvidenceRecord
+      parser_sema_conformance_evidence_record;
   Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
   Objc3ParserSemaCrossLaneIntegrationSync parser_sema_cross_lane_integration_sync;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
@@ -1669,6 +1727,7 @@ struct Objc3SemaParityContractSurface {
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_parser_sema_conformance_matrix = false;
   bool deterministic_parser_sema_conformance_corpus = false;
+  bool deterministic_parser_sema_conformance_evidence_record = false;
   bool deterministic_parser_sema_performance_quality_guardrails = false;
   bool deterministic_parser_sema_cross_lane_integration_sync = false;
   bool deterministic_parser_sema_docs_runbook_sync = false;
@@ -1947,6 +2006,142 @@ inline bool Objc3ParserSemaSyncCountsReady(
          failed_count == 0u;
 }
 
+inline std::size_t Objc3SemaEvidenceCount(bool ready) {
+  return ready ? 1u : 0u;
+}
+
+inline Objc3ParserSemaConformanceEvidenceRecord
+BuildObjc3ParserSemaConformanceEvidenceRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3ParserSemaConformanceEvidenceRecord record;
+  const Objc3ParserSemaConformanceMatrix &matrix =
+      surface.parser_sema_conformance_matrix;
+  const Objc3ParserSemaConformanceCorpus &corpus =
+      surface.parser_sema_conformance_corpus;
+  record.stage_input_owner = input.stage_input_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.conformance_matrix_deterministic =
+      surface.deterministic_parser_sema_conformance_matrix &&
+      matrix.deterministic;
+  record.conformance_corpus_deterministic =
+      surface.deterministic_parser_sema_conformance_corpus &&
+      corpus.deterministic;
+  record.declaration_count_evidence_ready =
+      matrix.top_level_declaration_count_matches &&
+      matrix.global_decl_count_matches && matrix.protocol_decl_count_matches &&
+      matrix.interface_decl_count_matches &&
+      matrix.implementation_decl_count_matches &&
+      matrix.function_decl_count_matches;
+  record.member_count_evidence_ready =
+      matrix.protocol_property_decl_count_matches &&
+      matrix.protocol_method_decl_count_matches &&
+      matrix.protocol_class_method_decl_count_matches &&
+      matrix.protocol_instance_method_decl_count_matches &&
+      matrix.interface_property_decl_count_matches &&
+      matrix.interface_method_decl_count_matches &&
+      matrix.interface_class_method_decl_count_matches &&
+      matrix.interface_instance_method_decl_count_matches &&
+      matrix.implementation_property_decl_count_matches &&
+      matrix.implementation_method_decl_count_matches &&
+      matrix.implementation_class_method_decl_count_matches &&
+      matrix.implementation_instance_method_decl_count_matches;
+  record.category_function_evidence_ready =
+      matrix.interface_category_decl_count_matches &&
+      matrix.implementation_category_decl_count_matches &&
+      matrix.function_prototype_count_matches &&
+      matrix.function_pure_count_matches;
+  record.fingerprint_evidence_ready =
+      matrix.ast_shape_fingerprint_matches &&
+      matrix.ast_top_level_layout_fingerprint_matches &&
+      matrix.parser_contract_snapshot_fingerprint_matches;
+  record.parser_budget_replay_evidence_ready =
+      matrix.parser_diagnostic_budget_consistent &&
+      matrix.parser_token_top_level_budget_consistent &&
+      matrix.parser_subset_count_consistent &&
+      matrix.parser_contract_snapshot_deterministic &&
+      matrix.parser_recovery_replay_ready;
+  record.passed_matrix_evidence_count =
+      Objc3SemaEvidenceCount(matrix.top_level_declaration_count_matches) +
+      Objc3SemaEvidenceCount(matrix.global_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.protocol_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.interface_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.implementation_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.function_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.protocol_property_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.protocol_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.protocol_class_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.protocol_instance_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.interface_property_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.interface_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.interface_class_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.interface_instance_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.implementation_property_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.implementation_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.implementation_class_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.implementation_instance_method_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.interface_category_decl_count_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.implementation_category_decl_count_matches) +
+      Objc3SemaEvidenceCount(matrix.function_prototype_count_matches) +
+      Objc3SemaEvidenceCount(matrix.function_pure_count_matches) +
+      Objc3SemaEvidenceCount(matrix.ast_shape_fingerprint_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.ast_top_level_layout_fingerprint_matches) +
+      Objc3SemaEvidenceCount(
+          matrix.parser_contract_snapshot_fingerprint_matches) +
+      Objc3SemaEvidenceCount(matrix.parser_diagnostic_budget_consistent) +
+      Objc3SemaEvidenceCount(matrix.parser_token_top_level_budget_consistent) +
+      Objc3SemaEvidenceCount(matrix.parser_subset_count_consistent) +
+      Objc3SemaEvidenceCount(matrix.parser_contract_snapshot_deterministic) +
+      Objc3SemaEvidenceCount(matrix.parser_recovery_replay_ready);
+  record.required_corpus_case_count = corpus.required_case_count;
+  record.passed_corpus_case_count = corpus.passed_case_count;
+  record.failed_corpus_case_count = corpus.failed_case_count;
+  record.corpus_inventory_ready =
+      corpus.required_case_count == 5u &&
+      corpus.has_top_level_declaration_count_case &&
+      corpus.has_snapshot_fingerprint_case &&
+      corpus.has_diagnostic_budget_case && corpus.has_subset_count_case &&
+      corpus.has_recovery_replay_case;
+  record.corpus_cases_passed =
+      corpus.passed_case_count == corpus.required_case_count &&
+      corpus.failed_case_count == 0u &&
+      corpus.top_level_declaration_count_case_passed &&
+      corpus.snapshot_fingerprint_case_passed &&
+      corpus.diagnostic_budget_case_passed &&
+      corpus.subset_count_case_passed && corpus.recovery_replay_case_passed;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.parser_sema_conformance_evidence_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.required_matrix_evidence_count == 30u &&
+      record.passed_matrix_evidence_count ==
+          record.required_matrix_evidence_count &&
+      record.required_corpus_case_count == 5u &&
+      record.passed_corpus_case_count == record.required_corpus_case_count &&
+      record.failed_corpus_case_count == 0u &&
+      record.conformance_matrix_deterministic &&
+      record.conformance_corpus_deterministic &&
+      record.declaration_count_evidence_ready &&
+      record.member_count_evidence_ready &&
+      record.category_function_evidence_ready &&
+      record.fingerprint_evidence_ready &&
+      record.parser_budget_replay_evidence_ready &&
+      record.corpus_inventory_ready && record.corpus_cases_passed;
+  return record;
+}
+
 inline Objc3ParserSemaContractReadinessRecord
 BuildObjc3ParserSemaContractReadinessRecord(
     const Objc3SemaPassManagerInput &input,
@@ -1956,12 +2151,18 @@ BuildObjc3ParserSemaContractReadinessRecord(
   record.owner_model = input.owner_model;
   record.strict_no_fallback = input.strict_no_fallback;
   record.strict_no_compatibility = input.strict_no_compatibility;
+  record.conformance_evidence_ready =
+      surface.deterministic_parser_sema_conformance_evidence_record &&
+      IsReadyObjc3ParserSemaConformanceEvidenceRecord(
+          surface.parser_sema_conformance_evidence_record);
   record.conformance_matrix_ready =
-      surface.deterministic_parser_sema_conformance_matrix &&
-      surface.parser_sema_conformance_matrix.deterministic;
+      record.conformance_evidence_ready &&
+      surface.parser_sema_conformance_evidence_record
+          .conformance_matrix_deterministic;
   record.conformance_corpus_ready =
-      surface.deterministic_parser_sema_conformance_corpus &&
-      surface.parser_sema_conformance_corpus.deterministic;
+      record.conformance_evidence_ready &&
+      surface.parser_sema_conformance_evidence_record
+          .conformance_corpus_deterministic;
   record.performance_quality_guardrails_ready =
       surface.deterministic_parser_sema_performance_quality_guardrails &&
       surface.parser_sema_performance_quality_guardrails.deterministic &&
@@ -2174,6 +2375,7 @@ BuildObjc3ParserSemaContractReadinessRecord(
       Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
       record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
       record.strict_no_fallback && record.strict_no_compatibility &&
+      record.conformance_evidence_ready &&
       record.conformance_matrix_ready && record.conformance_corpus_ready &&
       record.performance_quality_guardrails_ready &&
       record.cross_lane_integration_sync_ready &&
@@ -2236,57 +2438,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_parser_sema_contract_readiness_record &&
          IsReadyObjc3ParserSemaContractReadinessRecord(
              surface.parser_sema_contract_readiness_record) &&
-         surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
-         surface.parser_sema_conformance_matrix.global_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.protocol_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.interface_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.implementation_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.function_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.protocol_property_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.protocol_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .protocol_class_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .protocol_instance_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.interface_property_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.interface_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .interface_class_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .interface_instance_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.implementation_property_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.implementation_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .implementation_class_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix
-             .implementation_instance_method_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.interface_category_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.implementation_category_decl_count_matches &&
-         surface.parser_sema_conformance_matrix.function_prototype_count_matches &&
-         surface.parser_sema_conformance_matrix.function_pure_count_matches &&
-         surface.parser_sema_conformance_matrix.ast_shape_fingerprint_matches &&
-         surface.parser_sema_conformance_matrix.ast_top_level_layout_fingerprint_matches &&
-         surface.parser_sema_conformance_matrix.parser_contract_snapshot_fingerprint_matches &&
-         surface.parser_sema_conformance_matrix.parser_diagnostic_budget_consistent &&
-         surface.parser_sema_conformance_matrix.parser_token_top_level_budget_consistent &&
-         surface.parser_sema_conformance_matrix.parser_subset_count_consistent &&
-         surface.parser_sema_conformance_matrix.parser_contract_snapshot_deterministic &&
-         surface.parser_sema_conformance_matrix.parser_recovery_replay_ready &&
-         surface.parser_sema_conformance_corpus.required_case_count == 5u &&
-         surface.parser_sema_conformance_corpus.passed_case_count ==
-             surface.parser_sema_conformance_corpus.required_case_count &&
-         surface.parser_sema_conformance_corpus.failed_case_count == 0u &&
-         surface.parser_sema_conformance_corpus.has_top_level_declaration_count_case &&
-         surface.parser_sema_conformance_corpus.has_snapshot_fingerprint_case &&
-         surface.parser_sema_conformance_corpus.has_diagnostic_budget_case &&
-         surface.parser_sema_conformance_corpus.has_subset_count_case &&
-         surface.parser_sema_conformance_corpus.has_recovery_replay_case &&
-         surface.parser_sema_conformance_corpus
-             .top_level_declaration_count_case_passed &&
-         surface.parser_sema_conformance_corpus.snapshot_fingerprint_case_passed &&
-         surface.parser_sema_conformance_corpus.diagnostic_budget_case_passed &&
-         surface.parser_sema_conformance_corpus.subset_count_case_passed &&
-         surface.parser_sema_conformance_corpus.recovery_replay_case_passed &&
+         surface.deterministic_parser_sema_conformance_evidence_record &&
+         IsReadyObjc3ParserSemaConformanceEvidenceRecord(
+             surface.parser_sema_conformance_evidence_record) &&
          surface.diagnostics_accounting_consistent &&
          surface.diagnostics_bus_publish_consistent &&
          surface.diagnostics_canonicalized &&
