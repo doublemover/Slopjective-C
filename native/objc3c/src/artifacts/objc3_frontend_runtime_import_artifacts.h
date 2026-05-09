@@ -18,6 +18,20 @@ namespace objc3::artifacts::frontend {
     const Objc3ModuleImportGraphLoweringContract
         &module_import_graph_lowering_contract);
 
+[[nodiscard]] std::string BuildRuntimeAwareImportModuleFrontendClosureReplayKey(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary);
+
+[[nodiscard]] Objc3RuntimeAwareImportModuleFrontendClosureSummary
+BuildRuntimeAwareImportModuleFrontendClosureSummary(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
+
+[[nodiscard]] std::string BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
