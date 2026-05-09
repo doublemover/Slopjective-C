@@ -69,45 +69,9 @@ add_library(objc3c_diagnostics_modes STATIC
 objc3c_apply_build_defaults(objc3c_diagnostics_modes)
 objc3c_apply_llvm_direct_config(objc3c_diagnostics_modes)
 
-add_library(objc3c_frontend STATIC
-  libobjc3c_frontend/c_api.cpp
-  libobjc3c_frontend/frontend_anchor.cpp
-  libobjc3c_frontend/objc3_cli_frontend.cpp
-)
-objc3c_apply_build_defaults(objc3c_frontend)
-objc3c_apply_llvm_direct_config(objc3c_frontend)
-target_link_libraries(objc3c_frontend PUBLIC
-  objc3c_artifacts
-  objc3c_pipeline
-  objc3c_runtime_abi
-  objc3c_json
-)
+add_subdirectory(libobjc3c_frontend)
 
-add_library(objc3c_driver STATIC
-  driver/objc3_cli_options.cpp
-  driver/objc3_driver_main.cpp
-  driver/objc3_driver_shell.cpp
-  driver/objc3_frontend_options.cpp
-  driver/objc3_llvm_capability_routing.cpp
-  driver/objc3_objc3_conformance_path.cpp
-  driver/objc3_objc3_path.cpp
-  driver/objc3_objectivec_path.cpp
-  driver/objc3_compilation_driver.cpp
-)
-objc3c_apply_build_defaults(objc3c_driver)
-objc3c_apply_llvm_direct_config(objc3c_driver)
-target_link_libraries(objc3c_driver PUBLIC
-  objc3c_config
-  objc3c_diag
-  objc3c_diagnostics_modes
-  objc3c_frontend
-  objc3c_io
-)
-if (TARGET objc3c_libclang)
-  target_link_libraries(objc3c_driver PUBLIC
-    objc3c_libclang
-  )
-endif()
+add_subdirectory(driver)
 
 target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
