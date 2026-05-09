@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+from .action_catalog_core_capabilities import CORE_CAPABILITY_ACTION_SPECS
+from .action_catalog_core_linting import CORE_LINTING_ACTION_SPECS
+from .action_catalog_core_source_hygiene import CORE_SOURCE_HYGIENE_ACTION_SPECS
+from .action_catalog_core_superclean import CORE_SUPERCLEAN_ACTION_SPECS
 from .action_spec import ActionSpec
 
 CORE_HYGIENE_ACTION_SPECS: dict[str, ActionSpec] = {
-    "lint": ActionSpec("lint", "run the canonical maintainer lint workflow", "runner-internal + task hygiene + site build + markdown format check"),
-    "check-dependency-boundaries": ActionSpec("check-dependency-boundaries", "check strict objc3c dependency boundaries", "python:scripts/check_objc3c_dependency_boundaries.py --strict", validation_tier="repo", guarantee_owner="repo dependency boundaries stay explicit and strict"),
-    "check-llvm-capabilities": ActionSpec("check-llvm-capabilities", "probe llvm capability availability and write the summary artifact", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json", validation_tier="repo", guarantee_owner="llvm capability probe output stays tied to the live toolchain environment"),
-    "check-hosted-llvm-capabilities": ActionSpec("check-hosted-llvm-capabilities", "probe hosted-runner llvm capability availability with llc-unavailable tolerance", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json", validation_tier="ci", guarantee_owner="hosted Windows CI distinguishes missing clang failures from tolerated llc object-emission absence"),
-    "check-release-evidence": ActionSpec("check-release-evidence", "check the generated-only release evidence surface", "python:scripts/check_release_evidence.py", validation_tier="repo", guarantee_owner="release evidence indexes stay coherent and replayable from schemas plus generated tmp artifacts"),
-    "check-source-hygiene-authenticity": ActionSpec("check-source-hygiene-authenticity", "check source-hygiene residue removal, authenticity labeling, and genuine-output provenance against the live enforcement contract", "python:scripts/check_source_hygiene_authenticity.py", validation_tier="repo", guarantee_owner="product truth surfaces, synthetic fixtures, and genuine generated outputs stay mechanically distinguished and fail closed when provenance drifts"),
-    "check-source-hygiene-hard-cutover": ActionSpec("check-source-hygiene-hard-cutover", "scan active source roots for hard-cutover forbidden residue, direct helper exposure, adapter wording, and generated-report residue", "python -m scripts.source_hygiene", validation_tier="repo", guarantee_owner="hard-cutover forbidden strings, direct helper exposure, and tracked generated reports fail closed as active hygiene blockers"),
-    "check-task-hygiene": ActionSpec("check-task-hygiene", "run the task-hygiene gate over package scripts and checked-in roots", "python:scripts/ci/run_task_hygiene_gate.py", validation_tier="repo", guarantee_owner="task hygiene gate remains executable over the live repo script and path surface"),
-    "check-repo-superclean-surface": ActionSpec("check-repo-superclean-surface", "check the build-emitted repo superclean source-of-truth artifact", "python:scripts/check_repo_superclean_surface.py", validation_tier="repo", guarantee_owner="native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact"),
-    "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
+    **CORE_LINTING_ACTION_SPECS,
+    **CORE_CAPABILITY_ACTION_SPECS,
+    "check-release-evidence": CORE_SUPERCLEAN_ACTION_SPECS["check-release-evidence"],
+    **CORE_SOURCE_HYGIENE_ACTION_SPECS,
+    "check-repo-superclean-surface": CORE_SUPERCLEAN_ACTION_SPECS[
+        "check-repo-superclean-surface"
+    ],
+    "validate-repo-superclean": CORE_SUPERCLEAN_ACTION_SPECS[
+        "validate-repo-superclean"
+    ],
 }
+
+__all__ = ["CORE_HYGIENE_ACTION_SPECS"]
