@@ -12,6 +12,7 @@
 #include "parse/objc3_parse_support.h"
 #include "pipeline/dispatch_surface_classification.h"
 #include "pipeline/frontend_concurrency_source_closure_helpers.h"
+#include "pipeline/frontend_control_flow_source_closure_helpers.h"
 #include "pipeline/frontend_executable_metadata_handoff.h"
 #include "pipeline/frontend_metadata_handoff_helpers.h"
 #include "pipeline/frontend_ownership_source_closure_helpers.h"
@@ -3032,172 +3033,6 @@ Objc3RuntimeExportEnforcementSummary BuildRuntimeExportEnforcementSummary(
   return summary;
 }
 
-void CollectControlFlowControlFlowSourceClosureStmtSites(
-    const Stmt *stmt,
-    Objc3FrontendControlFlowControlFlowSourceClosureSummary &summary) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    break;
-  case Stmt::Kind::Assign:
-  case Stmt::Kind::Return:
-  case Stmt::Kind::Expr:
-    break;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt != nullptr) {
-      if (stmt->if_stmt->guard_binding_surface_enabled) {
-        ++summary.guard_binding_sites;
-        summary.guard_binding_clause_sites +=
-            stmt->if_stmt->optional_binding_clause_count;
-      }
-      if (stmt->if_stmt->guard_condition_list_surface_enabled) {
-        summary.guard_boolean_condition_sites +=
-            stmt->if_stmt->guard_boolean_condition_clause_count;
-      }
-      for (const auto &child : stmt->if_stmt->then_body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-      for (const auto &child : stmt->if_stmt->else_body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-    }
-    break;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt != nullptr) {
-      for (const auto &child : stmt->do_while_stmt->body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-    }
-    break;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt != nullptr) {
-      for (const auto &child : stmt->for_stmt->body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-    }
-    break;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt != nullptr) {
-      if (stmt->switch_stmt->match_surface_enabled) {
-        ++summary.match_statement_sites;
-      } else {
-        for (const auto &case_stmt : stmt->switch_stmt->cases) {
-          if (case_stmt.is_default) {
-            ++summary.switch_default_pattern_sites;
-          } else {
-            ++summary.switch_case_pattern_sites;
-          }
-          for (const auto &child : case_stmt.body) {
-            CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-          }
-        }
-        break;
-      }
-      for (const auto &case_stmt : stmt->switch_stmt->cases) {
-        if (case_stmt.is_default) {
-          ++summary.match_default_sites;
-        } else {
-          ++summary.match_case_pattern_sites;
-          switch (case_stmt.match_pattern_kind) {
-          case MatchPatternKind::Wildcard:
-            ++summary.match_wildcard_pattern_sites;
-            break;
-          case MatchPatternKind::LiteralInteger:
-          case MatchPatternKind::LiteralBool:
-          case MatchPatternKind::LiteralNil:
-            ++summary.match_literal_pattern_sites;
-            break;
-          case MatchPatternKind::Binding:
-            ++summary.match_binding_pattern_sites;
-            break;
-          case MatchPatternKind::ResultCase:
-            ++summary.match_result_case_pattern_sites;
-            break;
-          case MatchPatternKind::None:
-            break;
-          }
-        }
-        for (const auto &child : case_stmt.body) {
-          CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-        }
-      }
-    }
-    break;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt != nullptr) {
-      for (const auto &child : stmt->while_stmt->body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-    }
-    break;
-  case Stmt::Kind::Block:
-      case Stmt::Kind::Defer:
-    if (stmt->block_stmt != nullptr) {
-      for (const auto &child : stmt->block_stmt->body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
-      }
-    }
-    break;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    break;
-  }
-}
-
-Objc3FrontendControlFlowControlFlowSourceClosureSummary
-BuildControlFlowControlFlowSourceClosureSummary(
-    const Objc3Program &program,
-    const std::vector<Objc3LexToken> &tokens) {
-  Objc3FrontendControlFlowControlFlowSourceClosureSummary summary;
-  for (const auto &token : tokens) {
-    if (token.kind == Objc3LexTokenKind::KwDefer) {
-      ++summary.defer_keyword_sites;
-    }
-  }
-  for (const auto &fn : program.functions) {
-    for (const auto &stmt : fn.body) {
-      CollectControlFlowControlFlowSourceClosureStmtSites(stmt.get(), summary);
-    }
-  }
-  for (const auto &implementation : program.implementations) {
-    for (const auto &method : implementation.methods) {
-      for (const auto &stmt : method.body) {
-        CollectControlFlowControlFlowSourceClosureStmtSites(stmt.get(), summary);
-      }
-    }
-  }
-  summary.guard_binding_source_supported = true;
-  summary.guard_condition_list_source_supported = true;
-  summary.switch_case_pattern_source_supported = true;
-  summary.defer_statement_source_supported = true;
-  summary.match_statement_source_supported = true;
-  summary.match_wildcard_pattern_source_supported = true;
-  summary.match_literal_pattern_source_supported = true;
-  summary.match_binding_pattern_source_supported = true;
-  summary.match_result_case_pattern_source_supported = true;
-  summary.defer_keyword_reserved = true;
-  summary.defer_fail_closed = false;
-  summary.match_expression_fail_closed = true;
-  summary.guarded_pattern_fail_closed = true;
-  summary.type_test_pattern_fail_closed = true;
-  summary.deterministic_handoff =
-      summary.guard_binding_clause_sites >= summary.guard_binding_sites &&
-      summary.guard_boolean_condition_sites +
-              summary.guard_binding_sites >=
-          summary.guard_binding_sites &&
-      summary.switch_default_pattern_sites <=
-          summary.switch_case_pattern_sites + summary.switch_default_pattern_sites &&
-      summary.match_default_sites <=
-          summary.match_statement_sites + summary.match_default_sites;
-  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key =
-      objc3c::pipeline::orchestration::BuildControlFlowControlFlowSourceClosureReplayKey(summary);
-  return summary;
-}
-
 Objc3FrontendErrorHandlingErrorSourceClosureSummary
 BuildErrorHandlingErrorSourceClosureSummary(const Objc3Program &program,
                                     const std::vector<Objc3LexToken> &tokens) {
@@ -4384,7 +4219,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program),
           result.object_pointer_nullability_generics_summary);
   result.control_flow_control_flow_source_closure_summary =
-      BuildControlFlowControlFlowSourceClosureSummary(
+      objc3c::pipeline::orchestration::BuildControlFlowControlFlowSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
   result.error_handling_error_source_closure_summary =
       BuildErrorHandlingErrorSourceClosureSummary(
