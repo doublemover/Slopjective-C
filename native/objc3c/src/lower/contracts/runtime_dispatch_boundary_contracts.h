@@ -1,8 +1,20 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
-#include "lower/objc3_lowering_contract.h"
+#include "lower/contracts/runtime_dispatch_lowering_contracts.h"
+
+struct Objc3LoweringContract {
+  std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;
+  std::string runtime_dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+};
+
+struct Objc3LoweringIRBoundary {
+  std::size_t runtime_dispatch_arg_slots = kObjc3RuntimeDispatchDefaultArgs;
+  std::string runtime_dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+  std::string selector_global_ordering = kObjc3SelectorGlobalOrdering;
+};
 
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
