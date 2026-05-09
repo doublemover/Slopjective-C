@@ -62,6 +62,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_block_literal_source.cpp
   ../parser/frontend/objc3_parser_type_projection.cpp
   objc3_parser_core.cpp
+  objc3_parser_core_inline_asm_finalizers.cpp
   objc3_parser_cstyle_type_classifier.cpp
   objc3_parser_cstyle_type_parser.cpp
   objc3_parser_cursor.cpp
@@ -81,6 +82,7 @@ add_library(objc3c_parse STATIC
   objc3_parser.cpp
   ../parser/frontend/objc3_parser_type_projection.h
   objc3_parser_contract_types.h
+  objc3_parser_core_inline_asm_finalizers.h
 )
 objc3c_apply_build_defaults(objc3c_parse)
 objc3c_apply_llvm_direct_config(objc3c_parse)
