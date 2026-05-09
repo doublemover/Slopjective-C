@@ -555,7 +555,7 @@
         "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
         "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json"
       ],
-      "retired_disposition": "generated contract artifacts are resolved through generated-boundary provenance owner splits before any manifest row is cited; generated inventory, canonical fixture truth pointers, strict rejection, report-only generated output, replay packets, generator labels, and validation outputs cannot introduce behavior support or compatibility acceptance"
+      "retired_disposition": "generated contract artifacts are resolved through generated-boundary provenance owner splits before any manifest row is cited; generated inventory, canonical fixture truth pointers, fixture generation metadata, strict rejection, report-only generated output, migration-only generated output, replay packets, generator labels, validation outputs, generated-output-only rows, generator-output-only rows, and validation-packet-only rows cannot introduce behavior support or compatibility acceptance"
     },
     {
       "family": "generated_boundary_owner_split_indexes",
@@ -571,16 +571,20 @@
         "generated_inventory",
         "canonical_fixture_truth",
         "strict_rejection",
-        "report_only_generated_output"
+        "report_only_generated_output",
+        "fixture_generation_metadata",
+        "migration_only_generated_output"
       ],
       "index_evidence": [
         "tests/fixtures/generated/behavior_owner_splits/index.json",
         "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
         "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
         "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
-        "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json"
+        "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json",
+        "tests/fixtures/generated/behavior_owner_splits/fixture_generation_metadata.json",
+        "tests/fixtures/generated/behavior_owner_splits/migration_only_generated_output.json"
       ],
-      "retired_disposition": "generated inventory rows, manifest paths, replay packets, generator labels, validation outputs, report-only artifacts, and generated-output-only claims are provenance-only; canonical fixture truth remains in tests/native and behavior owner indexes, while old-mode, shim, fallback, compatibility, unsupported, alternate-acceptance, report-only, and generator-output-only claims remain strict rejection, canonical rejection, or provenance-only evidence"
+      "retired_disposition": "generated inventory rows, manifest paths, replay packets, generator labels, fixture generation metadata, validation outputs, report-only artifacts, generated-output-only claims, generator-output-only claims, migration-only rows, replay-only rows, and validation-packet-only rows are provenance-only; canonical fixture truth remains in tests/native and behavior owner indexes, while old-mode, shim, fallback, compatibility, unsupported, alternate-acceptance, report-only, generated-output-only, generator-output-only, migration-only, replay-only, and validation-packet-only claims remain strict rejection, canonical rejection, absent-support, or provenance-only evidence"
     },
     {
       "family": "generated_replay_owner_split_indexes",
@@ -613,7 +617,7 @@
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json",
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/generated_replay_provenance.json"
       ],
-      "retired_disposition": "generated replay artifacts under tests/tooling/fixtures/objc3c are resolved through behavior-first phase indexes and generated replay provenance before any replay path is cited; replay packets, module.ll outputs, module.manifest.json outputs, generator labels, validation outputs, generated-only rows, report-only rows, migration-only rows, runtime dispatch fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance path names remain canonical rejection, strict-error, or provenance-only evidence rather than positive behavior truth"
+      "retired_disposition": "generated replay artifacts under tests/tooling/fixtures/objc3c are resolved through behavior-first phase indexes, generated inventory provenance, fixture generation metadata, migration-only generated output, and generated replay provenance before any replay path is cited; replay packets, module.ll outputs, module.manifest.json outputs, generator labels, validation outputs, generated-only rows, generated-output-only rows, generator-output-only rows, report-only rows, migration-only rows, replay-only rows, validation-packet-only rows, runtime dispatch fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance path names remain canonical rejection, strict-error, absent-support, or provenance-only evidence rather than positive behavior truth"
     },
     {
       "family": "tooling_native_execution_metadata",
@@ -1192,6 +1196,8 @@
     "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
     "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
     "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json",
+    "tests/fixtures/generated/behavior_owner_splits/fixture_generation_metadata.json",
+    "tests/fixtures/generated/behavior_owner_splits/migration_only_generated_output.json",
     "tests/tooling/fixtures/native/owner_splits/index.json",
     "tests/tooling/fixtures/native/owner_splits/parser.json",
     "tests/tooling/fixtures/native/owner_splits/sema.json",

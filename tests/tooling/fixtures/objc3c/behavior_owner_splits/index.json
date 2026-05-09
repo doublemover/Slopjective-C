@@ -4,11 +4,12 @@
   "source_root": "tests/tooling/fixtures/objc3c",
   "source_manifest": "tests/fixtures/generated/manifest.json",
   "split_policy": {
-    "primary_axis": "behavior phase before validation contract directory name",
+    "primary_axis": "behavior phase before validation contract directory name, fixture generation metadata, replay packet, generated module output, generated manifest output, report-only row, migration-only row, or generated-output-only row",
     "generated_rule": "all replay contracts under this root are provenance-only and have no phase support claim authority",
     "positive_rule": "generated replay artifacts can only point back to canonical behavior owners; they never define positive parser, sema, lowering, IR, runtime, or e2e behavior by themselves",
-    "provenance_rule": "replay packets, generator labels, module.ll outputs, module.manifest.json outputs, report-only rows, generated-only rows, and migration-only rows stay generated replay provenance unless a canonical hand-authored fixture owner separately owns behavior",
-    "retired_surface_rule": "runtime dispatch fallback, shim, compatibility, old-mode, unsupported, generated-only, report-only, migration-only, and alternate acceptance path replay names are canonical rejection, strict-error, or provenance-only evidence"
+    "provenance_rule": "replay packets, generator labels, fixture generation metadata, generated module.ll outputs, generated module.manifest.json outputs, validation payload rows, report-only rows, generated-only rows, generated-output-only rows, generator-output-only rows, and migration-only rows stay generated replay provenance unless a canonical hand-authored fixture owner separately owns behavior",
+    "retired_surface_rule": "runtime dispatch fallback, shim, compatibility, old-mode, unsupported, generated-only, report-only, migration-only, generated-output-only, generator-output-only, replay-only, validation-packet-only, and alternate acceptance path replay names are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser, sema, lowering, IR, runtime, and e2e owners only route generated replay evidence to canonical hand-authored truth; fixture generation metadata, generated outputs, manifest outputs, report rows, replay packets, and migration rows remain separate provenance classes"
   },
   "owner_splits": [
     {

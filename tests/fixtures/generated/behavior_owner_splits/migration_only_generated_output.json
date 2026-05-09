@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-boundary-provenance-owner-split",
+  "owner_boundary": "migration_only_generated_output",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "migration-only generated output covers migration lanes, generated-output-only artifacts, report-only artifacts, replay-only packets, validation-packet-only rows, generator-output-only rows, and compatibility-shaped generated rows as provenance or rejection only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "*migration-only*",
+    "*migration_only*",
+    "*generated-output-only*",
+    "*generated_output_only*",
+    "*generator-output-only*",
+    "*report-only*",
+    "*report_only*",
+    "*replay-only*",
+    "*validation-packet-only*",
+    "*generated-only*",
+    "*generated_only*",
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*",
+    "*compatibility*",
+    "validation_*/M*.json",
+    "validation_*/replay_run_*/module.ll",
+    "validation_*/replay_run_*/module.manifest.json",
+    "fixtures[].behavior_boundary=generated-provenance-only",
+    "fixtures[].phase_support_claim_authority=false"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "migration-only, generated-output-only, generator-output-only, report-only, replay-only, validation-packet-only, old-mode, shim, fallback, and compatibility generated rows remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

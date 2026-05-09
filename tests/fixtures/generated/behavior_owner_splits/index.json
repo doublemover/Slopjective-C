@@ -8,11 +8,13 @@
     "tests/conformance/hard_cutover_fixture_family_owner_index.json"
   ],
   "split_policy": {
-    "primary_axis": "generated provenance role before replay directory, generator label, report output, or fixture basename",
+    "primary_axis": "generated provenance role before replay directory, generator label, fixture generation metadata, report output, migration-only row, generated-output-only row, or fixture basename",
     "positive_rule": "generated inventory rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; they may only point at canonical fixture truth owned elsewhere",
     "canonical_truth_rule": "canonical behavior truth remains in tests/native and behavior owner indexes, not generated artifacts",
-    "report_only_rule": "generated reports, replay packets, manifest entries, generator paths, and validation outputs are provenance-only until canonical behavior owners claim support",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, report-only, generated-output-only, and generator-output-only claims are strict rejection, canonical rejection, or provenance-only evidence"
+    "report_only_rule": "generated reports, replay packets, manifest entries, generator paths, validation outputs, generated-output-only rows, migration-only rows, and fixture generation metadata are provenance-only until canonical behavior owners claim support",
+    "fixture_generation_metadata_rule": "origin, generator, provenance, allowed path roots, hand-edit policy, source-of-truth labels, validation payload ids, replay run labels, and phase-support-authority flags are fixture generation metadata and cannot define behavior",
+    "migration_only_rule": "migration-only, generated-output-only, report-only, replay-only, validation-packet-only, and generator-output-only rows stay provenance or rejection even when they reference canonical fixture paths",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, report-only, generated-output-only, generator-output-only, migration-only, replay-only, and validation-packet-only claims are strict rejection, canonical rejection, or provenance-only evidence"
   },
   "owner_splits": [
     {
@@ -30,6 +32,14 @@
     {
       "owner_boundary": "report_only_generated_output",
       "path": "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json"
+    },
+    {
+      "owner_boundary": "fixture_generation_metadata",
+      "path": "tests/fixtures/generated/behavior_owner_splits/fixture_generation_metadata.json"
+    },
+    {
+      "owner_boundary": "migration_only_generated_output",
+      "path": "tests/fixtures/generated/behavior_owner_splits/migration_only_generated_output.json"
     }
   ]
 }
