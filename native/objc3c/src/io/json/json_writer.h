@@ -19,6 +19,7 @@ class JsonObjectWriter {
 
   void StringField(std::string_view name, std::string_view value);
   void BoolField(std::string_view name, bool value);
+  void IntField(std::string_view name, std::int64_t value);
   void NumberField(std::string_view name, double value);
   void SizeField(std::string_view name, std::size_t value);
   void UnsignedField(std::string_view name, std::uint64_t value);

@@ -11,6 +11,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "artifacts/json/program_manifest_json.h"
+#include "artifacts/json/runtime_metadata_manifest_json.h"
+#include "artifacts/json/semantic_type_manifest_json.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"

@@ -14,6 +14,9 @@ add_library(objc3c_artifacts STATIC
   json/artifact_json_model.cpp
   json/artifact_json_writer.cpp
   json/artifact_schema_registry.cpp
+  json/program_manifest_json.cpp
+  json/runtime_metadata_manifest_json.cpp
+  json/semantic_type_manifest_json.cpp
   objc3_frontend_artifacts.cpp
 )
 objc3c_apply_build_defaults(objc3c_artifacts)

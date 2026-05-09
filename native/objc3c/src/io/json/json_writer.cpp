@@ -78,6 +78,11 @@ void JsonObjectWriter::BoolField(std::string_view name, bool value) {
   out_ << (value ? "true" : "false");
 }
 
+void JsonObjectWriter::IntField(std::string_view name, std::int64_t value) {
+  BeginField(name);
+  out_ << value;
+}
+
 void JsonObjectWriter::NumberField(std::string_view name, double value) {
   BeginField(name);
   out_ << std::setprecision(17) << value;
