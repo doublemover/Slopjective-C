@@ -18,4 +18,7 @@ when it covers a retired surface, the retired tag used by the behavior harness.
 fixture-contract index for those retired surfaces: it names the owning behavior
 outcome, diagnostic owner, sidecar file, and non-positive disposition for each
 old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature,
-or runtime-dispatch case.
+or runtime-dispatch case. `tests/conformance/hard_cutover_fixture_boundary_contracts.json`
+is the cross-boundary index that keeps this canonical manifest distinct from
+generated provenance, conformance reference anchors, and lexical residue audit
+entries.

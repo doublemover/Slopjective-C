@@ -20,5 +20,6 @@ behavior support. Retired migration lanes and compatibility surfaces are either
 listed in `tests/conformance/hard_cutover_retired_surface_absence.json` as
 rejection or strict-error evidence, cross-checked in
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` against
-their fixture sidecars and diagnostic owners, or marked absent from public
-support.
+their fixture sidecars and diagnostic owners, tied together by
+`tests/conformance/hard_cutover_fixture_boundary_contracts.json`, or marked
+absent from public support.

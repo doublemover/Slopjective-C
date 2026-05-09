@@ -14,6 +14,7 @@
       "kind": "positive",
       "owning_indexes": [
         "tests/fixtures/canonical/manifest.json",
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_fixture_family_owner_index.json",
         "tests/conformance/hard_cutover_behavior_evidence_topology.json"
       ],
@@ -40,6 +41,7 @@
       "outcome": "parser_rejection",
       "kind": "rejection",
       "owning_indexes": [
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/native/retired_surface_matrix.json",
         "tests/conformance/hard_cutover_retired_surface_absence.json"
       ],
@@ -67,6 +69,7 @@
       "outcome": "semantic_rejection",
       "kind": "rejection",
       "owning_indexes": [
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_retired_surface_absence.json",
         "tests/conformance/hard_cutover_acceptance_area_owners.json"
       ],
@@ -93,6 +96,7 @@
       "outcome": "lowering_or_link_strict_error",
       "kind": "strict-error",
       "owning_indexes": [
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/native/retired_surface_matrix.json",
         "tests/conformance/hard_cutover_retired_surface_absence.json",
         "tests/conformance/hard_cutover_behavior_evidence_topology.json"
@@ -119,6 +123,7 @@
       "outcome": "runtime_strict_error",
       "kind": "strict-error",
       "owning_indexes": [
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/native/retired_surface_matrix.json",
         "tests/conformance/hard_cutover_acceptance_area_owners.json"
       ],
@@ -171,6 +176,7 @@
       "kind": "negative-execution",
       "owning_indexes": [
         "tests/fixtures/canonical/manifest.json",
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_behavior_evidence_topology.json"
       ],
       "owning_issues": [
@@ -192,6 +198,7 @@
       "kind": "provenance-only",
       "owning_indexes": [
         "tests/fixtures/generated/manifest.json",
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_fixture_family_owner_index.json"
       ],
       "owning_issues": [
@@ -209,7 +216,8 @@
       "outcome": "positive_residue_false_positive",
       "kind": "audit-disposition",
       "owning_indexes": [
-        "tests/conformance/hard_cutover_positive_residue_audit.json"
+        "tests/conformance/hard_cutover_positive_residue_audit.json",
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
       ],
       "owning_issues": [
         "#8144",
@@ -220,6 +228,7 @@
         "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
         "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
         "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
+        "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
         "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
         "tests/tooling/fixtures/native/optional_binding_send_coalescing_keypath_positive.objc3",
         "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
@@ -285,6 +294,7 @@
     "tests/conformance/hard_cutover_acceptance_area_owners.json",
     "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+    "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
     "tests/conformance/hard_cutover_retired_surface_absence.json",
     "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",

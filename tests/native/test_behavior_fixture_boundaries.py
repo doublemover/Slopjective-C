@@ -40,6 +40,9 @@ RETIRED_SURFACE_CONTRACT_INDEX = (
 POSITIVE_RESIDUE_AUDIT = (
     ROOT / "tests" / "conformance" / "hard_cutover_positive_residue_audit.json"
 )
+FIXTURE_BOUNDARY_CONTRACTS = (
+    ROOT / "tests" / "conformance" / "hard_cutover_fixture_boundary_contracts.json"
+)
 STRICT_REJECTION_NAME_SUFFIXES = (
     "_rejected.objc3",
     "_strict_error.objc3",
@@ -262,6 +265,9 @@ def test_canonical_fixture_manifest_matches_native_behavior_catalog() -> None:
     assert canonical_boundary["retired_surface_policy"] == (
         "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata"
     )
+    assert canonical_boundary["boundary_contract_index"] == (
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
+    )
 
 
 def test_canonical_and_generated_fixture_paths_are_disjoint() -> None:
@@ -287,6 +293,9 @@ def test_generated_fixture_manifest_is_provenance_only() -> None:
     assert "not canonical behavior expectations" in generated_boundary["hand_edit_policy"]
     assert generated_boundary["positive_fixture_policy"] == (
         "generated artifacts never define positive native behavior"
+    )
+    assert generated_boundary["boundary_contract_index"] == (
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
     )
     generated_allowed_roots = tuple(ROOT / root for root in generated_boundary["allowed_path_roots"])
 
@@ -387,7 +396,7 @@ def test_positive_residue_outcome_index_uses_documented_false_positive_paths() -
         for entry in outcome_index["outcomes"]
         if entry["outcome"] == "positive_residue_false_positive"
     )
-    assert set(residue_outcome["evidence"]).issubset(documented_paths)
+    assert set(residue_outcome["evidence"]) == documented_paths
 
 
 def test_generated_manifest_cannot_reference_native_behavior_or_retired_support() -> None:
@@ -655,6 +664,84 @@ def test_behavior_outcome_index_partitions_positive_rejection_and_provenance() -
         path = ROOT / relative_path
         assert path.is_file(), relative_path
         assert not path.is_relative_to(NATIVE_ROOT)
+
+
+def test_fixture_boundary_contract_index_links_all_boundary_families() -> None:
+    contracts = _load_json(FIXTURE_BOUNDARY_CONTRACTS)
+    catalog = _load_json(ROOT / "tests" / "conformance" / "hard_cutover_catalog.json")
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+    generated_paths = {
+        entry["path"] for entry in load_manifest_fixture_entries(FIXTURE_ROOT / "generated" / "manifest.json")
+    }
+    families = {entry["family"]: entry for entry in contracts["contract_families"]}
+
+    assert contracts["catalog"] == "objc3-hard-cutover-fixture-boundary-contracts"
+    assert catalog["policy"]["fixture_boundary_contracts"] == (
+        FIXTURE_BOUNDARY_CONTRACTS.relative_to(ROOT).as_posix()
+    )
+    assert contracts["manifests"]["canonical_behavior"]["path"] == (
+        FIXTURE_ROOT / "canonical" / "manifest.json"
+    ).relative_to(ROOT).as_posix()
+    assert contracts["manifests"]["canonical_behavior"]["positive_support"] is True
+    assert contracts["manifests"]["generated_provenance"]["path"] == (
+        FIXTURE_ROOT / "generated" / "manifest.json"
+    ).relative_to(ROOT).as_posix()
+    assert contracts["manifests"]["generated_provenance"]["positive_support"] is False
+
+    canonical = families["canonical_positive_behavior"]
+    assert canonical["positive_support"] is True
+    for relative_path in canonical["evidence"]:
+        fixture = behavior_by_path[relative_path]
+        assert fixture.fixture_kind == "positive"
+        assert not fixture.retired_surface_tags
+
+    retired = families["retired_surface_rejection_and_strict_error"]
+    assert retired["positive_support"] is False
+    for relative_path in retired["evidence"]:
+        fixture = behavior_by_path[relative_path]
+        assert fixture.fixture_kind in STRICT_KINDS
+        assert fixture.expected_diagnostic_code
+
+    generated = families["generated_provenance_only"]
+    assert generated["positive_support"] is False
+    assert set(generated["evidence"]) == generated_paths
+    for relative_path in generated["evidence"]:
+        path = ROOT / relative_path
+        assert path.is_file(), relative_path
+        assert not path.is_relative_to(NATIVE_ROOT)
+
+    lexical = families["tooling_positive_lexical_residue_audit"]
+    audit_paths = {
+        hit["path"] for hit in _load_json(POSITIVE_RESIDUE_AUDIT)["documented_lexical_positive_hits"]
+    }
+    assert set(lexical["evidence"]).issubset(audit_paths)
+
+
+def test_fixture_boundary_contract_reference_anchors_are_provenance_only() -> None:
+    contracts = _load_json(FIXTURE_BOUNDARY_CONTRACTS)
+    families = {entry["family"]: entry for entry in contracts["contract_families"]}
+    reference_family = families["conformance_reference_anchors"]
+    anchor_token = reference_family["anchor_token"]
+    canonical_paths = {
+        entry["path"] for entry in load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
+    }
+    roots = [ROOT / root for root in reference_family["roots"]]
+
+    assert reference_family["positive_support"] is False
+    assert reference_family["contract"] == "reference-provenance-only"
+    assert anchor_token == "docs/reference/legacy_spec_anchor_index.md"
+
+    anchored_files = {
+        path
+        for root in roots
+        for path in root.rglob("*.json")
+        if anchor_token in path.read_text(encoding="utf-8")
+    }
+    assert anchored_files
+    for path in anchored_files:
+        relative_path = path.relative_to(ROOT).as_posix()
+        assert relative_path not in canonical_paths
+        assert path.is_relative_to(ROOT / "tests" / "conformance")
 
 
 def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:

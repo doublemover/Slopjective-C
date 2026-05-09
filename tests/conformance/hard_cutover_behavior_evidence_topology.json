@@ -219,6 +219,7 @@
     "tests/conformance/hard_cutover_acceptance_area_owners.json",
     "tests/conformance/hard_cutover_retired_surface_absence.json",
     "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+    "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",
     "docs/issues/hard_cutover_8132_8150_evidence.json",
     "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"

@@ -57,6 +57,10 @@ Machine-readable indexes:
 - `tests/conformance/hard_cutover_fixture_family_owner_index.json` (fixture-family
   ownership index separating canonical positives, retired-surface rejection,
   generated provenance, tooling metadata, and issue closeout artifacts)
+- `tests/conformance/hard_cutover_fixture_boundary_contracts.json` (boundary
+  contract index tying canonical behavior, generated provenance, retired
+  surfaces, reference anchors, and lexical residue dispositions to their owner
+  indexes)
 - `tests/conformance/hard_cutover_behavior_outcome_owner_index.json` (behavior
   outcome ownership index separating canonical support, rejection, strict-error,
   generated provenance, residue-audit, and closeout-only evidence)

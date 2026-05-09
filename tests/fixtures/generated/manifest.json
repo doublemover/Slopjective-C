@@ -8,7 +8,8 @@
       "tests/tooling/fixtures/objc3c"
     ],
     "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations",
-    "positive_fixture_policy": "generated artifacts never define positive native behavior"
+    "positive_fixture_policy": "generated artifacts never define positive native behavior",
+    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
   },
   "fixtures": [
     {
