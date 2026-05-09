@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "objc3c_frontend_version.h"
+
 /*
  * Deterministic stage identifiers for per-stage summaries in compile results.
  * This header owns caller-visible diagnostic summary metadata; detailed
@@ -48,5 +50,27 @@ typedef struct objc3c_frontend_stage_summary {
   uint32_t diagnostics_errors;
   uint32_t diagnostics_fatals;
 } objc3c_frontend_stage_summary_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Public validation helpers for by-value stage summaries. They do not inspect
+ * transient diagnostic storage; they validate only the caller-visible record.
+ */
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_stage_summary_is_well_formed(
+    const objc3c_frontend_stage_summary_t *summary,
+    objc3c_frontend_stage_id_t expected_stage);
+/* Returns non-zero when the summary records one or more diagnostics. */
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_stage_summary_has_diagnostics(
+    const objc3c_frontend_stage_summary_t *summary);
+/* Returns non-zero when the summary records error or fatal diagnostics. */
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_stage_summary_has_errors(
+    const objc3c_frontend_stage_summary_t *summary);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif  // OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_DIAGNOSTIC_H_

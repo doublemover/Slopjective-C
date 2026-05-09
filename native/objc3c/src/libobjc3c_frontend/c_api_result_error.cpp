@@ -3,12 +3,11 @@
 extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
 objc3c_frontend_c_result_error_message(
     const objc3c_frontend_c_compile_result_t *result) {
-  return result == nullptr ? nullptr : result->error_message;
+  return objc3c_frontend_result_error_message(result);
 }
 
 extern "C" OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t
 objc3c_frontend_c_result_error_message_view(
     const objc3c_frontend_c_compile_result_t *result) {
-  return objc3c_frontend_c_string_view(
-      objc3c_frontend_c_result_error_message(result));
+  return objc3c_frontend_result_error_message_view(result);
 }
