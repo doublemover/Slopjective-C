@@ -4,6 +4,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_compile_options.cpp
   objc3c_frontend_c_api_runner_compile_session.cpp
   objc3c_frontend_c_api_runner_context.cpp
+  objc3c_frontend_c_api_runner_diagnostic_totals.cpp
   objc3c_frontend_c_api_runner_dump_actions.cpp
   objc3c_frontend_c_api_runner_dump_emitter.cpp
   objc3c_frontend_c_api_runner_dump_options.cpp
@@ -27,8 +28,10 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_session.cpp
   objc3c_frontend_c_api_runner_session_output.cpp
   objc3c_frontend_c_api_runner_shell_quote.cpp
+  objc3c_frontend_c_api_runner_stage_selection.cpp
+  objc3c_frontend_c_api_runner_stage_shape.cpp
   objc3c_frontend_c_api_runner_stage_trace_json.cpp
-  objc3c_frontend_c_api_runner_stage_report.cpp
+  objc3c_frontend_c_api_runner_status_mapping.cpp
   objc3c_frontend_c_api_runner_summary_io.cpp
   objc3c_frontend_c_api_runner_summary_json.cpp
   objc3c_frontend_c_api_runner_summary_path.cpp
