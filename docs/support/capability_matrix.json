@@ -27,7 +27,7 @@
     "Rejected and reserved rows are diagnostic or documentation truth, not alternate acceptance paths.",
     "Internal rows can name source, schema, workflow, or report owners without widening language support.",
     "Publicly replayable commands must use npm run objc3c -- <action>.",
-    "Docs, spec, and site content must not advertise shims, fallbacks, migration lanes, or compatibility modes as supported surfaces."
+    "Docs, spec, and site content must not advertise shims, fallbacks, migration lanes, or compatibility modes as supported surfaces; future support rows must use canonical feature names with evidence instead of reviving those labels."
   ],
   "capabilities": [
     {

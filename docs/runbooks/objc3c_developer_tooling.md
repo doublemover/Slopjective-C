@@ -151,7 +151,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - live capability-explorer probe contract:
   - `npm run objc3c -- inspect-capability-explorer`
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
-  - `capability_demo_compatibility`
+  - `capability_demo_consistency`
   - `stdlib/program_surface.json`
   - `showcase/portfolio.json`
 - downstream work must treat those runtime-emitted facts as authoritative over

@@ -94,16 +94,16 @@ Use the shortest path that matches what you are trying to do.
 | inspect the checked-in stdlib surface                           | [stdlib/README.md](stdlib/README.md)                                                             | then follow the core, advanced, and program runbooks                                                            |
 | follow the runnable tutorial path                               | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md)                           | compile one example first, then use the showcase surface                                                        |
 | pick the right capability-backed example first                  | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                         |
-| map ObjC2 habits onto canonical ObjC3 or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                 |
+| convert ObjC2 habits into canonical ObjC3 examples or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                 |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations         | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                      |
 | evaluate adoption and support claims                            | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
 | inspect performance surfaces                                    | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                       |
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
-| contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use the mapped package scripts                                          |
+| contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use the single npm bridge                                               |
 | inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
-| run exact package-script workflows                              | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                            |
+| run exact public workflow actions                               | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                            |
 | evaluate support status and evidence                            | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence before relying on a support claim                                         |
 
 Documentation boundary:
@@ -303,8 +303,8 @@ For the exact backend and artifact contract, use
 
 ## Public Command Surface
 
-Use package scripts for normal work. The public surface is now large and
-purpose-specific, so use the generated appendix for the full map.
+Use the single npm bridge for normal work. The public surface is now large and
+purpose-specific, so use the generated appendix for the full action map.
 
 Common entrypoints by job:
 
@@ -369,7 +369,7 @@ Language parts:
 | Part                                                            | Focus                                                    |
 | --------------------------------------------------------------- | -------------------------------------------------------- |
 | [Part 0](https://doublemover.github.io/Slopjective-C/#part-0)   | Baseline rules, terminology, and normative references    |
-| [Part 1](https://doublemover.github.io/Slopjective-C/#part-1)   | Versioning, compatibility, and conformance claims        |
+| [Part 1](https://doublemover.github.io/Slopjective-C/#part-1)   | Versioning, support states, and conformance claims       |
 | [Part 2](https://doublemover.github.io/Slopjective-C/#part-2)   | Modules, namespacing, and public API surfaces            |
 | [Part 3](https://doublemover.github.io/Slopjective-C/#part-3)   | Types, nullability, optionals, generics, and key paths   |
 | [Part 4](https://doublemover.github.io/Slopjective-C/#part-4)   | Ownership, retainable objects, and lifetime rules        |

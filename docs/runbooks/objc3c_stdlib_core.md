@@ -144,7 +144,7 @@ modules without updating the checked-in architecture contract.
 - text/data helpers preserve the caller-provided counts instead of claiming
   allocation, ownership, or transcoding semantics, and prefix helpers clamp to
   the caller-provided count instead of widening it
-- text/data shape diagnostics return `0` on compatible shapes and
+- text/data shape diagnostics return `0` on matching shapes and
   stable mismatch codes `30602` and `30603` for error-bridge and keypath
   shape failures
 - module semver metadata stays `1.0.0` for the initial core stdlib surface

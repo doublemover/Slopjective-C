@@ -50,7 +50,7 @@ Use these roots directly when cleaning or renaming repo surfaces:
   - `artifacts/`
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` is the build-emitted source-of-truth artifact for the repo superclean surface
 
-Do not add milestone-specific wrappers, sidecar compatibility files, or
+Do not add milestone-specific wrappers, sidecar support-status files, or
 parallel source-of-truth copies when changing these surfaces.
 
 Contributor-facing entrypoint:
@@ -151,13 +151,13 @@ Release-operations entrypoint:
 
 - `docs/runbooks/objc3c_release_operations.md` is the maintainer boundary for
   semantic versioning claims, support windows, update-manifest publication,
-  compatibility warnings, rollback guidance, and release-operations metadata
+  support warnings, rollback guidance, and release-operations metadata
 - release-operations work must stay on the existing release-foundation,
   packaging-channel, and `npm run objc3c -- <action>` bridge surfaces instead of inventing a
   hosted updater, second payload lineage, or package-manager-only upgrade flow
 - use the public runner actions for release-operations source checking, schema
   checking, update-manifest derivation, publication, and end-to-end validation
-  before widening compatibility or deprecation claims
+  before widening support-window or deprecation claims
 
 Runtime-performance entrypoint:
 
@@ -220,11 +220,11 @@ Public-conformance-reporting entrypoint:
 Standard-library entrypoint:
 
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
-  the checked-in stdlib root, canonical module inventory, alias mapping, and
+  the checked-in stdlib root, canonical module inventory, module-name mapping, and
   machine-owned stdlib workspace materialization flow
 - `docs/runbooks/objc3c_stdlib_core.md` is the maintainer boundary for the
   core stdlib utility, text/data, collection, option, and result family split
-- `stdlib/semantic_policy.json` is the checked-in compatibility contract for
+- `stdlib/semantic_policy.json` is the checked-in semantic stability contract for
   stable helper meaning and module semver across the core stdlib surface
 - stdlib work must stay on `stdlib/`, `tmp/artifacts/stdlib/`, and
   `tmp/reports/stdlib/` instead of inventing a second library tree or sidecar

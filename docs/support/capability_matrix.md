@@ -32,9 +32,10 @@ Command and evidence truth is hard-cut to the current surfaces:
   headers under `native/objc3c/src/runtime/public/`.
 - Shared JSON/schema claims are owned by checked-in schema files and the native
   `objc3c_json` / artifact JSON modules, not by prose-only summaries.
-- The hard-cutover matrix explicitly rejects shims, fallback paths, migration
-  lanes, direct helper commands, and compatibility-mode claims as public support
-  surfaces unless a row marks the behavior implemented with evidence.
+- The hard-cutover matrix rejects shims, fallback paths, migration lanes,
+  direct helper commands, and compatibility-mode labels as public support
+  surfaces. Future rows must use canonical feature names with evidence, not
+  revive those labels.
 
 | Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
 | ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -67,6 +68,7 @@ Command rule:
   evidence owners, but public docs must not present them as user-facing command
   surface.
 - Compatibility shims, fallback paths, migration lanes, old modes, and
-  prose-only capability claims are not alternate support states.
+  prose-only capability claims are not alternate support states and must not be
+  renamed into supported paths.
 
 Schema examples live in `docs/support/capability_schema_examples.md`.

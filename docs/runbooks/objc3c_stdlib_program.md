@@ -47,10 +47,10 @@ of inventing a second examples tree inside `stdlib/`.
 - only capabilities backed by checked-in compile and shared validation flows may
   be presented as runnable-now stories
 - not-yet-runnable capabilities must be framed as actor-shaped comparison or
-  migration guidance rather than runnable parity claims
+  canonical conversion guidance rather than runnable parity claims
 - the `package.json` bridge, `npm run objc3c -- <action>`, remains the
   authoritative command truth
-- `tmp/` artifacts and legacy redirects may not become the primary onboarding
+- `tmp/` artifacts and archived redirects may not become the primary onboarding
   route
 
 ## Exact Live Implementation Paths
@@ -84,7 +84,7 @@ of inventing a second examples tree inside `stdlib/`.
   interop
   - stdlib follow-up modules: `objc3.keypath`, `objc3.system`
 - `docs/tutorials/getting_started.md` for the first runnable reader path
-- `docs/tutorials/objc2_swift_cpp_comparison.md` for migration and comparison
+- `docs/tutorials/objc2_swift_cpp_comparison.md` for conversion and comparison
   framing
 - `stdlib/README.md` for the checked-in stdlib surface behind those same stories
 
