@@ -17,7 +17,8 @@
     "ir",
     "runtime",
     "e2e",
-    "canonical_rejection"
+    "canonical_rejection",
+    "public_conformance_provenance"
   ],
   "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
   "schema_surface": "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
@@ -36,6 +37,7 @@
     "report_only_allowed": false,
     "behavior_owner_split_required": true,
     "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
     "owned_actions": [
       "check-public-conformance-reporting-surface",
       "check-public-conformance-schema-surface",
@@ -45,6 +47,12 @@
       "validate-public-conformance-reporting-integration",
       "validate-public-conformance-reporting-end-to-end"
     ]
+  },
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before public reporting source family, schema anchor, workflow action, generated report, tmp artifact, scorecard, badge, release-evidence bundle, dashboard status, or public claim language",
+    "support_authority": "public conformance reporting rows are source, schema, workflow, stability, report, dashboard, scorecard, badge, and claim-language evidence only until parser, sema, lowering, IR, runtime, or e2e owners in upstream checked-in evidence families claim behavior",
+    "provenance_rule": "schemas, release-evidence bundles, workflow actions, generated summaries, tmp reports, tmp artifacts, scorecards, badges, public summaries, public status labels, and claim-language rows cannot define canonical behavior support",
+    "retired_surface_rule": "report-only, generated-only, generated-report-only, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, shim, old-mode, fallback, unsupported, and missing-upstream rows are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
@@ -106,8 +114,8 @@
       "behavior_owner_phases": [
         "ir",
         "e2e",
-        "provenance",
-        "canonical_rejection"
+        "canonical_rejection",
+        "public_conformance_provenance"
       ],
       "coverage_goal": "public status and scorecard claims must remain anchored to checked-in dashboard and release-evidence schemas",
       "source_paths": [

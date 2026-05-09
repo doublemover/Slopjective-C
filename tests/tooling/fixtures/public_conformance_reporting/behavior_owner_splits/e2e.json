@@ -4,7 +4,7 @@
   "owner_phase": "e2e",
   "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
   "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
-  "support_boundary": "e2e ownership covers public conformance workflow routing, integration validation, scorecard publication, and public summary publication only after upstream behavior owners and fail-closed policy pass",
+  "support_boundary": "e2e ownership covers public conformance workflow routing, integration validation, scorecard publication, and public summary publication only after upstream behavior owners and fail-closed policy pass; workflow labels, generated summaries, tmp artifacts, badges, scorecards, and public statuses are routing/provenance without upstream behavior support",
   "phase_support_claim_authority": false,
   "selectors": [
     "owner_policy:owned_actions=validate-public-conformance-reporting",
@@ -17,5 +17,5 @@
     "capability_truth_language:blocked"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "workflow-label-only success, report-only public readiness, generated-summary-only readiness, and provisional or blocked artifacts promoted as claim-ready are canonical rejection or provenance-only evidence"
+  "retired_surface_rule": "workflow-label-only success, wrapper-only workflow success, report-only public readiness, generated-only readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, old-mode commands, shim workflows, fallback workflows, compatibility workflows, and provisional or blocked artifacts promoted as claim-ready are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

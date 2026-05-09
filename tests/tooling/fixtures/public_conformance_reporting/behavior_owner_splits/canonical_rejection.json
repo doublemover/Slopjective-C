@@ -4,7 +4,7 @@
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
   "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
-  "support_boundary": "public conformance rows that mention report-only support, generated-report-only support, dashboard-only support, tmp artifact support, provisional-as-claim-ready promotion, blocked/quarantined evidence promotion, compatibility, shim, old-mode, fallback, unsupported, or missing upstream evidence are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "public conformance rows that mention report-only support, generated-only support, generated-report-only support, dashboard-only support, scorecard-only support, badge-only support, tmp artifact support, tmp-artifact-only support, workflow-label-only support, provisional-as-claim-ready promotion, blocked/quarantined evidence promotion, compatibility, shim, old-mode, fallback, unsupported, or missing upstream evidence are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "owner_policy:report_only_allowed=false",
@@ -18,6 +18,7 @@
     "fail_closed_conditions:public reporting cannot promote quarantined or blocked evidence into claim-ready status",
     "capability_truth_rules:provisional means publishable with explicit deductions and caution status",
     "capability_truth_rules:blocked means the public artifact must report blocked and cannot imply conformance readiness",
+    "fail_closed_behavior_boundary:provisional, blocked, quarantined, missing-upstream, report-only, generated-only, generated-report-only, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, fallback, shim, old-mode, compatibility, and unsupported public claims cannot be promoted to claim-ready support",
     "*fallback*",
     "*shim*",
     "*old_mode*",
@@ -26,12 +27,26 @@
     "*legacy*",
     "*unsupported*",
     "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*",
     "*generated-report*",
     "*dashboard-only*",
+    "*dashboard_only*",
+    "*scorecard-only*",
+    "*scorecard_only*",
+    "*badge-only*",
+    "*badge_only*",
+    "*tmp-artifact-only*",
+    "*tmp_artifact_only*",
+    "*workflow-label-only*",
+    "*workflow_label_only*",
     "*provisional-as-claim-ready*",
     "*blocked-as-claim-ready*",
-    "*quarantined*"
+    "*quarantined*",
+    "*missing-upstream*",
+    "*missing_upstream*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "report-only, generated-report-only, dashboard-only, tmp-artifact-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, shim, old-mode, fallback, unsupported, and missing-upstream-evidence claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "report-only, generated-only, generated-report-only, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, shim, old-mode, fallback, unsupported, and missing-upstream-evidence claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }
