@@ -160,6 +160,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_runtime_registration_plan.h
   objc3_frontend_artifact_runtime_support_library_metadata.cpp
   objc3_frontend_artifact_runtime_support_library_metadata.h
+  objc3_frontend_artifact_semantic_closure_metadata.cpp
+  objc3_frontend_artifact_semantic_closure_metadata.h
   objc3_frontend_artifact_source_shape_plan.cpp
   objc3_frontend_artifact_source_shape_plan.h
   objc3_frontend_artifact_type_system_lowering_plan.cpp

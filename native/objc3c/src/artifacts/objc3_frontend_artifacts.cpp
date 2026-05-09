@@ -33,6 +33,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
+#include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
@@ -10490,55 +10491,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .deterministic_error_handling_result_and_bridging_artifact_replay_handoff =
       error_handling_result_and_bridging_artifact_replay_summary.deterministic;
-  ir_frontend_metadata.object_pointer_type_spellings =
-      object_pointer_nullability_generics_summary.object_pointer_type_spellings;
-  ir_frontend_metadata.pointer_declarator_entries =
-      object_pointer_nullability_generics_summary.pointer_declarator_entries;
-  ir_frontend_metadata.pointer_declarator_depth_total =
-      object_pointer_nullability_generics_summary.pointer_declarator_depth_total;
-  ir_frontend_metadata.pointer_declarator_token_entries =
-      object_pointer_nullability_generics_summary.pointer_declarator_token_entries;
-  ir_frontend_metadata.nullability_suffix_entries =
-      object_pointer_nullability_generics_summary.nullability_suffix_entries;
-  ir_frontend_metadata.generic_suffix_entries = object_pointer_nullability_generics_summary.generic_suffix_entries;
-  ir_frontend_metadata.terminated_generic_suffix_entries =
-      object_pointer_nullability_generics_summary.terminated_generic_suffix_entries;
-  ir_frontend_metadata.unterminated_generic_suffix_entries =
-      object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries;
-  ir_frontend_metadata.global_symbol_nodes = symbol_graph_scope_resolution_summary.global_symbol_nodes;
-  ir_frontend_metadata.function_symbol_nodes = symbol_graph_scope_resolution_summary.function_symbol_nodes;
-  ir_frontend_metadata.interface_symbol_nodes = symbol_graph_scope_resolution_summary.interface_symbol_nodes;
-  ir_frontend_metadata.implementation_symbol_nodes = symbol_graph_scope_resolution_summary.implementation_symbol_nodes;
-  ir_frontend_metadata.interface_property_symbol_nodes =
-      symbol_graph_scope_resolution_summary.interface_property_symbol_nodes;
-  ir_frontend_metadata.implementation_property_symbol_nodes =
-      symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes;
-  ir_frontend_metadata.interface_method_symbol_nodes = symbol_graph_scope_resolution_summary.interface_method_symbol_nodes;
-  ir_frontend_metadata.implementation_method_symbol_nodes =
-      symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes;
-  ir_frontend_metadata.top_level_scope_symbols = symbol_graph_scope_resolution_summary.top_level_scope_symbols;
-  ir_frontend_metadata.nested_scope_symbols = symbol_graph_scope_resolution_summary.nested_scope_symbols;
-  ir_frontend_metadata.scope_frames_total = symbol_graph_scope_resolution_summary.scope_frames_total;
-  ir_frontend_metadata.implementation_interface_resolution_sites =
-      symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites;
-  ir_frontend_metadata.implementation_interface_resolution_hits =
-      symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits;
-  ir_frontend_metadata.implementation_interface_resolution_misses =
-      symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses;
-  ir_frontend_metadata.method_resolution_sites = symbol_graph_scope_resolution_summary.method_resolution_sites;
-  ir_frontend_metadata.method_resolution_hits = symbol_graph_scope_resolution_summary.method_resolution_hits;
-  ir_frontend_metadata.method_resolution_misses = symbol_graph_scope_resolution_summary.method_resolution_misses;
-  ir_frontend_metadata.deterministic_interface_implementation_handoff =
-      pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
-      interface_implementation_summary.deterministic;
-  ir_frontend_metadata.deterministic_protocol_category_handoff =
-      protocol_category_summary.deterministic_protocol_category_handoff;
-  ir_frontend_metadata.deterministic_class_protocol_category_linking_handoff =
-      class_protocol_category_linking_summary.deterministic_class_protocol_category_linking_handoff;
-  ir_frontend_metadata.deterministic_selector_normalization_handoff =
-      selector_normalization_summary.deterministic_selector_normalization_handoff;
-  ir_frontend_metadata.deterministic_property_attribute_handoff =
-      property_attribute_summary.deterministic_property_attribute_handoff;
+  objc3::artifacts::frontend::ApplyObjc3FrontendSemanticClosureMetadata(
+      ir_frontend_metadata, object_pointer_nullability_generics_summary,
+      symbol_graph_scope_resolution_summary,
+      pipeline_result.sema_parity_surface
+          .deterministic_interface_implementation_handoff,
+      interface_implementation_summary, protocol_category_summary,
+      class_protocol_category_linking_summary, selector_normalization_summary,
+      property_attribute_summary);
   objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeMetadataContractMetadata(
       ir_frontend_metadata, runtime_metadata_source_ownership,
       runtime_export_legality, runtime_export_enforcement,
