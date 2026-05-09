@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from scripts.objc3c_workflow.action_integrity import (
+from scripts.objc3c_workflow.action_resolution import (
     execute_registered_handler,
     resolve_registered_action,
 )

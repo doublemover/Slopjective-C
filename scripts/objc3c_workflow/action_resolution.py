@@ -1,4 +1,4 @@
-"""Action registry and handler consistency for workflow dispatch."""
+"""Registered action resolution for workflow dispatch."""
 
 from __future__ import annotations
 
@@ -11,19 +11,7 @@ from scripts.objc3c_workflow.command_result import (
     rejected_extra_args,
     unknown_action,
 )
-from scripts.objc3c_workflow.registry_views import action_names, action_spec
-
-
-def missing_action_handlers() -> list[str]:
-    return sorted(set(action_names()) - set(ACTION_HANDLERS))
-
-
-def orphan_action_handlers() -> list[str]:
-    return sorted(set(ACTION_HANDLERS) - set(action_names()))
-
-
-def action_handler_registry_is_complete() -> bool:
-    return not missing_action_handlers() and not orphan_action_handlers()
+from scripts.objc3c_workflow.registry_views import action_spec
 
 
 def resolve_registered_action(
