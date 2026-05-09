@@ -39,10 +39,9 @@
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
 #include "ir/objc3_ir_runtime_helper_calls.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
+#include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthesized_property_accessors.h"
 #include "parse/objc3_parse_support.h"
-
-bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
 class Objc3IREmitter {
  public:
@@ -130,41 +129,16 @@ class Objc3IREmitter {
 
     std::ostringstream body;
 
-    std::vector<int> resolved_global_values;
-    if (!ResolveGlobalInitializerValues(program_.globals, resolved_global_values) ||
-        resolved_global_values.size() != program_.globals.size()) {
-      error = "global initializer failed const evaluation";
+    if (!EmitObjc3IRStaticData(
+            Objc3IRStaticDataEmissionOptions{
+                program_.globals, mutable_global_symbols_,
+                metaprogramming_global_artifacts_, global_const_values_,
+                global_nil_proven_symbols_,
+                [this](const Expr *expr) {
+                  return IsCompileTimeGlobalNilExpr(expr);
+                }},
+            body, error)) {
       return false;
-    }
-    global_const_values_.clear();
-    global_nil_proven_symbols_.clear();
-    for (std::size_t i = 0; i < program_.globals.size(); ++i) {
-      if (mutable_global_symbols_.find(program_.globals[i].name) == mutable_global_symbols_.end()) {
-        global_const_values_[program_.globals[i].name] = resolved_global_values[i];
-      }
-      body << "@" << program_.globals[i].name << " = global i32 " << resolved_global_values[i] << ", align 4\n";
-    }
-    for (const auto &global : program_.globals) {
-      if (mutable_global_symbols_.find(global.name) != mutable_global_symbols_.end()) {
-        continue;
-      }
-      if (IsCompileTimeGlobalNilExpr(global.value.get())) {
-        global_nil_proven_symbols_.insert(global.name);
-      }
-    }
-    if (!program_.globals.empty()) {
-      body << "\n";
-    }
-
-    for (const auto &artifact : metaprogramming_global_artifacts_) {
-      std::string payload = artifact.payload;
-      payload.push_back('\0');
-      body << "@" << artifact.symbol << " = private constant ["
-           << payload.size() << " x i8] c\""
-           << EscapeCStringLiteral(payload) << "\", align 1\n";
-    }
-    if (!metaprogramming_global_artifacts_.empty()) {
-      body << "\n";
     }
 
     EmitRuntimeMetadataSectionScaffold(body);
@@ -2276,39 +2250,10 @@ class Objc3IREmitter {
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
-    EmitObjc3IRFrontendCoreMetadataPublication(frontend_metadata_, out);
-    EmitObjc3IRRuntimeMetadataBoundaryNodes(frontend_metadata_, out);
-    Objc3RuntimeMetadataLayoutPolicy runtime_metadata_layout_policy;
-    std::string runtime_metadata_layout_policy_error;
-    if (!TryBuildRuntimeMetadataLayoutPolicy(runtime_metadata_layout_policy,
-                                             runtime_metadata_layout_policy_error) &&
-        runtime_metadata_layout_policy.failure_reason.empty()) {
-      runtime_metadata_layout_policy.failure_reason =
-          runtime_metadata_layout_policy_error;
-    }
-    EmitObjc3IRRuntimeSupportMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRRuntimeMetadataObjectPublicationNodes(
-        frontend_metadata_, runtime_metadata_layout_policy,
-        RuntimeMetadataLinkerAnchorSymbol(), RuntimeMetadataDiscoveryRootSymbol(),
-        selector_pool_globals_.size(), runtime_string_pool_globals_.size(), out);
-    EmitObjc3IRDispatchOwnershipMetadataNodes(
-        frontend_metadata_, synthesized_property_accessor_count_, out);
-    EmitObjc3IRBlockArcMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRErrorHandlingMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRConcurrencyRuntimeMetadataNodes(out);
-    EmitObjc3IRTypeSymbolDispatchCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRDispatchOwnershipLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRBlockLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRTypeModuleLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRModuleGovernanceLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRErrorHandlingLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRSafetyConcurrencyLoweringCounterNodes(frontend_metadata_, out);
-    EmitObjc3IRActorDispatchControlMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRInteropLoweringMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRMetaprogrammingLoweringMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRDispatchMetadataPreservationNodes(frontend_metadata_, out);
-    EmitObjc3IROwnershipExtensionMetadataNodes(frontend_metadata_, out);
-    EmitObjc3IRAsyncDiagnosticLoweringCounterNodes(frontend_metadata_, out);
+    EmitObjc3IRFrontendMetadataPublication(
+        frontend_metadata_, runtime_metadata_symbols_, selector_pool_globals_.size(),
+        runtime_string_pool_globals_.size(),
+        synthesized_property_accessor_count_, out);
   }
 
   static bool IsNameBoundInScopes(const std::vector<std::unordered_set<std::string>> &scopes,

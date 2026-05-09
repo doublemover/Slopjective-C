@@ -7,9 +7,17 @@
 #include "ir/objc3_ir_frontend_metadata.h"
 
 struct Objc3RuntimeMetadataLayoutPolicy;
+struct Objc3IRRuntimeMetadataSymbols;
 
 std::string BuildObjc3IRFrontendProfileComment(
     const Objc3IRFrontendMetadata &metadata);
+
+void EmitObjc3IRFrontendMetadataPublication(
+    const Objc3IRFrontendMetadata &metadata,
+    const Objc3IRRuntimeMetadataSymbols &runtime_metadata_symbols,
+    std::size_t selector_pool_global_count,
+    std::size_t runtime_string_pool_global_count,
+    std::size_t synthesized_property_accessor_count, std::ostringstream &out);
 
 void EmitObjc3IRFrontendCoreMetadataPublication(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
