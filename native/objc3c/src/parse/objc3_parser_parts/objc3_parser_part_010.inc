@@ -1225,11 +1225,11 @@
       }
     }
 
-    std::vector<ParsedBlockParameterSourceModel> parameters;
+    std::vector<Objc3BlockParameterSourceModel> parameters;
     if (Match(TokenKind::LParen)) {
       if (!At(TokenKind::RParen)) {
         while (true) {
-          ParsedBlockParameterSourceModel parameter;
+          Objc3BlockParameterSourceModel parameter;
           if (At(TokenKind::KwI32) || At(TokenKind::KwBool) || At(TokenKind::KwVoid)) {
             parameter.explicit_type = true;
             parameter.type_spelling = Advance().text;
@@ -1310,7 +1310,7 @@
     }
     block->block_explicit_typed_parameter_count = static_cast<std::size_t>(
         std::count_if(parameters.begin(), parameters.end(),
-                      [](const ParsedBlockParameterSourceModel &parameter) {
+                      [](const Objc3BlockParameterSourceModel &parameter) {
                         return parameter.explicit_type;
                       }));
     block->block_implicit_parameter_count =

@@ -4,6 +4,8 @@
 // unsupported 'throw' statement, and unsupported 'do/catch' statement remain
 // explicit fail-closed parser-owned diagnostics until the later runnable Part 6
 // lowering/runtime tranches land.
+#include "ast/objc3_ast_block_surface.h"
+#include "ast/objc3_ast_decl_surface.h"
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_message_send_profiles.h"
 #include "parse/objc3_parse_support.h"
