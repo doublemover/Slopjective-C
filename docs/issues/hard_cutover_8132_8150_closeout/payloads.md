@@ -23,8 +23,14 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-source head is `9e36fd3fe` (`HC extract sema type boundary readiness builder`).
-Prior covered source heads were `2a512bc77` (`HC extract dispatch source completion helpers`),
+source head is `0e96b4cf0` (`HC extract sema module parity publication builder`).
+Prior covered source heads were `f885c12e6` (`HC extract metaprogramming source completion helpers`),
+`4c5389c86` (`HC extract sema core parity publication builder`),
+`22016d333` (`HC extract tooling source completion helpers`),
+`a27682e36` (`refactor(ir): extract scope cleanup emission`),
+`db26492d6` (`HC split block ARC closure behavior owners`),
+`9e36fd3fe` (`HC extract sema type boundary readiness builder`),
+`2a512bc77` (`HC extract dispatch source completion helpers`),
 `4915a9844` (`HC extract sema module boundary readiness builder`),
 `85081c4d5` (`HC split error runtime closure behavior owners`),
 `19ac96484` (`HC extract parse lowering readiness surface module`),
@@ -247,6 +253,12 @@ commits that landed after the first docs commit.
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `4915a9844` | Sema module boundary readiness ownership refreshes local semantic/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `2a512bc77` | Dispatch source completion helper ownership refreshes local pipeline/source-completion evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `9e36fd3fe` | Sema type boundary readiness ownership refreshes local semantic/deep handoff evidence. |
+| `#8136`, `#8137`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `db26492d6` | Block ARC closure behavior owner splits refresh local fixture/lowering/IR/runtime evidence without asserting validation. |
+| `#8137`, `#8147`, `#8150` | `a27682e36` | IR scope cleanup emission ownership refreshes local IR/deep handoff evidence. |
+| `#8138`, `#8140`, `#8147`, `#8150` | `22016d333` | Tooling source completion helper ownership refreshes local pipeline/tooling-source evidence. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `4c5389c86` | Sema core parity publication ownership refreshes local semantic/deep handoff evidence. |
+| `#8138`, `#8140`, `#8147`, `#8150` | `f885c12e6` | Metaprogramming source completion helper ownership refreshes local pipeline/tooling-source evidence. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `0e96b4cf0` | Sema module parity publication ownership refreshes local semantic/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -554,14 +566,14 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`9e36fd3fe`.
+`0e96b4cf0`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `9e36fd3fe`.
+`98d10a61c`, and the latest local implementation slices through `0e96b4cf0`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 
