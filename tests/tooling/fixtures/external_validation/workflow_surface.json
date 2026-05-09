@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.external_validation.workflow.surface.v1",
+  "schema_version": 1,
+  "package_bridge": "objc3c",
+  "source_check_action": "check-external-validation-surface",
+  "validate_action": "validate-external-validation",
+  "integration_action": "validate-external-validation-integration",
+  "required_actions": [
+    "check-external-validation-surface",
+    "test-external-validation-replay",
+    "publish-external-repro-corpus",
+    "validate-external-validation",
+    "validate-external-validation-integration"
+  ],
+  "validate_child_actions": [
+    "check-external-validation-surface",
+    "test-external-validation-replay",
+    "publish-external-repro-corpus"
+  ],
+  "required_child_reports": {
+    "tmp/reports/external-validation/source-surface-summary.json": "objc3c.external_validation.source.surface.summary.v1",
+    "tmp/reports/external-validation/intake-replay-summary.json": "objc3c.external_validation.intake.replay.summary.v1",
+    "tmp/reports/external-validation/publication-summary.json": "objc3c.external_validation.publication.summary.v1"
+  },
+  "report_paths": [
+    "tmp/reports/external-validation/source-surface-summary.json",
+    "tmp/reports/external-validation/intake-replay-summary.json",
+    "tmp/reports/external-validation/publication-summary.json",
+    "tmp/reports/external-validation/integration-summary.json"
+  ]
+}

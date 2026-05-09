@@ -18,6 +18,7 @@ EXPECTED_REQUIRED_PATHS = {
     "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
     "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
     "artifact_surface": "tests/tooling/fixtures/external_validation/artifact_surface.json",
+    "workflow_surface": "tests/tooling/fixtures/external_validation/workflow_surface.json",
 }
 
 EXPECTED_ROOTS = (

@@ -25,6 +25,7 @@ EXPECTED_SOURCE_FAMILY_PATHS = {
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
         "tests/tooling/fixtures/external_validation/artifact_surface.json",
+        "tests/tooling/fixtures/external_validation/workflow_surface.json",
         "tests/tooling/fixtures/objc3c",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",
@@ -55,6 +56,7 @@ EXPECTED_CONTRACT_IDS = {
     "intake_manifest": "objc3c.external_validation.intake.manifest.v1",
     "quarantine_manifest": "objc3c.external_validation.quarantine.manifest.v1",
     "artifact_surface": "objc3c.external_validation.artifact.surface.v1",
+    "workflow_surface": "objc3c.external_validation.workflow.surface.v1",
 }
 
 EXPECTED_TRUST_STATES = ("candidate", "accepted", "quarantined", "rejected")

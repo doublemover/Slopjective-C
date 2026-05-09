@@ -12,3 +12,7 @@ surfaces:
 - `scripts/check_objc3c_*_replay_proof.ps1`
 
 Machine-owned replay outputs belong under `tmp/`, not here.
+
+The checked-in workflow surface lives in
+`tests/tooling/fixtures/external_validation/workflow_surface.json`; it owns the
+public action inventory, integrated child ordering, and child report contracts.

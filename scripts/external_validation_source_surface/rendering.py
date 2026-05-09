@@ -29,6 +29,7 @@ def render_summary(
         "intake_manifest": required_paths["intake_manifest"],
         "quarantine_manifest": required_paths["quarantine_manifest"],
         "artifact_surface": required_paths["artifact_surface"],
+        "workflow_surface": required_paths["workflow_surface"],
         "checked_in_roots": list(validation.checked_roots),
         "expected_family_ids": list(EXPECTED_FAMILY_IDS),
         "artifact_root": EXPECTED_ARTIFACT_ROOT,

@@ -68,6 +68,9 @@ def test_external_validation_source_surface_writes_named_summary_fields() -> Non
             "quarantine_manifest"
         ]
         assert summary["artifact_surface"] == checker.EXPECTED_REQUIRED_PATHS["artifact_surface"]
+        assert summary["workflow_surface"] == checker.EXPECTED_REQUIRED_PATHS[
+            "workflow_surface"
+        ]
         assert summary["checked_in_roots"] == list(checker.EXPECTED_ROOTS)
         assert summary["expected_family_ids"] == list(checker.EXPECTED_FAMILY_IDS)
         assert summary["artifact_root"] == checker.EXPECTED_ARTIFACT_ROOT
