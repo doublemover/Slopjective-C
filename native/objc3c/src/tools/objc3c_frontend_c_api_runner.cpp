@@ -1,17 +1,12 @@
 #include "libobjc3c_frontend/c_api.h"
 
-#include <cerrno>
+#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <system_error>
 
-#include "ast/objc3_ast.h"
-#include "diagnostics/modes/objc3_removed_mode_options.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_corpus_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h"
@@ -23,7 +18,10 @@
 #include "io/objc3_json.h"
 #include "io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
-#include "support/objc3_ir_object_backend_token.h"
+#include "tools/objc3c_frontend_c_api_runner_commands.h"
+#include "tools/objc3c_frontend_c_api_runner_options.h"
+#include "tools/objc3c_frontend_c_api_runner_result.h"
+#include "tools/objc3c_frontend_c_api_runner_summary_io.h"
 
 namespace fs = std::filesystem;
 
@@ -31,422 +29,8 @@ namespace {
 
 using objc3::io::EscapeJsonString;
 
-constexpr std::size_t kMaxMessageSendArgs = 16;
 constexpr const char *kObjc3RuntimeArcDebugStateSnapshotSymbol =
     "objc3_runtime_copy_arc_debug_state_for_testing";
-
-struct RunnerOptions {
-  fs::path input_path;
-  fs::path out_dir = fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
-  std::string emit_prefix = "module";
-  fs::path clang_path = fs::path("clang");
-  fs::path llc_path = fs::path("llc");
-  objc3c_frontend_c_ir_object_backend_t ir_object_backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
-  std::uint32_t max_message_send_args = 0;
-  std::string runtime_dispatch_symbol;
-  bool emit_manifest = true;
-  bool emit_ir = true;
-  bool emit_object = true;
-  std::uint64_t translation_unit_registration_order_ordinal = 0;
-  fs::path summary_out;
-  bool dump_summary_json = false;
-  bool dump_observability_json = false;
-  bool dump_playground_repro_json = false;
-  bool dump_runtime_inspector_json = false;
-  bool dump_stage_trace_json = false;
-};
-
-std::string Usage() {
-  return "usage: objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] "
-         "[--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
-         std::to_string(kMaxMessageSendArgs) +
-         ">] [--objc3-runtime-dispatch-symbol <symbol>] "
-         "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
-         "[--objc3-ir-object-backend <clang|llvm-direct>] "
-         "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object] "
-         "[--dump-summary-json] [--dump-observability-json] [--dump-playground-repro-json] "
-         "[--dump-runtime-inspector-json] [--dump-stage-trace-json]";
-}
-
-bool ParseFrontendRunnerIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
-  objc3c::support::IrObjectBackendToken token;
-  if (!objc3c::support::ParseIrObjectBackendToken(value, token)) {
-    return false;
-  }
-  if (token == objc3c::support::IrObjectBackendToken::Clang) {
-    backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
-    return true;
-  }
-  backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
-  return true;
-}
-
-bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &error) {
-  if (argc < 2) {
-    error = Usage();
-    return false;
-  }
-
-  options = RunnerOptions{};
-  options.input_path = fs::path(argv[1]);
-
-  for (int i = 2; i < argc; ++i) {
-    const std::string arg = argv[i];
-    if (arg == "--out-dir" && i + 1 < argc) {
-      options.out_dir = fs::path(argv[++i]);
-    } else if (arg == "--emit-prefix" && i + 1 < argc) {
-      options.emit_prefix = argv[++i];
-    } else if (arg == "--clang" && i + 1 < argc) {
-      options.clang_path = fs::path(argv[++i]);
-    } else if (arg == "--llc" && i + 1 < argc) {
-      options.llc_path = fs::path(argv[++i]);
-    } else if (arg == "--summary-out" && i + 1 < argc) {
-      options.summary_out = fs::path(argv[++i]);
-    } else if (arg == "--objc3-max-message-args" && i + 1 < argc) {
-      const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE || parsed > kMaxMessageSendArgs) {
-        error = "invalid --objc3-max-message-args (expected integer 0-" +
-                std::to_string(kMaxMessageSendArgs) + "): " + value;
-        return false;
-      }
-      options.max_message_send_args = static_cast<std::uint32_t>(parsed);
-    } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
-      options.runtime_dispatch_symbol = argv[++i];
-    } else if (arg == "--objc3-bootstrap-registration-order-ordinal" &&
-               i + 1 < argc) {
-      const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long long parsed =
-          std::strtoull(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' ||
-          errno == ERANGE || parsed == 0) {
-        error =
-            "invalid --objc3-bootstrap-registration-order-ordinal (expected "
-            "positive integer): " +
-            value;
-        return false;
-      }
-      options.translation_unit_registration_order_ordinal =
-          static_cast<std::uint64_t>(parsed);
-    } else if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(arg, error)) {
-      return false;
-    } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
-      const std::string backend = argv[++i];
-      if (!ParseFrontendRunnerIrObjectBackend(backend, options.ir_object_backend)) {
-        error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " + backend;
-        return false;
-      }
-    } else if (arg == "--no-emit-manifest") {
-      options.emit_manifest = false;
-    } else if (arg == "--no-emit-ir") {
-      options.emit_ir = false;
-    } else if (arg == "--no-emit-object") {
-      options.emit_object = false;
-    } else if (arg == "--dump-summary-json") {
-      options.dump_summary_json = true;
-    } else if (arg == "--dump-observability-json") {
-      options.dump_observability_json = true;
-    } else if (arg == "--dump-playground-repro-json") {
-      options.dump_playground_repro_json = true;
-    } else if (arg == "--dump-runtime-inspector-json") {
-      options.dump_runtime_inspector_json = true;
-    } else if (arg == "--dump-stage-trace-json") {
-      options.dump_stage_trace_json = true;
-    } else if (arg == "--help" || arg == "-h") {
-      error = Usage();
-      return false;
-    } else {
-      error = "unknown arg: " + arg;
-      return false;
-    }
-  }
-
-  return true;
-}
-
-std::string OptionalString(const objc3c_frontend_c_string_t *value) {
-  const objc3c_frontend_c_string_view_t view =
-      objc3c_frontend_c_string_view(value);
-  if (view.data == nullptr || view.size == 0) {
-    return "";
-  }
-  return std::string(view.data, view.size);
-}
-
-std::string ResultArtifactPath(
-    const objc3c_frontend_c_compile_result_t &result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind) {
-  return OptionalString(objc3c_frontend_c_result_artifact_path(&result,
-                                                              artifact_kind));
-}
-
-std::string ResultErrorMessage(
-    const objc3c_frontend_c_compile_result_t &result) {
-  return OptionalString(objc3c_frontend_c_result_error_message(&result));
-}
-
-struct CompileResultGuard {
-  objc3c_frontend_c_compile_result_t *result = nullptr;
-
-  ~CompileResultGuard() {
-    objc3c_frontend_c_result_destroy(result);
-  }
-};
-
-bool StageSummaryShapeReady(
-    const objc3c_frontend_c_stage_summary_t &summary,
-    objc3c_frontend_c_stage_id_t expected_stage) {
-  return objc3c_frontend_c_stage_summary_is_well_formed(&summary,
-                                                        expected_stage) != 0u;
-}
-
-bool StageReportShapeReady(
-    const objc3c_frontend_c_compile_result_t &result) {
-  return StageSummaryShapeReady(result.lex, OBJC3C_FRONTEND_STAGE_LEX) &&
-         StageSummaryShapeReady(result.parse, OBJC3C_FRONTEND_STAGE_PARSE) &&
-         StageSummaryShapeReady(result.sema, OBJC3C_FRONTEND_STAGE_SEMA) &&
-         StageSummaryShapeReady(result.lower, OBJC3C_FRONTEND_STAGE_LOWER) &&
-         StageSummaryShapeReady(result.emit, OBJC3C_FRONTEND_STAGE_EMIT);
-}
-
-bool ValidateResultAccessors(
-    objc3c_frontend_c_status_t status,
-    const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const std::string &result_error_message,
-    std::string &reason) {
-  if (result.status != status) {
-    reason = "compile status does not match result.status";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && result.success == 0u) {
-    reason = "successful compile did not set result.success";
-    return false;
-  }
-  if (status != OBJC3C_FRONTEND_STATUS_OK && result.success != 0u) {
-    reason = "failing compile left result.success set";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && !result_error_message.empty()) {
-    reason = "successful compile published a result-owned error message";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && !last_error.empty()) {
-    reason = "successful compile published a context last_error";
-    return false;
-  }
-  if (status != OBJC3C_FRONTEND_STATUS_OK && result_error_message.empty()) {
-    reason = "failing compile published no result-owned error message";
-    return false;
-  }
-  if (!last_error.empty() && !result_error_message.empty() &&
-      last_error != result_error_message) {
-    reason = "context last_error and result-owned error_message differ";
-    return false;
-  }
-  return true;
-}
-
-struct DiagnosticTotals {
-  std::uint64_t total = 0;
-  std::uint64_t notes = 0;
-  std::uint64_t warnings = 0;
-  std::uint64_t errors = 0;
-  std::uint64_t fatals = 0;
-};
-
-void AccumulateStageDiagnostics(
-    const objc3c_frontend_c_stage_summary_t &summary,
-    DiagnosticTotals &totals) {
-  totals.total += summary.diagnostics_total;
-  totals.notes += summary.diagnostics_notes;
-  totals.warnings += summary.diagnostics_warnings;
-  totals.errors += summary.diagnostics_errors;
-  totals.fatals += summary.diagnostics_fatals;
-}
-
-DiagnosticTotals BuildDiagnosticTotals(
-    const objc3c_frontend_c_compile_result_t &result) {
-  DiagnosticTotals totals;
-  AccumulateStageDiagnostics(result.lex, totals);
-  AccumulateStageDiagnostics(result.parse, totals);
-  AccumulateStageDiagnostics(result.sema, totals);
-  AccumulateStageDiagnostics(result.lower, totals);
-  AccumulateStageDiagnostics(result.emit, totals);
-  return totals;
-}
-
-const char *StatusName(objc3c_frontend_c_status_t status) {
-  switch (status) {
-    case OBJC3C_FRONTEND_STATUS_OK:
-      return "ok";
-    case OBJC3C_FRONTEND_STATUS_DIAGNOSTICS:
-      return "diagnostics";
-    case OBJC3C_FRONTEND_STATUS_USAGE_ERROR:
-      return "usage-error";
-    case OBJC3C_FRONTEND_STATUS_EMIT_ERROR:
-      return "emit-error";
-    case OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR:
-      return "internal-error";
-    default:
-      return "unknown";
-  }
-}
-
-const char *HighestDiagnosticSeverity(const DiagnosticTotals &totals) {
-  if (totals.fatals != 0) {
-    return "fatal";
-  }
-  if (totals.errors != 0) {
-    return "error";
-  }
-  if (totals.warnings != 0) {
-    return "warning";
-  }
-  if (totals.notes != 0) {
-    return "note";
-  }
-  return "none";
-}
-
-std::string LastAttemptedStageName(
-    const objc3c_frontend_c_compile_result_t &result) {
-  if (result.emit.attempted != 0) {
-    return "emit";
-  }
-  if (result.lower.attempted != 0) {
-    return "lower";
-  }
-  if (result.sema.attempted != 0) {
-    return "sema";
-  }
-  if (result.parse.attempted != 0) {
-    return "parse";
-  }
-  if (result.lex.attempted != 0) {
-    return "lex";
-  }
-  return "";
-}
-
-std::string BlockingStageName(
-    const objc3c_frontend_c_compile_result_t &result) {
-  if (result.lex.diagnostics_errors != 0 || result.lex.diagnostics_fatals != 0) {
-    return "lex";
-  }
-  if (result.parse.diagnostics_errors != 0 ||
-      result.parse.diagnostics_fatals != 0) {
-    return "parse";
-  }
-  if (result.sema.diagnostics_errors != 0 ||
-      result.sema.diagnostics_fatals != 0) {
-    return "sema";
-  }
-  if (result.lower.diagnostics_errors != 0 ||
-      result.lower.diagnostics_fatals != 0) {
-    return "lower";
-  }
-  if (result.emit.diagnostics_errors != 0 ||
-      result.emit.diagnostics_fatals != 0 || result.process_exit_code != 0) {
-    return "emit";
-  }
-  return LastAttemptedStageName(result);
-}
-
-bool PathExists(const std::string &path_text) {
-  return !path_text.empty() && fs::exists(fs::path(path_text));
-}
-
-std::string QuotePowerShellArg(const std::string &value) {
-  std::string quoted = "'";
-  for (char c : value) {
-    if (c == '\'') {
-      quoted += "''";
-    } else {
-      quoted += c;
-    }
-  }
-  quoted += "'";
-  return quoted;
-}
-
-std::string BuildPowerShellReadCommand(const std::string &path_text) {
-  if (!PathExists(path_text)) {
-    return "";
-  }
-  return "Get-Content -Raw " + QuotePowerShellArg(path_text);
-}
-
-std::string BuildObjectInspectionCommand(const std::string &template_command,
-                                         const std::string &object_path_text) {
-  if (!PathExists(object_path_text)) {
-    return "";
-  }
-  const std::string placeholder =
-      kObjc3RuntimeMetadataObjectInspectionObjectRelativePath;
-  std::string command = template_command;
-  const std::size_t placeholder_offset = command.find(placeholder);
-  if (placeholder_offset != std::string::npos) {
-    command.replace(placeholder_offset,
-                    placeholder.size(),
-                    QuotePowerShellArg(object_path_text));
-    return command;
-  }
-  return command + " " + QuotePowerShellArg(object_path_text);
-}
-
-std::string BuildFrontendRunnerReproCommand(const RunnerOptions &options,
-                                            const fs::path &summary_path,
-                                            bool dump_playground_repro_json) {
-  std::ostringstream command;
-  command << "& "
-          << QuotePowerShellArg(
-                 (fs::path("artifacts") / "bin" /
-                  "objc3c-frontend-c-api-runner.exe")
-                     .generic_string());
-  command << " " << QuotePowerShellArg(options.input_path.generic_string());
-  command << " --out-dir " << QuotePowerShellArg(options.out_dir.generic_string());
-  command << " --emit-prefix " << QuotePowerShellArg(options.emit_prefix);
-  command << " --clang " << QuotePowerShellArg(options.clang_path.generic_string());
-  command << " --llc " << QuotePowerShellArg(options.llc_path.generic_string());
-  command << " --summary-out "
-          << QuotePowerShellArg(summary_path.generic_string());
-  command << " --objc3-ir-object-backend "
-          << QuotePowerShellArg(options.ir_object_backend ==
-                                        OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
-                                    ? "llvm-direct"
-                                    : "clang");
-  if (options.max_message_send_args != 0) {
-    command << " --objc3-max-message-args "
-            << std::to_string(options.max_message_send_args);
-  }
-  if (!options.runtime_dispatch_symbol.empty()) {
-    command << " --objc3-runtime-dispatch-symbol "
-            << QuotePowerShellArg(options.runtime_dispatch_symbol);
-  }
-  if (options.translation_unit_registration_order_ordinal != 0) {
-    command << " --objc3-bootstrap-registration-order-ordinal "
-            << std::to_string(
-                   options.translation_unit_registration_order_ordinal);
-  }
-  if (!options.emit_manifest) {
-    command << " --no-emit-manifest";
-  }
-  if (!options.emit_ir) {
-    command << " --no-emit-ir";
-  }
-  if (!options.emit_object) {
-    command << " --no-emit-object";
-  }
-  if (dump_playground_repro_json) {
-    command << " --dump-playground-repro-json";
-  }
-  return command.str();
-}
 
 void WriteObservabilityJson(
     std::ostringstream &out,
@@ -457,26 +41,28 @@ void WriteObservabilityJson(
     const std::string &result_error_message,
     const std::string &runtime_metadata_binary_path_text) {
   const std::string diagnostics_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const std::string manifest_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
   const std::string ir_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
   const std::string object_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
-  const DiagnosticTotals diagnostic_totals = BuildDiagnosticTotals(result);
-  const std::string last_attempted_stage = LastAttemptedStageName(result);
-  const std::string blocking_stage = BlockingStageName(result);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  const FrontendCApiDiagnosticTotals diagnostic_totals =
+      BuildFrontendCApiDiagnosticTotals(result);
+  const std::string last_attempted_stage =
+      LastAttemptedFrontendCApiStageName(result);
+  const std::string blocking_stage = BlockingFrontendCApiStageName(result);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   out << "{\n";
-  out << child_indent << "\"status_name\": \"" << StatusName(status) << "\",\n";
+  out << child_indent << "\"status_name\": \"" << FrontendCApiStatusName(status) << "\",\n";
   out << child_indent << "\"last_attempted_stage\": \""
       << EscapeJsonString(last_attempted_stage) << "\",\n";
   out << child_indent << "\"blocking_stage\": \""
       << EscapeJsonString(blocking_stage) << "\",\n";
   out << child_indent << "\"highest_diagnostic_severity\": \""
-      << HighestDiagnosticSeverity(diagnostic_totals) << "\",\n";
+      << HighestFrontendCApiDiagnosticSeverity(diagnostic_totals) << "\",\n";
   out << child_indent << "\"result_error_message_present\": "
       << (!result_error_message.empty() ? "true" : "false") << ",\n";
   out << child_indent << "\"diagnostics_total\": " << diagnostic_totals.total
@@ -492,31 +78,31 @@ void WriteObservabilityJson(
   out << child_indent << "\"artifact_presence\": {\n";
   out << grandchild_indent << "\"summary\": true,\n";
   out << grandchild_indent << "\"diagnostics\": "
-      << (PathExists(diagnostics_path_text) ? "true" : "false") << ",\n";
+      << (FrontendCApiRunnerPathExists(diagnostics_path_text) ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"manifest\": "
-      << (PathExists(manifest_path_text) ? "true" : "false") << ",\n";
+      << (FrontendCApiRunnerPathExists(manifest_path_text) ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"ir\": "
-      << (PathExists(ir_path_text) ? "true" : "false") << ",\n";
+      << (FrontendCApiRunnerPathExists(ir_path_text) ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"object\": "
-      << (PathExists(object_path_text) ? "true" : "false") << ",\n";
+      << (FrontendCApiRunnerPathExists(object_path_text) ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"runtime_metadata_binary\": "
       << (!runtime_metadata_binary_path_text.empty() ? "true" : "false")
       << "\n";
   out << child_indent << "},\n";
   out << child_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "\"summary\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
       << "\",\n";
   out << grandchild_indent << "\"diagnostics\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
       << "\",\n";
   out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
       << "\",\n";
   out << grandchild_indent << "\"ir\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(ir_path_text)) << "\",\n";
   out << grandchild_indent << "\"object\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(object_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(object_path_text))
       << "\"\n";
   out << child_indent << "}\n";
   out << indent << "}";
@@ -525,13 +111,13 @@ void WriteObservabilityJson(
 void WriteRuntimeInspectorJson(
     std::ostringstream &out,
     const std::string &indent,
-    const RunnerOptions &options,
+    const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result) {
   const std::string object_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
-  const bool available = PathExists(object_path_text);
+  const bool available = FrontendCApiRunnerPathExists(object_path_text);
   const std::string availability_reason = available
                                               ? std::string()
                                               : "object artifact missing or not emitted";
@@ -556,12 +142,12 @@ void WriteRuntimeInspectorJson(
       << EscapeJsonString(kObjc3RuntimeMetadataObjectInspectionSymbolInventoryRowKey)
       << "\",\n";
   out << child_indent << "\"section_inventory_command\": \""
-      << EscapeJsonString(BuildObjectInspectionCommand(
+      << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSectionCommand,
              object_path_text))
       << "\",\n";
   out << child_indent << "\"symbol_inventory_command\": \""
-      << EscapeJsonString(BuildObjectInspectionCommand(
+      << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
              object_path_text))
       << "\",\n";
@@ -580,12 +166,12 @@ void WriteRuntimeInspectorJson(
       << "\",\n";
   out << child_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "\"object_sections\": \""
-      << EscapeJsonString(BuildObjectInspectionCommand(
+      << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSectionCommand,
              object_path_text))
       << "\",\n";
   out << grandchild_indent << "\"object_symbols\": \""
-      << EscapeJsonString(BuildObjectInspectionCommand(
+      << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
              object_path_text))
       << "\"\n";
@@ -598,23 +184,24 @@ void WriteRuntimeInspectorJson(
 void WriteBonusExperiencesJson(
     std::ostringstream &out,
     const std::string &indent,
-    const RunnerOptions &options,
+    const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &summary_path_text,
     const std::string &runtime_metadata_binary_path_text) {
   const std::string diagnostics_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const std::string manifest_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
   const std::string ir_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
   const std::string object_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   const bool compile_surface_ready = result.emit.attempted != 0;
   const bool runtime_inspector_ready =
-      PathExists(object_path_text) && PathExists(runtime_metadata_binary_path_text);
+      FrontendCApiRunnerPathExists(object_path_text) &&
+      FrontendCApiRunnerPathExists(runtime_metadata_binary_path_text);
   const bool showcase_surface_ready =
       fs::exists(fs::path("showcase") / "portfolio.json") &&
       fs::exists(fs::path("showcase") / "tutorial_walkthrough.json");
@@ -652,14 +239,14 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "],\n";
   out << grandchild_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "  \"summary\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text)) << "\",\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text)) << "\",\n";
   out << grandchild_indent << "  \"diagnostics\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text)) << "\",\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(diagnostics_path_text)) << "\",\n";
   out << grandchild_indent << "  \"manifest\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\",\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text)) << "\",\n";
   out << grandchild_indent << "  \"repro_runner\": \""
       << EscapeJsonString(
-             BuildFrontendRunnerReproCommand(options,
+             BuildFrontendCApiRunnerReproCommand(options,
                                             fs::path(summary_path_text),
                                             true))
       << "\"\n";
@@ -679,15 +266,15 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "  \"trace-compile-stages\",\n";
   out << grandchild_indent << "  \"validate-developer-tooling\"\n";
   out << grandchild_indent << "],\n";
-  out << grandchild_indent << "\"capability_probe_script\": "
-      << "\"scripts/probe_objc3c_llvm_capabilities.py\",\n";
+  out << grandchild_indent << "\"capability_probe_action\": "
+      << "\"npm run objc3c -- inspect-capability-explorer\",\n";
   out << grandchild_indent << "\"capability_summary_report_path\": "
       << "\"tmp/reports/objc3c-public-workflow/capability-explorer.json\",\n";
   out << grandchild_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "  \"ir\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(ir_path_text)) << "\",\n";
   out << grandchild_indent << "  \"object\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(object_path_text)) << "\"\n";
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(object_path_text)) << "\"\n";
   out << grandchild_indent << "}\n";
   out << child_indent << "},\n";
   out << child_indent << "\"template_and_demo_harness\": {\n";
@@ -712,7 +299,7 @@ void WriteBonusExperiencesJson(
 void WritePlaygroundReproJson(
     std::ostringstream &out,
     const std::string &indent,
-    const RunnerOptions &options,
+    const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &summary_path_text) {
   const char *backend_name =
@@ -720,13 +307,13 @@ void WritePlaygroundReproJson(
           ? "llvm-direct"
           : "clang";
   const std::string diagnostics_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const std::string manifest_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
   const std::string ir_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
   const std::string object_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
 
@@ -777,17 +364,17 @@ void WritePlaygroundReproJson(
   out << child_indent << "],\n";
   out << child_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "\"summary\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
       << "\",\n";
   out << grandchild_indent << "\"diagnostics\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
       << "\",\n";
   out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
       << "\",\n";
   out << grandchild_indent << "\"repro_runner\": \""
       << EscapeJsonString(
-             BuildFrontendRunnerReproCommand(options,
+             BuildFrontendCApiRunnerReproCommand(options,
                                             fs::path(summary_path_text),
                                             true))
       << "\"\n";
@@ -833,7 +420,7 @@ std::string BuildStageTraceJson(const objc3c_frontend_c_compile_result_t &result
   return out.str();
 }
 
-std::string BuildSummaryJson(const RunnerOptions &options,
+std::string BuildSummaryJson(const FrontendCApiRunnerOptions &options,
                              const fs::path &summary_path,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
@@ -847,15 +434,15 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   const std::string summary_path_text = summary_path.generic_string();
   const std::string runtime_metadata_binary_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
   const std::string diagnostics_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const std::string manifest_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
   const std::string ir_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
   const std::string object_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -1129,67 +716,12 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   return out.str();
 }
 
-int ExitCodeFromStatus(objc3c_frontend_c_status_t status, const objc3c_frontend_c_compile_result_t &result) {
-  switch (status) {
-    case OBJC3C_FRONTEND_STATUS_OK:
-      return 0;
-    case OBJC3C_FRONTEND_STATUS_DIAGNOSTICS:
-      return 1;
-    case OBJC3C_FRONTEND_STATUS_USAGE_ERROR:
-      return 2;
-    case OBJC3C_FRONTEND_STATUS_EMIT_ERROR:
-      return result.process_exit_code != 0 ? result.process_exit_code : 3;
-    case OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR:
-    default:
-      return result.process_exit_code != 0 ? result.process_exit_code : 2;
-  }
-}
-
-std::string ReadLastError(const objc3c_frontend_c_context_t *context) {
-  const size_t required = objc3c_frontend_c_copy_last_error(context, nullptr, 0);
-  if (required == 0) {
-    return "";
-  }
-  std::string message(required, '\0');
-  const size_t written = objc3c_frontend_c_copy_last_error(context, message.data(), message.size());
-  if (written == 0) {
-    return "";
-  }
-  if (!message.empty() && message.back() == '\0') {
-    message.pop_back();
-  }
-  return message;
-}
-
-bool WriteSummary(const fs::path &summary_path, const std::string &summary_json, std::string &error) {
-  std::error_code mkdir_error;
-  if (!summary_path.parent_path().empty()) {
-    fs::create_directories(summary_path.parent_path(), mkdir_error);
-  }
-  if (mkdir_error) {
-    error = "failed to create summary directory '" + summary_path.parent_path().string() + "': " + mkdir_error.message();
-    return false;
-  }
-
-  std::ofstream out(summary_path, std::ios::binary);
-  if (!out.is_open()) {
-    error = "failed to open summary file '" + summary_path.string() + "' for writing";
-    return false;
-  }
-  out << summary_json;
-  if (!out.good()) {
-    error = "failed while writing summary file '" + summary_path.string() + "'";
-    return false;
-  }
-  return true;
-}
-
 }  // namespace
 
 int main(int argc, char **argv) {
-  RunnerOptions options;
+  FrontendCApiRunnerOptions options;
   std::string parse_error;
-  if (!ParseOptions(argc, argv, options, parse_error)) {
+  if (!ParseFrontendCApiRunnerOptions(argc, argv, options, parse_error)) {
     std::cerr << parse_error << "\n";
     return 2;
   }
@@ -1228,12 +760,12 @@ int main(int argc, char **argv) {
   compile_options.ir_object_backend = options.ir_object_backend;
 
   objc3c_frontend_c_compile_result_t result = {};
-  const CompileResultGuard result_guard{&result};
+  const FrontendCApiCompileResultGuard result_guard{&result};
   const objc3c_frontend_c_status_t status = objc3c_frontend_c_compile_file(context, &compile_options, &result);
-  const std::string last_error = ReadLastError(context);
-  const std::string result_error_message = ResultErrorMessage(result);
+  const std::string last_error = ReadFrontendCApiLastError(context);
+  const std::string result_error_message = FrontendCApiResultErrorMessage(result);
   std::string accessor_contract_error;
-  if (!ValidateResultAccessors(
+  if (!ValidateFrontendCApiResultAccessors(
           status, result, last_error, result_error_message,
           accessor_contract_error)) {
     std::cerr << "frontend C API accessor contract fail-closed: "
@@ -1241,13 +773,14 @@ int main(int argc, char **argv) {
     objc3c_frontend_c_context_destroy(context);
     return 2;
   }
-  const int exit_code = ExitCodeFromStatus(status, result);
+  const int exit_code = FrontendCApiExitCodeFromStatus(status, result);
 
   const fs::path summary_path =
       options.summary_out.empty() ? (options.out_dir / (options.emit_prefix + ".c_api_summary.json")) : options.summary_out;
   const std::string runtime_metadata_binary_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
-  const bool stage_report_output_contract_ready = StageReportShapeReady(result);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
+  const bool stage_report_output_contract_ready =
+      FrontendCApiStageReportShapeReady(result);
   const Objc3CliReportingOutputContractScaffold cli_reporting_output_contract_scaffold =
       BuildObjc3CliReportingOutputContractScaffold(
           options.out_dir,
@@ -1265,7 +798,7 @@ int main(int argc, char **argv) {
   }
 
   const std::string diagnostics_path_text =
-      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const fs::path diagnostics_output_path = diagnostics_path_text.empty()
                                                ? (options.out_dir / (options.emit_prefix + ".diagnostics.json"))
                                                : fs::path(diagnostics_path_text);
@@ -1398,7 +931,9 @@ int main(int argc, char **argv) {
       cli_reporting_output_contract_conformance_matrix_surface,
       cli_reporting_output_contract_conformance_corpus_surface);
   std::string summary_error;
-  if (!WriteSummary(summary_path, summary_json, summary_error)) {
+  if (!WriteFrontendCApiRunnerSummaryFile(summary_path,
+                                          summary_json,
+                                          summary_error)) {
     std::cerr << summary_error << "\n";
     objc3c_frontend_c_context_destroy(context);
     return 2;

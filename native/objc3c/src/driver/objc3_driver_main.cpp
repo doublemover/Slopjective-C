@@ -14,7 +14,7 @@ int RunObjc3DriverMain(int argc, char **argv) {
     std::cerr << cli_error << "\n";
     return 2;
   }
-  if (!ApplyObjc3LLVMCabilityRouting(cli_options, cli_error)) {
+  if (!ApplyObjc3LLVMCapabilityRouting(cli_options, cli_error)) {
     std::cerr << cli_error << "\n";
     return 2;
   }

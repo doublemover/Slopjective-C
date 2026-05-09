@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include "ast/objc3_ast.h"
+#include "driver/objc3_driver_frontend_artifact_handoff.h"
+#include "driver/objc3_driver_object_backend.h"
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_file_io.h"
@@ -41,87 +43,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     const std::string source = ReadText(cli_options.input);
     const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
     Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
-    // type-surface executable gate anchor: lane-E consumes the
-    // emitted manifest/IR/object triplet as the canonical integrated proof for
-    // the currently runnable optional/key-path slice.
-    // runnable-type-surface closeout anchor: the same emitted
-    // artifact triplet remains the source of truth for the milestone closeout
-    // matrix runtime rows and preserved generic replay evidence.
-    WriteDiagnosticsArtifacts(cli_options.out_dir,
-                              cli_options.emit_prefix,
-                              artifacts.stage_diagnostics,
-                              artifacts.post_pipeline_diagnostics);
-    if (!artifacts.manifest_json.empty()) {
-      // control-flow execution gate anchor: lane-E consumes the
-      // emitted manifest/IR/object triplet from this native CLI path as the
-      // truthful integrated proof surface for the currently runnable Part 5
-      // slice.
-      // runnable control-flow matrix anchor: the milestone closeout
-      // matrix continues to consume the same emitted native artifact triplet
-      // rather than widening into a synthetic reporting path.
-      // freeze: manifest emission remains the authoritative published
-      // metadata-section ABI surface until later object-section emission lands.
-      // scaffold: manifest emission mirrors the live runtime-metadata
-      // section scaffold inventory so tooling can diff JSON against emitted
-      // LLVM IR/object evidence without treating the manifest as the only source.
-      // object inspection harness: manifest emission also publishes
-      // the llvm-readobj/llvm-objdump matrix so object inspection remains tied
-      // to canonical emitted artifacts instead of ad hoc operator commands.
-      // freeze: manifest emission also publishes the reserved native
-      // runtime support-library surface (target/header/entrypoints/link mode)
-      // so D002/D003 must preserve one canonical runtime-library contract while
-      // the deterministic test surface remains non-canonical evidence only.
-      // core feature: manifest emission also publishes the live
-      // native runtime-library skeleton/build contract so the real in-tree
-      // archive/header/source/probe surface stays synchronized with emitted IR
-      // evidence while driver link wiring remains deferred to the next runtime step.
-      // link wiring: manifest emission remains the canonical
-      // runtime-archive handoff for external executable link steps, even while
-      // this driver tranche still stops at deterministic object emission.
-      WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
-    }
-    if (!artifacts.runtime_metadata_binary.empty()) {
-      WriteRuntimeMetadataBinaryArtifact(cli_options.out_dir,
-                                        cli_options.emit_prefix,
-                                        artifacts.runtime_metadata_binary);
-    }
-    if (!artifacts.error_handling_result_bridge_artifact_replay_json.empty()) {
-      WriteErrorHandlingResultBridgeArtifactReplay(
-          cli_options.out_dir, cli_options.emit_prefix,
-          artifacts.error_handling_result_bridge_artifact_replay_json);
-    }
-    if (!artifacts.diagnostics.empty()) {
-      return 1;
-    }
-    const bool has_runtime_import_artifact =
-        !artifacts.runtime_aware_import_module_artifact_json.empty();
-    if (has_runtime_import_artifact &&
-        !IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-            artifacts.runtime_aware_import_module_frontend_closure_summary)) {
-      std::cerr << "runtime-aware import/module frontend closure not ready\n";
-      return 125;
-    }
-    if (has_runtime_import_artifact) {
-      WriteRuntimeAwareImportModuleArtifact(
-          cli_options.out_dir,
-          cli_options.emit_prefix,
-          artifacts.runtime_aware_import_module_artifact_json);
-    }
-    // interop conformance gate anchor: the driver-side publication
-    // path includes the live D002 bridge sidecars consumed by the lane-E gate.
-    // Part 11 lane-E anchors: the driver-side publication
-    // path includes the live D002 bridge sidecars consumed by the gate and the closeout matrix.
-    if (!artifacts.interop_bridge_header_artifact_text.empty()) {
-      WriteInteropBridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                      artifacts.interop_bridge_header_artifact_text);
-    }
-    if (!artifacts.interop_bridge_module_artifact_text.empty()) {
-      WriteInteropBridgeModuleArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                      artifacts.interop_bridge_module_artifact_text);
-    }
-    if (!artifacts.interop_bridge_artifact_json.empty()) {
-      WriteInteropBridgeArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                artifacts.interop_bridge_artifact_json);
+    const Objc3DriverFrontendArtifactHandoffResult artifact_handoff =
+        PublishObjc3DriverFrontendArtifactHandoff(cli_options, artifacts);
+    if (artifact_handoff.status_code != 0) {
+      return artifact_handoff.status_code;
     }
     if (artifacts.metaprogramming_macro_host_process_cache_runtime_integration_ready) {
       std::string metaprogramming_host_cache_artifact_json;
@@ -217,7 +142,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .advanced_feature_release_evidence_contract_id =
                  "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1",
              .ci_release_evidence_gate_script_path =
-                 "scripts/check_release_evidence.py",
+                 "npm run objc3c -- check-release-evidence",
              .runbook_reference_path =
                  "spec/conformance/release_evidence_gate_maintenance.md",
              .dashboard_schema_path =
@@ -315,55 +240,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     WriteReleaseCandidateMatrixArtifact(cli_options.out_dir,
                                         cli_options.emit_prefix,
                                         release_candidate_matrix_artifact_json);
-    // expands the handoff so manifest projection survives fail-closed
-    // later lowering/object gates; native runtime linking remains a later
-    // milestone.
-    const fs::path ir_out = cli_options.out_dir / (cli_options.emit_prefix + ".ll");
-    WriteText(ir_out, artifacts.ir_text);
-    const fs::path object_out = cli_options.out_dir / (cli_options.emit_prefix + ".obj");
-    const bool clang_backend_selected = cli_options.ir_object_backend == Objc3IrObjectBackend::kClang;
-    const bool llvm_direct_backend_selected = cli_options.ir_object_backend == Objc3IrObjectBackend::kLLVMDirect;
-#if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
-    const bool llvm_direct_backend_enabled = true;
-#else
-    const bool llvm_direct_backend_enabled = false;
-#endif
-    const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
-        BuildObjc3ToolchainRuntimeGaOperationsScaffold(
-            clang_backend_selected,
-            llvm_direct_backend_selected,
-            cli_options.clang_path,
-            cli_options.llc_path,
-            llvm_direct_backend_enabled,
-            ir_out,
-            object_out);
-    std::string toolchain_runtime_scaffold_reason;
-    if (!IsObjc3ToolchainRuntimeGaOperationsScaffoldReady(
-            toolchain_runtime_ga_operations_scaffold,
-            toolchain_runtime_scaffold_reason)) {
-      std::cerr << "toolchain/runtime readiness contract fail-closed: "
-                << toolchain_runtime_scaffold_reason << "\n";
-      return 3;
+    const Objc3DriverObjectBackendResult object_backend =
+        EmitObjc3DriverObjectBackend(cli_options, artifacts.ir_text);
+    if (object_backend.status_code != 0) {
+      return object_backend.status_code;
     }
-    int compile_status = 0;
-    const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
-    const std::string backend_text =
-        cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
-    if (cli_options.ir_object_backend == Objc3IrObjectBackend::kClang) {
-      compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
-    } else {
-      std::string backend_error;
-      compile_status = RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error);
-      if (!backend_error.empty()) {
-        std::cerr << backend_error << "\n";
-      }
-    }
-    bool backend_output_recorded = false;
-    std::string backend_output_payload;
+    int compile_status = object_backend.compile_status;
+    const fs::path &ir_out = object_backend.ir_out;
+    const fs::path &object_out = object_backend.object_out;
+    const fs::path &backend_out = object_backend.backend_out;
     if (compile_status == 0) {
-      WriteText(backend_out, backend_text);
-      backend_output_recorded = true;
-      backend_output_payload = backend_text;
       Objc3RuntimeMetadataLinkerRetentionArtifacts
           linker_retention_artifacts;
       std::string linker_retention_error;
@@ -1479,11 +1365,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
     const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =
         BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureSurface(
-            toolchain_runtime_ga_operations_scaffold,
+            object_backend.scaffold,
             compile_status,
-            backend_output_recorded,
+            object_backend.backend_output_recorded,
             backend_out,
-            backend_output_payload);
+            object_backend.backend_output_payload);
     std::string toolchain_runtime_core_feature_reason;
     if (!IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
             toolchain_runtime_core_feature_surface,

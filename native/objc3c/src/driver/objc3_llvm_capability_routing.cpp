@@ -15,7 +15,7 @@ namespace {
 
 using objc3::io::json::JsonValue;
 
-struct Objc3LLVMCabilitySummary {
+struct Objc3LLVMCapabilitySummary {
   std::string mode;
   std::string clang_path;
   bool clang_found = false;
@@ -40,7 +40,9 @@ std::vector<std::string> ReadStringArrayField(const JsonValue &object, std::stri
   return values;
 }
 
-bool ParseCapabilitySummary(const std::string &text, Objc3LLVMCabilitySummary &summary, std::string &error) {
+bool ParseCapabilitySummary(const std::string &text,
+                            Objc3LLVMCapabilitySummary &summary,
+                            std::string &error) {
   const auto parsed = objc3::io::json::ParseJson(text);
   if (!parsed.ok()) {
     error = "llvm capability summary parse failure: " + parsed.error->Format();
@@ -113,7 +115,8 @@ std::string JoinBlockers(const std::vector<std::string> &blockers) {
 
 }  // namespace
 
-bool ApplyObjc3LLVMCabilityRouting(Objc3CliOptions &options, std::string &error) {
+bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
+                                     std::string &error) {
   if (options.llvm_capabilities_summary.empty()) {
     if (options.route_backend_from_capabilities) {
       error = "capability routing fail-closed: --objc3-route-backend-from-capabilities requires --llvm-capabilities-summary";
@@ -142,7 +145,7 @@ bool ApplyObjc3LLVMCabilityRouting(Objc3CliOptions &options, std::string &error)
     error = "capability routing fail-closed: " + std::string(read_error.what());
     return false;
   }
-  Objc3LLVMCabilitySummary summary;
+  Objc3LLVMCapabilitySummary summary;
   if (!ParseCapabilitySummary(payload, summary, error)) {
     error = "capability routing fail-closed: " + error;
     return false;

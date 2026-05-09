@@ -1,149 +1,12 @@
 #include "driver/objc3_cli_options.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <filesystem>
-#include <limits>
 #include <string>
 
 #include "config/objc3_language_profile.h"
 #include "diagnostics/modes/objc3_removed_mode_options.h"
-#include "support/objc3_ir_object_backend_token.h"
+#include "driver/objc3_cli_environment.h"
+#include "driver/objc3_cli_value_parsers.h"
 #include "support/objc3_runtime_dispatch_symbol.h"
-
-namespace {
-
-constexpr std::size_t kMaxMessageSendArgs = 16;
-
-bool ParseObjc3CliIrObjectBackend(const std::string &value, Objc3IrObjectBackend &backend) {
-  objc3c::support::IrObjectBackendToken token;
-  if (!objc3c::support::ParseIrObjectBackendToken(value, token)) {
-    return false;
-  }
-  if (token == objc3c::support::IrObjectBackendToken::Clang) {
-    backend = Objc3IrObjectBackend::kClang;
-    return true;
-  }
-  backend = Objc3IrObjectBackend::kLLVMDirect;
-  return true;
-}
-
-bool ParseConformanceProfile(const std::string &value,
-                             Objc3ConformanceProfile &profile) {
-  if (value == "core") {
-    profile = Objc3ConformanceProfile::kCore;
-    return true;
-  }
-  if (value == "strict") {
-    profile = Objc3ConformanceProfile::kStrict;
-    return true;
-  }
-  if (value == "strict-concurrency") {
-    profile = Objc3ConformanceProfile::kStrictConcurrency;
-    return true;
-  }
-  if (value == "strict-system") {
-    profile = Objc3ConformanceProfile::kStrictSystem;
-    return true;
-  }
-  return false;
-}
-
-bool ParseLanguageVersion(const std::string &value, std::uint32_t &version) {
-  errno = 0;
-  char *end = nullptr;
-  const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
-  if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
-      parsed > std::numeric_limits<std::uint32_t>::max()) {
-    return false;
-  }
-  version = static_cast<std::uint32_t>(parsed);
-  return true;
-}
-
-bool ParsePositiveOrdinal(const std::string &value, std::uint64_t &ordinal) {
-  errno = 0;
-  char *end = nullptr;
-  const unsigned long long parsed = std::strtoull(value.c_str(), &end, 10);
-  if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
-      parsed == 0 || parsed > std::numeric_limits<std::uint64_t>::max()) {
-    return false;
-  }
-  ordinal = static_cast<std::uint64_t>(parsed);
-  return true;
-}
-
-std::string ReadEnvironmentVariable(const char *name) {
-#if defined(_WIN32)
-  char *value = nullptr;
-  std::size_t value_length = 0;
-  if (_dupenv_s(&value, &value_length, name) != 0 || value == nullptr || value_length == 0) {
-    if (value != nullptr) {
-      std::free(value);
-    }
-    return "";
-  }
-  std::string result(value);
-  std::free(value);
-  return result;
-#else
-  const char *value = std::getenv(name);
-  return value == nullptr ? "" : std::string(value);
-#endif
-}
-
-std::filesystem::path DefaultLlcPath() {
-#if defined(_WIN32)
-  constexpr const char *llc_name = "llc.exe";
-#else
-  constexpr const char *llc_name = "llc";
-#endif
-  const std::string llvm_root = ReadEnvironmentVariable("LLVM_ROOT");
-  if (!llvm_root.empty()) {
-    return std::filesystem::path(llvm_root) / "bin" / llc_name;
-  }
-#if defined(_WIN32)
-  const std::filesystem::path standard_path = std::filesystem::path("C:\\Program Files\\LLVM\\bin\\llc.exe");
-  if (std::filesystem::exists(standard_path)) {
-    return standard_path;
-  }
-#endif
-  return std::filesystem::path(llc_name);
-}
-
-}  // namespace
-
-std::string Objc3CliUsage() {
-  return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
-         "[--llc <path>] [--objc3-import-runtime-surface <path>]... "
-         "[-fobjc-version=<N>] [--objc3-language-version <N>] "
-         "[-fobjc-arc] [-fno-objc-arc] "
-         "[--objc3-conformance-profile <core|strict|strict-concurrency|strict-system>] "
-         "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json|yaml>] "
-         "[--validate-objc3-conformance <report.json>] "
-         "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
-         "[--objc3-metaprogramming-cache-root <dir>] "
-         "[--objc3-ir-object-backend <clang|llvm-direct>] "
-         "[--llvm-capabilities-summary <path>] [--objc3-route-backend-from-capabilities] "
-         "[--objc3-max-message-args <0-" +
-         std::to_string(kMaxMessageSendArgs) +
-         ">] [--objc3-runtime-dispatch-symbol <symbol>]";
-}
-
-std::string ConformanceProfileName(Objc3ConformanceProfile profile) {
-  switch (profile) {
-    case Objc3ConformanceProfile::kCore:
-      return "core";
-    case Objc3ConformanceProfile::kStrict:
-      return "strict";
-    case Objc3ConformanceProfile::kStrictConcurrency:
-      return "strict-concurrency";
-    case Objc3ConformanceProfile::kStrictSystem:
-      return "strict-system";
-    default:
-      return "core";
-  }
-}
 
 bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::string &error) {
   if (argc < 2) {
@@ -152,12 +15,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
   }
 
   options = Objc3CliOptions{};
-  options.llc_path = DefaultLlcPath();
-  const std::string metaprogramming_cache_root =
-      ReadEnvironmentVariable("OBJC3C_METAPROGRAMMING_CACHE_ROOT");
-  if (!metaprogramming_cache_root.empty()) {
-    options.metaprogramming_cache_root = metaprogramming_cache_root;
-  }
+  ApplyObjc3CliEnvironmentDefaults(options);
   int index = 1;
   if (argv[1][0] != '-') {
     options.input = argv[1];
@@ -169,7 +27,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     if (flag.rfind("-fobjc-version=", 0) == 0) {
       const std::string version_value = flag.substr(std::string("-fobjc-version=").size());
       std::uint32_t parsed_version = 0;
-      if (!ParseLanguageVersion(version_value, parsed_version)) {
+      if (!ParseObjc3LanguageVersion(version_value, parsed_version)) {
         error = "invalid -fobjc-version (expected unsigned integer): " + version_value;
         return false;
       }
@@ -192,7 +50,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     } else if ((flag == "-fobjc-version" || flag == "--objc3-language-version") && i + 1 < argc) {
       const std::string version_value = argv[++i];
       std::uint32_t parsed_version = 0;
-      if (!ParseLanguageVersion(version_value, parsed_version)) {
+      if (!ParseObjc3LanguageVersion(version_value, parsed_version)) {
         error = "invalid " + flag + " (expected unsigned integer): " + version_value;
         return false;
       }
@@ -201,7 +59,8 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       return false;
     } else if (flag == "--objc3-conformance-profile" && i + 1 < argc) {
       const std::string profile_text = argv[++i];
-      if (!ParseConformanceProfile(profile_text, options.conformance_profile)) {
+      if (!ParseObjc3ConformanceProfile(profile_text,
+                                        options.conformance_profile)) {
         error =
             "invalid --objc3-conformance-profile (expected core|strict|strict-concurrency|strict-system): " +
             profile_text;
@@ -218,7 +77,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
                i + 1 < argc) {
       const std::string ordinal_text = argv[++i];
       std::uint64_t parsed_ordinal = 0;
-      if (!ParsePositiveOrdinal(ordinal_text, parsed_ordinal)) {
+      if (!ParseObjc3PositiveOrdinal(ordinal_text, parsed_ordinal)) {
         error =
             "invalid --objc3-bootstrap-registration-order-ordinal (expected positive integer): " +
             ordinal_text;
@@ -251,16 +110,13 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       options.route_backend_from_capabilities = true;
     } else if (flag == "--objc3-max-message-args" && i + 1 < argc) {
       const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
-          parsed > kMaxMessageSendArgs) {
+      std::size_t parsed = 0;
+      if (!ParseObjc3MessageSendArgLimit(value, parsed)) {
         error = "invalid --objc3-max-message-args (expected integer 0-" +
-                std::to_string(kMaxMessageSendArgs) + "): " + value;
+                std::to_string(kObjc3CliMaxMessageSendArgs) + "): " + value;
         return false;
       }
-      options.max_message_send_args = static_cast<std::size_t>(parsed);
+      options.max_message_send_args = parsed;
     } else if (flag == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
       const std::string symbol = argv[++i];
       if (!objc3c::support::IsValidRuntimeDispatchSymbol(symbol)) {
