@@ -31,6 +31,7 @@ from .scan_config import (
     scan_config_contract_summary,
 )
 from .violations import build_pattern_violation
+from .violations import violation_contract_summary
 
 __all__ = [
     "DEFAULT_JSON_REPORT",
@@ -137,6 +138,7 @@ def build_report(
         "owner_contract": owner_contract,
         "scan_config_contract": scan_config_contract_summary(config),
         "roots_contract": roots_contract_summary(),
+        "violation_contract": violation_contract_summary(),
         "blocker_metadata": owner_contract["blocker_metadata"],
         "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,

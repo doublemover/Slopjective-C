@@ -39,6 +39,7 @@ from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS, SOURCE_HYGIENE_ROOTS_CONTRACT_ID
 from scripts.source_hygiene.scanner import build_report, write_reports
 from scripts.source_hygiene.scan_config import SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID
+from scripts.source_hygiene.violations import SOURCE_HYGIENE_VIOLATION_CONTRACT_ID
 from scripts.source_hygiene.report_writer import (
     REPORT_SUMMARY_FIELDS,
     REPORT_WRITER_CONTRACT_ID,
@@ -98,6 +99,10 @@ def test_hard_cutover_gate_fails_on_active_forbidden_pattern(tmp_path: Path) -> 
     assert report["ok"] is False
     assert report["stats"]["active_finding_count"] == 1
     assert report["active_findings"][0]["pattern_id"] == "runtime-dispatch-pseudo-success"
+    assert (
+        report["active_findings"][0]["violation_contract"]
+        == SOURCE_HYGIENE_VIOLATION_CONTRACT_ID
+    )
 
 
 def test_hard_cutover_gate_rejects_dotted_runtime_shim_tokens(tmp_path: Path) -> None:
@@ -515,6 +520,10 @@ def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> 
         report["roots_contract"]["canonical_rejection_registry_excludes_are_scoped"]
         is True
     )
+    assert report["violation_contract"]["contract_id"] == (
+        SOURCE_HYGIENE_VIOLATION_CONTRACT_ID
+    )
+    assert report["violation_contract"]["pattern_owner_required"] is True
     assert owner_contract["pattern_owner"]["owner_id"] == SOURCE_HYGIENE_PATTERN_OWNER
     assert (
         owner_contract["generated_report_owner"]["owner_id"]
