@@ -431,6 +431,74 @@
         "#8135",
         "#8150"
       ]
+    },
+    {
+      "ref": "6fb35f438",
+      "summary": "HC split property ownership support owners",
+      "issues": [
+        "#8138",
+        "#8146",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "05250580f",
+      "summary": "HC split frontend C API runner dump emitter",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "7be1a0eec",
+      "summary": "HC split runtime state publication paths",
+      "issues": [
+        "#8138",
+        "#8143",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "63e7ad1eb",
+      "summary": "HC add config feature state table contract",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "1f0432fb2",
+      "summary": "HC split property storage modifier owners",
+      "issues": [
+        "#8138",
+        "#8146"
+      ]
+    },
+    {
+      "ref": "371509a81",
+      "summary": "HC split native driver CLI option owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ]
+    },
+    {
+      "ref": "e1347e564",
+      "summary": "HC add property storage modifier owner files",
+      "issues": [
+        "#8134",
+        "#8138",
+        "#8146"
+      ]
+    },
+    {
+      "ref": "d3079ed69",
+      "summary": "HC split conformance publication session",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
     }
   ],
   "hard_cutover_disposition": {

@@ -106,6 +106,11 @@ pass:
   acceptance-area evidence across artifacts, property/accessor support, driver
   runtime registration commands, contract helpers, stdlib docs, native contract
   IDs, JSON helpers, public result mapping, and drained include-shard removal.
+- `6fb35f438`, `05250580f`, `7be1a0eec`, `63e7ad1eb`, `1f0432fb2`,
+  `371509a81`, `e1347e564`, and `d3079ed69` extend property ownership/storage,
+  frontend runner dump/CLI options, runtime state publication, config feature
+  table contracts, parser core profile naming, and conformance publication
+  ownership evidence.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
