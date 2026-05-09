@@ -55,6 +55,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_conformance_profile_selection.cpp
   objc3_cross_module_imported_modules_document.cpp
   objc3_cross_module_runtime_link_plan_artifact.cpp
+  objc3_cross_module_runtime_link_plan_document.cpp
   objc3_cross_module_runtime_link_plan_inputs.cpp
   objc3_cross_module_runtime_link_plan_ordering.cpp
   objc3_dashboard_status_renderers.cpp
@@ -75,6 +76,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_runtime_registration_descriptor_artifact.cpp
   objc3_runtime_registration_descriptor_document.cpp
   objc3_runtime_registration_manifest_artifact.cpp
+  objc3_runtime_registration_manifest_document.cpp
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
