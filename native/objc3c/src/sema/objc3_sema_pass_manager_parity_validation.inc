@@ -1183,7 +1183,10 @@
       result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
       result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
       result.parity_surface.deterministic_parser_sema_integration_closeout_signoff &&
+      result.parity_surface.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassFlowSummary(result.parity_surface.sema_pass_flow_summary) &&
+      IsReadyObjc3SemaPassManagerPublicationRecord(
+          result.parity_surface.pass_manager_publication_record) &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic &&
       result.parity_surface.parser_sema_conformance_corpus.deterministic &&
       result.parity_surface.parser_sema_performance_quality_guardrails

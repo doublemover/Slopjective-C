@@ -102,6 +102,9 @@
       !result.parity_surface.pass_flow_recovery_replay_key.empty() &&
       result.parity_surface.pass_flow_recovery_replay_key_deterministic &&
       result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied &&
+      result.parity_surface.deterministic_pass_manager_publication_record &&
+      IsReadyObjc3SemaPassManagerPublicationRecord(
+          result.parity_surface.pass_manager_publication_record) &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
