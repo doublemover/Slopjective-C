@@ -20,6 +20,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_error_bridge_attribute_profiles.cpp
   objc3_parser_expression_nodes.cpp
   objc3_parser_expression_surface.cpp
+  objc3_parser_literal_expression_nodes.cpp
   objc3_parser_profile_helpers.cpp
   objc3_parser_recovery_boundaries.cpp
   objc3_parser_rejection_diagnostics.cpp
@@ -28,6 +29,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_statement_profiles.cpp
   objc3_parser_statement_surface.cpp
   objc3_parser_token_metadata.cpp
+  objc3_parser_unary_expression_nodes.cpp
   objc3_type_feature_profiles.cpp
   objc3_type_generic_profiles.cpp
   objc3_parser.cpp
