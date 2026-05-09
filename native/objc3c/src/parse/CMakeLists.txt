@@ -8,6 +8,7 @@ add_library(objc3c_parse STATIC
   objc3_parse_support.cpp
   objc3_parser_attributes.cpp
   objc3_parser_block_literal_source.cpp
+  objc3_parser_core.cpp
   objc3_parser_cstyle_type_parser.cpp
   objc3_parser_cursor.cpp
   objc3_parser_declaration_surface.cpp

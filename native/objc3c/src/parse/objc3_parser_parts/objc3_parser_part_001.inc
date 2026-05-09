@@ -13,6 +13,7 @@
 #include "parse/objc3_parser_block_literal_source.h"
 #include "parse/objc3_parser_cstyle_type_parser.h"
 #include "parse/objc3_parser_cursor.h"
+#include "parse/objc3_parser_core.h"
 #include "parse/objc3_parser_declaration_surface.h"
 #include "parse/objc3_parser_diagnostics.h"
 #include "parse/objc3_parser_expression_nodes.h"
