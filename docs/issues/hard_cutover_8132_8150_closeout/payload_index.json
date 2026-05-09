@@ -164,8 +164,8 @@
   "followup_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "f66452822",
-    "through_commit": "dfe365b2e",
-    "commit_count": 43,
+    "through_commit": "f4bf6228e",
+    "commit_count": 64,
     "count_policy": "counts committed owner/evidence commits after the prior docs/support closeout refresh and excludes uncommitted worktree edits",
     "issue_owner_buckets": [
       {
@@ -204,7 +204,12 @@
           "543dec411",
           "c1b56d77f",
           "96b65d03b",
-          "9074073ac"
+          "9074073ac",
+          "df0106f0a",
+          "a4e529621",
+          "5eb5ea497",
+          "9ad72ee8a",
+          "1afa7c1ae"
         ]
       },
       {
@@ -218,7 +223,10 @@
           "c1cf8f7b6",
           "937878ddd",
           "03ffe9df8",
-          "6acb1d390"
+          "6acb1d390",
+          "e6269dc67",
+          "5eb5ea497",
+          "f4af3437c"
         ]
       },
       {
@@ -239,7 +247,12 @@
           "7b914509f",
           "9f897ba25",
           "78dbcb9c3",
-          "54e81ff4a"
+          "54e81ff4a",
+          "d0ba8050e",
+          "c2b6b5209",
+          "e03ec059c",
+          "a61477b96",
+          "647e47739"
         ]
       },
       {
@@ -254,7 +267,11 @@
           "8fd99d3e",
           "34bb8547b",
           "68865ee06",
-          "dfe365b2e"
+          "dfe365b2e",
+          "8457e4728",
+          "720c366a5",
+          "f38134a38",
+          "110c07879"
         ]
       },
       {
@@ -268,7 +285,13 @@
           "7af7e36a6",
           "26cf43410",
           "29ecc147b",
-          "6acb1d390"
+          "6acb1d390",
+          "e7deeeda7",
+          "8457e4728",
+          "1678e0323",
+          "5153e749d",
+          "91e73f01f",
+          "f56e1af4f"
         ]
       },
       {
@@ -285,7 +308,11 @@
           "5487641c4",
           "0ab5fb9ae",
           "03ffe9df8",
-          "4dcbbb24c"
+          "4dcbbb24c",
+          "e6269dc67",
+          "f4af3437c",
+          "1678e0323",
+          "f4bf6228e"
         ]
       }
     ]

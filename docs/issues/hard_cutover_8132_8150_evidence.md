@@ -168,7 +168,7 @@ Latest local owner refresh after the docs/issues outcome-index pass:
 Follow-up local owner refresh after `f66452822`:
 
 - `docs/issues/hard_cutover_latest_local_commit_refresh.md` now also folds in
-  committed owner work after `f66452822` through `dfe365b2e` without running
+  committed owner work after `f66452822` through `f4bf6228e` without running
   validation, GitHub commands, push, or remote issue edits.
 - Compiler/parser/frontend/lowering/IR evidence is refreshed by static hard-cut
   expectations, canonical literal handoff contracts, typed sema-to-lowering
@@ -178,8 +178,10 @@ Follow-up local owner refresh after `f66452822`:
   metadata owners, method fast-path seeding, method resolution table owners,
   method cache snapshots, builtin lookup owners, class metadata term cleanup,
   class graph snapshots, dispatch state snapshots, protocol conformance
-  snapshots/query owners, and image registration API owners. Fallback dispatch
-  remains strict-error evidence.
+  snapshots/query owners, image registration API owners, runtime public ABI
+  records, method class-chain resolution owners, dispatch status helpers, and
+  property/storage reflection snapshot owners, and runtime fixture owner
+  anchors. Fallback dispatch remains strict-error evidence.
 - Public C API and frontend contract evidence is refreshed by frontend C API
   contract tightening, frontend result accessor consolidation, and tooling
   expectation updates. These are contract boundaries, not compatibility
@@ -187,42 +189,50 @@ Follow-up local owner refresh after `f66452822`:
 - IO/JSON/schema/artifact evidence is refreshed by JSON value/container writers,
   IO string/process owners, JSON schema validation owners, schema retired-term
   guidance, schema contract-table ownership, dashboard renderers, conformance
-  artifact adapters, conformance claim adapters/input owners, artifact-claim
-  metadata, and pipeline result handoff.
+  artifact adapters, conformance claim adapters/input owners, runtime
+  registration manifest/artifact builder owners, cross-module runtime link plan
+  owners/inputs/ordering, artifact-claim metadata, and pipeline result handoff.
 - Diagnostics/config/capability truth evidence is refreshed by diagnostic
   render/sink owner collapse, config state owner collapse, and schema guidance
-  plus canonical config tooling expectations that keep retired terms bounded to
-  negative evidence and source-hygiene contexts.
+  plus canonical config tooling expectations, public docs command-surface
+  alignment, native docs source ownership, spec hard-cutover prose, and prose
+  planning overlays that keep retired terms bounded to negative evidence and
+  source-hygiene contexts.
 - Workflow/control-plane evidence is refreshed by telemetry command evidence
-  constraints, workflow handler registries, workflow catalog core/application
-  specs, and native driver public-workflow command owners. The public command
-  bridge remains `npm run objc3c -- <action>`.
+  constraints, workflow handler registries, workflow catalog core/application/
+  release/tooling specs, native driver public-workflow command owners, public
+  command budget contracts, validation timing report owners, source-hygiene
+  cutover residue guardrails, and public docs command-surface alignment. The
+  public command bridge remains
+  `npm run objc3c -- <action>`.
 - Behavior fixture evidence is refreshed by hard-cut static expectations,
   positive-residue wording cleanup, fixture boundary indexes, runtime dispatch
   sidecars, conformance retired-positive policies, and parser owner-path
-  replacement plus fixture boundary residue contracts.
+  replacement plus fixture boundary residue contracts, C API runner source-test
+  expectations, driver CLI split owner tests, source-hygiene cutover residue
+  guardrails, and runtime fixture owner anchors.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
 | `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, schema, parser owner-path, and tooling expectation split commits. |
-| `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class graph, dispatch state, protocol conformance, registration API, and wrapper commits; runtime fallback remains strict-error evidence. |
+| `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class-chain resolution, dispatch status, public ABI records, class graph, dispatch state, protocol conformance, registration API, property/storage reflection, and wrapper commits; runtime fallback remains strict-error evidence. |
 | `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, and AST ownership splits are indexed; old-mode and parser fallback flags are rejection fixtures. |
 | `#8135` | evidence-ready | Semantic, diagnostic, and config owner splits are tied to typed-flow, unsupported-feature, and compatibility-shim rejection fixtures. |
 | `#8136` | evidence-ready | Lowering owner splits and typed sema-to-lowering handoff are tied to strict runtime-dispatch and removed fallback fixtures. |
 | `#8137` | evidence-ready | IR emitter, message-send validation, runtime metadata, typed handoff, artifact-claim metadata, and pipeline result handoff splits are tied to canonical IR fixture evidence. |
-| `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
-| `#8139` | evidence-ready | Native target-family splits are indexed as internal topology evidence and refreshed by newer native driver CLI plus diagnostics, config, IO, runtime, artifact, IR, and pipeline owner CMake updates. |
-| `#8140` | evidence-ready | Driver, frontend, C API contract, result accessor, native driver CLI, and runner expectation splits are indexed without direct helper entrypoints becoming public commands. |
-| `#8141` | evidence-ready | Public C API result/string/diagnostic/artifact/frontend/native-driver contract ownership is indexed as internal contract truth, not a compatibility wrapper. |
-| `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, and native driver public-workflow owners replace direct helpers, aliases, and registry facades. |
-| `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup, dispatch state, protocol conformance, registration API owners, and strict runtime behavior fixtures. |
-| `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, and issue evidence maps. |
-| `#8145` | evidence-ready | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, and evidence maps explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims. |
+| `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, runtime registration manifest/artifact builder, cross-module runtime link plan/input/ordering, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
+| `#8139` | evidence-ready | Native target-family splits are indexed as internal topology evidence and refreshed by newer native driver CLI/native-docs source ownership plus diagnostics, config, IO, runtime, artifact, IR, and pipeline owner CMake updates. |
+| `#8140` | evidence-ready | Driver, frontend, C API contract, result accessor, native driver CLI, C API runner source-test, driver CLI split owner tests, and runner expectation splits are indexed without direct helper entrypoints becoming public commands. |
+| `#8141` | evidence-ready | Public C API result/string/diagnostic/artifact/frontend/native-driver/C API runner/runtime ABI contract ownership is indexed as internal contract truth, not a compatibility wrapper. |
+| `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, release/tooling specs, public command budget contracts, validation timing report owners, native driver public-workflow owners, and public docs command-surface alignment replace direct helpers, aliases, and registry facades. |
+| `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup/class-chain/status, dispatch state, protocol conformance, public ABI, registration API/manifest owners, property/storage reflection snapshots, runtime fixture anchors, and strict runtime behavior fixtures. |
+| `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, C API runner source-test, driver CLI split owner tests, source-hygiene cutover residue guardrails, runtime fixture anchors, and issue evidence maps. |
+| `#8145` | evidence-ready | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, and evidence maps explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims. |
 | `#8146` | evidence-ready | Frontend type surfaces are indexed against canonical typed-flow, canonical literal, typed metadata handoff, and tooling split evidence. |
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
-| `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
-| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog, native driver CLI ownership, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the 90-owner-commit refresh plus the follow-up committed owner wave through `dfe365b2e`. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
+| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, validation timing reports, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
+| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the 90-owner-commit refresh plus the follow-up committed owner wave through `f4bf6228e`. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

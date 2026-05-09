@@ -771,8 +771,8 @@
   "followup_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "f66452822",
-    "through_commit": "dfe365b2e",
-    "commit_count": 43,
+    "through_commit": "f4bf6228e",
+    "commit_count": 64,
     "count_policy": "counts committed owner/evidence commits after the prior docs/support closeout refresh and excludes uncommitted worktree edits",
     "validation": "not run",
     "github": "not called",
@@ -815,9 +815,14 @@
           "543dec411",
           "c1b56d77f",
           "96b65d03b",
-          "9074073ac"
+          "9074073ac",
+          "df0106f0a",
+          "a4e529621",
+          "5eb5ea497",
+          "9ad72ee8a",
+          "1afa7c1ae"
         ],
-        "owner_boundary": "runtime image metadata, dispatch fast-path, method resolution table, cache snapshot, builtin lookup, class metadata, class graph snapshot, dispatch state snapshot, protocol conformance snapshot/query, and image registration API owners are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
+        "owner_boundary": "runtime image metadata, dispatch fast-path, method resolution table, cache snapshot, builtin lookup, class-chain resolution, dispatch status, runtime public ABI records, class metadata, class graph snapshot, dispatch state snapshot, protocol conformance snapshot/query, image registration API, property/storage reflection owners, and runtime fixture anchors are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
       },
       {
         "issues": [
@@ -830,9 +835,12 @@
           "c1cf8f7b6",
           "937878ddd",
           "03ffe9df8",
-          "6acb1d390"
+          "6acb1d390",
+          "e6269dc67",
+          "5eb5ea497",
+          "f4af3437c"
         ],
-        "owner_boundary": "frontend C API contract tightening, consolidated result accessors, native driver CLI owner splits, and tooling split expectations are public-contract evidence, not compatibility wrappers"
+        "owner_boundary": "frontend C API contract tightening, consolidated result accessors, native driver CLI owner splits, C API runner source-test expectations, runtime public ABI records, driver CLI split owner tests, and tooling split expectations are public-contract evidence, not compatibility wrappers"
       },
       {
         "issues": [
@@ -852,9 +860,14 @@
           "7b914509f",
           "9f897ba25",
           "78dbcb9c3",
-          "54e81ff4a"
+          "54e81ff4a",
+          "d0ba8050e",
+          "c2b6b5209",
+          "e03ec059c",
+          "a61477b96",
+          "647e47739"
         ],
-        "owner_boundary": "JSON writers, telemetry/schema guidance, IO/process owners, schema validation, developer tooling documents, dashboard renderers, conformance artifact adapters/input owners, artifact-claim metadata, and pipeline handoff own IO/schema/artifact evidence without fallback support"
+        "owner_boundary": "JSON writers, telemetry/schema guidance, IO/process owners, schema validation, developer tooling documents, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/inputs/ordering, artifact-claim metadata, and pipeline handoff own IO/schema/artifact evidence without fallback support"
       },
       {
         "issues": [
@@ -868,9 +881,13 @@
           "8fd99d3e",
           "34bb8547b",
           "68865ee06",
-          "dfe365b2e"
+          "dfe365b2e",
+          "8457e4728",
+          "720c366a5",
+          "f38134a38",
+          "110c07879"
         ],
-        "owner_boundary": "diagnostic render/sink owner collapse, config state owner collapse, schema retired-term guidance, and canonical config tooling expectations keep compatibility wording bounded to rejection or hygiene evidence"
+        "owner_boundary": "diagnostic render/sink owner collapse, config state owner collapse, schema retired-term guidance, canonical config tooling expectations, public docs command-surface alignment, native docs source ownership, spec hard-cutover prose, and prose planning overlays keep compatibility wording bounded to rejection or hygiene evidence"
       },
       {
         "issues": [
@@ -883,9 +900,15 @@
           "7af7e36a6",
           "26cf43410",
           "29ecc147b",
-          "6acb1d390"
+          "6acb1d390",
+          "e7deeeda7",
+          "8457e4728",
+          "1678e0323",
+          "5153e749d",
+          "91e73f01f",
+          "f56e1af4f"
         ],
-        "owner_boundary": "telemetry command evidence constraints, workflow handler registries, workflow catalog core/application specs, and native driver public-workflow command owners preserve the npm bridge as the public command surface"
+        "owner_boundary": "telemetry command evidence constraints, workflow handler registries, workflow catalog core/application/release/tooling specs, native driver public-workflow command owners, public command budget contracts, validation timing report owners, source-hygiene residue guardrails, and public docs command-surface alignment preserve the npm bridge as the public command surface"
       },
       {
         "issues": [
@@ -901,9 +924,13 @@
           "5487641c4",
           "0ab5fb9ae",
           "03ffe9df8",
-          "4dcbbb24c"
+          "4dcbbb24c",
+          "e6269dc67",
+          "f4af3437c",
+          "1678e0323",
+          "f4bf6228e"
         ],
-        "owner_boundary": "fixture boundaries, runtime dispatch sidecars, retired-positive conformance policy, parser owner paths, tooling expectations, and fixture residue contracts keep positives canonical and retired behavior rejected, strict-error, or absent"
+        "owner_boundary": "fixture boundaries, runtime dispatch sidecars, retired-positive conformance policy, parser owner paths, tooling expectations, fixture residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors keep positives canonical and retired behavior rejected, strict-error, or absent"
       }
     ]
   },

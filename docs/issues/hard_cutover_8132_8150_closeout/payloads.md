@@ -18,7 +18,7 @@ acceptance owner, without changing the no-validation, no-GitHub, no-push,
 local-only status of these payloads.
 
 The same local refresh document now also folds in the follow-up committed owner
-wave after `f66452822` through `dfe365b2e`. That follow-up covers JSON value
+wave after `f66452822` through `f4bf6228e`. That follow-up covers JSON value
 writers, schema retired-term guidance, diagnostic/config owner collapse,
 runtime class metadata and dispatch owner splits, IO/process owners, canonical
 literal and typed sema/lowering contracts, retired fixture sidecars, workflow
@@ -27,8 +27,15 @@ accessors, conformance artifact adapters, artifact-claim IR metadata owners,
 pipeline result handoff, tooling expectation refreshes, runtime class graph
 snapshots, runtime dispatch/protocol/registration owner splits, native driver
 CLI ownership, conformance claim validation input ownership, fixture residue
-contracts, and canonical config tooling expectations. It still does not assert
-validation, `gh`, push, or remote issue edits.
+contracts, canonical config tooling expectations, runtime method class-chain and
+dispatch status helpers, public/native docs ownership, C API runner source-test
+expectations, workflow release catalog specs, and runtime registration manifest
+artifact ownership. It still does not assert validation, `gh`, push, or remote
+issue edits. It also covers the later runtime public ABI, driver CLI test,
+runtime artifact builder, source-hygiene residue, workflow tooling catalog,
+cross-module link plan, public command budget, property/storage reflection,
+validation timing, spec prose, planning overlays, and runtime fixture owner
+commits that landed after the first docs commit.
 
 ## Latest Local Owner Refresh
 
@@ -45,12 +52,12 @@ validation, `gh`, push, or remote issue edits.
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
 | `#8132`, `#8134`, `#8136`, `#8137`, `#8146`, `#8147` | `d63a55535`, `9d53be5fb`, `0f1933ab3`, `0ab5fb9ae`, `9f897ba25`, `78dbcb9c3`, `03ffe9df8` | Compiler/parser/frontend/lowering/IR evidence now includes static hard-cut expectations, canonical literal handoff, typed sema-to-lowering handoff, parser include-owner paths, artifact-claim IR metadata, pipeline result handoff, and tooling split expectations. |
-| `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, and image registration API owners; fallback dispatch remains strict-error evidence. |
-| `#8139`, `#8140`, `#8141`, `#8143` | `c1cf8f7b6`, `937878ddd`, `03ffe9df8`, `6acb1d390` | Public frontend/API evidence now includes tightened frontend C API contracts, consolidated result accessors, native driver CLI ownership, and tooling split expectations without adding compatibility wrappers. |
-| `#8138`, `#8148` | `328bd8fe9`, `3bfc42ea5`, `34bb8547b`, `68865ee06`, `545e4159f`, `6017b3968`, `018f6aa84`, `a23c7d97a`, `e1842acf8`, `7b914509f`, `9f897ba25`, `78dbcb9c3`, `54e81ff4a` | IO/JSON/schema/artifact evidence now includes JSON value writers, telemetry command constraints, schema retired-term guidance, schema contract-table ownership, IO string/process owners, schema validation owners, developer tooling dump/playground owners, dashboard renderers, conformance artifact adapters/input owners, artifact-claim metadata, and pipeline handoff. |
-| `#8135`, `#8138`, `#8145`, `#8148` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e` | Diagnostic/config/capability truth evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, and schema guidance that keeps retired compatibility terms out of public support claims. |
-| `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application specs, and native driver public-workflow command owners while keeping public command truth at `npm run objc3c -- <action>`. |
-| `#8144`, `#8145`, `#8150` | `d63a55535`, `3fc0f3dd7`, `9b53ca57b`, `9debafbeb`, `5487641c4`, `0ab5fb9ae`, `03ffe9df8`, `4dcbbb24c` | Fixture and retired-surface evidence now includes static hard-cut expectations, positive-residue wording cleanup, fixture boundary indexes, runtime dispatch sidecars, retired-positive conformance policies, parser owner-path replacement, tooling split expectations, and fixture boundary residue contracts. |
+| `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac`, `df0106f0a`, `a4e529621`, `5eb5ea497`, `9ad72ee8a`, `1afa7c1ae` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, image registration API owners, method class-chain resolution owners, dispatch status helpers, runtime public ABI records, and property/storage reflection snapshot ownership; fallback dispatch remains strict-error evidence. |
+| `#8139`, `#8140`, `#8141`, `#8143` | `c1cf8f7b6`, `937878ddd`, `03ffe9df8`, `6acb1d390`, `e6269dc67`, `5eb5ea497`, `f4af3437c` | Public frontend/API evidence now includes tightened frontend C API contracts, consolidated result accessors, native driver CLI ownership, C API runner source-test expectations, runtime public ABI records, driver CLI split owner tests, and tooling split expectations without adding compatibility wrappers. |
+| `#8138`, `#8148` | `328bd8fe9`, `3bfc42ea5`, `34bb8547b`, `68865ee06`, `545e4159f`, `6017b3968`, `018f6aa84`, `a23c7d97a`, `e1842acf8`, `7b914509f`, `9f897ba25`, `78dbcb9c3`, `54e81ff4a`, `d0ba8050e`, `c2b6b5209`, `e03ec059c`, `a61477b96`, `647e47739` | IO/JSON/schema/artifact evidence now includes JSON value writers, telemetry command constraints, schema retired-term guidance, schema contract-table ownership, IO string/process owners, schema validation owners, developer tooling dump/playground owners, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/input/ordering, artifact-claim metadata, and pipeline handoff. |
+| `#8135`, `#8138`, `#8145`, `#8148`, `#8150` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e`, `8457e4728`, `720c366a5`, `f38134a38`, `110c07879` | Diagnostic/config/capability truth evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, and schema guidance that keeps retired compatibility terms out of public support claims. |
+| `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390`, `e7deeeda7`, `8457e4728`, `1678e0323`, `5153e749d`, `91e73f01f`, `f56e1af4f` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application/release/tooling specs, native driver public-workflow command owners, public command budget contracts, validation timing report owners, source-hygiene residue guardrails, and public docs command-surface alignment while keeping public command truth at `npm run objc3c -- <action>`. |
+| `#8144`, `#8145`, `#8150` | `d63a55535`, `3fc0f3dd7`, `9b53ca57b`, `9debafbeb`, `5487641c4`, `0ab5fb9ae`, `03ffe9df8`, `4dcbbb24c`, `e6269dc67`, `f4af3437c`, `1678e0323`, `f4bf6228e` | Fixture and retired-surface evidence now includes static hard-cut expectations, positive-residue wording cleanup, fixture boundary indexes, runtime dispatch sidecars, retired-positive conformance policies, parser owner-path replacement, tooling split expectations, fixture boundary residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors. |
 
 ## #8132
 
@@ -73,8 +80,9 @@ Strict typed runtime dispatch is indexed from local dispatch-result, selector,
 keypath, cache, state, wrapper, runtime image metadata, method fast-path,
 method-resolution, builtin-lookup, class graph snapshot, dispatch state
 snapshot, protocol conformance snapshot/query, and image registration API
-ownership commits. Runtime fallback behavior is represented as strict-error
-fixture evidence.
+ownership commits, plus method class-chain resolution and dispatch status helper
+splits, runtime public ABI records, and property/storage reflection snapshot ownership.
+Runtime fallback behavior is represented as strict-error fixture evidence.
 
 Evidence: `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
 `tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3`,
@@ -150,7 +158,8 @@ pipeline classification, IO/artifact support, artifact publication, config
 diagnostics, pipeline/IO artifact contracts, config truth-table commits, JSON
 value/container writers, IO string/process owners, schema validation owners,
 artifact adapters, conformance claim validation input owners, dashboard
-renderers, and pipeline result handoff.
+renderers, runtime registration manifest artifact owners, and pipeline result
+handoff, plus runtime artifact builder and cross-module runtime link plan input/ordering owners.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/support/evidence_map.json`, commits `4c5fbe849`, `7a5412e51`,
@@ -163,8 +172,9 @@ fallback or migration support.
 ## #8139
 
 Native target-family evidence is indexed from root, frontend/driver, config,
-CLI, support, AST target split commits, newer native driver CLI ownership, and
-newer diagnostics/config/IO/runtime/artifact/IR/pipeline owner CMake updates.
+CLI, support, AST target split commits, newer native driver CLI ownership,
+native docs source ownership, and newer diagnostics/config/IO/runtime/artifact/
+IR/pipeline owner CMake updates.
 
 Evidence: `docs/support/capability_matrix.json`, `docs/support/evidence_map.json`,
 commits `1877caeb7`, `df28562af`, `445494349`, `2e6b613b8`, `1e26582d3`,
@@ -178,7 +188,8 @@ fallback lane.
 Driver, frontend, and runner split evidence is indexed from frontend/driver,
 C API runner, result accessor, ADR, basic artifact publication, and driver/C API
 runner owner commits, plus tightened frontend C API contracts and tooling split
-expectation updates and native driver CLI owner splits.
+expectation updates, native driver CLI owner splits, and C API runner
+source-test expectations plus driver CLI split owner tests.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/support/evidence_map.json`, commits `c576b6a22`, `c18135fcc`,
@@ -192,7 +203,8 @@ Public C API ownership evidence is indexed from C API ownership coverage,
 frontend C API result accessor, runner owner, sema/frontend ownership, driver/C
 API runner, edge-case contract rename commits, tightened frontend C API
 contracts, consolidated result accessors, native driver public-workflow command
-owners, and artifact/IR metadata owners.
+owners, C API runner source-test expectations, and artifact/IR metadata owners.
+Runtime public ABI records are also indexed as strict public-contract evidence.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/evidence_map.json`, commits `a51cac68d`, `d8bbebb2b`,
@@ -207,7 +219,9 @@ Workflow command-surface evidence is indexed around the single public npm bridge
 and the retirement of direct helpers, package-script aliases, and registry
 facades. The follow-up handler registry and catalog core-spec splits keep that
 surface hard-cut to `npm run objc3c -- <action>`, with application catalog specs
-and native driver public-workflow command owners preserving the same boundary.
+release catalog specs, native driver public-workflow command owners, and public
+docs command-surface alignment preserving the same boundary, with tooling
+catalog specs and public command budget contracts included in the same lane.
 
 Evidence: `docs/workflows/commands.md`, `docs/support/capability_matrix.json`,
 commits `b3401be67`, `d86f03a25`, `72b62d7ed`, `d5668d12e`, `5c025aa97`,
@@ -223,7 +237,9 @@ acceptance-domain commits covering error, concurrency, interop, object model,
 registration, storage reflection, runtime package surfaces, class metadata,
 method cache/resolution/builtin lookup, dispatch state snapshots, protocol
 conformance snapshots/query owners, image registration API owners, and class
-graph snapshots.
+graph snapshots, plus method class-chain resolution, dispatch status helpers,
+runtime registration manifest artifacts, runtime public ABI records, and
+property reflection snapshot owners.
 
 Evidence: `tests/tooling/runtime/README.md`,
 `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
@@ -239,7 +255,8 @@ behavior.
 Behavior-first fixture evidence is indexed from behavior catalog, cutover
 boundary, strict fixture, wording, removed-mode fixture, retired-surface matrix,
 issue evidence commits, runtime dispatch sidecars, positive-residue wording
-cleanup, fixture residue contracts, and refreshed static/tooling hard-cut
+cleanup, fixture residue contracts, C API runner source-test expectations, and
+driver CLI split owner tests plus refreshed static/tooling hard-cut
 expectations.
 
 Evidence: `tests/native/README.md`, `tests/native/retired_surface_matrix.json`,
@@ -257,7 +274,8 @@ Capability truth evidence is indexed from capability docs, command bridge docs,
 schema truth docs, evidence-map tie-ins, support truth, and diagnostic catalog
 table commits, plus diagnostic/config owner collapse and schema retired-term
 guidance plus canonical config tooling expectations that prevent stale
-compatibility wording from becoming support truth.
+compatibility wording from becoming support truth, with public/native docs
+ownership, spec hard-cutover prose, and prose planning overlays kept in the same support-truth lane.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/capability_matrix.md`, `docs/support/evidence_map.json`,
@@ -305,8 +323,10 @@ artifact JSON writers, manifest writers, schema infrastructure, artifact
 registry owners, capability evidence schemas, evidence-map docs, schema id
 normalization, config truth tables, JSON value/container writers, schema
 validation owner splits, schema retired-term guidance, conformance claim
-validation input owners, artifact adapters, dashboard renderers, artifact-claim
-metadata, config tooling expectations, and pipeline result handoff.
+validation input owners, runtime registration manifest artifact owners, artifact
+adapters, dashboard renderers, artifact-claim metadata, config tooling
+expectations, runtime artifact builder owners, cross-module runtime link plan
+input/ordering owners, and pipeline result handoff.
 
 Evidence: `docs/support/capability_matrix.schema.json`,
 `docs/support/evidence_map.json`, `tests/tooling/test_objc3c_shared_json_schema.py`,
@@ -322,7 +342,9 @@ Source-hygiene and command-surface evidence is indexed from command hygiene,
 source root coverage, allowlist retirement, guardrail scanning, and workflow
 hygiene owner commits, plus telemetry command constraints, workflow handler
 registries, workflow catalog core/application specs, and native driver public
-workflow command owners.
+workflow command owners, release catalog specs, and public docs command-surface
+alignment, plus tooling catalog specs, public command budget contracts, and
+source-hygiene residue guardrails, plus validation timing report owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -334,7 +356,7 @@ are retired from public claims.
 ## #8150
 
 Final closure evidence is local and evidence-ready, including the follow-up
-committed owner wave through `dfe365b2e`. Remote issue closure, push, and
+committed owner wave through `f4bf6228e`. Remote issue closure, push, and
 validation remain deferred under the current worker constraints.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
