@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .action_spec import ActionSpec
-from .registry import ACTION_SPECS
+from .action_catalog import ACTION_SPECS
 
 
 def action_spec(action: str) -> ActionSpec | None:
