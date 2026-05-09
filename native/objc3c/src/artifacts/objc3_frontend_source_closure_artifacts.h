@@ -18,6 +18,16 @@ namespace objc3::artifacts::frontend {
 [[nodiscard]] std::string BuildConcurrencyAsyncSourceClosureSummaryJson(
     const Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary);
 
+[[nodiscard]] std::string
+BuildConcurrencyActorMemberIsolationSourceClosureSummaryJson(
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+        &summary);
+
+[[nodiscard]] std::string
+BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson(
+    const Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
+        &summary);
+
 [[nodiscard]] std::string BuildOwnershipSystemExtensionSourceClosureSummaryJson(
     const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary);
 
