@@ -81,6 +81,21 @@ from scripts.objc3c_workflow.actions.docs import (
     action_lint_markdown,
     action_validate_documentation_surface,
 )
+from scripts.objc3c_workflow.actions.ecosystem_publication import (
+    action_build_package_lock,
+    action_check_planning_publication_drift,
+    action_publish_adoption_legibility,
+    action_publish_governance_sustainability,
+    action_publish_long_horizon_operations,
+    action_publish_planning_issues,
+    action_validate_adoption_legibility,
+    action_validate_governance_sustainability,
+    action_validate_long_horizon_operations,
+    action_validate_package_authoring,
+    action_validate_package_ecosystem,
+    action_validate_package_mirror,
+    action_validate_runnable_package_ecosystem,
+)
 from scripts.objc3c_workflow.actions.external_validation import (
     action_check_external_validation_surface,
     action_publish_external_repro_corpus,
@@ -226,19 +241,6 @@ RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
 MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
 NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
-PACKAGE_LOCK_PY = ROOT / "scripts" / "build_objc3c_package_lock.py"
-PACKAGE_AUTHORING_WORKFLOW_PY = ROOT / "scripts" / "check_objc3c_package_authoring_workflow.py"
-PACKAGE_MIRROR_REPRODUCIBILITY_PY = ROOT / "scripts" / "check_objc3c_package_registry_mirror_reproducibility.py"
-PACKAGE_ECOSYSTEM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_package_ecosystem_integration.py"
-RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_package_ecosystem_end_to_end.py"
-LONG_HORIZON_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_long_horizon_operations_integration.py"
-LONG_HORIZON_OPERATIONS_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_long_horizon_operations_metadata.py"
-ADOPTION_LEGIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_adoption_legibility_integration.py"
-ADOPTION_LEGIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_adoption_legibility_metadata.py"
-GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
-GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_governance_sustainability_metadata.py"
-PLANNING_ISSUE_PUBLISHER_PY = ROOT / "scripts" / "publish_objc3c_planning_issues.py"
-PLANNING_PUBLICATION_AUDIT_PY = ROOT / "scripts" / "audit_objc3c_planning_publication.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
 SOURCE_HYGIENE_AUTHENTICITY_PY = ROOT / "scripts" / "check_source_hygiene_authenticity.py"
@@ -282,58 +284,6 @@ def action_check_task_hygiene(_: list[str]) -> int:
 
 def action_check_repo_superclean_surface(_: list[str]) -> int:
     return run([sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)])
-
-
-def action_build_package_lock(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_LOCK_PY)])
-
-
-def action_validate_package_authoring(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_AUTHORING_WORKFLOW_PY)])
-
-
-def action_validate_package_mirror(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_MIRROR_REPRODUCIBILITY_PY)])
-
-
-def action_validate_package_ecosystem(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_ECOSYSTEM_INTEGRATION_PY)])
-
-
-def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY)])
-
-
-def action_validate_long_horizon_operations(_: list[str]) -> int:
-    return run([sys.executable, str(LONG_HORIZON_OPERATIONS_INTEGRATION_PY)])
-
-
-def action_publish_long_horizon_operations(_: list[str]) -> int:
-    return run([sys.executable, str(LONG_HORIZON_OPERATIONS_PUBLICATION_PY)])
-
-
-def action_validate_adoption_legibility(_: list[str]) -> int:
-    return run([sys.executable, str(ADOPTION_LEGIBILITY_INTEGRATION_PY)])
-
-
-def action_publish_adoption_legibility(_: list[str]) -> int:
-    return run([sys.executable, str(ADOPTION_LEGIBILITY_PUBLICATION_PY)])
-
-
-def action_validate_governance_sustainability(_: list[str]) -> int:
-    return run([sys.executable, str(GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY)])
-
-
-def action_publish_governance_sustainability(_: list[str]) -> int:
-    return run([sys.executable, str(GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY)])
-
-
-def action_publish_planning_issues(rest: list[str]) -> int:
-    return run([sys.executable, str(PLANNING_ISSUE_PUBLISHER_PY), *rest])
-
-
-def action_check_planning_publication_drift(rest: list[str]) -> int:
-    return run([sys.executable, str(PLANNING_PUBLICATION_AUDIT_PY), "--check", *rest])
 
 
 def action_validate_repo_superclean(_: list[str]) -> int:
