@@ -47,5 +47,4 @@ jobs:
         run: npm run objc3c -- build-native-binaries
 
       - name: Verify conformance suite minima and required families
-        shell: pwsh
-        run: ./scripts/check_conformance_suite.ps1
+        run: npm run objc3c -- check-conformance-minima

@@ -13,6 +13,7 @@ SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
+CONFORMANCE_MINIMA_PS1 = ROOT / "scripts" / "check_conformance_suite.ps1"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 )
@@ -75,6 +76,10 @@ def action_validate_getting_started(_: list[str]) -> int:
 
 def action_validate_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
+
+
+def action_check_conformance_minima(_: list[str]) -> int:
+    return pwsh_file(CONFORMANCE_MINIMA_PS1)
 
 
 def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
