@@ -185,7 +185,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_api.h
   public/objc3_runtime_dispatch_diagnostics.cpp
   public/objc3_runtime_dispatch_diagnostics.h
+  public/objc3_runtime_dispatch_result.h
+  public/objc3_runtime_dispatch_status.h
   public/objc3_runtime_registration.h
+  public/objc3_runtime_registration_status.h
   public/objc3_runtime_result.h
   public/objc3_runtime_result_builder.cpp
   public/objc3_runtime_result_builder.h

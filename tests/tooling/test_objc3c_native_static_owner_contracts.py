@@ -101,3 +101,35 @@ def test_ir_emitter_static_contract_uses_split_context_and_active_artifact_api()
     assert "struct LoweredMessageSend" not in ir_header
     assert "EmitObjc3IRText(pipeline_result.program.ast, options.lowering" in artifacts_source
     assert "EmitObjc3IRText(pipeline_result.program, options.lowering" not in artifacts_source
+
+
+def test_runtime_public_result_abi_uses_split_status_and_payload_headers() -> None:
+    runtime_cmake = _read(SRC_ROOT / "runtime" / "CMakeLists.txt")
+    aggregate = _read(SRC_ROOT / "runtime" / "public" / "objc3_runtime_result.h")
+    registration_status = _read(
+        SRC_ROOT / "runtime" / "public" / "objc3_runtime_registration_status.h"
+    )
+    dispatch_status = _read(
+        SRC_ROOT / "runtime" / "public" / "objc3_runtime_dispatch_status.h"
+    )
+    dispatch_result = _read(
+        SRC_ROOT / "runtime" / "public" / "objc3_runtime_dispatch_result.h"
+    )
+
+    assert '#include "runtime/public/objc3_runtime_registration_status.h"' in aggregate
+    assert '#include "runtime/public/objc3_runtime_dispatch_status.h"' in aggregate
+    assert '#include "runtime/public/objc3_runtime_dispatch_result.h"' in aggregate
+    assert "typedef enum objc3_runtime_registration_status_code" not in aggregate
+    assert "typedef enum objc3_runtime_dispatch_status_code" not in aggregate
+    assert "typedef struct objc3_runtime_dispatch_i32_result" not in aggregate
+
+    assert "typedef enum objc3_runtime_registration_status_code" in registration_status
+    assert "OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS" in registration_status
+    assert "typedef enum objc3_runtime_dispatch_status_code" in dispatch_status
+    assert "OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT" in dispatch_status
+    assert "typedef struct objc3_runtime_dispatch_i32_result" in dispatch_result
+    assert "objc3_runtime_dispatch_status_code status_code;" in dispatch_result
+
+    assert "public/objc3_runtime_registration_status.h" in runtime_cmake
+    assert "public/objc3_runtime_dispatch_status.h" in runtime_cmake
+    assert "public/objc3_runtime_dispatch_result.h" in runtime_cmake

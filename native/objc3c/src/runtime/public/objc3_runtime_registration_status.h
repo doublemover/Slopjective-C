@@ -1,0 +1,18 @@
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum objc3_runtime_registration_status_code {
+  OBJC3_RUNTIME_REGISTRATION_STATUS_OK = 0,
+  OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR = -1,
+  OBJC3_RUNTIME_REGISTRATION_STATUS_DUPLICATE_TRANSLATION_UNIT_IDENTITY_KEY =
+      -2,
+  OBJC3_RUNTIME_REGISTRATION_STATUS_OUT_OF_ORDER_REGISTRATION = -3,
+  OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS = -4,
+} objc3_runtime_registration_status_code;
+
+#ifdef __cplusplus
+}
+#endif
