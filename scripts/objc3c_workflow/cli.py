@@ -5,7 +5,14 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 
-from .environment import WORKFLOW_COMMAND_TEXT
+from .arguments import (
+    DescribeActionRequest,
+    DescribePackageScriptRequest,
+    ExecuteActionRequest,
+    ListActionsRequest,
+    WorkflowUsageError,
+    parse_workflow_args,
+)
 from .npm_surface import describe_package_script_payload
 from .registry import ACTION_SPECS
 from .reports import emit_json
@@ -17,36 +24,24 @@ from .action_dispatch import (
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = list(sys.argv[1:] if argv is None else argv)
-    if not args:
-        print(
-            f"usage: {WORKFLOW_COMMAND_TEXT} <action> [args...]\n"
-            f"       {WORKFLOW_COMMAND_TEXT} --list-json\n"
-            f"       {WORKFLOW_COMMAND_TEXT} --describe <action>\n"
-            f"       {WORKFLOW_COMMAND_TEXT} --describe-script <package-script>",
-            file=sys.stderr,
-        )
-        return 2
+    try:
+        request = parse_workflow_args(sys.argv[1:] if argv is None else argv)
+    except WorkflowUsageError as exc:
+        print(exc.message, file=sys.stderr)
+        return exc.exit_code
 
-    action, *rest = args
-    if action == "--list-json":
+    if isinstance(request, ListActionsRequest):
         return emit_json(list_actions_payload())
-    if action == "--describe":
-        if len(rest) != 1:
-            print(f"usage: {WORKFLOW_COMMAND_TEXT} --describe <action>", file=sys.stderr)
+    if isinstance(request, DescribeActionRequest):
+        if request.action not in ACTION_SPECS:
+            print(f"unknown action: {request.action}", file=sys.stderr)
             return 2
-        describe_action = rest[0]
-        if describe_action not in ACTION_SPECS:
-            print(f"unknown action: {describe_action}", file=sys.stderr)
+        return emit_json(describe_action_payload(request.action))
+    if isinstance(request, DescribePackageScriptRequest):
+        if request.package_script != "objc3c":
+            print(f"unknown package script: {request.package_script}", file=sys.stderr)
             return 2
-        return emit_json(describe_action_payload(describe_action))
-    if action == "--describe-script":
-        if len(rest) != 1:
-            print(f"usage: {WORKFLOW_COMMAND_TEXT} --describe-script <package-script>", file=sys.stderr)
-            return 2
-        describe_script = rest[0]
-        if describe_script != "objc3c":
-            print(f"unknown package script: {describe_script}", file=sys.stderr)
-            return 2
-        return emit_json(describe_package_script_payload(describe_script))
-    return execute_registered_action(action, rest)
+        return emit_json(describe_package_script_payload(request.package_script))
+    if isinstance(request, ExecuteActionRequest):
+        return execute_registered_action(request.action, request.args)
+    raise AssertionError(f"unhandled workflow request: {request!r}")

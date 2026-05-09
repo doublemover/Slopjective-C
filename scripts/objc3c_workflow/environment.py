@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
 
+from .paths import ROOT, SCRIPT_ROOT
 
-SCRIPT_ROOT = Path(__file__).resolve().parents[1]
-ROOT = Path(__file__).resolve().parents[2]
 
 PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"

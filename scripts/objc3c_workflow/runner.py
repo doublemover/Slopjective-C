@@ -10,8 +10,9 @@ from pathlib import Path
 SCRIPT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = Path(__file__).resolve().parents[2]
 for import_root in (ROOT, SCRIPT_ROOT):
-    if str(import_root) not in sys.path:
-        sys.path.insert(0, str(import_root))
+    import_root_text = str(import_root)
+    if import_root_text not in sys.path:
+        sys.path.insert(0, import_root_text)
 
 from scripts.objc3c_workflow import cli
 
