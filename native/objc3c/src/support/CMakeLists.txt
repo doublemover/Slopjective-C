@@ -27,7 +27,12 @@ add_library(objc3c_support STATIC
   objc3_method_family_profile_builder.h
   objc3_method_family_profile_record.h
   objc3_method_family_profiles.h
-  objc3_method_family_traits.cpp
+  objc3_method_family_known_names.cpp
+  objc3_method_family_known_names.h
+  objc3_method_family_related_result.cpp
+  objc3_method_family_related_result.h
+  objc3_method_family_retained_result.cpp
+  objc3_method_family_retained_result.h
   objc3_method_family_traits.h
   objc3_objc_param_type_surface_profiles.h
   objc3_objc_property_type_surface_profiles.h
