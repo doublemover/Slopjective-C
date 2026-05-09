@@ -489,6 +489,43 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
 // registration-time seeded direct/final/sealed entries, and that seeded path
 // remains explicit in the runtime-owned proof counters and last-fast-path
 // reason snapshot state.
+void StoreDispatchResultContractUnlocked(
+    RuntimeState &state, objc3_runtime_dispatch_status_code status_code,
+    RuntimeMethodReturnKind return_kind) {
+  state.last_dispatch_status_code = status_code;
+  state.last_dispatch_return_kind = RuntimeMethodReturnKindName(return_kind);
+  state.last_dispatch_diagnostic_code =
+      objc3c::runtime::DispatchDiagnosticCode(status_code);
+  state.last_dispatch_diagnostic_message =
+      objc3c::runtime::DispatchDiagnosticMessage(status_code);
+  state.last_dispatch_result_contract =
+      status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK
+          ? "typed-dispatch-value-result"
+          : "typed-dispatch-strict-error-result";
+}
+
+void RecordTypedDispatchSuccess(RuntimeState &state,
+                                RuntimeMethodReturnKind return_kind) {
+  std::lock_guard<std::mutex> lock(state.mutex);
+  ++state.live_dispatch_count;
+  state.last_dispatch_strict_error = false;
+  state.last_dispatch_resolved_live_method = true;
+  StoreDispatchResultContractUnlocked(
+      state, OBJC3_RUNTIME_DISPATCH_STATUS_OK, return_kind);
+}
+
+void RecordPostResolutionStrictDispatchFailure(
+    RuntimeState &state, objc3_runtime_dispatch_status_code status_code,
+    RuntimeMethodReturnKind return_kind, const char *dispatch_path) {
+  std::lock_guard<std::mutex> lock(state.mutex);
+  ++state.strict_dispatch_error_count;
+  state.last_dispatch_strict_error = true;
+  state.last_dispatch_resolved_live_method = false;
+  state.last_dispatch_path = dispatch_path != nullptr ? dispatch_path : "";
+  state.last_dispatch_implementation_kind = "strict-dispatch-error";
+  StoreDispatchResultContractUnlocked(state, status_code, return_kind);
+}
+
 objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
   RuntimeState &state = State();
@@ -518,15 +555,23 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     state.last_dispatch_strict_error = false;
     state.last_dispatch_effective_direct_dispatch = false;
     state.last_dispatch_used_builtin = false;
+    state.last_dispatch_status_code =
+        OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
     state.last_fast_path_reason.clear();
     state.last_dispatch_path.clear();
     state.last_dispatch_implementation_kind.clear();
+    state.last_dispatch_return_kind.clear();
+    state.last_dispatch_diagnostic_code.clear();
+    state.last_dispatch_diagnostic_message.clear();
+    state.last_dispatch_result_contract.clear();
     state.last_dispatch_property_name.clear();
     state.last_resolved_class_name.clear();
     state.last_resolved_owner_identity.clear();
     state.last_dispatch_parameter_count = 0;
     state.last_dispatch_property_base_identity = 0;
     state.last_dispatch_property_slot_index = 0;
+    StoreDispatchResultContractUnlocked(
+        state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
 
     if (receiver != 0 && selector_handle != nullptr) {
       std::uint64_t base_identity = 0;
@@ -585,7 +630,6 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
             state.last_dispatch_implementation_kind =
                 DescribeResolvedImplementationKind(entry.builtin_kind,
                                                    entry.implementation);
-            ++state.live_dispatch_count;
             if (entry.fast_path_seeded) {
               ++state.fast_path_hit_count;
             }
@@ -593,6 +637,8 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
             state.last_dispatch_path = "cache-hit-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
             dispatch_status = entry.strict_error_status;
+            StoreDispatchResultContractUnlocked(
+                state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
             ++state.strict_dispatch_error_count;
           }
         } else {
@@ -670,11 +716,12 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
             state.last_dispatch_implementation_kind =
                 DescribeResolvedImplementationKind(resolution.builtin_kind,
                                                    resolution.implementation);
-            ++state.live_dispatch_count;
           } else {
             state.last_dispatch_path = "slow-path-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
             dispatch_status = cache_entry.strict_error_status;
+            StoreDispatchResultContractUnlocked(
+                state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
             ++state.strict_dispatch_error_count;
           }
         }
@@ -685,23 +732,38 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
         state.last_dispatch_implementation_kind = "strict-dispatch-error";
         dispatch_status =
             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS;
+        StoreDispatchResultContractUnlocked(
+            state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
       }
+    } else if (receiver != 0) {
+      ++state.strict_dispatch_error_count;
+      state.last_dispatch_strict_error = true;
+      state.last_dispatch_path = "unknown-selector-error";
+      state.last_dispatch_implementation_kind = "strict-dispatch-error";
+      dispatch_status = OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+      StoreDispatchResultContractUnlocked(
+          state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
     }
   }
-  // runtime call ABI generation anchor: canonical runtime dispatch
-  // owns nil-receiver semantics for lowered instance/class/super surfaces, so
-  // a zero receiver returns zero without requiring lowering-side elision.
+  // runtime call ABI generation anchor: nil receiver is an explicit checked
+  // dispatch status, not a value-success path for the i32 entrypoint.
   if (receiver == 0) {
     std::lock_guard<std::mutex> lock(state.mutex);
-    state.last_dispatch_path = "nil-short-circuit";
-    state.last_dispatch_implementation_kind = "nil-short-circuit";
+    ++state.strict_dispatch_error_count;
+    state.last_dispatch_strict_error = true;
+    state.last_dispatch_resolved_live_method = false;
+    state.last_dispatch_path = "nil-receiver-error";
+    state.last_dispatch_implementation_kind = "strict-dispatch-error";
+    StoreDispatchResultContractUnlocked(
+        state, OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
+        RuntimeMethodReturnKind::Unsupported);
     return objc3c::runtime::MakeDispatchI32Result(
         OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER, 0);
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
                              resolved_runtime_property_accessor);
-    const int result =
+    const RuntimeTypedDispatchResult result =
         InvokeResolvedMethod(resolved_implementation, resolved_return_kind,
                             resolved_parameter_count, a0, a1, a2, a3);
     const std::vector<int> autorelease_values =
@@ -712,13 +774,20 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
+    if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
+      RecordPostResolutionStrictDispatchFailure(
+          state, result.status_code, result.return_kind,
+          "resolved-method-invocation-error");
+      return objc3c::runtime::MakeDispatchI32Result(result.status_code, 0);
+    }
+    RecordTypedDispatchSuccess(state, result.return_kind);
     return objc3c::runtime::MakeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
+        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
                              resolved_runtime_property_accessor);
-    const int result = InvokeRuntimeBuiltinMethod(
+    const RuntimeTypedDispatchResult result = InvokeRuntimeBuiltinMethod(
         state, resolved_builtin_kind, receiver, receiver_base_identity,
         resolved_runtime_property_accessor, a0, a1, a2, a3);
     const std::vector<int> autorelease_values =
@@ -729,8 +798,27 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
+    if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
+      RecordPostResolutionStrictDispatchFailure(
+          state, result.status_code, result.return_kind,
+          "runtime-builtin-invocation-error");
+      return objc3c::runtime::MakeDispatchI32Result(result.status_code, 0);
+    }
+    RecordTypedDispatchSuccess(state, result.return_kind);
     return objc3c::runtime::MakeDispatchI32Result(
-        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
+        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
+  }
+  if (resolved_live_method) {
+    RecordPostResolutionStrictDispatchFailure(
+        state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
+        resolved_return_kind, "resolved-method-missing-callable-error");
+    return objc3c::runtime::MakeDispatchI32Result(
+        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    StoreDispatchResultContractUnlocked(
+        state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
   }
   return objc3c::runtime::MakeDispatchI32Result(dispatch_status, 0);
 }

@@ -16,8 +16,7 @@ objc3_runtime_dispatch_status_code RuntimeStrictDispatchStatus(
 
 bool RuntimeDispatchStatusIsSuccess(
     objc3_runtime_dispatch_status_code status_code) {
-  return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK ||
-         status_code == OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER;
+  return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK;
 }
 
 }  // namespace objc3c::runtime

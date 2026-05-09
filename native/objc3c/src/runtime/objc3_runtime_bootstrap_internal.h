@@ -184,10 +184,15 @@ typedef struct objc3_runtime_dispatch_state_snapshot {
   int last_dispatch_strict_error;
   int last_effective_direct_dispatch;
   int last_used_builtin;
+  int last_dispatch_status_code;
   const char *last_selector;
   const char *last_fast_path_reason;
   const char *last_dispatch_path;
   const char *last_implementation_kind;
+  const char *last_return_kind;
+  const char *last_diagnostic_code;
+  const char *last_diagnostic_message;
+  const char *last_result_contract;
   const char *last_property_name;
   const char *last_resolved_class_name;
   const char *last_resolved_owner_identity;

@@ -22,11 +22,20 @@
   snapshot->last_effective_direct_dispatch =
       state.last_dispatch_effective_direct_dispatch ? 1 : 0;
   snapshot->last_used_builtin = state.last_dispatch_used_builtin ? 1 : 0;
+  snapshot->last_dispatch_status_code = state.last_dispatch_status_code;
   snapshot->last_selector = StableCString(state.last_dispatch_selector);
   snapshot->last_fast_path_reason = StableCString(state.last_fast_path_reason);
   snapshot->last_dispatch_path = StableCString(state.last_dispatch_path);
   snapshot->last_implementation_kind =
       StableCString(state.last_dispatch_implementation_kind);
+  snapshot->last_return_kind =
+      StableCString(state.last_dispatch_return_kind);
+  snapshot->last_diagnostic_code =
+      StableCString(state.last_dispatch_diagnostic_code);
+  snapshot->last_diagnostic_message =
+      StableCString(state.last_dispatch_diagnostic_message);
+  snapshot->last_result_contract =
+      StableCString(state.last_dispatch_result_contract);
   snapshot->last_property_name =
       StableCString(state.last_dispatch_property_name);
   snapshot->last_resolved_class_name =
@@ -1255,10 +1264,10 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
 
 // optional/key-path runtime-helper freeze anchor: the live Part 3
 // runtime helper boundary intentionally remains minimal here. Optional sends
-// already execute through objc3_runtime_lookup_selector plus
-// objc3_runtime_dispatch_i32 with lowering-owned nil short-circuit semantics,
-// while validated typed key-path sites currently contribute retained descriptor
-// handles and descriptor sections without claiming full runtime evaluation yet.
+// execute through objc3_runtime_lookup_selector plus checked runtime dispatch
+// status handling, while validated typed key-path sites currently contribute
+// retained descriptor handles and descriptor sections without claiming full
+// runtime evaluation yet.
 
 // runtime memory-management API freeze anchor: lowered ownership
 // helpers remain private runtime entrypoints reached through IR and runtime

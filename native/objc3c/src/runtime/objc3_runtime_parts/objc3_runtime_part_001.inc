@@ -39,9 +39,13 @@ using objc3c::runtime::DispatchFamily;
 using objc3c::runtime::IsRuntimeReceiverBaseIdentity;
 using objc3c::runtime::RuntimeBuiltinKind;
 using objc3c::runtime::RuntimeMethodReturnKind;
+using objc3c::runtime::RuntimeMethodReturnKindName;
 using objc3c::runtime::RuntimeMethodShapeStatus;
 using objc3c::runtime::RuntimeReceiverIdentityBase;
 using objc3c::runtime::RuntimeReceiverIdentityStride;
+using objc3c::runtime::RuntimeTypedDispatchFailure;
+using objc3c::runtime::RuntimeTypedDispatchResult;
+using objc3c::runtime::RuntimeTypedDispatchSuccess;
 constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
     "tmp/artifacts/objc3c-native/cache/metaprogramming";
 [[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
@@ -586,9 +590,15 @@ struct RuntimeState {
   bool last_dispatch_strict_error = false;
   bool last_dispatch_effective_direct_dispatch = false;
   bool last_dispatch_used_builtin = false;
+  objc3_runtime_dispatch_status_code last_dispatch_status_code =
+      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   std::string last_fast_path_reason;
   std::string last_dispatch_path;
   std::string last_dispatch_implementation_kind;
+  std::string last_dispatch_return_kind;
+  std::string last_dispatch_diagnostic_code;
+  std::string last_dispatch_diagnostic_message;
+  std::string last_dispatch_result_contract;
   std::string last_dispatch_property_name;
   std::string last_resolved_class_name;
   std::string last_resolved_owner_identity;
@@ -820,9 +830,15 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.last_dispatch_strict_error = false;
   state.last_dispatch_effective_direct_dispatch = false;
   state.last_dispatch_used_builtin = false;
+  state.last_dispatch_status_code =
+      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   state.last_fast_path_reason.clear();
   state.last_dispatch_path.clear();
   state.last_dispatch_implementation_kind.clear();
+  state.last_dispatch_return_kind.clear();
+  state.last_dispatch_diagnostic_code.clear();
+  state.last_dispatch_diagnostic_message.clear();
+  state.last_dispatch_result_contract.clear();
   state.last_dispatch_property_name.clear();
   state.last_resolved_class_name.clear();
   state.last_resolved_owner_identity.clear();

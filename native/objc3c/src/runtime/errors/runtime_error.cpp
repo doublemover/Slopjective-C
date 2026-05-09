@@ -6,8 +6,9 @@ const char *RuntimeDispatchDiagnosticCode(
     objc3_runtime_dispatch_status_code status_code) {
   switch (status_code) {
     case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
-    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
       return "";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
+      return "O3RT008";
     case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
       return "O3RT001";
     case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
@@ -30,8 +31,9 @@ const char *RuntimeDispatchDiagnosticMessage(
     objc3_runtime_dispatch_status_code status_code) {
   switch (status_code) {
     case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
-    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
       return "";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
+      return "runtime dispatch failed: nil receiver has no value dispatch result";
     case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
       return "runtime dispatch failed: unknown selector";
     case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
@@ -54,7 +56,8 @@ objc3_runtime_dispatch_i32_result MakeRuntimeDispatchI32Result(
     objc3_runtime_dispatch_status_code status_code, int value) {
   objc3_runtime_dispatch_i32_result result{};
   result.status_code = status_code;
-  result.value = value;
+  result.value =
+      status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK ? value : 0;
   result.diagnostic_code = RuntimeDispatchDiagnosticCode(status_code);
   result.diagnostic_message = RuntimeDispatchDiagnosticMessage(status_code);
   return result;
