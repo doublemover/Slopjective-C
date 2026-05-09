@@ -46,7 +46,7 @@ Representative live proof paths:
   - `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`
   - `native/objc3c/src/runtime/dispatch/dispatch_status.cpp`
   - `native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp`
-  - `native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h`
   - `native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp`
   - `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
   - `native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp`

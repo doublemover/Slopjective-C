@@ -137,7 +137,7 @@
         "native/objc3c/src/runtime/public/objc3_runtime_registration.h",
         "native/objc3c/src/runtime/public/objc3_runtime_selector.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result.h",
-        "native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
       ],
