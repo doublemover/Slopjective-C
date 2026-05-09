@@ -18,6 +18,8 @@ add_library(objc3c_driver STATIC
   objc3_driver_runtime_import_artifact_publication.cpp
   objc3_driver_runtime_registration_accessor_surface.cpp
   objc3_driver_runtime_registration_command_surface.cpp
+  objc3_driver_runtime_registration_descriptor_inputs.cpp
+  objc3_driver_runtime_registration_manifest_inputs.cpp
   objc3_driver_runtime_registration_publication.cpp
   objc3_driver_toolchain_runtime_gate.cpp
   objc3_driver_main.cpp
