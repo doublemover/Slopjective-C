@@ -1,20 +1,9 @@
 #pragma once
 
-#include <algorithm>
-#include <cstdint>
 #include <string>
-#include <vector>
 
-#include "parse/objc3_diagnostic_grammar_hooks_core_feature.h"
-#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.h"
-#include "parse/objc3_diagnostic_grammar_hooks_edge_case_compatibility_surface.h"
-#include "parse/objc3_diagnostic_source_precision_scaffold.h"
-#include "pipeline/parse_lowering_artifact_keys.h"
-#include "pipeline/parse_lowering_diagnostic_keys.h"
 #include "pipeline/objc3_frontend_types.h"
-#include "pipeline/readiness/objc3_long_tail_grammar_readiness_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_conformance_performance_readiness.h"
-#include "pipeline/readiness/objc3_parse_lowering_conformance_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_failure_reason_readiness.h"
 #include "pipeline/readiness/objc3_parse_lowering_parser_behavior_readiness.h"
 #include "pipeline/readiness/objc3_parse_lowering_recovery_determinism_readiness.h"

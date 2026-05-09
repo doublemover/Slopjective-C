@@ -6,6 +6,7 @@
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/readiness/objc3_long_tail_grammar_readiness_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_conformance_keys.h"
+#include "pipeline/readiness/objc3_parse_lowering_diagnostic_grammar_hooks_readiness.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.h"
 
 struct Objc3ParseLoweringRecoveryDeterminismReadinessRecord {
@@ -94,29 +95,7 @@ ApplyObjc3ParseLoweringRecoveryDeterminismReadiness(
           surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready,
           surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent,
           surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready);
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent =
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready &&
-      surface.parse_lowering_conformance_matrix_case_count ==
-          kObjc3ParseLoweringConformanceMatrixCaseCount &&
-      surface.parse_lowering_conformance_matrix_case_count > 0 &&
-      surface.parse_artifact_replay_key_deterministic &&
-      !surface.parser_diagnostic_grammar_hooks_recovery_determinism_key.empty() &&
-      !surface.parse_recovery_determinism_hardening_key.empty() &&
-      !surface.parse_artifact_replay_key.empty();
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready =
-      surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent &&
-      surface.parse_lowering_conformance_corpus_case_count > 0 &&
-      surface.parse_lowering_performance_quality_guardrails_case_count > 0;
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_key =
-      BuildObjc3DiagnosticGrammarHooksConformanceMatrixKey(
-          surface.parse_lowering_conformance_matrix_case_count,
-          surface.parse_lowering_conformance_corpus_case_count,
-          surface.parse_lowering_performance_quality_guardrails_case_count,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready,
-          surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent,
-          surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready);
+  ApplyObjc3ParseLoweringDiagnosticGrammarHooksConformanceMatrixReadiness(surface);
   surface.long_tail_grammar_recovery_determinism_consistent =
       surface.parse_recovery_determinism_hardening_consistent &&
       surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
