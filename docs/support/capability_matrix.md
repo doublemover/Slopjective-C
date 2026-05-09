@@ -13,6 +13,9 @@ Command and evidence truth is hard-cut to the current surfaces:
   `scripts.objc3c_workflow` module.
 - `scripts/objc3c_workflow/action_catalog.py` owns action names, validation
   tiers, pass-through behavior, backend descriptions, and guarantee owners.
+  `registry_views.py`, `action_integrity.py`, `request_dispatch.py`, and
+  `path_bootstrap.py` own read-only registry access, handler integrity,
+  parsed-request dispatch, and direct-entrypoint import roots.
   There is no supported workflow-registry facade or retired public-script alias
   table.
 - Runtime dispatch claims are owned by the strict runtime C API and result
@@ -32,7 +35,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Async and actor runtime closure             | reserved    |                                                    | `docs/spec/concurrency_reserved.md`; `tests/conformance/diagnostics/manifest.json`                             |
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; compiler/runtime/pipeline/artifacts/IO owner modules under `native/objc3c/src/` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h` |
-| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `docs/runbooks/objc3c_public_command_surface.md` |
+| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `docs/runbooks/objc3c_public_command_surface.md` |
 | Shared JSON and schema registry helpers     | internal    |                                                    | `docs/support/capability_matrix.schema.json`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
 
 State meanings:

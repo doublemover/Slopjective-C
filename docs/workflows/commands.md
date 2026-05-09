@@ -10,6 +10,12 @@ The public command model is:
   module.
 - `scripts/objc3c_workflow/action_catalog.py` owns action names, tiers, pass-through
   behavior, backend descriptions, and guarantee-owner text.
+- `scripts/objc3c_workflow/registry_views.py`,
+  `scripts/objc3c_workflow/action_integrity.py`,
+  `scripts/objc3c_workflow/request_dispatch.py`, and
+  `scripts/objc3c_workflow/path_bootstrap.py` own the internal read-only
+  registry, handler-integrity, request-dispatch, and direct-entrypoint
+  bootstrap surfaces.
 - `docs/runbooks/objc3c_public_command_surface.md` is the operator-facing
   appendix for the package bridge.
 
