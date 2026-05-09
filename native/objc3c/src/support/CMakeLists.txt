@@ -36,9 +36,14 @@ add_library(objc3c_support STATIC
   objc3_method_family_traits.h
   objc3_objc_param_type_surface_profiles.h
   objc3_objc_property_type_surface_profiles.h
-  objc3_objc_reference_type_profiles.cpp
+  objc3_objc_reference_annotation_sites.cpp
+  objc3_objc_reference_annotation_sites.h
   objc3_objc_reference_type_profiles.h
+  objc3_objc_reference_value_types.cpp
+  objc3_objc_reference_value_types.h
   objc3_objc_return_type_surface_profiles.h
+  objc3_objc_runtime_type_surface.cpp
+  objc3_objc_runtime_type_surface.h
   objc3_objc_runtime_type_surface_profiles.h
   objc3_objc_type_surface_profiles.h
   objc3_objc_value_type_names.cpp
