@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "ast/objc3_ast.h"
@@ -25,6 +26,7 @@
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
+#include "ir/objc3_ir_function_effect_analysis.h"
 #include "ir/objc3_ir_function_definition_emission.h"
 #include "ir/objc3_ir_message_send_emission.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
@@ -100,8 +102,15 @@ class Objc3IREmitter {
         std::move(canonical_literal_pools.runtime_string_pool_globals);
     typed_keypath_artifacts_ =
         std::move(canonical_literal_pools.typed_keypath_artifacts);
-    CollectMutableGlobalSymbols();
-    CollectFunctionEffects();
+    Objc3IRFunctionEffectAnalysis function_effect_analysis =
+        BuildObjc3IRFunctionEffectAnalysis(
+            Objc3IRFunctionEffectAnalysisOptions{
+                function_definitions_, globals_, defined_functions_,
+                declared_pure_functions_});
+    mutable_global_symbols_ =
+        std::move(function_effect_analysis.mutable_global_symbols);
+    function_effects_ = std::move(function_effect_analysis.function_effects);
+    impure_functions_ = std::move(function_effect_analysis.impure_functions);
   }
 
   bool Emit(std::string &ir, std::string &error) {
@@ -2047,400 +2056,6 @@ class Objc3IREmitter {
         synthesized_property_accessor_count_, out);
   }
 
-  static bool IsNameBoundInScopes(const std::vector<std::unordered_set<std::string>> &scopes,
-                                  const std::string &name) {
-    for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-      if (it->find(name) != it->end()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void NotePotentialGlobalMutation(const std::string &name,
-                                   const std::vector<std::unordered_set<std::string>> &scopes) {
-    if (name.empty() || IsNameBoundInScopes(scopes, name)) {
-      return;
-    }
-    if (globals_.find(name) != globals_.end()) {
-      mutable_global_symbols_.insert(name);
-    }
-  }
-
-  void CollectMutableGlobalSymbolsForClause(const ForClause &clause, std::vector<std::unordered_set<std::string>> &scopes) {
-    switch (clause.kind) {
-      case ForClause::Kind::None:
-      case ForClause::Kind::Expr:
-        return;
-      case ForClause::Kind::Let:
-        if (!scopes.empty() && !clause.name.empty()) {
-          scopes.back().insert(clause.name);
-        }
-        return;
-      case ForClause::Kind::Assign:
-        NotePotentialGlobalMutation(clause.name, scopes);
-        return;
-    }
-  }
-
-  void CollectMutableGlobalSymbolsStmt(const Stmt *stmt, std::vector<std::unordered_set<std::string>> &scopes) {
-    if (stmt == nullptr) {
-      return;
-    }
-    switch (stmt->kind) {
-      case Stmt::Kind::Let:
-        if (stmt->let_stmt != nullptr && !stmt->let_stmt->name.empty() && !scopes.empty()) {
-          scopes.back().insert(stmt->let_stmt->name);
-        }
-        return;
-      case Stmt::Kind::Assign:
-        if (stmt->assign_stmt != nullptr) {
-          NotePotentialGlobalMutation(stmt->assign_stmt->name, scopes);
-        }
-        return;
-      case Stmt::Kind::If:
-        if (stmt->if_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &then_stmt : stmt->if_stmt->then_body) {
-          CollectMutableGlobalSymbolsStmt(then_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        scopes.push_back({});
-        for (const auto &else_stmt : stmt->if_stmt->else_body) {
-          CollectMutableGlobalSymbolsStmt(else_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::DoWhile:
-        if (stmt->do_while_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->do_while_stmt->body) {
-          CollectMutableGlobalSymbolsStmt(loop_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::For:
-        if (stmt->for_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        CollectMutableGlobalSymbolsForClause(stmt->for_stmt->init, scopes);
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->for_stmt->body) {
-          CollectMutableGlobalSymbolsStmt(loop_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        CollectMutableGlobalSymbolsForClause(stmt->for_stmt->step, scopes);
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Switch:
-        if (stmt->switch_stmt == nullptr) {
-          return;
-        }
-        for (const auto &case_stmt : stmt->switch_stmt->cases) {
-          scopes.push_back({});
-          for (const auto &case_body_stmt : case_stmt.body) {
-            CollectMutableGlobalSymbolsStmt(case_body_stmt.get(), scopes);
-          }
-          scopes.pop_back();
-        }
-        return;
-      case Stmt::Kind::While:
-        if (stmt->while_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->while_stmt->body) {
-          CollectMutableGlobalSymbolsStmt(loop_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Block:
-      case Stmt::Kind::Defer:
-        if (stmt->block_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &nested_stmt : stmt->block_stmt->body) {
-          CollectMutableGlobalSymbolsStmt(nested_stmt.get(), scopes);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Return:
-      case Stmt::Kind::Expr:
-      case Stmt::Kind::Break:
-      case Stmt::Kind::Continue:
-      case Stmt::Kind::Empty:
-        return;
-    }
-  }
-
-  void CollectMutableGlobalSymbols() {
-    mutable_global_symbols_.clear();
-    for (const FunctionDecl *fn : function_definitions_) {
-      if (fn == nullptr) {
-        continue;
-      }
-      std::vector<std::unordered_set<std::string>> scopes;
-      scopes.push_back({});
-      for (const auto &param : fn->params) {
-        scopes.back().insert(param.name);
-      }
-      for (const auto &stmt : fn->body) {
-        CollectMutableGlobalSymbolsStmt(stmt.get(), scopes);
-      }
-    }
-  }
-
-  bool IsGlobalSymbolWriteTarget(const std::string &name,
-                                 const std::vector<std::unordered_set<std::string>> &scopes) const {
-    if (name.empty() || IsNameBoundInScopes(scopes, name)) {
-      return false;
-    }
-    return globals_.find(name) != globals_.end();
-  }
-
-  void CollectFunctionEffectExpr(const Expr *expr, std::vector<std::unordered_set<std::string>> &scopes,
-                                 FunctionEffectInfo &info) const {
-    if (expr == nullptr) {
-      return;
-    }
-    switch (expr->kind) {
-      case Expr::Kind::Number:
-      case Expr::Kind::BoolLiteral:
-      case Expr::Kind::NilLiteral:
-      case Expr::Kind::Identifier:
-      case Expr::Kind::BlockLiteral:
-        return;
-      case Expr::Kind::Binary:
-        CollectFunctionEffectExpr(expr->left.get(), scopes, info);
-        CollectFunctionEffectExpr(expr->right.get(), scopes, info);
-        return;
-      case Expr::Kind::Conditional:
-        CollectFunctionEffectExpr(expr->left.get(), scopes, info);
-        CollectFunctionEffectExpr(expr->right.get(), scopes, info);
-        CollectFunctionEffectExpr(expr->third.get(), scopes, info);
-        return;
-      case Expr::Kind::Call:
-        info.called_functions.insert(expr->ident);
-        for (const auto &arg : expr->args) {
-          CollectFunctionEffectExpr(arg.get(), scopes, info);
-        }
-        return;
-      case Expr::Kind::MessageSend:
-        info.has_message_send = true;
-        CollectFunctionEffectExpr(expr->receiver.get(), scopes, info);
-        for (const auto &arg : expr->args) {
-          CollectFunctionEffectExpr(arg.get(), scopes, info);
-        }
-        return;
-    }
-  }
-
-  void CollectFunctionEffectForClause(const ForClause &clause, std::vector<std::unordered_set<std::string>> &scopes,
-                                      FunctionEffectInfo &info) const {
-    switch (clause.kind) {
-      case ForClause::Kind::None:
-        return;
-      case ForClause::Kind::Expr:
-        CollectFunctionEffectExpr(clause.value.get(), scopes, info);
-        return;
-      case ForClause::Kind::Let:
-        CollectFunctionEffectExpr(clause.value.get(), scopes, info);
-        if (!scopes.empty() && !clause.name.empty()) {
-          scopes.back().insert(clause.name);
-        }
-        return;
-      case ForClause::Kind::Assign:
-        if (IsGlobalSymbolWriteTarget(clause.name, scopes)) {
-          info.has_global_write = true;
-        }
-        CollectFunctionEffectExpr(clause.value.get(), scopes, info);
-        return;
-    }
-  }
-
-  void CollectFunctionEffectStmt(const Stmt *stmt, std::vector<std::unordered_set<std::string>> &scopes,
-                                 FunctionEffectInfo &info) const {
-    if (stmt == nullptr) {
-      return;
-    }
-    switch (stmt->kind) {
-      case Stmt::Kind::Let:
-        if (stmt->let_stmt == nullptr) {
-          return;
-        }
-        CollectFunctionEffectExpr(stmt->let_stmt->value.get(), scopes, info);
-        if (!scopes.empty() && !stmt->let_stmt->name.empty()) {
-          scopes.back().insert(stmt->let_stmt->name);
-        }
-        return;
-      case Stmt::Kind::Assign:
-        if (stmt->assign_stmt == nullptr) {
-          return;
-        }
-        if (IsGlobalSymbolWriteTarget(stmt->assign_stmt->name, scopes)) {
-          info.has_global_write = true;
-        }
-        CollectFunctionEffectExpr(stmt->assign_stmt->value.get(), scopes, info);
-        return;
-      case Stmt::Kind::Return:
-        if (stmt->return_stmt != nullptr) {
-          CollectFunctionEffectExpr(stmt->return_stmt->value.get(), scopes, info);
-        }
-        return;
-      case Stmt::Kind::Expr:
-        if (stmt->expr_stmt != nullptr) {
-          CollectFunctionEffectExpr(stmt->expr_stmt->value.get(), scopes, info);
-        }
-        return;
-      case Stmt::Kind::If:
-        if (stmt->if_stmt == nullptr) {
-          return;
-        }
-        CollectFunctionEffectExpr(stmt->if_stmt->condition.get(), scopes, info);
-        scopes.push_back({});
-        for (const auto &then_stmt : stmt->if_stmt->then_body) {
-          CollectFunctionEffectStmt(then_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        scopes.push_back({});
-        for (const auto &else_stmt : stmt->if_stmt->else_body) {
-          CollectFunctionEffectStmt(else_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::DoWhile:
-        if (stmt->do_while_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->do_while_stmt->body) {
-          CollectFunctionEffectStmt(loop_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        CollectFunctionEffectExpr(stmt->do_while_stmt->condition.get(), scopes, info);
-        return;
-      case Stmt::Kind::For:
-        if (stmt->for_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        CollectFunctionEffectForClause(stmt->for_stmt->init, scopes, info);
-        CollectFunctionEffectExpr(stmt->for_stmt->condition.get(), scopes, info);
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->for_stmt->body) {
-          CollectFunctionEffectStmt(loop_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        CollectFunctionEffectForClause(stmt->for_stmt->step, scopes, info);
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Switch:
-        if (stmt->switch_stmt == nullptr) {
-          return;
-        }
-        CollectFunctionEffectExpr(stmt->switch_stmt->condition.get(), scopes, info);
-        for (const auto &case_stmt : stmt->switch_stmt->cases) {
-          scopes.push_back({});
-          for (const auto &case_body_stmt : case_stmt.body) {
-            CollectFunctionEffectStmt(case_body_stmt.get(), scopes, info);
-          }
-          scopes.pop_back();
-        }
-        return;
-      case Stmt::Kind::While:
-        if (stmt->while_stmt == nullptr) {
-          return;
-        }
-        CollectFunctionEffectExpr(stmt->while_stmt->condition.get(), scopes, info);
-        scopes.push_back({});
-        for (const auto &loop_stmt : stmt->while_stmt->body) {
-          CollectFunctionEffectStmt(loop_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Block:
-      case Stmt::Kind::Defer:
-        if (stmt->block_stmt == nullptr) {
-          return;
-        }
-        scopes.push_back({});
-        for (const auto &nested_stmt : stmt->block_stmt->body) {
-          CollectFunctionEffectStmt(nested_stmt.get(), scopes, info);
-        }
-        scopes.pop_back();
-        return;
-      case Stmt::Kind::Break:
-      case Stmt::Kind::Continue:
-      case Stmt::Kind::Empty:
-        return;
-    }
-  }
-
-  void CollectFunctionEffects() {
-    function_effects_.clear();
-    impure_functions_.clear();
-
-    for (const FunctionDecl *fn : function_definitions_) {
-      if (fn == nullptr) {
-        continue;
-      }
-      FunctionEffectInfo info;
-      std::vector<std::unordered_set<std::string>> scopes;
-      scopes.push_back({});
-      for (const auto &param : fn->params) {
-        scopes.back().insert(param.name);
-      }
-      for (const auto &stmt : fn->body) {
-        CollectFunctionEffectStmt(stmt.get(), scopes, info);
-      }
-      function_effects_[fn->name] = std::move(info);
-    }
-
-    for (const auto &entry : function_effects_) {
-      const FunctionEffectInfo &info = entry.second;
-      if (info.has_global_write || info.has_message_send) {
-        impure_functions_.insert(entry.first);
-      }
-    }
-
-    bool changed = true;
-    while (changed) {
-      changed = false;
-      for (const auto &entry : function_effects_) {
-        const std::string &name = entry.first;
-        if (impure_functions_.find(name) != impure_functions_.end()) {
-          continue;
-        }
-        for (const std::string &callee : entry.second.called_functions) {
-          const bool callee_defined = defined_functions_.find(callee) != defined_functions_.end();
-          const bool callee_declared_pure = declared_pure_functions_.find(callee) != declared_pure_functions_.end();
-          if ((!callee_defined && !callee_declared_pure) ||
-              impure_functions_.find(callee) != impure_functions_.end()) {
-            impure_functions_.insert(name);
-            changed = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  bool FunctionMayHaveGlobalSideEffects(const std::string &name) const {
-    if (name.empty()) {
-      return true;
-    }
-    if (defined_functions_.find(name) == defined_functions_.end()) {
-      return declared_pure_functions_.find(name) == declared_pure_functions_.end();
-    }
-    return impure_functions_.find(name) != impure_functions_.end();
-  }
-
   void EmitRuntimeMetadataSectionScaffold(std::ostringstream &out) const {
     std::string scaffold_error;
     if (!EmitObjc3IRRuntimeMetadataSectionScaffold(
@@ -3210,7 +2825,9 @@ class Objc3IREmitter {
               return CoerceValueToI32(value, value_type, callback_ctx);
             },
             [this](const std::string &function_name) {
-              return FunctionMayHaveGlobalSideEffects(function_name);
+              return Objc3IRFunctionMayHaveGlobalSideEffects(
+                  function_name, defined_functions_, declared_pure_functions_,
+                  impure_functions_);
             },
             [this](const Expr *call_expr, FunctionContext &callback_ctx,
                    std::string &result_out) {
