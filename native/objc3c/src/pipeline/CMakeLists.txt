@@ -1,5 +1,6 @@
 add_library(objc3c_pipeline STATIC
   dispatch_surface_classification.cpp
+  frontend_executable_metadata_handoff.cpp
   frontend_pipeline_orchestration.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_pipeline_sema_stage_runner.cpp

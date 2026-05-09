@@ -1,8 +1,10 @@
 add_library(objc3c_ir STATIC
+  objc3_ir_block_runtime_contracts.cpp
   objc3_ir_c_string.cpp
   objc3_ir_function_signature_model.cpp
   objc3_ir_literal_parsing.cpp
   objc3_ir_module_identity.cpp
+  objc3_ir_receiver_identity_contracts.cpp
   objc3_ir_symbol_model.cpp
   objc3_ir_type_model.cpp
   objc3_ir_emitter.cpp

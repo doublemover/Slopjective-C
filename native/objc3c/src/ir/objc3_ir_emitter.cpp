@@ -14,7 +14,9 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_ir_receiver_identity_contracts.h"
 #include "ir/objc3_runtime_call_lowering.h"
 #include "parse/objc3_parse_support.h"
 #include "support/objc3_identifier_safe_suffix.h"
@@ -10529,101 +10531,6 @@ class Objc3IREmitter {
     return std::binary_search(entries.begin(), entries.end(), needle);
   }
 
-  static bool BlockLiteralUsesPointerCaptureStorage(const Expr &expr) {
-    return expr.block_storage_byref_slot_count > 0u ||
-           expr.block_runtime_owned_object_capture_count > 0u ||
-           expr.block_runtime_weak_object_capture_count > 0u ||
-           expr.block_runtime_unowned_object_capture_count > 0u ||
-           expr.block_runtime_copy_helper_required ||
-           expr.block_runtime_dispose_helper_required;
-  }
-
-  static std::string BuildBlockStorageType(const Expr &expr) {
-    std::ostringstream out;
-    if (!BlockLiteralUsesPointerCaptureStorage(expr)) {
-      out << "{ ptr, ["
-          << static_cast<unsigned long long>(
-                 expr.block_capture_names_lexicographic.size())
-          << " x i32] }";
-      return out.str();
-    }
-    out << "{ ptr, ptr, ptr, ["
-        << static_cast<unsigned long long>(
-               expr.block_capture_names_lexicographic.size())
-        << " x ptr] }";
-    return out.str();
-  }
-
-  static std::string BuildBlockInvokeSymbol(const Expr &expr) {
-    return expr.block_invoke_trampoline_symbol.empty()
-               ? std::string("objc3_block_invoke_missing_symbol")
-               : expr.block_invoke_trampoline_symbol;
-  }
-
-  static bool BlockLiteralRequiresEscapingRuntimeHooks(const Expr &expr) {
-    return expr.block_escape_shape_symbol == "global-initializer" ||
-           expr.block_escape_shape_symbol == "assignment-value" ||
-           expr.block_escape_shape_symbol == "return-value" ||
-           expr.block_escape_shape_symbol == "call-argument" ||
-           expr.block_escape_shape_symbol == "message-argument";
-  }
-
-  static bool BlockLiteralSupportsScalarRuntimePromotion(const Expr &expr) {
-    return expr.block_source_model_is_normalized &&
-           expr.block_runtime_capture_ownership_is_normalized &&
-           (!expr.block_storage_requires_byref_cells ||
-            !expr.block_storage_byref_layout_symbol.empty()) &&
-           ((!expr.block_runtime_copy_helper_required &&
-             !expr.block_copy_helper_required) ||
-            !expr.block_copy_helper_symbol.empty()) &&
-           ((!expr.block_runtime_dispose_helper_required &&
-             !expr.block_dispose_helper_required) ||
-            !expr.block_dispose_helper_symbol.empty());
-  }
-
-  static bool BlockLiteralSupportsEscapingRuntimeHookLowering(const Expr &expr) {
-    return expr.block_storage_escape_to_heap &&
-           BlockLiteralSupportsScalarRuntimePromotion(expr);
-  }
-
-  static bool BlockLiteralRequiresFutureRuntimeLanes(const Expr &expr) {
-    return !BlockLiteralSupportsScalarRuntimePromotion(expr);
-  }
-
-  static std::string BuildBlockCopyHelperSymbol(const Expr &expr) {
-    return expr.block_copy_helper_symbol.empty()
-               ? std::string("objc3_block_copy_helper_missing_symbol")
-               : expr.block_copy_helper_symbol;
-  }
-
-  static std::string BuildBlockDisposeHelperSymbol(const Expr &expr) {
-    return expr.block_dispose_helper_symbol.empty()
-               ? std::string("objc3_block_dispose_helper_missing_symbol")
-               : expr.block_dispose_helper_symbol;
-  }
-
-  static std::uint64_t AlignBlockStorageBytes(std::uint64_t value,
-                                              std::uint64_t alignment) {
-    if (alignment == 0u) {
-      return value;
-    }
-    const std::uint64_t remainder = value % alignment;
-    return remainder == 0u ? value : value + (alignment - remainder);
-  }
-
-  static std::uint64_t BlockStorageStaticSizeBytes(const Expr &expr) {
-    const std::uint64_t capture_count = static_cast<std::uint64_t>(
-        expr.block_capture_names_lexicographic.size());
-    if (!BlockLiteralUsesPointerCaptureStorage(expr)) {
-      return AlignBlockStorageBytes(
-          static_cast<std::uint64_t>(sizeof(void *)) +
-              capture_count * static_cast<std::uint64_t>(sizeof(std::int32_t)),
-          static_cast<std::uint64_t>(alignof(void *)));
-    }
-    return static_cast<std::uint64_t>(sizeof(void *) * 3u) +
-           capture_count * static_cast<std::uint64_t>(sizeof(void *));
-  }
-
   void EmitPendingBlockDisposeHelpers(FunctionContext &ctx) const {
     EmitPendingBlockDisposeUnwindToDepth(ctx, 0u);
   }
@@ -11172,12 +11079,6 @@ class Objc3IREmitter {
     return out;
   }
 
-  static int NextNonZeroReceiverIdentityValue(std::size_t ordinal, int salt) {
-    constexpr int kBase = 1024;
-    constexpr int kStride = 17;
-    return kBase + static_cast<int>(ordinal * kStride) + salt;
-  }
-
   void CollectKnownClassReceiverConstants() {
     std::set<std::string> class_names;
     for (const auto &interface_decl : program_.interfaces) {
@@ -11203,14 +11104,6 @@ class Objc3IREmitter {
       return 0;
     }
     return value_it->second;
-  }
-
-  static int BuildInstanceReceiverIdentityValue(int class_identity) {
-    return class_identity == 0 ? 0 : class_identity + 1;
-  }
-
-  static int BuildClassReceiverIdentityValue(int class_identity) {
-    return class_identity == 0 ? 0 : class_identity + 2;
   }
 
   void SeedKnownClassReceiverBindings(FunctionContext &ctx) const {
