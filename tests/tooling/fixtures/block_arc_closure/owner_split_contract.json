@@ -3,6 +3,7 @@
   "surface_kind": "block-arc-runtime-closure-owner-split",
   "family": "block_arc_closure",
   "boundary_inventory": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
   "owner_policy": {
     "source_authority": "checked-in-runtime-closure-owner-contracts",
     "missing_artifact_behavior": "fail-closed",
@@ -10,7 +11,9 @@
     "fallback_allowed": false,
     "compatibility_shims_allowed": false,
     "generated_reports_are_source": false,
-    "public_claims_require_executable_proof": true
+    "public_claims_require_executable_proof": true,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json"
   },
   "closure_publication_contract": {
     "source_owner_role": "semantic_model_owner",
@@ -27,48 +30,91 @@
     "semantic_model_owner": {
       "owner": "block-arc-escaping-block-byref-semantic-model",
       "source": "tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_semantic_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "lowering_abi_owner": {
       "owner": "block-arc-lowering-runtime-abi",
       "source": "tests/tooling/fixtures/block_arc_closure/block_arc_lowering_runtime_abi_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_lowering_abi_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "runtime_abi_owner": {
       "owner": "block-arc-private-runtime-abi-snapshot",
       "source": "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_executable_proof_summary.py",
       "claim_scope": "private-helper-abi-only"
     },
     "executable_proof_owner": {
       "owner": "block-arc-runnable-proof-gate",
       "source": "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_executable_proof_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "artifact_owner": {
       "owner": "block-arc-byref-copy-dispose-artifact-replay",
       "source": "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_byref_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "boundary_inventory_owner": {
       "owner": "block-arc-runtime-closure-boundary-inventory",
       "source": "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "scheduler_task_lifecycle_owner": {
       "owner": "block-arc-scheduler-task-interaction-successor-boundary",
       "source": "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "canonical_rejection",
+        "provenance"
+      ],
       "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
       "claim_scope": "successor-boundary-no-current-scheduler-claim"
     },
     "bridge_policy_owner": {
       "owner": "block-arc-error-bridge-interaction-successor-boundary",
       "source": "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "canonical_rejection",
+        "provenance"
+      ],
       "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
       "claim_scope": "successor-boundary-no-current-error-bridge-claim"
     }

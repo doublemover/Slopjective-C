@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-block-arc-closure-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json"
+  ],
+  "support_boundary": "e2e ownership covers packaged runnable block/ARC conformance, runnable block/ARC end-to-end, public command routing, workflow actions, and closure publication only after lower phase owners and executable proof pass",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "public_command_surfaces:test:objc3c:block-arc-conformance",
+    "public_command_surfaces:test:objc3c:runnable-block-arc",
+    "public_workflow_actions:validate-block-arc-conformance",
+    "public_workflow_actions:validate-runnable-block-arc",
+    "closure_publication_contract:claim_publication_mode=checked-in-owner-contract-plus-executable-proof",
+    "hard_cutover_requirements:runtime-closure-publication-requires-checked-in-owner-contract",
+    "hard_cutover_requirements:successor-boundary-owners-must-not-widen-current-runtime-claims"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-report-only e2e claims, milestone-local runtime scaffolding, and successor-boundary widening are canonical rejection or provenance-only evidence"
+}

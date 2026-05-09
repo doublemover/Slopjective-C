@@ -5,6 +5,14 @@
   "issue": "M320-B002",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
   "summary_implementation_anchor": "scripts/build_block_arc_closure_arc_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "lowering",
+    "runtime",
+    "canonical_rejection"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",

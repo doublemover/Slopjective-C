@@ -5,6 +5,13 @@
   "issue": "M320-D001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
   "summary_implementation_anchor": "scripts/build_block_arc_closure_executable_proof_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "runtime",
+    "e2e",
+    "canonical_rejection"
+  ],
+  "public_command_behavior_boundary": "public commands and workflows are executable proof routing only and do not widen public runtime ABI or turn report-only/generated-report-only evidence into support",
   "public_command_surfaces": [
     "test:objc3c:block-arc-conformance",
     "test:objc3c:runnable-block-arc"

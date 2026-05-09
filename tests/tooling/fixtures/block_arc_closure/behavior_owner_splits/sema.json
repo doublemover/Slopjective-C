@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-block-arc-closure-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json",
+    "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
+  ],
+  "support_boundary": "semantic ownership covers capture-family truth, owned/weak/unowned capture legality, retainable-family conflicts, cleanup ownership transfer, ARC insertion policy, and claim narrowing before lowering or runtime owners cite executable proof",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_ownership_resource_move_and_use_after_move_semantics",
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_ownership_capture_list_and_retainable_family_legality_completion",
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface",
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface",
+    "capture_profile_fields:cleanup_ownership_transfer_enforced",
+    "capture_profile_fields:retainable_family_conflict_enforced",
+    "frozen_semantic_models:escaping-block-capture-family-truth-stays-sema-owned-before-lowering",
+    "claim_narrowing_constraints:no-evidence-only-sidecar-ownership-model"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "lowering-owned reinterpretation of capture-family truth, evidence-only sidecar ownership models, compatibility-positive ARC semantics, and unsupported ownership widening stay diagnostics, canonical rejection, or provenance-only evidence"
+}

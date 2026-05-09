@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-block-arc-closure-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
+    "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
+  ],
+  "support_boundary": "runtime ownership covers private block/ARC helper ABI, byref promotion/forwarding/copy/dispose state, block invoke, ARC helper traffic, weak/current-property helpers, autoreleasepool scopes, and runtime-owned debug snapshots only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "private_runtime_abi_boundary:objc3_runtime_promote_block_i32",
+    "private_runtime_abi_boundary:objc3_runtime_invoke_block_i32",
+    "private_runtime_abi_boundary:objc3_runtime_retain_i32",
+    "private_runtime_abi_boundary:objc3_runtime_release_i32",
+    "private_runtime_abi_boundary:objc3_runtime_autorelease_i32",
+    "private_runtime_abi_boundary:objc3_runtime_push_autoreleasepool_scope",
+    "private_runtime_abi_boundary:objc3_runtime_pop_autoreleasepool_scope",
+    "private_runtime_abi_boundary:objc3_runtime_load_weak_current_property_i32",
+    "private_runtime_abi_boundary:objc3_runtime_store_weak_current_property_i32",
+    "private_runtime_abi_boundary:objc3_runtime_copy_arc_debug_state_for_testing",
+    "private_runtime_abi_boundary:objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
+    "authoritative_probe_paths:tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "public runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, proof-only helper claims, stack-only byref success, and non-runtime-backed property/error/concurrency interaction claims are strict-error, canonical rejection, or provenance-only evidence"
+}

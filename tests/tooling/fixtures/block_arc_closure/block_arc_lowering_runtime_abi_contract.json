@@ -5,6 +5,14 @@
   "issue": "M320-C001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
   "summary_implementation_anchor": "scripts/build_block_arc_closure_lowering_abi_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "runtime",
+    "canonical_rejection"
+  ],
+  "artifact_behavior_boundary": "compile artifacts, manifests, and runtime-registration descriptors are provenance until behavior owners claim support",
   "compile_manifest_surface_keys": [
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",
