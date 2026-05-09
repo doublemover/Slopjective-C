@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
+  "support_boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, report-only, migration-only, dashboard-only, prose-only, tmp-artifact-only, schema-only, workflow-only, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
   "owned_buckets": [
     "parser",
     "semantic",
@@ -46,7 +46,12 @@
         "known-open",
         "partial",
         "missing",
-        "unsupported"
+        "unsupported",
+        "generated-only",
+        "report-only",
+        "migration-only",
+        "dashboard-only",
+        "prose-only"
       ],
       "disposition": "tracking-only gap evidence; not behavior support"
     },
@@ -59,5 +64,35 @@
     }
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
-  "retired_surface_rule": "retired surfaces stay canonical rejection, strict-error, absent-support, known-open, or tracking-only evidence"
+  "selectors": [
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*",
+    "*compatibility*",
+    "*unsupported*",
+    "*known-open*",
+    "*known_open*",
+    "*alternate-acceptance*",
+    "*alternate_acceptance*",
+    "*generated-only*",
+    "*generated_only*",
+    "*report-only*",
+    "*report_only*",
+    "*migration-only*",
+    "*migration_only*",
+    "*dashboard-only*",
+    "*dashboard_only*",
+    "*prose-only*",
+    "*prose_only*",
+    "*tmp-artifact-only*",
+    "*tmp_artifact_only*",
+    "*schema-only*",
+    "*schema_only*",
+    "*workflow-only*",
+    "*workflow_only*",
+    "*claim-policy-only*",
+    "*claim_policy_only*"
+  ],
+  "retired_surface_rule": "retired surfaces, generated-only rows, report-only rows, migration-only rows, dashboard-only rows, prose-only rows, schema-only rows, workflow-only rows, tmp-artifact-only rows, and alternate acceptance rows stay canonical rejection, strict-error, absent-support, known-open, tracking-only, or provenance-only evidence"
 }

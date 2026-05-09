@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "lowering",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "lowering conformance owns canonical lowering, ABI handoff, coroutine/task lowering, object-model lowering, and strict link-error evidence for required runtime symbols",
+  "support_boundary": "lowering conformance owns canonical lowering, ABI handoff, coroutine/task lowering, object-model lowering, and strict link-error evidence for required runtime symbols only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "lowering_abi"
   ],
@@ -29,5 +29,5 @@
     }
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime dispatch fallback lowering and alternate ABI acceptance are strict-error or rejected conformance"
+  "retired_surface_rule": "runtime dispatch fallback lowering, shim lowering, old-mode lowering, compatibility lowering, alternate ABI acceptance, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, dashboard-only lowering rows, and prose-only lowering rows are strict-error, rejected conformance, or provenance-only evidence"
 }

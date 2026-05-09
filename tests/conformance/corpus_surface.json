@@ -51,7 +51,12 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/conformance/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "old-mode, shim, fallback, compatibility, unsupported, and known-open surfaces remain rejection, strict-error, or tracking-only evidence"
+      "boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, report-only, migration-only, dashboard-only, prose-only, schema-only, workflow-only, tmp-artifact-only, claim-policy-only, and alternate acceptance surfaces remain rejection, strict-error, tracking-only, or provenance-only evidence"
+    },
+    {
+      "phase": "conformance_corpus_provenance",
+      "path": "tests/conformance/behavior_owner_splits/conformance_corpus_provenance.json",
+      "boundary": "corpus surface rows, bucket inventories, coverage maps, gap models, workflows, report paths, tmp artifacts, schema/doc pointers, generated-only rows, report-only rows, and migration-only rows remain provenance only"
     }
   ],
   "taxonomy": {

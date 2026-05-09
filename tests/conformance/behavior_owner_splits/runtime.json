@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "runtime",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "runtime conformance owns live dispatch, object model, storage/reflection-adjacent behavior, ARC, blocks, actors, tasks, package loading, and runtime strict errors",
+  "support_boundary": "runtime conformance owns live dispatch, object model, storage/reflection-adjacent behavior, ARC, blocks, actors, tasks, package loading, and runtime strict errors only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "lowering_abi",
     "module_roundtrip",
@@ -39,5 +39,5 @@
     }
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime fallback, compatibility interop, unresolved dispatch, and alternate runtime acceptance are strict-error or provenance-only evidence"
+  "retired_surface_rule": "runtime fallback, runtime shims, old-mode runtime rows, compatibility interop, unresolved dispatch, alternate runtime acceptance, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, dashboard-only runtime rows, prose-only runtime rows, package-stage-only evidence, and release-report-only evidence are strict-error, canonical rejection, tracking-only, or provenance-only evidence"
 }
