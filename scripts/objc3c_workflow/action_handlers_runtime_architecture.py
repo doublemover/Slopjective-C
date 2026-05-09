@@ -1,0 +1,16 @@
+"""Runtime architecture action handlers."""
+
+from __future__ import annotations
+
+from scripts.objc3c_workflow.action_spec import ActionHandler
+from scripts.objc3c_workflow.actions import runtime_test_acceptance
+
+RUNTIME_ARCHITECTURE_ACTION_HANDLERS: dict[str, ActionHandler] = {
+    "proof-runtime-architecture": runtime_test_acceptance.action_proof_runtime_architecture,
+    "validate-runtime-architecture": (
+        runtime_test_acceptance.action_validate_runtime_architecture
+    ),
+}
+
+
+__all__ = ["RUNTIME_ARCHITECTURE_ACTION_HANDLERS"]

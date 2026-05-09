@@ -12,6 +12,21 @@ from scripts.objc3c_workflow.action_handler_integrity import (
     orphan_action_handlers,
 )
 from scripts.objc3c_workflow.action_handler_groups import ACTION_HANDLER_SECTION_GROUPS
+from scripts.objc3c_workflow.action_handlers_runtime_acceptance import (
+    RUNTIME_ACCEPTANCE_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_runtime_architecture import (
+    RUNTIME_ARCHITECTURE_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_runtime_runnable_conformance import (
+    RUNTIME_RUNNABLE_CONFORMANCE_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_runtime_runnable_e2e import (
+    RUNTIME_RUNNABLE_E2E_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_runtime_validation import (
+    RUNTIME_VALIDATION_ACTION_HANDLERS,
+)
 from scripts.objc3c_workflow.action_payload_builder import build_action_payload as owned_build_action_payload
 from scripts.objc3c_workflow.action_payload_fields import build_action_payload
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
@@ -186,6 +201,21 @@ def test_runtime_validation_catalog_aggregates_owner_catalogs() -> None:
     for catalog in owner_catalogs:
         for action, spec in catalog.items():
             assert RUNTIME_VALIDATION_ACTION_SPECS[action] is spec
+
+
+def test_runtime_validation_handlers_aggregate_owner_handlers() -> None:
+    owner_handlers = (
+        RUNTIME_ACCEPTANCE_ACTION_HANDLERS,
+        RUNTIME_ARCHITECTURE_ACTION_HANDLERS,
+        RUNTIME_RUNNABLE_CONFORMANCE_ACTION_HANDLERS,
+        RUNTIME_RUNNABLE_E2E_ACTION_HANDLERS,
+    )
+    owner_actions = set().union(*(handlers.keys() for handlers in owner_handlers))
+
+    assert owner_actions == set(RUNTIME_VALIDATION_ACTION_HANDLERS)
+    for handlers in owner_handlers:
+        for action, handler in handlers.items():
+            assert RUNTIME_VALIDATION_ACTION_HANDLERS[action] is handler
 
 
 def test_workflow_path_roots_are_owned_by_package_module() -> None:
