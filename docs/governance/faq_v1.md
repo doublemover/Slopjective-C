@@ -41,7 +41,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: What testing evidence is required for conformance claims?
 - Answer: Claims must cite required test IDs, outcomes, environment fingerprints, immutable logs, and any approved waiver references.
 - Applicability: `vendor`
-- References: `templates/vendor_extension_conformance_claim.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-175-extension-test-obligations-package`
+- References: `templates/vendor_extension_conformance_claim.md`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`; `spec/governance/extension_test_obligations_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: Hard-threshold failures are non-waiverable and block approval.
@@ -63,7 +63,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: When can a claim be published in the extension registry?
 - Answer: Publication follows accepted decision linkage plus schema IDs owned by the shared registry and support rows in the capability matrix/evidence map. Deferred or held outcomes must include explicit owner/date rationale and do not create fallback, alias, or compatibility-only support.
 - Applicability: `vendor`
-- References: `scripts/objc3c_shared/schema_registry.py`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-176-extension-registry-format-package`
+- References: `scripts/objc3c_shared/schema_registry.py`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: Schema-registry or evidence-map mismatches must be remediated before release publication.
@@ -74,7 +74,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: What happens if provenance evidence fails verification?
 - Answer: The claim is held and incident handling is triggered; the affected extension cannot proceed until containment and revalidation complete.
 - Applicability: `vendor`
-- References: `templates/vendor_extension_conformance_claim.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-174-security-provenance-incident-workflow-package`
+- References: `templates/vendor_extension_conformance_claim.md`; `docs/support/evidence_map.md`; `spec/governance/macro_security_incident_playbook_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: Route unresolved security incidents through security response owners and steering escalation.

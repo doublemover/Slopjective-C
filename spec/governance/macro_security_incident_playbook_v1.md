@@ -338,8 +338,7 @@ Every incident record MUST include:
 
 Audit evidence MUST maintain bidirectional references to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
-  Sections `14` through `18`,
+- `docs/support/evidence_map.md`,
 - this playbook Sections `2` through `8`,
 - all associated `E174-*`, `AC-174-*`, and `SPT-0366` through `SPT-0374`
   identifiers used for closeout.

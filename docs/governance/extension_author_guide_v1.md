@@ -67,7 +67,7 @@ workflow action registry, not public command examples.
 
 ## 5. Quality and Freshness Rules
 
-- Keep onboarding/FAQ references aligned with current template and registry paths.
+- Keep onboarding/FAQ references aligned with current templates, shared schema registry, capability matrix, and evidence map owners.
 - Re-verify board cadence and escalation references at least every 30 days.
 - Re-verify security/provenance guidance at least every 14 days.
 

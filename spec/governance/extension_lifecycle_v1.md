@@ -7,7 +7,8 @@ for promotion, rollback, deprecation, and retirement decisions.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md#planning-issue-164-extension-lifecycle-states-package`
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
 - `spec/governance/extension_review_rubric_v1.md`
 - `spec/governance/capability_namespace_policy_v1.md`
 
@@ -49,7 +50,7 @@ This document is aligned to:
 | Disallowed path | Reason                                                         |
 | --------------- | -------------------------------------------------------------- |
 | `LS-1 -> LS-3`  | Skips required cross-vendor convergence stage.                 |
-| `LS-3 -> LS-1`  | Violates compatibility and release predictability constraints. |
+| `LS-3 -> LS-1`  | Violates release predictability and would create an unsupported fallback lane. |
 | `LS-5 -> any`   | `retired` is terminal; restoration requires a new identity.    |
 | `LS-4 -> LS-2`  | Reversal path, if approved, returns directly to `LS-3` only.   |
 
@@ -82,12 +83,12 @@ This document is aligned to:
 | `LS-1` | Completed intake packet, baseline syntax and semantics evidence, diagnostics evidence, determinism evidence, security evidence, namespace validity proof.             |
 | `LS-2` | Transition dossier, rubric `ACCEPT+`, at least one production implementation, provisional test obligations pass, initial vendor claim linkage.                        |
 | `LS-3` | Transition dossier, rubric `ACCEPT-STRONG`, two independent implementations, cross-vendor interop evidence, stable test obligations pass, published claim references. |
-| `LS-4` | Deprecation dossier, migration and replacement guidance, diagnostics with fix-its, sunset timeline, compatibility risk statement.                                     |
+| `LS-4` | Deprecation dossier, replacement guidance, diagnostics with fix-its, sunset timeline, and no-fallback impact statement.                                                |
 | `LS-5` | Retirement dossier, proof deprecation window elapsed, ecosystem impact review, tombstone publication record.                                                          |
 
 Freshness and replay rules:
 
-1. promotion evidence older than 90 days requires revalidation,
+1. promotion evidence older than 90 days requires revalidation and matching capability/evidence rows,
 2. security evidence older than 30 days requires explicit freshness note,
 3. non-reproducible artifacts are treated as missing evidence.
 
@@ -124,7 +125,7 @@ Freshness and replay rules:
 | ------------- | -------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `TB-01`       | Intake triage                          | Intake packet and trace fields                    | Triage disposition with blockers and due dates.                                  |
 | `TB-02`       | Promotion readiness (`T-01` or `T-02`) | Transition dossier and gate results               | Vote record with disposition, conditions, effective release, and effective date. |
-| `TB-03`       | Deprecation readiness (`T-03`)         | Deprecation dossier and migration evidence        | Deprecation decision with sunset start and rollback conditions.                  |
+| `TB-03`       | Deprecation readiness (`T-03`)         | Deprecation dossier and no-fallback replay evidence | Deprecation decision with sunset start and rollback conditions.                |
 | `TB-04`       | Retirement readiness (`T-04`)          | Retirement dossier and sunset compliance evidence | Retirement decision and tombstone publication authorization.                     |
 | `TB-05`       | Emergency rollback (`RB-*`)            | Incident report and containment status            | Temporary hold or rollback disposition with follow-up actions.                   |
 

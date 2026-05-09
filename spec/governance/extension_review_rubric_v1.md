@@ -7,7 +7,8 @@ review decisions. It is the canonical `C-04` artifact.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
 - `spec/governance/macro_derive_extension_charter_v1.md`
 
 ## 1. Scope
@@ -166,7 +167,7 @@ Reference calculations:
 | Consumer                     | Required output from this rubric                                                          |
 | ---------------------------- | ----------------------------------------------------------------------------------------- |
 | `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                           |
-| `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims. |
+| `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims, grounded in capability/evidence rows. |
 | `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                         |
 
 No downstream consumer may reinterpret `HF-*` or criterion floors as advisory.
