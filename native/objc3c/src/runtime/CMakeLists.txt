@@ -44,6 +44,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_cache.h
   dispatch/runtime_method_return.cpp
   dispatch/runtime_method_return.h
+  dispatch/runtime_resolution_records.h
   dispatch/runtime_method_shape.cpp
   dispatch/runtime_method_shape.h
   dispatch/typed_dispatch_result.cpp
@@ -61,6 +62,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/autorelease_pool.cpp
   memory/autorelease_pool.h
   metadata/runtime_emitted_records.h
+  metadata/runtime_realized_records.h
   objc3_runtime.cpp
   public/objc3_runtime_api.h
   public/objc3_runtime_result.h

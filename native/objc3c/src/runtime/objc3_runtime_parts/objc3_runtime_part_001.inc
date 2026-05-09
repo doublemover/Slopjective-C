@@ -25,7 +25,9 @@
 #include <vector>
 
 #include "runtime/blocks/block_runtime_records.h"
+#include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/metadata/runtime_emitted_records.h"
+#include "runtime/metadata/runtime_realized_records.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -42,9 +44,16 @@ using objc3c::runtime::EmittedMethodListHeader;
 using objc3c::runtime::EmittedMethodListRef;
 using objc3c::runtime::EmittedPropertyDescriptor;
 using objc3c::runtime::EmittedProtocolRecord;
+using objc3c::runtime::HasTerminalStrictDispatchError;
+using objc3c::runtime::MethodCacheEntry;
 using objc3c::runtime::PromotePointerCaptureCellsIntoRuntimeOwnedStorage;
+using objc3c::runtime::PropertyLookupCacheEntry;
+using objc3c::runtime::PropertyLookupCacheKey;
+using objc3c::runtime::PropertyLookupCacheKeyHash;
+using objc3c::runtime::RealizedPropertyAccessor;
 using objc3c::runtime::RuntimeBlockInvokeFn;
 using objc3c::runtime::RuntimeBlockRecord;
+using objc3c::runtime::SlowPathResolution;
 
 namespace {
 
@@ -173,94 +182,6 @@ struct RegisteredImageMetadata {
   std::uint64_t keypath_descriptor_count = 0;
   bool linker_anchor_matches_discovery_root = false;
   bool used_staged_registration_table = false;
-};
-
-struct RealizedPropertyAccessor;
-
-struct PropertyLookupCacheKey {
-  std::uint64_t start_base_identity = 0;
-  std::string property_name;
-
-  bool operator==(const PropertyLookupCacheKey &other) const {
-    return start_base_identity == other.start_base_identity &&
-           property_name == other.property_name;
-  }
-};
-
-struct PropertyLookupCacheKeyHash {
-  std::size_t operator()(const PropertyLookupCacheKey &key) const {
-    return std::hash<std::uint64_t>{}(key.start_base_identity) ^
-           (std::hash<std::string>{}(key.property_name) << 1u);
-  }
-};
-
-struct PropertyLookupCacheEntry {
-  bool found = false;
-  bool inherited = false;
-  std::size_t resolved_node_index = 0;
-  std::size_t accessor_index = 0;
-};
-
-struct MethodCacheEntry {
-  bool resolved = false;
-  bool dispatch_family_is_class = false;
-  bool fast_path_seeded = false;
-  bool effective_direct_dispatch = false;
-  bool objc_final_declared = false;
-  bool objc_sealed_declared = false;
-  std::string selector_storage;
-  std::string fast_path_reason;
-  std::string class_name;
-  std::string owner_identity;
-  std::uint64_t normalized_receiver_identity = 0;
-  std::uint64_t selector_stable_id = 0;
-  std::uint64_t parameter_count = 0;
-  RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
-  std::uint64_t category_probe_count = 0;
-  std::uint64_t protocol_probe_count = 0;
-  objc3_runtime_dispatch_status_code strict_error_status =
-      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
-  const void *implementation = nullptr;
-  RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
-  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
-};
-
-struct SlowPathResolution {
-  bool resolved = false;
-  bool ambiguous = false;
-  bool dispatch_family_is_class = false;
-  bool effective_direct_dispatch = false;
-  bool objc_final_declared = false;
-  bool objc_sealed_declared = false;
-  std::string selector_storage;
-  std::string fast_path_reason;
-  std::string class_name;
-  std::string owner_identity;
-  std::uint64_t normalized_receiver_identity = 0;
-  std::uint64_t selector_stable_id = 0;
-  std::uint64_t parameter_count = 0;
-  RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
-  std::uint64_t category_probe_count = 0;
-  std::uint64_t protocol_probe_count = 0;
-  objc3_runtime_dispatch_status_code strict_error_status =
-      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
-  const void *implementation = nullptr;
-  RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
-  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
-};
-
-bool HasTerminalStrictDispatchError(const SlowPathResolution &resolution) {
-  return !resolution.resolved &&
-         resolution.strict_error_status !=
-             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
-}
-
-struct RealizedPropertyAccessor {
-  const EmittedPropertyDescriptor *property_descriptor = nullptr;
-  const EmittedIvarDescriptor *ivar_descriptor = nullptr;
-  RuntimeMethodReturnKind getter_return_kind = RuntimeMethodReturnKind::Unsupported;
-  std::string getter_owner_identity;
-  std::string setter_owner_identity;
 };
 
 struct RuntimeWeakSlotRef {
