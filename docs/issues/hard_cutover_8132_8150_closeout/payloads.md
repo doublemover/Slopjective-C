@@ -59,6 +59,14 @@ commits that landed after the first docs commit.
 | `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390`, `e7deeeda7`, `8457e4728`, `1678e0323`, `5153e749d`, `91e73f01f`, `f56e1af4f` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application/release/tooling specs, native driver public-workflow command owners, public command budget contracts, validation timing report owners, source-hygiene residue guardrails, and public docs command-surface alignment while keeping public command truth at `npm run objc3c -- <action>`. |
 | `#8144`, `#8145`, `#8150` | `d63a55535`, `3fc0f3dd7`, `9b53ca57b`, `9debafbeb`, `5487641c4`, `0ab5fb9ae`, `03ffe9df8`, `4dcbbb24c`, `e6269dc67`, `f4af3437c`, `1678e0323`, `f4bf6228e` | Fixture and retired-surface evidence now includes static hard-cut expectations, positive-residue wording cleanup, fixture boundary indexes, runtime dispatch sidecars, retired-positive conformance policies, parser owner-path replacement, tooling split expectations, fixture boundary residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors. |
 
+## Post-`f4bf6228e` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8142`, `#8145`, `#8149`, `#8150` | `91cdc9fcb`, `181c1c479`, `d9263af3a` | Release governance foundation, public-conformance, operation/channel, distribution-credibility, security-hardening, and validation timing owners now have committed control-plane evidence. The public workflow boundary remains the npm bridge. |
+| `#8143`, `#8144`, `#8145`, `#8150` | `2555e1c4f`, `1a3da4057` | Conformance runtime probe metadata and fixture runtime split anchors now refresh behavior evidence. Canonical positives remain separate from retired-surface rejection, strict-error, and absent-support metadata. |
+| `#8138`, `#8142`, `#8149` | `89959f6cc` | Developer tooling playground input, runner, and workspace owners now refresh internal tooling/workflow evidence without adding a public helper command path. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -344,7 +352,8 @@ hygiene owner commits, plus telemetry command constraints, workflow handler
 registries, workflow catalog core/application specs, and native driver public
 workflow command owners, release catalog specs, and public docs command-surface
 alignment, plus tooling catalog specs, public command budget contracts, and
-source-hygiene residue guardrails, plus validation timing report owners.
+source-hygiene residue guardrails, plus validation timing report owners, release
+governance owner splits, and playground workflow owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -356,8 +365,9 @@ are retired from public claims.
 ## #8150
 
 Final closure evidence is local and evidence-ready, including the follow-up
-committed owner wave through `f4bf6228e`. Remote issue closure, push, and
-validation remain deferred under the current worker constraints.
+committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
+through `89959f6cc`. Remote issue closure, push, and validation remain deferred
+under the current worker constraints.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

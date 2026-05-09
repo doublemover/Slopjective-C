@@ -317,6 +317,50 @@
       }
     ]
   },
+  "post_f4bf_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "f4bf6228e",
+    "through_commit": "89959f6cc",
+    "commit_count": 6,
+    "count_policy": "counts committed owner/evidence commits after the f4bf6228e closeout refresh and excludes uncommitted worktree edits plus docs-only closeout commits",
+    "issue_owner_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "91cdc9fcb",
+          "181c1c479",
+          "d9263af3a"
+        ]
+      },
+      {
+        "issues": [
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "2555e1c4f",
+          "1a3da4057"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8149"
+        ],
+        "primary_commits": [
+          "89959f6cc"
+        ]
+      }
+    ]
+  },
   "issue_payloads": [
     {
       "issue": "#8132",

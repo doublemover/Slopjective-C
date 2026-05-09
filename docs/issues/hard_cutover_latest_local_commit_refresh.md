@@ -82,6 +82,30 @@ push operations were run while preparing this artifact.
 | `#8149` | Source hygiene/control-plane evidence is refreshed by workflow handler registry and catalog owner splits, workflow release/tooling specs, validation timing report owners, native driver CLI owner splits, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, plus telemetry command evidence constraints. |
 | `#8150` | Local closure evidence now includes the follow-up committed owner wave through `f4bf6228e`. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
 
+## Post-`f4bf6228e` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `f4bf6228e`
+through `89959f6cc`. It does not include uncommitted worktree edits and does not
+assert validation, push, GitHub issue updates, or remote closure.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Release governance and validation control-plane surfaces | `#8142`, `#8145`, `#8149`, `#8150` | `91cdc9fcb`, `181c1c479`, `d9263af3a` | Release governance foundation, public-conformance, operation/channel, distribution-credibility, security-hardening, and validation-timing owner splits are workflow/control-plane evidence. They keep release governance behind the checked workflow surface and do not create direct helper command support. |
+| Conformance runtime probe and retired-surface metadata | `#8143`, `#8144`, `#8145`, `#8150` | `2555e1c4f`, `1a3da4057` | Hard-cutover conformance indexes, runtime probe metadata, fixture runtime split anchors, boundary inventories, and runtime semantic-model anchors refresh acceptance evidence. Positive fixtures remain canonical; retired runtime behavior stays rejection, strict-error, or absent-support evidence. |
+| Developer tooling and playground workflow owners | `#8138`, `#8142`, `#8149` | `89959f6cc` | Playground input, runner, and workspace owner splits are developer-tooling workflow evidence under the same public command boundary. They do not add a public direct helper path. |
+
+## Post-`f4bf6228e` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8138` | Developer tooling/playground owner splits refresh internal workflow evidence without adding public helper commands. |
+| `#8142` | Release governance and playground workflow owner splits refresh command/control-plane ownership; public command truth remains `npm run objc3c -- <action>`. |
+| `#8143` | Runtime acceptance evidence is refreshed by conformance runtime probe metadata and fixture runtime split anchors. |
+| `#8144` | Behavior fixture evidence is refreshed by hard-cutover conformance index alignment, runtime probe metadata, fixture anchors, and boundary inventories. |
+| `#8145` | Capability truth evidence is refreshed by release-governance credibility/security owners and conformance runtime probe metadata; retired support wording remains negative-evidence only. |
+| `#8149` | Source hygiene/control-plane evidence is refreshed by release governance owners, validation timing owner splits, and playground workflow owner splits. |
+| `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -119,3 +143,6 @@ after `f66452822` through `f4bf6228e`: `328bd8fe9`, `3bfc42ea5`,
 `c2b6b5209`, `1678e0323`, `5153e749d`, `e03ec059c`, `91e73f01f`,
 `9ad72ee8a`, `a61477b96`, `647e47739`, `f38134a38`, `110c07879`,
 `f56e1af4f`, `1afa7c1ae`, and `f4bf6228e`.
+
+This post-`f4bf6228e` refresh references `91cdc9fcb`, `181c1c479`,
+`2555e1c4f`, `d9263af3a`, `1a3da4057`, and `89959f6cc`.

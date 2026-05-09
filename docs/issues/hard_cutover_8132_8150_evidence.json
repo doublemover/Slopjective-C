@@ -934,6 +934,56 @@
       }
     ]
   },
+  "post_f4bf_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "f4bf6228e",
+    "through_commit": "89959f6cc",
+    "commit_count": 6,
+    "count_policy": "counts committed owner/evidence commits after the f4bf6228e closeout refresh and excludes uncommitted worktree edits plus docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "91cdc9fcb",
+          "181c1c479",
+          "d9263af3a"
+        ],
+        "owner_boundary": "release governance foundation, public conformance, operation/channel, distribution credibility, security hardening, and validation timing owners remain workflow/control-plane evidence under the npm bridge"
+      },
+      {
+        "issues": [
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "commits": [
+          "2555e1c4f",
+          "1a3da4057"
+        ],
+        "owner_boundary": "conformance runtime probe metadata and fixture runtime split anchors refresh behavior evidence while keeping positives canonical and retired behavior rejected, strict-error, or absent"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8149"
+        ],
+        "commits": [
+          "89959f6cc"
+        ],
+        "owner_boundary": "developer tooling playground input, runner, and workspace owners are internal workflow evidence and do not create a public direct-helper command path"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",
