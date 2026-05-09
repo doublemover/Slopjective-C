@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `0e96b4cf0`. It does not assert validation, remote issue
+refreshes through source commit `5ea59e3b7`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -371,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `0e96b4cf0` without running validation, GitHub commands, push, or remote
+to source commit `5ea59e3b7` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -436,6 +436,14 @@ issue edits. It groups the latest owner evidence as follows:
 - sema core parity publication owners: `4c5389c86`
 - metaprogramming source completion owners: `f885c12e6`
 - sema module parity publication owners: `0e96b4cf0`
+- sema concurrency parity publication owners: `f9d44ba5b`
+- IR runtime artifact emission owners: `f55dfb0f1`
+- concurrency runtime closure behavior owners: `eb3b09ca3`
+- ownership source completion owners: `4fce60223`
+- sema unsafe error parity validator owners: `d8410b588`
+- interop source completion owners: `79e3ff570`
+- runtime tooling probe behavior owners: `c8af0b997`
+- sema control binding parity validator owners: `5ea59e3b7`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
