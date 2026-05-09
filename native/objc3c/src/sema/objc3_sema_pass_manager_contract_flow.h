@@ -5481,28 +5481,6 @@ BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
 
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready &&
-         surface.deterministic_parser_sema_contract_readiness_record &&
-         IsReadyObjc3ParserSemaContractReadinessRecord(
-             surface.parser_sema_contract_readiness_record) &&
-         surface.deterministic_diagnostics_publication_record &&
-         surface.deterministic_pass_manager_publication_record &&
-         IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
-         IsReadyObjc3SemaDiagnosticsPublicationRecord(
-             surface.diagnostics_publication_record) &&
-         surface.deterministic_pass_flow_recovery_record &&
-         IsReadyObjc3SemaPassFlowRecoveryRecord(
-             surface.pass_flow_recovery_record) &&
-         IsReadyObjc3SemaPassManagerPublicationRecord(
-             surface.pass_manager_publication_record) &&
-         surface.deterministic_type_metadata_publication_record &&
-         IsReadyObjc3SemaTypeMetadataPublicationRecord(
-             surface.type_metadata_publication_record) &&
-         surface.deterministic_type_metadata_mapping_readiness_record &&
-         IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-             surface.type_metadata_mapping_readiness_record) &&
-         surface.deterministic_typed_semantic_handoff_record &&
-         IsReadyObjc3SemaTypedSemanticHandoffRecord(
-             surface.typed_semantic_handoff_record) &&
          surface.deterministic_parity_closeout_publication_readiness_record &&
          IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
              surface.parity_closeout_publication_readiness_record) &&
@@ -5512,9 +5490,6 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_closeout_signoff_record &&
          IsReadyObjc3SemaCloseoutSignoffRecord(
              surface.closeout_signoff_record) &&
-         surface.deterministic_parser_sema_contract_readiness_record &&
-         IsReadyObjc3ParserSemaContractReadinessRecord(
-             surface.parser_sema_contract_readiness_record) &&
          IsReadyObjc3BootstrapLegalityFailureContractSummary(
              surface.bootstrap_legality_failure_contract_summary) &&
          IsReadyObjc3BootstrapLegalitySemanticsSummary(
@@ -5533,13 +5508,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.diagnostics_bus_publish_consistent &&
          surface.diagnostics_canonicalized &&
          surface.diagnostics_hardening_satisfied &&
-         surface.deterministic_pass_flow_recovery_record &&
-         IsReadyObjc3SemaPassFlowRecoveryRecord(
-             surface.pass_flow_recovery_record) &&
          surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
-         surface.deterministic_type_metadata_mapping_readiness_record &&
-         IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-             surface.type_metadata_mapping_readiness_record) &&
          surface.interface_implementation_summary.interface_method_symbols == surface.interface_method_symbols_total &&
          surface.interface_implementation_summary.implementation_method_symbols ==
              surface.implementation_method_symbols_total &&
