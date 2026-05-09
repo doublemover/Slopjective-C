@@ -16,6 +16,8 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_sema_stage_runner.h
   frontend_pipeline_stage_contract.h
   frontend_pipeline_stage_runner.h
+  parse_lowering_artifact_keys.h
+  parse_lowering_diagnostic_keys.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
   objc3_frontend_pipeline.h
   objc3_ir_emission_core_feature_implementation_surface.h
