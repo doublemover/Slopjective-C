@@ -55,6 +55,11 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"(?<![A-Za-z0-9_.-])python\s+-m\s+scripts\.objc3c_workflow\b",
     ),
     ForbiddenPattern(
+        "direct-native-compile-wrapper-command",
+        "Public native compile instructions must expose npm run objc3c -- compile-objc3c instead of direct PowerShell wrapper commands.",
+        r"\b(?:pwsh|powershell(?:\.exe)?)\b[^\n]{0,180}\bscripts[\\/]+objc3c_native_compile\.ps1\b",
+    ),
+    ForbiddenPattern(
         "retired-public-script-alias-metadata",
         "Retired public script alias metadata must not reappear on active hard-cutover surfaces.",
         r"(?<![A-Za-z0-9_])public_scripts(?![A-Za-z0-9_])"

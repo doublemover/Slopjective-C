@@ -248,6 +248,34 @@ def test_hard_cutover_gate_rejects_retired_npm_workflow_aliases(tmp_path: Path) 
     assert report["active_findings"][0]["pattern_id"] == "retired-npm-workflow-command"
 
 
+def test_hard_cutover_gate_rejects_direct_native_compile_wrapper_commands(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/objc3c-native.md",
+        "Run pwsh -NoProfile -File scripts/objc3c_native_compile.ps1 sample.objc3.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "direct-native-compile-wrapper-command"
+
+
+def test_hard_cutover_gate_allows_native_compile_wrapper_as_source_anchor(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/objc3c-native.md",
+        "- implementation anchor: `scripts/objc3c_native_compile.ps1`\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is True
+    assert report["stats"]["active_finding_count"] == 0
+
+
 def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
     tmp_path: Path,
 ) -> None:
