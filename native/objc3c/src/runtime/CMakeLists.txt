@@ -45,6 +45,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor_mailbox_state.cpp
   concurrency/actor_mailbox_state.h
   concurrency/actor_snapshot.cpp
+  concurrency/actor_snapshot_fields.cpp
+  concurrency/actor_snapshot_fields.h
   concurrency/actor_state.cpp
   concurrency/actor_state.h
   concurrency/actor_state_store.h
