@@ -124,6 +124,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   images/image_descriptor.h
   images/multi_image_ordering.cpp
   images/multi_image_ordering.h
+  images/registration_api.cpp
   images/registration.cpp
   images/registration.h
   images/registration_snapshots.cpp
