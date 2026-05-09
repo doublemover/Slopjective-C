@@ -4,7 +4,7 @@
   "owner_phase": "e2e",
   "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
   "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
-  "support_boundary": "e2e ownership covers public smoke/full suite wiring, executable proof, native-output truth, and linked-probe closeout only after phase owners assign behavior",
+  "support_boundary": "e2e ownership covers public smoke/full suite wiring, executable proof, native-output truth, and linked-probe closeout only after phase owners assign behavior; required reports, generated reports, proof bundles, replay manifests, source-owner contract rows, report-only rows, migration-only rows, runner-only rows, and catalog-only rows remain provenance unless e2e owners claim executable behavior",
   "phase_support_claim_authority": false,
   "selectors": [
     "suite_ids:public-test-smoke",
@@ -18,5 +18,5 @@
     "proof_rules:runtime-claims-must-link-real-compiled-module-objects-into-native-runtime-probes"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "generated reports, milestone-local harness forks, sidecar-only proof, replay text alone, and catalog-only closeout claims are e2e provenance or rejection evidence"
+  "retired_surface_rule": "generated reports, required report paths, milestone-local harness forks, sidecar-only proof, replay text alone, catalog-only closeout claims, unlinked probes, generated-only rows, report-only rows, migration-only rows, runner-only rows, package-only rows, shim/fallback execution, old-mode execution, compatibility wording, and alternate acceptance paths are e2e provenance, canonical rejection, strict-error, or absent-support evidence only"
 }

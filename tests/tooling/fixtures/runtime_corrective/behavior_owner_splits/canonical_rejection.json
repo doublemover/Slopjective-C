@@ -4,7 +4,7 @@
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
   "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
-  "support_boundary": "runtime-corrective rows that mention unresolved dispatch, strict errors, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-report claims, or alternate acceptance are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "runtime-corrective rows that mention unresolved dispatch, strict errors, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-report claims, report-only outputs, migration-only rows, runner-only evidence, package-only evidence, cache-only evidence, counter-only evidence, replay-text-only evidence, catalog-only closeout, or alternate acceptance are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "current_corrective_gaps:unresolved-dispatch-strict-error-after-slow-path-miss",
@@ -23,8 +23,28 @@
     "*old-mode*",
     "*legacy*",
     "*unsupported*",
-    "*unresolved*"
+    "*unresolved*",
+    "*generated-only*",
+    "*generated_only*",
+    "*generated-report-only*",
+    "*report-only*",
+    "*report_only*",
+    "*migration-only*",
+    "*migration_only*",
+    "*runner-only*",
+    "*runner_only*",
+    "*cache-only*",
+    "*cache_only*",
+    "*package-only*",
+    "*package_only*",
+    "*counter-only*",
+    "*counter_only*",
+    "*sidecar-only*",
+    "*unlinked-probe*",
+    "*replay-text-alone*",
+    "*catalog-only*",
+    "*milestone-local*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, unresolved-dispatch, strict-error, sidecar-only, generated-report-only, unlinked-probe, and alternate acceptance path evidence is canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, unresolved-dispatch, strict-error, sidecar-only, generated-report-only, report-only, migration-only, runner-only, package-only, cache-only, counter-only, unlinked-probe, replay-text-only, catalog-only, milestone-local, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

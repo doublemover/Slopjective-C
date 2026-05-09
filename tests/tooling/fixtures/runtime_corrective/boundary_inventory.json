@@ -8,11 +8,54 @@
   "generated_report_root": "tmp/reports/m316/M316-A001",
   "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
   "behavior_boundary": {
-    "primary_axis": "behavior phase before corrective source-owner contract",
-    "support_authority": "runtime-corrective contracts are source, probe, acceptance, and provenance evidence only until a behavior owner split claims the phase",
-    "generated_report_rule": "generated corrective reports, compile artifacts, replay manifests, and proof bundles cannot define canonical support",
-    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, sidecar-only proof, and alternate acceptance evidence is canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before corrective source-owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, report-only row, migration-only row, runner-only row, or retired-surface claim",
+    "support_authority": "runtime-corrective contracts are source, probe, acceptance, report, proof, compile-artifact, and provenance evidence only until a behavior owner split claims the phase",
+    "generated_report_rule": "generated corrective reports, required reports, compile artifacts, replay manifests, proof bundles, module bundles, native-output truth bundles, linked-probe summaries, generated-only rows, report-only rows, migration-only rows, and runner-only rows cannot define canonical support",
+    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-report-only rows, report-only rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime source rows, runtime public ABI/C API path rows, dispatch semantic rows, acceptance workload rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows remain separately routed evidence classes"
   },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json",
+      "boundary": "parser fixture provenance consumed by runtime corrective acceptance and proof contracts"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json",
+      "boundary": "realized dispatch, synthesized accessor, ARC, and storage semantic provenance consumed by corrective runtime probes"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/lowering.json",
+      "boundary": "dispatch lowering, synthesized accessor helper selection, and lowering provenance coupling before runtime/e2e proof"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json",
+      "boundary": "emitted LLVM IR, object output, module manifests, registration manifests, compile provenance, and truthfulness envelope provenance"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
+      "boundary": "runtime acceptance cases, linked probes, dispatch/cache behavior, storage helpers, ARC helper interaction, and native runtime symbols"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
+      "boundary": "public smoke/full suite wiring, executable proof, native-output truth, linked-probe closeout, and required report provenance"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "strict-error, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-report-only, report-only, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
+    },
+    {
+      "phase": "runtime_corrective_provenance",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json",
+      "boundary": "boundary inventory rows, acceptance workload rows, source-owner contracts, summary/check anchors, required reports, compile artifacts, replay manifests, module bundles, native-output proof bundles, linked-probe summaries, probe/fixture paths, and owner split routing metadata"
+    }
+  ],
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "report_only_allowed": false,

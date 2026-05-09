@@ -875,7 +875,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "runtime_corrective_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
@@ -885,9 +886,10 @@
         "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json"
       ],
-      "retired_disposition": "runtime-corrective source-owner contracts, acceptance suites, linked probes, generated reports, compile artifacts, native-output truth bundles, and executable proof rows are resolved through behavior-first phase indexes before any corrective row is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, sidecar-only, unlinked-probe, generated-report-only, and alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "runtime-corrective source-owner contracts, acceptance suites, runtime acceptance reports, public workflow reports, linked probes, generated reports, compile artifacts, replay manifests, module bundles, native-output truth bundles, executable proof rows, summary/check anchors, authoritative probe rows, authoritative fixture rows, required LL snippets, generated-only rows, report-only rows, migration-only rows, runner-only rows, package-only rows, cache-only rows, and counter-only rows are resolved through behavior-first phase indexes and runtime corrective provenance before any corrective row, acceptance report, proof bundle, compile artifact, or linked-probe summary is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, strict-error, sidecar-only, unlinked-probe, generated-report-only, report-only, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance semantics remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
       "family": "performance_owner_split_indexes",
@@ -1275,6 +1277,7 @@
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json",
     "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/performance/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/performance/behavior_owner_splits/sema.json",

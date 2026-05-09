@@ -4,10 +4,11 @@
   "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
   "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
   "split_policy": {
-    "primary_axis": "behavior phase before runtime-corrective owner contract, acceptance suite, generated report, or proof bundle",
-    "positive_rule": "runtime-corrective rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
-    "provenance_rule": "generated reports, compile artifacts, replay manifests, module bundles, native-output proof bundles, and linked-probe summaries are provenance until a phase owner claims the behavior",
-    "retired_surface_rule": "fallback, shim, compatibility, old-mode, unsupported, unresolved dispatch, sidecar-only proof, unlinked probes, and alternate acceptance path claims are canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before runtime-corrective owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, report-only row, migration-only row, runner-only row, or retired-surface claim",
+    "positive_rule": "runtime-corrective rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; acceptance reports, generated reports, compile artifacts, replay manifests, proof bundles, source-owner contract rows, and provenance rows are not behavior support by themselves",
+    "provenance_rule": "source-owner contract rows, acceptance workload rows, generated reports, required reports, compile artifacts, replay manifests, module bundles, native-output proof bundles, linked-probe summaries, summary/check implementation anchors, authoritative probe paths, authoritative fixture paths, required LL snippets, generated-only rows, report-only rows, migration-only rows, runner-only rows, cache-only rows, timing-only rows, package-only rows, and counter-only rows are provenance until a phase owner claims the behavior",
+    "retired_surface_rule": "fallback, shim, compatibility, old-mode, unsupported, unresolved dispatch, strict-error, sidecar-only proof, unlinked probes, generated-report-only, report-only, migration-only, runner-only, package-only, replay-text-only, catalog-only, and alternate acceptance path claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime behavior, runtime public ABI/C API path rows, dispatch semantic model rows, acceptance suite rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
   },
   "owner_splits": [
     {
@@ -37,6 +38,10 @@
     {
       "owner_phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "runtime_corrective_provenance",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json"
     }
   ]
 }
