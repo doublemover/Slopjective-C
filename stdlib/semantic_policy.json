@@ -67,10 +67,10 @@
   },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",
-    "component_count": "returns root plus offset until runtime-backed keypath storage lands",
+    "component_count": "returns root plus offset as the explicit component-count shape",
     "text_shape_score": "returns component_count plus text_units for canonical text-shape validation",
     "text_shape_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
-    "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
+    "typed_keypath_metadata": "preserves root and component counts as the current metadata token shape",
     "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
     "runtime_composition_shape": "must preserve explicit component counts without inventing ownership or allocation semantics",
     "metadata_token": "returns root plus component_count",
@@ -78,7 +78,7 @@
     "runtime_composition_token": "returns component_count when imported_components is negative, otherwise component_count plus imported_components"
   },
   "concurrency_semantics": {
-    "spawn_token": "returns seed plus 1 as the current deterministic child-spawn token placeholder",
+    "spawn_token": "returns seed plus 1 as the canonical deterministic spawn token",
     "child_spawn_token": "returns seed plus 1 as the structured child-spawn helper token",
     "detached_spawn_token": "returns seed plus 2 as the detached-spawn helper token",
     "join_status": "returns the provided result code unless cancelled is nonzero, in which case it returns 2",
@@ -91,12 +91,12 @@
     "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
   },
   "system_semantics": {
-    "resource_token": "returns seed plus 4 as the current deterministic strict-system resource token placeholder",
+    "resource_token": "returns seed plus 4 as the canonical deterministic strict-system resource token",
     "cleanup_token": "returns seed plus 4 plus cleanup_count when cleanup_count is nonnegative, otherwise seed plus 4",
     "lifetime_borrow_token": "returns seed plus 4 plus borrow_depth when borrow_depth is nonnegative, otherwise seed plus 4",
     "diagnostics_gate_token": "returns 30704 when observed_profile is lower than required_profile and 0 otherwise",
     "runtime_composition_token": "returns seed plus 4 plus helper_token",
-    "profile_gate": "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports",
+    "profile_gate": "objc3.system helpers remain gated to Strict System and must not become unconditional Core imports",
     "runtime_composition_hook": "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers",
     "layering_rule": "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
   },
@@ -105,7 +105,7 @@
     "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
     "moving result-shape helpers into objc3.core",
-    "claiming runtime-backed executor or reflection semantics before the checked-in helper exports exist",
+    "presenting runtime-backed executor or reflection semantics without checked-in helper exports",
     "widening strict-system helpers into always-on core imports"
   ]
 }

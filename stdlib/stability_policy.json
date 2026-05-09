@@ -8,7 +8,7 @@
     "new exported APIs may be added without renaming existing modules",
     "layering violations are rejected at the checked-in workspace boundary",
     "advanced helper families remain owned by their current canonical modules within major version 1",
-    "strict-system helper exposure remains profile-gated and cannot be widened into core claims without an explicit contract update"
+    "strict-system helper exposure remains profile-gated and cannot be widened into core imports without an explicit contract update"
   ],
   "family_ownership": {
     "objc3.concurrency": [

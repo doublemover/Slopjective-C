@@ -70,9 +70,9 @@
     ]
   },
   "module_roles": {
-    "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints that eventually back structured runtime behavior",
+    "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints for deterministic structured-concurrency token shapes",
     "objc3.keypath": "typed key-path metadata and helper entrypoints for explicit reflection, interop, and runtime-composition tokens",
-    "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks reserved for strict-system claims"
+    "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks scoped to Strict System imports"
   },
   "layering_model": {
     "objc3.concurrency": [
@@ -92,7 +92,7 @@
   },
   "non_goals": [
     "duplicating the core stdlib helper contract",
-    "claiming runtime-backed reflection or executor semantics before live helper exports exist",
+    "presenting runtime-backed reflection or executor semantics without live helper exports",
     "widening strict-system helpers into always-on core imports",
     "adding a second stdlib packaging flow outside the existing runnable toolchain bundle"
   ]

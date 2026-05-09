@@ -38,7 +38,7 @@ Authoritative semantic contract:
 This root is not a place for:
 
 - milestone-only notes
-- temporary package layouts outside `tmp/pkg/`
+- ad hoc package layouts outside `tmp/pkg/`
 - duplicate tutorial text
 - duplicate showcase sources
 - a second stdlib onboarding tree outside `docs/tutorials/` and `showcase/`
