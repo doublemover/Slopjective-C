@@ -113,6 +113,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/current_property_binding.cpp
   storage/current_property_context.h
   storage/current_property_value.cpp
+  storage/current_property_weak.cpp
   state/runtime_reset.cpp
   state/runtime_reset.h
   state/runtime_state_clear.cpp
@@ -144,6 +145,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_value_storage.h
   storage/runtime_instance_records.h
   storage/storage_accessor_snapshot.cpp
+  storage/weak_slot_registry.cpp
+  storage/weak_slot_zeroing.cpp
   storage/weak_slots.cpp
   storage/weak_slots.h
 )
