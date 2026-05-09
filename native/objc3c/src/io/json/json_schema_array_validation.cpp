@@ -3,9 +3,9 @@
 #include <cstddef>
 
 #include "io/json/json_equivalence.h"
+#include "io/json/json_schema_array_items_validation.h"
 #include "io/json/json_schema_errors.h"
 #include "io/json/json_schema_subschema.h"
-#include "io/json/json_schema_validation.h"
 
 namespace objc3::io::json {
 
@@ -15,21 +15,9 @@ void ValidateJsonSchemaArrayFields(const JsonValue &schema_root,
                                    const std::string &instance_path,
                                    const std::string &schema_path,
                                    JsonSchemaResult &result) {
-  const JsonValue *items = schema.Find("items");
-  if (items != nullptr && payload.IsArray()) {
-    if (!items->IsObject()) {
-      AddJsonSchemaContractError(result, "invalid_items",
-                                 JsonSchemaKeywordPath(schema_path, "items"),
-                                 "items must be a schema object");
-      return;
-    }
-    const auto &array = payload.AsArray();
-    for (std::size_t i = 0; i < array.size(); ++i) {
-      ValidateJsonSchemaNode(schema_root, *items, array[i],
-                             JsonInstanceArrayElementPath(instance_path, i),
-                             JsonSchemaKeywordPath(schema_path, "items"),
-                             result);
-    }
+  if (!ValidateJsonSchemaArrayItems(schema_root, schema, payload, instance_path,
+                                    schema_path, result)) {
+    return;
   }
   const JsonValue *contains = schema.Find("contains");
   if (contains != nullptr && payload.IsArray()) {
