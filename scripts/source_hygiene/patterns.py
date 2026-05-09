@@ -57,7 +57,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "direct-native-compile-wrapper-command",
         "Public native compile instructions must expose npm run objc3c -- compile-objc3c instead of direct PowerShell wrapper commands.",
-        r"\b(?:pwsh|powershell(?:\.exe)?)\b[^\n]{0,180}\bscripts[\\/]+objc3c_native_compile\.ps1\b",
+        r"\b(?:pwsh|powershell(?:\.exe)?)\s+[^\n]{0,180}\bscripts[\\/]+objc3c_native_compile\.ps1\b",
     ),
     ForbiddenPattern(
         "retired-public-script-alias-metadata",
