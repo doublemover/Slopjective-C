@@ -78,8 +78,8 @@
     }
   },
   "claim_truth_policy": {
-    "source_compatibility_claims_allowed": false,
-    "migration_or_fallback_support_claims_allowed": false,
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
     "hosted_registry_claim_allowed": false,
     "report_only_allowed": false,
     "wrapper_only_allowed": false

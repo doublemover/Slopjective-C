@@ -63,7 +63,7 @@
       "public_actions": [
         "build-package-lock"
       ],
-      "claim_boundary": "deterministic local lock evidence only; no hosted registry, package-manager parity, or network fallback claim"
+      "claim_boundary": "deterministic local lock evidence only; no hosted registry, package-manager parity, or network-dependent install claim"
     },
     "registry_publication_owner": {
       "role": "package-ecosystem-registry-owner",
@@ -90,8 +90,8 @@
     }
   },
   "hard_cutover_publication_policy": {
-    "source_compatibility_claims_allowed": false,
-    "migration_or_fallback_support_claims_allowed": false,
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
     "wrapper_only_publication_allowed": false,
     "report_only_allowed": false,
     "required_owner_contract_module": "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py"

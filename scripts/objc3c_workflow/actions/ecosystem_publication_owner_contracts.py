@@ -17,7 +17,7 @@ class EcosystemPublicationOwnerContract:
     report_only_allowed: bool = False
     wrapper_only_allowed: bool = False
     retired_source_acceptance_claim_allowed: bool = False
-    retired_surface_claim_allowed: bool = False
+    retired_surface_acceptance_claim_allowed: bool = False
 
 
 PACKAGE_SOURCE_CONTRACTS = (
@@ -30,7 +30,7 @@ PACKAGE_SOURCE_CONTRACTS = (
 PACKAGE_FORBIDDEN_CLAIMS = (
     "hosted registry availability",
     "package-manager parity",
-    "network-backed fallback install path",
+    "network-backed alternate install path",
     "generated artifact as source authority",
     "wrapper-only package publication",
 )
@@ -95,7 +95,7 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
     "validate-package-mirror": _package_contract(
         "validate-package-mirror",
         "package-ecosystem-mirror-owner",
-        "proves local offline mirror reproducibility without network fallback claims",
+        "proves local offline mirror reproducibility without network-dependent install claims",
     ),
     "validate-package-ecosystem": _package_contract(
         "validate-package-ecosystem",
@@ -142,7 +142,7 @@ def require_ecosystem_publication_owner_contract(action_name: str) -> EcosystemP
         raise RuntimeError(f"{action_name} is wrapper-only")
     if contract.retired_source_acceptance_claim_allowed:
         raise RuntimeError(f"{action_name} allows retired source acceptance overclaims")
-    if contract.retired_surface_claim_allowed:
+    if contract.retired_surface_acceptance_claim_allowed:
         raise RuntimeError(f"{action_name} allows retired source acceptance claims")
     return contract
 
