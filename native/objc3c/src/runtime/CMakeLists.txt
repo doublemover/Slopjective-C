@@ -64,6 +64,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/task_group_state.cpp
   concurrency/task_lifecycle.cpp
   concurrency/task_snapshot.cpp
+  concurrency/task_snapshot_fields.cpp
+  concurrency/task_snapshot_fields.h
   concurrency/task_state.cpp
   concurrency/task_state.h
   concurrency/task_state_store.h
