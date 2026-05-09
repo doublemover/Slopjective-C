@@ -19,6 +19,10 @@ void ResetCompileResultForWrite(objc3c_frontend_compile_result_t *result);
 
 objc3c_frontend_string_t *CloneOwnedFrontendString(const std::string &text);
 
+void ReleaseOwnedFrontendString(objc3c_frontend_string_t *string);
+
+void ReleaseCompileResultOwnedStrings(objc3c_frontend_compile_result_t *result);
+
 bool PopulateCompileResultOwnedPayload(
     objc3c_frontend_compile_result_t *result,
     const Objc3FrontendResultOwnedPayload &payload,

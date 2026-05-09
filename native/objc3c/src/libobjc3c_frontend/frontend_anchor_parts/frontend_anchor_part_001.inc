@@ -23,290 +23,20 @@
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "libobjc3c_frontend/objc3c_frontend_artifact_plan.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
+#include "libobjc3c_frontend/objc3c_frontend_context_state.h"
+#include "libobjc3c_frontend/objc3c_frontend_diagnostics.h"
+#include "libobjc3c_frontend/objc3c_frontend_file_output.h"
 #include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
 #include "support/objc3_file_reading.h"
 
-using objc3::io::json::JsonObjectWriter;
-
-struct objc3c_frontend_context {
-  mutable std::mutex mutex;
-  std::string last_error;
-  std::string diagnostics_path;
-  // Context-local artifact paths copied into owned result strings.
-  std::string manifest_path;
-  std::string runtime_metadata_binary_path;
-  std::string ir_path;
-  std::string object_path;
-};
-
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
-  if (context == nullptr) {
-    return;
-  }
-  context->last_error = message == nullptr ? "" : message;
-}
-
-static std::filesystem::path BorrowedPathToFilesystemPath(objc3c_frontend_borrowed_path_t path) {
-  return std::filesystem::path(path);
-}
-
-static std::filesystem::path OptionalBorrowedFilesystemPath(objc3c_frontend_borrowed_path_t path) {
-  if (objc3c::frontend::IsMissingFrontendBorrowedPath(path)) {
-    return std::filesystem::path();
-  }
-  return BorrowedPathToFilesystemPath(path);
-}
-
-static std::string ToLowerCopy(std::string value) {
-  for (char &ch : value) {
-    ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-  }
-  return value;
-}
-
-static const char *DefaultEmitPrefix = "module";
-static const char *DefaultMemoryInputPath = "<memory>";
-
-static uint8_t NormalizeLanguageVersion(uint8_t requested_language_version) {
-  if (requested_language_version == 0u) {
-    return static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT);
-  }
-  return requested_language_version;
-}
-
-static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {
-  const uint8_t normalized_language_version = NormalizeLanguageVersion(requested_language_version);
-  if (normalized_language_version == static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3)) {
-    return true;
-  }
-
-  error = "unsupported compile_options.language_version: " + std::to_string(normalized_language_version) +
-          " (only Objective-C version 3 is supported).";
-  return false;
-}
-
-static std::filesystem::path ResolveInputPath(const objc3c_frontend_compile_options_t &options) {
-  if (!objc3c::frontend::IsMissingFrontendBorrowedPath(options.input_path)) {
-    return BorrowedPathToFilesystemPath(options.input_path);
-  }
-  return std::filesystem::path(DefaultMemoryInputPath);
-}
-
-static std::filesystem::path ResolveOutputDir(const objc3c_frontend_compile_options_t &options) {
-  if (objc3c::frontend::IsMissingFrontendBorrowedPath(options.out_dir)) {
-    return std::filesystem::path();
-  }
-  return BorrowedPathToFilesystemPath(options.out_dir);
-}
-
-static std::string ResolveEmitPrefix(const objc3c_frontend_compile_options_t &options,
-                                     const std::filesystem::path &input_path) {
-  if (!objc3c::frontend::IsMissingFrontendBorrowedText(options.emit_prefix)) {
-    return std::string(options.emit_prefix);
-  }
-  const std::string stem = input_path.stem().string();
-  if (!stem.empty()) {
-    return stem;
-  }
-  return DefaultEmitPrefix;
-}
-
-struct ParsedFrontendDiagnostic {
-  std::string severity = "unknown";
-  unsigned line = std::numeric_limits<unsigned>::max();
-  unsigned column = std::numeric_limits<unsigned>::max();
-  std::string code;
-  std::string message;
-  std::string raw;
-};
-
-static bool IsNativeDiagCode(const std::string &candidate) {
-  if (candidate.size() != 6) {
-    return false;
-  }
-  if (candidate[0] != 'O' || candidate[1] != '3') {
-    return false;
-  }
-  if (std::isupper(static_cast<unsigned char>(candidate[2])) == 0) {
-    return false;
-  }
-  return std::isdigit(static_cast<unsigned char>(candidate[3])) != 0 &&
-         std::isdigit(static_cast<unsigned char>(candidate[4])) != 0 &&
-         std::isdigit(static_cast<unsigned char>(candidate[5])) != 0;
-}
-
-static ParsedFrontendDiagnostic ParseFrontendDiagnostic(const std::string &diag) {
-  ParsedFrontendDiagnostic parsed;
-  parsed.raw = diag;
-  parsed.message = diag;
-
-  const std::size_t severity_end = diag.find(':');
-  if (severity_end == std::string::npos) {
-    return parsed;
-  }
-  parsed.severity = ToLowerCopy(diag.substr(0, severity_end));
-
-  const std::size_t line_end = diag.find(':', severity_end + 1);
-  const std::size_t column_end = line_end == std::string::npos ? std::string::npos : diag.find(':', line_end + 1);
-  if (line_end == std::string::npos || column_end == std::string::npos) {
-    return parsed;
-  }
-
-  try {
-    parsed.line = static_cast<unsigned>(std::stoul(diag.substr(severity_end + 1, line_end - (severity_end + 1))));
-    parsed.column = static_cast<unsigned>(std::stoul(diag.substr(line_end + 1, column_end - (line_end + 1))));
-  } catch (const std::exception &) {
-    parsed.line = std::numeric_limits<unsigned>::max();
-    parsed.column = std::numeric_limits<unsigned>::max();
-  }
-
-  std::size_t message_begin = column_end + 1;
-  while (message_begin < diag.size() && std::isspace(static_cast<unsigned char>(diag[message_begin])) != 0) {
-    ++message_begin;
-  }
-
-  const std::size_t code_begin = diag.rfind(" [");
-  if (code_begin != std::string::npos && code_begin > message_begin && !diag.empty() && diag.back() == ']') {
-    const std::string candidate_code = diag.substr(code_begin + 2, diag.size() - (code_begin + 3));
-    if (IsNativeDiagCode(candidate_code)) {
-      parsed.message = diag.substr(message_begin, code_begin - message_begin);
-      parsed.code = candidate_code;
-      return parsed;
-    }
-  }
-
-  parsed.message = diag.substr(message_begin);
-  return parsed;
-}
-
-static bool WriteTextFile(const std::filesystem::path &path, const std::string &contents, std::string &error) {
-  std::error_code mkdir_error;
-  if (!path.parent_path().empty()) {
-    std::filesystem::create_directories(path.parent_path(), mkdir_error);
-  }
-  if (mkdir_error) {
-    error = "failed to create output directory '" + path.parent_path().string() + "': " + mkdir_error.message();
-    return false;
-  }
-
-  std::ofstream out(path, std::ios::binary);
-  if (!out.is_open()) {
-    error = "failed to open output file '" + path.string() + "' for writing";
-    return false;
-  }
-  out << contents;
-  if (!out.good()) {
-    error = "failed while writing output file '" + path.string() + "'";
-    return false;
-  }
-  return true;
-}
-
-static bool WriteBinaryFile(const std::filesystem::path &path,
-                            const std::string &contents,
-                            std::string &error) {
-  std::error_code mkdir_error;
-  if (!path.parent_path().empty()) {
-    std::filesystem::create_directories(path.parent_path(), mkdir_error);
-  }
-  if (mkdir_error) {
-    error = "failed to create output directory '" + path.parent_path().string() + "': " + mkdir_error.message();
-    return false;
-  }
-
-  std::ofstream out(path, std::ios::binary);
-  if (!out.is_open()) {
-    error = "failed to open output file '" + path.string() + "' for writing";
-    return false;
-  }
-  out.write(contents.data(), static_cast<std::streamsize>(contents.size()));
-  if (!out.good()) {
-    error = "failed while writing output file '" + path.string() + "'";
-    return false;
-  }
-  return true;
-}
-
-static std::string BuildDiagnosticsJson(const std::vector<std::string> &diagnostics) {
-  std::ostringstream out;
-  out << "{\n";
-  out << "  \"schema_version\": \"1.0.0\",\n";
-  out << "  \"diagnostics\": [\n";
-  for (std::size_t i = 0; i < diagnostics.size(); ++i) {
-    const ParsedFrontendDiagnostic parsed = ParseFrontendDiagnostic(diagnostics[i]);
-    const unsigned line = parsed.line == std::numeric_limits<unsigned>::max() ? 0U : parsed.line;
-    const unsigned column = parsed.column == std::numeric_limits<unsigned>::max() ? 0U : parsed.column;
-    out << "    ";
-    JsonObjectWriter diagnostic(out);
-    diagnostic.StringField("severity", parsed.severity);
-    diagnostic.UnsignedField("line", line);
-    diagnostic.UnsignedField("column", column);
-    diagnostic.StringField("code", parsed.code);
-    diagnostic.StringField("message", parsed.message);
-    diagnostic.StringField("raw", parsed.raw);
-    diagnostic.End();
-    if (i + 1 != diagnostics.size()) {
-      out << ",";
-    }
-    out << "\n";
-  }
-  out << "  ]\n";
-  out << "}\n";
-  return out.str();
-}
-
-struct StageDiagnosticCounts {
-  uint32_t notes = 0;
-  uint32_t warnings = 0;
-  uint32_t errors = 0;
-  uint32_t fatals = 0;
-};
-
-static StageDiagnosticCounts CountDiagnosticsBySeverity(const std::vector<std::string> &diagnostics) {
-  StageDiagnosticCounts counts;
-  for (const std::string &diag : diagnostics) {
-    const std::size_t colon = diag.find(':');
-    const std::string prefix = ToLowerCopy(diag.substr(0, colon));
-    if (prefix == "note") {
-      ++counts.notes;
-    } else if (prefix == "warning") {
-      ++counts.warnings;
-    } else if (prefix == "fatal") {
-      ++counts.fatals;
-    } else {
-      ++counts.errors;
-    }
-  }
-  return counts;
-}
-
-static objc3c_frontend_stage_summary_t BuildStageSummary(objc3c_frontend_stage_id_t stage_id,
-                                                         bool attempted,
-                                                         bool skipped,
-                                                         const std::vector<std::string> &diagnostics) {
-  const StageDiagnosticCounts counts = CountDiagnosticsBySeverity(diagnostics);
-  objc3c_frontend_stage_summary_t summary = {};
-  summary.stage = stage_id;
-  summary.attempted = attempted ? 1u : 0u;
-  summary.skipped = skipped ? 1u : 0u;
-  summary.diagnostics_total = static_cast<uint32_t>(diagnostics.size());
-  summary.diagnostics_notes = counts.notes;
-  summary.diagnostics_warnings = counts.warnings;
-  summary.diagnostics_errors = counts.errors;
-  summary.diagnostics_fatals = counts.fatals;
-  return summary;
+  objc3c::frontend::SetFrontendContextError(context, message);
 }
 
 static void ClearCompileResultPaths(objc3c_frontend_context_t *context) {
-  if (context == nullptr) {
-    return;
-  }
-  context->diagnostics_path.clear();
-  context->manifest_path.clear();
-  context->runtime_metadata_binary_path.clear();
-  context->ir_path.clear();
-  context->object_path.clear();
+  objc3c::frontend::ClearFrontendContextResultPaths(context);
 }
 
 static bool PopulateResultPaths(objc3c_frontend_context_t *context,
@@ -316,15 +46,8 @@ static bool PopulateResultPaths(objc3c_frontend_context_t *context,
     error = "result path population requires context and result storage.";
     return false;
   }
-  return objc3c::frontend::PopulateCompileResultOwnedPayload(
-      result,
-      {.error_message = context->last_error,
-       .diagnostics_path = context->diagnostics_path,
-       .manifest_path = context->manifest_path,
-       .runtime_metadata_path = context->runtime_metadata_binary_path,
-       .ir_path = context->ir_path,
-       .object_path = context->object_path},
-      error);
+  return objc3c::frontend::PopulateCompileResultFromFrontendContext(
+      context, result, error);
 }
 
 static objc3c_frontend_status_t ReturnWithOwnedResultPayload(
@@ -378,27 +101,6 @@ static objc3c_frontend_status_t SetUsageErrorWithoutContext(
   return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
 }
 
-static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {
-  Objc3FrontendOptions frontend_options;
-  frontend_options.language_version = NormalizeLanguageVersion(options.language_version);
-  frontend_options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
-  frontend_options.emit_manifest = options.emit_manifest != 0;
-  frontend_options.emit_ir = options.emit_ir != 0;
-  frontend_options.emit_object = options.emit_object != 0;
-  if (options.translation_unit_registration_order_ordinal > 0) {
-    frontend_options.bootstrap_registration_order_ordinal =
-        options.translation_unit_registration_order_ordinal;
-  }
-  if (options.max_message_send_args > 0) {
-    frontend_options.lowering.max_message_send_args = options.max_message_send_args;
-  }
-  if (!objc3c::frontend::IsMissingFrontendBorrowedText(
-          options.runtime_dispatch_symbol)) {
-    frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;
-  }
-  return frontend_options;
-}
-
 static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t *context,
                                                        const std::filesystem::path &input_path,
                                                        const std::string &source_text,
@@ -407,7 +109,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   objc3c::frontend::ResetCompileResultForWrite(result);
   ClearCompileResultPaths(context);
 
-  Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);
+  Objc3FrontendOptions frontend_options =
+      objc3c::frontend::BuildFrontendPipelineOptions(*options);
   Objc3LoweringContract normalized_lowering;
   std::string lowering_error;
   if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {
@@ -426,9 +129,11 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   const bool lower_attempted = sema_attempted && product.pipeline_result.stage_diagnostics.semantic.empty();
   std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;
 
-  const std::filesystem::path out_dir = ResolveOutputDir(*options);
-  const bool has_out_dir = !out_dir.empty();
-  const std::string emit_prefix = ResolveEmitPrefix(*options, input_path);
+  const objc3c::frontend::Objc3FrontendArtifactOutputPlan artifact_plan =
+      objc3c::frontend::BuildFrontendArtifactOutputPlan(*options, input_path);
+  const std::filesystem::path &out_dir = artifact_plan.out_dir;
+  const bool has_out_dir = artifact_plan.has_out_dir;
+  const std::string &emit_prefix = artifact_plan.emit_prefix;
 
   if (has_out_dir) {
     std::string deprecated_claim_sidecar_error;
@@ -443,16 +148,22 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   }
 
   if (has_out_dir) {
-    const std::filesystem::path diagnostics_out = out_dir / (emit_prefix + ".diagnostics.json");
+    const std::filesystem::path diagnostics_out =
+        objc3c::frontend::BuildFrontendDiagnosticsOutputPath(artifact_plan);
     std::string io_error;
-    if (!WriteTextFile(diagnostics_out, BuildDiagnosticsJson(product.artifact_bundle.diagnostics), io_error)) {
+    if (!objc3c::frontend::WriteFrontendTextFile(
+            diagnostics_out,
+            objc3c::frontend::BuildFrontendDiagnosticsJson(
+                product.artifact_bundle.diagnostics),
+            io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, io_error.c_str());
       return ReturnWithOwnedResultPayload(context, result);
     }
-    context->diagnostics_path = diagnostics_out.generic_string();
+    objc3c::frontend::SetFrontendContextDiagnosticsPath(
+        context, diagnostics_out.generic_string());
   }
 
   if (!product.artifact_bundle.diagnostics.empty()) {
@@ -466,15 +177,18 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   }
 
   if (options->emit_manifest != 0 && has_out_dir && !product.artifact_bundle.manifest_json.empty()) {
-    const std::filesystem::path manifest_out = out_dir / (emit_prefix + ".manifest.json");
+    const std::filesystem::path manifest_out =
+        objc3c::frontend::BuildFrontendManifestOutputPath(artifact_plan);
     std::string io_error;
-    if (!WriteTextFile(manifest_out, product.artifact_bundle.manifest_json, io_error)) {
+    if (!objc3c::frontend::WriteFrontendTextFile(
+            manifest_out, product.artifact_bundle.manifest_json, io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, io_error.c_str());
     } else {
-      context->manifest_path = manifest_out.generic_string();
+      objc3c::frontend::SetFrontendContextManifestPath(
+          context, manifest_out.generic_string());
     }
   }
 
@@ -482,16 +196,17 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     const std::filesystem::path runtime_metadata_out =
         BuildRuntimeMetadataBinaryArtifactPath(out_dir, emit_prefix);
     std::string io_error;
-    if (!WriteBinaryFile(runtime_metadata_out,
-                         product.artifact_bundle.runtime_metadata_binary,
-                         io_error)) {
+    if (!objc3c::frontend::WriteFrontendBinaryFile(
+            runtime_metadata_out,
+            product.artifact_bundle.runtime_metadata_binary,
+            io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, io_error.c_str());
     } else {
-      context->runtime_metadata_binary_path =
-          runtime_metadata_out.generic_string();
+      objc3c::frontend::SetFrontendContextRuntimeMetadataPath(
+          context, runtime_metadata_out.generic_string());
     }
   }
 
@@ -501,7 +216,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     const std::filesystem::path replay_out =
         BuildErrorHandlingResultBridgeArtifactReplayPath(out_dir, emit_prefix);
     std::string io_error;
-    if (!WriteTextFile(
+    if (!objc3c::frontend::WriteFrontendTextFile(
             replay_out,
             product.artifact_bundle.error_handling_result_bridge_artifact_replay_json,
             io_error)) {
@@ -532,10 +247,11 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
           BuildRuntimeAwareImportModuleArtifactPath(out_dir, emit_prefix);
       std::string io_error;
       if (has_runtime_import_artifact &&
-          !WriteTextFile(runtime_import_surface_out,
-                         product.artifact_bundle
-                             .runtime_aware_import_module_artifact_json,
-                         io_error)) {
+          !objc3c::frontend::WriteFrontendTextFile(
+              runtime_import_surface_out,
+              product.artifact_bundle
+                  .runtime_aware_import_module_artifact_json,
+              io_error)) {
         result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
         result->process_exit_code = 2;
         result->success = 0;
@@ -549,9 +265,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     const std::filesystem::path header_out =
         BuildInteropBridgeHeaderArtifactPath(out_dir, emit_prefix);
     std::string io_error;
-    if (!WriteTextFile(header_out,
-                       product.artifact_bundle.interop_bridge_header_artifact_text,
-                       io_error)) {
+    if (!objc3c::frontend::WriteFrontendTextFile(
+            header_out,
+            product.artifact_bundle.interop_bridge_header_artifact_text,
+            io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
@@ -563,9 +280,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     const std::filesystem::path module_out =
         BuildInteropBridgeModuleArtifactPath(out_dir, emit_prefix);
     std::string io_error;
-    if (!WriteTextFile(module_out,
-                       product.artifact_bundle.interop_bridge_module_artifact_text,
-                       io_error)) {
+    if (!objc3c::frontend::WriteFrontendTextFile(
+            module_out,
+            product.artifact_bundle.interop_bridge_module_artifact_text,
+            io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
@@ -577,9 +295,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     const std::filesystem::path bridge_out =
         BuildInteropBridgeArtifactPath(out_dir, emit_prefix);
     std::string io_error;
-    if (!WriteTextFile(bridge_out,
-                       product.artifact_bundle.interop_bridge_artifact_json,
-                       io_error)) {
+    if (!objc3c::frontend::WriteFrontendTextFile(
+            bridge_out,
+            product.artifact_bundle.interop_bridge_artifact_json,
+            io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
@@ -609,7 +328,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       const std::filesystem::path conformance_report_out =
           BuildVersionedConformanceReportArtifactPath(out_dir, emit_prefix);
       std::string io_error;
-      if (!WriteTextFile(
+      if (!objc3c::frontend::WriteFrontendTextFile(
               conformance_report_out,
               product.artifact_bundle
                   .versioned_conformance_report_artifact_json,
@@ -673,8 +392,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         } else {
           const std::filesystem::path conformance_publication_out =
               BuildConformancePublicationArtifactPath(out_dir, emit_prefix);
-          if (!WriteTextFile(conformance_publication_out,
-                             conformance_publication_artifact_json, io_error)) {
+          if (!objc3c::frontend::WriteFrontendTextFile(
+                  conformance_publication_out,
+                  conformance_publication_artifact_json,
+                  io_error)) {
             result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
             result->process_exit_code = 2;
             result->success = 0;
@@ -713,7 +434,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
               result->success = 0;
               objc3c_frontend_set_error(context,
                                         advanced_feature_gate_error.c_str());
-            } else if (!WriteTextFile(
+            } else if (!objc3c::frontend::WriteFrontendTextFile(
                            BuildAdvancedFeatureGateArtifactPath(out_dir,
                                                                 emit_prefix),
                            advanced_feature_gate_artifact_json, io_error)) {
@@ -761,7 +482,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                 result->success = 0;
                 objc3c_frontend_set_error(
                     context, release_candidate_matrix_error.c_str());
-              } else if (!WriteTextFile(
+              } else if (!objc3c::frontend::WriteFrontendTextFile(
                              BuildReleaseCandidateMatrixArtifactPath(out_dir,
                                                                     emit_prefix),
                              release_candidate_matrix_artifact_json,
@@ -778,7 +499,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
 
-  const bool wants_ir_file = options->emit_ir != 0 || options->emit_object != 0;
+  const bool wants_ir_file = artifact_plan.wants_ir_file;
   std::filesystem::path ir_out;
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && wants_ir_file) {
     if (!has_out_dir) {
@@ -787,15 +508,17 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       result->success = 0;
       objc3c_frontend_set_error(context, "emit_ir/emit_object require out_dir in compile options.");
     } else {
-      ir_out = out_dir / (emit_prefix + ".ll");
+      ir_out = objc3c::frontend::BuildFrontendIrOutputPath(artifact_plan);
       std::string io_error;
-      if (!WriteTextFile(ir_out, product.artifact_bundle.ir_text, io_error)) {
+      if (!objc3c::frontend::WriteFrontendTextFile(
+              ir_out, product.artifact_bundle.ir_text, io_error)) {
         result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
         result->process_exit_code = 2;
         result->success = 0;
         objc3c_frontend_set_error(context, io_error.c_str());
       } else {
-        context->ir_path = ir_out.generic_string();
+        objc3c::frontend::SetFrontendContextIrPath(
+            context, ir_out.generic_string());
       }
     }
   }
@@ -830,8 +553,11 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       emit_diagnostics.push_back(
           "error:1:1: emit_object requires llc_path in compile options for llvm-direct backend [O3E001]");
     } else {
-      const std::filesystem::path object_out = out_dir / (emit_prefix + ".obj");
-      const std::filesystem::path backend_out = out_dir / (emit_prefix + ".object-backend.txt");
+      const std::filesystem::path object_out =
+          objc3c::frontend::BuildFrontendObjectOutputPath(artifact_plan);
+      const std::filesystem::path backend_out =
+          objc3c::frontend::BuildFrontendObjectBackendOutputPath(
+              artifact_plan);
       const std::string backend_text = wants_clang_backend ? "clang\n" : "llvm-direct\n";
       int compile_status = 0;
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
@@ -839,8 +565,12 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
 #else
       const bool llvm_direct_backend_enabled = false;
 #endif
-      const std::filesystem::path clang_path = OptionalBorrowedFilesystemPath(options->clang_path);
-      const std::filesystem::path llc_path = OptionalBorrowedFilesystemPath(options->llc_path);
+      const std::filesystem::path clang_path =
+          objc3c::frontend::OptionalBorrowedFrontendFilesystemPath(
+              options->clang_path);
+      const std::filesystem::path llc_path =
+          objc3c::frontend::OptionalBorrowedFrontendFilesystemPath(
+              options->llc_path);
       const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
           BuildObjc3ToolchainRuntimeGaOperationsScaffold(
               wants_clang_backend,
@@ -873,7 +603,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
           compile_status = RunIRCompileLLVMDirect(llc_path, ir_out, object_out, backend_error);
         }
         if (compile_status == 0) {
-          if (!WriteTextFile(backend_out, backend_text, backend_output_error)) {
+          if (!objc3c::frontend::WriteFrontendTextFile(
+                  backend_out, backend_text, backend_output_error)) {
             compile_status = 125;
           } else {
             backend_output_recorded = true;
@@ -892,18 +623,20 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
               const std::filesystem::path linker_response_out =
                   BuildRuntimeMetadataLinkerResponseArtifactPath(out_dir,
                                                                  emit_prefix);
-              if (!WriteTextFile(linker_response_out,
-                                 linker_retention_artifacts
-                                     .linker_response_file_payload,
-                                 backend_output_error)) {
+              if (!objc3c::frontend::WriteFrontendTextFile(
+                      linker_response_out,
+                      linker_retention_artifacts
+                          .linker_response_file_payload,
+                      backend_output_error)) {
                 compile_status = 125;
               } else {
                 const std::filesystem::path discovery_out =
                     BuildRuntimeMetadataDiscoveryArtifactPath(out_dir,
                                                               emit_prefix);
-                if (!WriteTextFile(discovery_out,
-                                   linker_retention_artifacts.discovery_json,
-                                   backend_output_error)) {
+                if (!objc3c::frontend::WriteFrontendTextFile(
+                        discovery_out,
+                        linker_retention_artifacts.discovery_json,
+                        backend_output_error)) {
                   compile_status = 125;
                 } else if (!IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
                                product.artifact_bundle
@@ -1200,9 +933,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                     const std::filesystem::path registration_manifest_out =
                         BuildRuntimeRegistrationManifestArtifactPath(out_dir,
                                                                      emit_prefix);
-                    if (!WriteTextFile(registration_manifest_out,
-                                       registration_manifest_json,
-                                       backend_output_error)) {
+                    if (!objc3c::frontend::WriteFrontendTextFile(
+                            registration_manifest_out,
+                            registration_manifest_json,
+                            backend_output_error)) {
                       compile_status = 125;
                     } else {
                       Objc3RuntimeRegistrationDescriptorArtifactInputs
@@ -1334,9 +1068,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                             registration_descriptor_out =
                                 BuildRuntimeRegistrationDescriptorArtifactPath(
                                     out_dir, emit_prefix);
-                        if (!WriteTextFile(registration_descriptor_out,
-                                           registration_descriptor_json,
-                                           backend_output_error)) {
+                        if (!objc3c::frontend::WriteFrontendTextFile(
+                                registration_descriptor_out,
+                                registration_descriptor_json,
+                                backend_output_error)) {
                           compile_status = 125;
                         }
                       }
