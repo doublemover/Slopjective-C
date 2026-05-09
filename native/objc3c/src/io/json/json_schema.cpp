@@ -6,6 +6,7 @@
 
 #include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
+#include "io/json/json_schema_annotation_contract_validation.h"
 #include "io/json/json_schema_applicator_contract_validation.h"
 #include "io/json/json_schema_composition_contract_validation.h"
 #include "io/json/json_schema_contract_validation.h"
@@ -80,19 +81,6 @@ void ValidateJsonSchemaTypeContract(const JsonValue &schema_type,
                                  "unsupported JSON Schema type " +
                                      entry.AsString());
     }
-  }
-}
-
-void ValidateJsonSchemaStringAnnotation(const JsonValue &schema,
-                                        std::string_view keyword,
-                                        const std::string &schema_path,
-                                        JsonSchemaResult &result) {
-  const JsonValue *value = schema.Find(keyword);
-  if (value != nullptr && !value->IsString()) {
-    AddJsonSchemaContractError(
-        result, "invalid_annotation",
-        JsonSchemaKeywordPath(schema_path, keyword),
-        std::string(keyword) + " must be a string when present");
   }
 }
 
@@ -194,13 +182,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
           "unsupported JSON Schema keyword " + key);
     }
   }
-  ValidateJsonSchemaStringAnnotation(schema, "$schema", schema_path, result);
-  ValidateJsonSchemaStringAnnotation(schema, "$id", schema_path, result);
-  ValidateJsonSchemaStringAnnotation(schema, "$comment", schema_path, result);
-  ValidateJsonSchemaStringAnnotation(schema, "title", schema_path, result);
-  ValidateJsonSchemaStringAnnotation(schema, "description", schema_path,
-                                     result);
-  ValidateJsonSchemaStringAnnotation(schema, "format", schema_path, result);
+  ValidateJsonSchemaAnnotationContracts(schema, schema_path, result);
 
   if (const JsonValue *ref = schema.Find("$ref"); ref != nullptr) {
     if (!ref->IsString()) {
