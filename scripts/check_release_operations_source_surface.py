@@ -3,16 +3,17 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import write_report_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "source_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "source-surface-summary.json"
+SURFACE_CONTRACT_ID = "objc3c.release.operations.source.surface.v1"
+SUMMARY_CONTRACT_ID = "objc3c.release.operations.source.surface.summary.v1"
 
 EXPECTED_CONTRACT_IDS = {
     "versioning_model": "objc3c.release.operations.versioning.model.v1",
@@ -37,7 +38,7 @@ def main() -> int:
     if not SOURCE_SURFACE.is_file():
         return fail(f"missing source surface {repo_rel(SOURCE_SURFACE)}")
     source_surface = load_json(SOURCE_SURFACE)
-    if source_surface.get("contract_id") != "objc3c.release.operations.source.surface.v1":
+    if source_surface.get("contract_id") != SURFACE_CONTRACT_ID:
         return fail("unexpected source surface contract_id")
     if source_surface.get("surface_kind") != "release-operations-source-surface":
         return fail("unexpected source surface kind")
@@ -79,15 +80,14 @@ def main() -> int:
                 return fail(f"{list_name} referenced missing path {raw_path}")
             checked_paths.append(raw_path)
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
-        "contract_id": "objc3c.release.operations.source.surface.summary.v1",
+        "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "source_surface": repo_rel(SOURCE_SURFACE),
         "checked_path_count": len(sorted(set(checked_paths))),
         "checked_paths": sorted(set(checked_paths)),
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("release-operations-source-surface: OK")
     return 0
