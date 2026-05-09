@@ -17,6 +17,8 @@ Canonical behavior and no-compatibility indexes:
 - `tests/conformance/hard_cutover_positive_residue_audit.json`
 - `tests/conformance/hard_cutover_behavior_evidence_topology.json`
 - `docs/issues/hard_cutover_behavior_evidence_topology.md`
+- `tests/conformance/hard_cutover_fixture_family_owner_index.json`
+- `docs/issues/hard_cutover_fixture_family_owner_index.md`
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -38,6 +40,10 @@ The phase/family topology in
 `tests/conformance/hard_cutover_behavior_evidence_topology.json` makes the
 behavior-first split explicit for parser, sema, lowering, IR, runtime, e2e, and
 generated-boundary evidence.
+The fixture-family owner index in
+`tests/conformance/hard_cutover_fixture_family_owner_index.json` keeps canonical
+positive behavior, retired-surface rejection, generated provenance, tooling
+metadata, and issue closeout payloads in separate acceptance roles.
 
 Additional local commits folded into this evidence map after the first index
 pass:
