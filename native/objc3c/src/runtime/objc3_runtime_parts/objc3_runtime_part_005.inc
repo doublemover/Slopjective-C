@@ -461,6 +461,7 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
 // invalidation through this same private pool-frame implementation.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
+  ++g_runtime_arc_debug_autoreleasepool_push_count;
 }
 
 // hardening anchor: task-runtime probes now rely on these existing
@@ -475,8 +476,7 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   for (auto it = values.rbegin(); it != values.rend(); ++it) {
-    g_runtime_last_drained_autorelease_value = *it;
-    ++g_runtime_autoreleasepool_drained_value_count;
+    RecordRuntimeAutoreleasePoolDrainedValue(*it);
     ReleaseRuntimeValueUnlocked(state, *it);
   }
 }

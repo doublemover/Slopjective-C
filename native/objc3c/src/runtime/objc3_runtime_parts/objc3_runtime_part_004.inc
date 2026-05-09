@@ -708,15 +708,14 @@ int objc3_runtime_copy_memory_management_state_for_testing(
   snapshot->live_runtime_instance_count = 0;
   snapshot->weak_target_count = 0;
   snapshot->weak_slot_ref_count = 0;
-  snapshot->autoreleasepool_depth =
-      static_cast<std::uint64_t>(g_runtime_autoreleasepool_frames.size());
-  snapshot->autoreleasepool_max_depth = g_runtime_autoreleasepool_max_depth;
+  snapshot->autoreleasepool_depth = RuntimeAutoreleasePoolDepth();
+  snapshot->autoreleasepool_max_depth = RuntimeAutoreleasePoolMaxDepth();
   snapshot->queued_autorelease_value_count = CountQueuedAutoreleaseValues();
   snapshot->drained_autorelease_value_count =
-      g_runtime_autoreleasepool_drained_value_count;
-  snapshot->last_autoreleased_value = g_runtime_last_autoreleased_value;
+      RuntimeAutoreleasePoolDrainedValueCount();
+  snapshot->last_autoreleased_value = RuntimeLastAutoreleasedValue();
   snapshot->last_drained_autorelease_value =
-      g_runtime_last_drained_autorelease_value;
+      RuntimeLastDrainedAutoreleaseValue();
 
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -1385,19 +1384,14 @@ extern "C" int objc3_runtime_bind_current_property_context_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
-  g_runtime_testing_dispatch_frame.receiver = receiver;
-  g_runtime_testing_dispatch_frame.base_identity =
-      instance_it->second.base_identity;
-  g_runtime_testing_dispatch_frame.runtime_property_accessor = accessor;
-  g_runtime_has_testing_dispatch_frame = true;
-  RecordArcDebugPropertyContext(&g_runtime_testing_dispatch_frame);
+  RuntimeDispatchFrame *testing_frame = SetRuntimeTestingDispatchFrame(
+      receiver, instance_it->second.base_identity, accessor);
+  RecordArcDebugPropertyContext(testing_frame);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
 extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
-  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
-  g_runtime_has_testing_dispatch_frame = false;
+  ClearRuntimeTestingDispatchFrame();
 }
 
 // error-runtime/bridge-helper anchor: the current runnable Part 6

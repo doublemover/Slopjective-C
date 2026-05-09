@@ -66,7 +66,6 @@ using objc3c::runtime::RuntimeBlockInvokeFn;
 using objc3c::runtime::RuntimeBlockRecord;
 using objc3c::runtime::RuntimeInstanceRecord;
 using objc3c::runtime::RuntimeState;
-using objc3c::runtime::RuntimeAutoreleasePoolFrame;
 using objc3c::runtime::RuntimeDispatchFrame;
 using objc3c::runtime::RuntimeWeakSlotRef;
 using objc3c::runtime::SelectorSlot;
@@ -78,6 +77,10 @@ using objc3c::runtime::ZeroWeakSlotRefsForTargetUnlocked;
 
 namespace {
 
+using objc3c::runtime::ClearRuntimeTestingDispatchFrame;
+using objc3c::runtime::CountQueuedAutoreleaseValues;
+using objc3c::runtime::CurrentRuntimeDispatchFrame;
+using objc3c::runtime::EnqueueAutoreleaseValue;
 using objc3c::runtime::MethodCacheKey;
 using objc3c::runtime::MethodCacheKeyHash;
 using objc3c::runtime::BuildReceiverBaseIdentity;
@@ -91,6 +94,17 @@ using objc3c::runtime::RuntimeMethodReturnKindName;
 using objc3c::runtime::RuntimeMethodShapeStatus;
 using objc3c::runtime::RuntimeReceiverIdentityBase;
 using objc3c::runtime::RuntimeReceiverIdentityStride;
+using objc3c::runtime::PopRuntimeAutoreleasePoolFrameValues;
+using objc3c::runtime::PopRuntimeDispatchFrameAutoreleaseValues;
+using objc3c::runtime::PushRuntimeAutoreleasePoolFrame;
+using objc3c::runtime::PushRuntimeDispatchFrame;
+using objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue;
+using objc3c::runtime::RuntimeAutoreleasePoolDepth;
+using objc3c::runtime::RuntimeAutoreleasePoolDrainedValueCount;
+using objc3c::runtime::RuntimeAutoreleasePoolMaxDepth;
+using objc3c::runtime::RuntimeLastAutoreleasedValue;
+using objc3c::runtime::RuntimeLastDrainedAutoreleaseValue;
+using objc3c::runtime::SetRuntimeTestingDispatchFrame;
 using objc3c::runtime::RuntimeTypedDispatchFailure;
 using objc3c::runtime::RuntimeTypedDispatchResult;
 using objc3c::runtime::RuntimeTypedDispatchSuccess;
@@ -114,13 +128,6 @@ using objc3c::runtime::MetaprogrammingHostCacheRootForTesting;
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 
-thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
-thread_local RuntimeDispatchFrame g_runtime_testing_dispatch_frame;
-thread_local bool g_runtime_has_testing_dispatch_frame = false;
-thread_local std::vector<RuntimeAutoreleasePoolFrame>
-    g_runtime_autoreleasepool_frames;
-thread_local std::uint64_t g_runtime_autoreleasepool_max_depth = 0;
-thread_local std::uint64_t g_runtime_autoreleasepool_drained_value_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_retain_call_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_release_call_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_autorelease_call_count = 0;
@@ -131,8 +138,6 @@ thread_local std::uint64_t g_runtime_arc_debug_current_property_write_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_current_property_exchange_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_load_count = 0;
 thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_store_count = 0;
-thread_local int g_runtime_last_autoreleased_value = 0;
-thread_local int g_runtime_last_drained_autorelease_value = 0;
 thread_local int g_runtime_arc_debug_last_retain_value = 0;
 thread_local int g_runtime_arc_debug_last_release_value = 0;
 thread_local int g_runtime_arc_debug_last_autorelease_value = 0;
@@ -236,41 +241,8 @@ std::size_t AlignTo(std::size_t value, std::size_t alignment) {
   return remainder == 0u ? value : value + (effective_alignment - remainder);
 }
 
-RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
-  if (!g_runtime_dispatch_frames.empty()) {
-    return &g_runtime_dispatch_frames.back();
-  }
-  return g_runtime_has_testing_dispatch_frame ? &g_runtime_testing_dispatch_frame
-                                              : nullptr;
-}
-
-void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
-                              const RealizedPropertyAccessor *accessor) {
-  RuntimeDispatchFrame frame;
-  frame.receiver = receiver;
-  frame.base_identity = base_identity;
-  frame.runtime_property_accessor = accessor;
-  g_runtime_dispatch_frames.push_back(std::move(frame));
-}
-
-std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
-  if (g_runtime_dispatch_frames.empty()) {
-    return {};
-  }
-  RuntimeDispatchFrame frame = std::move(g_runtime_dispatch_frames.back());
-  g_runtime_dispatch_frames.pop_back();
-  return std::move(frame.autorelease_values);
-}
-
 void ResetRuntimeAutoreleasepoolStateForTesting() {
-  g_runtime_dispatch_frames.clear();
-  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
-  g_runtime_has_testing_dispatch_frame = false;
-  g_runtime_autoreleasepool_frames.clear();
-  g_runtime_autoreleasepool_max_depth = 0;
-  g_runtime_autoreleasepool_drained_value_count = 0;
-  g_runtime_last_autoreleased_value = 0;
-  g_runtime_last_drained_autorelease_value = 0;
+  objc3c::runtime::ResetRuntimeAutoreleasepoolStateForTesting();
   g_runtime_arc_debug_retain_call_count = 0;
   g_runtime_arc_debug_release_call_count = 0;
   g_runtime_arc_debug_autorelease_call_count = 0;
@@ -407,51 +379,6 @@ const char *RuntimeErrorCatchKindName(int catch_kind) {
     return "id<error>";
   default:
     return "unknown";
-  }
-}
-
-void PushRuntimeAutoreleasePoolFrame() {
-  g_runtime_autoreleasepool_frames.push_back({});
-  ++g_runtime_arc_debug_autoreleasepool_push_count;
-  g_runtime_autoreleasepool_max_depth = std::max<std::uint64_t>(
-      g_runtime_autoreleasepool_max_depth,
-      static_cast<std::uint64_t>(g_runtime_autoreleasepool_frames.size()));
-}
-
-std::vector<int> PopRuntimeAutoreleasePoolFrameValues() {
-  if (g_runtime_autoreleasepool_frames.empty()) {
-    return {};
-  }
-  RuntimeAutoreleasePoolFrame frame =
-      std::move(g_runtime_autoreleasepool_frames.back());
-  g_runtime_autoreleasepool_frames.pop_back();
-  return std::move(frame.values);
-}
-
-std::uint64_t CountQueuedAutoreleaseValues() {
-  std::uint64_t total = 0;
-  for (const RuntimeAutoreleasePoolFrame &frame : g_runtime_autoreleasepool_frames) {
-    total += static_cast<std::uint64_t>(frame.values.size());
-  }
-  return total;
-}
-
-void EnqueueAutoreleaseValue(int value) {
-  if (!objc3c::runtime::RuntimeAutoreleasePoolCanEnqueue(value)) {
-    return;
-  }
-  g_runtime_last_autoreleased_value = value;
-  if (!g_runtime_autoreleasepool_frames.empty()) {
-    g_runtime_autoreleasepool_frames.back().values.push_back(value);
-    return;
-  }
-  if (g_runtime_dispatch_frames.size() >= 2u) {
-    g_runtime_dispatch_frames[g_runtime_dispatch_frames.size() - 2u]
-        .autorelease_values.push_back(value);
-    return;
-  }
-  if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
-    frame->autorelease_values.push_back(value);
   }
 }
 
