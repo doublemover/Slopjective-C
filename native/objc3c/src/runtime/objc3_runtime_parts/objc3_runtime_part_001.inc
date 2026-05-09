@@ -67,17 +67,15 @@ using objc3c::runtime::RuntimeDispatchFrame;
 using objc3c::runtime::RuntimeWeakSlotRef;
 using objc3c::runtime::SelectorSlot;
 using objc3c::runtime::SlowPathResolution;
-using objc3c::runtime::RegisterWeakSlotRefUnlocked;
-using objc3c::runtime::RemoveWeakSlotRefUnlocked;
-using objc3c::runtime::RemoveWeakSlotRefsOwnedByReceiverUnlocked;
-using objc3c::runtime::ZeroWeakSlotRefsForTargetUnlocked;
-
 namespace {
 
 using objc3c::runtime::ClearRuntimeTestingDispatchFrame;
 using objc3c::runtime::CountQueuedAutoreleaseValues;
 using objc3c::runtime::CurrentRuntimeDispatchFrame;
+using objc3c::runtime::EffectiveIvarOffset;
+using objc3c::runtime::EffectiveIvarSize;
 using objc3c::runtime::EnqueueAutoreleaseValue;
+using objc3c::runtime::ExchangeRuntimeManagedPropertyValueUnlocked;
 using objc3c::runtime::MethodCacheKey;
 using objc3c::runtime::MethodCacheKeyHash;
 using objc3c::runtime::BuildReceiverBaseIdentity;
@@ -94,7 +92,10 @@ using objc3c::runtime::PopRuntimeAutoreleasePoolFrameValues;
 using objc3c::runtime::PopRuntimeDispatchFrameAutoreleaseValues;
 using objc3c::runtime::PushRuntimeAutoreleasePoolFrame;
 using objc3c::runtime::PushRuntimeDispatchFrame;
+using objc3c::runtime::ReadRuntimeManagedPropertyValueUnlocked;
 using objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue;
+using objc3c::runtime::ReleaseRuntimeValueUnlocked;
+using objc3c::runtime::RetainRuntimeValueUnlocked;
 using objc3c::runtime::RuntimeAutoreleasePoolDepth;
 using objc3c::runtime::RuntimeAutoreleasePoolDrainedValueCount;
 using objc3c::runtime::RuntimeAutoreleasePoolMaxDepth;
@@ -104,6 +105,7 @@ using objc3c::runtime::SetRuntimeTestingDispatchFrame;
 using objc3c::runtime::RuntimeTypedDispatchFailure;
 using objc3c::runtime::RuntimeTypedDispatchResult;
 using objc3c::runtime::RuntimeTypedDispatchSuccess;
+using objc3c::runtime::UsesStrongOwnedRuntimeHooks;
 using objc3c::runtime::BorrowRuntimeCString;
 using objc3c::runtime::ClearMethodCacheStateUnlocked;
 using objc3c::runtime::ClearRealizedClassGraphUnlocked;
@@ -111,6 +113,7 @@ using objc3c::runtime::ClearRuntimeInstanceStateUnlocked;
 using objc3c::runtime::RecordPostResolutionStrictDispatchFailure;
 using objc3c::runtime::RecordTypedDispatchSuccess;
 using objc3c::runtime::StoreDispatchResultContractUnlocked;
+using objc3c::runtime::WriteRuntimeManagedPropertyValueUnlocked;
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 
@@ -131,12 +134,6 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   objc3c::runtime::ResetRuntimeBlockDebugStateForTesting();
   objc3c::runtime::ResetRuntimeErrorBridgeStateForTesting();
   objc3c::runtime::ResetRuntimeConcurrencyDebugStateForTesting();
-}
-
-bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value) {
-  return objc3c::runtime::RuntimeInstanceReceiverIsManaged(value) &&
-         state.runtime_instances_by_receiver.find(value) !=
-             state.runtime_instances_by_receiver.end();
 }
 
 std::string BuildSynthesizedInstanceMethodOwnerIdentity(
