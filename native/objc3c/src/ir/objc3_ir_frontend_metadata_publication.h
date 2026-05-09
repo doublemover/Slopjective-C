@@ -18,3 +18,6 @@ void EmitObjc3IRFrontendCoreMetadataPublication(
 
 void EmitObjc3IRRuntimeMetadataBoundaryNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRRuntimeSupportMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
