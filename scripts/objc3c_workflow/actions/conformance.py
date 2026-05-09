@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ..action_catalog import ACTION_SPECS
+from ..registry_views import actions_matching
 
 
 def action_names() -> list[str]:
-    return [action for action in ACTION_SPECS if "conformance" in action]
+    return actions_matching(lambda action, _: "conformance" in action)

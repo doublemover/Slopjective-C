@@ -6,7 +6,7 @@ import sys
 
 from ..commands import run
 from ..environment import MARKDOWN_GLOBS, NPX, ROOT
-from ..action_catalog import ACTION_SPECS
+from ..registry_views import actions_matching
 
 DOC_ACTION_MARKERS = (
     "docs",
@@ -26,11 +26,12 @@ DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 
 
 def action_names() -> list[str]:
-    return [
-        action
-        for action, spec in ACTION_SPECS.items()
-        if any(marker in action or marker in spec.summary for marker in DOC_ACTION_MARKERS)
-    ]
+    return actions_matching(
+        lambda action, spec: any(
+            marker in action or marker in spec.summary
+            for marker in DOC_ACTION_MARKERS
+        )
+    )
 
 
 def action_build_site(_: list[str]) -> int:

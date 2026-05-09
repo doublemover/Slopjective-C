@@ -12,8 +12,7 @@ from .public_bridge import (
     WORKFLOW_BRIDGE_SCRIPT,
     public_action_invocation,
 )
-from .action_catalog import ACTION_SPECS
-from .registry_views import action_count
+from .registry_views import action_count, action_specs, require_action_spec
 
 
 def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
@@ -37,9 +36,9 @@ def list_actions_payload() -> dict[str, object]:
         "package_bridge_count": len(PACKAGE_BRIDGES),
         "package_bridges": list(PACKAGE_BRIDGES),
         "single_package_bridge_only": True,
-        "actions": [enrich_action_payload(spec) for spec in ACTION_SPECS.values()],
+        "actions": [enrich_action_payload(spec) for spec in action_specs()],
     }
 
 
 def describe_action_payload(action: str) -> dict[str, object]:
-    return enrich_action_payload(ACTION_SPECS[action])
+    return enrich_action_payload(require_action_spec(action))

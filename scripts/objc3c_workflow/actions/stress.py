@@ -7,7 +7,7 @@ import sys
 from ..composite_validation import run_composite_validation
 from ..commands import run
 from ..environment import ROOT
-from ..action_catalog import ACTION_SPECS
+from ..registry_views import actions_matching
 
 STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
 FUZZ_SAFETY_PY = ROOT / "scripts" / "run_objc3c_fuzz_safety.py"
@@ -20,7 +20,9 @@ STRESS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_stress_end_to_end.py"
 
 
 def action_names() -> list[str]:
-    return [action for action in ACTION_SPECS if "stress" in action or "fuzz" in action]
+    return actions_matching(
+        lambda action, _: "stress" in action or "fuzz" in action
+    )
 
 
 def action_check_stress_surface(_: list[str]) -> int:
