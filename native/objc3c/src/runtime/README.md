@@ -411,7 +411,7 @@ Integrated runtime architecture proof:
 - runner:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
 - public action:
-  - `python -m scripts.objc3c_workflow proof-runtime-architecture`
+  - `npm run objc3c -- proof-runtime-architecture`
 - integrated packet:
   - `tmp/reports/runtime/architecture-proof/summary.json`
 
@@ -420,6 +420,6 @@ Integrated runtime architecture validation:
 - runner:
   - `scripts/check_objc3c_runtime_architecture_integration.py`
 - public action:
-  - `python -m scripts.objc3c_workflow validate-runtime-architecture`
+  - `npm run objc3c -- validate-runtime-architecture`
 - integrated summary:
   - `tmp/reports/runtime/architecture-integration/summary.json`
