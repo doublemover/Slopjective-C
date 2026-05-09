@@ -507,30 +507,6 @@
     out << "}\n";
   }
 
-  static std::string BuildImplementationMethodFunctionSymbol(const std::string &implementation_name,
-                                                             const std::string &selector,
-                                                             bool is_class_method) {
-    auto sanitize = [](const std::string &text) {
-      std::string out;
-      out.reserve(text.size());
-      for (unsigned char ch : text) {
-        if (std::isalnum(ch) != 0) {
-          out.push_back(static_cast<char>(ch));
-        } else {
-          out.push_back('_');
-        }
-      }
-      if (out.empty()) {
-        out = "anonymous";
-      }
-      return out;
-    };
-    const std::string owner = sanitize(implementation_name);
-    const std::string selector_key = sanitize(selector);
-    const char *dispatch_kind = is_class_method ? "class" : "instance";
-    return "objc3_method_" + owner + "_" + dispatch_kind + "_" + selector_key;
-  }
-
   void EmitEntryPoint(std::ostringstream &out) const {
     auto main_it = function_arity_.find("main");
     const bool has_zero_arity_main =

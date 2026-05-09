@@ -329,79 +329,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
                                                      const Objc3FrontendOptions &options) {
   Objc3FrontendPipelineResult result;
 
-  Objc3LexerOptions lexer_options;
-  lexer_options.language_version = options.language_version;
-  lexer_options.language_profile = Objc3LexerLanguageProfile::kCanonical;
-  Objc3Lexer lexer(source, lexer_options);
-  std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
-  const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();
-  const Objc3LexerLanguageVersionPragmaContract &pragma_contract = lexer.LanguageVersionPragmaContract();
-  const Objc3LexerBootstrapRegistrationSourceContract
-      &bootstrap_registration_pragma_contract =
-          lexer.BootstrapRegistrationSourceContract();
-  result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;
-  result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;
-  result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;
-  result.language_version_pragma_contract.seen = pragma_contract.seen;
-  result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;
-  result.language_version_pragma_contract.duplicate = pragma_contract.duplicate;
-  result.language_version_pragma_contract.non_leading = pragma_contract.non_leading;
-  result.language_version_pragma_contract.first_line = pragma_contract.first_line;
-  result.language_version_pragma_contract.first_column = pragma_contract.first_column;
-  result.language_version_pragma_contract.last_line = pragma_contract.last_line;
-  result.language_version_pragma_contract.last_column = pragma_contract.last_column;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.seen =
-      bootstrap_registration_pragma_contract.registration_descriptor.seen;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.directive_count =
-      bootstrap_registration_pragma_contract.registration_descriptor.directive_count;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.duplicate =
-      bootstrap_registration_pragma_contract.registration_descriptor.duplicate;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.non_leading =
-      bootstrap_registration_pragma_contract.registration_descriptor.non_leading;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.first_line =
-      bootstrap_registration_pragma_contract.registration_descriptor.first_line;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.first_column =
-      bootstrap_registration_pragma_contract.registration_descriptor.first_column;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.last_line =
-      bootstrap_registration_pragma_contract.registration_descriptor.last_line;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.last_column =
-      bootstrap_registration_pragma_contract.registration_descriptor.last_column;
-  result.bootstrap_registration_source_pragma_contract
-      .registration_descriptor.identifier =
-      bootstrap_registration_pragma_contract.registration_descriptor.identifier;
-  result.bootstrap_registration_source_pragma_contract.image_root.seen =
-      bootstrap_registration_pragma_contract.image_root.seen;
-  result.bootstrap_registration_source_pragma_contract.image_root.directive_count =
-      bootstrap_registration_pragma_contract.image_root.directive_count;
-  result.bootstrap_registration_source_pragma_contract.image_root.duplicate =
-      bootstrap_registration_pragma_contract.image_root.duplicate;
-  result.bootstrap_registration_source_pragma_contract.image_root.non_leading =
-      bootstrap_registration_pragma_contract.image_root.non_leading;
-  result.bootstrap_registration_source_pragma_contract.image_root.first_line =
-      bootstrap_registration_pragma_contract.image_root.first_line;
-  result.bootstrap_registration_source_pragma_contract.image_root.first_column =
-      bootstrap_registration_pragma_contract.image_root.first_column;
-  result.bootstrap_registration_source_pragma_contract.image_root.last_line =
-      bootstrap_registration_pragma_contract.image_root.last_line;
-  result.bootstrap_registration_source_pragma_contract.image_root.last_column =
-      bootstrap_registration_pragma_contract.image_root.last_column;
-  result.bootstrap_registration_source_pragma_contract.image_root.identifier =
-      bootstrap_registration_pragma_contract.image_root.identifier;
-
-  if (result.stage_diagnostics.lexer.empty()) {
-    Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
-    result.program = std::move(parse_result.program);
-    result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
-    result.parser_contract_snapshot = parse_result.contract_snapshot;
-  }
+  std::vector<Objc3LexToken> tokens =
+      RunObjc3FrontendLexStage(source, options, result);
+  RunObjc3FrontendParseStageIfLexClean(tokens, result);
   result.selector_normalization_summary =
       BuildSelectorNormalizationSummary(Objc3ParsedProgramAst(result.program));
   result.property_attribute_summary =
@@ -489,37 +419,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                              result.sema_type_metadata_handoff);
   const bool allow_error_handling_error_runtime_surface = true;
-  if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
-    NormalizeProgramDispatchSurfaceClassification(
-        MutableObjc3ParsedProgramAst(result.program));
-
-    Objc3SemanticValidationOptions semantic_options;
-    semantic_options.max_message_send_args = options.lowering.max_message_send_args;
-    // block-source-model-completion anchor: source-only frontend
-    // runs may admit block literals through semantic validation when both IR
-    // and object emission are disabled, but native emit paths must continue to
-    // fail closed until runnable block lowering lands.
-    semantic_options.allow_source_only_block_literals =
-        !options.emit_ir && !options.emit_object;
-    // defer-lowering anchor: defer statements are now admitted for
-    // native validation because lane C owns executable cleanup insertion in
-    // the IR path rather than keeping defer as a source-only semantic claim.
-    semantic_options.allow_source_only_defer_statements = true;
-    semantic_options.allow_source_only_error_runtime_surface =
-        allow_error_handling_error_runtime_surface;
-    semantic_options.arc_mode_enabled =
-        options.arc_mode == Objc3FrontendArcMode::kEnabled;
-
-    Objc3SemaPassManagerInput sema_input;
-    sema_input.program = &result.program;
-    sema_input.validation_options = semantic_options;
-    sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
-    sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;
-    sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;
-    sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;
-    sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;
-
-    Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);
+  if (ShouldRunObjc3FrontendSemaStage(result)) {
+    Objc3SemaPassManagerResult sema_result = RunObjc3FrontendSemaStage(
+        result, options, allow_error_handling_error_runtime_surface);
     result.integration_surface = std::move(sema_result.integration_surface);
     result.sema_type_metadata_handoff = std::move(sema_result.type_metadata_handoff);
     result.protocol_category_summary =
@@ -537,9 +439,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;
     result.sema_pass_flow_summary = sema_result.sema_pass_flow_summary;
     result.sema_parity_surface = sema_result.parity_surface;
-    if (result.stage_diagnostics.semantic.empty() && !sema_result.diagnostics.empty()) {
-      result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);
-    }
   }
   result.control_flow_control_flow_semantic_model_summary =
       BuildControlFlowControlFlowSemanticModelSummary(
@@ -880,6 +779,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.typed_sema_to_lowering_contract_surface,
           result.parse_lowering_readiness_surface,
           result.lowering_runtime_stability_invariant_scaffold);
-  TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program);
+  TransportObjc3FrontendPipelineDiagnostics(result);
   return result;
 }
