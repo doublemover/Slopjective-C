@@ -77,3 +77,9 @@ void EmitObjc3IRMetaprogrammingLoweringMetadataNodes(
 
 void EmitObjc3IRActorDispatchControlMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRDispatchMetadataPreservationNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IROwnershipExtensionMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
