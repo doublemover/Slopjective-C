@@ -8,7 +8,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: Who can submit an extension proposal?
 - Answer: A named proposal sponsor with accountable owners can submit. The intake packet must satisfy the `C-03` template contract before triage.
 - Applicability: `author`
-- References: `templates/experimental_extension_proposal.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-152-extension-proposal-intake-template-package`
+- References: `templates/experimental_extension_proposal.md`; `docs/governance/extension_author_guide_v1.md`; `spec/governance/macro_derive_extension_charter_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: If ownership is unclear, escalate through Lane C governance owners before intake submission.
@@ -19,7 +19,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: What evidence domains are mandatory in the proposal template?
 - Answer: Syntax, semantics, diagnostics, determinism, and security evidence are all required for intake readiness.
 - Applicability: `author`
-- References: `templates/experimental_extension_proposal.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-152-extension-proposal-intake-template-package`
+- References: `templates/experimental_extension_proposal.md`; `docs/governance/extension_author_guide_v1.md`; `spec/governance/extension_review_rubric_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: If a required domain cannot be filled, file a defer request with owner/date and blocking reason.
@@ -30,7 +30,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: Which lifecycle states are used for extension governance?
 - Answer: Extensions follow `LS-*` lifecycle states and `T-*` transition rules. Transition records must include traceable state and decision metadata.
 - Applicability: `all`
-- References: `docs/reference/legacy_spec_anchor_index.md#planning-issue-164-extension-lifecycle-states-package`
+- References: `spec/governance/extension_lifecycle_v1.md`; `spec/governance/capability_namespace_policy_v1.md`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: State-transition conflicts require review-board clarification before publication.
@@ -52,7 +52,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: How are final pilot and lifecycle decisions published?
 - Answer: Decisions require quorum-compliant vote metadata, gate summaries, and publication outputs according to board SLA rules.
 - Applicability: `reviewer`
-- References: `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-180-extension-pilots-workflow-package`
+- References: `spec/governance/review_board_operating_model_v1.md`; `spec/governance/extension_lifecycle_v1.md`; `docs/governance/extension_author_guide_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: Missing quorum or missing publication bundle blocks binding closure.
@@ -85,7 +85,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 - Question: Who maintains onboarding and FAQ documentation?
 - Answer: `C-LEAD` owns updates with `D-BACKUP` as backup; response target is `SLA-2BD` for documentation drift and stale-reference issues.
 - Applicability: `all`
-- References: `docs/governance/extension_author_guide_v1.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-138-governance-charter-package`
+- References: `docs/governance/extension_author_guide_v1.md`; `spec/governance/macro_derive_extension_charter_v1.md`; `spec/governance/review_board_operating_model_v1.md`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
 - Escalation note: If SLA is missed twice consecutively, escalate via Lane C governance leadership.
