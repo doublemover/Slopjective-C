@@ -31,6 +31,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_record_parsing.h
   runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
+  readiness/objc3_final_readiness_gate_failure_reasons.h
   objc3_frontend_pipeline.h
   objc3_ir_emission_core_feature_implementation_surface.h
   objc3_parse_lowering_readiness_surface.h
