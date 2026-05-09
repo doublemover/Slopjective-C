@@ -22,7 +22,7 @@ Any local claim in this part is subordinate to those capability and evidence
 surfaces.
 
 Public command truth lives in `package.json` and
-`scripts/objc3c_workflow/registry.py`. The supported command shape is
+`scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
 `npm run objc3c -- <action>`; direct helper commands and retired package-script
 aliases are implementation details unless a public workflow document generated
 from the registry lists them through the npm bridge.

@@ -7,7 +7,7 @@ import sys
 from ..composite_validation import run_composite_validation
 from ..commands import run
 from ..environment import ROOT
-from ..registry import ACTION_SPECS
+from ..action_catalog import ACTION_SPECS
 
 STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
 FUZZ_SAFETY_PY = ROOT / "scripts" / "run_objc3c_fuzz_safety.py"

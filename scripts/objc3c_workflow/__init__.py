@@ -3,6 +3,6 @@
 from __future__ import annotations
 
 from .action_spec import ActionSpec
-from .registry import ACTION_SPECS
+from .action_catalog import ACTION_SPECS
 
 __all__ = ["ACTION_SPECS", "ActionSpec"]

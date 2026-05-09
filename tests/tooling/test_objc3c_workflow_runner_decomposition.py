@@ -13,7 +13,7 @@ from scripts.objc3c_workflow.arguments import (
 )
 from scripts.objc3c_workflow.command_result import completed_action
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
-from scripts.objc3c_workflow.registry import ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
 
 
 def test_workflow_argument_parser_models_public_requests() -> None:
@@ -59,7 +59,7 @@ def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None
     assert completed.to_payload()["status"] == "completed"
 
 
-def test_handler_registry_matches_action_registry() -> None:
+def test_handler_registry_matches_action_catalog() -> None:
     assert set(ACTION_HANDLERS) == set(ACTION_SPECS)
 
 

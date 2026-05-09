@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..registry import ACTION_SPECS
+from ..action_catalog import ACTION_SPECS
 
 
 def action_names() -> list[str]:

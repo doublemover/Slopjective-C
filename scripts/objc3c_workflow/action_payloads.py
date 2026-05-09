@@ -12,7 +12,7 @@ from .public_bridge import (
     WORKFLOW_BRIDGE_SCRIPT,
     public_action_invocation,
 )
-from .registry import ACTION_SPECS
+from .action_catalog import ACTION_SPECS
 from .registry_views import action_count
 
 

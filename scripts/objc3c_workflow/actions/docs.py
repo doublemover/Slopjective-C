@@ -6,7 +6,7 @@ import sys
 
 from ..commands import run
 from ..environment import MARKDOWN_GLOBS, NPX, ROOT
-from ..registry import ACTION_SPECS
+from ..action_catalog import ACTION_SPECS
 
 DOC_ACTION_MARKERS = (
     "docs",

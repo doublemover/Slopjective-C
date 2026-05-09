@@ -51,7 +51,7 @@ Treat these as the live documentation-generation surfaces:
 - machine-facing generated operator appendix:
   - `package.json`
   - package bridge: `npm run objc3c -- <action>`
-  - action registry: `scripts/objc3c_workflow/registry.py`
+  - action catalog: `scripts/objc3c_workflow/action_catalog.py`
   - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
