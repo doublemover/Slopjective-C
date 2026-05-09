@@ -140,6 +140,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_module_lowering_plan.h
   objc3_frontend_artifact_ownership_lowering_plan.cpp
   objc3_frontend_artifact_ownership_lowering_plan.h
+  objc3_frontend_artifact_preservation_plan.cpp
+  objc3_frontend_artifact_preservation_plan.h
   objc3_frontend_artifact_runtime_metadata_plan.cpp
   objc3_frontend_artifact_runtime_metadata_plan.h
   objc3_frontend_artifact_runtime_import_plan.cpp

@@ -27,6 +27,7 @@
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_preservation_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
@@ -142,13 +143,9 @@ using objc3::artifacts::frontend::
     BuildMetaprogrammingExpansionLoweringContractJson;
 using objc3::artifacts::frontend::BuildMetaprogrammingMacroArtifactBundles;
 using objc3::artifacts::frontend::
-    BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary;
-using objc3::artifacts::frontend::
     BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummaryJson;
 using objc3::artifacts::frontend::
     BuildMetaprogrammingMacroSafetySandboxDeterminismSummaryJson;
-using objc3::artifacts::frontend::
-    BuildMetaprogrammingModuleInterfaceReplayPreservationSummary;
 using objc3::artifacts::frontend::
     BuildMetaprogrammingModuleInterfaceReplayPreservationSummaryJson;
 using objc3::artifacts::frontend::
@@ -337,8 +334,6 @@ using objc3::artifacts::frontend::
     BuildConcurrencyActorMailboxRuntimeImportSummary;
 using objc3::artifacts::frontend::
     BuildConcurrencyActorMailboxRuntimeImportSummaryJson;
-using objc3::artifacts::frontend::
-    BuildDispatchDispatchMetadataInterfacePreservationSummary;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchMetadataInterfacePreservationSummaryJson;
 using objc3::artifacts::frontend::
@@ -1545,36 +1540,38 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &interop_header_module_bridge_generation_summary =
           interop_lowering_plan
               .interop_header_module_bridge_generation_summary;
-  const auto dispatch_dispatch_metadata_interface_preservation_summary =
-      BuildDispatchDispatchMetadataInterfacePreservationSummary(
-          runtime_metadata_source_records, dispatch_dispatch_control_lowering_replay_key,
-          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-              runtime_aware_import_module_frontend_closure),
-          imported_runtime_module_surfaces);
-  const auto runtime_block_ownership_artifact_preservation_summary =
-      BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
+  const Objc3FrontendArtifactPreservationPlan artifact_preservation_plan =
+      BuildObjc3FrontendArtifactPreservationPlan(
+          runtime_metadata_source_records,
+          dispatch_dispatch_control_lowering_replay_key,
+          runtime_import_artifact_ready,
+          imported_runtime_module_surfaces,
           block_abi_invoke_trampoline_lowering_contract,
           block_storage_escape_lowering_contract,
           block_copy_dispose_lowering_contract,
-          runtime_support_library_link_wiring);
-  const auto runtime_storage_reflection_artifact_preservation_summary =
-      BuildObjc3RuntimeStorageReflectionArtifactPreservationSummary(
-          runtime_metadata_source_records);
-  const auto metaprogramming_module_interface_replay_preservation_summary =
-      BuildMetaprogrammingModuleInterfaceReplayPreservationSummary(
+          runtime_support_library_link_wiring,
           metaprogramming_expansion_lowering_contract,
           metaprogramming_expansion_lowering_replay_key,
           metaprogramming_synthesized_artifact_emission_contract,
           metaprogramming_synthesized_artifact_emission_replay_key,
           metaprogramming_property_behavior_artifact_bundles,
-          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-              runtime_aware_import_module_frontend_closure),
-          imported_runtime_module_surfaces);
-  const auto metaprogramming_macro_host_process_cache_runtime_integration_summary =
-      BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
-          metaprogramming_module_interface_replay_preservation_summary,
-          imported_runtime_module_surfaces,
           options);
+  const auto &dispatch_dispatch_metadata_interface_preservation_summary =
+      artifact_preservation_plan
+          .dispatch_dispatch_metadata_interface_preservation_summary;
+  const auto &runtime_block_ownership_artifact_preservation_summary =
+      artifact_preservation_plan
+          .runtime_block_ownership_artifact_preservation_summary;
+  const auto &runtime_storage_reflection_artifact_preservation_summary =
+      artifact_preservation_plan
+          .runtime_storage_reflection_artifact_preservation_summary;
+  const auto &metaprogramming_module_interface_replay_preservation_summary =
+      artifact_preservation_plan
+          .metaprogramming_module_interface_replay_preservation_summary;
+  const auto
+      &metaprogramming_macro_host_process_cache_runtime_integration_summary =
+          artifact_preservation_plan
+              .metaprogramming_macro_host_process_cache_runtime_integration_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
