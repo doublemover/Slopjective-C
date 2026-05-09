@@ -54,6 +54,11 @@ adding sidecar scaffolding:
 - public command surface build/check path:
   - `npm run objc3c -- build-public-command-surface`
   - `npm run objc3c -- check-public-command-surface`
+- public command budget path:
+  - `npm run objc3c -- check-public-command-budget`
+- reader-facing documentation surface validation:
+  - `npm run objc3c -- check-documentation-surface`
+  - `npm run objc3c -- validate-documentation-surface`
 
 ## Canonical Naming And Path Rules
 
@@ -96,6 +101,7 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - sources: `package.json`, `scripts/objc3c_workflow/action_catalog.py`,
     `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
+  - command-budget check: `npm run objc3c -- check-public-command-budget`
 
 Generated proof and report outputs under `tmp/` are evidence, not canonical
 documentation sources.
@@ -133,3 +139,5 @@ Explicit non-goals for this fragment tree:
 
 - Rebuild: `npm run objc3c -- build-native-docs`
 - Drift check: `npm run objc3c -- check-native-docs`
+- Reader surface check: `npm run objc3c -- check-documentation-surface`
+- Full docs workflow validation: `npm run objc3c -- validate-documentation-surface`

@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+from scripts.objc3c_workflow.actions.docs_documentation import (
+    CHECK_DOCUMENTATION_SURFACE_ACTION,
+    CHECK_DOCUMENTATION_SURFACE_BACKEND,
+    CHECK_DOCUMENTATION_SURFACE_SUMMARY,
+    DOCUMENTATION_SURFACE_GUARANTEE_OWNER,
+    DOCUMENTATION_SURFACE_VALIDATION_TIER,
+)
+
 from .action_spec import ActionSpec
 
 CORE_DOCUMENTATION_SURFACE_ACTION_SPECS: dict[str, ActionSpec] = {
-    "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
+    CHECK_DOCUMENTATION_SURFACE_ACTION: ActionSpec(
+        CHECK_DOCUMENTATION_SURFACE_ACTION,
+        CHECK_DOCUMENTATION_SURFACE_SUMMARY,
+        CHECK_DOCUMENTATION_SURFACE_BACKEND,
+        validation_tier=DOCUMENTATION_SURFACE_VALIDATION_TIER,
+        guarantee_owner=DOCUMENTATION_SURFACE_GUARANTEE_OWNER,
+    ),
 }
 
 __all__ = ["CORE_DOCUMENTATION_SURFACE_ACTION_SPECS"]

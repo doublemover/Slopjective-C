@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+from scripts.objc3c_workflow.actions.docs_documentation import (
+    DOCUMENTATION_VALIDATION_GUARANTEE_OWNER,
+    DOCUMENTATION_VALIDATION_TIER,
+    VALIDATE_DOCUMENTATION_SURFACE_ACTION,
+    VALIDATE_DOCUMENTATION_SURFACE_BACKEND,
+    VALIDATE_DOCUMENTATION_SURFACE_SUMMARY,
+)
+
 from .action_spec import ActionSpec
 
 CORE_DOCUMENTATION_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
-    "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
+    VALIDATE_DOCUMENTATION_SURFACE_ACTION: ActionSpec(
+        VALIDATE_DOCUMENTATION_SURFACE_ACTION,
+        VALIDATE_DOCUMENTATION_SURFACE_SUMMARY,
+        VALIDATE_DOCUMENTATION_SURFACE_BACKEND,
+        validation_tier=DOCUMENTATION_VALIDATION_TIER,
+        guarantee_owner=DOCUMENTATION_VALIDATION_GUARANTEE_OWNER,
+    ),
 }
 
 __all__ = ["CORE_DOCUMENTATION_VALIDATION_ACTION_SPECS"]

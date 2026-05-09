@@ -2,14 +2,59 @@
 
 from __future__ import annotations
 
+from scripts.objc3c_workflow.actions.docs_public_commands import (
+    BUILD_PUBLIC_COMMAND_CONTRACT_ACTION,
+    BUILD_PUBLIC_COMMAND_CONTRACT_BACKEND,
+    BUILD_PUBLIC_COMMAND_CONTRACT_SUMMARY,
+    BUILD_PUBLIC_COMMAND_SURFACE_ACTION,
+    BUILD_PUBLIC_COMMAND_SURFACE_BACKEND,
+    BUILD_PUBLIC_COMMAND_SURFACE_SUMMARY,
+    CHECK_PUBLIC_COMMAND_BUDGET_ACTION,
+    CHECK_PUBLIC_COMMAND_BUDGET_BACKEND,
+    CHECK_PUBLIC_COMMAND_BUDGET_SUMMARY,
+    CHECK_PUBLIC_COMMAND_CONTRACT_ACTION,
+    CHECK_PUBLIC_COMMAND_CONTRACT_BACKEND,
+    CHECK_PUBLIC_COMMAND_CONTRACT_SUMMARY,
+    CHECK_PUBLIC_COMMAND_SURFACE_ACTION,
+    CHECK_PUBLIC_COMMAND_SURFACE_BACKEND,
+    CHECK_PUBLIC_COMMAND_SURFACE_SUMMARY,
+    PUBLIC_COMMAND_BUDGET_GUARANTEE_OWNER,
+    PUBLIC_COMMAND_SURFACE_GUARANTEE_OWNER,
+    PUBLIC_COMMAND_VALIDATION_TIER,
+)
+
 from .action_spec import ActionSpec
 
 CORE_PUBLIC_COMMAND_ACTION_SPECS: dict[str, ActionSpec] = {
-    "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py"),
-    "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
-    "build-public-command-contract": ActionSpec("build-public-command-contract", "build the canonical public command contract artifact", "python:scripts/build_objc3c_public_command_contract.py"),
-    "check-public-command-contract": ActionSpec("check-public-command-contract", "check the canonical public command contract artifact for drift", "python:scripts/build_objc3c_public_command_contract.py --check"),
-    "check-public-command-budget": ActionSpec("check-public-command-budget", "check the public command budget and appendix sync against the canonical command contract", "python:scripts/check_objc3c_public_command_budget.py"),
+    BUILD_PUBLIC_COMMAND_SURFACE_ACTION: ActionSpec(
+        BUILD_PUBLIC_COMMAND_SURFACE_ACTION,
+        BUILD_PUBLIC_COMMAND_SURFACE_SUMMARY,
+        BUILD_PUBLIC_COMMAND_SURFACE_BACKEND,
+    ),
+    CHECK_PUBLIC_COMMAND_SURFACE_ACTION: ActionSpec(
+        CHECK_PUBLIC_COMMAND_SURFACE_ACTION,
+        CHECK_PUBLIC_COMMAND_SURFACE_SUMMARY,
+        CHECK_PUBLIC_COMMAND_SURFACE_BACKEND,
+        validation_tier=PUBLIC_COMMAND_VALIDATION_TIER,
+        guarantee_owner=PUBLIC_COMMAND_SURFACE_GUARANTEE_OWNER,
+    ),
+    BUILD_PUBLIC_COMMAND_CONTRACT_ACTION: ActionSpec(
+        BUILD_PUBLIC_COMMAND_CONTRACT_ACTION,
+        BUILD_PUBLIC_COMMAND_CONTRACT_SUMMARY,
+        BUILD_PUBLIC_COMMAND_CONTRACT_BACKEND,
+    ),
+    CHECK_PUBLIC_COMMAND_CONTRACT_ACTION: ActionSpec(
+        CHECK_PUBLIC_COMMAND_CONTRACT_ACTION,
+        CHECK_PUBLIC_COMMAND_CONTRACT_SUMMARY,
+        CHECK_PUBLIC_COMMAND_CONTRACT_BACKEND,
+    ),
+    CHECK_PUBLIC_COMMAND_BUDGET_ACTION: ActionSpec(
+        CHECK_PUBLIC_COMMAND_BUDGET_ACTION,
+        CHECK_PUBLIC_COMMAND_BUDGET_SUMMARY,
+        CHECK_PUBLIC_COMMAND_BUDGET_BACKEND,
+        validation_tier=PUBLIC_COMMAND_VALIDATION_TIER,
+        guarantee_owner=PUBLIC_COMMAND_BUDGET_GUARANTEE_OWNER,
+    ),
 }
 
 __all__ = ["CORE_PUBLIC_COMMAND_ACTION_SPECS"]
