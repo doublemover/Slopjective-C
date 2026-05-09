@@ -1,0 +1,16 @@
+// Canonical lowering statement fixture: branch assignments lower without recovery paths.
+module LoweringStatementsIfElseStatementLowering;
+
+fn choose(flag: bool) -> i32 {
+  let result = 0;
+  if (flag) {
+    result = 4;
+  } else {
+    result = 6;
+  }
+  return result;
+}
+
+fn main() -> i32 {
+  return choose(false);
+}

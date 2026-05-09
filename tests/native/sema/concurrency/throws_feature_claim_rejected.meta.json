@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "fixture": "throws_feature_claim_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "concurrency",
+  "fixture_kind": "negative",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "O3S221",
+    "required_tokens": [
+      "O3S221",
+      "unsupported feature claim: 'throws' is not yet runnable in Objective-C 3 native mode"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+// Canonical IR metadata fixture: module identity is source-authored.
+module IRMetadataModuleMetadataName;
+
+fn main() -> i32 {
+  return 21;
+}

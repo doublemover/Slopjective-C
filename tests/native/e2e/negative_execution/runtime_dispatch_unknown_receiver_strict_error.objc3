@@ -1,0 +1,7 @@
+// Canonical e2e negative fixture: unknown runtime receiver dispatch is a strict error.
+module E2ENegativeRuntimeDispatchUnknownReceiverStrictError;
+
+fn main() -> i32 {
+  let receiver = 9;
+  return [receiver ping];
+}

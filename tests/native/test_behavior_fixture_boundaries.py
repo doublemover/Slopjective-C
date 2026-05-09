@@ -21,6 +21,47 @@ from objc3c_tooling.behavior_fixtures import (
 )
 
 NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+EXPECTED_BOUNDARY_BY_KIND = {
+    "positive": "canonical-positive",
+    "negative": "canonical-rejection",
+    "rejection": "canonical-rejection",
+    "strict-error": "canonical-strict-error",
+}
+RETIRED_POSITIVE_SURFACE_TERMS = ("old-mode", "shim", "fallback", "compat")
+HARD_CUTOVER_CONTRACTS = {
+    "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3": (
+        "rejection",
+        "O3C002",
+    ),
+    "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3": (
+        "rejection",
+        "O3C002",
+    ),
+    "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3": (
+        "negative",
+        "O3S221",
+    ),
+    "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3": (
+        "negative",
+        "O3S221",
+    ),
+    "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3": (
+        "strict-error",
+        "link.unresolved_symbol",
+    ),
+    "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3": (
+        "strict-error",
+        "link.unresolved_symbol",
+    ),
+    "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3": (
+        "strict-error",
+        "O3RT002",
+    ),
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3": (
+        "strict-error",
+        "O3RT002",
+    ),
+}
 
 
 def _load_json(path: Path) -> dict:
@@ -63,11 +104,21 @@ def test_native_fixture_metadata_records_phase_and_diagnostics() -> None:
         assert relative_parts[1] == behavior_family
 
         fixture_kind = metadata["fixture_kind"]
+        boundary = metadata["boundary"]
+        assert boundary["canonical_behavior_source"] is True
+        assert boundary["behavior_contract"] == EXPECTED_BOUNDARY_BY_KIND[fixture_kind]
+        assert boundary["retired_positive_surface"] == bool(fixture.retired_surface_tags)
+
         if fixture_kind in STRICT_KINDS:
             expected = metadata["expected"]
             assert expected["stage"] in {"parse", "compile", "link", "run"}
             assert expected["diagnostic_code"]
             assert expected["required_tokens"]
+        else:
+            source_text = fixture_path.read_text(encoding="utf-8").lower()
+            assert not fixture.retired_surface_tags
+            for term in RETIRED_POSITIVE_SURFACE_TERMS:
+                assert term not in source_text
 
 
 def test_behavior_matrix_has_representative_phase_coverage() -> None:
@@ -78,11 +129,44 @@ def test_behavior_matrix_has_representative_phase_coverage() -> None:
         assert catalog.phase(phase), f"missing representative behavior fixtures for {phase}"
 
 
+def test_behavior_matrix_has_representative_family_coverage() -> None:
+    catalog = load_behavior_fixture_catalog()
+
+    for phase, families in REQUIRED_TREE.items():
+        for family in families:
+            if (phase, family) == ("parser", "snapshots"):
+                snapshots = tuple((NATIVE_ROOT / phase / family).glob("*.diagnostics.txt"))
+                assert snapshots, "parser snapshots must remain diagnostics-only evidence"
+                continue
+            assert catalog.family(phase, family), f"missing fixture coverage for {phase}/{family}"
+
+
+def test_hard_cutover_contract_fixtures_are_canonicalized() -> None:
+    catalog_by_path = load_behavior_fixture_catalog().by_relative_source()
+    manifest_by_path = {
+        entry["path"]: entry
+        for entry in load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
+    }
+
+    for relative_source, (fixture_kind, diagnostic_code) in HARD_CUTOVER_CONTRACTS.items():
+        fixture = catalog_by_path[relative_source]
+        manifest_entry = manifest_by_path[relative_source]
+        boundary = fixture.metadata["boundary"]
+
+        assert fixture.fixture_kind == fixture_kind
+        assert manifest_entry["fixture_kind"] == fixture_kind
+        assert fixture.expected_diagnostic_code == diagnostic_code
+        assert manifest_entry["expected_diagnostic_code"] == diagnostic_code
+        assert boundary["canonical_behavior_source"] is True
+        assert boundary["behavior_contract"] == EXPECTED_BOUNDARY_BY_KIND[fixture_kind]
+
+
 def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
     generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
     canonical_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
     generated_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "generated" / "manifest.json")
+    canonical_boundary = canonical_manifest["boundary"]
     generated_boundary = generated_manifest["boundary"]
 
     canonical_by_path = {entry["path"]: entry for entry in canonical_entries}
@@ -103,11 +187,24 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert entry == fixture.canonical_manifest_entry()
 
     assert canonical_manifest["fixtures"] == canonical_entries
+    assert canonical_boundary["kind"] == "hand-authored-native-behavior"
+    assert canonical_boundary["source_of_truth"] == "tests/native"
+    assert canonical_boundary["phase_order"] == list(PHASE_ORDER)
+    assert canonical_boundary["positive_fixture_policy"] == (
+        "positive fixtures cover canonical behavior only"
+    )
+    assert canonical_boundary["retired_surface_policy"] == (
+        "old-mode, shim, fallback, and runtime adapter residues must be rejection or strict-error metadata"
+    )
     assert generated_manifest["fixtures"] == generated_entries
     assert generated_boundary["kind"] == "generated-contract-artifacts"
     assert generated_boundary["source_of_truth"] == "generator-output"
+    assert generated_boundary["canonical_behavior_source"] is False
     assert generated_boundary["allowed_path_roots"] == ["tests/tooling/fixtures/objc3c"]
     assert "not canonical behavior expectations" in generated_boundary["hand_edit_policy"]
+    assert generated_boundary["positive_fixture_policy"] == (
+        "generated artifacts never define positive native behavior"
+    )
     generated_allowed_roots = tuple(ROOT / root for root in generated_boundary["allowed_path_roots"])
 
     for entry in generated_entries:
@@ -117,6 +214,7 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert entry["generator"]
         assert entry["provenance"]
         assert entry["boundary"] == "generated-contract-artifact"
+        assert entry["behavior_boundary"] == "generated-provenance-only"
         assert entry["canonical_behavior_source"] is False
         assert not path.is_relative_to(NATIVE_ROOT)
         assert any(path.is_relative_to(root) for root in generated_allowed_roots)

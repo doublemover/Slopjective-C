@@ -1,0 +1,7 @@
+// Canonical e2e feature-matrix fixture: nil keyword sends stay deterministic without live dispatch.
+module E2EFeatureMatrixNilKeywordMessageSendElision;
+
+fn main() -> i32 {
+  let sent = [nil? ping: 4 pong: 5];
+  return sent + 6;
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "fixture": "nil_receiver_runtime_call_elision.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "lowering",
+  "behavior_family": "objc_runtime",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": []
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

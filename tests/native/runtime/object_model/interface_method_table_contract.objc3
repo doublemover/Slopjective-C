@@ -1,0 +1,16 @@
+// Canonical runtime object-model fixture: interface methods are declared and implemented explicitly.
+module RuntimeObjectModelInterfaceMethodTableContract;
+
+@interface RuntimeBoundaryWidget
+- (i32)value;
+@end
+
+@implementation RuntimeBoundaryWidget
+- (i32)value {
+  return 12;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

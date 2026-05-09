@@ -5,6 +5,11 @@
   "owner_phase": "e2e",
   "behavior_family": "smoke",
   "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false
+  },
   "expected": {
     "stage": "run",
     "diagnostic_code": "",

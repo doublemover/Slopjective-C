@@ -1,0 +1,7 @@
+// Canonical IR runtime-call fixture: non-nil message sends keep live runtime dispatch.
+module IRRuntimeCallsNonNilReceiverRuntimeCallContract;
+
+fn main() -> i32 {
+  let receiver = 3;
+  return [receiver ping];
+}

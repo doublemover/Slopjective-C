@@ -1,0 +1,16 @@
+// Canonical sema Objective-C fixture: interface and implementation method surfaces are strict source truth.
+module SemaObjcInterfaceMethodContract;
+
+@interface BoundaryWidget
+- (i32)value;
+@end
+
+@implementation BoundaryWidget
+- (i32)value {
+  return 11;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

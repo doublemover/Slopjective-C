@@ -1,0 +1,11 @@
+// Canonical lowering strict-error fixture: shadowed nil receivers retain non-nil dispatch linkage.
+module LoweringErrorsShadowedNilRuntimeDispatchStrictError;
+
+fn main() -> i32 {
+  let receiver = nil;
+  if (1) {
+    let receiver = 7;
+    return [receiver ping];
+  }
+  return [receiver? ping];
+}

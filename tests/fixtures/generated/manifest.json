@@ -3,10 +3,12 @@
   "boundary": {
     "kind": "generated-contract-artifacts",
     "source_of_truth": "generator-output",
+    "canonical_behavior_source": false,
     "allowed_path_roots": [
       "tests/tooling/fixtures/objc3c"
     ],
-    "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations"
+    "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations",
+    "positive_fixture_policy": "generated artifacts never define positive native behavior"
   },
   "fixtures": [
     {
@@ -15,6 +17,7 @@
       "generator": "scripts/build_objc3c_native.ps1",
       "provenance": "frontend contract artifact generation",
       "boundary": "generated-contract-artifact",
+      "behavior_boundary": "generated-provenance-only",
       "canonical_behavior_source": false,
       "owner": "generated-fixture-provenance"
     },
@@ -24,6 +27,7 @@
       "generator": "scripts/build_objc3c_native.ps1",
       "provenance": "frontend contract artifact generation",
       "boundary": "generated-contract-artifact",
+      "behavior_boundary": "generated-provenance-only",
       "canonical_behavior_source": false,
       "owner": "generated-fixture-provenance"
     }

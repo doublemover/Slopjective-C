@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "fixture": "continue_outside_loop_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "control_flow",
+  "fixture_kind": "negative",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "O3S213",
+    "required_tokens": [
+      "O3S213",
+      "loop-control misuse: 'continue' outside loop"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+// Canonical lowering ownership fixture: block captures lower as explicit owned source values.
+module LoweringOwnershipBlockCaptureOwnedValueLowering;
+
+fn main() -> i32 {
+  let seed = 7;
+  let closure = ^() {
+    return seed;
+  };
+  return closure();
+}

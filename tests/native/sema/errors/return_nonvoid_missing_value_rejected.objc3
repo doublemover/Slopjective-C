@@ -1,0 +1,10 @@
+// Canonical sema error fixture: non-void returns must carry a value.
+module SemaErrorsReturnNonvoidMissingValueRejected;
+
+fn helper() -> i32 {
+  return;
+}
+
+fn main() -> i32 {
+  return helper();
+}

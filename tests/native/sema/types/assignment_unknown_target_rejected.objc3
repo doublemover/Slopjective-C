@@ -1,0 +1,7 @@
+// Canonical sema type fixture: unknown assignment targets are compile-time rejections.
+module SemaTypesAssignmentUnknownTargetRejected;
+
+fn main() -> i32 {
+  missing = 3;
+  return 0;
+}

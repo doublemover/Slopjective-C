@@ -1,0 +1,11 @@
+// Canonical sema error fixture: void functions reject returned values.
+module SemaErrorsReturnValueFromVoidStrictError;
+
+fn helper() -> void {
+  return 1;
+}
+
+fn main() -> i32 {
+  helper();
+  return 0;
+}

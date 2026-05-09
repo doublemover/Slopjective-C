@@ -1,0 +1,10 @@
+// Canonical runtime block fixture: block capture behavior is authored as a runtime boundary.
+module RuntimeBlocksBlockCaptureRuntimeContract;
+
+fn main() -> i32 {
+  let seed = 7;
+  let closure = ^() {
+    return seed + 1;
+  };
+  return closure();
+}

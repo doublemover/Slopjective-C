@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "fixture": "return_nonvoid_missing_value_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "errors",
+  "fixture_kind": "negative",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "O3S211",
+    "required_tokens": [
+      "O3S211",
+      "must return 'i32'"
+    ]
+  }
+}

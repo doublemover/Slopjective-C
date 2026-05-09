@@ -1,0 +1,11 @@
+// Canonical sema ownership fixture: id values stay in the type system as source-owned behavior.
+module SemaOwnershipStrongIdAssignment;
+
+fn hold(value: id) -> i32 {
+  let retained = value;
+  return 1;
+}
+
+fn main() -> i32 {
+  return hold(nil);
+}

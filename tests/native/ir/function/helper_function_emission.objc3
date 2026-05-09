@@ -1,0 +1,10 @@
+// Canonical IR function fixture: helper and main functions both materialize.
+module IRFunctionHelperFunctionEmission;
+
+fn helper(value: i32) -> i32 {
+  return value + 4;
+}
+
+fn main() -> i32 {
+  return helper(13);
+}
