@@ -34,6 +34,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_function_effect_analysis.cpp
   objc3_ir_function_definition_emission.cpp
   objc3_ir_function_local_flow.cpp
+  objc3_ir_function_orchestration.cpp
   objc3_ir_message_send_emission.cpp
   objc3_ir_message_send_lowering.cpp
   objc3_ir_message_send_validation.cpp

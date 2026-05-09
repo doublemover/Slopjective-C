@@ -22,8 +22,7 @@
 #include "ir/objc3_ir_expression_call_orchestration.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
-#include "ir/objc3_ir_function_definition_emission.h"
-#include "ir/objc3_ir_function_local_flow.h"
+#include "ir/objc3_ir_function_orchestration.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
@@ -36,7 +35,6 @@
 #include "ir/objc3_ir_runtime_helper_calls.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_runtime_metadata_scaffold_emission.h"
-#include "ir/objc3_ir_scope_cleanup_emission.h"
 #include "ir/objc3_ir_statement_orchestration.h"
 #include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
@@ -148,11 +146,13 @@ class Objc3IREmitter {
     EmitRuntimeBootstrapLoweringFunctions(body);
 
     for (const FunctionDecl *fn : function_definitions_) {
-      EmitFunction(*fn, body);
+      EmitObjc3IRFunctionOrchestration(
+          *fn, FunctionOrchestrationOptions(), body);
       body << "\n";
     }
     for (const Objc3IRMethodDefinition &method_def : method_definitions_) {
-      EmitMethod(method_def, body);
+      EmitObjc3IRMethodOrchestration(
+          method_def, FunctionOrchestrationOptions(), body);
       body << "\n";
     }
     for (const std::string &definition : block_function_definitions_) {
@@ -1989,18 +1989,6 @@ class Objc3IREmitter {
   }
 
  private:
-  bool IsActorImplementation(const std::string &name) const {
-    if (name.empty()) {
-      return false;
-    }
-    for (const auto &interface_decl : program_.interfaces) {
-      if (!interface_decl.has_category && interface_decl.name == name) {
-        return interface_decl.is_actor;
-      }
-    }
-    return false;
-  }
-
   bool ShouldEmitRuntimeBootstrapLowering() const {
     return Objc3IRRuntimeBootstrapLoweringReady(frontend_metadata_);
   }
@@ -2177,6 +2165,15 @@ class Objc3IREmitter {
             [this]() { return CompileTimeProofAnalysisContext(); }}};
   }
 
+  Objc3IRFunctionOrchestrationOptions FunctionOrchestrationOptions() const {
+    return Objc3IRFunctionOrchestrationOptions{
+        program_,
+        frontend_metadata_.arc_mode_enabled,
+        class_receiver_constants_,
+        StatementOrchestrationOptions(),
+        synthetic_method_stats_};
+  }
+
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
     if (!unsupported_fail_closed_path_triggered_) {
       unsupported_fail_closed_path_triggered_ = true;
@@ -2203,59 +2200,6 @@ class Objc3IREmitter {
   void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
     EmitObjc3IRRuntimeDispatchDeclarations(lowering_ir_boundary_,
                                            runtime_dispatch_call_state_, out);
-  }
-
-  Objc3IRFunctionDefinitionEmissionCallbacks
-  BuildFunctionDefinitionEmissionCallbacks() const {
-    return Objc3IRFunctionDefinitionEmissionCallbacks{
-        [](FunctionContext &ctx) { PushObjc3IRScope(ctx); },
-        [this](FunctionContext &ctx) {
-          SeedObjc3IRKnownClassReceiverBindings(class_receiver_constants_, ctx);
-        },
-        [this](const FuncParam &param, std::size_t index,
-               const std::string &ptr, FunctionContext &ctx) {
-          EmitObjc3IRFunctionLocalTypedParamStore(
-              param, index, ptr, ctx,
-              BuildObjc3IRStatementOrchestrationFunctionLocalContext(
-                  StatementOrchestrationOptions()));
-        },
-        [this](const Stmt *stmt, FunctionContext &ctx) {
-          EmitObjc3IRStatementOrchestration(
-              stmt, ctx, StatementOrchestrationOptions());
-        },
-        [this](FunctionContext &ctx, std::size_t depth) {
-          EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, depth);
-        },
-        [this](const std::string &i32_value, FunctionContext &ctx) {
-          EmitObjc3IRFunctionLocalTypedReturn(
-              i32_value, ctx,
-              BuildObjc3IRStatementOrchestrationFunctionLocalContext(
-                  StatementOrchestrationOptions()));
-        },
-        [this](const std::string &name) {
-          return IsActorImplementation(name);
-        },
-        [this](const std::string &class_name) {
-          return LookupObjc3IRClassReceiverIdentityValue(
-              class_receiver_constants_, class_name);
-        },
-        [this](const Objc3IRMethodDefinition &method_def,
-               std::ostringstream &out) {
-          EmitObjc3IRSyntheticMethod(method_def, out, synthetic_method_stats_);
-        }};
-  }
-
-  void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {
-    EmitObjc3IRFunctionDefinition(
-        fn, frontend_metadata_.arc_mode_enabled,
-        BuildFunctionDefinitionEmissionCallbacks(), out);
-  }
-
-  void EmitMethod(const Objc3IRMethodDefinition &method_def,
-                  std::ostringstream &out) const {
-    EmitObjc3IRMethodDefinition(
-        method_def, frontend_metadata_.arc_mode_enabled,
-        BuildFunctionDefinitionEmissionCallbacks(), out);
   }
 
   void EmitEntryPoint(std::ostringstream &out) const {
