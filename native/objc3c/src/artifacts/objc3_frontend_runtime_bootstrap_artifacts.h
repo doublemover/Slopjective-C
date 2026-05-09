@@ -71,6 +71,22 @@ BuildRuntimeBootstrapLegalitySemanticsSummary(
 [[nodiscard]] std::string BuildRuntimeBootstrapLegalitySemanticsSummaryJson(
     const Objc3RuntimeBootstrapLegalitySemanticsSummary &summary);
 
+[[nodiscard]] std::string BuildRuntimeBootstrapFailureRestartSemanticsReplayKey(
+    const Objc3RuntimeBootstrapFailureRestartSemanticsSummary &summary);
+
+[[nodiscard]] Objc3RuntimeBootstrapFailureRestartSemanticsSummary
+BuildRuntimeBootstrapFailureRestartSemanticsSummary(
+    const Objc3BootstrapFailureRestartSemanticsSummary &semantic_boundary,
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary
+        &bootstrap_legality_semantics,
+    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics,
+    const Objc3RuntimeBootstrapApiSummary &bootstrap_api,
+    const Objc3RuntimeBootstrapLoweringSummary &bootstrap_lowering,
+    const std::string &translation_unit_identity_key);
+
+[[nodiscard]] std::string BuildRuntimeBootstrapFailureRestartSemanticsSummaryJson(
+    const Objc3RuntimeBootstrapFailureRestartSemanticsSummary &summary);
+
 [[nodiscard]] std::string BuildRuntimeBootstrapApiReplayKey(
     const Objc3RuntimeBootstrapApiSummary &summary);
 
