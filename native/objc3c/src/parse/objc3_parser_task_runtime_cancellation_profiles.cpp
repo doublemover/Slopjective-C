@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -82,161 +83,20 @@ void CollectTaskRuntimeCancellationSitesFromSymbol(
   }
 }
 
-void CollectTaskRuntimeCancellationExprSites(
-    const Expr *expr,
-    Objc3TaskRuntimeCancellationSiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectTaskRuntimeCancellationSitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectTaskRuntimeCancellationExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectTaskRuntimeCancellationSitesFromSymbol(expr->selector, counts);
-    CollectTaskRuntimeCancellationExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectTaskRuntimeCancellationExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectTaskRuntimeCancellationExprSites(expr->left.get(), counts);
-    CollectTaskRuntimeCancellationExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectTaskRuntimeCancellationExprSites(expr->left.get(), counts);
-    CollectTaskRuntimeCancellationExprSites(expr->right.get(), counts);
-    CollectTaskRuntimeCancellationExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectTaskRuntimeCancellationForClauseSites(
-    const ForClause &clause,
-    Objc3TaskRuntimeCancellationSiteCounts &counts) {
-  CollectTaskRuntimeCancellationExprSites(clause.value.get(), counts);
-}
-
-void CollectTaskRuntimeCancellationStmtSites(
-    const Stmt *stmt,
-    Objc3TaskRuntimeCancellationSiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->let_stmt->value.get(),
-                                              counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->assign_stmt->value.get(),
-                                              counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->return_stmt->value.get(),
-                                              counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectTaskRuntimeCancellationExprSites(stmt->if_stmt->condition.get(),
-                                            counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectTaskRuntimeCancellationStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectTaskRuntimeCancellationStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
-    }
-    CollectTaskRuntimeCancellationExprSites(
-        stmt->do_while_stmt->condition.get(), counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectTaskRuntimeCancellationForClauseSites(stmt->for_stmt->init, counts);
-    CollectTaskRuntimeCancellationExprSites(stmt->for_stmt->condition.get(),
-                                            counts);
-    CollectTaskRuntimeCancellationForClauseSites(stmt->for_stmt->step, counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectTaskRuntimeCancellationExprSites(stmt->switch_stmt->condition.get(),
-                                            counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectTaskRuntimeCancellationStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectTaskRuntimeCancellationExprSites(stmt->while_stmt->condition.get(),
-                                            counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->expr_stmt->value.get(),
-                                              counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectTaskRuntimeCancellationProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts =
+      static_cast<Objc3TaskRuntimeCancellationSiteCounts *>(context);
+  CollectTaskRuntimeCancellationSitesFromSymbol(symbol, *counts);
 }
 
 Objc3TaskRuntimeCancellationSiteCounts CountTaskRuntimeCancellationSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3TaskRuntimeCancellationSiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectTaskRuntimeCancellationStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectTaskRuntimeCancellationProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -370,9 +230,9 @@ Objc3TaskRuntimeCancellationProfile
 BuildTaskRuntimeCancellationProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3TaskRuntimeCancellationSiteCounts counts;
-  if (method.has_body) {
-    CollectTaskRuntimeCancellationSitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectTaskRuntimeCancellationProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildTaskRuntimeCancellationProfileFromCounts(
       counts.runtime_hook_sites,
       counts.cancellation_check_sites,

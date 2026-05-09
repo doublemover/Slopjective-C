@@ -13,6 +13,7 @@ add_library(objc3c_parse_profiles STATIC
   objc3_parser_interop_profiles.cpp
   objc3_parser_ns_error_bridging_profiles.cpp
   objc3_parser_profile_helpers.cpp
+  objc3_parser_profile_symbol_walk.cpp
   objc3_parser_result_like_profiles.cpp
   objc3_parser_statement_profiles.cpp
   objc3_parser_task_runtime_cancellation_profiles.cpp
@@ -31,6 +32,7 @@ target_sources(objc3c_parse_profiles PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_inline_asm_intrinsic_profiles.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_ns_error_bridging_profiles.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_profile_helpers.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_profile_symbol_walk.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_result_like_profiles.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_statement_profiles.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_task_runtime_cancellation_profiles.h

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -90,164 +91,21 @@ void CollectConcurrencyReplayRaceGuardSitesFromSymbol(
   }
 }
 
-void CollectConcurrencyReplayRaceGuardExprSites(
-    const Expr *expr,
-    Objc3ConcurrencyReplayRaceGuardSiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectConcurrencyReplayRaceGuardSitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectConcurrencyReplayRaceGuardExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectConcurrencyReplayRaceGuardSitesFromSymbol(expr->selector, counts);
-    CollectConcurrencyReplayRaceGuardExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectConcurrencyReplayRaceGuardExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectConcurrencyReplayRaceGuardExprSites(expr->left.get(), counts);
-    CollectConcurrencyReplayRaceGuardExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectConcurrencyReplayRaceGuardExprSites(expr->left.get(), counts);
-    CollectConcurrencyReplayRaceGuardExprSites(expr->right.get(), counts);
-    CollectConcurrencyReplayRaceGuardExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectConcurrencyReplayRaceGuardForClauseSites(
-    const ForClause &clause,
-    Objc3ConcurrencyReplayRaceGuardSiteCounts &counts) {
-  CollectConcurrencyReplayRaceGuardExprSites(clause.value.get(), counts);
-}
-
-void CollectConcurrencyReplayRaceGuardStmtSites(
-    const Stmt *stmt,
-    Objc3ConcurrencyReplayRaceGuardSiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectConcurrencyReplayRaceGuardExprSites(stmt->let_stmt->value.get(),
-                                                 counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectConcurrencyReplayRaceGuardExprSites(stmt->assign_stmt->value.get(),
-                                                 counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectConcurrencyReplayRaceGuardExprSites(stmt->return_stmt->value.get(),
-                                                 counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectConcurrencyReplayRaceGuardExprSites(stmt->if_stmt->condition.get(),
-                                               counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(body_stmt.get(), counts);
-    }
-    CollectConcurrencyReplayRaceGuardExprSites(
-        stmt->do_while_stmt->condition.get(), counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectConcurrencyReplayRaceGuardForClauseSites(stmt->for_stmt->init,
-                                                    counts);
-    CollectConcurrencyReplayRaceGuardExprSites(
-        stmt->for_stmt->condition.get(), counts);
-    CollectConcurrencyReplayRaceGuardForClauseSites(stmt->for_stmt->step,
-                                                    counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectConcurrencyReplayRaceGuardExprSites(
-        stmt->switch_stmt->condition.get(), counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectConcurrencyReplayRaceGuardStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectConcurrencyReplayRaceGuardExprSites(
-        stmt->while_stmt->condition.get(), counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectConcurrencyReplayRaceGuardStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectConcurrencyReplayRaceGuardExprSites(stmt->expr_stmt->value.get(),
-                                                 counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectConcurrencyReplayRaceGuardProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts =
+      static_cast<Objc3ConcurrencyReplayRaceGuardSiteCounts *>(context);
+  CollectConcurrencyReplayRaceGuardSitesFromSymbol(symbol, *counts);
 }
 
 Objc3ConcurrencyReplayRaceGuardSiteCounts
 CountConcurrencyReplayRaceGuardSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3ConcurrencyReplayRaceGuardSiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectConcurrencyReplayRaceGuardStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectConcurrencyReplayRaceGuardProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -370,9 +228,9 @@ Objc3ConcurrencyReplayRaceGuardProfile
 BuildConcurrencyReplayRaceGuardProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3ConcurrencyReplayRaceGuardSiteCounts counts;
-  if (method.has_body) {
-    CollectConcurrencyReplayRaceGuardSitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectConcurrencyReplayRaceGuardProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildConcurrencyReplayRaceGuardProfileFromCounts(
       counts.replay_proof_sites,
       counts.race_guard_sites,

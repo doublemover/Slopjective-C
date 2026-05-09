@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -86,164 +87,21 @@ void CollectErrorDiagnosticsRecoverySitesFromSymbol(
   }
 }
 
-void CollectErrorDiagnosticsRecoveryExprSites(
-    const Expr *expr,
-    Objc3ErrorDiagnosticsRecoverySiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectErrorDiagnosticsRecoverySitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectErrorDiagnosticsRecoveryExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectErrorDiagnosticsRecoverySitesFromSymbol(expr->selector, counts);
-    CollectErrorDiagnosticsRecoveryExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectErrorDiagnosticsRecoveryExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectErrorDiagnosticsRecoveryExprSites(expr->left.get(), counts);
-    CollectErrorDiagnosticsRecoveryExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectErrorDiagnosticsRecoveryExprSites(expr->left.get(), counts);
-    CollectErrorDiagnosticsRecoveryExprSites(expr->right.get(), counts);
-    CollectErrorDiagnosticsRecoveryExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectErrorDiagnosticsRecoveryForClauseSites(
-    const ForClause &clause,
-    Objc3ErrorDiagnosticsRecoverySiteCounts &counts) {
-  CollectErrorDiagnosticsRecoveryExprSites(clause.value.get(), counts);
-}
-
-void CollectErrorDiagnosticsRecoveryStmtSites(
-    const Stmt *stmt,
-    Objc3ErrorDiagnosticsRecoverySiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectErrorDiagnosticsRecoveryExprSites(stmt->let_stmt->value.get(),
-                                               counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectErrorDiagnosticsRecoveryExprSites(stmt->assign_stmt->value.get(),
-                                               counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectErrorDiagnosticsRecoveryExprSites(stmt->return_stmt->value.get(),
-                                               counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectErrorDiagnosticsRecoveryExprSites(stmt->if_stmt->condition.get(),
-                                             counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(body_stmt.get(), counts);
-    }
-    CollectErrorDiagnosticsRecoveryExprSites(
-        stmt->do_while_stmt->condition.get(), counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectErrorDiagnosticsRecoveryForClauseSites(stmt->for_stmt->init,
-                                                  counts);
-    CollectErrorDiagnosticsRecoveryExprSites(stmt->for_stmt->condition.get(),
-                                             counts);
-    CollectErrorDiagnosticsRecoveryForClauseSites(stmt->for_stmt->step,
-                                                  counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectErrorDiagnosticsRecoveryExprSites(
-        stmt->switch_stmt->condition.get(), counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectErrorDiagnosticsRecoveryStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectErrorDiagnosticsRecoveryExprSites(stmt->while_stmt->condition.get(),
-                                             counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectErrorDiagnosticsRecoveryStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectErrorDiagnosticsRecoveryExprSites(stmt->expr_stmt->value.get(),
-                                               counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectErrorDiagnosticsRecoveryProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts =
+      static_cast<Objc3ErrorDiagnosticsRecoverySiteCounts *>(context);
+  CollectErrorDiagnosticsRecoverySitesFromSymbol(symbol, *counts);
 }
 
 Objc3ErrorDiagnosticsRecoverySiteCounts
 CountErrorDiagnosticsRecoverySitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3ErrorDiagnosticsRecoverySiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectErrorDiagnosticsRecoveryStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectErrorDiagnosticsRecoveryProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -426,9 +284,9 @@ Objc3ErrorDiagnosticsRecoveryProfile
 BuildErrorDiagnosticsRecoveryProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3ErrorDiagnosticsRecoverySiteCounts counts;
-  if (method.has_body) {
-    CollectErrorDiagnosticsRecoverySitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectErrorDiagnosticsRecoveryProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildErrorDiagnosticsRecoveryProfileFromCounts(
       counts.diagnostic_emit_sites,
       counts.recovery_anchor_sites,

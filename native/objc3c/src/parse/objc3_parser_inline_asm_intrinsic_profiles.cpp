@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -64,158 +65,19 @@ void CollectInlineAsmIntrinsicSitesFromSymbol(
   }
 }
 
-void CollectInlineAsmIntrinsicExprSites(
-    const Expr *expr,
-    Objc3InlineAsmIntrinsicSiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectInlineAsmIntrinsicSitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectInlineAsmIntrinsicExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectInlineAsmIntrinsicSitesFromSymbol(expr->selector, counts);
-    CollectInlineAsmIntrinsicExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectInlineAsmIntrinsicExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectInlineAsmIntrinsicExprSites(expr->left.get(), counts);
-    CollectInlineAsmIntrinsicExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectInlineAsmIntrinsicExprSites(expr->left.get(), counts);
-    CollectInlineAsmIntrinsicExprSites(expr->right.get(), counts);
-    CollectInlineAsmIntrinsicExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectInlineAsmIntrinsicForClauseSites(
-    const ForClause &clause,
-    Objc3InlineAsmIntrinsicSiteCounts &counts) {
-  CollectInlineAsmIntrinsicExprSites(clause.value.get(), counts);
-}
-
-void CollectInlineAsmIntrinsicStmtSites(
-    const Stmt *stmt,
-    Objc3InlineAsmIntrinsicSiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectInlineAsmIntrinsicExprSites(stmt->let_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectInlineAsmIntrinsicExprSites(stmt->assign_stmt->value.get(),
-                                         counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectInlineAsmIntrinsicExprSites(stmt->return_stmt->value.get(),
-                                         counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectInlineAsmIntrinsicExprSites(stmt->if_stmt->condition.get(), counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectInlineAsmIntrinsicStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectInlineAsmIntrinsicStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
-    }
-    CollectInlineAsmIntrinsicExprSites(stmt->do_while_stmt->condition.get(),
-                                       counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectInlineAsmIntrinsicForClauseSites(stmt->for_stmt->init, counts);
-    CollectInlineAsmIntrinsicExprSites(stmt->for_stmt->condition.get(),
-                                       counts);
-    CollectInlineAsmIntrinsicForClauseSites(stmt->for_stmt->step, counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectInlineAsmIntrinsicExprSites(stmt->switch_stmt->condition.get(),
-                                       counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectInlineAsmIntrinsicStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectInlineAsmIntrinsicExprSites(stmt->while_stmt->condition.get(),
-                                       counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectInlineAsmIntrinsicExprSites(stmt->expr_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectInlineAsmIntrinsicProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts = static_cast<Objc3InlineAsmIntrinsicSiteCounts *>(context);
+  CollectInlineAsmIntrinsicSitesFromSymbol(symbol, *counts);
 }
 
 Objc3InlineAsmIntrinsicSiteCounts CountInlineAsmIntrinsicSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3InlineAsmIntrinsicSiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectInlineAsmIntrinsicStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectInlineAsmIntrinsicProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -326,9 +188,9 @@ Objc3InlineAsmIntrinsicGovernanceProfile
 BuildInlineAsmIntrinsicGovernanceProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3InlineAsmIntrinsicSiteCounts counts;
-  if (method.has_body) {
-    CollectInlineAsmIntrinsicSitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectInlineAsmIntrinsicProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
       counts.inline_asm_sites,
       counts.intrinsic_sites,

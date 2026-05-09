@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -101,157 +102,20 @@ void CollectAsyncContinuationSitesFromSymbol(
   }
 }
 
-void CollectAsyncContinuationExprSites(
-    const Expr *expr,
-    Objc3AsyncContinuationSiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectAsyncContinuationSitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectAsyncContinuationExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectAsyncContinuationSitesFromSymbol(expr->selector, counts);
-    CollectAsyncContinuationExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectAsyncContinuationExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectAsyncContinuationExprSites(expr->left.get(), counts);
-    CollectAsyncContinuationExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectAsyncContinuationExprSites(expr->left.get(), counts);
-    CollectAsyncContinuationExprSites(expr->right.get(), counts);
-    CollectAsyncContinuationExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectAsyncContinuationForClauseSites(
-    const ForClause &clause,
-    Objc3AsyncContinuationSiteCounts &counts) {
-  CollectAsyncContinuationExprSites(clause.value.get(), counts);
-}
-
-void CollectAsyncContinuationStmtSites(
-    const Stmt *stmt,
-    Objc3AsyncContinuationSiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectAsyncContinuationExprSites(stmt->let_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectAsyncContinuationExprSites(stmt->assign_stmt->value.get(),
-                                        counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectAsyncContinuationExprSites(stmt->return_stmt->value.get(),
-                                        counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectAsyncContinuationExprSites(stmt->if_stmt->condition.get(), counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectAsyncContinuationStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectAsyncContinuationStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
-    }
-    CollectAsyncContinuationExprSites(stmt->do_while_stmt->condition.get(),
-                                      counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectAsyncContinuationForClauseSites(stmt->for_stmt->init, counts);
-    CollectAsyncContinuationExprSites(stmt->for_stmt->condition.get(), counts);
-    CollectAsyncContinuationForClauseSites(stmt->for_stmt->step, counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectAsyncContinuationExprSites(stmt->switch_stmt->condition.get(),
-                                      counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectAsyncContinuationStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectAsyncContinuationExprSites(stmt->while_stmt->condition.get(),
-                                      counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectAsyncContinuationExprSites(stmt->expr_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectAsyncContinuationProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts =
+      static_cast<Objc3AsyncContinuationSiteCounts *>(context);
+  CollectAsyncContinuationSitesFromSymbol(symbol, *counts);
 }
 
 Objc3AsyncContinuationSiteCounts CountAsyncContinuationSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3AsyncContinuationSiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectAsyncContinuationStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectAsyncContinuationProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -396,9 +260,9 @@ Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromFunction(
 Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3AsyncContinuationSiteCounts counts;
-  if (method.has_body) {
-    CollectAsyncContinuationSitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectAsyncContinuationProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   if (method.async_declared) {
     counts.async_keyword_sites += 1u;
     counts.async_function_sites += 1u;

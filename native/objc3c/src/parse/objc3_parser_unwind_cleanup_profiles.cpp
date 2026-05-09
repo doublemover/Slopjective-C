@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -78,153 +79,19 @@ void CollectUnwindCleanupSitesFromSymbol(
   }
 }
 
-void CollectUnwindCleanupExprSites(
-    const Expr *expr,
-    Objc3UnwindCleanupSiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectUnwindCleanupSitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectUnwindCleanupExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectUnwindCleanupSitesFromSymbol(expr->selector, counts);
-    CollectUnwindCleanupExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectUnwindCleanupExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectUnwindCleanupExprSites(expr->left.get(), counts);
-    CollectUnwindCleanupExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectUnwindCleanupExprSites(expr->left.get(), counts);
-    CollectUnwindCleanupExprSites(expr->right.get(), counts);
-    CollectUnwindCleanupExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectUnwindCleanupForClauseSites(
-    const ForClause &clause,
-    Objc3UnwindCleanupSiteCounts &counts) {
-  CollectUnwindCleanupExprSites(clause.value.get(), counts);
-}
-
-void CollectUnwindCleanupStmtSites(
-    const Stmt *stmt,
-    Objc3UnwindCleanupSiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectUnwindCleanupExprSites(stmt->let_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectUnwindCleanupExprSites(stmt->assign_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectUnwindCleanupExprSites(stmt->return_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectUnwindCleanupExprSites(stmt->if_stmt->condition.get(), counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectUnwindCleanupStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectUnwindCleanupStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectUnwindCleanupStmtSites(body_stmt.get(), counts);
-    }
-    CollectUnwindCleanupExprSites(stmt->do_while_stmt->condition.get(),
-                                  counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectUnwindCleanupForClauseSites(stmt->for_stmt->init, counts);
-    CollectUnwindCleanupExprSites(stmt->for_stmt->condition.get(), counts);
-    CollectUnwindCleanupForClauseSites(stmt->for_stmt->step, counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectUnwindCleanupStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectUnwindCleanupExprSites(stmt->switch_stmt->condition.get(), counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectUnwindCleanupStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectUnwindCleanupExprSites(stmt->while_stmt->condition.get(), counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectUnwindCleanupStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectUnwindCleanupStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectUnwindCleanupExprSites(stmt->expr_stmt->value.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectUnwindCleanupProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts = static_cast<Objc3UnwindCleanupSiteCounts *>(context);
+  CollectUnwindCleanupSitesFromSymbol(symbol, *counts);
 }
 
 Objc3UnwindCleanupSiteCounts CountUnwindCleanupSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3UnwindCleanupSiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectUnwindCleanupStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectUnwindCleanupProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -343,9 +210,9 @@ Objc3UnwindCleanupProfile BuildUnwindCleanupProfileFromFunction(
 Objc3UnwindCleanupProfile BuildUnwindCleanupProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3UnwindCleanupSiteCounts counts;
-  if (method.has_body) {
-    CollectUnwindCleanupSitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectUnwindCleanupProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildUnwindCleanupProfileFromCounts(
       counts.exceptional_exit_sites,
       counts.cleanup_action_sites,

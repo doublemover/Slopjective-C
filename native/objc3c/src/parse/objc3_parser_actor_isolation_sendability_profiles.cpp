@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_profile_symbol_walk.h"
 
 namespace objc3c::parse {
 namespace {
@@ -78,164 +79,21 @@ void CollectActorIsolationSendabilitySitesFromSymbol(
   }
 }
 
-void CollectActorIsolationSendabilityExprSites(
-    const Expr *expr,
-    Objc3ActorIsolationSendabilitySiteCounts &counts) {
-  if (expr == nullptr) {
-    return;
-  }
-  switch (expr->kind) {
-  case Expr::Kind::Call:
-    CollectActorIsolationSendabilitySitesFromSymbol(expr->ident, counts);
-    for (const auto &arg : expr->args) {
-      CollectActorIsolationSendabilityExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::MessageSend:
-    CollectActorIsolationSendabilitySitesFromSymbol(expr->selector, counts);
-    CollectActorIsolationSendabilityExprSites(expr->receiver.get(), counts);
-    for (const auto &arg : expr->args) {
-      CollectActorIsolationSendabilityExprSites(arg.get(), counts);
-    }
-    return;
-  case Expr::Kind::Binary:
-    CollectActorIsolationSendabilityExprSites(expr->left.get(), counts);
-    CollectActorIsolationSendabilityExprSites(expr->right.get(), counts);
-    return;
-  case Expr::Kind::Conditional:
-    CollectActorIsolationSendabilityExprSites(expr->left.get(), counts);
-    CollectActorIsolationSendabilityExprSites(expr->right.get(), counts);
-    CollectActorIsolationSendabilityExprSites(expr->third.get(), counts);
-    return;
-  case Expr::Kind::BlockLiteral:
-  case Expr::Kind::BoolLiteral:
-  case Expr::Kind::Identifier:
-  case Expr::Kind::NilLiteral:
-  case Expr::Kind::Number:
-  default:
-    return;
-  }
-}
-
-void CollectActorIsolationSendabilityForClauseSites(
-    const ForClause &clause,
-    Objc3ActorIsolationSendabilitySiteCounts &counts) {
-  CollectActorIsolationSendabilityExprSites(clause.value.get(), counts);
-}
-
-void CollectActorIsolationSendabilityStmtSites(
-    const Stmt *stmt,
-    Objc3ActorIsolationSendabilitySiteCounts &counts) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-  case Stmt::Kind::Let:
-    if (stmt->let_stmt != nullptr) {
-      CollectActorIsolationSendabilityExprSites(stmt->let_stmt->value.get(),
-                                                counts);
-    }
-    return;
-  case Stmt::Kind::Assign:
-    if (stmt->assign_stmt != nullptr) {
-      CollectActorIsolationSendabilityExprSites(stmt->assign_stmt->value.get(),
-                                                counts);
-    }
-    return;
-  case Stmt::Kind::Return:
-    if (stmt->return_stmt != nullptr) {
-      CollectActorIsolationSendabilityExprSites(stmt->return_stmt->value.get(),
-                                                counts);
-    }
-    return;
-  case Stmt::Kind::If:
-    if (stmt->if_stmt == nullptr) {
-      return;
-    }
-    CollectActorIsolationSendabilityExprSites(stmt->if_stmt->condition.get(),
-                                              counts);
-    for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectActorIsolationSendabilityStmtSites(then_stmt.get(), counts);
-    }
-    for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectActorIsolationSendabilityStmtSites(else_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::DoWhile:
-    if (stmt->do_while_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectActorIsolationSendabilityStmtSites(body_stmt.get(), counts);
-    }
-    CollectActorIsolationSendabilityExprSites(
-        stmt->do_while_stmt->condition.get(), counts);
-    return;
-  case Stmt::Kind::For:
-    if (stmt->for_stmt == nullptr) {
-      return;
-    }
-    CollectActorIsolationSendabilityForClauseSites(stmt->for_stmt->init,
-                                                   counts);
-    CollectActorIsolationSendabilityExprSites(stmt->for_stmt->condition.get(),
-                                              counts);
-    CollectActorIsolationSendabilityForClauseSites(stmt->for_stmt->step,
-                                                   counts);
-    for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectActorIsolationSendabilityStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Switch:
-    if (stmt->switch_stmt == nullptr) {
-      return;
-    }
-    CollectActorIsolationSendabilityExprSites(
-        stmt->switch_stmt->condition.get(), counts);
-    for (const auto &switch_case : stmt->switch_stmt->cases) {
-      for (const auto &case_stmt : switch_case.body) {
-        CollectActorIsolationSendabilityStmtSites(case_stmt.get(), counts);
-      }
-    }
-    return;
-  case Stmt::Kind::While:
-    if (stmt->while_stmt == nullptr) {
-      return;
-    }
-    CollectActorIsolationSendabilityExprSites(stmt->while_stmt->condition.get(),
-                                              counts);
-    for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectActorIsolationSendabilityStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-    if (stmt->block_stmt == nullptr) {
-      return;
-    }
-    for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectActorIsolationSendabilityStmtSites(body_stmt.get(), counts);
-    }
-    return;
-  case Stmt::Kind::Expr:
-    if (stmt->expr_stmt != nullptr) {
-      CollectActorIsolationSendabilityExprSites(stmt->expr_stmt->value.get(),
-                                                counts);
-    }
-    return;
-  case Stmt::Kind::Break:
-  case Stmt::Kind::Continue:
-  case Stmt::Kind::Empty:
-    return;
-  }
+void CollectActorIsolationSendabilityProfileSymbol(
+    const std::string &symbol,
+    void *context) {
+  auto *counts =
+      static_cast<Objc3ActorIsolationSendabilitySiteCounts *>(context);
+  CollectActorIsolationSendabilitySitesFromSymbol(symbol, *counts);
 }
 
 Objc3ActorIsolationSendabilitySiteCounts
 CountActorIsolationSendabilitySitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3ActorIsolationSendabilitySiteCounts counts;
-  for (const auto &stmt : body) {
-    CollectActorIsolationSendabilityStmtSites(stmt.get(), counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectActorIsolationSendabilityProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInBody(body, walker);
   return counts;
 }
 
@@ -379,9 +237,9 @@ Objc3ActorIsolationSendabilityProfile
 BuildActorIsolationSendabilityProfileFromOpaqueBody(
     const Objc3MethodDecl &method) {
   Objc3ActorIsolationSendabilitySiteCounts counts;
-  if (method.has_body) {
-    CollectActorIsolationSendabilitySitesFromSymbol(method.selector, counts);
-  }
+  Objc3ProfileSymbolWalker walker{
+      &CollectActorIsolationSendabilityProfileSymbol, &counts};
+  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
   return BuildActorIsolationSendabilityProfileFromCounts(
       counts.actor_isolation_decl_sites,
       counts.actor_hop_sites,
