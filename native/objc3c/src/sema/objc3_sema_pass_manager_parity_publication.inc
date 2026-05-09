@@ -646,305 +646,137 @@
       result.deterministic_type_metadata_publication_record &&
       IsReadyObjc3SemaTypeMetadataPublicationRecord(
           result.parity_surface.type_metadata_publication_record);
+  result.parity_surface.parser_sema_handoff_publication_transfer_record =
+      result.parser_sema_handoff_publication_transfer_record;
+  result.parity_surface
+      .deterministic_parser_sema_handoff_publication_transfer_record =
+      result.deterministic_parser_sema_handoff_publication_transfer_record &&
+      IsReadyObjc3ParserSemaHandoffPublicationTransferRecord(
+          result.parity_surface
+              .parser_sema_handoff_publication_transfer_record);
+  result.parser_sema_parity_publication_readiness_record =
+      BuildObjc3ParserSemaParityPublicationReadinessRecord(
+          input,
+          result.parity_surface
+              .parser_sema_handoff_publication_transfer_record,
+          result.parity_surface
+              .deterministic_parser_sema_handoff_publication_transfer_record);
+  result.deterministic_parser_sema_parity_publication_readiness_record =
+      IsReadyObjc3ParserSemaParityPublicationReadinessRecord(
+          result.parser_sema_parity_publication_readiness_record);
+  result.parity_surface.parser_sema_parity_publication_readiness_record =
+      result.parser_sema_parity_publication_readiness_record;
+  result.parity_surface
+      .deterministic_parser_sema_parity_publication_readiness_record =
+      result.deterministic_parser_sema_parity_publication_readiness_record;
   result.parity_surface.deterministic_parser_sema_conformance_matrix =
-      result.deterministic_parser_sema_conformance_matrix &&
-      result.parity_surface.parser_sema_conformance_matrix.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .conformance_matrix_ready;
   result.parity_surface.deterministic_parser_sema_conformance_corpus =
-      result.deterministic_parser_sema_conformance_corpus &&
-      result.parity_surface.parser_sema_conformance_corpus.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .conformance_corpus_ready;
   result.parity_surface.deterministic_parser_sema_performance_quality_guardrails =
-      result.deterministic_parser_sema_performance_quality_guardrails &&
-      result.parity_surface.parser_sema_performance_quality_guardrails.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .performance_quality_guardrails_ready;
   result.parity_surface.deterministic_parser_sema_cross_lane_integration_sync =
-      result.deterministic_parser_sema_cross_lane_integration_sync &&
-      result.parity_surface.parser_sema_cross_lane_integration_sync.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .cross_lane_integration_sync_ready;
   result.parity_surface.deterministic_parser_sema_docs_runbook_sync =
-      result.deterministic_parser_sema_docs_runbook_sync &&
-      result.parity_surface.parser_sema_docs_runbook_sync.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .docs_runbook_sync_ready;
   result.parity_surface.deterministic_parser_sema_release_candidate_replay_dry_run =
-      result.deterministic_parser_sema_release_candidate_replay_dry_run &&
-      result.parity_surface.parser_sema_release_candidate_replay_dry_run
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .release_candidate_replay_ready;
   result.parity_surface.deterministic_parser_sema_advanced_core_shard1 =
-      result.deterministic_parser_sema_advanced_core_shard1 &&
-      result.parity_surface.parser_sema_advanced_core_shard1.deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_core_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard1 =
-      result.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
-      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_contract_rejection_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard1 =
-      result.deterministic_parser_sema_advanced_diagnostics_shard1 &&
-      result.parity_surface.parser_sema_advanced_diagnostics_shard1
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_diagnostics_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_conformance_shard1 =
-      result.deterministic_parser_sema_advanced_conformance_shard1 &&
-      result.parity_surface.parser_sema_advanced_conformance_shard1
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_conformance_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_integration_shard1 =
-      result.deterministic_parser_sema_advanced_integration_shard1 &&
-      result.parity_surface.parser_sema_advanced_integration_shard1
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_integration_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_performance_shard1 =
-      result.deterministic_parser_sema_advanced_performance_shard1 &&
-      result.parity_surface.parser_sema_advanced_performance_shard1
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_performance_shard1_ready;
   result.parity_surface.deterministic_parser_sema_advanced_core_shard2 =
-      result.deterministic_parser_sema_advanced_core_shard2 &&
-      result.parity_surface.parser_sema_advanced_core_shard2
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_core_shard2_ready;
   result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard2 =
-      result.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
-      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_contract_rejection_shard2_ready;
   result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 =
-      result.deterministic_parser_sema_advanced_diagnostics_shard2 &&
-      result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .deterministic;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .advanced_diagnostics_shard2_ready;
   result.parity_surface.deterministic_parser_sema_integration_closeout_signoff =
-      result.deterministic_parser_sema_integration_closeout_signoff &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .deterministic;
-  result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
-  result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
+      result.parity_surface.parser_sema_parity_publication_readiness_record
+          .integration_closeout_ready;
+  result.core_semantic_parity_publication_readiness_record =
+      BuildObjc3SemaCoreSemanticParityPublicationReadinessRecord(
+          input,
+          result.parity_surface,
+          result.deterministic_semantic_diagnostics,
+          result.deterministic_type_metadata_handoff,
+          result.deterministic_interface_implementation_handoff,
+          result.deterministic_protocol_category_composition_handoff,
+          result.deterministic_class_protocol_category_linking_handoff,
+          result.deterministic_selector_normalization_handoff,
+          result.deterministic_property_attribute_handoff,
+          result.deterministic_type_annotation_surface_handoff,
+          result.deterministic_lightweight_generic_constraint_handoff,
+          result.deterministic_nullability_flow_warning_precision_handoff,
+          result.deterministic_protocol_qualified_object_type_handoff,
+          result.deterministic_variance_bridge_cast_handoff);
+  result.deterministic_core_semantic_parity_publication_readiness_record =
+      IsReadyObjc3SemaCoreSemanticParityPublicationReadinessRecord(
+          result.core_semantic_parity_publication_readiness_record);
+  result.parity_surface.core_semantic_parity_publication_readiness_record =
+      result.core_semantic_parity_publication_readiness_record;
+  result.parity_surface
+      .deterministic_core_semantic_parity_publication_readiness_record =
+      result.deterministic_core_semantic_parity_publication_readiness_record;
+  result.parity_surface.deterministic_semantic_diagnostics =
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .semantic_diagnostics_ready;
+  result.parity_surface.deterministic_type_metadata_handoff =
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .type_metadata_handoff_ready;
   result.parity_surface.deterministic_interface_implementation_handoff =
-      result.deterministic_interface_implementation_handoff &&
-      result.parity_surface.interfaces_total == result.parity_surface.type_metadata_interface_entries &&
-      result.parity_surface.implementations_total == result.parity_surface.type_metadata_implementation_entries &&
-      result.parity_surface.interface_implementation_summary.resolved_interfaces ==
-          result.parity_surface.type_metadata_interface_entries &&
-      result.parity_surface.interface_implementation_summary.resolved_implementations ==
-          result.parity_surface.type_metadata_implementation_entries;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .interface_implementation_ready;
   result.parity_surface.deterministic_protocol_category_composition_handoff =
-      result.deterministic_protocol_category_composition_handoff &&
-      result.parity_surface.protocol_category_composition_summary.protocol_composition_sites ==
-          result.parity_surface.protocol_composition_sites_total &&
-      result.parity_surface.protocol_category_composition_summary.protocol_composition_symbols ==
-          result.parity_surface.protocol_composition_symbols_total &&
-      result.parity_surface.protocol_category_composition_summary.category_composition_sites ==
-          result.parity_surface.category_composition_sites_total &&
-      result.parity_surface.protocol_category_composition_summary.category_composition_symbols ==
-          result.parity_surface.category_composition_symbols_total &&
-      result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
-          result.parity_surface.invalid_protocol_composition_sites_total &&
-      result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
-          result.parity_surface.protocol_category_composition_summary.total_composition_sites();
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .protocol_category_composition_ready;
   result.parity_surface.deterministic_class_protocol_category_linking_handoff =
-      result.deterministic_class_protocol_category_linking_handoff &&
-      result.parity_surface.class_protocol_category_linking_summary.declared_interfaces ==
-          result.parity_surface.interface_implementation_summary.declared_interfaces &&
-      result.parity_surface.class_protocol_category_linking_summary.resolved_interfaces ==
-          result.parity_surface.interface_implementation_summary.resolved_interfaces &&
-      result.parity_surface.class_protocol_category_linking_summary.declared_implementations ==
-          result.parity_surface.interface_implementation_summary.declared_implementations &&
-      result.parity_surface.class_protocol_category_linking_summary.resolved_implementations ==
-          result.parity_surface.interface_implementation_summary.resolved_implementations &&
-      result.parity_surface.class_protocol_category_linking_summary.interface_method_symbols ==
-          result.parity_surface.interface_method_symbols_total &&
-      result.parity_surface.class_protocol_category_linking_summary.implementation_method_symbols ==
-          result.parity_surface.implementation_method_symbols_total &&
-      result.parity_surface.class_protocol_category_linking_summary.linked_implementation_symbols ==
-          result.parity_surface.linked_implementation_symbols_total &&
-      result.parity_surface.class_protocol_category_linking_summary.protocol_composition_sites ==
-          result.parity_surface.protocol_composition_sites_total &&
-      result.parity_surface.class_protocol_category_linking_summary.protocol_composition_symbols ==
-          result.parity_surface.protocol_composition_symbols_total &&
-      result.parity_surface.class_protocol_category_linking_summary.category_composition_sites ==
-          result.parity_surface.category_composition_sites_total &&
-      result.parity_surface.class_protocol_category_linking_summary.category_composition_symbols ==
-          result.parity_surface.category_composition_symbols_total &&
-      result.parity_surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
-          result.parity_surface.invalid_protocol_composition_sites_total &&
-      result.parity_surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites <=
-          result.parity_surface.class_protocol_category_linking_summary.total_composition_sites() &&
-      result.parity_surface.class_protocol_category_linking_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .class_protocol_category_linking_ready;
   result.parity_surface.deterministic_selector_normalization_handoff =
-      result.deterministic_selector_normalization_handoff &&
-      result.parity_surface.selector_normalization_summary.methods_total ==
-          result.parity_surface.selector_normalization_methods_total &&
-      result.parity_surface.selector_normalization_summary.normalized_methods ==
-          result.parity_surface.selector_normalization_normalized_methods_total &&
-      result.parity_surface.selector_normalization_summary.selector_piece_entries ==
-          result.parity_surface.selector_normalization_piece_entries_total &&
-      result.parity_surface.selector_normalization_summary.selector_parameter_piece_entries ==
-          result.parity_surface.selector_normalization_parameter_piece_entries_total &&
-      result.parity_surface.selector_normalization_summary.selector_pieceless_methods ==
-          result.parity_surface.selector_normalization_pieceless_methods_total &&
-      result.parity_surface.selector_normalization_summary.selector_spelling_mismatches ==
-          result.parity_surface.selector_normalization_spelling_mismatches_total &&
-      result.parity_surface.selector_normalization_summary.selector_arity_mismatches ==
-          result.parity_surface.selector_normalization_arity_mismatches_total &&
-      result.parity_surface.selector_normalization_summary.selector_parameter_linkage_mismatches ==
-          result.parity_surface.selector_normalization_parameter_linkage_mismatches_total &&
-      result.parity_surface.selector_normalization_summary.selector_normalization_flag_mismatches ==
-          result.parity_surface.selector_normalization_flag_mismatches_total &&
-      result.parity_surface.selector_normalization_summary.selector_missing_keyword_pieces ==
-          result.parity_surface.selector_normalization_missing_keyword_pieces_total &&
-      result.parity_surface.selector_normalization_summary.normalized_methods <=
-          result.parity_surface.selector_normalization_summary.methods_total &&
-      result.parity_surface.selector_normalization_summary.selector_parameter_piece_entries <=
-          result.parity_surface.selector_normalization_summary.selector_piece_entries &&
-      result.parity_surface.selector_normalization_summary.contract_violations() <=
-          result.parity_surface.selector_normalization_summary.methods_total &&
-      result.parity_surface.selector_normalization_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .selector_normalization_ready;
   result.parity_surface.deterministic_property_attribute_handoff =
-      result.deterministic_property_attribute_handoff &&
-      result.parity_surface.property_attribute_summary.properties_total ==
-          result.parity_surface.property_attribute_properties_total &&
-      result.parity_surface.property_attribute_summary.attribute_entries ==
-          result.parity_surface.property_attribute_entries_total &&
-      result.parity_surface.property_attribute_summary.readonly_modifiers ==
-          result.parity_surface.property_attribute_readonly_modifiers_total &&
-      result.parity_surface.property_attribute_summary.readwrite_modifiers ==
-          result.parity_surface.property_attribute_readwrite_modifiers_total &&
-      result.parity_surface.property_attribute_summary.atomic_modifiers ==
-          result.parity_surface.property_attribute_atomic_modifiers_total &&
-      result.parity_surface.property_attribute_summary.nonatomic_modifiers ==
-          result.parity_surface.property_attribute_nonatomic_modifiers_total &&
-      result.parity_surface.property_attribute_summary.copy_modifiers ==
-          result.parity_surface.property_attribute_copy_modifiers_total &&
-      result.parity_surface.property_attribute_summary.strong_modifiers ==
-          result.parity_surface.property_attribute_strong_modifiers_total &&
-      result.parity_surface.property_attribute_summary.weak_modifiers ==
-          result.parity_surface.property_attribute_weak_modifiers_total &&
-      result.parity_surface.property_attribute_summary.assign_modifiers ==
-          result.parity_surface.property_attribute_assign_modifiers_total &&
-      result.parity_surface.property_attribute_summary.getter_modifiers ==
-          result.parity_surface.property_attribute_getter_modifiers_total &&
-      result.parity_surface.property_attribute_summary.setter_modifiers ==
-          result.parity_surface.property_attribute_setter_modifiers_total &&
-      result.parity_surface.property_attribute_summary.invalid_attribute_entries ==
-          result.parity_surface.property_attribute_invalid_attribute_entries_total &&
-      result.parity_surface.property_attribute_summary.property_contract_violations ==
-          result.parity_surface.property_attribute_contract_violations_total &&
-      result.parity_surface.property_attribute_summary.getter_modifiers <=
-          result.parity_surface.property_attribute_summary.properties_total &&
-      result.parity_surface.property_attribute_summary.setter_modifiers <=
-          result.parity_surface.property_attribute_summary.properties_total &&
-      result.parity_surface.property_attribute_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .property_attribute_ready;
   result.parity_surface.deterministic_type_annotation_surface_handoff =
-      result.deterministic_type_annotation_surface_handoff &&
-      result.parity_surface.type_annotation_surface_summary.generic_suffix_sites ==
-          result.parity_surface.type_annotation_generic_suffix_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites ==
-          result.parity_surface.type_annotation_pointer_declarator_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites ==
-          result.parity_surface.type_annotation_nullability_suffix_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.ownership_qualifier_sites ==
-          result.parity_surface.type_annotation_ownership_qualifier_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.object_pointer_type_sites ==
-          result.parity_surface.type_annotation_object_pointer_type_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites ==
-          result.parity_surface.type_annotation_invalid_generic_suffix_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites ==
-          result.parity_surface.type_annotation_invalid_pointer_declarator_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
-          result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites ==
-          result.parity_surface.type_annotation_invalid_ownership_qualifier_sites_total &&
-      result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites <=
-          result.parity_surface.type_annotation_surface_summary.generic_suffix_sites &&
-      result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
-          result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites &&
-      result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
-          result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites &&
-      result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites <=
-          result.parity_surface.type_annotation_surface_summary.ownership_qualifier_sites &&
-      result.parity_surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
-          result.parity_surface.type_annotation_surface_summary.total_type_annotation_sites() &&
-      result.parity_surface.type_annotation_surface_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .type_annotation_surface_ready;
   result.parity_surface.deterministic_lightweight_generic_constraint_handoff =
-      result.deterministic_lightweight_generic_constraint_handoff &&
-      result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites ==
-          result.parity_surface.lightweight_generic_constraint_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.generic_suffix_sites ==
-          result.parity_surface.lightweight_generic_constraint_generic_suffix_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.object_pointer_type_sites ==
-          result.parity_surface.lightweight_generic_constraint_object_pointer_type_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites ==
-          result.parity_surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.pointer_declarator_sites ==
-          result.parity_surface.lightweight_generic_constraint_pointer_declarator_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.normalized_constraint_sites ==
-          result.parity_surface.lightweight_generic_constraint_normalized_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.contract_violation_sites ==
-          result.parity_surface.lightweight_generic_constraint_contract_violation_sites_total &&
-      result.parity_surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites <=
-          result.parity_surface.lightweight_generic_constraint_summary.generic_suffix_sites &&
-      result.parity_surface.lightweight_generic_constraint_summary.normalized_constraint_sites <=
-          result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
-      result.parity_surface.lightweight_generic_constraint_summary.contract_violation_sites <=
-          result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
-      result.parity_surface.lightweight_generic_constraint_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .lightweight_generic_constraint_ready;
   result.parity_surface.deterministic_nullability_flow_warning_precision_handoff =
-      result.deterministic_nullability_flow_warning_precision_handoff &&
-      result.parity_surface.nullability_flow_warning_precision_summary.nullability_flow_sites ==
-          result.parity_surface.nullability_flow_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.object_pointer_type_sites ==
-          result.parity_surface.nullability_flow_object_pointer_type_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
-          result.parity_surface.nullability_flow_nullability_suffix_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.nullable_suffix_sites ==
-          result.parity_surface.nullability_flow_nullable_suffix_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites ==
-          result.parity_surface.nullability_flow_nonnull_suffix_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.normalized_sites ==
-          result.parity_surface.nullability_flow_normalized_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.contract_violation_sites ==
-          result.parity_surface.nullability_flow_contract_violation_sites_total &&
-      result.parity_surface.nullability_flow_warning_precision_summary.normalized_sites <=
-          result.parity_surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
-      result.parity_surface.nullability_flow_warning_precision_summary.contract_violation_sites <=
-          result.parity_surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
-      result.parity_surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
-          result.parity_surface.nullability_flow_warning_precision_summary.nullable_suffix_sites +
-              result.parity_surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
-      result.parity_surface.nullability_flow_warning_precision_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .nullability_flow_warning_precision_ready;
   result.parity_surface.deterministic_protocol_qualified_object_type_handoff =
-      result.deterministic_protocol_qualified_object_type_handoff &&
-      result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites ==
-          result.parity_surface.protocol_qualified_object_type_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.protocol_composition_sites ==
-          result.parity_surface.protocol_qualified_object_type_protocol_composition_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.object_pointer_type_sites ==
-          result.parity_surface.protocol_qualified_object_type_object_pointer_type_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites ==
-          result.parity_surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.pointer_declarator_sites ==
-          result.parity_surface.protocol_qualified_object_type_pointer_declarator_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites ==
-          result.parity_surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.contract_violation_sites ==
-          result.parity_surface.protocol_qualified_object_type_contract_violation_sites_total &&
-      result.parity_surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
-          result.parity_surface.protocol_qualified_object_type_summary.protocol_composition_sites &&
-      result.parity_surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
-          result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
-      result.parity_surface.protocol_qualified_object_type_summary.contract_violation_sites <=
-          result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
-      result.parity_surface.protocol_qualified_object_type_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .protocol_qualified_object_type_ready;
   result.parity_surface.deterministic_variance_bridge_cast_handoff =
-      result.deterministic_variance_bridge_cast_handoff &&
-      result.parity_surface.variance_bridge_cast_summary.variance_bridge_cast_sites ==
-          result.parity_surface.variance_bridge_cast_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.protocol_composition_sites ==
-          result.parity_surface.variance_bridge_cast_protocol_composition_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.ownership_qualifier_sites ==
-          result.parity_surface.variance_bridge_cast_ownership_qualifier_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.object_pointer_type_sites ==
-          result.parity_surface.variance_bridge_cast_object_pointer_type_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.pointer_declarator_sites ==
-          result.parity_surface.variance_bridge_cast_pointer_declarator_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.normalized_sites ==
-          result.parity_surface.variance_bridge_cast_normalized_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.contract_violation_sites ==
-          result.parity_surface.variance_bridge_cast_contract_violation_sites_total &&
-      result.parity_surface.variance_bridge_cast_summary.protocol_composition_sites <=
-          result.parity_surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
-      result.parity_surface.variance_bridge_cast_summary.normalized_sites <=
-          result.parity_surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
-      result.parity_surface.variance_bridge_cast_summary.contract_violation_sites <=
-          result.parity_surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
-      result.parity_surface.variance_bridge_cast_summary.deterministic;
+      result.parity_surface.core_semantic_parity_publication_readiness_record
+          .variance_bridge_cast_ready;
   result.parity_surface.deterministic_generic_metadata_abi_handoff =
       result.deterministic_generic_metadata_abi_handoff &&
       result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites ==

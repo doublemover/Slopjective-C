@@ -6,6 +6,12 @@
   Objc3ParserSemaHandoffPublicationTransferRecord
       parser_sema_handoff_publication_transfer_record;
   bool deterministic_parser_sema_handoff_publication_transfer_record = false;
+  Objc3ParserSemaParityPublicationReadinessRecord
+      parser_sema_parity_publication_readiness_record;
+  bool deterministic_parser_sema_parity_publication_readiness_record = false;
+  Objc3SemaCoreSemanticParityPublicationReadinessRecord
+      core_semantic_parity_publication_readiness_record;
+  bool deterministic_core_semantic_parity_publication_readiness_record = false;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   bool deterministic_parser_sema_docs_runbook_sync = false;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
