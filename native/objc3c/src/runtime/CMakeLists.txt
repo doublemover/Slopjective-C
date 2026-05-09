@@ -152,6 +152,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_lookup.cpp
   storage/property_lookup.h
   storage/property_snapshot.cpp
+  storage/property_snapshot_fields.cpp
+  storage/property_snapshot_fields.h
   storage/property_value_storage.cpp
   storage/property_value_storage.h
   storage/runtime_instance_records.h
