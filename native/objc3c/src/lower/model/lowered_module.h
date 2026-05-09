@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>
+#include <string>
+
 struct Objc3LoweringRuntimeStabilityInvariantScaffold {
   bool typed_surface_present = false;
   bool parse_readiness_surface_present = false;

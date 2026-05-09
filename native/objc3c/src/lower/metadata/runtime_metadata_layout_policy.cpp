@@ -1,4 +1,4 @@
-#include "lower/objc3_lowering_contract.h"
+#include "lower/metadata/runtime_metadata_layout_policy.h"
 
 #include "lower/metadata/lowering_metadata_helpers.h"
 

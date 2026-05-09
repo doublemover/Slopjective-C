@@ -1,3 +1,10 @@
+#include "lower/objc3_lowering_contract.h"
+
+#include "lower/metadata/lowering_metadata_helpers.h"
+
+#include <sstream>
+#include <string>
+
 bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
     const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract) {
   if (contract.parser_diagnostic_sites > contract.error_diagnostic_sites ||

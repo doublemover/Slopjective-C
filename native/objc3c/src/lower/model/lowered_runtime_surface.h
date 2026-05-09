@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>
+#include <string>
+
 struct Objc3TypedSemaToLoweringContractSurface {
   bool semantic_integration_surface_built = false;
   bool semantic_type_metadata_handoff_deterministic = false;
