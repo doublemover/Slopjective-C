@@ -19,7 +19,7 @@ from scripts.objc3c_workflow.arguments import (
     WorkflowUsageError,
     parse_workflow_args,
 )
-from scripts.objc3c_workflow.command_result import completed_action
+from scripts.objc3c_workflow.command_result_completion import completed_action
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
 
 

@@ -10,11 +10,9 @@ from scripts.objc3c_workflow.action_payloads import (
     describe_action_payload,
     list_actions_payload,
 )
+from scripts.objc3c_workflow.command_result_completion import completed_action
 from scripts.objc3c_workflow.command_result_model import WorkflowCommandResult
 from scripts.objc3c_workflow.command_result_output import emit_result_error
-from scripts.objc3c_workflow.command_result_states import (
-    completed_action,
-)
 
 
 def execute_registered_action_with_metadata(action: str, rest: list[str]) -> WorkflowCommandResult:

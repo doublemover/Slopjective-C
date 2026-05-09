@@ -1,4 +1,4 @@
-"""Command result factories for workflow dispatch states."""
+"""Command result factories for pre-execution action acceptance."""
 
 from __future__ import annotations
 
@@ -35,10 +35,4 @@ def rejected_extra_args(action: str, arg_count: int) -> WorkflowCommandResult:
     )
 
 
-def completed_action(action: str, exit_code: int, arg_count: int) -> WorkflowCommandResult:
-    return WorkflowCommandResult(
-        action=action,
-        status="completed" if exit_code == 0 else "failed",
-        exit_code=exit_code,
-        pass_through_arg_count=arg_count,
-    )
+__all__ = ["accepted_action", "rejected_extra_args", "unknown_action"]
