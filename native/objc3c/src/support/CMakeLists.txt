@@ -16,8 +16,12 @@ add_library(objc3c_support STATIC
   objc3_ir_object_backend_token.cpp
   objc3_ir_object_backend_token.h
   objc3_method_family.h
-  objc3_method_family_profiles.cpp
+  objc3_method_family_profile_builder.cpp
+  objc3_method_family_profile_builder.h
+  objc3_method_family_profile_record.h
   objc3_method_family_profiles.h
+  objc3_method_family_traits.cpp
+  objc3_method_family_traits.h
   objc3_objc_param_type_surface_profiles.h
   objc3_objc_property_type_surface_profiles.h
   objc3_objc_reference_type_profiles.cpp
