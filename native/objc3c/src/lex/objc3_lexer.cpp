@@ -37,7 +37,7 @@ Objc3Lexer::BootstrapRegistrationSourceContract() const {
 
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
   // mode-truth source anchor: the lexer owns the effective language
-  // version / compatibility / migration prelude inputs consumed by the
+  // version and canonical rejection prelude inputs consumed by the
   // runnable feature-claim inventory emitted by the frontend manifest.
   // truth-surface wiring anchor: strictness / strict concurrency do
   // not have accepted hidden lexer/prelude selection forms yet, so the emitted
@@ -75,10 +75,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // `objc_swift_private`, `objc_cxx_name`, and `objc_header_name` as
   // identifier tokens here.
   // source note: Part 12 stays token-stable. The advanced
-  // diagnostics/fix-it/migrator inventory and the migration/canonicalization
+  // diagnostics/fix-it inventory and the canonical rejection
   // completion packet are both derived from the existing Part 6 through Part
-  // 11 parser-owned surfaces plus the migration hint counters emitted here for
-  // legacy `YES` / `NO` / `NULL` spellings.
+  // 11 parser-owned surfaces plus the rejection counters emitted here for
+  // rejected `YES` / `NO` / `NULL` spellings.
   // source-surface note: direct/final/sealed/dynamic dispatch-intent
   // controls also remain parser-owned `__attribute__` spellings rather than
   // new reserved lexer keywords; the truthful Part 9 source boundary is
@@ -175,29 +175,30 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
       if (keyword.recognized) {
         kind = keyword.kind;
       } else {
-        const Objc3LegacyLiteralAliasKind alias = ClassifyObjc3LegacyLiteralAlias(ident);
-        switch (alias) {
-        case Objc3LegacyLiteralAliasKind::Yes:
+        const Objc3RejectedCanonicalLiteralKind rejected_literal =
+            ClassifyObjc3RejectedCanonicalLiteral(ident);
+        switch (rejected_literal) {
+        case Objc3RejectedCanonicalLiteralKind::Yes:
           ++migration_hints_.legacy_yes_count;
           break;
-        case Objc3LegacyLiteralAliasKind::No:
+        case Objc3RejectedCanonicalLiteralKind::No:
           ++migration_hints_.legacy_no_count;
           break;
-        case Objc3LegacyLiteralAliasKind::Null:
+        case Objc3RejectedCanonicalLiteralKind::Null:
           ++migration_hints_.legacy_null_count;
           break;
-        case Objc3LegacyLiteralAliasKind::None:
+        case Objc3RejectedCanonicalLiteralKind::None:
           break;
         }
-        if (alias != Objc3LegacyLiteralAliasKind::None) {
+        if (rejected_literal != Objc3RejectedCanonicalLiteralKind::None) {
           diagnostics.push_back(MakeDiag(
               token_line,
               token_column,
               "O3C002",
-              std::string("legacy literal alias '") +
-                  Objc3LegacyLiteralAliasDiagnosticSpelling(alias) +
+              std::string("rejected canonical literal spelling '") +
+                  Objc3RejectedCanonicalLiteralDiagnosticSpelling(rejected_literal) +
                   "' is rejected; use canonical '" +
-                  Objc3LegacyLiteralAliasCanonicalSpelling(alias) + "'"));
+                  Objc3RejectedCanonicalLiteralReplacementSpelling(rejected_literal) + "'"));
         }
       }
       tokens.push_back(Token{kind, ident, token_line, token_column});

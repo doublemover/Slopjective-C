@@ -9,7 +9,7 @@ struct Objc3TokenKindClassification {
   bool recognized = false;
 };
 
-enum class Objc3LegacyLiteralAliasKind {
+enum class Objc3RejectedCanonicalLiteralKind {
   None,
   Yes,
   No,
@@ -18,8 +18,8 @@ enum class Objc3LegacyLiteralAliasKind {
 
 Objc3TokenKindClassification ClassifyObjc3IdentifierToken(const std::string &text);
 Objc3TokenKindClassification ClassifyObjc3AtDirectiveToken(const std::string &directive);
-Objc3LegacyLiteralAliasKind ClassifyObjc3LegacyLiteralAlias(const std::string &text);
-const char *Objc3LegacyLiteralAliasDiagnosticSpelling(Objc3LegacyLiteralAliasKind alias);
-const char *Objc3LegacyLiteralAliasCanonicalSpelling(Objc3LegacyLiteralAliasKind alias);
+Objc3RejectedCanonicalLiteralKind ClassifyObjc3RejectedCanonicalLiteral(const std::string &text);
+const char *Objc3RejectedCanonicalLiteralDiagnosticSpelling(Objc3RejectedCanonicalLiteralKind literal);
+const char *Objc3RejectedCanonicalLiteralReplacementSpelling(Objc3RejectedCanonicalLiteralKind literal);
 const char *Objc3LexTokenKindName(Objc3LexTokenKind kind);
 bool Objc3LexTokenKindIsKeyword(Objc3LexTokenKind kind);
