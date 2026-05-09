@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
@@ -168,36 +167,26 @@ def test_hard_cutover_gate_excludes_source_hygiene_violation_fixtures(tmp_path: 
     assert report["stats"]["active_finding_count"] == 0
 
 
-def test_hard_cutover_gate_allows_temporary_tmp_allowlist(tmp_path: Path) -> None:
+def test_hard_cutover_gate_ignores_retired_tmp_allowlist(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/driver/options.cpp",
         "const char *flag = \"--objc3-compat-mode\";\n",
     )
-    allowlist = tmp_path / "tmp/source-hygiene-hard-cutover-allowlist.json"
     write(
-        allowlist,
-        json.dumps(
-            {
-                "allowed": [
-                    {
-                        "pattern_id": "public-compatibility-mode",
-                        "path": "native/objc3c/src/driver/options.cpp",
-                    }
-                ]
-            }
-        ),
+        tmp_path / "tmp/source-hygiene-hard-cutover-allowlist.json",
+        '{"allowed":[{"pattern_id":"public-compatibility-mode"}]}\n',
     )
 
     report = build_report(
         root=tmp_path,
         scan_roots=("native/objc3c",),
         excludes=(),
-        allowlist_path=allowlist,
     )
 
-    assert report["ok"] is True
-    assert report["stats"]["allowed_finding_count"] == 1
-    assert report["stats"]["active_finding_count"] == 0
+    assert report["ok"] is False
+    assert "allowed_finding_count" not in report["stats"]
+    assert report["stats"]["active_finding_count"] == 1
+    assert report["active_findings"][0]["pattern_id"] == "public-compatibility-mode"
 
 
 def test_hard_cutover_gate_rejects_legacy_language_profile_enum_values(tmp_path: Path) -> None:
