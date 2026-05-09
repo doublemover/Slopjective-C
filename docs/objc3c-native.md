@@ -2138,6 +2138,10 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 - `objc3c_frontend_error.h`: context error copy semantics
 - `c_api.h`: C-only names over the same ABI and ownership rules
 
+Headers in `native/objc3c/src/libobjc3c_frontend/` that are not listed in the
+public surface are internal C++ owner headers. They may populate public structs
+or publish artifacts, but they are not package-facing C ABI headers.
+
 ## Ownership Rules
 
 - compile result storage is caller-owned and zero-initialized before first use

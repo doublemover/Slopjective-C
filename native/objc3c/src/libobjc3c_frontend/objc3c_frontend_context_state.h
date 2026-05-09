@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ storage behind the opaque public frontend context. Public code
+ * owns only objc3c_frontend_context_t handles and error-copy semantics.
+ */
 #include <cstddef>
 #include <mutex>
 #include <string>

@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ validation and normalization owner for public compile options.
+ * Error text produced here is copied through the public context/result APIs.
+ */
 #include <filesystem>
 #include <string>
 

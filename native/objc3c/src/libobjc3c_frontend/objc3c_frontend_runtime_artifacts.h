@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ owner for runtime-aware artifact publication helpers. The public
+ * ABI exposes only artifact selectors and result-owned paths.
+ */
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_plan.h"
 #include "libobjc3c_frontend/objc3c_frontend_context.h"

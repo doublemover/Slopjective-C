@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ diagnostic serialization and stage-summary builder. Public
+ * callers observe the value summaries and diagnostics artifact path only.
+ */
 #include <string>
 #include <vector>
 

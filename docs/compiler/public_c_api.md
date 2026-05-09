@@ -37,6 +37,10 @@ Current frontend public C API ownership lives in:
 - `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
 - `native/objc3c/src/libobjc3c_frontend/c_api.h`
 
+Other headers in `native/objc3c/src/libobjc3c_frontend/` are internal C++
+owner headers unless this document lists them above. They may consume or
+populate public structs, but they do not define package-facing C ABI.
+
 The frontend result contract is:
 
 - callers own `objc3c_frontend_compile_result_t` storage and zero-initialize it

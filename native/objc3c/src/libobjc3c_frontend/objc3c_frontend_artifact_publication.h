@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ artifact publication owner. This maps artifact write outcomes
+ * into public result/context payloads without defining public ABI layout.
+ */
 #include <cstdint>
 #include <filesystem>
 #include <string>

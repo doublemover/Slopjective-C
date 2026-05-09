@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ artifact path planning owner. Public callers observe only the
+ * result-owned paths selected through objc3c_frontend_artifact.h.
+ */
 #include <filesystem>
 #include <string>
 

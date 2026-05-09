@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ owner for allocation, release, and population of public result
+ * strings. Callers use objc3c_frontend_result.h or c_api.h destruction APIs.
+ */
 #include <string>
 
 #include "libobjc3c_frontend/objc3c_frontend_result.h"

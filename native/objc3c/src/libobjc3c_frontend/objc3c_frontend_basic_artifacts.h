@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * Internal C++ coordinator for the baseline artifact publication set. Public
+ * artifact selectors and result ownership remain in the C ABI headers.
+ */
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_plan.h"
 #include "libobjc3c_frontend/objc3c_frontend_context.h"
