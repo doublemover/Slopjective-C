@@ -48,7 +48,9 @@ target_link_libraries(objc3c_parse_profiles PUBLIC
 add_library(objc3c_parse STATIC
   objc3_ast_builder.cpp
   objc3_ast_builder_contract.cpp
+  objc3_diagnostic_grammar_hooks_edge_case_consistency_surface.cpp
   objc3_diagnostic_grammar_hooks_core_feature.cpp
+  objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.cpp
   objc3_diagnostic_source_precision_scaffold.cpp
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
