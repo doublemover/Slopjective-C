@@ -13,6 +13,7 @@
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_lowering.h"
 #include "ir/objc3_ir_canonical_literal_pools.h"
+#include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_concurrency_runtime_call_emission.h"
 #include "ir/objc3_ir_control_flow_ops.h"
@@ -149,7 +150,8 @@ class Objc3IREmitter {
                 metaprogramming_global_artifacts_, global_const_values_,
                 global_nil_proven_symbols_,
                 [this](const Expr *expr) {
-                  return IsCompileTimeGlobalNilExpr(expr);
+                  return IsObjc3IRCompileTimeGlobalNilExpr(
+                      expr, CompileTimeProofAnalysisContext());
                 }},
             body, error)) {
       return false;
@@ -2021,7 +2023,7 @@ class Objc3IREmitter {
         [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
         [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
         [this](FunctionContext &callback_ctx) {
-          InvalidateGlobalProofState(callback_ctx);
+          InvalidateObjc3IRGlobalProofState(callback_ctx);
         }};
     return TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall(
         expr, ctx, callbacks, result_out);
@@ -2033,7 +2035,7 @@ class Objc3IREmitter {
         [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
         [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
         [this](FunctionContext &callback_ctx) {
-          InvalidateGlobalProofState(callback_ctx);
+          InvalidateObjc3IRGlobalProofState(callback_ctx);
         }};
     return TryEmitObjc3IRConcurrencyActorLoweringCall(
         expr, ctx, callbacks, result_out);
@@ -2131,6 +2133,17 @@ class Objc3IREmitter {
         frontend_metadata_.arc_mode_enabled, ScopeCleanupCallbacks()};
   }
 
+  Objc3IRCompileTimeProofAnalysisContext CompileTimeProofAnalysisContext()
+      const {
+    return Objc3IRCompileTimeProofAnalysisContext{
+        global_nil_proven_symbols_,
+        global_const_values_,
+        [this](const FunctionContext &callback_ctx,
+               const std::string &name) {
+          return LookupVarPtr(callback_ctx, name);
+        }};
+  }
+
   void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
     EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, target_depth);
@@ -2166,15 +2179,6 @@ class Objc3IREmitter {
       return "@" + name;
     }
     return "";
-  }
-
-  int LookupImmediateIdentifierValue(const FunctionContext &ctx,
-                                     const std::string &name) const {
-    const auto value_it = ctx.immediate_identifiers.find(name);
-    if (value_it == ctx.immediate_identifiers.end()) {
-      return 0;
-    }
-    return value_it->second;
   }
 
   std::string EmitIdentifierValue(const std::string &name,
@@ -2300,257 +2304,12 @@ class Objc3IREmitter {
                   call_expr, callback_ctx, result_out);
             },
             [this](FunctionContext &callback_ctx) {
-              InvalidateGlobalProofState(callback_ctx);
+              InvalidateObjc3IRGlobalProofState(callback_ctx);
             },
             [this](const std::string &name) {
               return LookupFunctionSignature(name);
             }},
         throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
-  }
-
-  bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {
-    if (expr == nullptr) {
-      return false;
-    }
-    if (expr->kind == Expr::Kind::NilLiteral) {
-      return true;
-    }
-    if (expr->kind == Expr::Kind::Conditional) {
-      if (expr->left == nullptr || expr->right == nullptr || expr->third == nullptr) {
-        return false;
-      }
-      int cond_value = 0;
-      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, cond_value)) {
-        return false;
-      }
-      if (cond_value != 0) {
-        return IsCompileTimeNilReceiverExprInContext(expr->right.get(), ctx);
-      }
-      return IsCompileTimeNilReceiverExprInContext(expr->third.get(), ctx);
-    }
-    if (expr->kind != Expr::Kind::Identifier) {
-      return false;
-    }
-    const std::string ptr = LookupVarPtr(ctx, expr->ident);
-    if (ptr.empty()) {
-      return LookupImmediateIdentifierValue(ctx, expr->ident) == 0;
-    }
-    if (ctx.nil_bound_ptrs.find(ptr) != ctx.nil_bound_ptrs.end()) {
-      return true;
-    }
-    if (ptr.rfind("@", 0) == 0 && !ctx.global_proofs_invalidated) {
-      return global_nil_proven_symbols_.find(expr->ident) != global_nil_proven_symbols_.end();
-    }
-    return false;
-  }
-
-  bool IsCompileTimeGlobalNilExpr(const Expr *expr) const {
-    if (expr == nullptr) {
-      return false;
-    }
-    if (expr->kind == Expr::Kind::NilLiteral) {
-      return true;
-    }
-    if (expr->kind == Expr::Kind::Identifier) {
-      return global_nil_proven_symbols_.find(expr->ident) != global_nil_proven_symbols_.end();
-    }
-    if (expr->kind == Expr::Kind::Conditional) {
-      if (expr->left == nullptr || expr->right == nullptr || expr->third == nullptr) {
-        return false;
-      }
-      int cond_value = 0;
-      const FunctionContext global_eval_ctx;
-      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), global_eval_ctx, cond_value)) {
-        return false;
-      }
-      if (cond_value != 0) {
-        return IsCompileTimeGlobalNilExpr(expr->right.get());
-      }
-      return IsCompileTimeGlobalNilExpr(expr->third.get());
-    }
-    return false;
-  }
-
-  bool TryGetCompileTimeI32ExprInContext(const Expr *expr, const FunctionContext &ctx, int &value) const {
-    if (expr == nullptr) {
-      return false;
-    }
-    if (expr->kind == Expr::Kind::Number) {
-      value = expr->number;
-      return true;
-    }
-    if (expr->kind == Expr::Kind::BoolLiteral) {
-      value = expr->bool_value ? 1 : 0;
-      return true;
-    }
-    if (expr->kind == Expr::Kind::NilLiteral) {
-      value = 0;
-      return true;
-    }
-    if (expr->kind == Expr::Kind::Identifier) {
-      const std::string ptr = LookupVarPtr(ctx, expr->ident);
-      if (ptr.empty()) {
-        const int immediate_value =
-            LookupImmediateIdentifierValue(ctx, expr->ident);
-        if (immediate_value != 0) {
-          value = immediate_value;
-          return true;
-        }
-        return false;
-      }
-      auto value_it = ctx.const_value_ptrs.find(ptr);
-      if (value_it != ctx.const_value_ptrs.end()) {
-        value = value_it->second;
-        return true;
-      }
-      if (ptr.rfind("@", 0) == 0 && !ctx.global_proofs_invalidated) {
-        auto global_it = global_const_values_.find(expr->ident);
-        if (global_it != global_const_values_.end()) {
-          value = global_it->second;
-          return true;
-        }
-      }
-      return false;
-    }
-    if (expr->kind == Expr::Kind::Conditional) {
-      if (expr->left == nullptr || expr->right == nullptr || expr->third == nullptr) {
-        return false;
-      }
-      int cond_value = 0;
-      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, cond_value)) {
-        return false;
-      }
-      if (cond_value != 0) {
-        return TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, value);
-      }
-      return TryGetCompileTimeI32ExprInContext(expr->third.get(), ctx, value);
-    }
-    if (expr->kind != Expr::Kind::Binary || expr->left == nullptr || expr->right == nullptr) {
-      return false;
-    }
-    if (expr->op == "&&" || expr->op == "||") {
-      int lhs = 0;
-      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, lhs)) {
-        return false;
-      }
-      if (expr->op == "&&") {
-        if (lhs == 0) {
-          value = 0;
-          return true;
-        }
-        int rhs = 0;
-        if (!TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, rhs)) {
-          return false;
-        }
-        value = rhs != 0 ? 1 : 0;
-        return true;
-      }
-      if (lhs != 0) {
-        value = 1;
-        return true;
-      }
-      int rhs = 0;
-      if (!TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, rhs)) {
-        return false;
-      }
-      value = rhs != 0 ? 1 : 0;
-      return true;
-    }
-    if (expr->op == "??") {
-      int lhs = 0;
-      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, lhs)) {
-        return false;
-      }
-      if (lhs != 0) {
-        value = lhs;
-        return true;
-      }
-      return TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, value);
-    }
-    int lhs = 0;
-    int rhs = 0;
-    if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, lhs) ||
-        !TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, rhs)) {
-      return false;
-    }
-    if (expr->op == "+") {
-      value = lhs + rhs;
-      return true;
-    }
-    if (expr->op == "-") {
-      value = lhs - rhs;
-      return true;
-    }
-    if (expr->op == "*") {
-      value = lhs * rhs;
-      return true;
-    }
-    if (expr->op == "/") {
-      if (rhs == 0) {
-        return false;
-      }
-      value = lhs / rhs;
-      return true;
-    }
-    if (expr->op == "%") {
-      if (rhs == 0) {
-        return false;
-      }
-      value = lhs % rhs;
-      return true;
-    }
-    if (expr->op == "&") {
-      value = lhs & rhs;
-      return true;
-    }
-    if (expr->op == "|") {
-      value = lhs | rhs;
-      return true;
-    }
-    if (expr->op == "^") {
-      value = lhs ^ rhs;
-      return true;
-    }
-    if (expr->op == "<<" || expr->op == ">>") {
-      if (rhs < 0 || rhs > 31) {
-        return false;
-      }
-      value = expr->op == "<<" ? (lhs << rhs) : (lhs >> rhs);
-      return true;
-    }
-    if (expr->op == "==") {
-      value = lhs == rhs ? 1 : 0;
-      return true;
-    }
-    if (expr->op == "!=") {
-      value = lhs != rhs ? 1 : 0;
-      return true;
-    }
-    if (expr->op == "<") {
-      value = lhs < rhs ? 1 : 0;
-      return true;
-    }
-    if (expr->op == "<=") {
-      value = lhs <= rhs ? 1 : 0;
-      return true;
-    }
-    if (expr->op == ">") {
-      value = lhs > rhs ? 1 : 0;
-      return true;
-    }
-    if (expr->op == ">=") {
-      value = lhs >= rhs ? 1 : 0;
-      return true;
-    }
-    return false;
-  }
-
-  bool IsCompileTimeKnownNonNilExprInContext(const Expr *expr, const FunctionContext &ctx) const {
-    int const_value = 0;
-    if (!TryGetCompileTimeI32ExprInContext(expr, ctx, const_value)) {
-      return false;
-    }
-    return const_value != 0;
   }
 
   std::string EmitMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
@@ -2575,19 +2334,21 @@ class Objc3IREmitter {
             },
             [this](const Expr *receiver_expr,
                    const FunctionContext &callback_ctx) {
-              return IsCompileTimeNilReceiverExprInContext(receiver_expr,
-                                                           callback_ctx);
+              return IsObjc3IRCompileTimeNilReceiverExprInContext(
+                  receiver_expr, callback_ctx,
+                  CompileTimeProofAnalysisContext());
             },
             [this](const Expr *receiver_expr,
                    const FunctionContext &callback_ctx) {
-              return IsCompileTimeKnownNonNilExprInContext(receiver_expr,
-                                                           callback_ctx);
+              return IsObjc3IRCompileTimeKnownNonNilExprInContext(
+                  receiver_expr, callback_ctx,
+                  CompileTimeProofAnalysisContext());
             },
             [this](const std::string &reason) {
               return EmitUnsupportedI32Value(reason);
             },
             [this](FunctionContext &callback_ctx) {
-              InvalidateGlobalProofState(callback_ctx);
+              InvalidateObjc3IRGlobalProofState(callback_ctx);
             }});
   }
 
@@ -2686,12 +2447,13 @@ class Objc3IREmitter {
             },
             [this](const Expr *expr, const FunctionContext &callback_ctx,
                    int &value) {
-              return TryGetCompileTimeI32ExprInContext(
-                  expr, callback_ctx, value);
+              return TryGetObjc3IRCompileTimeI32ExprInContext(
+                  expr, callback_ctx, value,
+                  CompileTimeProofAnalysisContext());
             },
             [this](const Expr *expr, const FunctionContext &callback_ctx) {
-              return IsCompileTimeNilReceiverExprInContext(expr,
-                                                           callback_ctx);
+              return IsObjc3IRCompileTimeNilReceiverExprInContext(
+                  expr, callback_ctx, CompileTimeProofAnalysisContext());
             },
             [this](const std::string &reason) {
               return EmitUnsupportedI32Value(reason);
@@ -2732,31 +2494,6 @@ class Objc3IREmitter {
               EmitObjc3IRPropagateThrownError(
                   error_value, callback_ctx, FunctionLocalFlowContext());
             }});
-  }
-
-  void InvalidateGlobalProofState(FunctionContext &ctx) const {
-    ctx.global_proofs_invalidated = true;
-    for (auto it = ctx.nil_bound_ptrs.begin(); it != ctx.nil_bound_ptrs.end();) {
-      if (it->rfind("@", 0) == 0) {
-        it = ctx.nil_bound_ptrs.erase(it);
-      } else {
-        ++it;
-      }
-    }
-    for (auto it = ctx.nonzero_bound_ptrs.begin(); it != ctx.nonzero_bound_ptrs.end();) {
-      if (it->rfind("@", 0) == 0) {
-        it = ctx.nonzero_bound_ptrs.erase(it);
-      } else {
-        ++it;
-      }
-    }
-    for (auto it = ctx.const_value_ptrs.begin(); it != ctx.const_value_ptrs.end();) {
-      if (it->first.rfind("@", 0) == 0) {
-        it = ctx.const_value_ptrs.erase(it);
-      } else {
-        ++it;
-      }
-    }
   }
 
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
