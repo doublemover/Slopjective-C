@@ -6,6 +6,7 @@ add_library(objc3c_parse STATIC
   objc3_message_send_profiles.cpp
   objc3_parse_support.cpp
   objc3_parser_profile_helpers.cpp
+  objc3_type_feature_profiles.cpp
   objc3_parser.cpp
   objc3_parser_contract_types.h
 )

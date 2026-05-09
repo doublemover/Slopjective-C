@@ -1,6 +1,7 @@
 add_library(objc3c_lower STATIC
   core/lowering_primitive_ops.cpp
   metadata/lowering_metadata_helpers.cpp
+  objc3_lowering_dispatch_contracts.cpp
   runtime_metadata_layout_policy.cpp
   objc3_lowering_contract.cpp
 )
