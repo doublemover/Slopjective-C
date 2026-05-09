@@ -11,9 +11,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json"
 PRODUCT_REPORT_PATH = ROOT / "tmp/reports/source-hygiene/product-decontamination/product_decontamination_report.json"
-OUT_DIR = ROOT / "tmp/reports/source-hygiene/archive-boundary-compatibility"
-JSON_OUT = OUT_DIR / "archive_boundary_compatibility_summary.json"
-MD_OUT = OUT_DIR / "archive_boundary_compatibility_summary.md"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/archive-boundary-retired-reference"
+JSON_OUT = OUT_DIR / "archive_boundary_retired_reference_summary.json"
+MD_OUT = OUT_DIR / "archive_boundary_retired_reference_summary.md"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -51,6 +51,7 @@ def count_pattern_hits(paths: list[str], patterns: list[str]) -> tuple[int, list
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     product_report = read_json(PRODUCT_REPORT_PATH)
+    retired_reference_rules = contract["retired_reference_rules"]
 
     archive_counts: dict[str, int] = {}
     archive_samples: dict[str, list[str]] = {}
@@ -84,15 +85,18 @@ def main() -> int:
         "product_surface_report_stays_clean": product_report.get("ok") is True,
         "product_surface_report_has_zero_residue_hits": product_report.get("product_milestone_residue_hit_count") == 0
         and product_report.get("generated_truth_milestone_residue_hit_count") == 0,
+        "canonical_summary_output_matches": contract["canonical_summary_output"] == normalize(JSON_OUT),
+        "retired_reference_rules_declared": len(retired_reference_rules) == 4,
     }
 
     summary = {
-        "issue": "source-hygiene-archive-boundary-compatibility",
+        "issue": "source-hygiene-archive-boundary-retired-reference",
         "contract_id": contract["contract_id"],
         "archive_root_file_counts": archive_counts,
         "archive_root_samples": archive_samples,
         "historical_reference_hit_count": pattern_total,
         "historical_reference_sample": pattern_sample,
+        "retired_reference_rule_count": len(retired_reference_rules),
         "product_report_path": normalize(PRODUCT_REPORT_PATH),
         "checks": checks,
         "ok": all(checks.values()),
@@ -101,10 +105,11 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     write_json_file(JSON_OUT, summary)
     MD_OUT.write_text(
-        "# Archive Boundary Compatibility Summary\n\n"
+        "# Archive Boundary Retired Reference Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Archive-tracked file count: `{archive_total}`\n"
         f"- Historical-reference hit count: `{summary['historical_reference_hit_count']}`\n"
+        f"- Retired-reference rule count: `{summary['retired_reference_rule_count']}`\n"
         f"- Product cleanliness report: `{summary['product_report_path']}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
         encoding="utf-8",

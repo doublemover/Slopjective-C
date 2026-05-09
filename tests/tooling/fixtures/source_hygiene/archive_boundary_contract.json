@@ -31,11 +31,11 @@
     "workpack iteration",
     "closeout signoff"
   ],
-  "compatibility_rules": [
+  "retired_reference_rules": [
     "archive roots may preserve milestone or planning-era references",
     "archive roots must remain disjoint from product surface roots and generated truth files",
     "product surface residue checks remain authoritative for live truth cleanliness",
     "archive summaries must prove history still exists without widening current product claims"
   ],
-  "canonical_summary_output": "tmp/reports/source-hygiene/archive-boundary-compatibility/archive_boundary_compatibility_summary.json"
+  "canonical_summary_output": "tmp/reports/source-hygiene/archive-boundary-retired-reference/archive_boundary_retired_reference_summary.json"
 }
