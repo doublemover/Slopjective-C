@@ -5,6 +5,8 @@
 #include <string>
 
 #include "ast/objc3_ast.h"
+#include "driver/objc3_driver_runtime_registration_accessor_surface.h"
+#include "driver/objc3_driver_runtime_registration_command_surface.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 #include "lower/objc3_lowering_contract.h"
@@ -65,84 +67,10 @@ BuildObjc3DriverRuntimeRegistrationManifestInputs(
       registration_manifest_summary.runtime_library_resolution_model;
   inputs.driver_linker_flag_consumption_model =
       registration_manifest_summary.driver_linker_flag_consumption_model;
-  inputs.compile_wrapper_command_surface =
-      registration_manifest_summary.compile_wrapper_command_surface;
-  inputs.compile_proof_command_surface =
-      registration_manifest_summary.compile_proof_command_surface;
-  inputs.execution_smoke_command_surface =
-      registration_manifest_summary.execution_smoke_command_surface;
-
-  inputs.dispatch_accessor_runtime_abi_contract_id =
-      "objc3c.runtime.dispatch_accessor.abi.surface.v1";
-  inputs.dispatch_accessor_runtime_abi_boundary_model =
-      "public-dispatch-entrypoint-plus-private-testing-snapshot-and-property-helper-surface";
-  inputs.dispatch_accessor_public_header_path =
-      "native/objc3c/src/runtime/public/objc3_runtime_api.h";
-  inputs.dispatch_accessor_private_header_path =
-      "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
-  inputs.dispatch_accessor_runtime_dispatch_symbol =
-      runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
-  inputs.dispatch_accessor_dispatch_state_snapshot_symbol =
-      "objc3_runtime_copy_dispatch_state_for_testing";
-  inputs.dispatch_accessor_method_cache_state_snapshot_symbol =
-      "objc3_runtime_copy_method_cache_state_for_testing";
-  inputs.dispatch_accessor_method_cache_entry_snapshot_symbol =
-      "objc3_runtime_copy_method_cache_entry_for_testing";
-  inputs.dispatch_accessor_property_registry_state_snapshot_symbol =
-      "objc3_runtime_copy_property_registry_state_for_testing";
-  inputs.dispatch_accessor_property_entry_snapshot_symbol =
-      "objc3_runtime_copy_property_entry_for_testing";
-  inputs.dispatch_accessor_arc_debug_state_snapshot_symbol =
-      "objc3_runtime_copy_arc_debug_state_for_testing";
-  inputs.dispatch_accessor_current_property_read_symbol =
-      kObjc3RuntimeReadCurrentPropertyI32Symbol;
-  inputs.dispatch_accessor_current_property_write_symbol =
-      kObjc3RuntimeWriteCurrentPropertyI32Symbol;
-  inputs.dispatch_accessor_current_property_exchange_symbol =
-      kObjc3RuntimeExchangeCurrentPropertyI32Symbol;
-  inputs.dispatch_accessor_bind_current_property_context_symbol =
-      "objc3_runtime_bind_current_property_context_for_testing";
-  inputs.dispatch_accessor_clear_current_property_context_symbol =
-      "objc3_runtime_clear_current_property_context_for_testing";
-  inputs.dispatch_accessor_weak_current_property_load_symbol =
-      kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol;
-  inputs.dispatch_accessor_weak_current_property_store_symbol =
-      kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
-  inputs.dispatch_accessor_retain_symbol = kObjc3RuntimeRetainI32Symbol;
-  inputs.dispatch_accessor_release_symbol = kObjc3RuntimeReleaseI32Symbol;
-  inputs.dispatch_accessor_autorelease_symbol =
-      kObjc3RuntimeAutoreleaseI32Symbol;
-  inputs.dispatch_accessor_private_testing_surface_only = true;
-  inputs.dispatch_accessor_deterministic = true;
-
-  inputs.storage_accessor_runtime_abi_contract_id =
-      kObjc3RuntimeStorageAccessorAbiSurfaceContractId;
-  inputs.storage_accessor_runtime_abi_boundary_model =
-      "private-bootstrap-internal-property-helper-and-reflection-snapshot-surface-without-public-header-widening";
-  inputs.storage_accessor_public_header_path =
-      "native/objc3c/src/runtime/public/objc3_runtime_api.h";
-  inputs.storage_accessor_private_header_path =
-      "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
-  inputs.storage_accessor_property_registry_state_snapshot_symbol =
-      "objc3_runtime_copy_property_registry_state_for_testing";
-  inputs.storage_accessor_property_entry_snapshot_symbol =
-      "objc3_runtime_copy_property_entry_for_testing";
-  inputs.storage_accessor_current_property_read_symbol =
-      kObjc3RuntimeReadCurrentPropertyI32Symbol;
-  inputs.storage_accessor_current_property_write_symbol =
-      kObjc3RuntimeWriteCurrentPropertyI32Symbol;
-  inputs.storage_accessor_current_property_exchange_symbol =
-      kObjc3RuntimeExchangeCurrentPropertyI32Symbol;
-  inputs.storage_accessor_bind_current_property_context_symbol =
-      "objc3_runtime_bind_current_property_context_for_testing";
-  inputs.storage_accessor_clear_current_property_context_symbol =
-      "objc3_runtime_clear_current_property_context_for_testing";
-  inputs.storage_accessor_weak_current_property_load_symbol =
-      kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol;
-  inputs.storage_accessor_weak_current_property_store_symbol =
-      kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
-  inputs.storage_accessor_private_testing_surface_only = true;
-  inputs.storage_accessor_deterministic = true;
+  PopulateObjc3DriverRuntimeRegistrationCommandSurfaceInputs(
+      inputs, registration_manifest_summary);
+  PopulateObjc3DriverRuntimeRegistrationAccessorSurfaceInputs(
+      inputs, runtime_bootstrap_api_summary);
 
   inputs.registration_descriptor_source_contract_id =
       registration_descriptor_source_surface_summary.contract_id;
