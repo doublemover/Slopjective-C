@@ -13,7 +13,8 @@
     "generated_reports_are_source": false,
     "public_claims_require_executable_proof": true,
     "behavior_owner_split_required": true,
-    "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json"
+    "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/concurrency_runtime_provenance.json"
   },
   "closure_publication_contract": {
     "source_owner_role": "semantic_model_owner",
@@ -34,7 +35,8 @@
         "parser",
         "sema",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_semantic_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -46,7 +48,8 @@
         "lowering",
         "ir",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -56,7 +59,8 @@
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
       "behavior_owner_phases": [
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
       "claim_scope": "private-helper-abi-only"
@@ -67,7 +71,8 @@
       "behavior_owner_phases": [
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -78,8 +83,8 @@
       "behavior_owner_phases": [
         "lowering",
         "ir",
-        "provenance",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -94,7 +99,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -105,7 +111,8 @@
       "behavior_owner_phases": [
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -115,10 +122,19 @@
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
       "behavior_owner_phases": [
         "canonical_rejection",
-        "provenance"
+        "concurrency_runtime_provenance"
       ],
       "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "successor-boundary-no-current-error-bridge-claim"
+    },
+    "provenance_owner": {
+      "owner": "concurrency-runtime-closure-provenance",
+      "source": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/concurrency_runtime_provenance.json",
+      "behavior_owner_phases": [
+        "concurrency_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
+      "claim_scope": "provenance-only-no-positive-behavior"
     }
   },
   "hard_cutover_requirements": [
@@ -126,14 +142,22 @@
     "no-report-only-runtime-closure-publication",
     "no-generated-report-as-source-authority",
     "runtime-closure-publication-requires-checked-in-owner-contract",
-    "scheduler-task-lifecycle-claims-require-private-runtime-helper-proof"
+    "scheduler-task-lifecycle-claims-require-private-runtime-helper-proof",
+    "provenance-only-rows-cannot-establish-positive-concurrency-behavior"
   ],
   "blocked_claim_shapes": [
     "fallback-runtime-behavior",
     "report-only-runtime-closure",
     "compatibility-shim-runtime-closure",
     "public-runtime-abi-widening-without-source-owner",
-    "generated-report-only-source-truth"
+    "generated-report-only-source-truth",
+    "generated-only-runtime-closure",
+    "manifest-only-runtime-closure",
+    "descriptor-only-runtime-registration",
+    "private-snapshot-only-runtime-support",
+    "probe-payload-only-runtime-support",
+    "workflow-label-only-runnable-claim",
+    "wrapper-only-runnable-action"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/concurrency-runtime-closure",

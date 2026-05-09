@@ -10,7 +10,8 @@
     "parser",
     "sema",
     "runtime",
-    "canonical_rejection"
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
   ],
   "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
@@ -28,7 +29,8 @@
   "claim_narrowing_constraints": [
     "public claims stay narrower than the private runtime-owned helper ABI and snapshot evidence",
     "scheduler fairness and external executor transport remain out of scope until dedicated runtime evidence lands",
-    "stdlib actor-shaped or helper-oriented narratives must not be promoted to runnable parity claims without runtime proof"
+    "stdlib actor-shaped or helper-oriented narratives must not be promoted to runnable parity claims without runtime proof",
+    "semantic-model-source-lists-private-helper-snapshots-probe-payloads-generated-reports-manifests-descriptors-and-workflow-labels-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "unified-concurrency-runtime-architecture",

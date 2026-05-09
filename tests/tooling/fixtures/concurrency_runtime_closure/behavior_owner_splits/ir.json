@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
     "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json"
   ],
-  "support_boundary": "IR ownership covers compile artifacts, manifests, runtime-registration descriptors, generated acceptance summaries, and runnable concurrency reports as provenance; generated artifacts do not create positive concurrency runtime behavior",
+  "support_boundary": "IR ownership covers compile artifacts, manifests, runtime-registration descriptors, generated acceptance summaries, runnable concurrency reports, private snapshot references, and probe payload references as provenance; generated artifacts do not create positive concurrency runtime behavior",
   "phase_support_claim_authority": false,
   "selectors": [
     "required_compile_artifacts:<emit-prefix>.obj",
@@ -21,5 +21,5 @@
     "machine_owned_output_roots:tmp/reports/runtime/runnable-concurrency-e2e"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated reports, runnable summaries, manifest replay packets, runtime-registration artifacts, probe payload snapshots, and compile artifacts are provenance-only until behavior owners claim support"
+  "retired_surface_rule": "generated reports, runnable summaries, manifest replay packets, manifest-only rows, descriptor-only runtime-registration rows, private-snapshot-only rows, probe-payload-only rows, runtime-registration artifacts, and compile artifacts are provenance-only until behavior owners claim support"
 }

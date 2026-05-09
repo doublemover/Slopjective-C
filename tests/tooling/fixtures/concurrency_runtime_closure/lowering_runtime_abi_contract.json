@@ -10,9 +10,16 @@
     "lowering",
     "ir",
     "runtime",
-    "canonical_rejection"
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
   ],
-  "artifact_behavior_boundary": "compile artifacts, manifests, runtime-registration descriptors, generated reports, and workflow action labels are provenance until behavior owners claim support",
+  "artifact_behavior_boundary": "compile artifacts, manifests, runtime-registration descriptors, generated reports, private snapshot references, probe payload references, and workflow action labels are provenance until behavior owners claim support",
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before compile artifact, manifest, runtime-registration descriptor, lowering metadata row, private runtime snapshot, probe payload snapshot, generated report, runnable report, or public workflow label",
+    "support_authority": "concurrency lowering and runtime ABI support requires lowering, IR, or runtime owner assignment over canonical fixtures and probes",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated reports, report-only rows, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, fallback lowering, shim lowering, old-mode lowering, workflow-label-only rows, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "compile_manifest_surface_keys": [
     "runtime_unified_concurrency_source_surface",
     "runtime_async_task_actor_normalization_completion_surface",

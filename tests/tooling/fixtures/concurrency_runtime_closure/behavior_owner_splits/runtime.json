@@ -8,7 +8,7 @@
     "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
     "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
   ],
-  "support_boundary": "runtime ownership covers private continuation, task, task-group, cancellation, executor-hop, actor isolation, actor mailbox, actor replay/race-guard, and snapshot helper ABI evidence only",
+  "support_boundary": "runtime ownership covers private continuation, task, task-group, cancellation, executor-hop, actor isolation, actor mailbox, actor replay/race-guard, runtime snapshot helper ABI, and runtime support/library behavior only; private-snapshot-only rows, probe-payload-only rows, generated reports, manifests, descriptors, and workflow labels stay provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "private_runtime_abi_boundary:objc3_runtime_allocate_async_continuation_i32",
@@ -30,5 +30,5 @@
     "authoritative_probe_paths:tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "public concurrency runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, scheduler fairness, distributed actor transport, external executor integration, and non-runtime-backed ARC/error/interop interaction claims are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "public concurrency runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, old-mode runtime behavior, report-only runtime closure, manifest-only runtime support, descriptor-only runtime-registration, private-snapshot-only proof, probe-payload-only proof, scheduler fairness, distributed actor transport, external executor integration, and non-runtime-backed ARC/error/interop interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }
