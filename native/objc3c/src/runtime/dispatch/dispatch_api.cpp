@@ -18,27 +18,6 @@
 #include <mutex>
 #include <vector>
 
-namespace objc3c::runtime {
-
-objc3_runtime_dispatch_status_code RuntimeStrictDispatchStatus(
-    bool resolved, bool ambiguous,
-    objc3_runtime_dispatch_status_code unresolved_status) {
-  if (resolved) {
-    return OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-  }
-  if (ambiguous) {
-    return OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
-  }
-  return unresolved_status;
-}
-
-bool RuntimeDispatchStatusIsSuccess(
-    objc3_runtime_dispatch_status_code status_code) {
-  return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-}
-
-}  // namespace objc3c::runtime
-
 extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
   using objc3c::runtime::InvokeRuntimeBuiltinMethod;

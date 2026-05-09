@@ -89,6 +89,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/dispatch_result_state.h
   dispatch/dispatch_family.cpp
   dispatch/dispatch_family.h
+  dispatch/dispatch_status.cpp
   dispatch/dispatch_api.cpp
   dispatch/dispatch_api.h
   dispatch/dispatch_state_snapshots.cpp
