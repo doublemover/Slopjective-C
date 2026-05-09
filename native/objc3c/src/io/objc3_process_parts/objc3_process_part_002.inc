@@ -200,114 +200,92 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       inputs.bootstrap_image_local_init_state_symbol_prefix + safe_identity_suffix;
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
-      << "\",\n"
-      << "  \"registration_manifest_contract_id\": \""
-      << EscapeJsonString(inputs.registration_manifest_contract_id)
-      << "\",\n"
-      << "  \"source_surface_contract_id\": \""
-      << EscapeJsonString(inputs.source_surface_contract_id) << "\",\n"
-      << "  \"bootstrap_lowering_contract_id\": \""
-      << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"
-      << "  \"payload_model\": \""
-      << EscapeJsonString(inputs.payload_model) << "\",\n"
-      << "  \"artifact\": \""
-      << EscapeJsonString(inputs.artifact_relative_path) << "\",\n"
-      << "  \"authority_model\": \""
-      << EscapeJsonString(inputs.authority_model) << "\",\n"
-      << "  \"translation_unit_identity_model\": \""
-      << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
-      << "  \"translation_unit_identity_key\": \""
-      << EscapeJsonString(linker_retention_artifacts.translation_unit_identity_key)
-      << "\",\n"
-      << "  \"payload_ownership_model\": \""
-      << EscapeJsonString(inputs.payload_ownership_model) << "\",\n"
-      << "  \"runtime_support_library_archive_relative_path\": \""
-      << EscapeJsonString(inputs.runtime_support_library_archive_relative_path)
-      << "\",\n"
-      << "  \"registration_entrypoint_symbol\": \""
-      << EscapeJsonString(inputs.registration_entrypoint_symbol) << "\",\n"
-      << "  \"registration_descriptor_pragma_name\": \""
-      << EscapeJsonString(inputs.registration_descriptor_pragma_name)
-      << "\",\n"
-      << "  \"image_root_pragma_name\": \""
-      << EscapeJsonString(inputs.image_root_pragma_name) << "\",\n"
-      << "  \"module_identity_source\": \""
-      << EscapeJsonString(inputs.module_identity_source) << "\",\n"
-      << "  \"registration_descriptor_identifier\": \""
-      << EscapeJsonString(inputs.registration_descriptor_identifier)
-      << "\",\n"
-      << "  \"registration_descriptor_identity_source\": \""
-      << EscapeJsonString(inputs.registration_descriptor_identity_source)
-      << "\",\n"
-      << "  \"image_root_identifier\": \""
-      << EscapeJsonString(inputs.image_root_identifier) << "\",\n"
-      << "  \"image_root_identity_source\": \""
-      << EscapeJsonString(inputs.image_root_identity_source) << "\",\n"
-      << "  \"bootstrap_visible_metadata_ownership_model\": \""
-      << EscapeJsonString(inputs.bootstrap_visible_metadata_ownership_model)
-      << "\",\n"
-      << "  \"constructor_root_symbol\": \""
-      << EscapeJsonString(inputs.constructor_root_symbol) << "\",\n"
-      << "  \"constructor_init_stub_symbol\": \""
-      << EscapeJsonString(constructor_init_stub_symbol) << "\",\n"
-      << "  \"bootstrap_registration_table_symbol\": \""
-      << EscapeJsonString(bootstrap_registration_table_symbol) << "\",\n"
-      << "  \"bootstrap_image_local_init_state_symbol\": \""
-      << EscapeJsonString(bootstrap_image_local_init_state_symbol)
-      << "\",\n"
-      << "  \"bootstrap_registration_table_layout_model\": \""
-      << EscapeJsonString(inputs.bootstrap_registration_table_layout_model)
-      << "\",\n"
-      << "  \"bootstrap_image_local_initialization_model\": \""
-      << EscapeJsonString(inputs.bootstrap_image_local_initialization_model)
-      << "\",\n"
-      << "  \"bootstrap_constructor_root_emission_state\": \""
-      << EscapeJsonString(inputs.bootstrap_constructor_root_emission_state)
-      << "\",\n"
-      << "  \"bootstrap_init_stub_emission_state\": \""
-      << EscapeJsonString(inputs.bootstrap_init_stub_emission_state)
-      << "\",\n"
-      << "  \"bootstrap_registration_table_emission_state\": \""
-      << EscapeJsonString(inputs.bootstrap_registration_table_emission_state)
-      << "\",\n"
-      << "  \"bootstrap_registration_table_abi_version\": "
-      << inputs.bootstrap_registration_table_abi_version << ",\n"
-      << "  \"bootstrap_registration_table_pointer_field_count\": "
-      << inputs.bootstrap_registration_table_pointer_field_count << ",\n"
-      << "  \"class_descriptor_count\": "
-      << inputs.class_descriptor_count << ",\n"
-      << "  \"protocol_descriptor_count\": "
-      << inputs.protocol_descriptor_count << ",\n"
-      << "  \"category_descriptor_count\": "
-      << inputs.category_descriptor_count << ",\n"
-      << "  \"property_descriptor_count\": "
-      << inputs.property_descriptor_count << ",\n"
-      << "  \"ivar_descriptor_count\": " << inputs.ivar_descriptor_count
-      << ",\n"
-      << "  \"total_descriptor_count\": " << inputs.total_descriptor_count
-      << ",\n"
-      << "  \"translation_unit_registration_order_ordinal\": "
-      << inputs.translation_unit_registration_order_ordinal << ",\n"
-      << "  \"object_artifact\": \""
-      << EscapeJsonString(inputs.object_artifact_relative_path) << "\",\n"
-      << "  \"backend_artifact\": \""
-      << EscapeJsonString(inputs.backend_artifact_relative_path) << "\",\n"
-      << "  \"object_format\": \""
-      << EscapeJsonString(linker_retention_artifacts.object_format)
-      << "\",\n"
-      << "  \"linker_anchor_symbol\": \""
-      << EscapeJsonString(linker_retention_artifacts.linker_anchor_symbol)
-      << "\",\n"
-      << "  \"discovery_root_symbol\": \""
-      << EscapeJsonString(linker_retention_artifacts.discovery_root_symbol)
-      << "\",\n"
-      << "  \"ready_for_descriptor_artifact_emission\": true,\n"
-      << "  \"ready_for_registration_descriptor_lowering\": true,\n"
-      << "  \"ready_for_loader_table_lowering\": true\n"
-      << "}\n";
-  descriptor_json = out.str();
+  JsonObjectWriter descriptor(out);
+  descriptor.StringField("contract_id", inputs.contract_id);
+  descriptor.StringField("registration_manifest_contract_id",
+                         inputs.registration_manifest_contract_id);
+  descriptor.StringField("source_surface_contract_id",
+                         inputs.source_surface_contract_id);
+  descriptor.StringField("bootstrap_lowering_contract_id",
+                         inputs.bootstrap_lowering_contract_id);
+  descriptor.StringField("payload_model", inputs.payload_model);
+  descriptor.StringField("artifact", inputs.artifact_relative_path);
+  descriptor.StringField("authority_model", inputs.authority_model);
+  descriptor.StringField("translation_unit_identity_model",
+                         inputs.translation_unit_identity_model);
+  descriptor.StringField(
+      "translation_unit_identity_key",
+      linker_retention_artifacts.translation_unit_identity_key);
+  descriptor.StringField("payload_ownership_model",
+                         inputs.payload_ownership_model);
+  descriptor.StringField("runtime_support_library_archive_relative_path",
+                         inputs.runtime_support_library_archive_relative_path);
+  descriptor.StringField("registration_entrypoint_symbol",
+                         inputs.registration_entrypoint_symbol);
+  descriptor.StringField("registration_descriptor_pragma_name",
+                         inputs.registration_descriptor_pragma_name);
+  descriptor.StringField("image_root_pragma_name",
+                         inputs.image_root_pragma_name);
+  descriptor.StringField("module_identity_source",
+                         inputs.module_identity_source);
+  descriptor.StringField("registration_descriptor_identifier",
+                         inputs.registration_descriptor_identifier);
+  descriptor.StringField("registration_descriptor_identity_source",
+                         inputs.registration_descriptor_identity_source);
+  descriptor.StringField("image_root_identifier", inputs.image_root_identifier);
+  descriptor.StringField("image_root_identity_source",
+                         inputs.image_root_identity_source);
+  descriptor.StringField("bootstrap_visible_metadata_ownership_model",
+                         inputs.bootstrap_visible_metadata_ownership_model);
+  descriptor.StringField("constructor_root_symbol",
+                         inputs.constructor_root_symbol);
+  descriptor.StringField("constructor_init_stub_symbol",
+                         constructor_init_stub_symbol);
+  descriptor.StringField("bootstrap_registration_table_symbol",
+                         bootstrap_registration_table_symbol);
+  descriptor.StringField("bootstrap_image_local_init_state_symbol",
+                         bootstrap_image_local_init_state_symbol);
+  descriptor.StringField("bootstrap_registration_table_layout_model",
+                         inputs.bootstrap_registration_table_layout_model);
+  descriptor.StringField("bootstrap_image_local_initialization_model",
+                         inputs.bootstrap_image_local_initialization_model);
+  descriptor.StringField("bootstrap_constructor_root_emission_state",
+                         inputs.bootstrap_constructor_root_emission_state);
+  descriptor.StringField("bootstrap_init_stub_emission_state",
+                         inputs.bootstrap_init_stub_emission_state);
+  descriptor.StringField("bootstrap_registration_table_emission_state",
+                         inputs.bootstrap_registration_table_emission_state);
+  descriptor.UnsignedField("bootstrap_registration_table_abi_version",
+                           inputs.bootstrap_registration_table_abi_version);
+  descriptor.UnsignedField(
+      "bootstrap_registration_table_pointer_field_count",
+      inputs.bootstrap_registration_table_pointer_field_count);
+  descriptor.UnsignedField("class_descriptor_count",
+                           inputs.class_descriptor_count);
+  descriptor.UnsignedField("protocol_descriptor_count",
+                           inputs.protocol_descriptor_count);
+  descriptor.UnsignedField("category_descriptor_count",
+                           inputs.category_descriptor_count);
+  descriptor.UnsignedField("property_descriptor_count",
+                           inputs.property_descriptor_count);
+  descriptor.UnsignedField("ivar_descriptor_count",
+                           inputs.ivar_descriptor_count);
+  descriptor.UnsignedField("total_descriptor_count",
+                           inputs.total_descriptor_count);
+  descriptor.UnsignedField("translation_unit_registration_order_ordinal",
+                           inputs.translation_unit_registration_order_ordinal);
+  descriptor.StringField("object_artifact", inputs.object_artifact_relative_path);
+  descriptor.StringField("backend_artifact",
+                         inputs.backend_artifact_relative_path);
+  descriptor.StringField("object_format", linker_retention_artifacts.object_format);
+  descriptor.StringField("linker_anchor_symbol",
+                         linker_retention_artifacts.linker_anchor_symbol);
+  descriptor.StringField("discovery_root_symbol",
+                         linker_retention_artifacts.discovery_root_symbol);
+  descriptor.BoolField("ready_for_descriptor_artifact_emission", true);
+  descriptor.BoolField("ready_for_registration_descriptor_lowering", true);
+  descriptor.BoolField("ready_for_loader_table_lowering", true);
+  descriptor_json = FinishJsonObject(descriptor, out);
   return true;
 }
 
@@ -395,61 +373,45 @@ bool TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
-      << "\",\n"
-      << "  \"source_contract_id\": \""
-      << EscapeJsonString(inputs.source_contract_id) << "\",\n"
-      << "  \"surface_path\": \"" << EscapeJsonString(inputs.surface_path)
-      << "\",\n"
-      << "  \"artifact\": \"" << EscapeJsonString(inputs.artifact_relative_path)
-      << "\",\n"
-      << "  \"host_executable_relative_path\": \""
-      << EscapeJsonString(inputs.host_executable_relative_path) << "\",\n"
-      << "  \"cache_root_relative_path\": \""
-      << EscapeJsonString(inputs.cache_root_relative_path) << "\",\n"
-      << "  \"cache_key\": \"" << EscapeJsonString(cache_key) << "\",\n"
-      << "  \"cache_entry_relative_path\": \""
-      << EscapeJsonString(cache_entry.generic_string()) << "\",\n"
-      << "  \"cache_summary_relative_path\": \""
-      << EscapeJsonString(cache_summary_path.generic_string()) << "\",\n"
-      << "  \"cache_runtime_import_surface_relative_path\": \""
-      << EscapeJsonString(cache_runtime_import_path.generic_string())
-      << "\",\n"
-      << "  \"cache_manifest_relative_path\": \""
-      << EscapeJsonString(cache_manifest_path.generic_string()) << "\",\n"
-      << "  \"host_model\": \"" << EscapeJsonString(inputs.host_model)
-      << "\",\n"
-      << "  \"toolchain_model\": \""
-      << EscapeJsonString(inputs.toolchain_model) << "\",\n"
-      << "  \"cache_model\": \"" << EscapeJsonString(inputs.cache_model)
-      << "\",\n"
-      << "  \"fail_closed_model\": \""
-      << EscapeJsonString(inputs.fail_closed_model) << "\",\n"
-      << "  \"source_input_path\": \""
-      << EscapeJsonString(source_input_path.generic_string()) << "\",\n"
-      << "  \"cache_ready\": true,\n"
-      << "  \"launch_attempted\": " << (launch_attempted ? "true" : "false")
-      << ",\n"
-      << "  \"cache_hit\": " << (cache_hit ? "true" : "false") << ",\n"
-      << "  \"cache_summary_present\": "
-      << (std::filesystem::exists(cache_summary_path) ? "true" : "false")
-      << ",\n"
-      << "  \"cache_runtime_import_surface_present\": "
-      << (std::filesystem::exists(cache_runtime_import_path) ? "true" : "false")
-      << ",\n"
-      << "  \"cache_manifest_present\": "
-      << (std::filesystem::exists(cache_manifest_path) ? "true" : "false")
-      << ",\n"
-      << "  \"cache_materialization_state\": \""
-      << (launch_attempted ? "materialized" : "cache-hit") << "\",\n"
-      << "  \"host_process_exit_code\": " << host_process_exit_code << ",\n"
-      << "  \"deterministic\": " << (inputs.deterministic ? "true" : "false")
-      << ",\n"
-      << "  \"replay_key\": \"" << EscapeJsonString(inputs.replay_key)
-      << "\"\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonObjectWriter artifact(out);
+  artifact.StringField("contract_id", inputs.contract_id);
+  artifact.StringField("source_contract_id", inputs.source_contract_id);
+  artifact.StringField("surface_path", inputs.surface_path);
+  artifact.StringField("artifact", inputs.artifact_relative_path);
+  artifact.StringField("host_executable_relative_path",
+                       inputs.host_executable_relative_path);
+  artifact.StringField("cache_root_relative_path",
+                       inputs.cache_root_relative_path);
+  artifact.StringField("cache_key", cache_key);
+  artifact.StringField("cache_entry_relative_path",
+                       cache_entry.generic_string());
+  artifact.StringField("cache_summary_relative_path",
+                       cache_summary_path.generic_string());
+  artifact.StringField("cache_runtime_import_surface_relative_path",
+                       cache_runtime_import_path.generic_string());
+  artifact.StringField("cache_manifest_relative_path",
+                       cache_manifest_path.generic_string());
+  artifact.StringField("host_model", inputs.host_model);
+  artifact.StringField("toolchain_model", inputs.toolchain_model);
+  artifact.StringField("cache_model", inputs.cache_model);
+  artifact.StringField("fail_closed_model", inputs.fail_closed_model);
+  artifact.StringField("source_input_path", source_input_path.generic_string());
+  artifact.BoolField("cache_ready", true);
+  artifact.BoolField("launch_attempted", launch_attempted);
+  artifact.BoolField("cache_hit", cache_hit);
+  artifact.BoolField("cache_summary_present",
+                     std::filesystem::exists(cache_summary_path));
+  artifact.BoolField("cache_runtime_import_surface_present",
+                     std::filesystem::exists(cache_runtime_import_path));
+  artifact.BoolField("cache_manifest_present",
+                     std::filesystem::exists(cache_manifest_path));
+  artifact.StringField("cache_materialization_state",
+                       launch_attempted ? "materialized" : "cache-hit");
+  artifact.NumberField("host_process_exit_code",
+                       static_cast<double>(host_process_exit_code));
+  artifact.BoolField("deterministic", inputs.deterministic);
+  artifact.StringField("replay_key", inputs.replay_key);
+  artifact_json = FinishJsonObject(artifact, out);
   return true;
 }
 

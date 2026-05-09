@@ -1,6 +1,7 @@
 #include "io/objc3_process.h"
 
 #include "io/json/json_parser.h"
+#include "io/json/json_writer.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_json.h"
 #include "lower/objc3_lowering_contract.h"
@@ -22,6 +23,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -29,6 +31,8 @@
 namespace {
 
 using objc3::io::EscapeJsonString;
+using objc3::io::json::JsonObjectWriter;
+using objc3::io::json::JsonValue;
 #if !defined(_WIN32)
 extern char **environ;
 #endif
@@ -340,18 +344,102 @@ bool ExtractHexBoundaryTokenValue(const std::string &line,
 
 std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
                                          const std::string &indent) {
-  std::ostringstream out;
-  out << "[\n";
-  for (std::size_t index = 0; index < values.size(); ++index) {
-    out << indent;
-    objc3::io::WriteJsonString(out, values[index]);
-    if (index + 1u < values.size()) {
-      out << ",";
-    }
-    out << "\n";
+  (void)indent;
+  JsonValue::Array array;
+  array.reserve(values.size());
+  for (const std::string &value : values) {
+    array.push_back(JsonValue::String(value));
   }
-  out << indent.substr(0, indent.size() >= 2u ? indent.size() - 2u : 0u)
-      << "]";
+  return objc3::io::json::RenderJson(JsonValue::ArrayValue(std::move(array)));
+}
+
+bool TryParseJsonObjectText(const std::string &text,
+                            const std::string &label,
+                            JsonValue &value,
+                            std::string &error) {
+  objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
+  if (!parsed.ok()) {
+    error = label + " is not valid JSON: " + parsed.error->Format();
+    return false;
+  }
+  if (!parsed.value.IsObject()) {
+    error = label + " is not a JSON object";
+    return false;
+  }
+  value = std::move(parsed.value);
+  return true;
+}
+
+bool TryGetJsonStringField(const JsonValue &object,
+                           std::string_view field,
+                           std::string &value) {
+  const std::optional<std::string> field_value = object.GetString(field);
+  if (!field_value.has_value()) {
+    return false;
+  }
+  value = *field_value;
+  return true;
+}
+
+bool TryGetJsonBoolField(const JsonValue &object,
+                         std::string_view field,
+                         bool &value) {
+  const std::optional<bool> field_value = object.GetBool(field);
+  if (!field_value.has_value()) {
+    return false;
+  }
+  value = *field_value;
+  return true;
+}
+
+bool TryGetJsonStringArrayField(const JsonValue &object,
+                                std::string_view field,
+                                std::vector<std::string> &values) {
+  const JsonValue *field_value = object.Find(field);
+  if (field_value == nullptr || !field_value->IsArray()) {
+    return false;
+  }
+  std::vector<std::string> array_values;
+  array_values.reserve(field_value->AsArray().size());
+  for (const JsonValue &entry : field_value->AsArray()) {
+    if (!entry.IsString()) {
+      return false;
+    }
+    array_values.push_back(entry.AsString());
+  }
+  values = std::move(array_values);
+  return true;
+}
+
+const JsonValue *FindJsonPath(
+    const JsonValue &root,
+    std::initializer_list<std::string_view> field_path) {
+  const JsonValue *cursor = &root;
+  for (std::string_view field : field_path) {
+    if (cursor == nullptr) {
+      return nullptr;
+    }
+    cursor = cursor->Find(field);
+  }
+  return cursor;
+}
+
+bool HasJsonField(const JsonValue &root,
+                  std::initializer_list<std::string_view> field_path) {
+  return FindJsonPath(root, field_path) != nullptr;
+}
+
+bool JsonStringFieldEquals(
+    const JsonValue &root,
+    std::initializer_list<std::string_view> field_path,
+    std::string_view expected) {
+  const JsonValue *field = FindJsonPath(root, field_path);
+  return field != nullptr && field->IsString() && field->AsString() == expected;
+}
+
+std::string FinishJsonObject(JsonObjectWriter &object, std::ostringstream &out) {
+  object.End();
+  out << '\n';
   return out.str();
 }
 
@@ -379,54 +467,34 @@ std::string ComputeSha256ShapedContentDigest(const std::string &text) {
 bool TryExtractJsonStringField(const std::string &text,
                                const std::string &field,
                                std::string &value) {
-  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
-  if (!parsed.ok()) {
+  JsonValue parsed;
+  std::string parse_error;
+  if (!TryParseJsonObjectText(text, "JSON object", parsed, parse_error)) {
     return false;
   }
-  const std::optional<std::string> field_value = parsed.value.GetString(field);
-  if (!field_value.has_value()) {
-    return false;
-  }
-  value = *field_value;
-  return true;
+  return TryGetJsonStringField(parsed, field, value);
 }
 
 bool TryExtractJsonBoolField(const std::string &text,
                              const std::string &field,
                              bool &value) {
-  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
-  if (!parsed.ok()) {
+  JsonValue parsed;
+  std::string parse_error;
+  if (!TryParseJsonObjectText(text, "JSON object", parsed, parse_error)) {
     return false;
   }
-  const std::optional<bool> field_value = parsed.value.GetBool(field);
-  if (!field_value.has_value()) {
-    return false;
-  }
-  value = *field_value;
-  return true;
+  return TryGetJsonBoolField(parsed, field, value);
 }
 
 bool TryExtractJsonStringArrayField(const std::string &text,
                                     const std::string &field,
                                     std::vector<std::string> &values) {
-  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
-  if (!parsed.ok()) {
+  JsonValue parsed;
+  std::string parse_error;
+  if (!TryParseJsonObjectText(text, "JSON object", parsed, parse_error)) {
     return false;
   }
-  const objc3::io::json::JsonValue *field_value = parsed.value.Find(field);
-  if (field_value == nullptr || !field_value->IsArray()) {
-    return false;
-  }
-  std::vector<std::string> array_values;
-  array_values.reserve(field_value->AsArray().size());
-  for (const objc3::io::json::JsonValue &entry : field_value->AsArray()) {
-    if (!entry.IsString()) {
-      return false;
-    }
-    array_values.push_back(entry.AsString());
-  }
-  values = std::move(array_values);
-  return true;
+  return TryGetJsonStringArrayField(parsed, field, values);
 }
 
 }  // namespace

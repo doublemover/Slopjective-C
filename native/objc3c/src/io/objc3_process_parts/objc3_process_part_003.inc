@@ -914,61 +914,54 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
-      << "\",\n"
-      << "  \"schema_id\": \"" << EscapeJsonString(inputs.schema_id)
-      << "\",\n"
-      << "  \"selected_profile\": \""
-      << EscapeJsonString(inputs.selected_profile) << "\",\n"
-      << "  \"selected_profile_supported\": "
-      << (inputs.selected_profile_supported ? "true" : "false") << ",\n"
-      << "  \"supported_profile_ids\": "
-      << BuildIndentedStringArrayJson(inputs.supported_profile_ids, "    ")
-      << ",\n"
-      << "  \"rejected_profile_ids\": "
-      << BuildIndentedStringArrayJson(inputs.rejected_profile_ids, "    ")
-      << ",\n"
-      << "  \"effective_language_profile\": \""
-      << EscapeJsonString(inputs.effective_language_profile) << "\",\n"
-      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
-      << (inputs.canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
-      << "  \"publication_model\": \""
-      << EscapeJsonString(inputs.publication_model) << "\",\n"
-      << "  \"publication_surface_kind\": \""
-      << EscapeJsonString(inputs.publication_surface_kind) << "\",\n"
-      << "  \"fail_closed_diagnostic_model\": \""
-      << EscapeJsonString(inputs.fail_closed_diagnostic_model) << "\",\n"
-      << "  \"lowered_report_contract_id\": \""
-      << EscapeJsonString(inputs.lowered_report_contract_id) << "\",\n"
-      << "  \"runtime_capability_contract_id\": \""
-      << EscapeJsonString(inputs.runtime_capability_contract_id) << "\",\n"
-      << "  \"public_conformance_schema_id\": \""
-      << EscapeJsonString(inputs.public_conformance_schema_id) << "\",\n"
-      << "  \"advanced_feature_ops_contract_id\": \""
-      << EscapeJsonString(inputs.advanced_feature_ops_contract_id) << "\",\n"
-      << "  \"advanced_feature_reporting_contract_id\": \""
-      << EscapeJsonString(inputs.advanced_feature_reporting_contract_id)
-      << "\",\n"
-      << "  \"advanced_feature_release_evidence_contract_id\": \""
-      << EscapeJsonString(inputs.advanced_feature_release_evidence_contract_id)
-      << "\",\n"
-      << "  \"advanced_feature_targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(inputs.advanced_feature_targeted_profile_ids,
-                                      "    ")
-      << ",\n"
-      << "  \"ci_release_evidence_gate_script_path\": \""
-      << EscapeJsonString(inputs.ci_release_evidence_gate_script_path)
-      << "\",\n"
-      << "  \"runbook_reference_path\": \""
-      << EscapeJsonString(inputs.runbook_reference_path) << "\",\n"
-      << "  \"dashboard_schema_path\": \""
-      << EscapeJsonString(inputs.dashboard_schema_path) << "\",\n"
-      << "  \"report_artifact\": \""
-      << EscapeJsonString(inputs.report_artifact_relative_path) << "\",\n"
-      << "  \"ready\": true\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonObjectWriter publication(out);
+  publication.StringField("contract_id", inputs.contract_id);
+  publication.StringField("schema_id", inputs.schema_id);
+  publication.StringField("selected_profile", inputs.selected_profile);
+  publication.BoolField("selected_profile_supported",
+                        inputs.selected_profile_supported);
+  publication.RawJsonField(
+      "supported_profile_ids",
+      BuildIndentedStringArrayJson(inputs.supported_profile_ids, "    "));
+  publication.RawJsonField(
+      "rejected_profile_ids",
+      BuildIndentedStringArrayJson(inputs.rejected_profile_ids, "    "));
+  publication.StringField("effective_language_profile",
+                          inputs.effective_language_profile);
+  publication.BoolField("canonical_literal_rejection_diagnostics_enabled",
+                        inputs.canonical_literal_rejection_diagnostics_enabled);
+  publication.StringField("publication_model", inputs.publication_model);
+  publication.StringField("publication_surface_kind",
+                          inputs.publication_surface_kind);
+  publication.StringField("fail_closed_diagnostic_model",
+                          inputs.fail_closed_diagnostic_model);
+  publication.StringField("lowered_report_contract_id",
+                          inputs.lowered_report_contract_id);
+  publication.StringField("runtime_capability_contract_id",
+                          inputs.runtime_capability_contract_id);
+  publication.StringField("public_conformance_schema_id",
+                          inputs.public_conformance_schema_id);
+  publication.StringField("advanced_feature_ops_contract_id",
+                          inputs.advanced_feature_ops_contract_id);
+  publication.StringField("advanced_feature_reporting_contract_id",
+                          inputs.advanced_feature_reporting_contract_id);
+  publication.StringField(
+      "advanced_feature_release_evidence_contract_id",
+      inputs.advanced_feature_release_evidence_contract_id);
+  publication.RawJsonField(
+      "advanced_feature_targeted_profile_ids",
+      BuildIndentedStringArrayJson(inputs.advanced_feature_targeted_profile_ids,
+                                   "    "));
+  publication.StringField("ci_release_evidence_gate_script_path",
+                          inputs.ci_release_evidence_gate_script_path);
+  publication.StringField("runbook_reference_path",
+                          inputs.runbook_reference_path);
+  publication.StringField("dashboard_schema_path",
+                          inputs.dashboard_schema_path);
+  publication.StringField("report_artifact",
+                          inputs.report_artifact_relative_path);
+  publication.BoolField("ready", true);
+  artifact_json = FinishJsonObject(publication, out);
   return true;
 }
 
@@ -1013,228 +1006,223 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       BuildObjc3RejectedConformanceProfileIds();
   const std::vector<std::string> expected_targeted_profile_ids =
       BuildObjc3ReleaseTargetedProfileIds();
+  JsonValue report_document;
+  JsonValue publication_document;
+  if (!TryParseJsonObjectText(report_json, "conformance report",
+                              report_document, error) ||
+      !TryParseJsonObjectText(publication_json, "conformance publication",
+                              publication_document, error)) {
+    return false;
+  }
 
-  if (!TryExtractJsonStringField(report_json, "schema_id", report_schema_id) ||
+  if (!TryGetJsonStringField(report_document, "schema_id", report_schema_id) ||
       report_schema_id != "objc3c-versioned-conformance-report-v1") {
     error = "invalid conformance report schema_id";
     return false;
   }
-  if (!TryExtractJsonStringField(report_json, "contract_id", report_contract_id) ||
+  if (!TryGetJsonStringField(report_document, "contract_id", report_contract_id) ||
       report_contract_id != "objc3c.versioned.conformance.report.lowering.v1") {
     error = "invalid conformance report contract_id";
     return false;
   }
-  if (!TryExtractJsonStringField(report_json, "effective_language_profile",
-                                 effective_language_profile)) {
+  if (!TryGetJsonStringField(report_document, "effective_language_profile",
+                             effective_language_profile)) {
     error = "missing effective_language_profile in conformance report";
     return false;
   }
-  if (!TryExtractJsonBoolField(report_json, "canonical_literal_rejection_diagnostics_enabled",
-                               canonical_literal_rejection_diagnostics_enabled)) {
+  if (!TryGetJsonBoolField(
+          report_document, "canonical_literal_rejection_diagnostics_enabled",
+          canonical_literal_rejection_diagnostics_enabled)) {
     error = "missing canonical_literal_rejection_diagnostics_enabled in conformance report";
     return false;
   }
-  if (report_json.find("\"runtime_capability_report\"") == std::string::npos ||
-      report_json.find(
-          "\"contract_id\":\"objc3c.runtime.capability.reporting.v1\"") ==
-          std::string::npos) {
+  if (!JsonStringFieldEquals(
+          report_document, {"runtime_capability_report", "contract_id"},
+          "objc3c.runtime.capability.reporting.v1")) {
     error = "runtime_capability_report payload is missing or drifted";
     return false;
   }
   runtime_capability_contract_id =
       "objc3c.runtime.capability.reporting.v1";
-  if (report_json.find("\"public_conformance_report\"") == std::string::npos ||
-      report_json.find("\"schema_id\":\"objc3-conformance-report/v1\"") ==
-          std::string::npos) {
+  if (!JsonStringFieldEquals(
+          report_document, {"public_conformance_report", "schema_id"},
+          "objc3-conformance-report/v1")) {
     error = "public_conformance_report payload is missing or drifted";
     return false;
   }
   public_conformance_schema_id = "objc3-conformance-report/v1";
-  if (report_json.find("\"advanced_feature_reporting\"") == std::string::npos ||
-      report_json.find(kObjc3AdvancedFeatureReportingContractId) ==
-          std::string::npos) {
+  if (!JsonStringFieldEquals(
+          report_document, {"advanced_feature_reporting", "contract_id"},
+          kObjc3AdvancedFeatureReportingContractId)) {
     error = "advanced_feature_reporting payload is missing or drifted";
     return false;
   }
-  if (report_json.find("\"advanced_feature_release_evidence\"") ==
-          std::string::npos ||
-      report_json.find(kObjc3AdvancedFeatureReleaseEvidenceContractId) ==
-          std::string::npos) {
+  if (!JsonStringFieldEquals(
+          report_document,
+          {"advanced_feature_release_evidence", "contract_id"},
+          kObjc3AdvancedFeatureReleaseEvidenceContractId)) {
     error = "advanced_feature_release_evidence payload is missing or drifted";
     return false;
   }
 
-  if (!TryExtractJsonStringField(publication_json, "schema_id",
-                                 publication_schema_id) ||
+  if (!TryGetJsonStringField(publication_document, "schema_id",
+                             publication_schema_id) ||
       publication_schema_id != "objc3c-driver-conformance-publication-v1") {
     error = "invalid conformance publication schema_id";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "contract_id",
-                                 publication_contract_id) ||
+  if (!TryGetJsonStringField(publication_document, "contract_id",
+                             publication_contract_id) ||
       publication_contract_id !=
           "objc3c.driver.conformance.report.publication.v1") {
     error = "invalid conformance publication contract_id";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "selected_profile",
-                                 selected_profile)) {
+  if (!TryGetJsonStringField(publication_document, "selected_profile",
+                             selected_profile)) {
     error = "selected_profile is missing from conformance publication";
     return false;
   }
-  if (!TryExtractJsonBoolField(publication_json, "selected_profile_supported",
-                               selected_profile_supported) ||
+  if (!TryGetJsonBoolField(publication_document, "selected_profile_supported",
+                           selected_profile_supported) ||
       selected_profile_supported !=
           IsObjc3ClaimedConformanceProfile(selected_profile)) {
     error = "selected_profile_supported drifted from the live claim policy";
     return false;
   }
-  if (!TryExtractJsonStringArrayField(publication_json, "supported_profile_ids",
-                                      supported_profile_ids) ||
+  if (!TryGetJsonStringArrayField(publication_document, "supported_profile_ids",
+                                  supported_profile_ids) ||
       supported_profile_ids != expected_supported_profile_ids) {
     error = "supported_profile_ids drifted from the live claim policy";
     return false;
   }
-  if (!TryExtractJsonStringArrayField(publication_json, "rejected_profile_ids",
-                                      rejected_profile_ids) ||
+  if (!TryGetJsonStringArrayField(publication_document, "rejected_profile_ids",
+                                  rejected_profile_ids) ||
       rejected_profile_ids != expected_rejected_profile_ids) {
     error = "rejected_profile_ids drifted from the live claim policy";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "publication_surface_kind",
-                                 publication_surface_kind)) {
+  if (!TryGetJsonStringField(publication_document, "publication_surface_kind",
+                             publication_surface_kind)) {
     error = "missing publication_surface_kind in conformance publication";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "report_artifact",
-                                 report_artifact_relative_path) ||
+  if (!TryGetJsonStringField(publication_document, "report_artifact",
+                             report_artifact_relative_path) ||
       report_artifact_relative_path !=
           std::filesystem::path(inputs.report_artifact_path).filename().string()) {
     error = "publication report_artifact does not match the validated report path";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json,
-                                 "advanced_feature_ops_contract_id",
-                                 advanced_feature_ops_contract_id) ||
+  if (!TryGetJsonStringField(publication_document,
+                             "advanced_feature_ops_contract_id",
+                             advanced_feature_ops_contract_id) ||
       advanced_feature_ops_contract_id != kObjc3AdvancedFeatureOpsContractId) {
     error = "advanced_feature_ops_contract_id drifted";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json,
-                                 "advanced_feature_reporting_contract_id",
-                                 advanced_feature_reporting_contract_id) ||
+  if (!TryGetJsonStringField(publication_document,
+                             "advanced_feature_reporting_contract_id",
+                             advanced_feature_reporting_contract_id) ||
       advanced_feature_reporting_contract_id !=
           kObjc3AdvancedFeatureReportingContractId) {
     error = "advanced_feature_reporting_contract_id drifted";
     return false;
   }
-  if (!TryExtractJsonStringField(
-          publication_json, "advanced_feature_release_evidence_contract_id",
+  if (!TryGetJsonStringField(
+          publication_document, "advanced_feature_release_evidence_contract_id",
           advanced_feature_release_evidence_contract_id) ||
       advanced_feature_release_evidence_contract_id !=
           kObjc3AdvancedFeatureReleaseEvidenceContractId) {
     error = "advanced_feature_release_evidence_contract_id drifted";
     return false;
   }
-  if (!TryExtractJsonStringArrayField(publication_json,
-                                      "advanced_feature_targeted_profile_ids",
-                                      advanced_feature_targeted_profile_ids) ||
+  if (!TryGetJsonStringArrayField(publication_document,
+                                  "advanced_feature_targeted_profile_ids",
+                                  advanced_feature_targeted_profile_ids) ||
       advanced_feature_targeted_profile_ids != expected_targeted_profile_ids) {
     error = "advanced_feature_targeted_profile_ids drifted";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json,
-                                 "ci_release_evidence_gate_script_path",
-                                 ci_release_evidence_gate_script_path) ||
+  if (!TryGetJsonStringField(publication_document,
+                             "ci_release_evidence_gate_script_path",
+                             ci_release_evidence_gate_script_path) ||
       ci_release_evidence_gate_script_path !=
           kObjc3AdvancedFeatureEvidenceGateScriptPath) {
     error = "ci_release_evidence_gate_script_path drifted";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "runbook_reference_path",
-                                 runbook_reference_path) ||
+  if (!TryGetJsonStringField(publication_document, "runbook_reference_path",
+                             runbook_reference_path) ||
       runbook_reference_path !=
           kObjc3AdvancedFeatureEvidenceRunbookPath) {
     error = "runbook_reference_path drifted";
     return false;
   }
-  if (!TryExtractJsonStringField(publication_json, "dashboard_schema_path",
-                                 dashboard_schema_path) ||
+  if (!TryGetJsonStringField(publication_document, "dashboard_schema_path",
+                             dashboard_schema_path) ||
       dashboard_schema_path !=
           kObjc3AdvancedFeatureDashboardSchemaPath) {
     error = "dashboard_schema_path drifted";
     return false;
   }
-  if (publication_json.find(
-          std::string("\"fail_closed_diagnostic_model\": \"") +
-              kObjc3ConformancePublicationFailClosedDiagnosticModel + "\"") ==
-      std::string::npos) {
+  if (!JsonStringFieldEquals(publication_document,
+                             {"fail_closed_diagnostic_model"},
+                             kObjc3ConformancePublicationFailClosedDiagnosticModel)) {
     error = "publication fail_closed_diagnostic_model drifted";
     return false;
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
-      << "\",\n"
-      << "  \"schema_id\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimValidationSchemaId)
-      << "\",\n"
-      << "  \"validation_model\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimValidationModel)
-      << "\",\n"
-      << "  \"consumption_model\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimConsumptionModel)
-      << "\",\n"
-      << "  \"format\": \"json\",\n"
-      << "  \"validated_report_artifact\": \""
-      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
-      << "  \"validated_publication_artifact\": \""
-      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
-      << "  \"report_schema_id\": \"" << EscapeJsonString(report_schema_id)
-      << "\",\n"
-      << "  \"report_contract_id\": \"" << EscapeJsonString(report_contract_id)
-      << "\",\n"
-      << "  \"runtime_capability_contract_id\": \""
-      << EscapeJsonString(runtime_capability_contract_id) << "\",\n"
-      << "  \"public_conformance_schema_id\": \""
-      << EscapeJsonString(public_conformance_schema_id) << "\",\n"
-      << "  \"advanced_feature_ops_contract_id\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureOpsContractId) << "\",\n"
-      << "  \"advanced_feature_reporting_contract_id\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureReportingContractId)
-      << "\",\n"
-      << "  \"advanced_feature_release_evidence_contract_id\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureReleaseEvidenceContractId)
-      << "\",\n"
-      << "  \"advanced_feature_targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(advanced_feature_targeted_profile_ids,
-                                      "    ")
-      << ",\n"
-      << "  \"ci_release_evidence_gate_script_path\": \""
-      << EscapeJsonString(ci_release_evidence_gate_script_path) << "\",\n"
-      << "  \"runbook_reference_path\": \""
-      << EscapeJsonString(runbook_reference_path) << "\",\n"
-      << "  \"dashboard_schema_path\": \""
-      << EscapeJsonString(dashboard_schema_path) << "\",\n"
-      << "  \"selected_profile\": \"" << EscapeJsonString(selected_profile)
-      << "\",\n"
-      << "  \"selected_profile_supported\": "
-      << (selected_profile_supported ? "true" : "false") << ",\n"
-      << "  \"supported_profile_ids\": "
-      << BuildIndentedStringArrayJson(supported_profile_ids, "    ") << ",\n"
-      << "  \"rejected_profile_ids\": "
-      << BuildIndentedStringArrayJson(rejected_profile_ids, "    ") << ",\n"
-      << "  \"effective_language_profile\": \""
-      << EscapeJsonString(effective_language_profile) << "\",\n"
-      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
-      << (canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
-      << "  \"publication_surface_kind\": \""
-      << EscapeJsonString(publication_surface_kind) << "\",\n"
-      << "  \"ready\": true\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonObjectWriter validation(out);
+  validation.StringField("contract_id",
+                         kObjc3ToolchainConformanceClaimOperationsContractId);
+  validation.StringField("schema_id",
+                         kObjc3ToolchainConformanceClaimValidationSchemaId);
+  validation.StringField("validation_model",
+                         kObjc3ToolchainConformanceClaimValidationModel);
+  validation.StringField("consumption_model",
+                         kObjc3ToolchainConformanceClaimConsumptionModel);
+  validation.StringField("format", "json");
+  validation.StringField("validated_report_artifact",
+                         inputs.report_artifact_path);
+  validation.StringField("validated_publication_artifact",
+                         inputs.publication_artifact_path);
+  validation.StringField("report_schema_id", report_schema_id);
+  validation.StringField("report_contract_id", report_contract_id);
+  validation.StringField("runtime_capability_contract_id",
+                         runtime_capability_contract_id);
+  validation.StringField("public_conformance_schema_id",
+                         public_conformance_schema_id);
+  validation.StringField("advanced_feature_ops_contract_id",
+                         kObjc3AdvancedFeatureOpsContractId);
+  validation.StringField("advanced_feature_reporting_contract_id",
+                         kObjc3AdvancedFeatureReportingContractId);
+  validation.StringField("advanced_feature_release_evidence_contract_id",
+                         kObjc3AdvancedFeatureReleaseEvidenceContractId);
+  validation.RawJsonField(
+      "advanced_feature_targeted_profile_ids",
+      BuildIndentedStringArrayJson(advanced_feature_targeted_profile_ids,
+                                   "    "));
+  validation.StringField("ci_release_evidence_gate_script_path",
+                         ci_release_evidence_gate_script_path);
+  validation.StringField("runbook_reference_path", runbook_reference_path);
+  validation.StringField("dashboard_schema_path", dashboard_schema_path);
+  validation.StringField("selected_profile", selected_profile);
+  validation.BoolField("selected_profile_supported", selected_profile_supported);
+  validation.RawJsonField("supported_profile_ids",
+                          BuildIndentedStringArrayJson(supported_profile_ids,
+                                                       "    "));
+  validation.RawJsonField("rejected_profile_ids",
+                          BuildIndentedStringArrayJson(rejected_profile_ids,
+                                                       "    "));
+  validation.StringField("effective_language_profile",
+                         effective_language_profile);
+  validation.BoolField("canonical_literal_rejection_diagnostics_enabled",
+                       canonical_literal_rejection_diagnostics_enabled);
+  validation.StringField("publication_surface_kind", publication_surface_kind);
+  validation.BoolField("ready", true);
+  artifact_json = FinishJsonObject(validation, out);
   return true;
 }
 
@@ -1254,92 +1242,94 @@ bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
     error = "release evidence operation artifact inputs are incomplete";
     return false;
   }
-  if (report_json.find("\"advanced_feature_release_evidence\"") ==
-          std::string::npos ||
-      report_json.find("\"release_evidence_checklist_path\":\"spec/conformance/profile_release_evidence_checklist.md\"") ==
-          std::string::npos ||
-      report_json.find("\"release_evidence_schema_path\":\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\"") ==
-          std::string::npos) {
+  JsonValue report_document;
+  JsonValue publication_document;
+  JsonValue validation_document;
+  if (!TryParseJsonObjectText(report_json, "conformance report",
+                              report_document, error) ||
+      !TryParseJsonObjectText(publication_json, "conformance publication",
+                              publication_document, error) ||
+      !TryParseJsonObjectText(validation_json, "conformance validation",
+                              validation_document, error)) {
+    return false;
+  }
+  if (!JsonStringFieldEquals(
+          report_document,
+          {"advanced_feature_release_evidence",
+           "release_evidence_checklist_path"},
+          "spec/conformance/profile_release_evidence_checklist.md") ||
+      !JsonStringFieldEquals(
+          report_document,
+          {"advanced_feature_release_evidence", "release_evidence_schema_path"},
+          "spec/conformance/objc3_conformance_evidence_bundle_schema.md")) {
     error = "advanced feature release evidence payload is missing or drifted";
     return false;
   }
-  if (publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos ||
-      validation_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos) {
+  if (!JsonStringFieldEquals(publication_document,
+                             {"advanced_feature_ops_contract_id"},
+                             kObjc3AdvancedFeatureOpsContractId) ||
+      !JsonStringFieldEquals(validation_document, {"contract_id"},
+                             kObjc3ToolchainConformanceClaimOperationsContractId)) {
     error = "advanced feature operator contract drifted";
     return false;
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \""
-      << EscapeJsonString(kObjc3ReleaseEvidenceOperationContractId) << "\",\n"
-      << "  \"schema_id\": \""
-      << EscapeJsonString(kObjc3ReleaseEvidenceOperationSchemaId) << "\",\n"
-      << "  \"dependency_contract_ids\": "
-      << BuildIndentedStringArrayJson(
-             {kObjc3AdvancedFeatureOpsContractId,
-              kObjc3AdvancedFeatureReleaseEvidenceContractId},
-             "    ")
-      << ",\n"
-      << "  \"validation_contract_id\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
-      << "\",\n"
-      << "  \"dashboard_contract_id\": \""
-      << EscapeJsonString(kObjc3DashboardStatusPublicationContractId)
-      << "\",\n"
-      << "  \"operation_model\": \""
-      << "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set"
-      << "\",\n"
-      << "  \"release_label\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
-      << "  \"command_tokens\": "
-      << BuildIndentedStringArrayJson({"python",
-                                       kObjc3AdvancedFeatureEvidenceGateScriptPath},
-                                      "    ")
-      << ",\n"
-      << "  \"report_artifact\": \""
-      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
-      << "  \"publication_artifact\": \""
-      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
-      << "  \"validation_artifact\": \""
-      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
-      << "  \"dashboard_artifact\": \""
-      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
-      << "  \"gate_script_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceGateScriptPath)
-      << "\",\n"
-      << "  \"runbook_reference_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceRunbookPath)
-      << "\",\n"
-      << "  \"dashboard_schema_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureDashboardSchemaPath)
-      << "\",\n"
-      << "  \"release_evidence_checklist_path\": "
-      << "\"spec/conformance/profile_release_evidence_checklist.md\",\n"
-      << "  \"release_evidence_schema_path\": "
-      << "\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\",\n"
-      << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(
-             {"strict", "strict-concurrency", "strict-system"}, "    ")
-      << ",\n"
-      << "  \"corpus_shard_ids\": "
-      << BuildIndentedStringArrayJson({"parser", "semantic", "lowering_abi",
-                                       "module_roundtrip", "diagnostics"},
-                                      "    ")
-      << ",\n"
-      << "  \"release_evidence_artifact_ids\": "
-      << BuildIndentedStringArrayJson({"EVID-01", "EVID-02", "EVID-03",
-                                       "EVID-04", "EVID-07", "EVID-08",
-                                       "EVID-09", "EVID-10", "EVID-11"},
-                                      "    ")
-      << ",\n"
-      << "  \"generated_at\": \""
-      << EscapeJsonString(kObjc3DeterministicReplayTimestamp) << "\",\n"
-      << "  \"ready\": true\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonObjectWriter operation(out);
+  operation.StringField("contract_id", kObjc3ReleaseEvidenceOperationContractId);
+  operation.StringField("schema_id", kObjc3ReleaseEvidenceOperationSchemaId);
+  operation.RawJsonField(
+      "dependency_contract_ids",
+      BuildIndentedStringArrayJson(
+          {kObjc3AdvancedFeatureOpsContractId,
+           kObjc3AdvancedFeatureReleaseEvidenceContractId},
+          "    "));
+  operation.StringField("validation_contract_id",
+                        kObjc3ToolchainConformanceClaimOperationsContractId);
+  operation.StringField("dashboard_contract_id",
+                        kObjc3DashboardStatusPublicationContractId);
+  operation.StringField(
+      "operation_model",
+      "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set");
+  operation.StringField("release_label", kObjc3AdvancedFeatureReleaseLabel);
+  operation.RawJsonField(
+      "command_tokens",
+      BuildIndentedStringArrayJson(
+          {"python", kObjc3AdvancedFeatureEvidenceGateScriptPath}, "    "));
+  operation.StringField("report_artifact", inputs.report_artifact_path);
+  operation.StringField("publication_artifact",
+                        inputs.publication_artifact_path);
+  operation.StringField("validation_artifact", inputs.validation_artifact_path);
+  operation.StringField("dashboard_artifact", inputs.dashboard_artifact_path);
+  operation.StringField("gate_script_path",
+                        kObjc3AdvancedFeatureEvidenceGateScriptPath);
+  operation.StringField("runbook_reference_path",
+                        kObjc3AdvancedFeatureEvidenceRunbookPath);
+  operation.StringField("dashboard_schema_path",
+                        kObjc3AdvancedFeatureDashboardSchemaPath);
+  operation.StringField("release_evidence_checklist_path",
+                        "spec/conformance/profile_release_evidence_checklist.md");
+  operation.StringField(
+      "release_evidence_schema_path",
+      "spec/conformance/objc3_conformance_evidence_bundle_schema.md");
+  operation.RawJsonField(
+      "targeted_profile_ids",
+      BuildIndentedStringArrayJson(
+          {"strict", "strict-concurrency", "strict-system"}, "    "));
+  operation.RawJsonField(
+      "corpus_shard_ids",
+      BuildIndentedStringArrayJson({"parser", "semantic", "lowering_abi",
+                                    "module_roundtrip", "diagnostics"},
+                                   "    "));
+  operation.RawJsonField(
+      "release_evidence_artifact_ids",
+      BuildIndentedStringArrayJson({"EVID-01", "EVID-02", "EVID-03",
+                                    "EVID-04", "EVID-07", "EVID-08",
+                                    "EVID-09", "EVID-10", "EVID-11"},
+                                   "    "));
+  operation.StringField("generated_at", kObjc3DeterministicReplayTimestamp);
+  operation.BoolField("ready", true);
+  artifact_json = FinishJsonObject(operation, out);
   return true;
 }
 
@@ -1360,14 +1350,30 @@ bool TryBuildObjc3DashboardStatusArtifact(
     error = "dashboard status artifact inputs are incomplete";
     return false;
   }
-  if (report_json.find("\"advanced_feature_release_evidence\"") ==
-          std::string::npos ||
-      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos ||
-      validation_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos ||
-      release_evidence_operation_json.find(
-          kObjc3ReleaseEvidenceOperationContractId) == std::string::npos) {
+  JsonValue report_document;
+  JsonValue publication_document;
+  JsonValue validation_document;
+  JsonValue release_evidence_operation_document;
+  if (!TryParseJsonObjectText(report_json, "conformance report",
+                              report_document, error) ||
+      !TryParseJsonObjectText(publication_json, "conformance publication",
+                              publication_document, error) ||
+      !TryParseJsonObjectText(validation_json, "conformance validation",
+                              validation_document, error) ||
+      !TryParseJsonObjectText(release_evidence_operation_json,
+                              "release evidence operation",
+                              release_evidence_operation_document, error)) {
+    return false;
+  }
+  if (!HasJsonField(report_document, {"advanced_feature_release_evidence"}) ||
+      !JsonStringFieldEquals(publication_document,
+                             {"advanced_feature_ops_contract_id"},
+                             kObjc3AdvancedFeatureOpsContractId) ||
+      !JsonStringFieldEquals(validation_document, {"contract_id"},
+                             kObjc3ToolchainConformanceClaimOperationsContractId) ||
+      !JsonStringFieldEquals(release_evidence_operation_document,
+                             {"contract_id"},
+                             kObjc3ReleaseEvidenceOperationContractId)) {
     error = "dashboard status publication inputs drifted";
     return false;
   }

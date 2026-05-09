@@ -105,56 +105,60 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
     error = "advanced feature gate artifact inputs are incomplete";
     return false;
   }
-  if (report_json.find("\"advanced_feature_reporting\"") ==
-          std::string::npos ||
-      report_json.find("\"advanced_feature_release_evidence\"") ==
-          std::string::npos ||
-      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos) {
+  JsonValue report_document;
+  JsonValue publication_document;
+  if (!TryParseJsonObjectText(report_json, "conformance report",
+                              report_document, error) ||
+      !TryParseJsonObjectText(publication_json, "conformance publication",
+                              publication_document, error)) {
+    return false;
+  }
+  if (!JsonStringFieldEquals(
+          report_document, {"advanced_feature_reporting", "contract_id"},
+          kObjc3AdvancedFeatureReportingContractId) ||
+      !JsonStringFieldEquals(
+          report_document,
+          {"advanced_feature_release_evidence", "contract_id"},
+          kObjc3AdvancedFeatureReleaseEvidenceContractId) ||
+      !JsonStringFieldEquals(publication_document,
+                             {"advanced_feature_ops_contract_id"},
+                             kObjc3AdvancedFeatureOpsContractId)) {
     error = "advanced feature gate inputs drifted";
     return false;
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureGateContractId) << "\",\n"
-      << "  \"schema_id\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureGateSchemaId) << "\",\n"
-      << "  \"dependency_contract_ids\": "
-      << BuildIndentedStringArrayJson(
-             {"objc3c.tooling.frontend.migration.canonicalization.source.completion.v1",
-              "objc3c.tooling.legacy.canonical.migration.semantics.v1",
-              kObjc3AdvancedFeatureReleaseEvidenceContractId,
-              kObjc3ReleaseEvidenceOperationContractId},
-             "    ")
-      << ",\n"
-      << "  \"surface_kind\": \"" << EscapeJsonString(inputs.surface_kind)
-      << "\",\n"
-      << "  \"report_artifact\": \""
-      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
-      << "  \"publication_artifact\": \""
-      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
-      << "  \"validation_artifact_expected\": \""
-      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
-      << "  \"release_evidence_operation_artifact_expected\": \""
-      << EscapeJsonString(inputs.release_evidence_operation_artifact_path)
-      << "\",\n"
-      << "  \"dashboard_artifact_expected\": \""
-      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
-      << "  \"gate_model\": \""
-      << "integrated-advanced-feature-gate-consumes-report-publication-and-native-validation-sidecars"
-      << "\",\n"
-      << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
-                                      "    ")
-      << ",\n"
-      << "  \"native_validation_required\": true,\n"
-      << "  \"report_payload_ready\": true,\n"
-      << "  \"release_evidence_ready\": true,\n"
-      << "  \"ready\": true\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonObjectWriter gate(out);
+  gate.StringField("contract_id", kObjc3AdvancedFeatureGateContractId);
+  gate.StringField("schema_id", kObjc3AdvancedFeatureGateSchemaId);
+  gate.RawJsonField(
+      "dependency_contract_ids",
+      BuildIndentedStringArrayJson(
+          {"objc3c.tooling.frontend.migration.canonicalization.source.completion.v1",
+           "objc3c.tooling.legacy.canonical.migration.semantics.v1",
+           kObjc3AdvancedFeatureReleaseEvidenceContractId,
+           kObjc3ReleaseEvidenceOperationContractId},
+          "    "));
+  gate.StringField("surface_kind", inputs.surface_kind);
+  gate.StringField("report_artifact", inputs.report_artifact_path);
+  gate.StringField("publication_artifact", inputs.publication_artifact_path);
+  gate.StringField("validation_artifact_expected",
+                   inputs.validation_artifact_path);
+  gate.StringField("release_evidence_operation_artifact_expected",
+                   inputs.release_evidence_operation_artifact_path);
+  gate.StringField("dashboard_artifact_expected", inputs.dashboard_artifact_path);
+  gate.StringField(
+      "gate_model",
+      "integrated-advanced-feature-gate-consumes-report-publication-and-native-validation-sidecars");
+  gate.RawJsonField(
+      "targeted_profile_ids",
+      BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
+                                   "    "));
+  gate.BoolField("native_validation_required", true);
+  gate.BoolField("report_payload_ready", true);
+  gate.BoolField("release_evidence_ready", true);
+  gate.BoolField("ready", true);
+  artifact_json = FinishJsonObject(gate, out);
   return true;
 }
 
@@ -177,56 +181,86 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
     error = "release candidate matrix artifact inputs are incomplete";
     return false;
   }
-  if (report_json.find("\"advanced_feature_release_evidence\"") ==
-          std::string::npos ||
-      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
-          std::string::npos ||
-      advanced_feature_gate_json.find(kObjc3AdvancedFeatureGateContractId) ==
-          std::string::npos) {
+  JsonValue report_document;
+  JsonValue publication_document;
+  JsonValue advanced_feature_gate_document;
+  if (!TryParseJsonObjectText(report_json, "conformance report",
+                              report_document, error) ||
+      !TryParseJsonObjectText(publication_json, "conformance publication",
+                              publication_document, error) ||
+      !TryParseJsonObjectText(advanced_feature_gate_json,
+                              "advanced feature gate",
+                              advanced_feature_gate_document, error)) {
+    return false;
+  }
+  if (!JsonStringFieldEquals(
+          report_document,
+          {"advanced_feature_release_evidence", "contract_id"},
+          kObjc3AdvancedFeatureReleaseEvidenceContractId) ||
+      !JsonStringFieldEquals(publication_document,
+                             {"advanced_feature_ops_contract_id"},
+                             kObjc3AdvancedFeatureOpsContractId) ||
+      !JsonStringFieldEquals(advanced_feature_gate_document, {"contract_id"},
+                             kObjc3AdvancedFeatureGateContractId)) {
     error = "release candidate matrix inputs drifted";
     return false;
   }
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \""
-      << EscapeJsonString(kObjc3ReleaseCandidateMatrixContractId) << "\",\n"
-      << "  \"schema_id\": \""
-      << EscapeJsonString(kObjc3ReleaseCandidateMatrixSchemaId) << "\",\n"
-      << "  \"surface_kind\": \"" << EscapeJsonString(inputs.surface_kind)
-      << "\",\n"
-      << "  \"release_label\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
-      << "  \"report_artifact\": \""
-      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
-      << "  \"publication_artifact\": \""
-      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
-      << "  \"advanced_feature_gate_artifact\": \""
-      << EscapeJsonString(inputs.advanced_feature_gate_artifact_path)
-      << "\",\n"
-      << "  \"validation_artifact_expected\": \""
-      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
-      << "  \"release_evidence_operation_artifact_expected\": \""
-      << EscapeJsonString(inputs.release_evidence_operation_artifact_path)
-      << "\",\n"
-      << "  \"dashboard_artifact_expected\": \""
-      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
-      << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
-                                      "    ")
-      << ",\n"
-      << "  \"matrix_rows\": [\n"
-      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c.tooling.migration.canonicalization.source.completion.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c.tooling.legacy.canonical.migration.semantics.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c.tooling.corpus.sharding.release.evidence.packaging.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c.tooling.release.evidence.toolchain.operations.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c.tooling.integrated.advanced.feature.gate.v1\",\"status\":\"pass\"}\n"
-      << "  ],\n"
-      << "  \"matrix_model\": \""
-      << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set"
-      << "\",\n"
-      << "  \"ready\": true\n"
-      << "}\n";
-  artifact_json = out.str();
+  JsonValue::Array matrix_rows;
+  matrix_rows.push_back(JsonValue::ObjectValue(
+      {{"lane", JsonValue::String("A")},
+       {"contract_id", JsonValue::String(
+                           "objc3c.tooling.migration.canonicalization.source.completion.v1")},
+       {"status", JsonValue::String("pass")}}));
+  matrix_rows.push_back(JsonValue::ObjectValue(
+      {{"lane", JsonValue::String("B")},
+       {"contract_id", JsonValue::String(
+                           "objc3c.tooling.legacy.canonical.migration.semantics.v1")},
+       {"status", JsonValue::String("pass")}}));
+  matrix_rows.push_back(JsonValue::ObjectValue(
+      {{"lane", JsonValue::String("C")},
+       {"contract_id", JsonValue::String(
+                           "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1")},
+       {"status", JsonValue::String("pass")}}));
+  matrix_rows.push_back(JsonValue::ObjectValue(
+      {{"lane", JsonValue::String("D")},
+       {"contract_id", JsonValue::String(
+                           "objc3c.tooling.release.evidence.toolchain.operations.v1")},
+       {"status", JsonValue::String("pass")}}));
+  matrix_rows.push_back(JsonValue::ObjectValue(
+      {{"lane", JsonValue::String("E")},
+       {"contract_id", JsonValue::String(
+                           "objc3c.tooling.integrated.advanced.feature.gate.v1")},
+       {"status", JsonValue::String("pass")}}));
+
+  JsonObjectWriter matrix(out);
+  matrix.StringField("contract_id", kObjc3ReleaseCandidateMatrixContractId);
+  matrix.StringField("schema_id", kObjc3ReleaseCandidateMatrixSchemaId);
+  matrix.StringField("surface_kind", inputs.surface_kind);
+  matrix.StringField("release_label", kObjc3AdvancedFeatureReleaseLabel);
+  matrix.StringField("report_artifact", inputs.report_artifact_path);
+  matrix.StringField("publication_artifact", inputs.publication_artifact_path);
+  matrix.StringField("advanced_feature_gate_artifact",
+                     inputs.advanced_feature_gate_artifact_path);
+  matrix.StringField("validation_artifact_expected",
+                     inputs.validation_artifact_path);
+  matrix.StringField("release_evidence_operation_artifact_expected",
+                     inputs.release_evidence_operation_artifact_path);
+  matrix.StringField("dashboard_artifact_expected",
+                     inputs.dashboard_artifact_path);
+  matrix.RawJsonField(
+      "targeted_profile_ids",
+      BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
+                                   "    "));
+  matrix.RawJsonField(
+      "matrix_rows",
+      objc3::io::json::RenderJson(
+          JsonValue::ArrayValue(std::move(matrix_rows))));
+  matrix.StringField(
+      "matrix_model",
+      "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set");
+  matrix.BoolField("ready", true);
+  artifact_json = FinishJsonObject(matrix, out);
   return true;
 }
