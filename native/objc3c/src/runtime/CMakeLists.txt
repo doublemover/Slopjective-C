@@ -48,6 +48,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor_state_store.h
   concurrency/continuation_state.cpp
   concurrency/continuation_state.h
+  concurrency/continuation_state_store.cpp
+  concurrency/continuation_state_store.h
   concurrency/executor.cpp
   concurrency/executor.h
   concurrency/runtime_debug.cpp

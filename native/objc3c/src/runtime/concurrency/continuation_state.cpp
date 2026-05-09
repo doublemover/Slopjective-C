@@ -1,46 +1,12 @@
 #include "runtime/concurrency/continuation_state.h"
 
+#include "runtime/concurrency/continuation_state_store.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
-
-#include <cstdint>
-#include <unordered_set>
-
-namespace objc3c::runtime {
-namespace detail {
-
-struct RuntimeContinuationState {
-  std::uint64_t allocation_call_count = 0;
-  std::uint64_t handoff_call_count = 0;
-  std::uint64_t resume_call_count = 0;
-  int next_handle = 1;
-  int last_allocated_handle = 0;
-  int last_allocated_resume_entry_tag = 0;
-  int last_allocated_executor_tag = 0;
-  int last_handoff_handle = 0;
-  int last_handoff_executor_tag = 0;
-  int last_resume_handle = 0;
-  int last_resume_result_value = 0;
-  int last_resume_return_value = 0;
-  std::unordered_set<int> live_handles;
-};
-
-RuntimeContinuationState &ContinuationStateForCurrentThread() {
-  thread_local RuntimeContinuationState state;
-  return state;
-}
-
-}  // namespace detail
-
-void ResetRuntimeContinuationStateForTesting() {
-  detail::ContinuationStateForCurrentThread() = detail::RuntimeContinuationState{};
-}
-
-}  // namespace objc3c::runtime
 
 extern "C" int objc3_runtime_allocate_async_continuation_i32(
     int resume_entry_tag, int executor_tag) {
-  objc3c::runtime::detail::RuntimeContinuationState &state =
-      objc3c::runtime::detail::ContinuationStateForCurrentThread();
+  objc3c::runtime::RuntimeContinuationState &state =
+      objc3c::runtime::RuntimeContinuationStateForCurrentThread();
   ++state.allocation_call_count;
   const int handle = state.next_handle++;
   state.last_allocated_handle = handle;
@@ -52,8 +18,8 @@ extern "C" int objc3_runtime_allocate_async_continuation_i32(
 
 extern "C" int objc3_runtime_handoff_async_continuation_to_executor_i32(
     int continuation_handle, int executor_tag) {
-  objc3c::runtime::detail::RuntimeContinuationState &state =
-      objc3c::runtime::detail::ContinuationStateForCurrentThread();
+  objc3c::runtime::RuntimeContinuationState &state =
+      objc3c::runtime::RuntimeContinuationStateForCurrentThread();
   ++state.handoff_call_count;
   state.last_handoff_handle = continuation_handle;
   state.last_handoff_executor_tag = executor_tag;
@@ -67,8 +33,8 @@ extern "C" int objc3_runtime_handoff_async_continuation_to_executor_i32(
 
 extern "C" int objc3_runtime_resume_async_continuation_i32(
     int continuation_handle, int result_value) {
-  objc3c::runtime::detail::RuntimeContinuationState &state =
-      objc3c::runtime::detail::ContinuationStateForCurrentThread();
+  objc3c::runtime::RuntimeContinuationState &state =
+      objc3c::runtime::RuntimeContinuationStateForCurrentThread();
   ++state.resume_call_count;
   state.last_resume_handle = continuation_handle;
   state.last_resume_result_value = result_value;
@@ -88,8 +54,8 @@ extern "C" int objc3_runtime_copy_async_continuation_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  const objc3c::runtime::detail::RuntimeContinuationState &state =
-      objc3c::runtime::detail::ContinuationStateForCurrentThread();
+  const objc3c::runtime::RuntimeContinuationState &state =
+      objc3c::runtime::RuntimeContinuationStateForCurrentThread();
   snapshot->allocation_call_count = state.allocation_call_count;
   snapshot->handoff_call_count = state.handoff_call_count;
   snapshot->resume_call_count = state.resume_call_count;
