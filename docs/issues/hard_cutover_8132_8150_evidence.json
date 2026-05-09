@@ -19,9 +19,12 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "2a2d9759a",
-    "current_head_summary": "HC extract final readiness core keys",
-    "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
+    "current_head": "b4dad7b30",
+    "current_head_summary": "docs: refresh hard-cutover evidence through core keys",
+    "current_head_role": "latest committed docs-only closeout refresh folded into this evidence map",
+    "latest_source_head": "2a2d9759a",
+    "latest_source_head_summary": "HC extract final readiness core keys",
+    "latest_source_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "local_longest_file_scan": {
     "status": "local scan observation only; not validation, push, GitHub issue edit, or remote closure evidence",
@@ -2618,6 +2621,45 @@
       }
     ]
   },
+  "current_docs_only_closeout_refresh": {
+    "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
+    "since_commit": "2a2d9759a",
+    "through_commit": "b4dad7b30",
+    "commit_count": 1,
+    "count_policy": "counts the docs-only closeout refresh commit after the latest covered source head and excludes uncommitted worktree edits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8132",
+          "#8133",
+          "#8134",
+          "#8135",
+          "#8136",
+          "#8137",
+          "#8138",
+          "#8139",
+          "#8140",
+          "#8141",
+          "#8142",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8146",
+          "#8147",
+          "#8148",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "b4dad7b30"
+        ],
+        "owner_boundary": "docs-only evidence and closeout index synchronization; latest source implementation evidence remains 2a2d9759a"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",
@@ -3001,7 +3043,7 @@
     {
       "issue": "#8150",
       "status_for_tracker": "local-evidence-indexed-remote-deferred",
-      "closeout_summary": "Local closeout evidence is indexed from committed hard-cutover branch surfaces through the current covered head, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
+      "closeout_summary": "Local closeout evidence is indexed from committed hard-cutover branch surfaces through source head 2a2d9759a, with docs-only synchronization through b4dad7b30, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
       "local_commits": [
         "4c0285b0d",
         "16e517982",
@@ -3089,7 +3131,8 @@
         "8313028a7",
         "7f3a8c968",
         "e44d837ad",
-        "2a2d9759a"
+        "2a2d9759a",
+        "b4dad7b30"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

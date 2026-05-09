@@ -24,6 +24,8 @@ The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
 source head is `2a2d9759a` (`HC extract final readiness core keys`).
+The current docs-only closeout refresh folded into these payloads is
+`b4dad7b30` (`docs: refresh hard-cutover evidence through core keys`).
 Prior covered source heads were `e44d837ad` (`HC split parser behavior owner metadata`),
 `7f3a8c968` (`refactor(ir): extract protocol category metadata emission`),
 `8313028a7` (`HC extract frontend artifact runtime metadata plan`),
@@ -328,6 +330,12 @@ commits that landed after the first docs commit.
 | `#8144`, `#8150` | `e8b4d5d45` | Conformance behavior owner splits refresh local behavior-corpus ownership evidence without asserting a test run. |
 | `#8144`, `#8150` | `6e2076598` | Generated replay behavior owner splits refresh local generated-fixture ownership evidence without asserting a replay run. |
 
+## Current Docs-Only Closeout Refresh
+
+| Issue Area | Local Commit | Closeout Meaning |
+| --- | --- | --- |
+| `#8132`-`#8150` | `b4dad7b30` | Evidence and closeout docs are synchronized through the current local branch head. The latest source implementation evidence remains `2a2d9759a`; validation, push, GitHub issue edits, and remote closure remain deferred. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -629,14 +637,15 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`2a2d9759a`.
+`2a2d9759a`, with docs-only closeout synchronization through `b4dad7b30`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `2a2d9759a`.
+`98d10a61c`, the latest local implementation slices through `2a2d9759a`, and
+the docs-only evidence refresh through `b4dad7b30`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 
@@ -645,7 +654,7 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/issues/hard_cutover_8132_8150_evidence.json`,
 `docs/issues/hard_cutover_8132_8150_evidence.md`, commits `4c0285b0d`,
 `16e517982`, `e5b988129`, `a87b2c92e`, `709148d75`, `016683b19`,
-`645e9c25f`.
+`645e9c25f`, `b4dad7b30`.
 
 Remaining closure gates: this payload is current only as local source
 architecture evidence through the committed head named above. Validation, push,
