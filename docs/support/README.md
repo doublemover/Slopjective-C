@@ -33,5 +33,7 @@ The canonical schema registry entries live under `schemas/`:
 - Use only `implemented`, `rejected`, `reserved`, and `internal` as capability
   states.
 - Public replay commands must use `npm run objc3c -- <action>`.
+- Keep retired wording in `retired_surface_terms`; active rows must use current
+  canonical capability names.
 - Retired alternate surfaces are diagnostics, history, or anti-examples; they
   are not support modes.

@@ -29,6 +29,33 @@
     "Publicly replayable commands must use npm run objc3c -- <action>.",
     "Docs, spec, and site content must not advertise shims, fallbacks, migration lanes, or compatibility modes as supported surfaces; future support rows must use canonical feature names with evidence instead of reviving those labels."
   ],
+  "retired_surface_terms": [
+    {
+      "term": "shim",
+      "canonical_handling": "Reject as a support claim; replace with an implemented capability row or a diagnostic rejection row.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "fallback",
+      "canonical_handling": "Reject as an acceptance path; use the canonical parser, semantic, lowering, runtime, or tooling behavior name.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "migration lane",
+      "canonical_handling": "Reject as a supported mode; use adoption, upgrade, or reserved-state evidence without widening accepted syntax.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "compatibility mode",
+      "canonical_handling": "Reject as a mode label; use strict capability states and evidence-backed support claims.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "package-script alias",
+      "canonical_handling": "Reject as public command surface; use npm run objc3c -- <action>.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    }
+  ],
   "capabilities": [
     {
       "id": "compiler.parser.core-declarations",

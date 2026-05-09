@@ -68,6 +68,21 @@ Rules shown by this entry:
 - A future implementation must add or update a matrix row before docs can claim
   public support.
 
+## Retired Surface Term
+
+```json
+{
+  "term": "shim",
+  "canonical_handling": "Reject as a support claim; replace with an implemented capability row or a diagnostic rejection row.",
+  "allowed_context": "Negative examples only."
+}
+```
+
+Rules shown by this entry:
+
+- Retired wording is data for rejection and hygiene, not a support state.
+- Active capability rows use current feature names and evidence.
+
 ## Evidence Map Row
 
 ```json

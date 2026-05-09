@@ -11,6 +11,7 @@
     "states",
     "command_surface",
     "hard_cutover_rules",
+    "retired_surface_terms",
     "capabilities"
   ],
   "properties": {
@@ -75,6 +76,30 @@
       "items": {
         "type": "string",
         "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "retired_surface_terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["term", "canonical_handling", "allowed_context"],
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1
+          },
+          "canonical_handling": {
+            "type": "string",
+            "minLength": 1
+          },
+          "allowed_context": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
       },
       "minItems": 1,
       "uniqueItems": true

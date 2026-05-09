@@ -16,6 +16,9 @@ Machine-readable truth is split deliberately:
 - evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - schema examples: `docs/support/capability_schema_examples.md`
 
+The matrix also carries `retired_surface_terms` for wording that may appear only
+in negative examples, issue evidence, or source-hygiene rejection data.
+
 Command and evidence truth is hard-cut to the current surfaces:
 
 - `package.json` exposes one public bridge: `objc3c`.
