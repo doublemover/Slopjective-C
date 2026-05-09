@@ -46,6 +46,17 @@ BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
 BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
     const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary &summary);
 
+[[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringReplayKey(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
+
+[[nodiscard]] Objc3SerializedRuntimeMetadataImportLoweringSummary
+BuildSerializedRuntimeMetadataImportLoweringSummary(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary
+        &imported_runtime_metadata_semantic_rules);
+
+[[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
