@@ -2,6 +2,7 @@ add_library(objc3c_pipeline STATIC
   dispatch_surface_classification.cpp
   frontend_executable_metadata_handoff.cpp
   frontend_pipeline_orchestration.cpp
+  frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_pipeline_pragma_contracts.cpp
   frontend_pipeline_sema_stage_runner.cpp
@@ -11,6 +12,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation.cpp
   frontend_pipeline_phase_io.h
   frontend_pipeline_result_contract.h
+  frontend_pipeline_result_handoff.h
   frontend_pipeline_sema_stage_runner.h
   frontend_pipeline_stage_contract.h
   frontend_pipeline_stage_runner.h

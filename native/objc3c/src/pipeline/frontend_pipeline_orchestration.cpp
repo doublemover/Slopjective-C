@@ -16,6 +16,7 @@
 #include "pipeline/dispatch_surface_classification.h"
 #include "pipeline/frontend_executable_metadata_handoff.h"
 #include "pipeline/frontend_metadata_handoff_helpers.h"
+#include "pipeline/frontend_pipeline_result_handoff.h"
 #include "pipeline/frontend_pipeline_sema_stage_runner.h"
 #include "pipeline/frontend_pipeline_stage_sequence.h"
 #include "pipeline/frontend_pipeline_stage_runner.h"
@@ -6371,8 +6372,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   if (ShouldRunObjc3FrontendSemaStage(result)) {
     Objc3SemaPassManagerResult sema_result = RunObjc3FrontendSemaStage(
         result, options, allow_error_handling_error_runtime_surface);
-    result.integration_surface = std::move(sema_result.integration_surface);
-    result.sema_type_metadata_handoff = std::move(sema_result.type_metadata_handoff);
+    AdoptObjc3FrontendSemaResult(result, std::move(sema_result));
     result.protocol_category_summary =
         BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                      result.integration_surface,
@@ -6385,9 +6385,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     result.symbol_graph_scope_resolution_summary =
         BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                                result.sema_type_metadata_handoff);
-    result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;
-    result.sema_pass_flow_summary = sema_result.sema_pass_flow_summary;
-    result.sema_parity_surface = sema_result.parity_surface;
   }
   result.control_flow_control_flow_semantic_model_summary =
       BuildControlFlowControlFlowSemanticModelSummary(

@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "lex/objc3_lexer.h"
+#include "pipeline/frontend_pipeline_result_handoff.h"
 #include "parse/objc3_ast_builder_contract.h"
 #include "parse/objc3_diagnostics_bus.h"
 #include "pipeline/frontend_pipeline_pragma_contracts.h"
@@ -17,14 +18,8 @@ std::vector<Objc3LexToken> RunObjc3FrontendLexStage(
   std::vector<Objc3LexToken> tokens =
       lexer.Run(result.stage_diagnostics.lexer);
 
-  const Objc3LexerCanonicalLiteralRejectionCounts &lexer_counts =
-      lexer.CanonicalLiteralRejectionCounts();
-  result.canonical_literal_rejection_counts.yes_literal_sites =
-      lexer_counts.yes_literal_sites;
-  result.canonical_literal_rejection_counts.no_literal_sites =
-      lexer_counts.no_literal_sites;
-  result.canonical_literal_rejection_counts.null_literal_sites =
-      lexer_counts.null_literal_sites;
+  CaptureObjc3FrontendCanonicalLiteralRejections(
+      result, lexer.CanonicalLiteralRejectionCounts());
 
   CopyLanguageVersionPragmaContract(lexer.LanguageVersionPragmaContract(),
                                     result.language_version_pragma_contract);

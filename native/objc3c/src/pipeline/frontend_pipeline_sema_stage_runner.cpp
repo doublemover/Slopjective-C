@@ -4,6 +4,7 @@
 
 #include "parse/objc3_parse_support.h"
 #include "pipeline/dispatch_surface_classification.h"
+#include "pipeline/frontend_pipeline_result_handoff.h"
 #include "sema/objc3_sema_pass_manager.h"
 
 bool ShouldRunObjc3FrontendSemaStage(
@@ -34,17 +35,7 @@ Objc3SemaPassManagerResult RunObjc3FrontendSemaStage(
       options.arc_mode == Objc3FrontendArcMode::kEnabled;
 
   Objc3SemaPassManagerInput sema_input;
-  sema_input.program = &result.program;
-  sema_input.validation_options = semantic_options;
-  sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
-  sema_input.canonical_literal_rejection_counts.yes_literal_sites =
-      result.canonical_literal_rejection_counts.yes_literal_sites;
-  sema_input.canonical_literal_rejection_counts.no_literal_sites =
-      result.canonical_literal_rejection_counts.no_literal_sites;
-  sema_input.canonical_literal_rejection_counts.null_literal_sites =
-      result.canonical_literal_rejection_counts.null_literal_sites;
-  sema_input.diagnostics_bus.diagnostics =
-      &result.stage_diagnostics.semantic;
+  PopulateObjc3FrontendSemaInputHandoff(result, semantic_options, sema_input);
 
   Objc3SemaPassManagerResult sema_result =
       RunObjc3SemaPassManager(sema_input);
