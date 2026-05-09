@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from scripts.objc3c_workflow.action_dispatch import resolve_registered_action
-from scripts.objc3c_workflow.action_integrity import (
+from scripts.objc3c_workflow.action_handler_integrity import (
     action_handler_registry_is_complete,
     missing_action_handlers,
     orphan_action_handlers,
