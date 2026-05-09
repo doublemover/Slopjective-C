@@ -39,6 +39,30 @@
       "build-platform-support-matrix"
     ]
   },
+  "channel_owner_contract": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "packaging-channels-installer-validation",
+    "package_validation_owner": "packaging-channels-package-validation",
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ]
+  },
+  "blocker_metadata": {
+    "blocker_owner": "packaging-channels-blockers",
+    "blocking_conditions": [
+      "packaging workflow skipped source or schema surface checks",
+      "package-channel child action missing from objc3c bridge",
+      "package-channel workflow summary emitted report-only status"
+    ]
+  },
   "upstream_validate_actions": [
     "validate-release-foundation"
   ],

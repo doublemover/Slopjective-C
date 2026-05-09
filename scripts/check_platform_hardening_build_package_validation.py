@@ -14,6 +14,9 @@ from platform_hardening_contracts import (
     SUPPORT_MATRIX_ARTIFACT_PATH,
     host_matches_supported_platform,
     load_json_object,
+    platform_hardening_owner_payload,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     require_required_fields,
     write_json,
 )
@@ -22,6 +25,12 @@ from platform_hardening_contracts import (
 def main() -> int:
     run_capture(python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT))
     contract = load_json_object(BUILD_PACKAGE_VALIDATION_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform build package validation contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform build package validation contract",
+        required_blockers=("required package validation step failed",),
+    )
     matrix = load_json_object(SUPPORT_MATRIX_ARTIFACT_PATH)
 
     require_required_fields(matrix, contract["required_matrix_fields"], "platform support matrix")
@@ -36,7 +45,7 @@ def main() -> int:
         "build-native-binaries": public_workflow_command("build-native-binaries"),
         "package-runnable-toolchain": public_workflow_command("package-runnable-toolchain"),
         "build-package-channels": python_script_command(ROOT / "scripts" / "build_objc3c_package_channels.py"),
-        "check-packaging-channels-end-to-end": python_script_command(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"),
+        "validate-packaging-channels-end-to-end": python_script_command(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"),
     }
     for step_name in contract["required_steps"]:
         command = command_map[step_name]
@@ -58,6 +67,8 @@ def main() -> int:
     summary = {
         "contract_id": "objc3c.platform.hardening.build.package.validation.summary.v1",
         "status": "PASS",
+        "owner_policy": owner_policy or platform_hardening_owner_payload(),
+        "blocker_metadata": blocker_metadata,
         "support_matrix_artifact": repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
         "default_platform_id": matrix["default_platform_id"],
         "current_host": matrix["current_host"],

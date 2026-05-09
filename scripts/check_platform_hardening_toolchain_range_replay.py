@@ -18,6 +18,9 @@ from platform_hardening_contracts import (
     TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
     UPDATE_MANIFEST_PATH,
     load_json_object,
+    platform_hardening_owner_payload,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     summary_passes,
     write_json,
 )
@@ -33,6 +36,12 @@ def run(command: list[str]) -> None:
 
 def main() -> int:
     contract = load_json_object(TOOLCHAIN_RANGE_REPLAY_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform toolchain range replay contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform toolchain range replay contract",
+        required_blockers=("release operation published toolchain range outside replay evidence",),
+    )
     probe_summary = ROOT / contract["toolchain_probe_summary"]
 
     run(python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT))
@@ -83,6 +92,8 @@ def main() -> int:
     summary = {
         "contract_id": "objc3c.platform.hardening.toolchain.range.replay.summary.v1",
         "status": "PASS" if all(checks.values()) else "FAIL",
+        "owner_policy": owner_policy or platform_hardening_owner_payload(),
+        "blocker_metadata": blocker_metadata,
         "support_matrix_artifact": repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
         "toolchain_probe_summary": repo_rel(probe_summary),
         "release_operations_update_manifest": repo_rel(UPDATE_MANIFEST_PATH),

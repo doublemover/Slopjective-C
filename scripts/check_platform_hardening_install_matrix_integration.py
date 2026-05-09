@@ -16,7 +16,10 @@ from platform_hardening_contracts import (
     TOOLCHAIN_RANGE_REPLAY_SCRIPT,
     TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
     load_json_object,
+    platform_hardening_owner_payload,
     require_paths_exist,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     summary_passes,
     write_json,
 )
@@ -30,6 +33,12 @@ def run(command: list[str]) -> None:
 
 def main() -> int:
     contract = load_json_object(INSTALL_MATRIX_INTEGRATION_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform install matrix integration contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform install matrix integration contract",
+        required_blockers=("install matrix validation lost rollback evidence",),
+    )
     run(python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT))
     run(python_script_command(TOOLCHAIN_RANGE_REPLAY_SCRIPT))
     require_paths_exist((ROOT / raw_path for raw_path in contract["required_inputs"]), description="install-matrix input")
@@ -54,6 +63,8 @@ def main() -> int:
     summary = {
         "contract_id": "objc3c.platform.hardening.install.matrix.integration.summary.v1",
         "status": "PASS" if all(checks.values()) else "FAIL",
+        "owner_policy": owner_policy or platform_hardening_owner_payload(),
+        "blocker_metadata": blocker_metadata,
         "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
         "build_package_validation_summary": "tmp/reports/platform-hardening/build-package-validation-summary.json",
         "toolchain_range_replay_summary": "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",

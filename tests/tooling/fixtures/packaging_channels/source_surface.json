@@ -34,6 +34,31 @@
       "validate-platform-hardening-end-to-end"
     ]
   },
+  "channel_owner_contract": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "packaging-channels-installer-validation",
+    "package_validation_owner": "packaging-channels-package-validation",
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ]
+  },
+  "blocker_metadata": {
+    "blocker_owner": "packaging-channels-blockers",
+    "blocking_conditions": [
+      "channel source contract missing checked-in source",
+      "installer policy missing rollback or receipt contract",
+      "package channel artifact not derived from runnable package manifest",
+      "platform support matrix absent from package-channel summary"
+    ]
+  },
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
     "docs/runbooks/objc3c_release_foundation.md"

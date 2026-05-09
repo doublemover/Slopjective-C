@@ -19,6 +19,7 @@ from objc3c_tooling.public_workflow_output import extract_output_value
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 BUILD_PACKAGE_CHANNELS_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
+SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "source_surface.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 INSTALL_RECEIPT_SCHEMA = ROOT / "schemas" / "objc3c-package-install-receipt-v1.schema.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summary.json"
@@ -53,6 +54,14 @@ def main() -> int:
     build_result = run_capture(python_script_command(BUILD_PACKAGE_CHANNELS_PY), cwd=ROOT, capture_output=False)
     if build_result.returncode != 0:
         raise RuntimeError("package-channels build failed")
+
+    source_surface = load_json(SOURCE_SURFACE)
+    owner_policy = source_surface.get("owner_policy")
+    if not isinstance(owner_policy, dict) or owner_policy.get("report_only_allowed") is not False:
+        raise RuntimeError("packaging-channel source surface missing non-report-only owner_policy")
+    blocker_metadata = source_surface.get("blocker_metadata")
+    if not isinstance(blocker_metadata, dict) or blocker_metadata.get("blocker_owner") != "packaging-channels-blockers":
+        raise RuntimeError("packaging-channel source surface missing blocker metadata")
 
     summary = load_json(REPORT_PATH)
     manifest_path = ROOT / str(summary["manifest_path"]).replace("/", os.sep)
@@ -125,6 +134,8 @@ def main() -> int:
     end_to_end_summary = {
         "contract_id": "objc3c.packaging.channels.end-to-end.summary.v1",
         "status": "PASS",
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "build_report": repo_rel(REPORT_PATH),
         "manifest_path": repo_rel(manifest_path),
         "package_root": manifest["package_root"],

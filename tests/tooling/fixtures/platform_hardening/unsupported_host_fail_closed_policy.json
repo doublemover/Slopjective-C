@@ -4,6 +4,24 @@
   "milestone": "M326",
   "issue": "M326-B002",
   "supported_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "unsupported host attempted build package or install flow",
+      "unsupported channel claim reached publication",
+      "support tier overclaim bypassed fail-closed policy"
+    ]
+  },
   "hard_fail_classes": [
     {
       "failure_id": "unsupported-host-os-or-arch",

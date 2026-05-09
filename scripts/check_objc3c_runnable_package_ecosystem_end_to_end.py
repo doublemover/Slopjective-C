@@ -12,6 +12,7 @@ from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
+from package_ecosystem_contracts import package_ecosystem_owner_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,7 +78,7 @@ def main() -> int:
     expect(mirror_summary.get("status") == "PASS", "packaged mirror reproducibility summary did not report PASS", failures)
     expect(mirror_summary.get("network_policy") == "no-network-during-validation", "packaged mirror network policy drifted", failures)
     expect(
-        mirror_summary.get("hosted_registry_support") == "deferred-release-blocking-if-claimed",
+        mirror_summary.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed",
         "packaged hosted registry support claim drifted",
         failures,
     )
@@ -85,6 +86,16 @@ def main() -> int:
     payload = {
         "contract_id": "objc3c.package_ecosystem.runnable.end_to_end.summary.v1",
         "status": "PASS" if not failures else "FAIL",
+        "owner_policy": package_ecosystem_owner_payload(),
+        "blocker_metadata": {
+            "blocker_owner": "package-ecosystem-blockers",
+            "blocking_conditions": [
+                "packaged package authoring workflow failed",
+                "packaged mirror workflow failed",
+                "runnable package manifest missing package ecosystem owner surface",
+                "packaged hosted registry claim did not fail closed",
+            ],
+        },
         "package_root": repo_rel(package_root),
         "manifest_path": repo_rel(manifest_path),
         "package_ecosystem_surface": package_surface,

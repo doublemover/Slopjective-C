@@ -7,6 +7,24 @@
   "summary_action": "validate-platform-hardening",
   "summary_command": "npm run objc3c -- validate-platform-hardening",
   "summary_implementation_anchor": "scripts/check_platform_hardening_build_package_validation.py",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "required package validation step failed",
+      "current host fell outside checked-in supported platform matrix",
+      "required tool probe failed"
+    ]
+  },
   "required_steps": [
     "build-native-binaries",
     "package-runnable-toolchain",

@@ -12,6 +12,8 @@ from platform_hardening_contracts import (
     load_json_object,
     policy_path_entries,
     required_tool_probes,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     write_json,
     write_markdown_summary,
 )
@@ -21,6 +23,12 @@ from objc3c_tooling.public_runner import public_workflow_action_names
 
 def main() -> int:
     contract = load_json_object(BOUNDARY_INVENTORY_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform hardening boundary inventory")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform hardening boundary inventory",
+        required_blockers=("platform claim outside checked-in support matrix",),
+    )
     supported_platforms = load_json_object(SUPPORTED_PLATFORMS_PATH)
     runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
     registered_actions = set(public_workflow_action_names())
@@ -38,7 +46,7 @@ def main() -> int:
         raise RuntimeError("supported_platforms.json did not publish supported_platforms")
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_platform_hardening_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_platform_hardening_boundary_inventory_summary.py",
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_policy_contract_paths_exist": all(path.is_file() for path in policy_path_entries()),
         "all_public_actions_registered": not missing_actions,
@@ -65,6 +73,8 @@ def main() -> int:
         "supported_platform_count": len(contract["supported_platform_ids"]),
         "supported_channel_count": len(contract["supported_channels"]),
         "gap_claim_count": len(contract["gap_claims"]),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "host_probe": {
             "os": host.os,
             "arch": host.arch,

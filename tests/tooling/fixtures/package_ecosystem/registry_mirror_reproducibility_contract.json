@@ -15,6 +15,24 @@
     "reproducibility_summary": "tmp/reports/package-ecosystem/registry-mirror-reproducibility-summary.json"
   },
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "mirror package ids drift from lock package ids",
+      "local registry package ids drift from lock package ids",
+      "hosted registry claim did not fail closed",
+      "mirror validation requires network access"
+    ]
+  },
   "required_actions": [
     "build-package-channels",
     "build-release-manifest",

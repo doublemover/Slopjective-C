@@ -236,6 +236,7 @@ $requiredRelativeFiles = @(
   "scripts/build_package_ecosystem_local_workspace_mirror_summary.py",
   "scripts/build_package_ecosystem_registry_publication_summary.py",
   "scripts/build_package_ecosystem_artifact_contract_summary.py",
+  "scripts/package_ecosystem_contracts.py",
   "scripts/build_objc3c_package_lock.py",
   "scripts/check_objc3c_package_authoring_workflow.py",
   "scripts/build_objc3c_package_mirror.py",
@@ -309,6 +310,7 @@ $requiredRelativeFiles = @(
   "site/src/index.body.md",
   "scripts/probe_objc3c_llvm_capabilities.py",
   "scripts/build_objc3c_platform_support_matrix.py",
+  "scripts/platform_hardening_contracts.py",
   "scripts/check_objc3c_platform_hardening_integration.py",
   "scripts/check_objc3c_runnable_platform_hardening_end_to_end.py",
   "scripts/build_platform_hardening_boundary_inventory_summary.py",
@@ -430,8 +432,8 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
   "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
-  "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
-  "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json",
+  "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+  "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
   "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
   "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
   "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
@@ -757,8 +759,8 @@ $manifestPayload = [ordered]@{
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
   platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
-  platform_unsupported_host_policy = "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json"
-  platform_toolchain_archive_policy = "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json"
+  platform_unsupported_host_policy = "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+  platform_toolchain_archive_policy = "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json"
   platform_support_matrix_schema = "schemas/objc3c-platform-support-matrix-v1.schema.json"
   platform_support_matrix_contract = "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json"
   platform_build_package_validation_contract = "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json"

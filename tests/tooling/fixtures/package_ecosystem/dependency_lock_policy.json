@@ -64,6 +64,25 @@
     "tmp-only-source-of-truth"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "missing dependency provenance",
+      "ambiguous package identity",
+      "unstable lock ordering or digest input set",
+      "public workflow replay failure",
+      "registry claim without local package evidence"
+    ]
+  },
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",
@@ -76,7 +95,7 @@
   "claim_rules": [
     "dependency resolution starts from checked-in local package surfaces",
     "lockfiles must be deterministic and provenance-bearing before registry publication can be claimed",
-    "network-backed dependency resolution is unsupported until represented by replayable evidence",
+    "network-backed dependency resolution fails closed until represented by replayable evidence",
     "tmp outputs may contain generated locks and reports but may not become source authority"
   ],
   "release_blocking_conditions": [

@@ -52,6 +52,25 @@
     "offline mirror publication must remain usable without network access"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "hosted registry claimed as supported",
+      "publication metadata contains an unlocked package identity",
+      "offline mirror validation requires network access",
+      "registry index is hand-authored instead of generated",
+      "release/update metadata drifts from package ecosystem evidence"
+    ]
+  },
   "required_actions": [
     "build-package-channels",
     "build-release-manifest",

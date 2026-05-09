@@ -14,10 +14,14 @@ from scripts.objc3c_workflow.action_catalog_reporting_release import (
 from scripts.objc3c_workflow.action_catalog_release_foundation import (
     RELEASE_FOUNDATION_ACTION_SPECS,
 )
+from scripts.objc3c_workflow.action_catalog_packaging_channels import (
+    PACKAGING_CHANNEL_ACTION_SPECS,
+)
 from scripts.objc3c_workflow.action_catalog_release_operations import (
     RELEASE_OPERATIONS_ACTION_SPECS,
 )
 from scripts.objc3c_workflow.actions.release_governance_owner_contracts import (
+    PACKAGING_CHANNEL_ACTION_CONTRACTS,
     RELEASE_FOUNDATION_ACTION_CONTRACTS,
     RELEASE_GATE_OWNERS,
     RELEASE_OPERATIONS_ACTION_CONTRACTS,
@@ -78,18 +82,25 @@ def test_reporting_release_catalog_exports_all_release_gate_owners() -> None:
             assert STRESS_REPORTING_RELEASE_ACTION_OWNER_MAP[action_name] == action_owner
 
 
-def test_foundation_and_operations_catalogs_are_contract_facades() -> None:
+def test_release_channel_catalogs_are_contract_facades() -> None:
     foundation_text = (
         WORKFLOW_ROOT / "action_catalog_release_foundation.py"
+    ).read_text(encoding="utf-8")
+    packaging_text = (
+        WORKFLOW_ROOT / "action_catalog_packaging_channels.py"
     ).read_text(encoding="utf-8")
     operations_text = (
         WORKFLOW_ROOT / "action_catalog_release_operations.py"
     ).read_text(encoding="utf-8")
 
     assert "ActionSpec(" not in foundation_text
+    assert "ActionSpec(" not in packaging_text
     assert "ActionSpec(" not in operations_text
     assert RELEASE_FOUNDATION_ACTION_SPECS == release_action_specs(
         RELEASE_FOUNDATION_ACTION_CONTRACTS
+    )
+    assert PACKAGING_CHANNEL_ACTION_SPECS == release_action_specs(
+        PACKAGING_CHANNEL_ACTION_CONTRACTS
     )
     assert RELEASE_OPERATIONS_ACTION_SPECS == release_action_specs(
         RELEASE_OPERATIONS_ACTION_CONTRACTS

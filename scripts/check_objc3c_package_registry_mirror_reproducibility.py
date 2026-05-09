@@ -12,6 +12,10 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.public_runner import public_workflow_action_names
 from objc3c_tooling.subprocesses import python_script_command
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +44,12 @@ def package_ids(payload: dict[str, Any]) -> list[str]:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem registry mirror reproducibility")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        contract,
+        surface_name="package ecosystem registry mirror reproducibility",
+        required_blockers=("hosted registry claim did not fail closed",),
+    )
     package = load_json(ROOT / "package.json")
     package_scripts = package.get("scripts", {})
     if not isinstance(package_scripts, dict):
@@ -78,7 +88,7 @@ def main() -> int:
     expect(lock_ids == mirror_ids, "mirror package ids drifted from lock package ids", failures)
     expect(lock_ids == registry_ids, "registry package ids drifted from lock package ids", failures)
     expect(mirror.get("network_policy") == "no-network-during-validation", "mirror network policy drifted", failures)
-    expect(publication.get("hosted_registry_support") == "deferred-release-blocking-if-claimed", "hosted registry support claim drifted", failures)
+    expect(publication.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed", "hosted registry support claim drifted", failures)
     expect(publication.get("network_resolution_support") == "unsupported", "network resolution support claim drifted", failures)
     expect(mirror_summary.get("status") == "PASS", "mirror summary did not report PASS", failures)
     expect(mirror_summary.get("package_count") == len(lock_ids), "mirror summary package count drifted", failures)
@@ -97,6 +107,8 @@ def main() -> int:
         "package_count": len(lock_ids),
         "network_policy": mirror.get("network_policy"),
         "hosted_registry_support": publication.get("hosted_registry_support"),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "package_bridge": package_bridge,
         "package_bridge_count": 1 if package_bridge_exists else 0,
         "required_actions": required_actions,

@@ -8,6 +8,10 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "artifact-contra
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem artifact contract")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        contract,
+        surface_name="package ecosystem artifact contract",
+        required_blockers=("package artifact generated without checked-in source contract",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(contract["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(contract["boundary_inventory"]))
@@ -85,6 +95,8 @@ def main() -> int:
         "generated_artifact_roots": generated_artifact_roots,
         "required_actions": required_actions,
         "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "artifact_claim_rules": claim_rules,
         "missing_paths": missing_paths,
         "missing_actions": missing_actions,

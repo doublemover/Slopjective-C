@@ -44,6 +44,24 @@
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "package artifact generated without checked-in source contract",
+      "schema missing for package publication artifact",
+      "generated package evidence outside package ecosystem artifact root",
+      "hosted registry claim without local package evidence"
+    ]
+  },
   "required_actions": [
     "package-runnable-toolchain",
     "build-package-lock",

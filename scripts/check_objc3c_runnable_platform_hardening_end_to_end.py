@@ -18,6 +18,9 @@ from platform_hardening_contracts import (
     SUPPORT_MATRIX_ARTIFACT_PATH,
     SUPPORT_MATRIX_SUMMARY_PATH,
     PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH,
+    platform_hardening_owner_payload,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
 )
 
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -42,6 +45,12 @@ def package_path(package_root: Path, relative_path: str) -> Path:
 
 def main() -> int:
     contract = load_json(PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="packaged platform hardening smoke contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="packaged platform hardening smoke contract",
+        required_blockers=("packaged platform hardening command surface missing",),
+    )
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     package_root = ROOT / "tmp" / "pkg" / "objc3c-platform-hardening-e2e" / run_id
     manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
@@ -133,6 +142,8 @@ def main() -> int:
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS",
+        "owner_policy": owner_policy or platform_hardening_owner_payload(),
+        "blocker_metadata": blocker_metadata,
         "runner_path": "scripts/check_objc3c_runnable_platform_hardening_end_to_end.py",
         "package_manifest_path": repo_rel(manifest_path),
         "package_root": repo_rel(package_root),

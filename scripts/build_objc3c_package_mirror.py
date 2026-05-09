@@ -96,7 +96,7 @@ def main() -> int:
         "source_mirror": repo_rel(MIRROR_PATH),
         "source_registry_index": repo_rel(REGISTRY_PATH),
         "publication_state": "generated-local-metadata",
-        "hosted_registry_support": "deferred-release-blocking-if-claimed",
+        "hosted_registry_support": "unsupported-fail-closed-if-claimed",
         "network_resolution_support": "unsupported",
         "package_count": len(packages),
     }

@@ -57,6 +57,24 @@
     "scripts/check_objc3c_release_operations_end_to_end.py"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "missing checked-in package source contract",
+      "public package workflow action absent from objc3c bridge",
+      "generated package evidence outside package ecosystem artifact root",
+      "hosted registry claim without local package evidence"
+    ]
+  },
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",

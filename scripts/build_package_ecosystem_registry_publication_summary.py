@@ -8,6 +8,10 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "registry-public
 
 def main() -> int:
     semantics = load_json(SEMANTICS_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(semantics, surface_name="package ecosystem registry publication semantics")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        semantics,
+        surface_name="package ecosystem registry publication semantics",
+        required_blockers=("hosted registry claimed as supported",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(semantics["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(semantics["boundary_inventory"]))
@@ -63,7 +73,7 @@ def main() -> int:
         "local_index_supported": layer_states.get("local-index") == "supported-generated-artifact",
         "offline_mirror_supported": layer_states.get("offline-mirror") == "supported-generated-artifact",
         "publication_metadata_supported": layer_states.get("publication-metadata") == "supported-generated-artifact",
-        "hosted_registry_deferred": layer_states.get("hosted-registry") == "deferred-release-blocking-if-claimed",
+        "hosted_registry_fails_closed": layer_states.get("hosted-registry") == "unsupported-fail-closed-if-claimed",
         "release_blockers_include_hosted_claim": "hosted registry claimed as supported" in release_blocking_conditions,
     }
     ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
@@ -87,6 +97,8 @@ def main() -> int:
         "publication_rules": publication_rules,
         "required_actions": required_actions,
         "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "release_blocking_conditions": release_blocking_conditions,
         "missing_paths": missing_paths,
         "missing_actions": missing_actions,

@@ -8,6 +8,8 @@ from platform_hardening_contracts import (
     UNSUPPORTED_HOST_POLICY_PATH,
     UNSUPPORTED_HOST_POLICY_SUMMARY_PATH,
     load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     write_json,
     write_markdown_summary,
 )
@@ -15,6 +17,12 @@ from platform_hardening_contracts import (
 
 def main() -> int:
     policy = load_json_object(UNSUPPORTED_HOST_POLICY_PATH)
+    owner_policy = require_platform_hardening_owner_policy(policy, surface_name="unsupported host fail-closed policy")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        policy,
+        surface_name="unsupported host fail-closed policy",
+        required_blockers=("unsupported host attempted build package or install flow",),
+    )
     runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
     allowed_fail_closed_actions = policy["allowed_fail_closed_non_build_actions"]
 
@@ -25,15 +33,17 @@ def main() -> int:
         "required_claims_present": len(policy["required_claims"]) >= 3,
         "runbook_mentions_unsupported_host_policy": "## Unsupported-Host Fail-Closed Policy" in runbook_text,
         "runbook_mentions_hard_fail_host_matrix": "host OS or host architecture outside the checked-in support matrix" in runbook_text,
-        "runbook_mentions_allowed_fallback_behavior": "capability inspection and docs-only policy checks may still run" in runbook_text,
+        "runbook_mentions_allowed_fail_closed_behavior": "capability inspection and docs-only policy checks may still run" in runbook_text,
         "runbook_mentions_forbidden_supported_language": "`best effort supported`" in runbook_text and "`supported if LLVM is installed`" in runbook_text,
     }
 
     payload = {
-        "contract_id": "objc3c.platform.hardening.unsupported.host.fallback.policy.summary.v1",
+        "contract_id": "objc3c.platform.hardening.unsupported.host.fail_closed.policy.summary.v1",
         "source_contract_id": policy["contract_id"],
         "status": "PASS" if all(checks.values()) else "FAIL",
         "runner_path": "scripts/build_platform_hardening_unsupported_host_policy_summary.py",
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "hard_fail_class_count": len(policy["hard_fail_classes"]),
         "allowed_fail_closed_non_build_action_count": len(allowed_fail_closed_actions),
         "forbidden_phrase_count": len(policy["forbidden_phrases"]),

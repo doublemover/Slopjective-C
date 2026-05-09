@@ -1,5 +1,23 @@
 {
   "contract_id": "objc3c.platform.hardening.packaged.smoke.integration.contract.v1",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "packaged platform hardening command surface missing",
+      "packaged support matrix missing publication surface",
+      "packaged validate-platform-hardening summary failed"
+    ]
+  },
   "manifest_fields": [
     "platform_hardening_runbook",
     "platform_hardening_boundary_inventory",

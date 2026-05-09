@@ -14,6 +14,8 @@ from platform_hardening_contracts import (
     PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH,
     ROOT,
     load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     write_json,
     write_markdown_summary,
 )
@@ -25,6 +27,12 @@ def main() -> int:
         check=True,
     )
     contract = load_json_object(PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform matrix artifact contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform matrix artifact contract",
+        required_blockers=("platform matrix artifact missing source-owned owner policy",),
+    )
     schema = load_json_object(PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH)
     artifact = load_json_object(resolve_repo_path(contract["generated_artifact_path"]))
     runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
@@ -49,6 +57,8 @@ def main() -> int:
         "runner_path": "scripts/build_platform_hardening_artifact_contract_summary.py",
         "required_field_count": len(contract["required_fields"]),
         "required_publication_field_count": len(contract["required_publication_surface_fields"]),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "checks": checks,
     }
 

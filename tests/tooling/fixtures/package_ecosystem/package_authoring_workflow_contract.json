@@ -15,6 +15,23 @@
     "authoring_summary": "tmp/reports/package-ecosystem/package-authoring-workflow-summary.json"
   },
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "package source lacks provenance entry",
+      "authoring lock graph missing package edge",
+      "public workflow replay failure"
+    ]
+  },
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",

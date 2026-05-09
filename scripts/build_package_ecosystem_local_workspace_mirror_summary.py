@@ -8,6 +8,10 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "local-workspace
 
 def main() -> int:
     semantics = load_json(SEMANTICS_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(semantics, surface_name="package ecosystem workspace mirror semantics")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        semantics,
+        surface_name="package ecosystem workspace mirror semantics",
+        required_blockers=("mirror index not derived from current lock graph",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(semantics["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(semantics["boundary_inventory"]))
@@ -91,6 +101,8 @@ def main() -> int:
         "workspace_rules": workspace_rules,
         "required_actions": required_actions,
         "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "non_goals": non_goals,
         "missing_paths": missing_paths,
         "missing_actions": missing_actions,

@@ -25,8 +25,8 @@
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
-    "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
-    "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json",
+    "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
     "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
     "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
     "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
@@ -34,6 +34,25 @@
     "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "platform claim outside checked-in support matrix",
+      "policy contract path missing from source tree",
+      "public platform hardening action absent from objc3c bridge",
+      "host tool discovery widened package support claim"
+    ]
+  },
   "public_actions": [
     "build-platform-support-matrix",
     "validate-platform-hardening",

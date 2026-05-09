@@ -28,6 +28,7 @@ from platform_hardening_contracts import (
     TOOLCHAIN_RANGE_REPLAY_SCRIPT,
     TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
     UPDATE_MANIFEST_PATH,
+    platform_hardening_owner_payload,
     summary_passes,
 )
 
@@ -62,6 +63,15 @@ def main() -> int:
         payload = {
             "contract_id": "objc3c.platform.hardening.integration.summary.v1",
             "ok": not failures,
+            "owner_policy": platform_hardening_owner_payload(),
+            "blocker_metadata": {
+                "blocker_owner": "platform-hardening-blockers",
+                "blocking_conditions": [
+                    "packaged platform hardening manifest missing source contract",
+                    "packaged command surface absent from objc3c bridge",
+                    "packaged platform hardening validation emitted report-only status",
+                ],
+            },
             "failures": failures,
             "mode": "packaged-bundle-smoke",
             "reports": {
@@ -171,6 +181,17 @@ def main() -> int:
     payload = {
         "contract_id": "objc3c.platform.hardening.integration.summary.v1",
         "ok": not failures,
+        "owner_policy": platform_hardening_owner_payload(),
+        "blocker_metadata": {
+            "blocker_owner": "platform-hardening-blockers",
+            "blocking_conditions": [
+                "platform hardening summary builder failed",
+                "build/package validation did not pass",
+                "toolchain range replay did not pass",
+                "install matrix integration did not pass",
+                "release publication metadata drifted from platform support matrix",
+            ],
+        },
         "failures": failures,
         "steps": steps,
         "reports": {

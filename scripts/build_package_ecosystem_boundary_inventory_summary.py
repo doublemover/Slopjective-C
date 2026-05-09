@@ -8,6 +8,10 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +32,12 @@ def missing_files(paths: list[str]) -> list[str]:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem boundary inventory")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        contract,
+        surface_name="package ecosystem boundary inventory",
+        required_blockers=("missing checked-in package source contract",),
+    )
     package = load_json(PACKAGE_JSON)
     stdlib_workspace = load_json(ROOT / str(contract["stdlib_workspace_contract"]))
     stdlib_package_surface = load_json(ROOT / str(contract["stdlib_package_surface"]))
@@ -76,6 +86,8 @@ def main() -> int:
         "existing_package_validation_surfaces": existing_files(validation_surfaces),
         "required_actions": required_actions,
         "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "missing_paths": missing_paths,
         "missing_actions": missing_actions,
         "missing_package_bridge": [] if package_bridge_exists else [package_bridge],

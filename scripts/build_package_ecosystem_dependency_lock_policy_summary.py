@@ -8,6 +8,10 @@ from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "dependency-lock
 
 def main() -> int:
     policy = load_json(POLICY_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(policy, surface_name="package ecosystem dependency lock policy")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        policy,
+        surface_name="package ecosystem dependency lock policy",
+        required_blockers=("missing dependency provenance",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(policy["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(policy["boundary_inventory"]))
@@ -81,6 +91,8 @@ def main() -> int:
         "forbidden_dependency_sources": forbidden_sources,
         "required_actions": required_actions,
         "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "claim_rules": claim_rules,
         "release_blocking_conditions": release_blocking_conditions,
         "missing_paths": missing_paths,

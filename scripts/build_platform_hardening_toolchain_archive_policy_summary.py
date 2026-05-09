@@ -10,6 +10,8 @@ from platform_hardening_contracts import (
     TOOLCHAIN_ARCHIVE_POLICY_PATH,
     TOOLCHAIN_ARCHIVE_POLICY_SUMMARY_PATH,
     load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     write_json,
     write_markdown_summary,
 )
@@ -17,6 +19,12 @@ from platform_hardening_contracts import (
 
 def main() -> int:
     policy = load_json_object(TOOLCHAIN_ARCHIVE_POLICY_PATH)
+    owner_policy = require_platform_hardening_owner_policy(policy, surface_name="toolchain archive claim policy")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        policy,
+        surface_name="toolchain archive claim policy",
+        required_blockers=("toolchain archive claim outside checked-in package channel set",),
+    )
     platform_runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
     packaging_runbook_text = PACKAGING_RUNBOOK_PATH.read_text(encoding="utf-8")
     release_runbook_text = RELEASE_RUNBOOK_PATH.read_text(encoding="utf-8")
@@ -34,10 +42,12 @@ def main() -> int:
     }
 
     payload = {
-        "contract_id": "objc3c.platform.hardening.toolchain.archive.compatibility.policy.summary.v1",
+        "contract_id": "objc3c.platform.hardening.toolchain.archive.claim.policy.summary.v1",
         "source_contract_id": policy["contract_id"],
         "status": "PASS" if all(checks.values()) else "FAIL",
         "runner_path": "scripts/build_platform_hardening_toolchain_archive_policy_summary.py",
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "claim_boundary_rule_count": len(claim_boundary_rules),
         "toolchain_range_rule_count": len(policy["toolchain_range_rules"]),
         "forbidden_claim_count": len(policy["forbidden_claims"]),
@@ -48,7 +58,7 @@ def main() -> int:
     write_json(TOOLCHAIN_ARCHIVE_POLICY_SUMMARY_PATH, payload)
     write_markdown_summary(
         TOOLCHAIN_ARCHIVE_POLICY_SUMMARY_PATH.with_suffix(".md"),
-        "Toolchain And Archive Compatibility Policy Summary",
+        "Toolchain And Archive Claim Policy Summary",
         (
             ("Contract", payload["source_contract_id"]),
             ("Claim-boundary rules", payload["claim_boundary_rule_count"]),

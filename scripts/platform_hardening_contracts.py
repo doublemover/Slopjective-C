@@ -25,8 +25,8 @@ PLATFORM_REPORT_ROOT = ROOT / "tmp" / "reports" / "platform-hardening"
 
 BOUNDARY_INVENTORY_PATH = PLATFORM_FIXTURE_ROOT / "boundary_inventory.json"
 SUPPORT_TIER_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "platform_support_tier_policy.json"
-UNSUPPORTED_HOST_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "unsupported_host_fallback_policy.json"
-TOOLCHAIN_ARCHIVE_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_archive_compatibility_policy.json"
+UNSUPPORTED_HOST_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "unsupported_host_fail_closed_policy.json"
+TOOLCHAIN_ARCHIVE_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_archive_claim_policy.json"
 PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "platform_matrix_artifact_contract.json"
 BUILD_PACKAGE_VALIDATION_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "build_package_validation_contract.json"
 TOOLCHAIN_RANGE_REPLAY_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_range_replay_contract.json"
@@ -77,6 +77,19 @@ PUBLICATION_SURFACE: dict[str, str] = {
     "release_operations_command": "validate-release-operations",
     "release_operations_end_to_end_command": "validate-release-operations-end-to-end",
 }
+
+PLATFORM_HARDENING_OWNER_POLICY: dict[str, object] = {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": False,
+}
+
+PLATFORM_HARDENING_OWNER_FIELDS: tuple[str, ...] = tuple(PLATFORM_HARDENING_OWNER_POLICY)
 
 PLATFORM_HARDENING_SUMMARY_BUILDERS: tuple[Path, ...] = (
     ROOT / "scripts" / "build_platform_hardening_boundary_inventory_summary.py",
@@ -246,6 +259,40 @@ def write_support_matrix(payload: dict[str, Any]) -> dict[str, Any]:
 def require_required_fields(payload: dict[str, Any], field_names: Iterable[str], surface_name: str) -> None:
     for field_name in field_names:
         expect(field_name in payload, f"{surface_name} missing required field {field_name}")
+
+
+def platform_hardening_owner_payload() -> dict[str, object]:
+    return dict(PLATFORM_HARDENING_OWNER_POLICY)
+
+
+def require_platform_hardening_owner_policy(payload: dict[str, Any], *, surface_name: str) -> dict[str, Any]:
+    owner_policy = payload.get("owner_policy")
+    expect(isinstance(owner_policy, dict), f"{surface_name} missing owner_policy")
+    missing_fields = [field for field in PLATFORM_HARDENING_OWNER_FIELDS if field not in owner_policy]
+    expect(not missing_fields, f"{surface_name} owner_policy missing fields: {', '.join(missing_fields)}")
+    expect(owner_policy.get("report_only_allowed") is False, f"{surface_name} owner_policy must forbid report-only publication")
+    for field_name, expected_value in PLATFORM_HARDENING_OWNER_POLICY.items():
+        expect(owner_policy.get(field_name) == expected_value, f"{surface_name} owner_policy drifted for {field_name}")
+    return owner_policy
+
+
+def require_platform_hardening_blocker_metadata(
+    payload: dict[str, Any],
+    *,
+    surface_name: str,
+    required_blockers: Iterable[str] = (),
+) -> dict[str, Any]:
+    blocker_metadata = payload.get("blocker_metadata")
+    expect(isinstance(blocker_metadata, dict), f"{surface_name} missing blocker_metadata")
+    expect(
+        blocker_metadata.get("blocker_owner") == PLATFORM_HARDENING_OWNER_POLICY["blocker_owner"],
+        f"{surface_name} blocker owner drifted",
+    )
+    blocking_conditions = blocker_metadata.get("blocking_conditions")
+    expect(isinstance(blocking_conditions, list) and len(blocking_conditions) > 0, f"{surface_name} missing blocking_conditions")
+    missing_blockers = [blocker for blocker in required_blockers if blocker not in blocking_conditions]
+    expect(not missing_blockers, f"{surface_name} blocker_metadata missing blockers: {', '.join(missing_blockers)}")
+    return blocker_metadata
 
 
 def require_paths_exist(paths: Iterable[Path], *, description: str) -> None:

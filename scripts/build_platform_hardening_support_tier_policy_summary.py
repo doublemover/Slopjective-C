@@ -11,6 +11,8 @@ from platform_hardening_contracts import (
     SUPPORT_TIER_POLICY_SUMMARY_PATH,
     SUPPORTED_PLATFORMS_PATH,
     load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
     write_json,
     write_markdown_summary,
 )
@@ -18,6 +20,12 @@ from platform_hardening_contracts import (
 
 def main() -> int:
     policy = load_json_object(SUPPORT_TIER_POLICY_PATH)
+    owner_policy = require_platform_hardening_owner_policy(policy, surface_name="platform support tier policy")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        policy,
+        surface_name="platform support tier policy",
+        required_blockers=("support tier claim outside checked-in platform ids",),
+    )
     supported_platforms = load_json_object(SUPPORTED_PLATFORMS_PATH)
     platform_runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
     packaging_runbook_text = PACKAGING_RUNBOOK_PATH.read_text(encoding="utf-8")
@@ -48,6 +56,8 @@ def main() -> int:
         "tier_2_platform_count": len(tier_index["tier-2"]["platform_ids"]),
         "experimental_platform_count": len(tier_index["experimental"]["platform_ids"]),
         "forbidden_claim_count": len(policy["forbidden_claims"]),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "checks": checks,
     }
 

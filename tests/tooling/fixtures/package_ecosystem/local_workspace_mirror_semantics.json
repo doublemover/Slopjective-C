@@ -69,6 +69,24 @@
     "canonical applications and stdlib programs must pressure the same package semantics"
   ],
   "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "workspace source missing from checked-in package surface",
+      "lock replay path absent from objc3c package bridge",
+      "mirror index not derived from current lock graph",
+      "offline mirror validation requires network access"
+    ]
+  },
   "required_actions": [
     "materialize-stdlib-workspace",
     "materialize-canonical-application-workspace",

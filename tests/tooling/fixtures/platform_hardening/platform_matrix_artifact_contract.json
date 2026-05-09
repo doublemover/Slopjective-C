@@ -8,6 +8,24 @@
   "summary_implementation_anchor": "scripts/build_platform_hardening_artifact_contract_summary.py",
   "generated_artifact_path": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
   "generated_summary_path": "tmp/reports/platform-hardening/platform-support-matrix-summary.json",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "report_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "platform matrix artifact missing source-owned owner policy",
+      "platform matrix artifact missing publication surface",
+      "support matrix schema drifted from source contract"
+    ]
+  },
   "required_fields": [
     "contract_id",
     "schema_version",
