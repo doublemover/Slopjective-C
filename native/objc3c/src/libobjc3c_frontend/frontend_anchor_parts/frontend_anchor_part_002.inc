@@ -52,7 +52,8 @@
       OBJC3C_FRONTEND_STAGE_EMIT, emit_attempted, emit_skipped, emit_diagnostics);
 
   std::string result_ownership_error;
-  if (!PopulateResultPaths(context, result, result_ownership_error)) {
+  if (!objc3c::frontend::PopulateCompileResultFromFrontendContext(
+          context, result, result_ownership_error)) {
     result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
     result->process_exit_code = 2;
     result->success = 0;
@@ -69,21 +70,25 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
   if (context == nullptr) {
-    return SetUsageErrorWithoutContext(result, "compile_file requires a frontend context.");
+    return objc3c::frontend::SetFrontendUsageErrorWithoutContext(
+        result, "compile_file requires a frontend context.");
   }
   if (options == nullptr) {
-    return SetUsageError(context, result, "compile_file requires compile options.");
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, "compile_file requires compile options.");
   }
   std::lock_guard<std::mutex> lock(context->mutex);
   std::string language_version_error;
   if (!objc3c::frontend::ValidateSupportedFrontendLanguageVersion(
           options->language_version, language_version_error)) {
-    return SetUsageError(context, result, language_version_error);
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, language_version_error);
   }
   std::string compile_options_error;
   if (!objc3c::frontend::ValidateFrontendCompileFileOptions(
           *options, compile_options_error)) {
-    return SetUsageError(context, result, compile_options_error);
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, compile_options_error);
   }
 
   std::string source_text;
@@ -96,7 +101,7 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
                                         io_error,
                                         "failed to open input source '" + input_path.string() + "'",
                                         "failed while reading input source '" + input_path.string() + "'")) {
-    return SetUsageError(context, result, io_error);
+    return objc3c::frontend::SetFrontendUsageError(context, result, io_error);
   }
   return CompileObjc3SourceImpl(context, input_path, source_text, options, result);
 }
@@ -109,21 +114,25 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
   if (context == nullptr) {
-    return SetUsageErrorWithoutContext(result, "compile_source requires a frontend context.");
+    return objc3c::frontend::SetFrontendUsageErrorWithoutContext(
+        result, "compile_source requires a frontend context.");
   }
   if (options == nullptr) {
-    return SetUsageError(context, result, "compile_source requires compile options.");
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, "compile_source requires compile options.");
   }
   std::lock_guard<std::mutex> lock(context->mutex);
   std::string language_version_error;
   if (!objc3c::frontend::ValidateSupportedFrontendLanguageVersion(
           options->language_version, language_version_error)) {
-    return SetUsageError(context, result, language_version_error);
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, language_version_error);
   }
   std::string compile_options_error;
   if (!objc3c::frontend::ValidateFrontendCompileSourceOptions(
           *options, compile_options_error)) {
-    return SetUsageError(context, result, compile_options_error);
+    return objc3c::frontend::SetFrontendUsageError(
+        context, result, compile_options_error);
   }
   const std::filesystem::path input_path =
       objc3c::frontend::ResolveFrontendInputPath(*options);

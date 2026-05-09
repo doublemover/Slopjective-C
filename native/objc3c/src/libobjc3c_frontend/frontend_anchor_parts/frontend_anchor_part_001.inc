@@ -35,79 +35,13 @@ static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const 
   objc3c::frontend::SetFrontendContextError(context, message);
 }
 
-static void ClearCompileResultPaths(objc3c_frontend_context_t *context) {
-  objc3c::frontend::ClearFrontendContextResultPaths(context);
-}
-
-static bool PopulateResultPaths(objc3c_frontend_context_t *context,
-                                objc3c_frontend_compile_result_t *result,
-                                std::string &error) {
-  if (context == nullptr || result == nullptr) {
-    error = "result path population requires context and result storage.";
-    return false;
-  }
-  return objc3c::frontend::PopulateCompileResultFromFrontendContext(
-      context, result, error);
-}
-
-static objc3c_frontend_status_t ReturnWithOwnedResultPayload(
-    objc3c_frontend_context_t *context,
-    objc3c_frontend_compile_result_t *result) {
-  std::string result_ownership_error;
-  if (!PopulateResultPaths(context, result, result_ownership_error)) {
-    result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-    result->process_exit_code = 2;
-    result->success = 0;
-    objc3c_frontend_set_error(context, result_ownership_error.c_str());
-  }
-  return result->status;
-}
-
-static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context,
-                                              objc3c_frontend_compile_result_t *result,
-                                              const std::string &message) {
-  objc3c::frontend::ResetCompileResultForWrite(result);
-  result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-  result->process_exit_code = 2;
-  result->success = 0;
-  std::string ownership_error;
-  if (!objc3c::frontend::SetCompileResultOwnedErrorMessage(
-          result, message, ownership_error)) {
-    result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-    result->process_exit_code = 2;
-    objc3c_frontend_set_error(context, ownership_error.c_str());
-    return result->status;
-  }
-  objc3c_frontend_set_error(context, message.c_str());
-  return result->status;
-}
-
-static objc3c_frontend_status_t SetUsageErrorWithoutContext(
-    objc3c_frontend_compile_result_t *result,
-    const std::string &message) {
-  if (result != nullptr) {
-    objc3c::frontend::ResetCompileResultForWrite(result);
-    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-    result->process_exit_code = 2;
-    result->success = 0;
-    std::string ownership_error;
-    if (!objc3c::frontend::SetCompileResultOwnedErrorMessage(
-            result, message, ownership_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-    }
-    return result->status;
-  }
-  return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-}
-
 static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t *context,
                                                        const std::filesystem::path &input_path,
                                                        const std::string &source_text,
                                                        const objc3c_frontend_compile_options_t *options,
                                                        objc3c_frontend_compile_result_t *result) {
   objc3c::frontend::ResetCompileResultForWrite(result);
-  ClearCompileResultPaths(context);
+  objc3c::frontend::ClearFrontendContextResultPaths(context);
 
   Objc3FrontendOptions frontend_options =
       objc3c::frontend::BuildFrontendPipelineOptions(*options);
@@ -118,7 +52,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     result->process_exit_code = 2;
     result->success = 0;
     objc3c_frontend_set_error(context, lowering_error.c_str());
-    return ReturnWithOwnedResultPayload(context, result);
+    return objc3c::frontend::ReturnWithFrontendContextResultPayload(context, result);
   }
   frontend_options.lowering = normalized_lowering;
 
@@ -136,14 +70,14 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   const std::string &emit_prefix = artifact_plan.emit_prefix;
 
   if (has_out_dir) {
-    std::string deprecated_claim_sidecar_error;
-    if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
-            out_dir, emit_prefix, deprecated_claim_sidecar_error)) {
+    std::string retired_claim_sidecar_error;
+    if (!DiagnoseObjc3RetiredClaimSidecars(
+            out_dir, emit_prefix, retired_claim_sidecar_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 125;
       result->success = 0;
-      objc3c_frontend_set_error(context, deprecated_claim_sidecar_error.c_str());
-      return ReturnWithOwnedResultPayload(context, result);
+      objc3c_frontend_set_error(context, retired_claim_sidecar_error.c_str());
+      return objc3c::frontend::ReturnWithFrontendContextResultPayload(context, result);
     }
   }
 
@@ -160,7 +94,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, io_error.c_str());
-      return ReturnWithOwnedResultPayload(context, result);
+      return objc3c::frontend::ReturnWithFrontendContextResultPayload(context, result);
     }
     objc3c::frontend::SetFrontendContextDiagnosticsPath(
         context, diagnostics_out.generic_string());
