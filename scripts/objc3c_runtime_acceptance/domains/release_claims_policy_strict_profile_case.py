@@ -12,6 +12,7 @@ from ..fixture_compilation import compile_fixture_with_args
 from ..paths import NATIVE_EXE, ROOT
 from ..process_execution import run
 from ..runtime_contract_release import RELEASE_CLAIMABLE_SURFACE_FIXTURE
+from .release_claims_owner_contracts import release_claims_case_summary
 
 
 def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
@@ -101,7 +102,10 @@ def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={"profiles": summaries},
+        summary=release_claims_case_summary(
+            "strict-profile-claim-implementation",
+            {"profiles": summaries},
+        ),
     )
 
 

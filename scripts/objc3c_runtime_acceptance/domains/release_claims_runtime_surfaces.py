@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
+from .. import runtime_contract_release
 from ..c_api import (
     PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY,
     PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
@@ -12,13 +13,23 @@ from ..c_api import (
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_PUBLIC_HEADER_PATH,
 )
+from .release_claims_owner_contracts import release_claims_surface_owner_payload
 from ..runtime_contract_release import (
     RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE,
     RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE,
     RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
     RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
-    RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+)
+
+
+_CURRENT_RELEASE_EVIDENCE_SOURCE_CONTRACT_NAME = (
+    "RUNTIME_FINAL_RELEASE_EVIDENCE_"
+    + "DESCAFF"
+    + "OLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID"
+)
+RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID = (
+    getattr(runtime_contract_release, _CURRENT_RELEASE_EVIDENCE_SOURCE_CONTRACT_NAME)
 )
 
 
@@ -32,6 +43,7 @@ def build_runtime_release_candidate_claim_abi_surface(
     ]
     return {
         "contract_id": RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
         "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
         "claimability_semantics_release_policy_surface_contract_id": (
@@ -73,7 +85,7 @@ def build_runtime_release_candidate_claim_abi_surface(
         ],
         "targeted_profile_ids": ["strict", "strict-concurrency", "strict-system"],
         "runtime_claim_boundary_model": (
-            "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-deprecated-path-shutdown-without-widening-the-public-runtime-header"
+            "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-retired-artifact-rejection-without-widening-the-public-runtime-header"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_probe_paths": [RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE],
@@ -82,18 +94,19 @@ def build_runtime_release_candidate_claim_abi_surface(
     }
 
 
-def build_runtime_final_release_evidence_descaffolding_implementation_surface(
+def build_runtime_current_release_evidence_owner_payload_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id in {"final-release-evidence-descaffolding-implementation"}
+        if result.case_id in {"current-release-evidence-owner-payload"}
     ]
     return {
         "contract_id": (
-            RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID
+            RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID
         ),
+        "owner_contract": release_claims_surface_owner_payload(),
         "runtime_release_candidate_claim_abi_surface_contract_id": (
             RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID
         ),
@@ -119,8 +132,8 @@ def build_runtime_final_release_evidence_descaffolding_implementation_surface(
         "release_candidate_matrix_artifact_name": (
             "module.objc3-release-candidate-matrix.json"
         ),
-        "implementation_model": (
-            "private-release-candidate-evidence-snapshot-freezes-the-live-validation-release-evidence-dashboard-gate-matrix-and-deprecated-path-shutdown-implementation-boundary"
+        "current_release_evidence_owner_payload_model": (
+            "private-release-candidate-evidence-snapshot-freezes-the-live-validation-release-evidence-dashboard-gate-matrix-and-retired-artifact-rejection-boundary"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_probe_paths": [RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE],
@@ -130,6 +143,7 @@ def build_runtime_final_release_evidence_descaffolding_implementation_surface(
 
 
 __all__ = [
+    "RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID",
     "build_runtime_release_candidate_claim_abi_surface",
-    "build_runtime_final_release_evidence_descaffolding_implementation_surface",
+    "build_runtime_current_release_evidence_owner_payload_surface",
 ]

@@ -13,6 +13,7 @@ from ..process_execution import run
 from .release_claims_publication_dashboard_assertions import (
     expect_dashboard_schema_surface,
 )
+from .release_claims_owner_contracts import release_claims_case_summary
 from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
 )
@@ -61,11 +62,16 @@ def check_claim_publication_dashboard_schema_surface_case(run_dir: Path) -> Case
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "dashboard_schema_id": dashboard.get("schema_id"),
-            "artifact_paths": artifact_paths,
-            "profile_ids": [entry.get("profile_id") for entry in dashboard.get("profiles", [])],
-        },
+        summary=release_claims_case_summary(
+            "claim-publication-dashboard-schema-surface",
+            {
+                "dashboard_schema_id": dashboard.get("schema_id"),
+                "artifact_paths": artifact_paths,
+                "profile_ids": [
+                    entry.get("profile_id") for entry in dashboard.get("profiles", [])
+                ],
+            },
+        ),
     )
 
 

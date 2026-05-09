@@ -21,6 +21,7 @@ from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
 )
+from .release_claims_owner_contracts import release_claims_case_summary
 
 
 def check_release_candidate_runtime_claim_abi_case(
@@ -126,11 +127,14 @@ def check_release_candidate_runtime_claim_abi_case(
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="linked-runtime-probe",
         passed=True,
-        summary={
-            "selected_profile": payload.get("selected_profile"),
-            "claimed_profile_ids_csv": payload.get("claimed_profile_ids_csv"),
-            "targeted_profile_ids_csv": payload.get("targeted_profile_ids_csv"),
-        },
+        summary=release_claims_case_summary(
+            "release-candidate-runtime-claim-abi",
+            {
+                "selected_profile": payload.get("selected_profile"),
+                "claimed_profile_ids_csv": payload.get("claimed_profile_ids_csv"),
+                "targeted_profile_ids_csv": payload.get("targeted_profile_ids_csv"),
+            },
+        ),
     )
 
 

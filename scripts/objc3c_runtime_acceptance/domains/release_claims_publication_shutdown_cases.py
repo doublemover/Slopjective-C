@@ -15,6 +15,7 @@ from .release_claims_publication_shutdown_assertions import (
     expect_live_compile_artifacts,
     expect_live_validate_artifacts,
 )
+from .release_claims_owner_contracts import release_claims_case_summary
 from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
 )
@@ -80,11 +81,14 @@ def check_final_claim_publication_deprecated_path_shutdown_case(
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "compile_artifacts": compile_artifacts,
-            "validate_artifacts": validate_artifacts,
-            "validation_surface_kind": advanced_feature_gate.get("surface_kind"),
-        },
+        summary=release_claims_case_summary(
+            "final-claim-publication-deprecated-path-shutdown",
+            {
+                "compile_artifacts": compile_artifacts,
+                "validate_artifacts": validate_artifacts,
+                "validation_surface_kind": advanced_feature_gate.get("surface_kind"),
+            },
+        ),
     )
 
 

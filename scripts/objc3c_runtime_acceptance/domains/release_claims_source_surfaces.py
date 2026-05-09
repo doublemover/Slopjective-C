@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
+from .release_claims_owner_contracts import release_claims_surface_owner_payload
 from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
@@ -26,6 +27,7 @@ def build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface(
         "contract_id": (
             RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID
         ),
+        "owner_contract": release_claims_surface_owner_payload(),
         "compile_artifact_set": [
             "<emit-prefix>.manifest.json",
             "<emit-prefix>.objc3-conformance-report.json",
@@ -94,6 +96,7 @@ def build_runtime_strict_profile_feature_claim_source_surface(
     ]
     return {
         "contract_id": RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
             RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
             "objc3c.versioned.conformance.report.lowering.v1",
@@ -154,6 +157,7 @@ def build_runtime_claimability_semantics_release_policy_surface(
     ]
     return {
         "contract_id": RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
             RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
@@ -203,6 +207,7 @@ def build_runtime_strict_profile_claim_implementation_surface(
     ]
     return {
         "contract_id": RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
             RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
             "objc3c.driver.conformance.report.publication.v1",

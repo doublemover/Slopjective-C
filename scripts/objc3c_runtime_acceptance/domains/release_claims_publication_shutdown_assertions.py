@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ..expectation_matching import expect
-from .release_claims_deprecated_sidecars import deprecated_claim_sidecars_absent
+from .release_claims_retired_artifacts import retired_release_claim_artifacts_absent
 
 
 EXPECTED_COMPILE_ARTIFACTS = [
@@ -31,19 +31,19 @@ def expect_live_compile_artifacts(compile_dir: Path, compile_artifacts: list[str
         "expected native compile to publish only the live claim publication and release-candidate sidecars",
     )
     expect(
-        deprecated_claim_sidecars_absent(compile_dir),
-        "expected native compile to stop emitting every deprecated claim/scaffold sidecar filename",
+        retired_release_claim_artifacts_absent(compile_dir),
+        "expected native compile to stop emitting every retired release-claim artifact filename",
     )
 
 
 def expect_live_validate_artifacts(validate_dir: Path, validate_artifacts: list[str]) -> None:
     expect(
         validate_artifacts == EXPECTED_VALIDATE_ARTIFACTS,
-        "expected conformance validation to publish the final post-publication release artifacts and no deprecated sidecars",
+        "expected conformance validation to publish the final post-publication release artifacts and no retired artifacts",
     )
     expect(
-        deprecated_claim_sidecars_absent(validate_dir),
-        "expected conformance validation to keep deprecated claim/scaffold sidecar paths shut down",
+        retired_release_claim_artifacts_absent(validate_dir),
+        "expected conformance validation to keep retired release-claim artifact paths shut down",
     )
 
 
@@ -72,5 +72,5 @@ def expect_final_publication_artifact_wiring(
     expect(
         release_candidate_matrix.get("matrix_model")
         == "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set",
-        "expected release candidate matrix to describe the final claim publication artifact set instead of emitted sidecars generically",
+        "expected release candidate matrix to describe the final claim publication artifact set instead of generic emitted artifacts",
     )

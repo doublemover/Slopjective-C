@@ -11,6 +11,7 @@ from ..fixture_compilation import compile_fixture_with_args
 from ..paths import NATIVE_EXE, ROOT
 from ..process_execution import run
 from ..runtime_contract_release import RELEASE_CLAIMABLE_SURFACE_FIXTURE
+from .release_claims_owner_contracts import release_claims_case_summary
 
 
 def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResult:
@@ -134,15 +135,18 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "selected_profile": publication.get("selected_profile"),
-            "supported_profile_ids": publication.get("supported_profile_ids"),
-            "targeted_profile_ids": publication.get(
-                "advanced_feature_targeted_profile_ids"
-            ),
-            "strict_selected_profile": strict_publication.get("selected_profile"),
-            "yaml_reject_returncode": yaml_reject.returncode,
-        },
+        summary=release_claims_case_summary(
+            "claimability-semantics-release-policy",
+            {
+                "selected_profile": publication.get("selected_profile"),
+                "supported_profile_ids": publication.get("supported_profile_ids"),
+                "targeted_profile_ids": publication.get(
+                    "advanced_feature_targeted_profile_ids"
+                ),
+                "strict_selected_profile": strict_publication.get("selected_profile"),
+                "yaml_reject_returncode": yaml_reject.returncode,
+            },
+        ),
     )
 
 

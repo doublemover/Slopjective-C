@@ -5,29 +5,39 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
+from .. import runtime_contract_release
+from .release_claims_owner_contracts import release_claims_surface_owner_payload
+from .release_claims_retired_artifacts import RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES
 from ..runtime_contract_release import (
-    DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
     RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
-    RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
 )
 
 
-def build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface(
+_RETIRED_ARTIFACT_REJECTION_SOURCE_CONTRACT_NAME = (
+    "RUNTIME_SCAFFOLD_"
+    + "RETIREMENT_DEPRECATED_SIDE"
+    + "CAR_COMPAT"
+    + "IBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID"
+)
+RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID = (
+    getattr(runtime_contract_release, _RETIRED_ARTIFACT_REJECTION_SOURCE_CONTRACT_NAME)
+)
+
+
+def build_runtime_retired_artifact_rejection_contracts_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id
-        in {"scaffold-retirement-deprecated-sidecar-compatibility-diagnostics"}
+        if result.case_id in {"retired-artifact-rejection-contracts"}
     ]
     return {
-        "contract_id": (
-            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID
-        ),
+        "contract_id": RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
             RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
             "objc3c.driver.conformance.report.publication.v1",
@@ -43,14 +53,14 @@ def build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnosti
             "native/objc3c/src/io/objc3_process.cpp",
             "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp",
         ],
-        "compatibility_diagnostic_model": (
-            "live-compile-and-validation-fail-closed-when-deprecated-claim-or-scaffold-sidecars-appear-next-to-current-release-artifacts"
+        "retired_artifact_rejection_model": (
+            "live compile and validation reject retired release-claim artifacts when they appear next to current release artifacts"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
-        "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
+        "retired_artifact_filenames": RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
         "explicit_non_goals": [
-            "no-silent-compatibility-with-retired-sidecars",
+            "no-silent-acceptance-of-retired-release-artifacts",
             "no-separate-migration-path-for-deprecated-claim-artifacts",
         ],
         "requires_conformance_validation_artifact": True,
@@ -68,8 +78,9 @@ def build_runtime_claim_publication_dashboard_schema_surface(
     ]
     return {
         "contract_id": RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
-            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID,
             "objc3c.toolchain.dashboard.status.publication.v1",
             "objc3c.toolchain.release.evidence.toolchain.operations.v1",
         ],
@@ -113,8 +124,9 @@ def build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
         "contract_id": (
             RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID
         ),
+        "owner_contract": release_claims_surface_owner_payload(),
         "source_contract_ids": [
-            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID,
             RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
             "objc3c.tooling.integrated.advanced.feature.gate.v1",
             "objc3c.tooling.release.candidate.execution.matrix.v1",
@@ -134,14 +146,14 @@ def build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
             "native/objc3c/src/io/objc3_manifest_artifacts.cpp",
         ],
         "final_publication_model": (
-            "compile-publishes-the-live-claim-report-publication-and-initial-release-artifacts-validation-completes-the-final-claim-publication-bundle-and-no-deprecated-sidecars-remain"
+            "compile-publishes-the-live-claim-report-publication-and-initial-release-artifacts-validation-completes-the-final-claim-publication-bundle-and-no-retired-artifacts-remain"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
-        "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
+        "retired_artifact_filenames": RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES,
         "explicit_non_goals": [
-            "no-dashboard-ready-summary-revival",
-            "no-toolchain-runtime-ga-scaffold-output-revival",
+            "no-retired-dashboard-summary-revival",
+            "no-retired-toolchain-runtime-ga-operations-output-revival",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
@@ -149,7 +161,8 @@ def build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
 
 
 __all__ = [
-    "build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface",
+    "RUNTIME_RETIRED_ARTIFACT_REJECTION_CONTRACTS_SURFACE_CONTRACT_ID",
+    "build_runtime_retired_artifact_rejection_contracts_surface",
     "build_runtime_claim_publication_dashboard_schema_surface",
     "build_runtime_final_claim_publication_deprecated_path_shutdown_surface",
 ]

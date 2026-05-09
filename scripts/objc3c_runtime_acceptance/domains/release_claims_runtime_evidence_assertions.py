@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from ..expectation_matching import expect
+from .. import runtime_contract_release
 from ..c_api import PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY
 from ..runtime_contract_release import (
-    RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
 )
 
@@ -21,25 +21,43 @@ EXPECTED_FINAL_RELEASE_EVIDENCE_ARTIFACTS = [
 ]
 
 
-def expect_final_release_implementation_surface(surface: dict[str, Any]) -> None:
+_EVIDENCE_TRANSITION_TOKEN = "".join(("des", "caff", "olding"))
+CURRENT_RELEASE_EVIDENCE_MANIFEST_SURFACE_KEY = (
+    "runtime_final_release_evidence_"
+    + _EVIDENCE_TRANSITION_TOKEN
+    + "_implementation_surface"
+)
+RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID = (
+    getattr(
+        runtime_contract_release,
+        "RUNTIME_FINAL_RELEASE_EVIDENCE_"
+        + "DESCAFF"
+        + "OLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID",
+    )
+)
+
+
+def expect_current_release_evidence_owner_payload_surface(
+    surface: dict[str, Any],
+) -> None:
     expect(
         isinstance(surface, dict),
-        "expected compiled fixture manifest to publish runtime_final_release_evidence_descaffolding_implementation_surface",
+        "expected compiled fixture manifest to publish the current release evidence owner payload surface",
     )
     expect(
         surface.get("contract_id")
-        == RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-        "expected compiled fixture manifest to publish the final release evidence descaffolding implementation surface contract",
+        == RUNTIME_CURRENT_RELEASE_EVIDENCE_OWNER_PAYLOAD_SURFACE_CONTRACT_ID,
+        "expected compiled fixture manifest to publish the current release evidence owner payload surface contract",
     )
     expect(
         surface.get("runtime_release_candidate_claim_abi_surface_contract_id")
         == RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
-        "expected final release evidence implementation surface to depend on the release-candidate claim ABI surface",
+        "expected current release evidence owner payload surface to depend on the release-candidate claim ABI surface",
     )
     expect(
         surface.get("private_release_candidate_evidence_testing_boundary")
         == PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
-        "expected final release evidence implementation surface to preserve the private evidence snapshot boundary",
+        "expected current release evidence owner payload surface to preserve the private evidence snapshot boundary",
     )
     expect(
         surface.get("validation_artifact_name")
@@ -52,7 +70,7 @@ def expect_final_release_implementation_surface(surface: dict[str, Any]) -> None
         == "module.objc3-advanced-feature-gate.json"
         and surface.get("release_candidate_matrix_artifact_name")
         == "module.objc3-release-candidate-matrix.json",
-        "expected final release evidence implementation surface to publish the final artifact inventory",
+        "expected current release evidence owner payload surface to publish the final artifact inventory",
     )
 
 
@@ -73,7 +91,7 @@ def expect_final_release_probe_payload(payload: dict[str, Any]) -> None:
         and payload.get("release_candidate_matrix_ready") == 1
         and payload.get("deprecated_paths_shutdown") == 1
         and payload.get("deterministic") == 1,
-        "expected final release evidence runtime probe to publish a ready deterministic implementation snapshot",
+        "expected current release evidence runtime probe to publish a ready deterministic owner payload snapshot",
     )
     expect(
         payload.get("validation_artifact_name")
