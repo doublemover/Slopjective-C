@@ -39,7 +39,7 @@ Current closure constraints:
 Explicit non-goals:
 
 - public runtime ABI widening beyond registration, selector lookup, dispatch, and reset
-- claims that unresolved dispatch miss fallback is part of the supported object-model closure
+- claims that unresolved dispatch miss recovery is part of the supported object-model closure
 - probe-local or source-only reflection truth that bypasses runtime-owned query state
 - release-scope runtime or packaging scaffolds parallel to the shipped acceptance path
 

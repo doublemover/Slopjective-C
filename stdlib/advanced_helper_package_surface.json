@@ -51,7 +51,7 @@
     "objc3.system": "Strict System"
   },
   "import_surface": {
-    "model": "advanced-helper-canonical-module-subset-uses-the-shared-implementation-alias-package-surface",
+    "model": "advanced-helper-canonical-module-subset-uses-the-shared-compiler-visible-package-surface",
     "module_imports_source": "stdlib/package_surface.json",
     "identity_fields": [
       "canonical_module",

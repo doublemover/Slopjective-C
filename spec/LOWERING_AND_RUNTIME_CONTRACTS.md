@@ -204,10 +204,10 @@ At minimum, the pass-graph gate shall validate:
 - IR-emission advanced core workpack (shard 1) governance shall preserve
   explicit lane-C dependency anchors (`M228-C015`, `M228-C014`) and fail
   closed on advanced-core shard1 consistency, key-transport continuity, or
-  dependency-anchor drift before advanced edge-compatibility gates advance.
-- IR-emission advanced edge compatibility workpack (shard 1) governance shall
+  dependency-anchor drift before advanced edge gates advance.
+- IR-emission advanced edge workpack (shard 1) governance shall
   preserve explicit lane-C dependency anchors (`M228-C016`, `M228-C015`) and
-  fail closed on advanced-edge-compatibility shard1 consistency,
+  fail closed on advanced-edge shard1 consistency,
   key-transport continuity, or dependency-anchor drift before advanced
   diagnostics gates advance.
 - IR-emission advanced diagnostics workpack (shard 1) governance shall
@@ -267,11 +267,11 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering advanced core workpack (shard 1) governance shall
   preserve explicit lane-B dependency anchors (`M228-B015`, `M228-B014`) and
   fail closed on advanced-core-shard1 continuity, command sequencing, or
-  evidence-path drift before lane-B advanced edge-compatibility validation
+  evidence-path drift before lane-B advanced edge validation
   advances.
-- ownership-aware lowering advanced edge compatibility workpack (shard 1)
+- ownership-aware lowering advanced edge workpack (shard 1)
   governance shall preserve explicit lane-B dependency anchors (`M228-B016`,
-  `M228-B015`) and fail closed on advanced-edge-compatibility-shard1
+  `M228-B015`) and fail closed on advanced-edge-shard1
   continuity, command sequencing, or evidence-path drift before lane-B
   advanced diagnostics validation advances.
 - ownership-aware lowering advanced diagnostics workpack (shard 1) governance
@@ -466,16 +466,16 @@ At minimum, the pass-graph gate shall validate:
 - frontend profiling and hot-path decomposition release-candidate and replay dry-run wiring
   shall preserve explicit lane-A dependency anchor (`M247-A013`) and fail closed
   when dependency references, release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
-- frontend profiling and hot-path decomposition advanced edge compatibility workpack (shard 1) wiring
+- frontend profiling and hot-path decomposition advanced edge workpack (shard 1) wiring
   shall preserve explicit lane-A dependency anchor (`M247-A015`) and fail closed
-  when dependency references, advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+  when dependency references, advanced-edge-workpack command sequencing continuity, advanced-edge-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
 - runtime/link/build throughput optimization core-feature expansion wiring
   shall preserve explicit lane-D dependency anchor (`M247-D003`) and fail
   closed when dependency references, pending-token continuity, or throughput
   contract-gating evidence commands drift.
 - runtime/link/build throughput optimization edge-case and compatibility completion wiring
   shall preserve explicit lane-D dependency anchor (`M247-D004`) and fail
-  closed when dependency references or throughput edge-compatibility evidence
+  closed when dependency references or throughput edge evidence
   commands drift.
 - runtime/link/build throughput optimization conformance matrix implementation wiring
   shall preserve explicit lane-D dependency anchor (`M247-D008`) and fail
@@ -610,47 +610,47 @@ At minimum, the pass-graph gate shall validate:
   dependency references or readiness evidence commands drift.
 - interop conformance gate and operations contract and architecture freeze wiring shall preserve explicit
   lane-E dependency anchors (`M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E readiness hooks drift.
 - interop conformance gate and operations modular split/scaffolding wiring shall preserve explicit
   lane-E dependency anchors (`M244-E001`, `M244-A002`, `M244-B002`, `M244-C002`, and `M244-D002`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D modular split readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D modular split readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E modular split readiness hooks drift.
 - interop conformance gate and operations core-feature implementation wiring shall preserve explicit
   lane-E dependency anchors (`M244-E002`, `M244-A002`, `M244-B003`, `M244-C004`, and `M244-D004`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D core-feature readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D core-feature readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E core-feature readiness hooks drift.
 - interop conformance gate and operations core-feature expansion wiring shall preserve explicit
   lane-E dependency anchors (`M244-E003`, `M244-A003`, `M244-B004`, `M244-C005`, and `M244-D005`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D core-feature expansion readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D core-feature expansion readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E core-feature expansion readiness hooks drift.
 - interop conformance gate and operations edge-case and compatibility completion wiring shall preserve explicit
   lane-E dependency anchors (`M244-E004`, `M244-A004`, `M244-B006`, `M244-C007`, and `M244-D006`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case and compatibility completion readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D edge-case completion readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E edge-case and compatibility completion readiness hooks drift.
 - interop conformance gate and operations edge-case expansion and robustness wiring shall preserve explicit
   lane-E dependency anchors (`M244-E005`, `M244-A005`, `M244-B007`, `M244-C008`, and `M244-D008`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case expansion and robustness readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D edge-case expansion and robustness readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E edge-case expansion and robustness readiness hooks drift.
 - interop conformance gate and operations diagnostics hardening wiring shall preserve explicit
   lane-E dependency anchors (`M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D diagnostics hardening readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D diagnostics hardening readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E diagnostics hardening readiness hooks drift.
 - interop conformance gate and operations recovery and determinism hardening wiring shall preserve explicit
   lane-E dependency anchors (`M244-E007`, `M244-A006`, `M244-B009`, `M244-C011`, and `M244-D010`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D recovery and determinism hardening readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D recovery and determinism hardening readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E recovery and determinism hardening readiness hooks drift.
 - interop conformance gate and operations conformance matrix implementation wiring shall preserve explicit
   lane-E dependency anchors (`M244-E008`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`),
-  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D conformance matrix implementation readiness hooks,
+  preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D conformance matrix implementation readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E conformance matrix implementation readiness hooks drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
@@ -753,8 +753,8 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference advanced core workpack (shard 1) governance shall preserve explicit
   lane-B dependency anchors (`M235-B014`) and fail closed on advanced core workpack (shard 1) evidence drift
   before semantic parity and lowering portability validation advances.
-- qualifier/generic semantic inference advanced edge compatibility workpack (shard 1) governance shall preserve explicit
-  lane-B dependency anchors (`M235-B015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+- qualifier/generic semantic inference advanced edge workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B015`) and fail closed on advanced edge workpack (shard 1) evidence drift
   before semantic parity and lowering portability validation advances.
 - qualifier/generic semantic inference advanced diagnostics workpack (shard 1) governance shall preserve explicit
   lane-B dependency anchors (`M235-B016`) and fail closed on advanced diagnostics workpack (shard 1) evidence drift
@@ -771,8 +771,8 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference advanced core workpack (shard 2) governance shall preserve explicit
   lane-B dependency anchors (`M235-B020`) and fail closed on advanced core workpack (shard 2) evidence drift
   before semantic parity and lowering portability validation advances.
-- qualifier/generic semantic inference advanced edge compatibility workpack (shard 2) governance shall preserve explicit
-  lane-B dependency anchors (`M235-B021`) and fail closed on advanced edge compatibility workpack (shard 2) evidence drift
+- qualifier/generic semantic inference advanced edge workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B021`) and fail closed on advanced edge workpack (shard 2) evidence drift
   before semantic parity and lowering portability validation advances.
 - qualifier/generic semantic inference advanced diagnostics workpack (shard 2) governance shall preserve explicit
   lane-B dependency anchors (`M235-B022`) and fail closed on advanced diagnostics workpack (shard 2) evidence drift
@@ -789,8 +789,8 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference advanced core workpack (shard 3) governance shall preserve explicit
   lane-B dependency anchors (`M235-B026`) and fail closed on advanced core workpack (shard 3) evidence drift
   before semantic parity and lowering portability validation advances.
-- qualifier/generic semantic inference advanced edge compatibility workpack (shard 3) governance shall preserve explicit
-  lane-B dependency anchors (`M235-B027`) and fail closed on advanced edge compatibility workpack (shard 3) evidence drift
+- qualifier/generic semantic inference advanced edge workpack (shard 3) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B027`) and fail closed on advanced edge workpack (shard 3) evidence drift
   before semantic parity and lowering portability validation advances.
 - qualifier/generic semantic inference advanced diagnostics workpack (shard 3) governance shall preserve explicit
   lane-B dependency anchors (`M235-B028`) and fail closed on advanced diagnostics workpack (shard 3) evidence drift
@@ -837,9 +837,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization release-candidate and replay dry-run wiring shall preserve explicit
   lane-A dependency anchor (`M235-A013`) and fail closed when
   release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
-- qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+- qualifier/generic grammar normalization advanced edge workpack (shard 1) wiring shall preserve explicit
   lane-A dependency anchor (`M235-A015`) and fail closed when
-  advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+  advanced-edge-workpack command sequencing continuity, advanced-edge-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
 - qualifier/generic grammar normalization integration closeout and gate sign-off wiring shall preserve explicit
   lane-A dependency anchor (`M235-A016`) and fail closed when
   integration-closeout-and-gate-signoff command sequencing continuity, integration-closeout-and-gate-signoff-key continuity, or contract-gating evidence commands drift.
@@ -887,8 +887,8 @@ At minimum, the pass-graph gate shall validate:
 - accessor and ivar lowering contracts advanced core workpack (shard 1) governance shall preserve explicit
   lane-C dependency anchors (`M234-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
   before runtime property metadata and integration validation advances.
-- accessor and ivar lowering contracts advanced edge compatibility workpack (shard 1) governance shall preserve explicit
-  lane-C dependency anchors (`M234-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+- accessor and ivar lowering contracts advanced edge workpack (shard 1) governance shall preserve explicit
+  lane-C dependency anchors (`M234-C015`) and fail closed on advanced edge workpack (shard 1) evidence drift
   before runtime property metadata and integration validation advances.
 - accessor and ivar lowering contracts integration closeout and gate sign-off governance shall preserve explicit
   lane-C dependency anchors (`M234-C016`) and fail closed on integration closeout and gate sign-off evidence drift
@@ -967,38 +967,38 @@ At minimum, the pass-graph gate shall validate:
   lane-B dependency anchors (`M227-B001`) and fail closed on canonical ObjC
   type-form contract drift before semantic compatibility and migration
   validation advances.
-- type-system diagnostics hardening governance shall preserve explicit lane-B dependency anchors (`M227-B007`, `M227-B006`) and fail closed on canonical ObjC type-form diagnostics consistency/readiness or diagnostics-key continuity drift before semantic compatibility and migration validation advances.
-- type-system recovery/determinism hardening governance shall preserve explicit lane-B dependency anchors (`M227-B008`, `M227-B007`) and fail closed on canonical ObjC type-form recovery consistency/readiness or recovery-key continuity drift before semantic compatibility and migration validation advances.
-- type-system conformance matrix implementation governance shall preserve explicit lane-B dependency anchors (`M227-B009`, `M227-B008`) and fail closed on canonical ObjC type-form conformance matrix consistency/readiness or conformance-matrix-key continuity drift before semantic compatibility and migration validation advances.
-- type-system conformance corpus expansion governance shall preserve explicit lane-B dependency anchors (`M227-B010`, `M227-B009`) and fail closed on canonical ObjC type-form conformance corpus consistency/readiness, case-accounting continuity, or conformance-corpus-key continuity drift before semantic compatibility and migration validation advances.
-- type-system performance and quality guardrails governance shall preserve explicit lane-B dependency anchors (`M227-B011`, `M227-B010`) and fail closed on canonical ObjC type-form performance/quality guardrail accounting, consistency/readiness, or performance-quality-key continuity drift before semantic compatibility and migration validation advances.
-- type-system docs and operator runbook synchronization governance shall preserve explicit lane-B dependency anchors (`M227-B013`, `M227-B012`) and fail closed on canonical ObjC type-form docs/runbook command sequencing or evidence-path continuity drift before semantic compatibility and migration validation advances.
-- type-system release-candidate replay dry-run governance shall preserve explicit lane-B dependency anchors (`M227-B014`, `M227-B013`) and fail closed on canonical ObjC type-form release/replay command sequencing or evidence-path continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced core workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B015`, `M227-B014`) and fail closed on canonical ObjC type-form advanced-core command sequencing, evidence-path continuity, or advanced-core continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B016`, `M227-B015`) and fail closed on canonical ObjC type-form advanced-edge-compatibility command sequencing, evidence-path continuity, or advanced-edge-compatibility continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B017`, `M227-B016`) and fail closed on canonical ObjC type-form advanced-diagnostics command sequencing, evidence-path continuity, or advanced-diagnostics continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced conformance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B018`, `M227-B017`) and fail closed on canonical ObjC type-form advanced-conformance command sequencing, evidence-path continuity, or advanced-conformance continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced integration workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B019`, `M227-B018`) and fail closed on canonical ObjC type-form advanced-integration command sequencing, evidence-path continuity, or advanced-integration continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced performance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B020`, `M227-B019`) and fail closed on canonical ObjC type-form advanced-performance command sequencing, evidence-path continuity, or advanced-performance continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced core workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B021`, `M227-B020`) and fail closed on canonical ObjC type-form advanced-core-shard2 command sequencing, evidence-path continuity, or advanced-core-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced edge compatibility workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B022`, `M227-B021`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard2 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B023`, `M227-B022`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard2 command sequencing, evidence-path continuity, or advanced-diagnostics-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced conformance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B024`, `M227-B023`) and fail closed on canonical ObjC type-form advanced-conformance-shard2 command sequencing, evidence-path continuity, or advanced-conformance-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced integration workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B025`, `M227-B024`) and fail closed on canonical ObjC type-form advanced-integration-shard2 command sequencing, evidence-path continuity, or advanced-integration-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced performance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B026`, `M227-B025`) and fail closed on canonical ObjC type-form advanced-performance-shard2 command sequencing, evidence-path continuity, or advanced-performance-shard2 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced core workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B027`, `M227-B026`) and fail closed on canonical ObjC type-form advanced-core-shard3 command sequencing, evidence-path continuity, or advanced-core-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced edge compatibility workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B028`, `M227-B027`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard3 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced diagnostics workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B029`, `M227-B028`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard3 command sequencing, evidence-path continuity, or advanced-diagnostics-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced conformance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B030`, `M227-B029`) and fail closed on canonical ObjC type-form advanced-conformance-shard3 command sequencing, evidence-path continuity, or advanced-conformance-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced integration workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B031`, `M227-B030`) and fail closed on canonical ObjC type-form advanced-integration-shard3 command sequencing, evidence-path continuity, or advanced-integration-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced performance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B032`, `M227-B031`) and fail closed on canonical ObjC type-form advanced-performance-shard3 command sequencing, evidence-path continuity, or advanced-performance-shard3 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced core workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B033`, `M227-B032`) and fail closed on canonical ObjC type-form advanced-core-shard4 command sequencing, evidence-path continuity, or advanced-core-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced edge compatibility workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B034`, `M227-B033`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard4 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced diagnostics workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B035`, `M227-B034`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard4 command sequencing, evidence-path continuity, or advanced-diagnostics-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced conformance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B036`, `M227-B035`) and fail closed on canonical ObjC type-form advanced-conformance-shard4 command sequencing, evidence-path continuity, or advanced-conformance-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced integration workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B037`, `M227-B036`) and fail closed on canonical ObjC type-form advanced-integration-shard4 command sequencing, evidence-path continuity, or advanced-integration-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system advanced performance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B038`, `M227-B037`) and fail closed on canonical ObjC type-form advanced-performance-shard4 command sequencing, evidence-path continuity, or advanced-performance-shard4 continuity drift before semantic compatibility and migration validation advances.
-- type-system integration closeout and gate sign-off governance shall preserve explicit lane-B dependency anchors (`M227-B039`, `M227-B038`) and fail closed on canonical ObjC type-form integration-closeout-and-gate-signoff command sequencing, evidence-path continuity, or integration-closeout-and-gate-signoff continuity drift before semantic compatibility and migration validation advances.
+- type-system diagnostics hardening governance shall preserve explicit lane-B dependency anchors (`M227-B007`, `M227-B006`) and fail closed on canonical ObjC type-form diagnostics consistency/readiness or diagnostics-key continuity drift before semantic migration validation advances.
+- type-system recovery/determinism hardening governance shall preserve explicit lane-B dependency anchors (`M227-B008`, `M227-B007`) and fail closed on canonical ObjC type-form recovery consistency/readiness or recovery-key continuity drift before semantic migration validation advances.
+- type-system conformance matrix implementation governance shall preserve explicit lane-B dependency anchors (`M227-B009`, `M227-B008`) and fail closed on canonical ObjC type-form conformance matrix consistency/readiness or conformance-matrix-key continuity drift before semantic migration validation advances.
+- type-system conformance corpus expansion governance shall preserve explicit lane-B dependency anchors (`M227-B010`, `M227-B009`) and fail closed on canonical ObjC type-form conformance corpus consistency/readiness, case-accounting continuity, or conformance-corpus-key continuity drift before semantic migration validation advances.
+- type-system performance and quality guardrails governance shall preserve explicit lane-B dependency anchors (`M227-B011`, `M227-B010`) and fail closed on canonical ObjC type-form performance/quality guardrail accounting, consistency/readiness, or performance-quality-key continuity drift before semantic migration validation advances.
+- type-system docs and operator runbook synchronization governance shall preserve explicit lane-B dependency anchors (`M227-B013`, `M227-B012`) and fail closed on canonical ObjC type-form docs/runbook command sequencing or evidence-path continuity drift before semantic migration validation advances.
+- type-system release-candidate replay dry-run governance shall preserve explicit lane-B dependency anchors (`M227-B014`, `M227-B013`) and fail closed on canonical ObjC type-form release/replay command sequencing or evidence-path continuity drift before semantic migration validation advances.
+- type-system advanced core workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B015`, `M227-B014`) and fail closed on canonical ObjC type-form advanced-core command sequencing, evidence-path continuity, or advanced-core continuity drift before semantic migration validation advances.
+- type-system advanced edge workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B016`, `M227-B015`) and fail closed on canonical ObjC type-form advanced-edge command sequencing, evidence-path continuity, or advanced-edge continuity drift before semantic migration validation advances.
+- type-system advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B017`, `M227-B016`) and fail closed on canonical ObjC type-form advanced-diagnostics command sequencing, evidence-path continuity, or advanced-diagnostics continuity drift before semantic migration validation advances.
+- type-system advanced conformance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B018`, `M227-B017`) and fail closed on canonical ObjC type-form advanced-conformance command sequencing, evidence-path continuity, or advanced-conformance continuity drift before semantic migration validation advances.
+- type-system advanced integration workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B019`, `M227-B018`) and fail closed on canonical ObjC type-form advanced-integration command sequencing, evidence-path continuity, or advanced-integration continuity drift before semantic migration validation advances.
+- type-system advanced performance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B020`, `M227-B019`) and fail closed on canonical ObjC type-form advanced-performance command sequencing, evidence-path continuity, or advanced-performance continuity drift before semantic migration validation advances.
+- type-system advanced core workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B021`, `M227-B020`) and fail closed on canonical ObjC type-form advanced-core-shard2 command sequencing, evidence-path continuity, or advanced-core-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced edge workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B022`, `M227-B021`) and fail closed on canonical ObjC type-form advanced-edge-shard2 command sequencing, evidence-path continuity, or advanced-edge-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B023`, `M227-B022`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard2 command sequencing, evidence-path continuity, or advanced-diagnostics-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced conformance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B024`, `M227-B023`) and fail closed on canonical ObjC type-form advanced-conformance-shard2 command sequencing, evidence-path continuity, or advanced-conformance-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced integration workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B025`, `M227-B024`) and fail closed on canonical ObjC type-form advanced-integration-shard2 command sequencing, evidence-path continuity, or advanced-integration-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced performance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B026`, `M227-B025`) and fail closed on canonical ObjC type-form advanced-performance-shard2 command sequencing, evidence-path continuity, or advanced-performance-shard2 continuity drift before semantic migration validation advances.
+- type-system advanced core workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B027`, `M227-B026`) and fail closed on canonical ObjC type-form advanced-core-shard3 command sequencing, evidence-path continuity, or advanced-core-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced edge workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B028`, `M227-B027`) and fail closed on canonical ObjC type-form advanced-edge-shard3 command sequencing, evidence-path continuity, or advanced-edge-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced diagnostics workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B029`, `M227-B028`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard3 command sequencing, evidence-path continuity, or advanced-diagnostics-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced conformance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B030`, `M227-B029`) and fail closed on canonical ObjC type-form advanced-conformance-shard3 command sequencing, evidence-path continuity, or advanced-conformance-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced integration workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B031`, `M227-B030`) and fail closed on canonical ObjC type-form advanced-integration-shard3 command sequencing, evidence-path continuity, or advanced-integration-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced performance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B032`, `M227-B031`) and fail closed on canonical ObjC type-form advanced-performance-shard3 command sequencing, evidence-path continuity, or advanced-performance-shard3 continuity drift before semantic migration validation advances.
+- type-system advanced core workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B033`, `M227-B032`) and fail closed on canonical ObjC type-form advanced-core-shard4 command sequencing, evidence-path continuity, or advanced-core-shard4 continuity drift before semantic migration validation advances.
+- type-system advanced edge workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B034`, `M227-B033`) and fail closed on canonical ObjC type-form advanced-edge-shard4 command sequencing, evidence-path continuity, or advanced-edge-shard4 continuity drift before semantic migration validation advances.
+- type-system advanced diagnostics workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B035`, `M227-B034`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard4 command sequencing, evidence-path continuity, or advanced-diagnostics-shard4 continuity drift before semantic migration validation advances.
+- type-system advanced conformance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B036`, `M227-B035`) and fail closed on canonical ObjC type-form advanced-conformance-shard4 command sequencing, evidence-path continuity, or advanced-conformance-shard4 continuity drift before semantic migration validation advances.
+- type-system advanced integration workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B037`, `M227-B036`) and fail closed on canonical ObjC type-form advanced-integration-shard4 command sequencing, evidence-path continuity, or advanced-integration-shard4 continuity drift before semantic migration validation advances.
+- type-system advanced performance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B038`, `M227-B037`) and fail closed on canonical ObjC type-form advanced-performance-shard4 command sequencing, evidence-path continuity, or advanced-performance-shard4 continuity drift before semantic migration validation advances.
+- type-system integration closeout and gate sign-off governance shall preserve explicit lane-B dependency anchors (`M227-B039`, `M227-B038`) and fail closed on canonical ObjC type-form integration-closeout-and-gate-signoff command sequencing, evidence-path continuity, or integration-closeout-and-gate-signoff continuity drift before semantic migration validation advances.
 - typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
   lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
   before semantic compatibility and runtime-facing metadata validation advances.
@@ -1054,9 +1054,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic conformance lane-E advanced core workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E014`, `M227-A016`, `M227-B029`, `M227-C020`, and `M227-D009`),
   preserve readiness continuity across direct `M227-E014`, `M227-A016`, and `M227-D009` checker/test commands plus `check:objc3c:m227-b029-lane-b-readiness` and `check:objc3c:m227-c020-lane-c-readiness`,
   and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced core workpack (shard 1) evidence drift.
-- semantic conformance lane-E advanced edge compatibility workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E015`, `M227-A017`, `M227-B031`, `M227-C021`, and `M227-D010`),
+- semantic conformance lane-E advanced edge workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E015`, `M227-A017`, `M227-B031`, `M227-C021`, and `M227-D010`),
   preserve readiness continuity across direct `M227-E015`, `M227-A017`, and `M227-D010` checker/test commands plus `check:objc3c:m227-b031-lane-b-readiness` and `check:objc3c:m227-c021-lane-c-readiness`,
-  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced edge compatibility workpack (shard 1) evidence drift.
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced edge workpack (shard 1) evidence drift.
 - semantic conformance lane-E advanced diagnostics workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E016`, `M227-A018`, `M227-B033`, `M227-C022`, and `M227-D010`),
   preserve readiness continuity across direct `M227-E016`, `M227-A018`, and `M227-D010` checker/test commands plus `check:objc3c:m227-b033-lane-b-readiness` and `check:objc3c:m227-c022-lane-c-readiness`,
   and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced diagnostics workpack (shard 1) evidence drift.
@@ -1085,8 +1085,8 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_advanced_core_ready`, or
   `toolchain_runtime_ga_operations_advanced_core_key` drift before advanced
   edge/diagnostics/conformance validation advances.
-- semantic-pass advanced edge compatibility workpack (shard 1) wiring shall preserve deterministic
-  edge-compatibility dependency anchors (`M227-A016`)
+- semantic-pass advanced edge workpack (shard 1) wiring shall preserve deterministic
+  edge dependency anchors (`M227-A016`)
   and fail closed when
   `toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent`,
   `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`, or
@@ -1216,7 +1216,7 @@ At minimum, the pass-graph gate shall validate:
   before runtime reproducibility implementation advances.
 - build/link/runtime reproducibility core feature expansion governance shall preserve explicit
   lane-D dependency anchors (`M245-D003`) and fail closed on core-feature expansion evidence drift
-  before runtime reproducibility edge-compatibility advances.
+  before runtime reproducibility edge advances.
 - build/link/runtime reproducibility edge-case and compatibility completion governance shall preserve explicit
   lane-D dependency anchors (`M245-D004`) and fail closed on edge-case and compatibility completion evidence drift
   before runtime reproducibility robustness validation advances.
@@ -1249,9 +1249,9 @@ At minimum, the pass-graph gate shall validate:
   before runtime reproducibility advanced-core-workpack validation advances.
 - build/link/runtime reproducibility advanced core workpack (shard 1) governance shall preserve explicit
   lane-D dependency anchors (`M245-D014`) and fail closed on advanced core workpack evidence drift
-  before runtime reproducibility advanced-edge-compatibility-workpack validation advances.
-- build/link/runtime reproducibility advanced edge compatibility workpack (shard 1) governance shall preserve explicit
-  lane-D dependency anchors (`M245-D015`) and fail closed on advanced edge compatibility evidence drift
+  before runtime reproducibility advanced-edge-workpack validation advances.
+- build/link/runtime reproducibility advanced edge workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D015`) and fail closed on advanced edge evidence drift
   before runtime reproducibility advanced-diagnostics-workpack validation advances.
 - build/link/runtime reproducibility advanced diagnostics workpack (shard 1) governance shall preserve explicit
   lane-D dependency anchors (`M245-D016`) and fail closed on advanced diagnostics evidence drift
@@ -1322,9 +1322,9 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-E dependency anchors (`M245-E014`, `M245-A006`, `M245-B007`,
   `M245-C008`, and `M245-D011`) and fail closed on advanced core workpack
   handoff drift.
-- portability gate/release checklist advanced edge compatibility workpack (shard 1) wiring shall preserve
+- portability gate/release checklist advanced edge workpack (shard 1) wiring shall preserve
   explicit lane-E dependency anchors (`M245-E015`, `M245-A006`, `M245-B007`,
-  `M245-C009`, and `M245-D012`) and fail closed on advanced edge compatibility
+  `M245-C009`, and `M245-D012`) and fail closed on advanced edge
   handoff drift.
 - portability gate/release checklist advanced diagnostics workpack (shard 1) wiring shall preserve
   explicit lane-E dependency anchors (`M245-E016`, `M245-A006`, `M245-B008`,
@@ -1430,9 +1430,9 @@ At minimum, the pass-graph gate shall validate:
 - runtime metadata and lookup plumbing advanced core workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M233-D015`, `M233-D014`) and fail closed on
   advanced-core evidence continuity drift before lane-D closeout readiness advances.
-- runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 1) governance shall preserve
+- runtime metadata and lookup plumbing advanced edge workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M233-D016`, `M233-D015`) and fail closed on
-  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+  advanced edge evidence continuity drift before lane-D closeout readiness advances.
 - runtime metadata and lookup plumbing advanced diagnostics workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M233-D017`, `M233-D016`) and fail closed on
   advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
@@ -1445,9 +1445,9 @@ At minimum, the pass-graph gate shall validate:
 - runtime metadata and lookup plumbing advanced performance workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M233-D020`, `M233-D019`) and fail closed on
   advanced performance evidence continuity drift before lane-D closeout readiness advances.
-- runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 2) governance shall preserve
+- runtime metadata and lookup plumbing advanced edge workpack (shard 2) governance shall preserve
   explicit lane-D dependency anchors (`M233-D022`, `M233-D021`) and fail closed on
-  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+  advanced edge evidence continuity drift before lane-D closeout readiness advances.
 - runtime metadata and lookup plumbing advanced diagnostics workpack (shard 2) governance shall preserve
   explicit lane-D dependency anchors (`M233-D023`, `M233-D022`) and fail closed on
   advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
@@ -1488,9 +1488,9 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling advanced core workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M249-D015`, `M249-D014`) and fail closed on
   advanced-core evidence continuity drift before lane-D closeout readiness advances.
-- installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) governance shall preserve
+- installer/runtime operations and support tooling advanced edge workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M249-D016`, `M249-D015`) and fail closed on
-  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+  advanced edge evidence continuity drift before lane-D closeout readiness advances.
 - installer/runtime operations and support tooling advanced diagnostics workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M249-D017`, `M249-D016`) and fail closed on
   advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
@@ -1579,10 +1579,10 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-E dependency anchors (`M249-E014`, `M249-A006`, `M249-B007`,
   `M249-C008`, and `M249-D015`) and fail closed when dependency references,
   docs/runbook advanced-core evidence commands, or release gate readiness hooks drift.
-- release gate/docs/runbooks advanced edge compatibility workpack (shard 1) governance shall preserve
+- release gate/docs/runbooks advanced edge workpack (shard 1) governance shall preserve
   explicit lane-E dependency anchors (`M249-E016`, `M249-E015`) and fail closed on
-  advanced edge-compatibility command sequencing, evidence-path continuity, or
-  release gate/docs/runbooks advanced edge-compatibility continuity drift before lane-E readiness advances.
+  advanced edge command sequencing, evidence-path continuity, or
+  release gate/docs/runbooks advanced edge continuity drift before lane-E readiness advances.
 - release gate/docs/runbooks advanced diagnostics workpack (shard 1) governance shall preserve
   explicit lane-E dependency anchors (`M249-E017`, `M249-E016`, `M249-A007`, `M249-B008`,
   `M249-C009`, and `M249-D017`) and fail closed on
@@ -1608,11 +1608,11 @@ At minimum, the pass-graph gate shall validate:
   `M249-C011`, and `M249-D018`) and fail closed on
   advanced core (shard 2) command sequencing, dependency evidence continuity, or
   release gate/docs/runbooks advanced core (shard 2) continuity drift before lane-E readiness advances.
-- release gate/docs/runbooks advanced edge compatibility workpack (shard 2) governance shall preserve
+- release gate/docs/runbooks advanced edge workpack (shard 2) governance shall preserve
   explicit lane-E dependency anchors (`M249-E022`, `M249-E021`, `M249-A008`, `M249-B010`,
   `M249-C011`, and `M249-D018`) and fail closed on
-  advanced edge compatibility (shard 2) command sequencing, dependency evidence continuity, or
-  release gate/docs/runbooks advanced edge compatibility (shard 2) continuity drift before lane-E readiness advances.
+  advanced edge (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced edge (shard 2) continuity drift before lane-E readiness advances.
 - release gate/docs/runbooks advanced diagnostics workpack (shard 2) governance shall preserve
   explicit lane-E dependency anchors (`M249-E023`, `M249-E022`, `M249-A009`, `M249-B011`,
   `M249-C012`, and `M249-D019`) and fail closed on
@@ -1841,7 +1841,7 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-D dependency anchors (`M248-D014`) and fail closed on advanced
   core evidence drift before downstream platform replay and lane-e conformance
   matrix advances.
-- runner/platform operations advanced edge compatibility workpack (shard 1) governance shall preserve
+- runner/platform operations advanced edge workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M248-D015`) and fail closed on advanced
   edge compatibility evidence drift before downstream platform replay and lane-e
   conformance matrix advances.
@@ -2233,7 +2233,7 @@ typed sema-to-lowering release-candidate and replay dry-run governance shall pre
 
 typed sema-to-lowering advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C015`, `M227-C014`) so typed advanced-core continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
-typed sema-to-lowering advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C016`, `M227-C015`) so typed advanced-edge compatibility continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+typed sema-to-lowering advanced edge workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C016`, `M227-C015`) so typed advanced-edge compatibility continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C017`, `M227-C016`) so typed advanced-diagnostics continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
@@ -2245,7 +2245,7 @@ typed sema-to-lowering advanced performance workpack (shard 1) governance shall 
 
 typed sema-to-lowering advanced core workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C021`, `M227-C020`) so typed advanced-core-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
-typed sema-to-lowering advanced edge compatibility workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C022`, `M227-C021`) so typed advanced-edge-compatibility-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+typed sema-to-lowering advanced edge workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C022`, `M227-C021`) so typed advanced-edge-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C023`, `M227-C022`) so typed advanced-diagnostics-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
@@ -2283,9 +2283,9 @@ message send lowering and call emission docs and operator runbook synchronizatio
 
 message send lowering and call emission release-candidate and replay dry-run governance shall preserve explicit lane-C dependency anchors (`M232-C014`, `M232-C013`) and fail closed on release/replay continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced workpack stages advance.
 
-message send lowering and call emission advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C015`, `M232-C014`) and fail closed on advanced-core-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility stages advance.
+message send lowering and call emission advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C015`, `M232-C014`) and fail closed on advanced-core-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge stages advance.
 
-message send lowering and call emission advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C016`, `M232-C015`) and fail closed on advanced-edge-compatibility-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility shard-2 stages advance.
+message send lowering and call emission advanced edge workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C016`, `M232-C015`) and fail closed on advanced-edge-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge shard-2 stages advance.
 
 message send lowering and call emission advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C017`, `M232-C016`) and fail closed on advanced-diagnostics-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced diagnostics shard-2 stages advance.
 
@@ -2385,7 +2385,7 @@ lane-A dependency anchors (`M231-A013`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization advanced core workpack (shard 1) governance shall preserve explicit
 lane-A dependency anchors (`M231-A014`) and fail closed on core-feature evidence drift
 
-declaration grammar expansion and normalization advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+declaration grammar expansion and normalization advanced edge workpack (shard 1) governance shall preserve explicit
 lane-A dependency anchors (`M231-A015`) and fail closed on core-feature evidence drift
 
 declaration grammar expansion and normalization advanced diagnostics workpack (shard 1) governance shall preserve explicit
@@ -2705,7 +2705,7 @@ IR-emission advanced core workpack (shard 2) governance shall
 
 lane-C dependency anchors (`M228-C021`, `M228-C020`)
 
-IR-emission advanced edge compatibility workpack (shard 2) governance shall
+IR-emission advanced edge workpack (shard 2) governance shall
 
 lane-C dependency anchors (`M228-C022`, `M228-C021`)
 
@@ -2729,7 +2729,7 @@ IR-emission advanced core workpack (shard 3) governance shall
 
 lane-C dependency anchors (`M228-C027`, `M228-C026`)
 
-IR-emission advanced edge compatibility workpack (shard 3) governance shall
+IR-emission advanced edge workpack (shard 3) governance shall
 
 lane-C dependency anchors (`M228-C028`, `M228-C027`)
 
@@ -2753,7 +2753,7 @@ IR-emission advanced core workpack (shard 4) governance shall
 
 lane-C dependency anchors (`M228-C033`, `M228-C032`)
 
-IR-emission advanced edge compatibility workpack (shard 4) governance shall
+IR-emission advanced edge workpack (shard 4) governance shall
 
 lane-C dependency anchors (`M228-C034`, `M228-C033`)
 
@@ -2795,7 +2795,7 @@ replay-proof/performance release-candidate and replay dry-run closeout wiring
 
 replay-proof/performance advanced core workpack (shard 1) closeout wiring
 
-replay-proof/performance advanced edge compatibility workpack (shard 1) closeout wiring
+replay-proof/performance advanced edge workpack (shard 1) closeout wiring
 
 replay-proof/performance advanced diagnostics workpack (shard 1) closeout wiring
 
@@ -3325,9 +3325,9 @@ qualified type lowering and ABI representation advanced core workpack (shard 1) 
 
 lane-C dependency anchors (`M235-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
 
-qualified type lowering and ABI representation advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+qualified type lowering and ABI representation advanced edge workpack (shard 1) governance shall preserve explicit
 
-lane-C dependency anchors (`M235-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+lane-C dependency anchors (`M235-C015`) and fail closed on advanced edge workpack (shard 1) evidence drift
 
 qualified type lowering and ABI representation advanced diagnostics workpack (shard 1) governance shall preserve explicit
 
@@ -3389,7 +3389,7 @@ lowering/runtime diagnostics surfacing advanced core workpack (shard 1) shall pr
 
 lane-C dependency anchors (`M243-C014`)
 
-lowering/runtime diagnostics surfacing advanced edge compatibility workpack (shard 1) shall preserve
+lowering/runtime diagnostics surfacing advanced edge workpack (shard 1) shall preserve
 
 lane-C dependency anchors (`M243-C015`)
 
@@ -3401,7 +3401,7 @@ CLI/reporting and output release-candidate and replay dry-run governance shall p
 
 CLI/reporting and output advanced core workpack (shard 1) governance shall preserve
 
-CLI/reporting and output advanced edge compatibility workpack (shard 1) governance shall preserve
+CLI/reporting and output advanced edge workpack (shard 1) governance shall preserve
 
 CLI/reporting and output advanced diagnostics workpack (shard 1) governance shall preserve
 
@@ -3427,7 +3427,7 @@ diagnostics quality gate and replay policy advanced core workpack (shard 1) wiri
 
 lane-E dependency anchors (`M243-E014`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
-diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+diagnostics quality gate and replay policy advanced edge workpack (shard 1) wiring shall preserve explicit
 
 lane-E dependency anchors (`M243-E015`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
@@ -3451,7 +3451,7 @@ diagnostics quality gate and replay policy advanced core workpack (shard 2) wiri
 
 lane-E dependency anchors (`M243-E020`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
-diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 2) wiring shall preserve explicit
+diagnostics quality gate and replay policy advanced edge workpack (shard 2) wiring shall preserve explicit
 
 lane-E dependency anchors (`M243-E021`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
@@ -3475,7 +3475,7 @@ diagnostics quality gate and replay policy advanced core workpack (shard 3) wiri
 
 lane-E dependency anchors (`M243-E026`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
-diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 3) wiring shall preserve explicit
+diagnostics quality gate and replay policy advanced edge workpack (shard 3) wiring shall preserve explicit
 
 lane-E dependency anchors (`M243-E027`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
@@ -3491,7 +3491,7 @@ diagnostics quality gate and replay policy integration closeout and gate sign-of
 
 lane-E dependency anchors (`M243-E030`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
-interop semantic/type mediation advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+interop semantic/type mediation advanced edge workpack (shard 1) governance shall preserve explicit
 
 lane-B dependency anchor (`M244-B015`)
 
@@ -3511,7 +3511,7 @@ interop lowering and ABI conformance advanced core workpack (shard 1) governance
 
 lane-C dependency anchor (`M244-C014`)
 
-interop lowering and ABI conformance advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+interop lowering and ABI conformance advanced edge workpack (shard 1) governance shall preserve explicit
 
 lane-C dependency anchor (`M244-C015`)
 
@@ -3535,7 +3535,7 @@ interop lowering and ABI conformance advanced core workpack (shard 2) governance
 
 lane-C dependency anchor (`M244-C020`)
 
-interop lowering and ABI conformance advanced edge compatibility workpack (shard 2) governance shall preserve explicit
+interop lowering and ABI conformance advanced edge workpack (shard 2) governance shall preserve explicit
 
 lane-C dependency anchor (`M244-C021`)
 
@@ -3571,9 +3571,9 @@ runtime/link bridge-path advanced core workpack (shard 1) governance shall prese
 
 advanced core workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
 
-runtime/link bridge-path advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D015`)
+runtime/link bridge-path advanced edge workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D015`)
 
-advanced edge compatibility workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+advanced edge workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
 
 runtime/link bridge-path advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D016`)
 
@@ -3603,7 +3603,7 @@ interop conformance gate and operations conformance corpus expansion wiring shal
 
 lane-E dependency anchors (`M244-E009`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D conformance corpus expansion readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D conformance corpus expansion readiness hooks
 
 or lane-E conformance corpus expansion readiness hooks drift.
 
@@ -3611,7 +3611,7 @@ interop conformance gate and operations performance and quality guardrails wirin
 
 lane-E dependency anchors (`M244-E010`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D performance and quality guardrails readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D performance and quality guardrails readiness hooks
 
 or lane-E performance and quality guardrails readiness hooks drift.
 
@@ -3619,7 +3619,7 @@ interop conformance gate and operations cross-lane integration sync wiring shall
 
 lane-E dependency anchors (`M244-E011`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D cross-lane integration sync readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D cross-lane integration sync readiness hooks
 
 or lane-E cross-lane integration sync readiness hooks drift.
 
@@ -3627,7 +3627,7 @@ interop conformance gate and operations docs and operator runbook synchronizatio
 
 lane-E dependency anchors (`M244-E012`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D docs and operator runbook synchronization readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D docs and operator runbook synchronization readiness hooks
 
 or lane-E docs and operator runbook synchronization readiness hooks drift.
 
@@ -3635,7 +3635,7 @@ interop conformance gate and operations release-candidate and replay dry-run wir
 
 lane-E dependency anchors (`M244-E013`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D release-candidate and replay dry-run readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D release-candidate and replay dry-run readiness hooks
 
 or lane-E release-candidate and replay dry-run readiness hooks drift.
 
@@ -3643,23 +3643,23 @@ interop conformance gate and operations advanced core workpack (shard 1) wiring 
 
 lane-E dependency anchors (`M244-E014`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D advanced core workpack (shard 1) readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D advanced core workpack (shard 1) readiness hooks
 
 or lane-E advanced core workpack (shard 1) readiness hooks drift.
 
-interop conformance gate and operations advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+interop conformance gate and operations advanced edge workpack (shard 1) wiring shall preserve explicit
 
 lane-E dependency anchors (`M244-E015`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D advanced edge compatibility workpack (shard 1) readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D advanced edge workpack (shard 1) readiness hooks
 
-or lane-E advanced edge compatibility workpack (shard 1) readiness hooks drift.
+or lane-E advanced edge workpack (shard 1) readiness hooks drift.
 
 interop conformance gate and operations integration closeout and gate sign-off wiring shall preserve explicit
 
 lane-E dependency anchors (`M244-E016`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
 
-preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D integration closeout and gate sign-off readiness hooks
+preserve canonical `npm run objc3c -- <action>` dependency-reference continuity for lane-B/C/D integration closeout and gate sign-off readiness hooks
 
 or lane-E integration closeout and gate sign-off readiness hooks drift.
 
@@ -3776,7 +3776,7 @@ that parse successfully but still cannot participate in runtime export.
   `@implementation`,
 - category-interface-only runtime export units to name the missing category
   `@implementation`,
-- the generic B002 blocker to remain as the fallback when no more precise
+- the generic B002 blocker to remain as the fail-closed blocker when no more precise
   declaration-specific explanation is available.
 
 B003 shall keep the B002 fail-closed blocker code stable while making incomplete runtime export messages precise so class and category interface declarations that parse successfully but still cannot participate in runtime export fail closed with deterministic explanations.
@@ -4118,8 +4118,8 @@ lowering admission or runtime ingest readiness.
 
 `M252-B004` freezes the property/ivar export legality surface so the
 property-synthesis/ivar-binding lowering contract is built from
-`Objc3SemaParityContractSurface` instead of the older property-attribute
-fallback.
+`Objc3SemaParityContractSurface` instead of the retired property-attribute
+summary path.
 
 The packet-free hardening must preserve:
 
@@ -5487,7 +5487,7 @@ surface:
   ordering
 - sema owns deterministic merge-surface construction for realized classes only
 - concrete message resolution consumes the merged category surface before base
-  class fallback
+  base-class resolution path
 - declared protocol conformance consumes the same merged category surface
 - realized-class category interface/implementation pairs fail closed when one
   side is missing

@@ -512,7 +512,7 @@ In Objective‑C 3.0 v1, optional chaining constructs in [§3.4.1](#part-3-4-1) 
 
 If the selected property or method returns any scalar, vector, enum, or struct/union type, use of `?.` or `[receiver? ...]` is **ill‑formed**.
 
-**Note:** Ordinary Objective‑C message sends to `nil` receivers that yield scalar zero values remain part of the baseline language behavior. However, in ObjC 3.0 **strict** mode, ordinary sends on nullable receivers are rejected (see [§3.4.3](#part-3-4-3)), pushing scalar-return calls into explicitly nonnull contexts and eliminating silent fallbacks.
+**Note:** Ordinary Objective-C message sends to `nil` receivers that yield scalar zero values remain part of the baseline language behavior. However, in ObjC 3.0 **strict** mode, ordinary sends on nullable receivers are rejected (see [§3.4.3](#part-3-4-3)), pushing scalar-return calls into explicitly nonnull contexts and eliminating silent scalar-zero recovery.
 
 ## 3.5 Pragmatic generics {#part-3-5}
 

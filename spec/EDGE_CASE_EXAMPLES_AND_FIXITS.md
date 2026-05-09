@@ -73,7 +73,7 @@ Total examples: 58.
 | `EC-COALESCE-02` | Precedence with ternary           | Accept                                        | [EC-COALESCE-02](../tests/conformance/examples/nil_coalescing/EC-COALESCE-02.json) |
 | `EC-COALESCE-03` | Non-contiguous `? ?` tokenization | Parser error + contiguous fix-it              | [EC-COALESCE-03](../tests/conformance/examples/nil_coalescing/EC-COALESCE-03.json) |
 | `EC-COALESCE-04` | `a??b:c` likely ternary intent    | Diagnostic + ternary rewrite fix-it           | [EC-COALESCE-04](../tests/conformance/examples/nil_coalescing/EC-COALESCE-04.json) |
-| `EC-COALESCE-05` | RHS type mismatch                 | Semantic error + type-correct fallback fix-it | [EC-COALESCE-05](../tests/conformance/examples/nil_coalescing/EC-COALESCE-05.json) |
+| `EC-COALESCE-05` | RHS type mismatch                 | Semantic error + type-correct default-expression fix-it | [EC-COALESCE-05](../tests/conformance/examples/nil_coalescing/EC-COALESCE-05.json) |
 
 ## Capture Lists
 
@@ -103,7 +103,7 @@ Total examples: 58.
 | `EC-CROSS-02` | Non-canonical `await try` ordering               | Warning + reorder fix-it         | [EC-CROSS-02](../tests/conformance/examples/cross_feature/EC-CROSS-02.json) |
 | `EC-CROSS-03` | Follow-token violation after cross-feature chain | Diagnostic + parenthesize fix-it | [EC-CROSS-03](../tests/conformance/examples/cross_feature/EC-CROSS-03.json) |
 | `EC-CROSS-04` | `try? await` plus chained optional propagation   | Accept                           | [EC-CROSS-04](../tests/conformance/examples/cross_feature/EC-CROSS-04.json) |
-| `EC-CROSS-05` | Cross-feature expression with `??` fallback      | Accept                           | [EC-CROSS-05](../tests/conformance/examples/cross_feature/EC-CROSS-05.json) |
+| `EC-CROSS-05` | Cross-feature expression with `??` default RHS   | Accept                           | [EC-CROSS-05](../tests/conformance/examples/cross_feature/EC-CROSS-05.json) |
 
 ## Optional Spelling Outcomes (`OPT-SPELL-*`) {#optional-spelling-outcomes-opt-spell-}
 

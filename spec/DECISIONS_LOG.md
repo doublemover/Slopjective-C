@@ -246,7 +246,7 @@ support based on parser/sema or contract-only progress.
 
 ---
 
-## D-032: Part 9 freezes the existing runtime cache and fallback surface before widening live fast paths {#decisions-d-032}
+## D-032: Part 9 freezes the existing runtime cache and slow-path surface before widening live fast paths {#decisions-d-032}
 
 **Decision:** `M272-D001` shall freeze the existing runtime dispatch boundary as
 follows:
@@ -262,8 +262,8 @@ follows:
   artifact paths so later runtime widening can stay provenance-aware.
 
 **Rationale:** The current Part 9 runnable boundary is already truthful: exact
-LLVM direct calls bypass runtime, while the existing method-cache / slow-path /
-fallback runtime remains the only live dispatch engine. `M272-D001` should
+LLVM direct calls bypass runtime, while the existing method-cache / slow-path
+runtime remains the only live dispatch engine. `M272-D001` should
 freeze that boundary before `M272-D002` widens the live fast path.
 
 **Spec impact:** [Part 9](#part-9) runtime behavior and [E](#e) conformance

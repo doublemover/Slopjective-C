@@ -160,7 +160,7 @@ metadata updates.
 | `refresh`   | Signature, timestamp, or trust-root metadata refresh with unchanged graph and digest set. | Version changes or digest changes.            |
 | `patch`     | Controlled compatibility-window dependency updates with explicit diff.                    | Unbounded upgrade or silent transitive drift. |
 | `minor`     | Controlled additive updates preserving compatibility profile.                             | Breaking schema changes.                      |
-| `major`     | Explicit schema or policy migration with migration record.                                | Silent compatibility fallback.                |
+| `major`     | Explicit schema or policy migration with migration record.                                | Silent compatibility bypass.                  |
 
 Governance rules:
 

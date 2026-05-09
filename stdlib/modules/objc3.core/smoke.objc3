@@ -24,11 +24,11 @@ fn objc3_core_option_has_value(flag: i32) {
   }
 }
 
-fn objc3_core_option_unwrap_or(flag: i32, value: i32, fallback: i32) {
+fn objc3_core_option_unwrap_or(flag: i32, value: i32, default_value: i32) {
   if (flag) {
     return value;
   } else {
-    return fallback;
+    return default_value;
   }
 }
 
@@ -88,11 +88,11 @@ fn objc3_core_map_entry_present(flag: i32) {
   }
 }
 
-fn objc3_core_map_entry_value_or(flag: i32, value: i32, fallback: i32) {
+fn objc3_core_map_entry_value_or(flag: i32, value: i32, default_value: i32) {
   if (flag) {
     return value;
   } else {
-    return fallback;
+    return default_value;
   }
 }
 

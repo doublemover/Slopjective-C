@@ -73,7 +73,7 @@ Conditional activation predicates:
    boundaries,
 2. `F-05` is mandatory when runtime behavior is externally observable,
 3. `F-06` is mandatory when behavior crosses module or package boundaries,
-4. `F-09` is mandatory in `LS-2` when migration or fallback claims are used in
+4. `F-09` is mandatory in `LS-2` when migration or alternate-behavior claims are used in
    promotion rationale.
 
 ## 5. Interop Coverage Minima

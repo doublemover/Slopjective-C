@@ -73,7 +73,7 @@ Compatibility publication for this milestone must emit:
 - a machine-owned compatibility report with support-window, upgrade-path, and
   warning details
 - explicit rollback guidance tied to the published installer/offline channels
-- ABI/runtime/data-format fallback diagnostics as checked-in policy contracts
+- ABI/runtime/data-format rejection diagnostics as checked-in policy contracts
 
 Warnings must be deterministic and derived from checked-in policy classes such
 as:
@@ -82,7 +82,7 @@ as:
 - channel downgrades from `stable` to `preview`
 - cross-major upgrade requests
 - deprecated channel usage
-- runtime/data-format fallback requirements
+- runtime/data-format rejection requirements
 - support-tier or archive compatibility overclaim attempts outside the checked-in
   `windows-x64` package/install/update surface
 
