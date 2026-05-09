@@ -57,6 +57,20 @@ BuildSerializedRuntimeMetadataImportLoweringSummary(
 [[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
     const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
 
+[[nodiscard]] std::string BuildSerializedRuntimeMetadataArtifactReuseReplayKey(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary);
+
+[[nodiscard]] Objc3SerializedRuntimeMetadataArtifactReuseSummary
+BuildSerializedRuntimeMetadataArtifactReuseSummary(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary
+        &serialized_import_lowering,
+    const std::string &local_module_name,
+    const Objc3RuntimeMetadataSourceRecordSet &reused_runtime_metadata_source_records,
+    const std::vector<std::string> &reused_module_names_lexicographic);
+
+[[nodiscard]] std::string BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
