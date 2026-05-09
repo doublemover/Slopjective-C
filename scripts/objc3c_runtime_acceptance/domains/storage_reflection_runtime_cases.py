@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_accessor_cases import (
+    check_synthesized_accessor_runtime_case,
+)
+from objc3c_runtime_acceptance.domains.storage_reflection_runtime_layout_cases import (
     check_instance_allocation_layout_runtime_case,
     check_property_layout_case,
-    check_synthesized_accessor_runtime_case,
 )
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_property_cases import (
     check_property_execution_case,
