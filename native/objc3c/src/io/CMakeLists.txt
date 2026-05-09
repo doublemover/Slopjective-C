@@ -39,6 +39,7 @@ add_library(objc3c_json STATIC
   json/json_schema_ref_preflight_validation.cpp
   json/json_schema_required_contract_validation.cpp
   json/json_schema_runtime_field_validation.cpp
+  json/json_schema_runtime_node_validation.cpp
   json/json_schema_scalar_validation.cpp
   json/json_schema_string_constraint_validation.cpp
   json/json_schema_subschema.cpp
