@@ -71,6 +71,22 @@ BuildSerializedRuntimeMetadataArtifactReuseSummary(
 [[nodiscard]] std::string BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary);
 
+[[nodiscard]] std::string BuildCrossModuleBuildRuntimeOrchestrationReplayKey(
+    const Objc3CrossModuleBuildRuntimeOrchestrationSummary &summary);
+
+[[nodiscard]] Objc3CrossModuleBuildRuntimeOrchestrationSummary
+BuildCrossModuleBuildRuntimeOrchestrationSummary(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary
+        &serialized_runtime_metadata_artifact_reuse,
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary
+        &imported_runtime_metadata_semantic_rules,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &local_runtime_registration_manifest,
+    std::size_t direct_import_input_count);
+
+[[nodiscard]] std::string BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
+    const Objc3CrossModuleBuildRuntimeOrchestrationSummary &summary);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
