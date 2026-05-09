@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+SOURCE_HYGIENE_ROOTS_CONTRACT_ID = "source-hygiene-roots-v1"
+SOURCE_HYGIENE_ROOTS_OWNER_SURFACE = "scripts/source_hygiene/roots.py"
 
 DEFAULT_SCAN_ROOTS: tuple[str, ...] = (
     "README.md",
@@ -63,3 +65,30 @@ TEXT_SUFFIXES: frozenset[str] = frozenset(
         ".yml",
     }
 )
+
+
+def roots_contract_summary() -> dict[str, object]:
+    return {
+        "contract_id": SOURCE_HYGIENE_ROOTS_CONTRACT_ID,
+        "owner_surface": SOURCE_HYGIENE_ROOTS_OWNER_SURFACE,
+        "default_scan_roots": list(DEFAULT_SCAN_ROOTS),
+        "default_excludes": list(DEFAULT_EXCLUDES),
+        "text_suffixes": sorted(TEXT_SUFFIXES),
+        "public_command_truth_roots": [
+            root
+            for root in DEFAULT_SCAN_ROOTS
+            if root in {"README.md", "CONTRIBUTING.md", "docs", "spec", "site", "stdlib"}
+        ],
+        "tmp_and_report_outputs_excluded": True,
+        "canonical_rejection_registry_excludes_are_scoped": True,
+    }
+
+
+__all__ = [
+    "DEFAULT_EXCLUDES",
+    "DEFAULT_SCAN_ROOTS",
+    "SOURCE_HYGIENE_ROOTS_CONTRACT_ID",
+    "SOURCE_HYGIENE_ROOTS_OWNER_SURFACE",
+    "TEXT_SUFFIXES",
+    "roots_contract_summary",
+]

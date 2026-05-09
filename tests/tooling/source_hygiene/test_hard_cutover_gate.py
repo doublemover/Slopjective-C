@@ -36,7 +36,7 @@ from scripts.source_hygiene.patterns_public_legacy import PUBLIC_LEGACY_PATTERNS
 from scripts.source_hygiene.patterns_public_migration import PUBLIC_MIGRATION_PATTERNS
 from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_PATTERNS
 from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
-from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
+from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS, SOURCE_HYGIENE_ROOTS_CONTRACT_ID
 from scripts.source_hygiene.scanner import build_report, write_reports
 from scripts.source_hygiene.scan_config import SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID
 from scripts.source_hygiene.report_writer import (
@@ -508,6 +508,13 @@ def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> 
     assert scan_config_contract["compiled_patterns_are_case_insensitive"] is True
     assert scan_config_contract["scan_roots"] == report["scan_roots"]
     assert scan_config_contract["pattern_count"] == len(report["forbidden_patterns"])
+    assert report["roots_contract"]["contract_id"] == SOURCE_HYGIENE_ROOTS_CONTRACT_ID
+    assert report["roots_contract"]["default_scan_roots"] == list(DEFAULT_SCAN_ROOTS)
+    assert report["roots_contract"]["tmp_and_report_outputs_excluded"] is True
+    assert (
+        report["roots_contract"]["canonical_rejection_registry_excludes_are_scoped"]
+        is True
+    )
     assert owner_contract["pattern_owner"]["owner_id"] == SOURCE_HYGIENE_PATTERN_OWNER
     assert (
         owner_contract["generated_report_owner"]["owner_id"]

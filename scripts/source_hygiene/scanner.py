@@ -23,6 +23,7 @@ from .patterns import FORBIDDEN_PATTERNS
 from .owners import source_hygiene_owner_contract_summary
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
+from .roots import roots_contract_summary
 from .scan_config import (
     SourceHygieneScanConfig,
     compile_policy_patterns,
@@ -135,6 +136,7 @@ def build_report(
         "gate_contract": gate_contract_summary(),
         "owner_contract": owner_contract,
         "scan_config_contract": scan_config_contract_summary(config),
+        "roots_contract": roots_contract_summary(),
         "blocker_metadata": owner_contract["blocker_metadata"],
         "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,
