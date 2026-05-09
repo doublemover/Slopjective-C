@@ -7,6 +7,14 @@ from objc3c_runtime_acceptance.domains.release_claims_publication_cases import (
     check_final_claim_publication_deprecated_path_shutdown_case,
     check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case,
 )
+from objc3c_runtime_acceptance.domains.release_claims_claimable_cases import (
+    check_claimable_surface_residual_non_claimable_gaps_source_surface_case,
+    check_strict_profile_feature_claim_source_surface_case,
+)
+from objc3c_runtime_acceptance.domains.release_claims_policy_cases import (
+    check_claimability_semantics_release_policy_case,
+    check_strict_profile_claim_implementation_case,
+)
 from objc3c_runtime_acceptance.domains.release_claims_publication_surfaces import (
     build_runtime_claim_publication_dashboard_schema_surface,
     build_runtime_final_claim_publication_deprecated_path_shutdown_surface,
@@ -19,12 +27,6 @@ from objc3c_runtime_acceptance.domains.release_claims_runtime_surfaces import (
 from objc3c_runtime_acceptance.domains.release_claims_runtime_cases import (
     check_final_release_evidence_descaffolding_implementation_case,
     check_release_candidate_runtime_claim_abi_case,
-)
-from objc3c_runtime_acceptance.domains.release_claims_source_cases import (
-    check_claimability_semantics_release_policy_case,
-    check_claimable_surface_residual_non_claimable_gaps_source_surface_case,
-    check_strict_profile_claim_implementation_case,
-    check_strict_profile_feature_claim_source_surface_case,
 )
 from objc3c_runtime_acceptance.domains.release_claims_source_surfaces import (
     build_runtime_claimability_semantics_release_policy_surface,
