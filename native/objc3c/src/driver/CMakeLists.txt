@@ -9,6 +9,8 @@ add_library(objc3c_driver STATIC
   objc3_driver_cross_module_link_plan_inputs.cpp
   objc3_driver_command_dispatch.cpp
   objc3_driver_conformance_publication.cpp
+  objc3_driver_conformance_publication_sidecar.cpp
+  objc3_driver_conformance_release_artifact_publication.cpp
   objc3_driver_conformance_surface.cpp
   objc3_driver_conformance_validation_paths.cpp
   objc3_driver_conformance_validation_publication.cpp
