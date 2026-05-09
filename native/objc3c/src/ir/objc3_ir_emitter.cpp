@@ -1,7 +1,5 @@
 #include "ir/objc3_ir_emitter.h"
 
-#include <algorithm>
-#include <array>
 #include <cstdint>
 #include <map>
 #include <set>
@@ -13,7 +11,7 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
-#include "ir/objc3_ir_block_runtime_contracts.h"
+#include "ir/objc3_ir_block_lowering.h"
 #include "ir/objc3_ir_canonical_literal_pools.h"
 #include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_concurrency_runtime_call_emission.h"
@@ -2100,6 +2098,33 @@ class Objc3IREmitter {
         }};
   }
 
+  Objc3IRBlockLoweringContext BlockLoweringContext() const {
+    return Objc3IRBlockLoweringContext{
+        Objc3IRBlockLoweringState{
+            &block_function_definitions_,
+            &emitted_block_invoke_symbols_,
+            &emitted_block_copy_helper_symbols_,
+            &emitted_block_dispose_helper_symbols_},
+        ScopeCleanupCallbacks(),
+        Objc3IRBlockLoweringCallbacks{
+            [this](const std::string &reason) {
+              return EmitUnsupportedI32Value(reason);
+            },
+            [this](const Expr *expr, FunctionContext &callback_ctx) {
+              return EmitExpr(expr, callback_ctx);
+            },
+            [this](const Stmt *stmt, FunctionContext &callback_ctx) {
+              EmitStatement(stmt, callback_ctx);
+            },
+            [this](const FunctionContext &callback_ctx,
+                   const std::string &name) {
+              return LookupVarPtr(callback_ctx, name);
+            },
+            [this](const std::string &name, FunctionContext &callback_ctx) {
+              return EmitIdentifierValue(name, callback_ctx);
+            }}};
+  }
+
   void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
     EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, target_depth);
@@ -2167,15 +2192,6 @@ class Objc3IREmitter {
     return value_it->second;
   }
 
-  static bool SortedStringListContains(const std::vector<std::string> &entries,
-                                       const std::string &needle) {
-    return std::binary_search(entries.begin(), entries.end(), needle);
-  }
-
-  void EmitPendingBlockDisposeHelpers(FunctionContext &ctx) const {
-    EmitPendingBlockDisposeUnwindToDepth(ctx, 0u);
-  }
-
   void EmitArcOwnedCleanupUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
     EmitObjc3IRArcOwnedCleanupUnwindToDepth(
@@ -2190,216 +2206,12 @@ class Objc3IREmitter {
         ctx, target_depth, out_lines, temp_counter);
   }
 
-  void EmitBlockCopyHelper(const Expr &expr) const {
-    if (!BlockLiteralUsesPointerCaptureStorage(expr) ||
-        !expr.block_runtime_copy_helper_required) {
-      return;
-    }
-    const std::string symbol = BuildBlockCopyHelperSymbol(expr);
-    if (symbol.empty() ||
-        !emitted_block_copy_helper_symbols_.insert(symbol).second) {
-      return;
-    }
-
-    const std::string storage_type = BuildBlockStorageType(expr);
-    std::ostringstream out;
-    out << "define internal void @" << symbol << "(ptr %block) {\n";
-    out << "entry:\n";
-    int temp_counter = 0;
-    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size();
-         ++i) {
-      const std::string &capture_name =
-          expr.block_capture_names_lexicographic[i];
-      if (!SortedStringListContains(
-              expr.block_runtime_owned_object_capture_names_lexicographic,
-              capture_name)) {
-        continue;
-      }
-      const std::string slot_ptr =
-          "%block.copy.slot." + std::to_string(temp_counter++);
-      const std::string capture_ptr =
-          "%block.copy.capture." + std::to_string(temp_counter++);
-      const std::string loaded_value =
-          "%block.copy.value." + std::to_string(temp_counter++);
-      const std::string retained_value =
-          "%block.copy.retained." + std::to_string(temp_counter++);
-      out << "  " << slot_ptr << " = getelementptr inbounds " << storage_type
-          << ", ptr %block, i32 0, i32 3, i32 " << i << "\n";
-      out << "  " << capture_ptr << " = load ptr, ptr " << slot_ptr
-          << ", align 8\n";
-      out << "  " << loaded_value << " = load i32, ptr " << capture_ptr
-          << ", align 4\n";
-      out << "  " << retained_value << " = call i32 @"
-          << kObjc3RuntimeRetainI32Symbol << "(i32 " << loaded_value << ")\n";
-      out << "  store i32 " << retained_value << ", ptr " << capture_ptr
-          << ", align 4\n";
-    }
-    out << "  ret void\n";
-    out << "}\n";
-    block_function_definitions_.push_back(out.str());
-  }
-
-  void EmitBlockDisposeHelper(const Expr &expr,
-                              const FunctionContext &ctx) const {
-    if (!BlockLiteralUsesPointerCaptureStorage(expr) ||
-        !expr.block_runtime_dispose_helper_required) {
-      return;
-    }
-    const std::string symbol = BuildBlockDisposeHelperSymbol(expr);
-    if (symbol.empty() ||
-        !emitted_block_dispose_helper_symbols_.insert(symbol).second) {
-      return;
-    }
-
-    const std::string storage_type = BuildBlockStorageType(expr);
-    std::ostringstream out;
-    out << "define internal void @" << symbol << "(ptr %block) {\n";
-    out << "entry:\n";
-    int temp_counter = 0;
-    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size();
-         ++i) {
-      const std::string &capture_name =
-          expr.block_capture_names_lexicographic[i];
-      const auto moved_capture_it = std::find_if(
-          expr.block_explicit_capture_items_source_order.begin(),
-          expr.block_explicit_capture_items_source_order.end(),
-          [&capture_name](const Expr::ExplicitBlockCaptureItem &item) {
-            return item.name == capture_name && item.mode == "move";
-          });
-      const bool moved_capture =
-          moved_capture_it != expr.block_explicit_capture_items_source_order.end();
-      const auto cleanup_it = ctx.ownership_cleanup_call_indices.find(capture_name);
-      if (!SortedStringListContains(
-              expr.block_runtime_owned_object_capture_names_lexicographic,
-              capture_name) &&
-          (!moved_capture || cleanup_it == ctx.ownership_cleanup_call_indices.end())) {
-        continue;
-      }
-      const std::string slot_ptr =
-          "%block.dispose.slot." + std::to_string(temp_counter++);
-      const std::string capture_ptr =
-          "%block.dispose.capture." + std::to_string(temp_counter++);
-      const std::string loaded_value =
-          "%block.dispose.value." + std::to_string(temp_counter++);
-      const std::string released_value =
-          "%block.dispose.released." + std::to_string(temp_counter++);
-      out << "  " << slot_ptr << " = getelementptr inbounds " << storage_type
-          << ", ptr %block, i32 0, i32 3, i32 " << i << "\n";
-      out << "  " << capture_ptr << " = load ptr, ptr " << slot_ptr
-          << ", align 8\n";
-      out << "  " << loaded_value << " = load i32, ptr " << capture_ptr
-          << ", align 4\n";
-      if (SortedStringListContains(
-              expr.block_runtime_owned_object_capture_names_lexicographic,
-              capture_name)) {
-        out << "  " << released_value << " = call i32 @"
-            << kObjc3RuntimeReleaseI32Symbol << "(i32 " << loaded_value
-            << ")\n";
-      }
-      if (moved_capture && cleanup_it != ctx.ownership_cleanup_call_indices.end()) {
-        const PendingOwnershipCleanupCall &cleanup_call =
-            ctx.pending_ownership_cleanup_calls[cleanup_it->second];
-        if (!cleanup_call.resource_close_symbol.empty()) {
-          if (cleanup_call.has_resource_invalid_value) {
-            const std::string resource_live =
-                "%block.dispose.resource.live." + std::to_string(temp_counter++);
-            const std::string resource_close_label =
-                "block.dispose.resource.close." + std::to_string(temp_counter++);
-            const std::string resource_skip_label =
-                "block.dispose.resource.skip." + std::to_string(temp_counter++);
-            out << "  " << resource_live << " = icmp ne i32 " << loaded_value
-                << ", " << cleanup_call.resource_invalid_value << "\n";
-            out << "  br i1 " << resource_live << ", label %"
-                << resource_close_label << ", label %" << resource_skip_label
-                << "\n";
-            out << resource_close_label << ":\n";
-            out << "  call void @" << cleanup_call.resource_close_symbol
-                << "(i32 " << loaded_value << ")\n";
-            out << "  br label %" << resource_skip_label << "\n";
-            out << resource_skip_label << ":\n";
-          } else {
-            out << "  call void @" << cleanup_call.resource_close_symbol
-                << "(i32 " << loaded_value << ")\n";
-          }
-        }
-        if (!cleanup_call.cleanup_function_symbol.empty()) {
-          out << "  call void @" << cleanup_call.cleanup_function_symbol
-              << "(i32 " << loaded_value << ")\n";
-        }
-      }
-      (void)released_value;
-    }
-    out << "  ret void\n";
-    out << "}\n";
-    block_function_definitions_.push_back(out.str());
-  }
-
-  std::string EmitPromotedBlockHandle(const Expr &expr,
-                                      const std::string &storage_ptr,
-                                      FunctionContext &ctx,
-                                      bool allow_nonescaping_scalar_promotion =
-                                          false) const {
-    // escaping-block runtime-hook anchor: readonly-scalar escaping
-    // block values now lower through a private runtime promotion hook instead
-    // of failing closed at the first escaping expression use.
-    const bool supported = allow_nonescaping_scalar_promotion
-                               ? BlockLiteralSupportsScalarRuntimePromotion(expr)
-                               : BlockLiteralSupportsEscapingRuntimeHookLowering(
-                                     expr);
-    if (!supported) {
-      return EmitUnsupportedI32Value(
-          "escaping block value still requires normalized block runtime helper metadata that lands in later runtime work");
-    }
-    // lowering-implementation anchor: actual promotion of move-based
-    // cleanup/resource captures remains fail-closed until runtime ownership
-    // transfer exists. Plain stack/local helper lowering is implemented now.
-    if (expr.block_explicit_capture_move_count > 0u) {
-      return EmitUnsupportedI32Value(
-          "escaping move captures for cleanup/resource-backed locals still require later Part 8 runtime ownership transfer support");
-    }
-    const bool pointer_capture_storage =
-        BlockLiteralUsesPointerCaptureStorage(expr);
-    const std::string promoted = NewTemp(ctx);
-    ctx.code_lines.push_back(
-        "  " + promoted + " = call i32 @" +
-        std::string(kObjc3RuntimePromoteBlockI32Symbol) + "(ptr " + storage_ptr +
-        ", i64 " + std::to_string(BlockStorageStaticSizeBytes(expr)) +
-        ", i32 " + std::string(pointer_capture_storage ? "1" : "0") + ")");
-    return promoted;
-  }
-
-  std::string EmitPromotedBlockHandleLoad(BlockBinding &binding,
-                                          FunctionContext &ctx) const {
-    if (!binding.promoted_handle_ptr.empty()) {
-      const std::string loaded = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
-                               binding.promoted_handle_ptr + ", align 4");
-      return loaded;
-    }
-    if (binding.literal == nullptr || binding.storage_ptr.empty()) {
-      return EmitUnsupportedI32Value(
-          "missing block literal metadata for escaping block-handle lowering");
-    }
-    const std::string promoted =
-        EmitPromotedBlockHandle(*binding.literal, binding.storage_ptr, ctx,
-                                true);
-    if (promoted == "poison") {
-      return promoted;
-    }
-    binding.promoted_handle_ptr =
-        "%block.promoted.addr." + std::to_string(ctx.temp_counter++);
-    ctx.entry_lines.push_back("  " + binding.promoted_handle_ptr +
-                              " = alloca i32, align 4");
-    ctx.code_lines.push_back("  store i32 " + promoted + ", ptr " +
-                             binding.promoted_handle_ptr + ", align 4");
-    return promoted;
-  }
-
   std::string EmitIdentifierValue(const std::string &name,
                                   FunctionContext &ctx) const {
     auto block_it = ctx.block_bindings.find(name);
     if (block_it != ctx.block_bindings.end()) {
-      return EmitPromotedBlockHandleLoad(block_it->second, ctx);
+      return EmitObjc3IRPromotedBlockHandleLoad(
+          block_it->second, ctx, BlockLoweringContext());
     }
     const std::string ptr = LookupVarPtr(ctx, name);
     if (!ptr.empty()) {
@@ -2435,259 +2247,6 @@ class Objc3IREmitter {
     }
     return std::to_string(
         static_cast<unsigned long long>(artifact_it->second.ordinal + 1u));
-  }
-
-  void EmitBlockInvokeThunk(const Expr &expr) const {
-    // byref-cell/copy-helper/dispose-helper anchor: each runnable
-    // local block literal now receives one internal invoke thunk definition
-    // that rehydrates readonly captures from snapshot cells and mutated captures
-    // from stack byref-cell references.
-    const std::string symbol = BuildBlockInvokeSymbol(expr);
-    if (symbol.empty() || !emitted_block_invoke_symbols_.insert(symbol).second) {
-      return;
-    }
-
-    std::ostringstream out;
-    out << "define internal i32 @" << symbol
-        << "(ptr %block, i32 %arg0, i32 %arg1, i32 %arg2, i32 %arg3) {\n";
-    out << "entry:\n";
-
-    FunctionContext ctx;
-    ctx.return_type = ValueType::I32;
-    PushScope(ctx);
-
-    const std::string block_storage_type = BuildBlockStorageType(expr);
-    const bool pointer_capture_storage =
-        BlockLiteralUsesPointerCaptureStorage(expr);
-    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
-      const std::string &capture_name = expr.block_capture_names_lexicographic[i];
-      const std::string slot_ptr = NewTemp(ctx);
-      const std::size_t capture_field_index =
-          pointer_capture_storage ? 3u : 1u;
-      ctx.entry_lines.push_back("  " + slot_ptr + " = getelementptr inbounds " +
-                                block_storage_type +
-                                ", ptr %block, i32 0, i32 " +
-                                std::to_string(capture_field_index) +
-                                ", i32 " + std::to_string(i));
-      if (pointer_capture_storage) {
-        const std::string capture_ptr = NewTemp(ctx);
-        ctx.entry_lines.push_back("  " + capture_ptr + " = load ptr, ptr " +
-                                  slot_ptr + ", align 8");
-        ctx.scopes.back()[capture_name] = capture_ptr;
-        continue;
-      }
-      const std::string ptr =
-          "%" + capture_name + ".addr." + std::to_string(ctx.temp_counter++);
-      const std::string value = NewTemp(ctx);
-      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
-      ctx.scopes.back()[capture_name] = ptr;
-      ctx.entry_lines.push_back("  " + value + " = load i32, ptr " + slot_ptr +
-                                ", align 4");
-      ctx.entry_lines.push_back("  store i32 " + value + ", ptr " + ptr +
-                                ", align 4");
-    }
-
-    for (std::size_t i = 0; i < expr.block_parameters_source_order.size() && i < 4u; ++i) {
-      const auto &parameter = expr.block_parameters_source_order[i];
-      const std::string ptr =
-          "%" + parameter.name + ".addr." + std::to_string(ctx.temp_counter++);
-      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
-      ctx.entry_lines.push_back("  store i32 %arg" + std::to_string(i) + ", ptr " + ptr + ", align 4");
-      ctx.scopes.back()[parameter.name] = ptr;
-    }
-
-    for (const auto &stmt : expr.block_body) {
-      EmitStatement(stmt.get(), ctx);
-      if (ctx.terminated) {
-        break;
-      }
-    }
-
-    if (!ctx.terminated) {
-      EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-      EmitOwnershipCleanupUnwindToDepth(ctx, 0u);
-      EmitPendingBlockDisposeHelpers(ctx);
-      EmitArcOwnedCleanupReleases(ctx);
-      ctx.code_lines.push_back("  ret i32 0");
-    }
-
-    for (const auto &line : ctx.entry_lines) {
-      out << line << "\n";
-    }
-    for (const auto &line : ctx.code_lines) {
-      out << line << "\n";
-    }
-    out << "}\n";
-    block_function_definitions_.push_back(out.str());
-  }
-
-  std::string EmitBlockLiteralStorage(const Expr &expr,
-                                      FunctionContext &ctx) const {
-    // byref-cell/copy-helper/dispose-helper anchor: the current live
-    // lowering slice now supports non-escaping byref and owned-capture block
-    // objects through stack snapshot/byref cells plus emitted helper bodies.
-    // lowering-implementation anchor: cleanup/resource-backed move
-    // captures now lower through the same stack/local helper path. The
-    // unsupported boundary is promotion, not local helper materialization.
-    if (BlockLiteralRequiresFutureRuntimeLanes(expr)) {
-      return EmitUnsupportedI32Value(
-          "block literal requires escaping heap-promotion or runtime-managed copy/dispose lowering that lands in later runtime work");
-    }
-    if (expr.block_parameter_count > 4u) {
-      return EmitUnsupportedI32Value(
-          "block literal exceeds current runnable invoke-thunk arity limit of 4");
-    }
-
-    EmitBlockInvokeThunk(expr);
-    EmitBlockCopyHelper(expr);
-    EmitBlockDisposeHelper(expr, ctx);
-
-    const std::string storage_type = BuildBlockStorageType(expr);
-    const bool pointer_capture_storage =
-        BlockLiteralUsesPointerCaptureStorage(expr);
-    const std::string storage_ptr =
-        "%block.literal.addr." + std::to_string(ctx.temp_counter++);
-    ctx.entry_lines.push_back("  " + storage_ptr + " = alloca " + storage_type + ", align 8");
-
-    const std::string invoke_ptr_slot = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + invoke_ptr_slot + " = getelementptr inbounds " +
-                             storage_type + ", ptr " + storage_ptr + ", i32 0, i32 0");
-    ctx.code_lines.push_back("  store ptr @" + BuildBlockInvokeSymbol(expr) + ", ptr " +
-                             invoke_ptr_slot + ", align 8");
-
-    if (pointer_capture_storage) {
-      const std::string copy_helper_slot = NewTemp(ctx);
-      const std::string dispose_helper_slot = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + copy_helper_slot +
-                               " = getelementptr inbounds " + storage_type +
-                               ", ptr " + storage_ptr + ", i32 0, i32 1");
-      ctx.code_lines.push_back("  store ptr " +
-                               std::string(expr.block_runtime_copy_helper_required
-                                               ? "@" + BuildBlockCopyHelperSymbol(expr)
-                                               : "null") +
-                               ", ptr " + copy_helper_slot + ", align 8");
-      ctx.code_lines.push_back("  " + dispose_helper_slot +
-                               " = getelementptr inbounds " + storage_type +
-                               ", ptr " + storage_ptr + ", i32 0, i32 2");
-      ctx.code_lines.push_back("  store ptr " +
-                               std::string(expr.block_runtime_dispose_helper_required
-                                               ? "@" + BuildBlockDisposeHelperSymbol(expr)
-                                               : "null") +
-                               ", ptr " + dispose_helper_slot + ", align 8");
-    }
-
-    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
-      const std::string &capture_name = expr.block_capture_names_lexicographic[i];
-      const std::string capture_slot = NewTemp(ctx);
-      if (pointer_capture_storage) {
-        std::string capture_cell_ptr;
-        const auto moved_capture_it = std::find_if(
-            expr.block_explicit_capture_items_source_order.begin(),
-            expr.block_explicit_capture_items_source_order.end(),
-            [&capture_name](const Expr::ExplicitBlockCaptureItem &item) {
-              return item.name == capture_name && item.mode == "move";
-            });
-        if (moved_capture_it != expr.block_explicit_capture_items_source_order.end()) {
-          const auto cleanup_it = ctx.ownership_cleanup_call_indices.find(capture_name);
-          if (cleanup_it == ctx.ownership_cleanup_call_indices.end()) {
-            return EmitUnsupportedI32Value(
-                "move capture '" + capture_name +
-                "' was not registered as a cleanup/resource-backed local");
-          }
-          PendingOwnershipCleanupCall &cleanup_call =
-              ctx.pending_ownership_cleanup_calls[cleanup_it->second];
-          cleanup_call.active = false;
-          capture_cell_ptr = cleanup_call.storage_ptr;
-        } else if (SortedStringListContains(
-                expr.block_byref_capture_names_lexicographic, capture_name)) {
-          capture_cell_ptr = LookupVarPtr(ctx, capture_name);
-          if (capture_cell_ptr.empty()) {
-            return EmitUnsupportedI32Value(
-                "block literal byref capture '" + capture_name +
-                "' could not be resolved during IR lowering");
-          }
-        } else {
-          capture_cell_ptr = "%" + capture_name + ".capture.addr." +
-                             std::to_string(ctx.temp_counter++);
-          ctx.entry_lines.push_back("  " + capture_cell_ptr +
-                                    " = alloca i32, align 4");
-          const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
-          ctx.code_lines.push_back("  store i32 " + capture_value + ", ptr " +
-                                   capture_cell_ptr + ", align 4");
-        }
-        ctx.code_lines.push_back("  " + capture_slot +
-                                 " = getelementptr inbounds " + storage_type +
-                                 ", ptr " + storage_ptr +
-                                 ", i32 0, i32 3, i32 " + std::to_string(i));
-        ctx.code_lines.push_back("  store ptr " + capture_cell_ptr + ", ptr " +
-                                 capture_slot + ", align 8");
-        continue;
-      }
-      const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
-      ctx.code_lines.push_back("  " + capture_slot + " = getelementptr inbounds " +
-                               storage_type + ", ptr " + storage_ptr + ", i32 0, i32 1, i32 " +
-                               std::to_string(i));
-      ctx.code_lines.push_back("  store i32 " + capture_value + ", ptr " + capture_slot +
-                               ", align 4");
-    }
-
-    if (pointer_capture_storage && expr.block_runtime_copy_helper_required) {
-      ctx.code_lines.push_back("  call void @" + BuildBlockCopyHelperSymbol(expr) +
-                               "(ptr " + storage_ptr + ")");
-    }
-    if (pointer_capture_storage && expr.block_runtime_dispose_helper_required) {
-      ctx.pending_block_dispose_calls.push_back(
-          PendingBlockDisposeCall{BuildBlockDisposeHelperSymbol(expr),
-                                  storage_ptr});
-    }
-
-    return storage_ptr;
-  }
-
-  std::string EmitBlockInvokeCall(const BlockBinding &binding,
-                                  const Expr *call_expr,
-                                  FunctionContext &ctx) const {
-    if (binding.literal == nullptr) {
-      return EmitUnsupportedI32Value(
-          "missing block literal metadata for local callable invocation");
-    }
-
-    if (!binding.promoted_handle_ptr.empty()) {
-      std::array<std::string, 4> args{"0", "0", "0", "0"};
-      for (std::size_t i = 0; i < call_expr->args.size() && i < args.size();
-           ++i) {
-        args[i] = EmitExpr(call_expr->args[i].get(), ctx);
-      }
-      const std::string handle = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + handle + " = load i32, ptr " +
-                               binding.promoted_handle_ptr + ", align 4");
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(
-          "  " + out + " = call i32 @" +
-          std::string(kObjc3RuntimeInvokeBlockI32Symbol) + "(i32 " + handle +
-          ", i32 " + args[0] + ", i32 " + args[1] + ", i32 " + args[2] +
-          ", i32 " + args[3] + ")");
-      return out;
-    }
-
-    const std::string storage_type = BuildBlockStorageType(*binding.literal);
-    const std::string invoke_ptr_slot = NewTemp(ctx);
-    const std::string invoke_ptr = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + invoke_ptr_slot + " = getelementptr inbounds " +
-                             storage_type + ", ptr " + binding.storage_ptr + ", i32 0, i32 0");
-    ctx.code_lines.push_back("  " + invoke_ptr + " = load ptr, ptr " + invoke_ptr_slot +
-                             ", align 8");
-
-    std::array<std::string, 4> args{"0", "0", "0", "0"};
-    for (std::size_t i = 0; i < call_expr->args.size() && i < args.size(); ++i) {
-      args[i] = EmitExpr(call_expr->args[i].get(), ctx);
-    }
-
-    const std::string out = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + out + " = call i32 " + invoke_ptr + "(ptr " +
-                             binding.storage_ptr + ", i32 " + args[0] + ", i32 " + args[1] +
-                             ", i32 " + args[2] + ", i32 " + args[3] + ")");
-    return out;
   }
 
   void CollectKnownClassReceiverConstants() {
@@ -3235,17 +2794,20 @@ class Objc3IREmitter {
               return EmitTypedKeyPathLiteralValue(callback_expr);
             },
             [this](const Expr &callback_expr, FunctionContext &callback_ctx) {
-              return EmitBlockLiteralStorage(callback_expr, callback_ctx);
+              return EmitObjc3IRBlockLiteralStorage(
+                  callback_expr, callback_ctx, BlockLoweringContext());
             },
             [this](const Expr &callback_expr,
                    const std::string &storage_ptr,
                    FunctionContext &callback_ctx) {
-              return EmitPromotedBlockHandle(callback_expr, storage_ptr,
-                                             callback_ctx);
+              return EmitObjc3IRPromotedBlockHandle(
+                  callback_expr, storage_ptr, callback_ctx,
+                  BlockLoweringContext());
             },
             [this](const BlockBinding &binding, const Expr *call_expr,
                    FunctionContext &callback_ctx) {
-              return EmitBlockInvokeCall(binding, call_expr, callback_ctx);
+              return EmitObjc3IRBlockInvokeCall(
+                  binding, call_expr, callback_ctx, BlockLoweringContext());
             },
             [this](const std::string &name) {
               return LookupFunctionSignature(name);
@@ -3289,7 +2851,8 @@ class Objc3IREmitter {
               return EmitExpr(expr, callback_ctx);
             },
             [this](const Expr &expr, FunctionContext &callback_ctx) {
-              return EmitBlockLiteralStorage(expr, callback_ctx);
+              return EmitObjc3IRBlockLiteralStorage(
+                  expr, callback_ctx, BlockLoweringContext());
             },
             [this](FunctionContext &callback_ctx) {
               return NewTemp(callback_ctx);

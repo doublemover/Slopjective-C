@@ -20,6 +20,7 @@ target_link_libraries(objc3c_ir_core_models PUBLIC
 )
 
 add_library(objc3c_ir_runtime_surface STATIC
+  objc3_ir_block_lowering.cpp
   objc3_ir_block_runtime_contracts.cpp
   objc3_ir_concurrency_identity.cpp
   objc3_ir_concurrency_runtime_call_emission.cpp
