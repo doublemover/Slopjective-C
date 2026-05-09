@@ -19,6 +19,8 @@ Machine-readable truth is split deliberately:
 - schema examples: `docs/support/capability_schema_examples.md`
 - projection policy: the `projection_policy` object in
   `docs/support/capability_matrix.json`
+- support-claim contract: the `claim_contract` object in
+  `docs/support/capability_matrix.json`
 
 The matrix also carries `retired_surface_terms` for wording that may appear only
 in negative examples, issue evidence, or source-hygiene rejection data.
@@ -26,6 +28,14 @@ in negative examples, issue evidence, or source-hygiene rejection data.
 Projection policy is part of the support contract: markdown files may explain
 the matrix and evidence map, but they do not create support claims without a
 matching row in the authoritative JSON data.
+
+Support-claim contract is separate from projection mechanics: only
+`implemented` rows with `support_claims` in the `objc3c.behavior.*` namespace
+may become public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and
+`internal` rows are negative, unavailable, schema, workflow, report, or owner
+truth only. Retired terms, compatibility/fallback wording, registry facades,
+direct helper commands, and generated reports cannot supply missing support
+claims.
 
 Command and evidence truth is hard-cut to the current surfaces:
 
@@ -68,7 +78,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; `native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp`; `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`; `native/objc3c/src/runtime/classes/class_graph.cpp` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h`; `native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h`; `native/objc3c/src/runtime/images/registration.cpp`; `native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp` |
 | npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_handler_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `scripts/objc3c_workflow/path_bootstrap.py`; `docs/runbooks/objc3c_public_command_surface.md` |
-| Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `schemas/objc3-conformance-evidence-bundle-v1.schema.json`; `schemas/objc3c-adoption-legibility-evidence-v1.schema.json`; `schemas/objc3c-package-lock-v1.schema.json`; `schemas/objc3c-platform-support-matrix-v1.schema.json`; `schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json`; `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`; `schemas/objc3c-application-architecture-evidence-summary-v1.schema.json`; `schemas/objc3c-artifact-authenticity-v1.schema.json`; `schemas/source-hygiene-hard-cutover-report-v1.schema.json`; `scripts/objc3c_shared/schema_registry.py`; `docs/support/README.md`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/json_schema_validation.cpp`; `native/objc3c/src/io/json/json_equivalence.cpp`; `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |
+| Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `schemas/objc3-conformance-evidence-bundle-v1.schema.json`; `schemas/objc3c-adoption-legibility-evidence-v1.schema.json`; `schemas/objc3c-package-lock-v1.schema.json`; `schemas/objc3c-platform-support-matrix-v1.schema.json`; `schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json`; `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`; `schemas/objc3c-application-architecture-evidence-summary-v1.schema.json`; `schemas/objc3c-artifact-authenticity-v1.schema.json`; `schemas/source-hygiene-hard-cutover-report-v1.schema.json`; `scripts/objc3c_shared/schema_registry.py`; `docs/support/README.md`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/json_parser.cpp`; `native/objc3c/src/io/json/json_writer.cpp`; `native/objc3c/src/io/json/json_schema.cpp`; `native/objc3c/src/io/json/json_schema_errors.cpp`; `native/objc3c/src/io/json/json_schema_validation.cpp`; `native/objc3c/src/io/json/json_equivalence.cpp`; `native/objc3c/src/io/json/json_pointer.cpp`; `native/objc3c/src/io/json/json_schema_type.cpp`; `native/objc3c/src/artifacts/json/artifact_schema_registry.cpp`; `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`; `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |
 | Hard-cutover capability truth boundary      | internal    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `docs/support/README.md`; `docs/issues/hard_cutover_8132_8150_evidence.md`; `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`; `docs/issues/hard_cutover_8132_8150_closeout/payloads.md` |
 
 State meanings:

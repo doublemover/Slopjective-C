@@ -40,6 +40,13 @@ ownership cannot drift between local copies and checked-in registry entries.
 the authoritative data files, schema sources, and human projections so consumers
 can distinguish source truth from reader-facing summaries.
 
+`capability_matrix.json` carries `claim_contract` as the state-to-claim rule.
+Only `implemented` rows with `support_claims` in `objc3c.behavior.*` can become
+public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and `internal`
+rows remain negative, unavailable, schema, workflow, report, or owner truth and
+must not be promoted by aliases, compatibility/fallback wording, direct helper
+commands, registry facades, or generated reports.
+
 `evidence_map.json` carries `projection_contract`. That contract makes the
 evidence map a flattened projection of
 `docs/support/capability_matrix.json#/capabilities/*/evidence`, owned by
@@ -61,6 +68,8 @@ validator rejects duplicate, missing, or extra evidence-map keys.
 - Keep site/spec/runbook summaries subordinate to this directory.
 - Treat markdown projections as summaries of `capability_matrix.json` and
   `evidence_map.json`; they cannot introduce support claims on their own.
+- Keep `claim_contract` aligned with capability states so only implemented
+  rows can carry public behavior claims.
 - Use only `implemented`, `rejected`, `reserved`, and `internal` as capability
   states.
 - Public replay commands must use `npm run objc3c -- <action>`.

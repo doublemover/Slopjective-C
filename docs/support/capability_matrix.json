@@ -39,6 +39,31 @@
     ],
     "consumer_rule": "Consumers may summarize only rows and evidence present in authoritative data; projection docs cannot introduce new support claims."
   },
+  "claim_contract": {
+    "support_claim_required_for_states": [
+      "implemented"
+    ],
+    "support_claim_forbidden_for_states": [
+      "rejected",
+      "reserved",
+      "internal"
+    ],
+    "public_behavior_claim_namespace": "objc3c.behavior.*",
+    "no_alias_or_fallback_claim_sources": [
+      "retired surface terms",
+      "retired mode labels",
+      "workflow registry facades",
+      "direct helper commands",
+      "generated reports without matching implemented rows",
+      "compatibility or fallback wording"
+    ],
+    "owner_only_states": [
+      "rejected",
+      "reserved",
+      "internal"
+    ],
+    "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, report, or owner truth only."
+  },
   "hard_cutover_rules": [
     "Only implemented behavior rows may claim public Objective-C 3.0 support.",
     "Rejected and reserved rows are diagnostic or documentation truth, not alternate acceptance paths.",

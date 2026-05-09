@@ -40,6 +40,8 @@ files must not duplicate schema fragments.
 Rules shown by this entry:
 
 - `implemented` behavior needs evidence.
+- `implemented` behavior is the only state that may carry a public
+  `objc3c.behavior.*` support claim.
 - Public replay commands use the npm bridge only.
 - Source files and `owner_modules` may bound the implementation without
   becoming public command surface.
@@ -69,6 +71,8 @@ Rules shown by this entry:
 
 - Reserved is an unavailable state, not an alternate acceptance mode.
 - A reserved row can point to docs or diagnostics instead of runnable tests.
+- Reserved, rejected, and internal rows do not carry public behavior support
+  claims.
 - A row that moves this capability out of `reserved` must carry evidence before
   docs can claim public support.
 
@@ -157,6 +161,48 @@ Rules shown by this policy:
   exact row it replays.
 - A blank command cell is intentional; consumers must not infer hidden helper
   commands from it.
+
+## Support Claim Contract
+
+```json
+{
+  "support_claim_required_for_states": [
+    "implemented"
+  ],
+  "support_claim_forbidden_for_states": [
+    "rejected",
+    "reserved",
+    "internal"
+  ],
+  "public_behavior_claim_namespace": "objc3c.behavior.*",
+  "no_alias_or_fallback_claim_sources": [
+    "retired surface terms",
+    "retired mode labels",
+    "workflow registry facades",
+    "direct helper commands",
+    "generated reports without matching implemented rows",
+    "compatibility or fallback wording"
+  ],
+  "owner_only_states": [
+    "rejected",
+    "reserved",
+    "internal"
+  ],
+  "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, report, or owner truth only."
+}
+```
+
+Rules shown by this contract:
+
+- Support claims are state-gated before docs or release evidence can quote
+  them.
+- The matrix schema enforces the state gate: implemented rows require
+  `support_claims`, while rejected, reserved, and internal rows cannot carry
+  them.
+- Alias, compatibility, fallback, registry-facade, helper-command, and
+  report-only wording cannot become public behavior support.
+- Owner-only rows can explain where truth lives without widening the supported
+  language surface.
 
 ## Anti-Examples
 

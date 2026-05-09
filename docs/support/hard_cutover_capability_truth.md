@@ -21,6 +21,12 @@ the JSON matrix and evidence map. They may clarify reader expectations, but they
 must not introduce a public support claim, command surface, or completion state
 that is absent from the authoritative data.
 
+Claim rule: only `implemented` rows with `support_claims` in
+`objc3c.behavior.*` are public Objective-C 3.0 behavior claims. Rejected,
+reserved, and internal rows are negative, unavailable, schema, workflow, report,
+or owner truth only; compatibility/fallback wording and aliases cannot fill in a
+missing support claim.
+
 Issue closeout payloads are support-boundary evidence only when they point back
 to committed branch surfaces listed by the capability matrix, evidence map, or
 hard-cutover issue evidence files. They are not validation reports, remote issue
