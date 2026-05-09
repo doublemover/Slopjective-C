@@ -19,8 +19,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "10abd536d",
-    "current_head_summary": "HC move interop lowering contract builders",
+    "current_head": "64702b40d",
+    "current_head_summary": "HC extract IR emission feature surface module",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -205,7 +205,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "10abd536d",
+    "through_commit": "64702b40d",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -513,6 +513,55 @@
           "10abd536d"
         ],
         "owner_boundary": "interop lowering contract ownership is committed local artifact, lowering, and API evidence"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8138",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "dd3f50c2e"
+        ],
+        "owner_boundary": "property synthesis object-model ownership is committed local artifact, runtime, and type evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8144",
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "d463f1bb6"
+        ],
+        "owner_boundary": "performance behavior owner splits are committed local workflow and tooling behavior evidence only"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "f9d7c7467"
+        ],
+        "owner_boundary": "IR message-send emission ownership is committed local IR and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "64702b40d"
+        ],
+        "owner_boundary": "IR emission feature surface ownership is committed local pipeline and IR feature evidence"
       },
       {
         "issues": [
@@ -2059,7 +2108,8 @@
         "709148d75",
         "016683b19",
         "ced378fe3",
-        "7ef7fd02a"
+        "7ef7fd02a",
+        "d463f1bb6"
       ],
       "index_evidence": [
         "docs/support/capability_matrix.json",
@@ -2169,7 +2219,11 @@
         "108edc450",
         "03a6c6aea",
         "7ef7fd02a",
-        "10abd536d"
+        "10abd536d",
+        "dd3f50c2e",
+        "d463f1bb6",
+        "f9d7c7467",
+        "64702b40d"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

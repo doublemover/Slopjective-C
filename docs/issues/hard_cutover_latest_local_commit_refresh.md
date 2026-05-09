@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `10abd536d`. It does not assert validation, remote issue
+refreshes through source commit `64702b40d`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -371,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `10abd536d` without running validation, GitHub commands, push, or remote
+to source commit `64702b40d` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -400,6 +400,10 @@ issue edits. It groups the latest owner evidence as follows:
 - IR direct-call emission owners: `03a6c6aea`
 - runtime corrective behavior owners: `7ef7fd02a`
 - interop lowering contract owners: `10abd536d`
+- property synthesis object-model owners: `dd3f50c2e`
+- performance behavior owners: `d463f1bb6`
+- IR message-send emission owners: `f9d7c7467`
+- IR emission feature surface owners: `64702b40d`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
