@@ -47,10 +47,10 @@ add_library(objc3c_runtime_abi STATIC
   objc3_advanced_feature_gate_artifact.cpp
   objc3_advanced_feature_gate_document.cpp
   objc3_conformance_report_publication_artifact.cpp
+  objc3_conformance_claim_validation_artifact.cpp
   objc3_conformance_claim_validation_document.cpp
   objc3_conformance_dashboard_artifact_document.cpp
   objc3_conformance_report_publication_document.cpp
-  objc3_conformance_artifact_documents.cpp
   objc3_conformance_profile_selection.cpp
   objc3_cross_module_imported_modules_document.cpp
   objc3_dashboard_status_renderers.cpp
