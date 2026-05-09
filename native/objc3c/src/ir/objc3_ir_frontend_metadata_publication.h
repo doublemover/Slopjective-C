@@ -7,5 +7,7 @@
 std::string BuildObjc3IRFrontendProfileComment(
     const Objc3IRFrontendMetadata &metadata);
 
+std::string BuildObjc3IRFrontendNamedMetadataTable();
+
 std::string BuildObjc3IRFrontendMetadataNode(
     const Objc3IRFrontendMetadata &metadata);
