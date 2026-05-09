@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-boundary-provenance-owner-split-index",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "source_contracts": [
+    "tests/fixtures/generated/README.md",
+    "tests/fixtures/generated/manifest.json",
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json"
+  ],
+  "split_policy": {
+    "primary_axis": "generated provenance role before replay directory, generator label, report output, or fixture basename",
+    "positive_rule": "generated inventory rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; they may only point at canonical fixture truth owned elsewhere",
+    "canonical_truth_rule": "canonical behavior truth remains in tests/native and behavior owner indexes, not generated artifacts",
+    "report_only_rule": "generated reports, replay packets, manifest entries, generator paths, and validation outputs are provenance-only until canonical behavior owners claim support",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, report-only, generated-output-only, and generator-output-only claims are strict rejection, canonical rejection, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "generated_inventory",
+      "path": "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json"
+    },
+    {
+      "owner_boundary": "canonical_fixture_truth",
+      "path": "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json"
+    },
+    {
+      "owner_boundary": "strict_rejection",
+      "path": "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json"
+    },
+    {
+      "owner_boundary": "report_only_generated_output",
+      "path": "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json"
+    }
+  ]
+}

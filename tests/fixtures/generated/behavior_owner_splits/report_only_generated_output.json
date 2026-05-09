@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-boundary-provenance-owner-split",
+  "owner_boundary": "report_only_generated_output",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "report-only and generated-output evidence covers replay packets, generated validation contract artifacts, deterministic report payloads, and generator paths as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "fixtures[].path=tests/tooling/fixtures/objc3c/**",
+    "fixtures[].generator=scripts/build_objc3c_native.ps1",
+    "fixtures[].provenance=frontend contract artifact generation",
+    "boundary.hand_edit_policy=generated fixtures are provenance artifacts, not canonical behavior expectations",
+    "boundary.phase_support_claim_authority=false",
+    "boundary.behavior_phase_split_indexes:tests/tooling/fixtures/objc3c/behavior_owner_splits/*.json",
+    "*report*",
+    "*generated-output*",
+    "*replay*",
+    "*validation_*"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
+  "retired_surface_rule": "report-only, generated-output-only, replay-only, and validation-packet-only evidence cannot define positive behavior support"
+}

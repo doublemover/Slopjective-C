@@ -19,3 +19,7 @@ The larger replay tree under `tests/tooling/fixtures/objc3c` is additionally
 split by behavior owner in `tests/tooling/fixtures/objc3c/behavior_owner_splits/`
 so generated diagnostics, semantic, lowering, IR, runtime, e2e, and rejection
 provenance cannot be cited as generic generated support.
+The manifest boundary itself is split in
+`tests/fixtures/generated/behavior_owner_splits/` so generated inventory,
+canonical fixture truth pointers, strict rejection, and report-only generated
+outputs stay separate.

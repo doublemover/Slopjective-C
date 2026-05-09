@@ -316,7 +316,32 @@
         "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
         "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json"
       ],
-      "retired_disposition": "generated contract artifacts cannot introduce behavior support or compatibility acceptance"
+      "retired_disposition": "generated contract artifacts are resolved through generated-boundary provenance owner splits before any manifest row is cited; generated inventory, canonical fixture truth pointers, strict rejection, report-only generated output, replay packets, generator labels, and validation outputs cannot introduce behavior support or compatibility acceptance"
+    },
+    {
+      "family": "generated_boundary_owner_split_indexes",
+      "kind": "provenance_owner_split_index_family",
+      "source": "tests/fixtures/generated/behavior_owner_splits",
+      "acceptance_area": "pipeline_artifacts_config_json",
+      "owning_issues": [
+        "#8138",
+        "#8144",
+        "#8148"
+      ],
+      "owned_boundaries": [
+        "generated_inventory",
+        "canonical_fixture_truth",
+        "strict_rejection",
+        "report_only_generated_output"
+      ],
+      "index_evidence": [
+        "tests/fixtures/generated/behavior_owner_splits/index.json",
+        "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
+        "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
+        "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
+        "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json"
+      ],
+      "retired_disposition": "generated inventory rows, manifest paths, replay packets, generator labels, validation outputs, report-only artifacts, and generated-output-only claims are provenance-only; canonical fixture truth remains in tests/native and behavior owner indexes, while old-mode, shim, fallback, compatibility, unsupported, alternate-acceptance, report-only, and generator-output-only claims remain strict rejection, canonical rejection, or provenance-only evidence"
     },
     {
       "family": "generated_replay_owner_split_indexes",
@@ -862,6 +887,11 @@
     "tests/conformance/hard_cutover_retired_surface_absence.json",
     "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "tests/fixtures/generated/behavior_owner_splits/index.json",
+    "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
+    "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
+    "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
+    "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json",
     "tests/tooling/fixtures/native/owner_splits/parser.json",
     "tests/tooling/fixtures/native/owner_splits/sema.json",
     "tests/tooling/fixtures/native/owner_splits/lowering.json",

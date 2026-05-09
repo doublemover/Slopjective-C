@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-boundary-provenance-owner-split",
+  "owner_boundary": "canonical_fixture_truth",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "canonical fixture truth stays in hand-authored native fixtures and behavior owner indexes; generated manifest rows can reference those owners but cannot replace them",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "boundary.canonical_behavior_source=false",
+    "boundary.phase_owner_contract_index=tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "boundary.boundary_contract_index=tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "boundary.behavior_phase_split_indexes:tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
+    "fixtures[].canonical_behavior_source=false",
+    "fixtures[].phase_support_claim_authority=false"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "retired_surface_rule": "generated rows must route behavior claims to canonical owner indexes before any support, rejection, strict-error, or absent-support disposition is cited"
+}
