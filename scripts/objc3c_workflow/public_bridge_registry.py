@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .action_audience_constants import AUDIENCE_OPERATOR
 from .public_bridge_constants import (
     PUBLIC_BRIDGE_CAPABILITY_TRUTH_SCOPE,
     PUBLIC_BRIDGE_CONSTANTS_OWNER_SURFACE,
@@ -21,7 +22,7 @@ OBJC3C_PACKAGE_BRIDGE = PackageBridgeSpec(
     package_bridge=WORKFLOW_BRIDGE_SCRIPT,
     action="<action>",
     summary="canonical npm bridge for the objc3c workflow action registry",
-    audience="operator",
+    audience=AUDIENCE_OPERATOR,
     category="bridge",
     backend=WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
     validation_tier="repo",

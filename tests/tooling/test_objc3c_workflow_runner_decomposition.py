@@ -4,6 +4,10 @@ from scripts.objc3c_workflow.action_acceptance import (
     resolve_registered_action as owned_resolve_registered_action,
 )
 from scripts.objc3c_workflow.action_audience import action_audience
+from scripts.objc3c_workflow.action_audience_constants import (
+    AUDIENCE_MAINTAINER,
+    AUDIENCE_OPERATOR,
+)
 from scripts.objc3c_workflow.action_audience_rules import action_audience as owned_action_audience
 from scripts.objc3c_workflow.action_dispatch import resolve_registered_action
 from scripts.objc3c_workflow.action_handler_integrity import (
@@ -152,6 +156,8 @@ def test_action_payloads_keep_single_public_package_bridge() -> None:
     payload = list_actions_payload()
 
     assert action_audience is owned_action_audience
+    assert action_audience("check-source-hygiene-hard-cutover") == AUDIENCE_MAINTAINER
+    assert action_audience("test-full") == AUDIENCE_OPERATOR
     assert build_action_payload is owned_build_action_payload
     assert list_actions_payload is owned_list_actions_payload
     assert describe_action_payload is owned_describe_action_payload
