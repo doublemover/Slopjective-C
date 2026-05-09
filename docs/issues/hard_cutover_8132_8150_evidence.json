@@ -19,8 +19,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "71a5061ce",
-    "current_head_summary": "HC extract runtime export enforcement module"
+    "current_head": "918aed5d4",
+    "current_head_summary": "HC move id class sel typecheck builder"
   },
   "current_branch_owner_refresh": {
     "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
@@ -204,7 +204,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "71a5061ce",
+    "through_commit": "918aed5d4",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -256,6 +256,18 @@
       {
         "issues": [
           "#8138",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "aaf570cfb"
+        ],
+        "owner_boundary": "runtime metadata boundary ownership is committed local pipeline and runtime metadata evidence"
+      },
+      {
+        "issues": [
+          "#8138",
           "#8147",
           "#8150"
         ],
@@ -263,6 +275,155 @@
           "b8491e5b4"
         ],
         "owner_boundary": "block source artifact ownership is committed local artifact and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "3317109c1"
+        ],
+        "owner_boundary": "type-system lowering contract ownership is committed local artifact, lowering, and type evidence"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "13992b5f6"
+        ],
+        "owner_boundary": "concurrency runtime call emission ownership is committed local IR and runtime handoff evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "52c13f631"
+        ],
+        "owner_boundary": "control-flow lowering contract ownership is committed local artifact, lowering, and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8140",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "f6d6a6bd3"
+        ],
+        "owner_boundary": "executable metadata semantic surface ownership is committed local pipeline, frontend, and runtime metadata evidence"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "bd4731728"
+        ],
+        "owner_boundary": "IR function definition emission ownership is committed local IR and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "e49583f8c"
+        ],
+        "owner_boundary": "error lowering contract ownership is committed local diagnostic and lowering evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ced378fe3"
+        ],
+        "owner_boundary": "compiler throughput behavior owner splits are committed local behavior and tooling evidence only"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8140",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "135708f41"
+        ],
+        "owner_boundary": "executable metadata source graph ownership is committed local pipeline and frontend metadata evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "415fb4e47"
+        ],
+        "owner_boundary": "cross-module lowering contract ownership is committed local artifact and lowering evidence"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8138",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "0ffaace91"
+        ],
+        "owner_boundary": "IR module prelude and static data emission ownership is committed local IR and artifact handoff evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8140",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "b5b2891c1"
+        ],
+        "owner_boundary": "executable metadata graph readiness ownership is committed local pipeline and frontend metadata evidence"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8135",
+          "#8138",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "918aed5d4"
+        ],
+        "owner_boundary": "ID/class/selector typecheck ownership is committed local semantic, artifact, and type evidence"
       },
       {
         "issues": [
@@ -318,6 +479,16 @@
           "e8b4d5d45"
         ],
         "owner_boundary": "conformance behavior owner splits are committed local behavior-corpus ownership evidence and do not assert a test run"
+      },
+      {
+        "issues": [
+          "#8144",
+          "#8150"
+        ],
+        "primary_commits": [
+          "6e2076598"
+        ],
+        "owner_boundary": "generated replay behavior owner splits are committed local generated-fixture ownership evidence and do not assert a replay run"
       }
     ]
   },
@@ -1787,8 +1958,8 @@
     },
     {
       "issue": "#8145",
-      "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Capability truth docs and evidence maps are indexed and explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode claims.",
+      "status_for_tracker": "local-capability-truth-indexed",
+      "closeout_summary": "Capability truth docs and evidence maps are indexed as local source evidence and explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, compatibility-mode claims, validation completion, pushed state, and remote closure.",
       "local_commits": [
         "cb19d16ed",
         "6d7c78009",
@@ -1797,7 +1968,8 @@
         "295984cb6",
         "9034bf1f5",
         "709148d75",
-        "016683b19"
+        "016683b19",
+        "ced378fe3"
       ],
       "index_evidence": [
         "docs/support/capability_matrix.json",
@@ -1883,14 +2055,24 @@
     {
       "issue": "#8150",
       "status_for_tracker": "local-evidence-indexed-remote-deferred",
-      "closeout_summary": "Local closeout evidence is indexed from committed hard-cutover branch surfaces, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
+      "closeout_summary": "Local closeout evidence is indexed from committed hard-cutover branch surfaces through the current covered head, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
       "local_commits": [
         "4c0285b0d",
         "16e517982",
         "e5b988129",
         "a87b2c92e",
         "709148d75",
-        "016683b19"
+        "016683b19",
+        "52c13f631",
+        "f6d6a6bd3",
+        "bd4731728",
+        "e49583f8c",
+        "ced378fe3",
+        "135708f41",
+        "415fb4e47",
+        "0ffaace91",
+        "b5b2891c1",
+        "918aed5d4"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

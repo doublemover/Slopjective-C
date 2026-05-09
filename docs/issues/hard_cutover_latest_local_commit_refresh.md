@@ -3,8 +3,9 @@
 This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
-work after `f66452822` through local commit `f4bf6228e`. It does not assert
-validation, remote issue edits, GitHub status, push state, or final closure.
+work after `f66452822` through local commit `f4bf6228e`, with later local-only
+refreshes through `918aed5d4`. It does not assert validation, remote issue
+edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
 push operations were run while preparing this artifact.
@@ -56,7 +57,7 @@ push operations were run while preparing this artifact.
 | `#8147` | Deep sema/lowering/runtime metadata evidence is refreshed by property/method/type support helpers, lower handoff, IR publication, runtime snapshots/storage, blocks, concurrency, and memory owners. |
 | `#8148` | JSON/schema and config evidence is refreshed by contract ids/descriptions, feature-state summaries, diagnostic lookup/config helpers, pipeline result classification, workflow payload schemas, and deterministic publication helpers. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by source-hygiene pattern modules, generated-report boundary split, GitHub control-plane cleanup, and workflow catalog wording. |
-| `#8150` | Local closure evidence is refreshed by the 90-owner-commit wave and this docs/issues-only index. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
+| `#8150` | Local closeout evidence is refreshed by the 90-owner-commit wave and this docs/issues-only index. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
 
 ## Follow-up Issue Ownership After `f66452822`
 
@@ -80,7 +81,7 @@ push operations were run while preparing this artifact.
 | `#8147` | Deep sema/lowering/runtime metadata evidence is refreshed by typed handoff contracts, IR metadata publication, runtime metadata/class graph snapshots, and pipeline result handoff. |
 | `#8148` | JSON/schema evidence is refreshed by JSON value/container writers, schema validation owners, telemetry/schema contract guidance, conformance claim validation input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/inputs/ordering, artifact adapters, dashboard renderers, artifact claim metadata, config tooling expectations, and pipeline result handoff. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by workflow handler registry and catalog owner splits, workflow release/tooling specs, validation timing report owners, native driver CLI owner splits, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, plus telemetry command evidence constraints. |
-| `#8150` | Local closure evidence now includes the follow-up committed owner wave through `f4bf6228e`. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
+| `#8150` | Local closeout evidence now includes the follow-up committed owner wave through `f4bf6228e`. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
 
 ## Post-`f4bf6228e` Owner Refresh
 
@@ -104,7 +105,7 @@ assert validation, push, GitHub issue updates, or remote closure.
 | `#8144` | Behavior fixture evidence is refreshed by hard-cutover conformance index alignment, runtime probe metadata, fixture anchors, and boundary inventories. |
 | `#8145` | Capability truth evidence is refreshed by release-governance credibility/security owners and conformance runtime probe metadata; retired support wording remains negative-evidence only. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by release governance owners, validation timing owner splits, and playground workflow owner splits. |
-| `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
+| `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
 
 ## Post-`89959f6cc` Owner Refresh
 
@@ -370,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to `71a5061ce` without running validation, GitHub commands, push, or remote
+to `918aed5d4` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -378,13 +379,27 @@ issue edits. It groups the latest owner evidence as follows:
   `2506e3519`
 - frontend phase publication owners: `bddd95a7e`
 - runtime export enforcement owners: `71a5061ce`
+- runtime metadata boundary owners: `aaf570cfb`
 - block source artifact owners: `b8491e5b4`
+- type-system lowering contract owners: `3317109c1`
+- concurrency runtime call emission owners: `13992b5f6`
+- control-flow lowering contract owners: `52c13f631`
+- executable metadata semantic surface owners: `f6d6a6bd3`
+- IR function definition emission owners: `bd4731728`
+- error lowering contract owners: `e49583f8c`
+- compiler throughput behavior owners: `ced378fe3`
+- executable metadata source graph owners: `135708f41`
+- cross-module lowering contract owners: `415fb4e47`
+- IR module prelude/static data emission owners: `0ffaace91`
+- executable metadata graph readiness owners: `b5b2891c1`
+- ID/class/selector typecheck owners: `918aed5d4`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
   `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a`
 - stress fixture behavior owners: `8eb0db7a6`
 - conformance behavior owners: `e8b4d5d45`
+- generated replay behavior owners: `6e2076598`
 
 These remain committed-owner evidence only. They do not introduce direct helper
 commands, alternate acceptance paths, report-only completion, validation claims,

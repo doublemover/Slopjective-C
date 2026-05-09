@@ -29,9 +29,10 @@ missing support claim.
 
 Issue closeout payloads are support-boundary evidence only when they point back
 to committed branch surfaces listed by the capability matrix, evidence map, or
-hard-cutover issue evidence files. They are not validation reports, remote issue
-edits, or release claims, and they do not close the gap left by deferred
-validation, push, or tracker operations.
+hard-cutover issue evidence files. Implementation commit lists in those files
+are local source evidence only. They are not validation reports, pushed-state
+evidence, remote issue edits, release claims, or remote closure, and they do
+not close the gap left by deferred validation, push, or tracker operations.
 
 ## Support States
 

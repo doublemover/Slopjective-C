@@ -16,7 +16,10 @@ but they must not widen it beyond these files.
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
 Issue closeout payloads are downstream evidence consumers, not new support
-truth. They must point back to committed branch surfaces in the files above:
+truth. They must point back to committed branch surfaces in the files above and
+must describe implementation commit lists as local source evidence only. A
+payload or issue evidence table is not validation evidence, pushed-state
+evidence, GitHub issue action, remote closure, or compatibility support.
 
 - `docs/issues/hard_cutover_8132_8150_evidence.md`
 - `docs/issues/hard_cutover_8132_8150_evidence.json`
@@ -86,7 +89,8 @@ validator rejects duplicate, missing, or extra evidence-map keys.
 - Runtime, object-model, stdlib, or workflow prose must not upgrade an
   `internal` or `reserved` row into public behavior. Link the matrix row and
   evidence instead.
-- Closeout payloads may use only committed branch evidence and must keep
+- Closeout payloads may use only committed branch evidence, must label
+  implementation commit inventories as local source evidence, and must keep
   validation, push, and remote issue actions explicitly deferred unless those
   operations actually ran.
 

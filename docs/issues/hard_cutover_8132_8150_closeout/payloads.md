@@ -1,11 +1,11 @@
-# Hard-Cutover Tracker Closeout Payloads
+# Hard-Cutover Local Closeout Payloads
 
-These are branch-committed, tracker-ready notes for `#8132`-`#8150`. They do
-not assert remote closure. Validation, `gh`, push, and issue edits were
-intentionally not run while preparing them. Historic `local` refresh labels in
-this file mean committed refs in this checkout; they are not report-only
-evidence, uncommitted worktree evidence, or a substitute for deferred tracker
-operations.
+These are branch-committed local closeout notes for `#8132`-`#8150`. They are
+not remote completion claims and do not assert remote closure.
+Validation, `gh`, push, and issue edits were intentionally not run while
+preparing them. Historic `local` refresh labels in this file mean committed
+refs in this checkout; they are not report-only evidence, uncommitted worktree
+evidence, or a substitute for deferred tracker operations.
 
 Post-payload refresh commits are indexed in
 `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`. The refresh
@@ -21,9 +21,24 @@ acceptance owner, without changing the no-validation, no-GitHub, no-push,
 remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
-closeout payloads may point only to committed hard-cutover branch surfaces. The
-current covered head is `71a5061ce` (`HC extract runtime export enforcement module`).
-Prior covered heads were `e8b4d5d45` (`HC split conformance behavior owners`),
+closeout payloads may point only to committed hard-cutover branch surfaces, and
+implementation commit lists are local source evidence only. The current covered
+head is `918aed5d4` (`HC move id class sel typecheck builder`).
+Prior covered heads were `b5b2891c1` (`HC extract executable metadata graph readiness module`),
+`0ffaace91` (`refactor(ir): extract module prelude emission`),
+`415fb4e47` (`HC move cross module lowering contract builders`),
+`135708f41` (`HC extract executable metadata source graph module`),
+`ced378fe3` (`HC split compiler throughput behavior owners`),
+`e49583f8c` (`HC move error lowering contract builders`),
+`bd4731728` (`refactor(ir): extract function definition emission`),
+`f6d6a6bd3` (`HC extract executable metadata semantic surface module`),
+`52c13f631` (`HC move control flow lowering contract builder`),
+`3317109c1` (`HC move type system lowering contract builders`),
+`13992b5f6` (`refactor(ir): extract concurrency runtime call emission`),
+`aaf570cfb` (`HC extract runtime metadata boundary module`),
+`6e2076598` (`HC split generated replay behavior owners`),
+and `71a5061ce` (`HC extract runtime export enforcement module`).
+Earlier covered heads were `e8b4d5d45` (`HC split conformance behavior owners`),
 `b8491e5b4` (`HC move block source artifact builders`),
 `2506e3519` (`refactor(ir): extract entry point emission`), `8eb0db7a6`
 (`HC split stress fixture behavior owners`), `bddd95a7e`
@@ -66,7 +81,7 @@ commits that landed after the first docs commit.
 | `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime fallback remains removed or strict-error behavior. |
 | `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe`, `9cf3601b5`, `4307f5156` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch fallback stays strict-error evidence. |
 | `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe`, `c8060c3e3`, `531b53843`, `6d6fa804d` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
-| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; final closure still waits on validation, push, and remote issue updates. |
+| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; validation, push, and remote issue updates remain deferred. |
 
 ## Follow-up Local Owner Refresh
 
@@ -144,11 +159,25 @@ commits that landed after the first docs commit.
 | `#8137`, `#8147`, `#8150` | `2506e3519` | IR entry point emission ownership refreshes local IR/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `bddd95a7e` | Frontend phase publication ownership refreshes local pipeline/frontend publication evidence. |
 | `#8138`, `#8140`, `#8143`, `#8150` | `71a5061ce` | Runtime export enforcement ownership refreshes local pipeline/frontend/runtime evidence. |
+| `#8138`, `#8143`, `#8147`, `#8150` | `aaf570cfb` | Runtime metadata boundary ownership refreshes local pipeline/runtime metadata evidence. |
 | `#8138`, `#8147`, `#8150` | `b8491e5b4` | Block source artifact ownership refreshes local artifact/deep handoff evidence. |
+| `#8136`, `#8138`, `#8146`, `#8147`, `#8150` | `3317109c1` | Type-system lowering contract ownership refreshes local artifact/lowering/type evidence. |
+| `#8137`, `#8143`, `#8147`, `#8150` | `13992b5f6` | Concurrency runtime call emission ownership refreshes local IR/runtime handoff evidence. |
+| `#8136`, `#8138`, `#8147`, `#8150` | `52c13f631` | Control-flow lowering contract ownership refreshes local artifact/lowering/deep handoff evidence. |
+| `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `f6d6a6bd3` | Executable metadata semantic surface ownership refreshes local pipeline/frontend/runtime metadata evidence. |
+| `#8137`, `#8147`, `#8150` | `bd4731728` | IR function definition emission ownership refreshes local IR/deep handoff evidence. |
+| `#8135`, `#8136`, `#8147`, `#8150` | `e49583f8c` | Error lowering contract ownership refreshes local diagnostic/lowering evidence. |
+| `#8138`, `#8144`, `#8145`, `#8150` | `ced378fe3` | Compiler throughput behavior owner splits refresh local behavior/tooling evidence without asserting validation. |
+| `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `135708f41` | Executable metadata source graph ownership refreshes local pipeline/frontend metadata evidence. |
+| `#8136`, `#8138`, `#8147`, `#8150` | `415fb4e47` | Cross-module lowering contract ownership refreshes local artifact/lowering evidence. |
+| `#8137`, `#8138`, `#8147`, `#8150` | `0ffaace91` | IR module prelude/static data emission ownership refreshes local IR/artifact handoff evidence. |
+| `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `b5b2891c1` | Executable metadata graph readiness ownership refreshes local pipeline/frontend metadata evidence. |
+| `#8133`, `#8135`, `#8138`, `#8146`, `#8147`, `#8150` | `918aed5d4` | ID/class/selector typecheck ownership refreshes local semantic/artifact/type evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
 | `#8144`, `#8150` | `e8b4d5d45` | Conformance behavior owner splits refresh local behavior-corpus ownership evidence without asserting a test run. |
+| `#8144`, `#8150` | `6e2076598` | Generated replay behavior owner splits refresh local generated-fixture ownership evidence without asserting a replay run. |
 
 ## #8132
 
@@ -363,16 +392,16 @@ absent from support.
 
 Capability truth evidence is indexed from capability docs, command bridge docs,
 schema truth docs, evidence-map tie-ins, support truth, and diagnostic catalog
-table commits, plus diagnostic/config owner collapse and schema retired-term
-guidance plus canonical config tooling expectations that prevent stale
-compatibility wording from becoming support truth, with public/native docs
-ownership, spec hard-cutover prose, and prose planning overlays kept in the same support-truth lane.
+table commits, plus diagnostic/config owner collapse, schema retired-term
+guidance, canonical config tooling expectations, public/native docs ownership,
+spec hard-cutover prose, prose planning overlays, and compiler throughput
+behavior-owner evidence kept in the same local source-evidence lane.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/capability_matrix.md`, `docs/support/evidence_map.json`,
 `docs/support/evidence_map.md`, commits `cb19d16ed`, `6d7c78009`,
 `49c78c2ae`, `e782c6074`, `295984cb6`, `9034bf1f5`, `709148d75`,
-`016683b19`, `8dead58b3`.
+`016683b19`, `8dead58b3`, `ced378fe3`.
 
 Retired-surface state: docs reject retired adapters, alternate acceptance paths,
 retired-source lanes, and compatibility-mode support claims.
@@ -450,14 +479,14 @@ are retired from public claims.
 
 ## #8150
 
-Local closeout evidence is branch-committed and indexed through `71a5061ce`.
+Local closeout evidence is branch-committed and indexed through `918aed5d4`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `71a5061ce`.
+`98d10a61c`, and the latest local implementation slices through `918aed5d4`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 

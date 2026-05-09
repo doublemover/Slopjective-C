@@ -25,6 +25,11 @@ only for replayable implemented behavior evidence through `npm run objc3c --
 documentation boundaries; they do not create public workflow surface or widen a
 capability state.
 
+Rows that point to hard-cutover issue evidence or closeout payloads are local
+source-evidence boundaries only. Implementation commit lists in those docs do
+not prove validation, push state, GitHub issue edits, remote closure, or
+compatibility support.
+
 | Capability ID                                | Support claim                                      | Evidence kind | Path                                                                                                      | Command                                  |
 | -------------------------------------------- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `compiler.parser.core-declarations`          | `objc3c.behavior.parser.canonical-syntax`          | test          | `tests/native/parser/positive/canonical_module_main.objc3`                                                | `npm run objc3c -- test-behavior-matrix` |

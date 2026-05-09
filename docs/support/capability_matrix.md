@@ -29,6 +29,10 @@ Projection policy is part of the support contract: markdown files may explain
 the matrix and evidence map, but they do not create support claims without a
 matching row in the authoritative JSON data.
 
+Issue evidence and payload tables linked from this matrix list local
+implementation commits as source evidence only. They do not prove validation,
+push state, GitHub issue edits, remote closure, or compatibility support.
+
 Support-claim contract is separate from projection mechanics: only
 `implemented` rows with `support_claims` in the `objc3c.behavior.*` namespace
 may become public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and

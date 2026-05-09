@@ -765,7 +765,7 @@
       "id": "support.hard-cutover-capability-truth",
       "title": "Hard-cutover capability truth boundary",
       "state": "internal",
-      "summary": "Docs, specs, site pages, stdlib notes, and runbooks route support claims through the matrix and evidence map; retired surfaces and report-only completion remain negative evidence or source-hygiene data, not support.",
+      "summary": "Docs, specs, site pages, stdlib notes, and runbooks route support claims through the matrix and evidence map. Hard-cutover issue evidence and payload commit lists are local source evidence only, not validation, pushed-state, GitHub issue, remote-closure, release, or compatibility-support claims. Retired surfaces and report-only completion remain negative evidence or source-hygiene data, not support.",
       "owner_modules": [
         "docs/support/capability_matrix.json",
         "docs/support/evidence_map.json",

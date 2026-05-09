@@ -25,7 +25,7 @@
       "doc boundary rows",
       "diagnostic inventory rows that are not public replay commands"
     ],
-    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state."
+    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state. Hard-cutover issue evidence and payload rows identify local source-evidence boundaries only; their implementation commit lists do not prove validation, push state, GitHub issue edits, remote closure, or compatibility support."
   },
   "rows": [
     {
