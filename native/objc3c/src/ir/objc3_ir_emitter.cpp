@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <limits>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <sstream>
@@ -28,6 +28,7 @@
 #include "ir/objc3_ir_runtime_dispatch_calls.h"
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
+#include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
 #include "ir/objc3_ir_runtime_helper_calls.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_synthesized_property_accessors.h"
@@ -2925,24 +2926,8 @@ class Objc3IREmitter {
         frontend_metadata_);
   }
 
-  std::string RuntimeBootstrapModuleNameGlobalSymbol() const {
-    return runtime_metadata_symbols_.module_name_global_symbol;
-  }
-
-  std::string RuntimeBootstrapTranslationUnitIdentityGlobalSymbol() const {
-    return runtime_metadata_symbols_.translation_unit_identity_global_symbol;
-  }
-
   std::string RuntimeBootstrapImageDescriptorSymbol() const {
     return runtime_metadata_symbols_.image_descriptor_symbol;
-  }
-
-  std::string RuntimeBootstrapRegistrationDescriptorNameGlobalSymbol() const {
-    return runtime_metadata_symbols_.registration_descriptor_name_global_symbol;
-  }
-
-  std::string RuntimeBootstrapImageRootNameGlobalSymbol() const {
-    return runtime_metadata_symbols_.image_root_name_global_symbol;
   }
 
   std::string RuntimeBootstrapRegistrationDescriptorSymbol() const {
@@ -2963,10 +2948,6 @@ class Objc3IREmitter {
 
   std::string RuntimeBootstrapImageLocalInitStateSymbol() const {
     return runtime_metadata_symbols_.image_local_init_state_symbol;
-  }
-
-  static const char *RuntimeBootstrapImageDescriptorType() {
-    return Objc3IRRuntimeBootstrapImageDescriptorType();
   }
 
   static const char *RuntimeBootstrapRegistrationTableType() {
@@ -9415,174 +9396,18 @@ class Objc3IREmitter {
     emit_retained(linker_anchor_symbol);
 
     if (ShouldEmitRuntimeBootstrapLowering()) {
-      const std::string module_name_symbol =
-          "@" + RuntimeBootstrapModuleNameGlobalSymbol();
-      const std::string translation_unit_identity_symbol =
-          "@" + RuntimeBootstrapTranslationUnitIdentityGlobalSymbol();
-      const std::string image_descriptor_symbol =
-          "@" + RuntimeBootstrapImageDescriptorSymbol();
-      const std::string registration_descriptor_name_symbol =
-          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
-              ? "@" + RuntimeBootstrapRegistrationDescriptorNameGlobalSymbol()
-              : std::string();
-      const std::string image_root_name_symbol =
-          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
-              ? "@" + RuntimeBootstrapImageRootNameGlobalSymbol()
-              : std::string();
-      const std::string registration_descriptor_symbol =
-          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
-              ? "@" + RuntimeBootstrapRegistrationDescriptorSymbol()
-              : std::string();
-      const std::string image_root_symbol =
-          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
-              ? "@" + RuntimeBootstrapImageRootSymbol()
-              : std::string();
-      const std::string registration_table_symbol =
-          "@" + RuntimeBootstrapRegistrationTableSymbol();
-      const std::string image_local_init_state_symbol =
-          "@" + RuntimeBootstrapImageLocalInitStateSymbol();
-      const std::string constructor_root_symbol =
-          "@" +
-          frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol;
-      const std::string class_section_root_symbol =
-          "@__objc3_sec_class_descriptors";
-      const std::string protocol_section_root_symbol =
-          "@__objc3_sec_protocol_descriptors";
-      const std::string category_section_root_symbol =
-          "@__objc3_sec_category_descriptors";
-      const std::string property_section_root_symbol =
-          "@__objc3_sec_property_descriptors";
-      const std::string ivar_section_root_symbol =
-          "@__objc3_sec_ivar_descriptors";
-      const std::string selector_pool_symbol =
-          emit_selector_string_pools ? "@__objc3_sec_selector_pool" : "null";
-      const std::string string_pool_symbol =
-          emit_selector_string_pools ? "@__objc3_sec_string_pool" : "null";
-      const std::string keypath_descriptor_root_symbol =
-          emit_typed_keypath_artifacts ? "@__objc3_sec_keypath_descriptors"
-                                       : "null";
-      const std::string module_name =
-          program_.module_name.empty() ? "objc3_module" : program_.module_name;
-      const std::string &translation_unit_identity_key =
-          frontend_metadata_
-              .runtime_metadata_archive_static_link_translation_unit_identity_key;
-      const std::string &registration_descriptor_identifier =
-          frontend_metadata_.runtime_bootstrap_registration_descriptor_identifier;
-      const std::string &image_root_identifier =
-          frontend_metadata_.runtime_bootstrap_image_root_identifier;
-      out << module_name_symbol << " = private unnamed_addr constant ["
-          << (module_name.size() + 1u) << " x i8] c\""
-          << EscapeCStringLiteral(module_name) << "\\00\", align 1\n";
-      out << translation_unit_identity_symbol
-          << " = private unnamed_addr constant ["
-          << (translation_unit_identity_key.size() + 1u) << " x i8] c\""
-          << EscapeCStringLiteral(translation_unit_identity_key)
-          << "\\00\", align 1\n";
-      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
-        out << registration_descriptor_name_symbol
-            << " = private unnamed_addr constant ["
-            << (registration_descriptor_identifier.size() + 1u)
-            << " x i8] c\""
-            << EscapeCStringLiteral(registration_descriptor_identifier)
-            << "\\00\", align 1\n";
-        out << image_root_name_symbol << " = private unnamed_addr constant ["
-            << (image_root_identifier.size() + 1u) << " x i8] c\""
-            << EscapeCStringLiteral(image_root_identifier)
-            << "\\00\", align 1\n";
-      }
-      const std::uint64_t registration_order_ordinal =
-          frontend_metadata_.runtime_bootstrap_registration_order_ordinal == 0
-              ? kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal
-              : frontend_metadata_.runtime_bootstrap_registration_order_ordinal;
-      out << image_descriptor_symbol << " = internal constant "
-          << RuntimeBootstrapImageDescriptorType()
-          << " { ptr getelementptr inbounds (["
-          << (module_name.size() + 1u) << " x i8], ptr " << module_name_symbol
-          << ", i32 0, i32 0), ptr getelementptr inbounds (["
-          << (translation_unit_identity_key.size() + 1u)
-          << " x i8], ptr " << translation_unit_identity_symbol
-          << ", i32 0, i32 0)"
-          << ", i64 " << registration_order_ordinal << ", i64 "
-          << frontend_metadata_.runtime_metadata_section_publication_class_descriptor_count
-          << ", i64 "
-          << frontend_metadata_
-                 .runtime_metadata_section_publication_protocol_descriptor_count
-          << ", i64 "
-          << frontend_metadata_
-                 .runtime_metadata_section_publication_category_descriptor_count
-          << ", i64 "
-          << frontend_metadata_
-                 .runtime_metadata_section_publication_property_descriptor_count
-          << ", i64 "
-          << frontend_metadata_
-                 .runtime_metadata_section_publication_ivar_descriptor_count
-          << " }, align 8\n";
-      out << image_local_init_state_symbol
-          << " = internal global i8 0, align 1\n";
-      out << registration_table_symbol
-          << " = internal constant " << RuntimeBootstrapRegistrationTableType()
-          << " { i64 "
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_table_abi_version
-          << ", i64 "
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_table_pointer_field_count
-          << ", ptr " << image_descriptor_symbol << ", ptr "
-          << discovery_root_symbol << ", ptr " << linker_anchor_symbol
-          << ", ptr " << class_section_root_symbol << ", ptr "
-          << protocol_section_root_symbol << ", ptr "
-          << category_section_root_symbol << ", ptr "
-          << property_section_root_symbol << ", ptr "
-          << ivar_section_root_symbol << ", ptr " << selector_pool_symbol
-          << ", ptr " << string_pool_symbol << ", ptr "
-          << keypath_descriptor_root_symbol << ", ptr "
-          << image_local_init_state_symbol << " }, align 8\n";
-      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
-        // emits first-class image-root/registration-descriptor
-        // globals into dedicated sections, keyed by the authoritative source
-        // identifiers from the frontend closure rather than sidecar-only JSON.
-        out << image_root_symbol << " = internal constant { ptr, ptr, ptr, ptr, ptr }"
-            << " { ptr getelementptr inbounds (["
-            << (image_root_identifier.size() + 1u) << " x i8], ptr "
-            << image_root_name_symbol << ", i32 0, i32 0), ptr getelementptr inbounds (["
-            << (module_name.size() + 1u) << " x i8], ptr " << module_name_symbol
-            << ", i32 0, i32 0), ptr " << image_descriptor_symbol
-            << ", ptr " << registration_table_symbol << ", ptr "
-            << discovery_root_symbol << " }, section \""
-            << Objc3RuntimeMetadataHostSectionForLogicalName(
-                   kObjc3RuntimeBootstrapImageRootLogicalSection)
-            << "\", align 8\n";
-        out << registration_descriptor_symbol
-            << " = internal constant { ptr, ptr, ptr, ptr, ptr, ptr }"
-            << " { ptr getelementptr inbounds (["
-            << (registration_descriptor_identifier.size() + 1u)
-            << " x i8], ptr " << registration_descriptor_name_symbol
-            << ", i32 0, i32 0), ptr " << image_root_symbol << ", ptr "
-            << image_descriptor_symbol << ", ptr " << registration_table_symbol
-            << ", ptr " << linker_anchor_symbol << ", ptr "
-            << image_local_init_state_symbol << " }, section \""
-            << Objc3RuntimeMetadataHostSectionForLogicalName(
-                   kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection)
-            << "\", align 8\n";
-      }
-      const std::uint32_t global_ctor_priority =
-          registration_order_ordinal >
-                  static_cast<std::uint64_t>(
-                      std::numeric_limits<std::uint32_t>::max())
-              ? std::numeric_limits<std::uint32_t>::max()
-              : static_cast<std::uint32_t>(registration_order_ordinal);
-      out << "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
-             "[{ i32, ptr, ptr } { i32 "
-          << global_ctor_priority << ", ptr "
-          << constructor_root_symbol << ", ptr " << registration_table_symbol
-          << " }]\n";
-      emit_retained(image_descriptor_symbol);
-      emit_retained(registration_table_symbol);
-      emit_retained(image_local_init_state_symbol);
-      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
-        emit_retained(image_root_symbol);
-        emit_retained(registration_descriptor_symbol);
-      }
+      Objc3IRRuntimeBootstrapGlobalEmissionOptions bootstrap_options;
+      bootstrap_options.module_name = program_.module_name;
+      bootstrap_options.discovery_root_symbol = discovery_root_symbol;
+      bootstrap_options.linker_anchor_symbol = linker_anchor_symbol;
+      bootstrap_options.emit_selector_string_pools = emit_selector_string_pools;
+      bootstrap_options.emit_typed_keypath_artifacts =
+          emit_typed_keypath_artifacts;
+      bootstrap_options.emit_registration_descriptor_image_root =
+          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering();
+      EmitObjc3IRRuntimeBootstrapGlobals(
+          frontend_metadata_, runtime_metadata_symbols_, bootstrap_options, out,
+          retained_globals);
     }
 
     out << "@llvm.used = appending global [" << retained_globals.size()
