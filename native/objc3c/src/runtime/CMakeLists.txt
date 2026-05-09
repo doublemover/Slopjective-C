@@ -79,6 +79,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_state.cpp
   state/runtime_state.h
   state/runtime_state_records.h
+  state/runtime_state_store.cpp
+  state/runtime_state_store.h
   state/runtime_thread_records.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h

@@ -32,6 +32,7 @@
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/storage/runtime_instance_records.h"
 #include "runtime/state/runtime_state_records.h"
+#include "runtime/state/runtime_state_store.h"
 #include "runtime/state/runtime_thread_records.h"
 
 #if defined(_WIN32)
@@ -56,6 +57,7 @@ using objc3c::runtime::PromotePointerCaptureCellsIntoRuntimeOwnedStorage;
 using objc3c::runtime::PropertyLookupCacheEntry;
 using objc3c::runtime::PropertyLookupCacheKey;
 using objc3c::runtime::PropertyLookupCacheKeyHash;
+using objc3c::runtime::ProcessRuntimeState;
 using objc3c::runtime::RealizedClassNode;
 using objc3c::runtime::RealizedPropertyAccessor;
 using objc3c::runtime::RegisteredImageMetadata;
@@ -101,11 +103,6 @@ using objc3c::runtime::kObjc3ConformanceClaimOperationsContractId;
 using objc3c::runtime::kObjc3ConformanceClaimSelectionModel;
 using objc3c::runtime::kObjc3ConformancePublicationContractId;
 using objc3c::runtime::MetaprogrammingHostCacheRootForTesting;
-
-RuntimeState &State() {
-  static RuntimeState state;
-  return state;
-}
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 

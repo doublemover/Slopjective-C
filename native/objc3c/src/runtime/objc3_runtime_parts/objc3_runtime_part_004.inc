@@ -1,4 +1,4 @@
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->cache_entry_count =
       static_cast<std::uint64_t>(state.method_cache.size());
@@ -69,7 +69,7 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
   snapshot->resolved_class_name = nullptr;
   snapshot->resolved_owner_identity = nullptr;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   std::uint64_t base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
@@ -120,7 +120,7 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->realized_class_count =
       static_cast<std::uint64_t>(state.realized_class_nodes.size());
@@ -182,7 +182,7 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   state.last_queried_class_name = class_name != nullptr ? class_name : "";
   state.last_resolved_class_query_name.clear();
@@ -272,7 +272,7 @@ int objc3_runtime_copy_property_registry_state_for_testing(
   snapshot->last_resolved_class_name = nullptr;
   snapshot->last_resolved_owner_identity = nullptr;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   for (const RealizedClassNode &node : state.realized_class_nodes) {
     if (!node.runtime_layout_ready) {
@@ -356,7 +356,7 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->getter_owner_identity = nullptr;
   snapshot->setter_owner_identity = nullptr;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   state.last_queried_property_class_name =
       class_name != nullptr ? class_name : "";
@@ -575,7 +575,7 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   state.last_protocol_conformance_class_name = class_name;
   state.last_protocol_conformance_protocol_name = protocol_name;
@@ -652,7 +652,7 @@ int objc3_runtime_copy_object_model_query_state_for_testing(
   snapshot->last_matched_protocol_owner_identity = nullptr;
   snapshot->last_matched_attachment_owner_identity = nullptr;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->realized_class_count =
       static_cast<std::uint64_t>(state.realized_class_nodes.size());
@@ -718,7 +718,7 @@ int objc3_runtime_copy_memory_management_state_for_testing(
   snapshot->last_drained_autorelease_value =
       g_runtime_last_drained_autorelease_value;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->live_runtime_instance_count = state.live_runtime_instance_count;
   snapshot->weak_target_count =
@@ -849,7 +849,7 @@ int objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing(
   snapshot->fail_closed_model =
       "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening";
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->live_runtime_block_handle_count =
       static_cast<std::uint64_t>(state.runtime_blocks_by_handle.size());
@@ -1193,7 +1193,7 @@ int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
 }
 
 int objc3_runtime_replay_registered_images_for_testing(void) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   // live-registration-discovery-replay anchor: replay consumes the
   // retained bootstrap catalog only when live registration state is empty,
@@ -1257,7 +1257,7 @@ int objc3_runtime_replay_registered_images_for_testing(void) {
 
 const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
     const char *selector) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   return LookupSelectorUnlocked(selector);
 }
@@ -1289,7 +1289,7 @@ extern "C" int objc3_runtime_read_current_property_i32(void) {
     g_runtime_arc_debug_last_property_read_value = 0;
     return 0;
   }
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
@@ -1314,7 +1314,7 @@ extern "C" void objc3_runtime_write_current_property_i32(int value) {
       frame->receiver == 0) {
     return;
   }
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
@@ -1334,7 +1334,7 @@ extern "C" int objc3_runtime_exchange_current_property_i32(int value) {
     g_runtime_arc_debug_last_property_exchange_previous_value = 0;
     return 0;
   }
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
@@ -1358,7 +1358,7 @@ extern "C" int objc3_runtime_bind_current_property_context_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
   const auto found = state.realized_class_node_indices_by_name.find(class_name);

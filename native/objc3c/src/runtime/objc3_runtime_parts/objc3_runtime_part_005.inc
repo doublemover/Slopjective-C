@@ -321,7 +321,7 @@ extern "C" int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
 extern "C" int objc3_runtime_retain_i32(int value) {
   ++g_runtime_arc_debug_retain_call_count;
   g_runtime_arc_debug_last_retain_value = value;
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   RetainRuntimeValueUnlocked(state, value);
   return value;
@@ -330,7 +330,7 @@ extern "C" int objc3_runtime_retain_i32(int value) {
 extern "C" int objc3_runtime_release_i32(int value) {
   ++g_runtime_arc_debug_release_call_count;
   g_runtime_arc_debug_last_release_value = value;
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   ReleaseRuntimeValueUnlocked(state, value);
   return value;
@@ -364,7 +364,7 @@ extern "C" int objc3_runtime_promote_block_i32(
   ++g_runtime_block_promote_call_count;
   g_runtime_last_promote_has_pointer_capture_storage =
       has_pointer_capture_storage != 0 ? 1 : 0;
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   int block_handle = state.next_runtime_block_handle;
   while (block_handle <= 0 ||
@@ -426,7 +426,7 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
   RuntimeBlockInvokeFn invoke = nullptr;
   std::vector<std::uint64_t> storage_words;
   {
-    RuntimeState &state = State();
+    RuntimeState &state = ProcessRuntimeState();
     std::lock_guard<std::mutex> lock(state.mutex);
     const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
     if (block_it == state.runtime_blocks_by_handle.end() ||
@@ -472,7 +472,7 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   if (values.empty()) {
     return;
   }
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   for (auto it = values.rbegin(); it != values.rend(); ++it) {
     g_runtime_last_drained_autorelease_value = *it;
@@ -528,7 +528,7 @@ void RecordPostResolutionStrictDispatchFailure(
 
 objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   const void *resolved_implementation = nullptr;
   const RealizedPropertyAccessor *resolved_runtime_property_accessor = nullptr;
   std::uint64_t resolved_parameter_count = 0;
@@ -849,7 +849,7 @@ int objc3_runtime_copy_registration_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->registered_image_count = state.registered_image_count;
   snapshot->registered_descriptor_total = state.registered_descriptor_total;
@@ -873,7 +873,7 @@ int objc3_runtime_copy_registration_state_for_testing(
 }
 
 void objc3_runtime_reset_for_testing(void) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   (void)objc3c::runtime::RuntimeStateLockDiscipline();
   (void)objc3c::runtime::RuntimeStateOwnershipModel();

@@ -414,7 +414,7 @@ const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector
     return nullptr;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   const auto found = state.selector_index_by_name.find(normalized_selector);
   if (found != state.selector_index_by_name.end()) {
     return &state.selector_slots[found->second].handle;
@@ -1049,7 +1049,7 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
 
 extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
     const objc3_runtime_registration_table *registration_table) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   state.staged_registration_table = registration_table;
 }
@@ -1059,7 +1059,7 @@ extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
 // D002/D003 may extend image walk and reset behavior, but they must preserve
 // this surface and its fail-closed status/result contract.
 int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const objc3_runtime_registration_table *const staged_registration_table =
       state.staged_registration_table;
@@ -1076,7 +1076,7 @@ int objc3_runtime_copy_image_walk_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   // live-registration-discovery-replay anchor: discovery-root/image
   // walk state stays runtime-owned, is republished after deterministic replay,
@@ -1118,7 +1118,7 @@ int objc3_runtime_copy_reset_replay_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   // live-registration-discovery-replay anchor: reset/replay evidence
   // is published directly from runtime state so probes can verify retained
@@ -1145,7 +1145,7 @@ int objc3_runtime_copy_selector_lookup_table_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->selector_table_entry_count =
       static_cast<std::uint64_t>(state.selector_slots.size());
@@ -1185,7 +1185,7 @@ int objc3_runtime_copy_selector_lookup_entry_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto found = state.selector_index_by_name.find(selector);
   if (found == state.selector_index_by_name.end()) {
@@ -1222,7 +1222,7 @@ int objc3_runtime_copy_keypath_registry_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->keypath_table_entry_count =
       static_cast<std::uint64_t>(state.keypath_slots.size());
@@ -1261,7 +1261,7 @@ int objc3_runtime_copy_keypath_entry_for_testing(
   snapshot->profile = nullptr;
   snapshot->generic_metadata_replay_key = nullptr;
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   state.last_queried_keypath_handle = stable_id;
   state.last_keypath_query_found = false;
@@ -1302,7 +1302,7 @@ int objc3_runtime_keypath_component_count_for_testing(int keypath_handle) {
     return 0;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto found =
       state.keypath_slots.find(static_cast<std::uint64_t>(keypath_handle));
@@ -1326,7 +1326,7 @@ int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle) {
     return 0;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto found =
       state.keypath_slots.find(static_cast<std::uint64_t>(keypath_handle));
@@ -1349,7 +1349,7 @@ int objc3_runtime_copy_method_cache_state_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
 
-  RuntimeState &state = State();
+  RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   snapshot->cache_entry_count =
       static_cast<std::uint64_t>(state.method_cache.size());
