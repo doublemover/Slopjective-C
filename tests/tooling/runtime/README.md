@@ -27,7 +27,8 @@ What does not count as proof:
 
 - hand-authored `.ll` files or placeholder object artifacts
 - sidecar-only evidence with no matching executable compile or probe path
-- legacy shim, fallback, compatibility, or migration-lane naming that claims positive runtime support
+- legacy retired-adapter, alternate-acceptance, old-surface, or retired-source
+  lane naming that claims positive runtime support
 
 Current corrective focus:
 
@@ -83,8 +84,9 @@ Use the runtime probes and native object fixtures as the truth source for runtim
 Runtime fixtures are canonical owner anchors. Positive probe output may prove
 storage, reflection, registration, object-model, ARC/block, or public ABI
 behavior; strict-dispatch probes prove rejected runtime outcomes. A probe name,
-snapshot field, or README row must not turn legacy shim, fallback,
-compatibility, or migration-lane residue into positive support.
+snapshot field, or README row must not turn legacy retired-adapter,
+alternate-acceptance, old-surface, or retired-source lane residue into positive
+support.
 
 Fast helper-only checks:
 

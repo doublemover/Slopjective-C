@@ -14,8 +14,8 @@
       "package-script aliases",
       "direct helper script commands",
       "showcase-local wrappers",
-      "fallback compile or runtime lanes",
-      "migration-lane support claims"
+      "alternate compile or runtime support lanes",
+      "retired-source support claims"
     ]
   },
   "public_actions": {

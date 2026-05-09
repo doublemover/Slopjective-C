@@ -17,7 +17,7 @@ alias contracts.
 Change-rejection outcomes use three deterministic values:
 
 - `pass`: accepted for this fixture and publishable.
-- `conditional`: replay-only hold with explicit migration notes; no fallback support.
+- `conditional`: replay-only hold with explicit conversion notes; no alternate support.
 - `fail`: rejected; publish is blocked.
 
 Required matrix IDs:

@@ -122,8 +122,8 @@ def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
             "package-script aliases",
             "direct helper script commands",
             "showcase-local wrappers",
-            "fallback compile or runtime lanes",
-            "migration-lane support claims",
+            "alternate compile or runtime support lanes",
+            "retired-source support claims",
         ],
     }
     assert "public_entrypoints" not in payload
@@ -200,8 +200,8 @@ def test_stdlib_program_surface_records_canonical_command_model() -> None:
             "package-script aliases",
             "direct helper script commands",
             "stdlib-local wrappers",
-            "fallback import or package lanes",
-            "migration-lane support claims",
+            "alternate import or package support lanes",
+            "retired-source support claims",
         ],
     }
     assert payload["onboarding_policy"]["command_truth_rule"] == (

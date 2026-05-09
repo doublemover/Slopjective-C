@@ -7,7 +7,7 @@ The native frontend accepts two input classes:
   Objective-C path
 
 The non-`.objc3` path is a driver/frontend integration path. It does not create
-an alternate Objective-C 3.0 source mode or compatibility surface.
+an alternate Objective-C 3.0 source mode or old-surface support path.
 
 ## CLI Usage
 

@@ -2,7 +2,7 @@
 
 Active repo content no longer points directly at the archived `spec/` corpus. This index preserves the legacy file and anchor targets that existing docs, scripts, conformance metadata, and reports used to cite.
 
-Use topic-specific docs when they exist. Use this page only as a retired-reference anchor bridge while the old `spec/` tree remains in-repo but decommissioned from active navigation; it is not a compatibility surface or support path.
+Use topic-specific docs when they exist. Use this page only as a retired-reference anchor bridge while the old `spec/` tree remains in-repo but decommissioned from active navigation; it is not an old-surface support path.
 
 ## Legacy Files {#legacy-files}
 

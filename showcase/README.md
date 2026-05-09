@@ -66,7 +66,7 @@ Shared live tooling:
 - `docs/tutorials/guided_walkthrough.md`
 
 Package-script aliases, direct helper scripts, showcase-local wrappers,
-fallback compile/runtime lanes, and migration-lane support claims are not
+alternate compile/runtime support lanes, and retired-source support claims are not
 public entrypoints for this portfolio.
 
 Machine-owned outputs only:

@@ -6,5 +6,5 @@ diagnostic contract for removed declaration spellings, malformed punctuation,
 or noncanonical type syntax.
 
 The manifest is intentionally behavior-first: a rejected legacy-looking spelling
-is not a migration path or parser fallback. It is a hard-cutover diagnostic
-expectation.
+is not a retired-source path or alternate parser acceptance path. It is a
+hard-cutover diagnostic expectation.

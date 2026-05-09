@@ -64,7 +64,7 @@ module boundary that sits behind the same teaching path.
 
 The `objc2_to_objc3_migration.md` path is a stable historical filename. Treat
 the guide as canonicalization and conversion teaching over checked-in examples,
-not a migration lane or retired-source acceptance surface.
+not a retired-source lane or retired-source acceptance surface.
 
 - contributor path:
   - use `CONTRIBUTING.md` for repo-change instructions

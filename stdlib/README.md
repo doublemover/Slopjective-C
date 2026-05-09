@@ -40,7 +40,7 @@ Support truth:
 - `docs/support/hard_cutover_capability_truth.md`
 
 Stdlib docs describe checked-in modules, package surfaces, and examples. They
-do not claim runtime behavior, compatibility aliases, fallback imports, or
+do not claim runtime behavior, alias adapters, alternate imports, or
 stdlib-wide completeness beyond implemented capability rows.
 
 ## Non-goals
@@ -81,7 +81,7 @@ This root is not a place for:
 - validation and packaging commands for this root use the public
   `npm run objc3c -- <action>` surface
 - package-script aliases, direct helper commands, stdlib-local wrappers,
-  fallback import/package lanes, and migration-lane support claims are not
+  alternate import/package support lanes, and retired-source support claims are not
   public stdlib entrypoints
 - reader-facing onboarding, comparison, and capability-demo work stays on the
   live `docs/tutorials/`, `showcase/`, and `site/src/index.body.md` surfaces
