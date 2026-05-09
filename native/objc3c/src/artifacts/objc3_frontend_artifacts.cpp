@@ -22,6 +22,7 @@
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
+#include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_truth_artifacts.h"
 #include "artifacts/objc3_frontend_interop_semantic_artifacts.h"
@@ -76,6 +77,11 @@ using objc3::artifacts::identity::Objc3TranslationUnitIdentityEvidence;
 using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
 using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
+using objc3::artifacts::frontend::
+    BuildDispatchDispatchIntentCompatibilitySummaryJson;
+using objc3::artifacts::frontend::BuildDispatchDispatchIntentLegalitySummaryJson;
+using objc3::artifacts::frontend::
+    BuildDispatchDispatchIntentSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildInteropCppInteropInteractionSummaryJson;
 using objc3::artifacts::frontend::BuildInteropInteropRuntimeParitySummaryJson;
 using objc3::artifacts::frontend::BuildInteropInteropSemanticModelSummaryJson;
@@ -409,143 +415,6 @@ const char *ArcModeName(Objc3FrontendArcMode mode) {
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
   return objc3::io::json::RenderJsonStringArray(values);
-}
-
-std::string BuildDispatchDispatchIntentSemanticModelSummaryJson(
-    const Objc3DispatchDispatchIntentSemanticModelSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"frontend_dependency_contract_id\":\""
-      << EscapeJsonString(summary.frontend_dependency_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
-      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
-      << "\",\"prefixed_container_attribute_sites\":"
-      << summary.prefixed_container_attribute_sites
-      << ",\"direct_members_container_sites\":"
-      << summary.direct_members_container_sites
-      << ",\"final_container_sites\":" << summary.final_container_sites
-      << ",\"sealed_container_sites\":" << summary.sealed_container_sites
-      << ",\"effective_direct_member_sites\":"
-      << summary.effective_direct_member_sites
-      << ",\"direct_members_defaulted_method_sites\":"
-      << summary.direct_members_defaulted_method_sites
-      << ",\"direct_members_dynamic_opt_out_sites\":"
-      << summary.direct_members_dynamic_opt_out_sites
-      << ",\"override_lookup_sites\":" << summary.override_lookup_sites
-      << ",\"override_lookup_hits\":" << summary.override_lookup_hits
-      << ",\"override_lookup_misses\":" << summary.override_lookup_misses
-      << ",\"override_conflicts\":" << summary.override_conflicts
-      << ",\"unresolved_base_interfaces\":"
-      << summary.unresolved_base_interfaces
-      << ",\"source_dependency_required\":"
-      << (summary.source_dependency_required ? "true" : "false")
-      << ",\"dispatch_intent_source_supported\":"
-      << (summary.dispatch_intent_source_supported ? "true" : "false")
-      << ",\"override_semantic_surface_reused\":"
-      << (summary.override_semantic_surface_reused ? "true" : "false")
-      << ",\"direct_dispatch_reserved_non_goal\":"
-      << (summary.direct_dispatch_reserved_non_goal ? "true" : "false")
-      << ",\"final_sealed_enforcement_deferred\":"
-      << (summary.final_sealed_enforcement_deferred ? "true" : "false")
-      << ",\"lowering_runtime_deferred\":"
-      << (summary.lowering_runtime_deferred ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_core_implementation\":"
-      << (summary.ready_for_core_implementation ? "true" : "false")
-      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
-}
-
-std::string BuildDispatchDispatchIntentLegalitySummaryJson(
-    const Objc3DispatchDispatchIntentLegalitySummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"dependency_contract_id\":\""
-      << EscapeJsonString(summary.dependency_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
-      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
-      << "\",\"subclass_sites\":" << summary.subclass_sites
-      << ",\"override_sites\":" << summary.override_sites
-      << ",\"illegal_final_superclass_sites\":"
-      << summary.illegal_final_superclass_sites
-      << ",\"illegal_sealed_superclass_sites\":"
-      << summary.illegal_sealed_superclass_sites
-      << ",\"illegal_final_override_sites\":"
-      << summary.illegal_final_override_sites
-      << ",\"illegal_direct_override_sites\":"
-      << summary.illegal_direct_override_sites
-      << ",\"dependency_required\":"
-      << (summary.dependency_required ? "true" : "false")
-      << ",\"final_superclass_fail_closed\":"
-      << (summary.final_superclass_fail_closed ? "true" : "false")
-      << ",\"sealed_superclass_fail_closed\":"
-      << (summary.sealed_superclass_fail_closed ? "true" : "false")
-      << ",\"final_override_fail_closed\":"
-      << (summary.final_override_fail_closed ? "true" : "false")
-      << ",\"direct_override_fail_closed\":"
-      << (summary.direct_override_fail_closed ? "true" : "false")
-      << ",\"lowering_runtime_deferred\":"
-      << (summary.lowering_runtime_deferred ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
-}
-
-std::string BuildDispatchDispatchIntentCompatibilitySummaryJson(
-    const Objc3DispatchDispatchIntentCompatibilitySummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"dependency_contract_id\":\""
-      << EscapeJsonString(summary.dependency_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
-      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
-      << "\",\"callable_dispatch_intent_sites\":"
-      << summary.callable_dispatch_intent_sites
-      << ",\"container_dispatch_intent_sites\":"
-      << summary.container_dispatch_intent_sites
-      << ",\"illegal_direct_dynamic_conflict_sites\":"
-      << summary.illegal_direct_dynamic_conflict_sites
-      << ",\"illegal_final_dynamic_conflict_sites\":"
-      << summary.illegal_final_dynamic_conflict_sites
-      << ",\"illegal_non_method_callable_sites\":"
-      << summary.illegal_non_method_callable_sites
-      << ",\"illegal_protocol_method_sites\":"
-      << summary.illegal_protocol_method_sites
-      << ",\"illegal_category_method_sites\":"
-      << summary.illegal_category_method_sites
-      << ",\"illegal_category_container_sites\":"
-      << summary.illegal_category_container_sites
-      << ",\"dependency_required\":"
-      << (summary.dependency_required ? "true" : "false")
-      << ",\"callable_conflict_fail_closed\":"
-      << (summary.callable_conflict_fail_closed ? "true" : "false")
-      << ",\"unsupported_callable_topology_fail_closed\":"
-      << (summary.unsupported_callable_topology_fail_closed ? "true"
-                                                            : "false")
-      << ",\"unsupported_container_topology_fail_closed\":"
-      << (summary.unsupported_container_topology_fail_closed ? "true"
-                                                             : "false")
-      << ",\"lowering_runtime_deferred\":"
-      << (summary.lowering_runtime_deferred ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
 }
 
 std::string BuildConcurrencyActorMemberIsolationSourceClosureSummaryJson(
