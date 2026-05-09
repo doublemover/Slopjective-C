@@ -395,7 +395,37 @@
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
       ],
-      "retired_disposition": "runtime dispatch fallback is strict-error behavior"
+      "retired_disposition": "runtime behavior rows are resolved through runtime-family owner splits before any runtime fixture is cited; canonical runtime positives remain hand-authored runtime fixtures, dispatch misses and unresolved dispatch symbols remain strict-error evidence, and old-mode, shim, fallback, generated-only, report-only, or migration-only runtime claims remain rejection or provenance-only rather than positive behavior truth"
+    },
+    {
+      "family": "runtime_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/runtime/behavior_owner_splits",
+      "acceptance_area": "runtime_dispatch_registration",
+      "owning_issues": [
+        "#8133",
+        "#8143",
+        "#8144"
+      ],
+      "owned_boundaries": [
+        "runtime",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "e2e"
+      ],
+      "index_evidence": [
+        "tests/native/runtime/behavior_owner_splits/index.json",
+        "tests/native/runtime/behavior_owner_splits/runtime.json",
+        "tests/native/runtime/behavior_owner_splits/docs_evidence.json",
+        "tests/native/runtime/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "runtime fixture positives, runtime dispatch strict errors, unresolved-symbol link failures, runtime probe pointers, and runtime-family index rows are split into runtime behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only runtime claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "runtime_tooling_probe_metadata",
@@ -1092,6 +1122,10 @@
     "tests/native/ir/behavior_owner_splits/ir.json",
     "tests/native/ir/behavior_owner_splits/docs_evidence.json",
     "tests/native/ir/behavior_owner_splits/rejection_provenance.json",
+    "tests/native/runtime/behavior_owner_splits/index.json",
+    "tests/native/runtime/behavior_owner_splits/runtime.json",
+    "tests/native/runtime/behavior_owner_splits/docs_evidence.json",
+    "tests/native/runtime/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",

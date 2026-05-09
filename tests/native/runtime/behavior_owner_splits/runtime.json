@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-behavior-family-owner-split",
+  "owner_boundary": "runtime",
+  "source_family": "tests/native/runtime",
+  "support_boundary": "runtime ownership covers canonical object model, storage, ARC, block, and concurrency runtime positives under tests/native/runtime only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "object_model/interface_method_table_contract.objc3",
+    "object_model/interface_method_table_contract.meta.json:fixture_kind=positive",
+    "storage/property_accessor_storage_contract.objc3",
+    "storage/property_accessor_storage_contract.meta.json:fixture_kind=positive",
+    "arc/strong_id_lifetime_contract.objc3",
+    "arc/strong_id_lifetime_contract.meta.json:fixture_kind=positive",
+    "blocks/block_capture_runtime_contract.objc3",
+    "blocks/block_capture_runtime_contract.meta.json:fixture_kind=positive",
+    "concurrency/actor_executor_contract.objc3",
+    "concurrency/actor_executor_contract.meta.json:fixture_kind=positive"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "positive runtime truth is limited to hand-authored canonical runtime fixtures with retired_positive_surface=false; dispatch strict errors, unresolved symbols, reports, generated artifacts, migration rows, old-mode rows, shim rows, and fallback rows are not positive runtime support"
+}

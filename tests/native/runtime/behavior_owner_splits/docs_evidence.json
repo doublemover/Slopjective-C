@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-behavior-family-owner-split",
+  "owner_boundary": "docs_evidence",
+  "source_family": "tests/native/runtime",
+  "support_boundary": "docs/evidence ownership covers fixture family index rows, phase owner references, runtime-backed conformance manifest rows, runtime probe pointers, report pointers, generated artifact pointers, and metadata field names as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json:family=runtime_behavior",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json:phase=runtime",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json:phase=runtime",
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json:outcome=runtime_strict_error",
+    "tests/conformance/lowering_abi/manifest.json:runtime-backed rows",
+    "tests/conformance/module_roundtrip/manifest.json:runtime package loading",
+    "tests/conformance/examples/manifest.json:runtime-backed runnable examples",
+    "tests/tooling/runtime/*.cpp",
+    "reports/claimability/*",
+    "meta fields:expected.required_tokens",
+    "meta fields:execution.runtime_dispatch_symbol",
+    "meta fields:execution.requires_live_runtime_dispatch",
+    "meta fields:execution.native_compile_args"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "docs rows, index rows, runtime-backed conformance manifests, tooling probes, generated reports, runtime-dispatch symbol mentions, and claimability pointers are provenance unless they point to hand-authored runtime fixture metadata"
+}
