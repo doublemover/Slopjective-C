@@ -244,7 +244,7 @@
     {
       "capability_id": "workflow.command.npm-objc3c-bridge",
       "evidence_kind": "source",
-      "path": "scripts/objc3c_workflow/action_integrity.py"
+      "path": "scripts/objc3c_workflow/action_handler_integrity.py"
     },
     {
       "capability_id": "workflow.command.npm-objc3c-bridge",

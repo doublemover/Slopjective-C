@@ -26,8 +26,8 @@ Command and evidence truth is hard-cut to the current surfaces:
   `scripts.objc3c_workflow` module.
 - `scripts/objc3c_workflow/action_catalog.py` owns action names, validation
   tiers, pass-through behavior, backend descriptions, and guarantee owners.
-  `registry_views.py`, `action_integrity.py`, `request_dispatch.py`, and
-  `path_bootstrap.py` own read-only registry access, handler integrity,
+  `registry_views.py`, `action_handler_integrity.py`, `request_dispatch.py`,
+  and `path_bootstrap.py` own read-only registry access, action-handler integrity,
   parsed-request dispatch, and direct-entrypoint import roots.
   There is no supported workflow-registry facade or retired public-script alias
   table.
@@ -59,7 +59,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Advanced runtime-backed language closure    | reserved    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `spec/PART_6_ERRORS_RESULTS_THROWS.md`; `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`; `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md` |
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; `native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp`; `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`; `native/objc3c/src/runtime/classes/class_graph.cpp` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h`; `native/objc3c/src/runtime/images/registration.cpp`; `native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp` |
-| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `docs/runbooks/objc3c_public_command_surface.md` |
+| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_handler_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `scripts/objc3c_workflow/path_bootstrap.py`; `docs/runbooks/objc3c_public_command_surface.md` |
 | Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/README.md`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/json_schema_validation.cpp`; `native/objc3c/src/io/json/json_equivalence.cpp`; `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |
 | Hard-cutover capability truth boundary      | internal    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `docs/support/README.md`; `docs/issues/hard_cutover_8132_8150_evidence.md` |
 

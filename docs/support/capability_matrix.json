@@ -430,11 +430,11 @@
       "id": "workflow.command.npm-objc3c-bridge",
       "title": "npm objc3c workflow bridge",
       "state": "internal",
-      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, guarantee owners, registry views, handler integrity checks, request dispatch, and direct-entrypoint import roots live under scripts/objc3c_workflow; retired registry facades and package-script alias surfaces are not support claims.",
+      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, guarantee owners, registry views, action-handler integrity checks, request dispatch, and direct-entrypoint import roots live under scripts/objc3c_workflow; retired registry facades and package-script alias surfaces are not support claims.",
       "owner_modules": [
         "scripts/objc3c_workflow/action_catalog.py",
         "scripts/objc3c_workflow/registry_views.py",
-        "scripts/objc3c_workflow/action_integrity.py",
+        "scripts/objc3c_workflow/action_handler_integrity.py",
         "scripts/objc3c_workflow/request_dispatch.py",
         "scripts/objc3c_workflow/path_bootstrap.py"
       ],
@@ -453,7 +453,7 @@
         },
         {
           "kind": "source",
-          "path": "scripts/objc3c_workflow/action_integrity.py"
+          "path": "scripts/objc3c_workflow/action_handler_integrity.py"
         },
         {
           "kind": "source",
