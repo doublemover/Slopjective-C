@@ -21,8 +21,7 @@ void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
   frame.receiver = receiver;
   frame.base_identity = base_identity;
   frame.runtime_property_accessor = accessor;
-  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
-  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.ownership = RuntimeDispatchFrameOwnershipForHardCutover();
   state.frames.push_back(std::move(frame));
 }
 
@@ -41,8 +40,7 @@ RuntimeDispatchFrame *SetRuntimeTestingDispatchFrame(
     const RealizedPropertyAccessor *accessor) {
   RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
   state.testing_frame = RuntimeDispatchFrame{};
-  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
-  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.ownership = RuntimeDispatchFrameOwnershipForHardCutover();
   state.testing_frame.receiver = receiver;
   state.testing_frame.base_identity = base_identity;
   state.testing_frame.runtime_property_accessor = accessor;
@@ -59,8 +57,7 @@ void ClearRuntimeTestingDispatchFrame() {
 void ResetRuntimeDispatchFrameStateForTesting() {
   RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
   state.frames.clear();
-  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
-  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.ownership = RuntimeDispatchFrameOwnershipForHardCutover();
   ClearRuntimeTestingDispatchFrame();
 }
 

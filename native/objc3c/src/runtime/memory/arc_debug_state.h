@@ -1,6 +1,7 @@
 #pragma once
 
-#include "runtime/memory/runtime_ownership_snapshot_contracts.h"
+#include "runtime/memory/arc_debug_snapshot_contracts.h"
+#include "runtime/memory/block_arc_runtime_abi_snapshot_contracts.h"
 #include "runtime/state/runtime_thread_records.h"
 
 #include <cstdint>

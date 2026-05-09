@@ -168,6 +168,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/arc.h
   memory/arc_debug_events.cpp
   memory/arc_debug_events.h
+  memory/arc_debug_snapshot_contracts.h
   memory/arc_debug_state.cpp
   memory/arc_debug_state.h
   memory/arc_value_lifetime.cpp
@@ -176,6 +177,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/autorelease_pool.h
   memory/autorelease_pool_state.cpp
   memory/autorelease_pool_state.h
+  memory/block_arc_runtime_abi_snapshot_contracts.h
+  memory/dispatch_frame_ownership.h
   memory/dispatch_frame_store.cpp
   memory/dispatch_frame_store.h
   memory/dispatch_frame_state.cpp
@@ -183,10 +186,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/memory_management_snapshot.cpp
   memory/memory_management_snapshot_fields.cpp
   memory/memory_management_snapshot_fields.h
+  memory/memory_management_snapshot_contracts.h
   memory/runtime_instance_destroy_plan.cpp
   memory/runtime_instance_destroy_plan.h
   memory/runtime_instance_lifetime.cpp
   memory/runtime_instance_lifetime.h
+  memory/runtime_ownership_helper_entrypoints.h
   memory/runtime_ownership_snapshot_contracts.h
   metadata/runtime_capability_contracts.h
   metadata/runtime_artifact_snapshot_contracts.h

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime/memory/runtime_ownership_snapshot_contracts.h"
+#include "runtime/memory/memory_management_snapshot_contracts.h"
 
 namespace objc3c::runtime {
 
