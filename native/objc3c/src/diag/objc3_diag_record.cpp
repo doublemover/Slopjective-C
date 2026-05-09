@@ -3,12 +3,6 @@
 #include "diag/objc3_diag_catalog.h"
 #include "diag/objc3_diag_code.h"
 
-bool IsValidDiagnosticCoordinate(
-    const Objc3DiagnosticCoordinate &coordinate) {
-  return coordinate.line != std::numeric_limits<unsigned>::max() &&
-         coordinate.column != std::numeric_limits<unsigned>::max();
-}
-
 bool IsValidDiagnosticPayload(const Objc3DiagnosticPayload &payload,
                               std::string *reason) {
   if (payload.severity == Objc3DiagnosticSeverity::kUnknown) {

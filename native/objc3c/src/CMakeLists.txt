@@ -9,6 +9,7 @@ add_subdirectory(support)
 add_subdirectory(cli)
 
 add_subdirectory(diag)
+add_subdirectory(token)
 add_subdirectory(lex)
 
 add_subdirectory(parse)

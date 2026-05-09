@@ -3,14 +3,11 @@
 #include <string>
 #include <string_view>
 
+#include "diagnostics/modes/objc3_mode_option_diagnostic.h"
+
 namespace objc3c::diagnostics::modes {
 
-struct RemovedModeOptionDiagnostic {
-  bool matched = false;
-  std::string flag;
-  std::string diagnostic_code;
-  std::string message;
-};
+using RemovedModeOptionDiagnostic = ModeOptionDiagnostic;
 
 RemovedModeOptionDiagnostic ClassifyRemovedModeOption(std::string_view flag);
 bool BuildRemovedModeOptionDiagnostic(const std::string &flag, std::string &diagnostic);

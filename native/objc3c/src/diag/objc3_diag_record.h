@@ -1,14 +1,9 @@
 #pragma once
 
-#include <limits>
 #include <string>
 
+#include "diag/objc3_diag_coordinate.h"
 #include "diag/objc3_diag_severity.h"
-
-struct Objc3DiagnosticCoordinate {
-  unsigned line = std::numeric_limits<unsigned>::max();
-  unsigned column = std::numeric_limits<unsigned>::max();
-};
 
 struct Objc3DiagnosticPayload {
   Objc3DiagnosticSeverity severity = Objc3DiagnosticSeverity::kError;
@@ -17,7 +12,6 @@ struct Objc3DiagnosticPayload {
   std::string message;
 };
 
-bool IsValidDiagnosticCoordinate(const Objc3DiagnosticCoordinate &coordinate);
 bool IsValidDiagnosticPayload(const Objc3DiagnosticPayload &payload,
                               std::string *reason = nullptr);
 Objc3DiagnosticPayload MakeErrorDiagnosticPayload(unsigned line,

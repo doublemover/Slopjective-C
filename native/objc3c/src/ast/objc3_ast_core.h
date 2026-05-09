@@ -5,32 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "ast/objc3_ast_symbol_context.h"
+#include "ast/objc3_ast_value_type.h"
 #include "token/objc3_token_contract.h"
-
-struct SymbolRow {
-  std::string kind;
-  std::string name;
-  unsigned line;
-  unsigned column;
-};
-
-struct SymbolContext {
-  std::vector<SymbolRow> rows;
-};
-
-enum class ValueType {
-  Unknown,
-  I32,
-  Bool,
-  Void,
-  Function,
-  ObjCId,
-  ObjCClass,
-  ObjCSel,
-  ObjCProtocol,
-  ObjCInstancetype,
-  ObjCObjectPtr
-};
 
 struct Stmt;
 

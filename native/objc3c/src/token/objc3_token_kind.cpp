@@ -1,5 +1,7 @@
 #include "token/objc3_token_kind.h"
 
+#include "token/objc3_token_keyword_data.h"
+
 namespace {
 
 Objc3TokenKindClassification Keyword(Objc3LexTokenKind kind) {
@@ -9,159 +11,25 @@ Objc3TokenKindClassification Keyword(Objc3LexTokenKind kind) {
 }  // namespace
 
 Objc3TokenKindClassification ClassifyObjc3IdentifierToken(const std::string &text) {
-  if (text == "module") {
-    return Keyword(Objc3LexTokenKind::KwModule);
-  }
-  if (text == "let") {
-    return Keyword(Objc3LexTokenKind::KwLet);
-  }
-  if (text == "var") {
-    return Keyword(Objc3LexTokenKind::KwVar);
-  }
-  if (text == "fn") {
-    return Keyword(Objc3LexTokenKind::KwFn);
-  }
-  if (text == "async") {
-    return Keyword(Objc3LexTokenKind::KwAsync);
-  }
-  if (text == "pure") {
-    return Keyword(Objc3LexTokenKind::KwPure);
-  }
-  if (text == "extern") {
-    return Keyword(Objc3LexTokenKind::KwExtern);
-  }
-  if (text == "return") {
-    return Keyword(Objc3LexTokenKind::KwReturn);
-  }
-  if (text == "if") {
-    return Keyword(Objc3LexTokenKind::KwIf);
-  }
-  if (text == "else") {
-    return Keyword(Objc3LexTokenKind::KwElse);
-  }
-  if (text == "guard") {
-    return Keyword(Objc3LexTokenKind::KwGuard);
-  }
-  if (text == "defer") {
-    return Keyword(Objc3LexTokenKind::KwDefer);
-  }
-  if (text == "do") {
-    return Keyword(Objc3LexTokenKind::KwDo);
-  }
-  if (text == "await") {
-    return Keyword(Objc3LexTokenKind::KwAwait);
-  }
-  if (text == "try") {
-    return Keyword(Objc3LexTokenKind::KwTry);
-  }
-  if (text == "throw") {
-    return Keyword(Objc3LexTokenKind::KwThrow);
-  }
-  if (text == "catch") {
-    return Keyword(Objc3LexTokenKind::KwCatch);
-  }
-  if (text == "for") {
-    return Keyword(Objc3LexTokenKind::KwFor);
-  }
-  if (text == "switch") {
-    return Keyword(Objc3LexTokenKind::KwSwitch);
-  }
-  if (text == "match") {
-    return Keyword(Objc3LexTokenKind::KwMatch);
-  }
-  if (text == "case") {
-    return Keyword(Objc3LexTokenKind::KwCase);
-  }
-  if (text == "default") {
-    return Keyword(Objc3LexTokenKind::KwDefault);
-  }
-  if (text == "while") {
-    return Keyword(Objc3LexTokenKind::KwWhile);
-  }
-  if (text == "break") {
-    return Keyword(Objc3LexTokenKind::KwBreak);
-  }
-  if (text == "continue") {
-    return Keyword(Objc3LexTokenKind::KwContinue);
-  }
-  if (text == "i32") {
-    return Keyword(Objc3LexTokenKind::KwI32);
-  }
-  if (text == "bool") {
-    return Keyword(Objc3LexTokenKind::KwBool);
-  }
-  if (text == "BOOL") {
-    return Keyword(Objc3LexTokenKind::KwBOOL);
-  }
-  if (text == "NSInteger") {
-    return Keyword(Objc3LexTokenKind::KwNSInteger);
-  }
-  if (text == "NSUInteger") {
-    return Keyword(Objc3LexTokenKind::KwNSUInteger);
-  }
-  if (text == "void") {
-    return Keyword(Objc3LexTokenKind::KwVoid);
-  }
-  if (text == "id") {
-    return Keyword(Objc3LexTokenKind::KwId);
-  }
-  if (text == "Class") {
-    return Keyword(Objc3LexTokenKind::KwClass);
-  }
-  if (text == "SEL") {
-    return Keyword(Objc3LexTokenKind::KwSEL);
-  }
-  if (text == "Protocol") {
-    return Keyword(Objc3LexTokenKind::KwProtocol);
-  }
-  if (text == "instancetype") {
-    return Keyword(Objc3LexTokenKind::KwInstancetype);
-  }
-  if (text == "true") {
-    return Keyword(Objc3LexTokenKind::KwTrue);
-  }
-  if (text == "false") {
-    return Keyword(Objc3LexTokenKind::KwFalse);
-  }
-  if (text == "nil") {
-    return Keyword(Objc3LexTokenKind::KwNil);
+  std::size_t count = 0;
+  const Objc3KeywordTokenEntry *keywords =
+      Objc3IdentifierKeywordTokenEntries(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    if (text == keywords[index].spelling) {
+      return Keyword(keywords[index].kind);
+    }
   }
   return Objc3TokenKindClassification{};
 }
 
 Objc3TokenKindClassification ClassifyObjc3AtDirectiveToken(const std::string &directive) {
-  if (directive == "interface") {
-    return Keyword(Objc3LexTokenKind::KwAtInterface);
-  }
-  if (directive == "implementation") {
-    return Keyword(Objc3LexTokenKind::KwAtImplementation);
-  }
-  if (directive == "protocol") {
-    return Keyword(Objc3LexTokenKind::KwAtProtocol);
-  }
-  if (directive == "required") {
-    return Keyword(Objc3LexTokenKind::KwAtRequired);
-  }
-  if (directive == "optional") {
-    return Keyword(Objc3LexTokenKind::KwAtOptional);
-  }
-  if (directive == "property") {
-    return Keyword(Objc3LexTokenKind::KwAtProperty);
-  }
-  if (directive == "keypath") {
-    return Keyword(Objc3LexTokenKind::KwAtKeypath);
-  }
-  if (directive == "cleanup") {
-    return Keyword(Objc3LexTokenKind::KwAtCleanup);
-  }
-  if (directive == "resource") {
-    return Keyword(Objc3LexTokenKind::KwAtResource);
-  }
-  if (directive == "end") {
-    return Keyword(Objc3LexTokenKind::KwAtEnd);
-  }
-  if (directive == "autoreleasepool") {
-    return Keyword(Objc3LexTokenKind::KwAtAutoreleasePool);
+  std::size_t count = 0;
+  const Objc3KeywordTokenEntry *keywords =
+      Objc3AtDirectiveKeywordTokenEntries(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    if (directive == keywords[index].spelling) {
+      return Keyword(keywords[index].kind);
+    }
   }
   return Objc3TokenKindClassification{};
 }

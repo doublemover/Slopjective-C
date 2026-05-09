@@ -2,6 +2,10 @@ add_library(objc3c_ast_core INTERFACE)
 target_link_libraries(objc3c_ast_core INTERFACE
   objc3c_build_defaults
 )
+target_sources(objc3c_ast_core INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_symbol_context.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_value_type.h
+)
 
 add_library(objc3c_ast_contracts INTERFACE)
 target_link_libraries(objc3c_ast_contracts INTERFACE
