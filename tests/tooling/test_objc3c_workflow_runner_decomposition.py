@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from scripts.objc3c_workflow.action_acceptance import (
+    resolve_registered_action as owned_resolve_registered_action,
+)
 from scripts.objc3c_workflow.action_dispatch import resolve_registered_action
 from scripts.objc3c_workflow.action_handler_integrity import (
     action_handler_registry_is_complete,
@@ -104,6 +107,7 @@ def test_workflow_report_json_helpers_emit_canonical_json(tmp_path, capsys) -> N
 
 
 def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None:
+    assert resolve_registered_action is owned_resolve_registered_action
     accepted = resolve_registered_action("compile-objc3c", ["sample.objc3"])
     rejected = resolve_registered_action("lint", ["unexpected"])
     unknown = resolve_registered_action("missing-action", [])
