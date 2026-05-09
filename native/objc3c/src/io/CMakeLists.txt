@@ -43,46 +43,98 @@ add_library(objc3c_io STATIC
 objc3c_apply_build_defaults(objc3c_io)
 objc3c_apply_llvm_direct_config(objc3c_io)
 
-add_library(objc3c_runtime_abi STATIC
+add_library(objc3c_runtime_abi_process STATIC
+  objc3_object_format.cpp
+  objc3_object_format.h
+  objc3_process.h
+  objc3_process_boundary_tokens.cpp
+  objc3_process_boundary_tokens.h
+  objc3_process_execution.cpp
+  objc3_process_internal.h
+  objc3_process_json_helpers.cpp
+  objc3_process_json_helpers.h
+)
+objc3c_apply_build_defaults(objc3c_runtime_abi_process)
+objc3c_apply_llvm_direct_config(objc3c_runtime_abi_process)
+target_link_libraries(objc3c_runtime_abi_process PUBLIC
+  objc3c_json
+  objc3c_support
+)
+
+add_library(objc3c_runtime_abi_release_artifacts STATIC
   objc3_advanced_feature_gate_artifact.cpp
   objc3_advanced_feature_gate_document.cpp
-  objc3_conformance_report_publication_artifact.cpp
   objc3_conformance_claim_validation_artifact.cpp
-  objc3_conformance_claim_validation_inputs.cpp
   objc3_conformance_claim_validation_document.cpp
+  objc3_conformance_claim_validation_inputs.cpp
+  objc3_conformance_claim_validation_inputs.h
   objc3_conformance_dashboard_artifact_document.cpp
-  objc3_conformance_report_publication_document.cpp
   objc3_conformance_profile_selection.cpp
-  objc3_cross_module_imported_modules_document.cpp
-  objc3_cross_module_runtime_link_plan_artifact.cpp
-  objc3_cross_module_runtime_link_plan_document.cpp
-  objc3_cross_module_runtime_link_plan_inputs.cpp
-  objc3_cross_module_runtime_link_plan_ordering.cpp
+  objc3_conformance_release_artifact_document.h
+  objc3_conformance_report_publication_artifact.cpp
+  objc3_conformance_report_publication_document.cpp
   objc3_dashboard_status_renderers.cpp
+  objc3_dashboard_status_renderers.h
   objc3_metaprogramming_macro_host_cache_artifact.cpp
   objc3_metaprogramming_macro_host_cache_document.cpp
-  objc3_object_format.cpp
-  objc3_process_execution.cpp
-  objc3_process_boundary_tokens.cpp
-  objc3_process_json_helpers.cpp
+  objc3_metaprogramming_macro_host_cache_document.h
   objc3_release_candidate_matrix_artifact.cpp
   objc3_release_candidate_matrix_document.cpp
   objc3_release_evidence_operation_artifact.cpp
   objc3_release_evidence_operation_document.cpp
   objc3_retired_claim_sidecars.cpp
+)
+objc3c_apply_build_defaults(objc3c_runtime_abi_release_artifacts)
+objc3c_apply_llvm_direct_config(objc3c_runtime_abi_release_artifacts)
+target_link_libraries(objc3c_runtime_abi_release_artifacts PUBLIC
+  objc3c_runtime_abi_process
+)
+
+add_library(objc3c_runtime_abi_cross_module STATIC
+  objc3_cross_module_imported_modules_document.cpp
+  objc3_cross_module_imported_modules_document.h
+  objc3_cross_module_runtime_link_plan_artifact.cpp
+  objc3_cross_module_runtime_link_plan_document.cpp
+  objc3_cross_module_runtime_link_plan_document.h
+  objc3_cross_module_runtime_link_plan_inputs.cpp
+  objc3_cross_module_runtime_link_plan_inputs.h
+  objc3_cross_module_runtime_link_plan_ordering.cpp
+  objc3_cross_module_runtime_link_plan_ordering.h
+)
+objc3c_apply_build_defaults(objc3c_runtime_abi_cross_module)
+objc3c_apply_llvm_direct_config(objc3c_runtime_abi_cross_module)
+target_link_libraries(objc3c_runtime_abi_cross_module PUBLIC
+  objc3c_runtime_abi_process
+)
+
+add_library(objc3c_runtime_abi_metadata STATIC
   objc3_runtime_artifact_contracts.cpp
+  objc3_runtime_artifact_contracts.h
   objc3_runtime_metadata_discovery_document.cpp
+  objc3_runtime_metadata_discovery_document.h
   objc3_runtime_metadata_linker_retention_artifact.cpp
   objc3_runtime_registration_descriptor_artifact.cpp
   objc3_runtime_registration_descriptor_document.cpp
+  objc3_runtime_registration_descriptor_document.h
   objc3_runtime_registration_manifest_artifact.cpp
   objc3_runtime_registration_manifest_document.cpp
+  objc3_runtime_registration_manifest_document.h
 )
-objc3c_apply_build_defaults(objc3c_runtime_abi)
-objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
-target_link_libraries(objc3c_runtime_abi PUBLIC
-  objc3c_json
-  objc3c_support
+objc3c_apply_build_defaults(objc3c_runtime_abi_metadata)
+objc3c_apply_llvm_direct_config(objc3c_runtime_abi_metadata)
+target_link_libraries(objc3c_runtime_abi_metadata PUBLIC
+  objc3c_runtime_abi_process
+)
+target_link_libraries(objc3c_runtime_abi_release_artifacts PUBLIC
+  objc3c_runtime_abi_metadata
+)
+
+add_library(objc3c_runtime_abi INTERFACE)
+target_link_libraries(objc3c_runtime_abi INTERFACE
+  objc3c_runtime_abi_cross_module
+  objc3c_runtime_abi_metadata
+  objc3c_runtime_abi_process
+  objc3c_runtime_abi_release_artifacts
 )
 target_link_libraries(objc3c_io PUBLIC
   objc3c_diag
