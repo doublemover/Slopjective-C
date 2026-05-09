@@ -7,6 +7,10 @@
 
 namespace objc3::artifacts::frontend {
 
+[[nodiscard]] Objc3ControlFlowControlFlowSafetyLoweringContract
+BuildControlFlowControlFlowSafetyLoweringContract(
+    const Objc3ControlFlowControlFlowSemanticModelSummary &summary);
+
 [[nodiscard]] std::string BuildControlFlowControlFlowSemanticModelSummaryJson(
     const Objc3ControlFlowControlFlowSemanticModelSummary &summary);
 

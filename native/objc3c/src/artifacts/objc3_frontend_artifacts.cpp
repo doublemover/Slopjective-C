@@ -253,6 +253,7 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::BuildConcurrencyAsyncSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson;
+using objc3::artifacts::frontend::BuildControlFlowControlFlowSafetyLoweringContract;
 using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSafetyLoweringContractJson;
 using objc3::artifacts::frontend::
@@ -1949,39 +1950,6 @@ Objc3IdClassSelObjectPointerTypecheckContract BuildIdClassSelObjectPointerTypech
   AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.protocols, contract);
   AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.interfaces, contract);
   AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.implementations, contract);
-  return contract;
-}
-
-Objc3ControlFlowControlFlowSafetyLoweringContract
-BuildControlFlowControlFlowSafetyLoweringContract(
-    const Objc3ControlFlowControlFlowSemanticModelSummary &summary) {
-  Objc3ControlFlowControlFlowSafetyLoweringContract contract;
-  contract.guard_statement_sites = summary.guard_exit_enforcement_sites;
-  contract.guard_clause_sites = summary.guard_binding_clause_semantic_sites +
-                                summary.guard_condition_clause_semantic_sites;
-  contract.match_statement_sites = summary.match_statement_semantic_sites;
-  contract.defer_statement_sites = summary.defer_statement_semantic_sites;
-  // lowering contract anchor: lane-C now treats admitted match
-  // statements as live only when they stay inside the current literal/default/
-  // wildcard/binding slice. Result-case payload matching remains explicitly
-  // fail-closed until a later runtime ABI tranche lands.
-  const bool result_case_patterns_present =
-      summary.match_result_case_scope_sites > 0u;
-  contract.live_guard_short_circuit_sites = contract.guard_statement_sites;
-  contract.live_match_dispatch_sites =
-      result_case_patterns_present ? 0u : contract.match_statement_sites;
-  contract.live_defer_cleanup_sites = contract.defer_statement_sites;
-  contract.fail_closed_guard_short_circuit_sites = 0;
-  contract.fail_closed_match_dispatch_sites =
-      contract.match_statement_sites - contract.live_match_dispatch_sites;
-  contract.fail_closed_defer_cleanup_sites = 0;
-  contract.deterministic_fail_closed_sites =
-      contract.fail_closed_guard_short_circuit_sites +
-      contract.fail_closed_match_dispatch_sites +
-      contract.fail_closed_defer_cleanup_sites;
-  contract.contract_violation_sites = 0;
-  contract.deterministic = summary.deterministic &&
-                           summary.ready_for_lowering_and_runtime;
   return contract;
 }
 
