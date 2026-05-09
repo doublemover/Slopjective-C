@@ -29,6 +29,8 @@ target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_contract_core.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_contract_feature_surfaces.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_contract_type_handoff.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_flow_core_contract.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_flow_diagnostics_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_flow.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_results.h
