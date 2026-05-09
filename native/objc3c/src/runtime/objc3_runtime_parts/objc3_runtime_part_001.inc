@@ -26,6 +26,7 @@
 
 #include "runtime/blocks/block_runtime_records.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
+#include "runtime/metadata/runtime_capability_contracts.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
@@ -87,63 +88,19 @@ using objc3c::runtime::RuntimeTypedDispatchFailure;
 using objc3c::runtime::RuntimeTypedDispatchResult;
 using objc3c::runtime::RuntimeTypedDispatchSuccess;
 using objc3c::runtime::BorrowRuntimeCString;
-constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
-    "tmp/artifacts/objc3c-native/cache/metaprogramming";
-[[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
-    "objc3c.driver.conformance.report.publication.v1";
-[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimOperationsContractId =
-    "objc3c.toolchain.conformance.claim.operations.v1";
-[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimSelectionModel =
-    "canonical-language-profile-drives-current-publication-surface";
-[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimFailureModel =
-    "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureOpsContractId =
-        "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureReportingContractId =
-        "objc3c.tooling.feature.aware.conformance.report.emission.v1";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureReleaseEvidenceContractId =
-        "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureEvidenceGateScriptPath =
-    "scripts/check_release_evidence.py";
-
-const char *MetaprogrammingHostCacheRootForTesting() {
-#if defined(_WIN32)
-  char buffer[32768] = {};
-  const DWORD length = GetEnvironmentVariableA(
-      "OBJC3C_METAPROGRAMMING_CACHE_ROOT", buffer,
-      static_cast<DWORD>(sizeof(buffer)));
-  if (length == 0 || length >= sizeof(buffer)) {
-    return kObjc3DefaultMetaprogrammingHostCacheRoot;
-  }
-  static std::string cached_override;
-  cached_override.assign(buffer, static_cast<std::size_t>(length));
-  return cached_override.c_str();
-#else
-  const char *override_value = std::getenv("OBJC3C_METAPROGRAMMING_CACHE_ROOT");
-  if (override_value == nullptr || override_value[0] == '\0') {
-    return kObjc3DefaultMetaprogrammingHostCacheRoot;
-  }
-  static std::string cached_override;
-  cached_override = override_value;
-  return cached_override.c_str();
-#endif
-}
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureEvidenceRunbookPath =
-        "spec/conformance/release_evidence_gate_maintenance.md";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureDashboardSchemaPath =
-        "schemas/objc3-conformance-dashboard-status-v1.schema.json";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureReleaseEvidenceOperationContractId =
-        "objc3c.tooling.release.evidence.toolchain.operations.v1";
-[[maybe_unused]] constexpr const char
-    *kObjc3AdvancedFeatureDashboardStatusPublicationContractId =
-        "objc3c.tooling.dashboard.status.publication.v1";
+using objc3c::runtime::kObjc3AdvancedFeatureDashboardSchemaPath;
+using objc3c::runtime::kObjc3AdvancedFeatureDashboardStatusPublicationContractId;
+using objc3c::runtime::kObjc3AdvancedFeatureEvidenceGateScriptPath;
+using objc3c::runtime::kObjc3AdvancedFeatureEvidenceRunbookPath;
+using objc3c::runtime::kObjc3AdvancedFeatureOpsContractId;
+using objc3c::runtime::kObjc3AdvancedFeatureReleaseEvidenceContractId;
+using objc3c::runtime::kObjc3AdvancedFeatureReleaseEvidenceOperationContractId;
+using objc3c::runtime::kObjc3AdvancedFeatureReportingContractId;
+using objc3c::runtime::kObjc3ConformanceClaimFailureModel;
+using objc3c::runtime::kObjc3ConformanceClaimOperationsContractId;
+using objc3c::runtime::kObjc3ConformanceClaimSelectionModel;
+using objc3c::runtime::kObjc3ConformancePublicationContractId;
+using objc3c::runtime::MetaprogrammingHostCacheRootForTesting;
 
 RuntimeState &State() {
   static RuntimeState state;

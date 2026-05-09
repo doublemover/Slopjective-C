@@ -61,6 +61,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/arc.h
   memory/autorelease_pool.cpp
   memory/autorelease_pool.h
+  metadata/runtime_capability_contracts.h
   metadata/runtime_emitted_records.h
   metadata/runtime_registration_records.h
   metadata/runtime_realized_records.h
