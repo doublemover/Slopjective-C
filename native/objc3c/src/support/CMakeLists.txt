@@ -34,8 +34,13 @@ add_library(objc3c_support STATIC
   objc3_property_profile_tokens.cpp
   objc3_property_profile_tokens.h
   objc3_property_storage_profile_helpers.h
+  objc3_property_storage_modifier_counts.cpp
+  objc3_property_storage_modifier_counts.h
+  objc3_property_storage_modifier_spelling.cpp
+  objc3_property_storage_modifier_spelling.h
+  objc3_property_storage_modifier_support.cpp
+  objc3_property_storage_modifier_support.h
   objc3_property_storage_modifiers.h
-  objc3_property_storage_modifiers.cpp
   objc3_receiver_dispatch_profiles.cpp
   objc3_receiver_dispatch_profiles.h
   objc3_receiver_profile_helpers.h
