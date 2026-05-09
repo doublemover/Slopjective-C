@@ -23,8 +23,9 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-head is `918aed5d4` (`HC move id class sel typecheck builder`).
-Prior covered heads were `b5b2891c1` (`HC extract executable metadata graph readiness module`),
+source head is `4bbdc5c26` (`HC split runtime performance behavior owners`).
+Prior covered source heads were `918aed5d4` (`HC move id class sel typecheck builder`),
+`b5b2891c1` (`HC extract executable metadata graph readiness module`),
 `0ffaace91` (`refactor(ir): extract module prelude emission`),
 `415fb4e47` (`HC move cross module lowering contract builders`),
 `135708f41` (`HC extract executable metadata source graph module`),
@@ -173,6 +174,7 @@ commits that landed after the first docs commit.
 | `#8137`, `#8138`, `#8147`, `#8150` | `0ffaace91` | IR module prelude/static data emission ownership refreshes local IR/artifact handoff evidence. |
 | `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `b5b2891c1` | Executable metadata graph readiness ownership refreshes local pipeline/frontend metadata evidence. |
 | `#8133`, `#8135`, `#8138`, `#8146`, `#8147`, `#8150` | `918aed5d4` | ID/class/selector typecheck ownership refreshes local semantic/artifact/type evidence. |
+| `#8138`, `#8143`, `#8144`, `#8145`, `#8149`, `#8150` | `4bbdc5c26` | Runtime performance behavior owner splits refresh local runtime/tooling/behavior evidence without asserting validation. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -479,14 +481,15 @@ are retired from public claims.
 
 ## #8150
 
-Local closeout evidence is branch-committed and indexed through `918aed5d4`.
+Local closeout evidence is branch-committed and indexed through source commit
+`4bbdc5c26`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `918aed5d4`.
+`98d10a61c`, and the latest local implementation slices through `4bbdc5c26`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 

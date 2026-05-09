@@ -19,8 +19,9 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "918aed5d4",
-    "current_head_summary": "HC move id class sel typecheck builder"
+    "current_head": "4bbdc5c26",
+    "current_head_summary": "HC split runtime performance behavior owners",
+    "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
     "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
@@ -204,7 +205,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "918aed5d4",
+    "through_commit": "4bbdc5c26",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -424,6 +425,20 @@
           "918aed5d4"
         ],
         "owner_boundary": "ID/class/selector typecheck ownership is committed local semantic, artifact, and type evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "4bbdc5c26"
+        ],
+        "owner_boundary": "runtime performance behavior owner splits are committed local runtime, tooling, and behavior evidence only"
       },
       {
         "issues": [
@@ -2072,7 +2087,8 @@
         "415fb4e47",
         "0ffaace91",
         "b5b2891c1",
-        "918aed5d4"
+        "918aed5d4",
+        "4bbdc5c26"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

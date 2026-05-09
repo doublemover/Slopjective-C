@@ -17,6 +17,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_runner.cpp
   frontend_runtime_export_enforcement_helpers.cpp
   frontend_runtime_metadata_boundary_helpers.cpp
+  readiness/objc3_final_readiness_gate_failure_reasons.cpp
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation.cpp

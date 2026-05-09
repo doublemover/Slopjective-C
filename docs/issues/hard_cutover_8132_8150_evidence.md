@@ -30,7 +30,8 @@ Canonical behavior and no-compatibility indexes:
 
 Current branch head covered by the support/evidence closeout map:
 
-- `918aed5d4` (`HC move id class sel typecheck builder`)
+- latest source head folded into this docs-only map: `4bbdc5c26` (`HC split runtime performance behavior owners`)
+- prior covered source head: `918aed5d4` (`HC move id class sel typecheck builder`)
 - prior covered head: `b5b2891c1` (`HC extract executable metadata graph readiness module`)
 - prior covered head: `0ffaace91` (`refactor(ir): extract module prelude emission`)
 - prior covered head: `415fb4e47` (`HC move cross module lowering contract builders`)
@@ -389,6 +390,8 @@ Post-`4fddfacb7` local owner refresh:
   metadata evidence for `#8138`, `#8140`, `#8143`, `#8147`, and `#8150`.
 - ID/class/selector typecheck ownership refreshes local semantic/artifact/type
   evidence for `#8133`, `#8135`, `#8138`, `#8146`, `#8147`, and `#8150`.
+- Runtime performance behavior owner splits refresh local runtime/tooling/behavior
+  evidence for `#8138`, `#8143`, `#8144`, `#8145`, `#8149`, and `#8150`.
 - Parser inline-asm finalizer, semantic constant evaluator, and runtime dispatch
   entrypoint owners refresh parser, sema, runtime dispatch, and runtime
   acceptance evidence for `#8133`, `#8134`, `#8135`, `#8143`, `#8146`,
@@ -403,7 +406,7 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8144` and `#8150`.
 - Generated replay behavior owner splits refresh local generated-fixture
   ownership evidence for `#8144` and `#8150`.
-- The latest committed head folded into this docs-only map is `918aed5d4`.
+- The latest committed source head folded into this docs-only map is `4bbdc5c26`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
 These issue rows are local implementation-evidence summaries only. They are not
@@ -430,7 +433,7 @@ claims.
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
 | `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed owner refresh through `918aed5d4`. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed source refresh through `4bbdc5c26`. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into
