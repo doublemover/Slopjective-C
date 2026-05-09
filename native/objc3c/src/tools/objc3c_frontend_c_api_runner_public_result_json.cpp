@@ -31,6 +31,8 @@ std::string RenderFrontendCApiRunnerStringOwnershipJson(
   std::ostringstream out;
   JsonObjectWriter object(out);
   object.BoolField("present", contract.present);
+  object.StringField("snapshot_owner", contract.snapshot_owner);
+  object.StringField("accessor_name", contract.accessor_name);
   object.StringField("storage_owner", contract.storage_owner);
   object.StringField("accessor_view", contract.accessor_view);
   object.StringField("release_function", contract.release_function);
@@ -46,6 +48,10 @@ std::string RenderFrontendCApiRunnerArtifactOwnershipJson(
   object.StringField("name", contract.name);
   object.BoolField("required_by_runner", contract.required_by_runner);
   object.BoolField("produced", contract.produced);
+  object.BoolField("path_snapshot_present", contract.path_snapshot_present);
+  object.StringField("snapshot_owner", contract.snapshot_owner);
+  object.StringField("presence_accessor", contract.presence_accessor);
+  object.StringField("path_accessor", contract.path_accessor);
   object.StringField("storage_owner", contract.storage_owner);
   object.StringField("accessor_view", contract.accessor_view);
   object.StringField("release_function", contract.release_function);
@@ -74,6 +80,8 @@ std::string RenderFrontendCApiRunnerCOwnershipJson(
   object.StringField("result_release_function",
                      ownership.result_release_function);
   object.StringField("result_release_timing", ownership.result_release_timing);
+  object.StringField("publication_snapshot_owner",
+                     ownership.publication_snapshot_owner);
   object.StringField("context_lifetime", ownership.context_lifetime);
   object.StringField("compile_options_lifetime",
                      ownership.compile_options_lifetime);
@@ -116,6 +124,9 @@ void WriteFrontendCApiRunnerPublicResultSummaryFields(
       << "\",\n";
   out << "  \"result_error_message\": \""
       << EscapeJsonString(public_result.result_error_message) << "\",\n";
+  out << "  \"result_error_message_present\": "
+      << (public_result.result_error_message_present ? "true" : "false")
+      << ",\n";
   out << "  \"c_api_ownership\": "
       << RenderFrontendCApiRunnerCOwnershipJson(public_result.c_api_ownership)
       << ",\n";

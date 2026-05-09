@@ -19,8 +19,9 @@ bool RunFrontendCApiRunnerCompileSession(
       compile_invocation.compile_options(),
       &session.result);
   session.last_error = ReadFrontendCApiLastError(context.get());
-  session.result_error_message =
-      FrontendCApiResultErrorMessage(session.result);
+  session.result_error_message_snapshot =
+      FrontendCApiResultErrorMessageSnapshot(session.result);
+  session.result_error_message = session.result_error_message_snapshot.text;
 
   std::string accessor_contract_error;
   if (!ValidateFrontendCApiResultAccessors(
@@ -28,7 +29,7 @@ bool RunFrontendCApiRunnerCompileSession(
           session.status,
           session.result,
           session.last_error,
-          session.result_error_message,
+          session.result_error_message_snapshot,
           accessor_contract_error)) {
     error = "frontend C API accessor contract fail-closed: ";
     error += accessor_contract_error;

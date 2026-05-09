@@ -25,10 +25,11 @@ bool BuildFrontendCApiRunnerSessionSummary(
   summary.json = BuildFrontendCApiRunnerSummaryJson(
       options,
       summary_path,
+      summary.artifact_paths,
       compile_session.status,
       compile_session.result,
       compile_session.last_error,
-      compile_session.result_error_message,
+      compile_session.result_error_message_snapshot,
       output_contract);
   error.clear();
   return true;

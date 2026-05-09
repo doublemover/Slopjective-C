@@ -15,15 +15,16 @@ namespace fs = std::filesystem;
 std::string BuildFrontendCApiRunnerSummaryJson(
     const FrontendCApiRunnerOptions &options,
     const fs::path &summary_path,
+    const FrontendCApiRunnerArtifactPathView &artifact_paths,
     objc3c_frontend_c_status_t status,
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &last_error,
-    const std::string &result_error_message,
+    const FrontendCApiRunnerStringSnapshot &result_error_message,
     const FrontendCApiRunnerOutputContract &output_contract) {
   const FrontendCApiRunnerPublicResultView public_result =
       BuildFrontendCApiRunnerPublicResultView(
           options,
-          summary_path,
+          artifact_paths,
           status,
           result,
           last_error,
@@ -49,7 +50,7 @@ std::string BuildFrontendCApiRunnerSummaryJson(
       public_result.paths.summary,
       result,
       status,
-      result_error_message,
+      result_error_message.text,
       public_result.paths.runtime_metadata_binary);
   out << ",\n";
   out << "  \"runtime_inspector\": ";

@@ -10,6 +10,7 @@ struct FrontendCApiRunnerCompileSession {
   FrontendCApiCompileResultGuard result_guard;
   objc3c_frontend_c_status_t status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
   std::string last_error;
+  FrontendCApiRunnerStringSnapshot result_error_message_snapshot;
   std::string result_error_message;
   int exit_code = 2;
 
