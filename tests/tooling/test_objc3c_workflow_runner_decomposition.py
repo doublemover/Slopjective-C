@@ -3,6 +3,8 @@ from __future__ import annotations
 from scripts.objc3c_workflow.action_acceptance import (
     resolve_registered_action as owned_resolve_registered_action,
 )
+from scripts.objc3c_workflow.action_audience import action_audience
+from scripts.objc3c_workflow.action_audience_rules import action_audience as owned_action_audience
 from scripts.objc3c_workflow.action_dispatch import resolve_registered_action
 from scripts.objc3c_workflow.action_handler_integrity import (
     action_handler_registry_is_complete,
@@ -67,6 +69,7 @@ def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:
 def test_action_payloads_keep_single_public_package_bridge() -> None:
     payload = list_actions_payload()
 
+    assert action_audience is owned_action_audience
     assert build_action_payload is owned_build_action_payload
     assert payload["schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert payload["package_bridge_count"] == 1

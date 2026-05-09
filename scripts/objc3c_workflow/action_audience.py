@@ -1,32 +1,9 @@
-"""Audience classification for public workflow action payloads."""
+"""Audience classification facade for public workflow action payloads."""
 
 from __future__ import annotations
 
-MAINTAINER_PREFIXES: tuple[str, ...] = (
-    "build-",
-    "check-",
-    "format-",
-    "lint",
-    "publish-",
-)
-
-OPERATOR_PREFIXES: tuple[str, ...] = (
-    "benchmark-",
-    "compile-",
-    "inspect-",
-    "materialize-",
-    "package-",
-    "proof-",
-    "test-",
-    "validate-",
-)
+from .action_audience_prefixes import MAINTAINER_PREFIXES, OPERATOR_PREFIXES
+from .action_audience_rules import action_audience
 
 
-def action_audience(action: str) -> str:
-    if action.startswith("build-native") or action == "build-default":
-        return "operator"
-    if action.startswith(MAINTAINER_PREFIXES):
-        return "maintainer"
-    if action.startswith(OPERATOR_PREFIXES):
-        return "operator"
-    return "operator"
+__all__ = ["MAINTAINER_PREFIXES", "OPERATOR_PREFIXES", "action_audience"]
