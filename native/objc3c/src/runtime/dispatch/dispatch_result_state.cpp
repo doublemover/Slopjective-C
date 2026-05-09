@@ -1,7 +1,7 @@
 #include "runtime/dispatch/dispatch_result_state.h"
 
 #include "runtime/dispatch/runtime_method_return.h"
-#include "runtime/dispatch/typed_dispatch_result.h"
+#include "runtime/dispatch/typed_dispatch_contract.h"
 #include "runtime/public/objc3_runtime_result_contract.h"
 #include "runtime/state/runtime_state_records.h"
 

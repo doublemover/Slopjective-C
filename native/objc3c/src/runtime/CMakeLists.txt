@@ -99,6 +99,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/dispatch_state_snapshots.cpp
   dispatch/dispatch_target_resolution.cpp
   dispatch/dispatch_target_resolution.h
+  dispatch/dispatch_status.h
   dispatch/method_fast_path_seed.cpp
   dispatch/method_fast_path_seed.h
   dispatch/method_invocation.cpp
@@ -119,6 +120,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/runtime_resolution_records.h
   dispatch/runtime_method_shape.cpp
   dispatch/runtime_method_shape.h
+  dispatch/typed_dispatch_contract.cpp
+  dispatch/typed_dispatch_contract.h
+  dispatch/typed_dispatch_error.cpp
+  dispatch/typed_dispatch_error.h
   dispatch/typed_dispatch_result.cpp
   dispatch/typed_dispatch_result.h
   errors/catch_filter.cpp

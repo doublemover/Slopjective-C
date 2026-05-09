@@ -1,10 +1,10 @@
 #include "runtime/dispatch/dispatch_target_resolution.h"
 
 #include "runtime/classes/receiver_identity.h"
-#include "runtime/dispatch/dispatch_api.h"
 #include "runtime/dispatch/dispatch_family.h"
 #include "runtime/dispatch/dispatch_resolution_state.h"
 #include "runtime/dispatch/dispatch_result_state.h"
+#include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/method_cache.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/selectors/selector_table.h"

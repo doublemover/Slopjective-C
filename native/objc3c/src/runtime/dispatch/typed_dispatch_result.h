@@ -12,15 +12,6 @@ struct RuntimeTypedDispatchResult {
   int value = 0;
 };
 
-enum class RuntimeTypedDispatchResultContract {
-  ValueResult,
-  StrictErrorResult,
-};
-
-RuntimeTypedDispatchResultContract RuntimeTypedDispatchContractForStatus(
-    objc3_runtime_dispatch_status_code status_code);
-const char *RuntimeTypedDispatchContractName(
-    RuntimeTypedDispatchResultContract contract);
 bool RuntimeTypedDispatchResultIsSuccess(
     const RuntimeTypedDispatchResult &result);
 RuntimeTypedDispatchResult NormalizeRuntimeTypedDispatchResult(
