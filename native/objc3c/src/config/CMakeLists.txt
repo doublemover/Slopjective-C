@@ -8,6 +8,7 @@ add_library(objc3c_config STATIC
   objc3_feature_state_tables.cpp
   objc3_language_profile.cpp
   objc3_language_version.cpp
+  objc3_removed_command_option_data.cpp
   objc3_removed_command_option_table.cpp
   objc3_removed_command_options.cpp
 )
