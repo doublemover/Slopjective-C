@@ -1,35 +1,25 @@
 #pragma once
 
+#include "contracts/objc3_config_contract_descriptions.h"
+#include "contracts/objc3_frontend_contract_descriptions.h"
 #include "contracts/objc3_native_contract_descriptor.h"
 #include "contracts/objc3_native_contract_ids.h"
+#include "contracts/objc3_runtime_metadata_contract_descriptions.h"
 
 inline constexpr Objc3NativeContractDescriptor DescribeObjc3NativeContract(
     Objc3NativeContractId contract_id) {
-  switch (contract_id) {
-    case Objc3NativeContractId::kDiagnosticPayloadV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "diagnostics", "v1", true};
-    case Objc3NativeContractId::kFrontendDiagnosticsBusV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "frontend-diagnostics-bus", "v1", true};
-    case Objc3NativeContractId::kCanonicalLanguageProfileV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "config", "v1", true};
-    case Objc3NativeContractId::kCanonicalFeatureStateCatalogV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "config", "v1", true};
-    case Objc3NativeContractId::kRemovedOptionValidationV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "config", "v1", true};
-    case Objc3NativeContractId::kRuntimeMetadataSourceOwnershipFreezeV1:
-    case Objc3NativeContractId::kRuntimeMetadataSectionAbiSymbolPolicyFreezeV1:
-    case Objc3NativeContractId::kRuntimeMetadataSectionPublicationV1:
-    case Objc3NativeContractId::kRuntimeMetadataObjectInspectionHarnessV1:
-    case Objc3NativeContractId::kRuntimeMetadataSourceToSectionMatrixV1:
-    case Objc3NativeContractId::kRuntimeMetadataEmissionGateV1:
-    case Objc3NativeContractId::kRuntimeMetadataObjectEmissionCloseoutV1:
-      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
-              "runtime-metadata", "v1", true};
+  if (const auto frontend = DescribeObjc3FrontendContract(contract_id);
+      frontend.valid) {
+    return frontend;
+  }
+  if (const auto config = DescribeObjc3ConfigContract(contract_id);
+      config.valid) {
+    return config;
+  }
+  if (const auto runtime_metadata =
+          DescribeObjc3RuntimeMetadataContract(contract_id);
+      runtime_metadata.valid) {
+    return runtime_metadata;
   }
   return {};
 }
