@@ -683,18 +683,21 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "tooling_native_provenance"
       ],
       "index_evidence": [
+        "tests/tooling/fixtures/native/owner_splits/index.json",
         "tests/tooling/fixtures/native/owner_splits/parser.json",
         "tests/tooling/fixtures/native/owner_splits/sema.json",
         "tests/tooling/fixtures/native/owner_splits/lowering.json",
         "tests/tooling/fixtures/native/owner_splits/ir.json",
         "tests/tooling/fixtures/native/owner_splits/runtime.json",
         "tests/tooling/fixtures/native/owner_splits/e2e.json",
-        "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/native/owner_splits/tooling_native_provenance.json"
       ],
-      "retired_disposition": "large mixed tooling fixture surfaces are resolved through behavior-first phase indexes before any path is cited as support; retired surfaces stay canonical rejection or strict-error evidence"
+      "retired_disposition": "large mixed tooling fixture surfaces are resolved through behavior-first phase indexes and tooling-native provenance before any path is cited as support; fixture-family catalog rows, mixed surface selectors, fixture names, generated-only rows, report-only rows, shim-looking names, fallback-looking names, old-mode rows, migration-only rows, compatibility rows, and unsupported claims remain provenance, canonical rejection, or strict-error evidence rather than positive behavior truth"
     },
     {
       "family": "frontend_c_api_owner_split_indexes",
@@ -1173,6 +1176,7 @@
     "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
     "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
     "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json",
+    "tests/tooling/fixtures/native/owner_splits/index.json",
     "tests/tooling/fixtures/native/owner_splits/parser.json",
     "tests/tooling/fixtures/native/owner_splits/sema.json",
     "tests/tooling/fixtures/native/owner_splits/lowering.json",
@@ -1180,6 +1184,7 @@
     "tests/tooling/fixtures/native/owner_splits/runtime.json",
     "tests/tooling/fixtures/native/owner_splits/e2e.json",
     "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/native/owner_splits/tooling_native_provenance.json",
     "tests/tooling/fixtures/native/execution/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/native/execution/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/native/execution/behavior_owner_splits/sema.json",

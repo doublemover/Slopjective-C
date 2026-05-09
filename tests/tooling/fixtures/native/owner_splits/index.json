@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split-index",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "split_policy": {
+    "primary_axis": "canonical behavior phase before mixed tooling fixture surface, fixture basename, source catalog row, report row, or retired-surface label",
+    "positive_rule": "tooling native fixtures can cite positive behavior only by pointing back to canonical hand-authored tests/native owner evidence or explicitly e2e-owned compile-link-run fixtures",
+    "provenance_rule": "source catalog rows, mixed surface selectors, fixture basenames, package/release evidence labels, generated-only rows, report-only rows, and migration-only rows are provenance until a canonical behavior owner claims behavior",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported-feature, generated-only, report-only, migration-only, and alternate acceptance names remain canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/native/owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/native/owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/native/owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/native/owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/native/owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/native/owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "tooling_native_provenance",
+      "path": "tests/tooling/fixtures/native/owner_splits/tooling_native_provenance.json"
+    }
+  ]
+}

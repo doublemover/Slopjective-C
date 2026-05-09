@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "tooling_native_provenance",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "tooling native provenance covers source catalog rows, mixed surface selectors, fixture basenames, package/release witness labels, generated-only rows, report-only rows, migration-only rows, and owner split routing metadata as provenance only",
+  "positive_support_authority": "none",
+  "negative_support_authority": "tests/native behavior owner indexes and canonical rejection owner splits",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+      "selectors": [
+        "fixture family rows",
+        "source catalog labels",
+        "support labels"
+      ],
+      "disposition": "catalog provenance only until canonical tests/native owners claim behavior"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/*.objc3",
+      "selectors": [
+        "*_positive.objc3",
+        "*_negative.objc3",
+        "*_rejected.objc3",
+        "*_provider.objc3",
+        "*_consumer.objc3",
+        "*_packaging_*.objc3",
+        "*release*_*.objc3"
+      ],
+      "disposition": "mixed tooling source provenance; fixture basenames do not create positive behavior truth"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/{execution,recovery}/**",
+      "selectors": [
+        "*.objc3",
+        "*.meta.json",
+        "*.exitcode.txt",
+        "negative_*",
+        "replay_*"
+      ],
+      "disposition": "execution/recovery metadata provenance unless a behavior phase owner claims the contract"
+    }
+  ],
+  "selectors": [
+    "*generated-only*",
+    "*generated_only*",
+    "*report-only*",
+    "*report_only*",
+    "*migration-only*",
+    "*migration_only*",
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*"
+  ],
+  "canonical_evidence": [],
+  "retired_surface_rule": "tooling native provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, report-only, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
+}

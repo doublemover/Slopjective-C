@@ -3,7 +3,7 @@
   "catalog": "native-fixture-owner-split",
   "owner_phase": "e2e",
   "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
-  "support_boundary": "e2e fixtures own deterministic compile-link-run positives and execution-boundary negative metadata",
+  "support_boundary": "e2e fixtures own deterministic compile-link-run positives and execution-boundary negative metadata only when the fixture is not generated-only, report-only, shim, fallback, old-mode, or migration-only provenance",
   "positive_support_authority": "tests/native/e2e/{smoke,feature_matrix}",
   "negative_support_authority": "tests/native/e2e/negative_execution",
   "mixed_surfaces": [
@@ -33,5 +33,5 @@
     "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
     "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
   ],
-  "retired_surface_rule": "legacy literals and runtime dispatch misses stay negative or strict-error execution evidence"
+  "retired_surface_rule": "legacy literals, runtime dispatch misses, generated-only rows, report-only rows, shim/fallback names, old-mode rows, and migration-only rows stay negative, strict-error, or provenance-only execution evidence"
 }
