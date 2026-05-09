@@ -21,6 +21,7 @@
 #include "ir/objc3_ir_emission_readiness_publication.h"
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
+#include "ir/objc3_ir_lowering_extension_metadata_publication.h"
 #include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"

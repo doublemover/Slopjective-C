@@ -47,7 +47,9 @@ add_library(objc3c_ir_publication_surface STATIC
   objc3_ir_deterministic_publication.cpp
   objc3_ir_emission_prologue.cpp
   objc3_ir_emission_readiness_publication.cpp
+  objc3_ir_frontend_core_metadata_nodes.cpp
   objc3_ir_frontend_metadata_publication.cpp
+  objc3_ir_lowering_extension_metadata_publication.cpp
   objc3_ir_module_emission_surface.cpp
   objc3_ir_surface_serialization.cpp
 )
