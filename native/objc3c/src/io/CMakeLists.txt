@@ -28,6 +28,7 @@ add_library(objc3c_json STATIC
   json/json_schema_object_properties_validation.cpp
   json/json_schema_object_required_validation.cpp
   json/json_schema_object_validation.cpp
+  json/json_schema_pattern_contract_validation.cpp
   json/json_schema_path_helpers.cpp
   json/json_schema_required_contract_validation.cpp
   json/json_schema_scalar_validation.cpp

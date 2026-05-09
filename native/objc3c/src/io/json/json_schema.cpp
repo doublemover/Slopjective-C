@@ -1,6 +1,5 @@
 #include "io/json/json_schema.h"
 
-#include <regex>
 #include <string_view>
 
 #include "io/json/json_pointer.h"
@@ -11,6 +10,7 @@
 #include "io/json/json_schema_enum_contract_validation.h"
 #include "io/json/json_schema_errors.h"
 #include "io/json/json_schema_numeric_contract_validation.h"
+#include "io/json/json_schema_pattern_contract_validation.h"
 #include "io/json/json_schema_required_contract_validation.h"
 #include "io/json/json_schema_type_contract_validation.h"
 #include "io/json/json_schema_validation.h"
@@ -104,23 +104,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
         JsonSchemaKeywordPath(schema_path, "uniqueItems"),
         "uniqueItems must be a boolean");
   }
-  if (const JsonValue *pattern = schema.Find("pattern"); pattern != nullptr) {
-    if (!pattern->IsString()) {
-      AddJsonSchemaContractError(
-          result, "invalid_pattern",
-          JsonSchemaKeywordPath(schema_path, "pattern"),
-          "pattern must be a string");
-    } else {
-      try {
-        (void)std::regex(pattern->AsString());
-      } catch (const std::regex_error &) {
-        AddJsonSchemaContractError(
-            result, "invalid_pattern",
-            JsonSchemaKeywordPath(schema_path, "pattern"),
-            "pattern is not a valid regular expression");
-      }
-    }
-  }
+  ValidateJsonSchemaPatternContract(schema, schema_path, result);
 }
 
 JsonSchemaResult ValidateJsonSchema(const JsonValue &schema,
