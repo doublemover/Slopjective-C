@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from .action_audience import action_audience
 from .action_spec import ActionSpec
 from .environment import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
 from .public_bridge import (
@@ -20,8 +21,10 @@ def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
     payload["mode"] = WORKFLOW_RUNNER_MODE
     payload["runner_path"] = WORKFLOW_RUNNER_SURFACE
     payload["category"] = spec.action.split("-", 1)[0]
+    payload["audience"] = action_audience(spec.action)
     payload["package_bridge"] = WORKFLOW_BRIDGE_SCRIPT
     payload["public_invocation"] = public_action_invocation(spec.action)
+    payload["public_command"] = public_action_invocation(spec.action)
     payload["public_entrypoint"] = PUBLIC_ENTRYPOINT_KIND
     return payload
 

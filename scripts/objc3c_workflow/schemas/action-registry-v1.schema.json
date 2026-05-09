@@ -33,17 +33,24 @@
         "required": [
           "action",
           "summary",
+          "audience",
           "backend",
           "pass_through_args",
           "package_bridge",
+          "public_command",
           "public_invocation",
           "public_entrypoint"
         ],
         "properties": {
           "action": { "type": "string", "minLength": 1 },
           "summary": { "type": "string", "minLength": 1 },
+          "audience": { "enum": ["operator", "maintainer"] },
           "backend": { "type": "string", "minLength": 1 },
           "package_bridge": { "const": "objc3c" },
+          "public_command": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [A-Za-z0-9][A-Za-z0-9_-]*$"
+          },
           "public_invocation": {
             "type": "string",
             "pattern": "^npm run objc3c -- [A-Za-z0-9][A-Za-z0-9_-]*$"
