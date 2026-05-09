@@ -23,6 +23,7 @@
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
@@ -343,43 +344,23 @@ using objc3::artifacts::frontend::
     BuildOwnershipSystemExtensionSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildTypeSystemTypeSourceClosureSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeBootstrapLoweringSummary;
 using objc3::artifacts::frontend::BuildRuntimeBootstrapLoweringSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeBootstrapSemanticsSummary;
 using objc3::artifacts::frontend::BuildRuntimeBootstrapSemanticsSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeBootstrapApiSummary;
 using objc3::artifacts::frontend::BuildRuntimeBootstrapApiSummaryJson;
 using objc3::artifacts::frontend::
-    BuildRuntimeBootstrapLegalityFailureContractSummary;
-using objc3::artifacts::frontend::
     BuildRuntimeBootstrapLegalityFailureContractSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeBootstrapLegalitySemanticsSummary;
 using objc3::artifacts::frontend::
     BuildRuntimeBootstrapLegalitySemanticsSummaryJson;
 using objc3::artifacts::frontend::
-    BuildRuntimeBootstrapFailureRestartSemanticsSummary;
-using objc3::artifacts::frontend::
     BuildRuntimeBootstrapFailureRestartSemanticsSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeStartupBootstrapInvariantSummary;
 using objc3::artifacts::frontend::
     BuildRuntimeStartupBootstrapInvariantSummaryJson;
 using objc3::artifacts::frontend::
-    BuildRuntimeRegistrationDescriptorFrontendClosureSummary;
-using objc3::artifacts::frontend::
     BuildRuntimeRegistrationDescriptorFrontendClosureSummaryJson;
 using objc3::artifacts::frontend::
-    BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummary;
-using objc3::artifacts::frontend::
     BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummaryJson;
-using objc3::artifacts::frontend::BuildRuntimeSupportLibraryContractSummary;
-using objc3::artifacts::frontend::BuildRuntimeSupportLibraryCoreFeatureSummary;
-using objc3::artifacts::frontend::BuildRuntimeSupportLibraryLinkWiringSummary;
-using objc3::artifacts::frontend::
-    BuildRuntimeTranslationUnitRegistrationContractSummary;
 using objc3::artifacts::frontend::
     BuildRuntimeTranslationUnitRegistrationContractSummaryJson;
-using objc3::artifacts::frontend::
-    BuildRuntimeTranslationUnitRegistrationManifestSummary;
 using objc3::artifacts::frontend::
     BuildRuntimeTranslationUnitRegistrationManifestSummaryJson;
 using objc3::artifacts::frontend::BuildRuntimeAwareImportModuleSurfaceReplayKey;
@@ -1142,83 +1123,55 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &executable_metadata_runtime_ingest_binary_boundary =
           runtime_metadata_plan
               .executable_metadata_runtime_ingest_binary_boundary;
-  const Objc3RuntimeSupportLibraryContractSummary runtime_support_library =
-      BuildRuntimeSupportLibraryContractSummary();
+  const Objc3FrontendArtifactRuntimeRegistrationPlan runtime_registration_plan =
+      BuildObjc3FrontendArtifactRuntimeRegistrationPlan(
+          input_path, program, pipeline_result, options, runtime_metadata_plan);
+  const Objc3RuntimeSupportLibraryContractSummary &runtime_support_library =
+      runtime_registration_plan.runtime_support_library;
   const Objc3RuntimeSupportLibraryCoreFeatureSummary
-      runtime_support_library_core_feature =
-          BuildRuntimeSupportLibraryCoreFeatureSummary(runtime_support_library);
+      &runtime_support_library_core_feature =
+          runtime_registration_plan.runtime_support_library_core_feature;
   const Objc3RuntimeSupportLibraryLinkWiringSummary
-      runtime_support_library_link_wiring =
-          BuildRuntimeSupportLibraryLinkWiringSummary(
-              runtime_support_library_core_feature);
+      &runtime_support_library_link_wiring =
+          runtime_registration_plan.runtime_support_library_link_wiring;
   const Objc3RuntimeTranslationUnitRegistrationContractSummary
-      runtime_translation_unit_registration_contract =
-          BuildRuntimeTranslationUnitRegistrationContractSummary(
-              executable_metadata_runtime_ingest_binary_boundary,
-              runtime_support_library_link_wiring);
+      &runtime_translation_unit_registration_contract =
+          runtime_registration_plan
+              .runtime_translation_unit_registration_contract;
   const Objc3RuntimeTranslationUnitRegistrationManifestSummary
-      runtime_translation_unit_registration_manifest =
-          BuildRuntimeTranslationUnitRegistrationManifestSummary(
-              runtime_translation_unit_registration_contract,
-              runtime_support_library_link_wiring,
-              runtime_metadata_section_publication,
-              options.bootstrap_registration_order_ordinal);
+      &runtime_translation_unit_registration_manifest =
+          runtime_registration_plan
+              .runtime_translation_unit_registration_manifest;
   const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
-      runtime_registration_descriptor_image_root_source_surface =
-          BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
-              program,
-              pipeline_result.bootstrap_registration_source_pragma_contract,
-              runtime_translation_unit_registration_manifest);
+      &runtime_registration_descriptor_image_root_source_surface =
+          runtime_registration_plan
+              .runtime_registration_descriptor_image_root_source_surface;
   const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
-      runtime_registration_descriptor_frontend_closure =
-          BuildRuntimeRegistrationDescriptorFrontendClosureSummary(
-              runtime_registration_descriptor_image_root_source_surface,
-              runtime_translation_unit_registration_manifest);
-  const std::string translation_unit_identity_key =
-      BuildObjc3TranslationUnitIdentityKey(Objc3TranslationUnitIdentityEvidence{
-          input_path,
-          pipeline_result.parse_lowering_readiness_surface.parse_artifact_replay_key,
-          pipeline_result.parse_lowering_readiness_surface.lowering_boundary_replay_key,
-      });
+      &runtime_registration_descriptor_frontend_closure =
+          runtime_registration_plan
+              .runtime_registration_descriptor_frontend_closure;
+  const std::string &translation_unit_identity_key =
+      runtime_registration_plan.translation_unit_identity_key;
   const Objc3RuntimeStartupBootstrapInvariantSummary
-      runtime_startup_bootstrap_invariants =
-          BuildRuntimeStartupBootstrapInvariantSummary(
-              runtime_translation_unit_registration_manifest);
-  const Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api =
-      BuildRuntimeBootstrapApiSummary(runtime_support_library_core_feature,
-                                      runtime_support_library_link_wiring);
-  const Objc3RuntimeBootstrapSemanticsSummary
-      runtime_bootstrap_semantics = BuildRuntimeBootstrapSemanticsSummary(
-          runtime_startup_bootstrap_invariants,
-          runtime_translation_unit_registration_manifest);
+      &runtime_startup_bootstrap_invariants =
+          runtime_registration_plan.runtime_startup_bootstrap_invariants;
+  const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api =
+      runtime_registration_plan.runtime_bootstrap_api;
+  const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics =
+      runtime_registration_plan.runtime_bootstrap_semantics;
   const Objc3RuntimeBootstrapLegalityFailureContractSummary
-      runtime_bootstrap_legality_failure_contract =
-          BuildRuntimeBootstrapLegalityFailureContractSummary(
-              pipeline_result.sema_parity_surface
-                  .bootstrap_legality_failure_contract_summary,
-              runtime_registration_descriptor_frontend_closure,
-              runtime_bootstrap_semantics);
+      &runtime_bootstrap_legality_failure_contract =
+          runtime_registration_plan
+              .runtime_bootstrap_legality_failure_contract;
   const Objc3RuntimeBootstrapLegalitySemanticsSummary
-      runtime_bootstrap_legality_semantics =
-          BuildRuntimeBootstrapLegalitySemanticsSummary(
-              pipeline_result.sema_parity_surface
-                  .bootstrap_legality_semantics_summary,
-              runtime_bootstrap_legality_failure_contract,
-              runtime_registration_descriptor_frontend_closure,
-              runtime_bootstrap_semantics, translation_unit_identity_key);
-    const Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering =
-        BuildRuntimeBootstrapLoweringSummary(
-            runtime_translation_unit_registration_manifest,
-            runtime_bootstrap_semantics,
-            runtime_registration_descriptor_frontend_closure);
+      &runtime_bootstrap_legality_semantics =
+          runtime_registration_plan.runtime_bootstrap_legality_semantics;
+  const Objc3RuntimeBootstrapLoweringSummary &runtime_bootstrap_lowering =
+      runtime_registration_plan.runtime_bootstrap_lowering;
   const Objc3RuntimeBootstrapFailureRestartSemanticsSummary
-      runtime_bootstrap_failure_restart_semantics =
-          BuildRuntimeBootstrapFailureRestartSemanticsSummary(
-              pipeline_result.sema_parity_surface
-                  .bootstrap_failure_restart_semantics_summary,
-              runtime_bootstrap_legality_semantics, runtime_bootstrap_semantics,
-              runtime_bootstrap_api, runtime_bootstrap_lowering,
-              translation_unit_identity_key);
+      &runtime_bootstrap_failure_restart_semantics =
+          runtime_registration_plan
+              .runtime_bootstrap_failure_restart_semantics;
   const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
       frontend_compatibility_strictness_claim_semantics =
           BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
