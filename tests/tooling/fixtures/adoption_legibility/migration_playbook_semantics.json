@@ -35,7 +35,7 @@
     {
       "phase_id": "compile-showcase-anchors",
       "sequence": 2,
-      "description": "Compile and validate ObjC2-shaped, Swift-facing, and C++-facing showcase anchors before claiming migration success.",
+      "description": "Compile and validate ObjC2-shaped, Swift-facing, and C++-facing showcase anchors before publishing any adoption guidance.",
       "required_paths": [
         "showcase/auroraBoard/main.objc3",
         "showcase/signalMesh/main.objc3",
@@ -67,7 +67,7 @@
     {
       "phase_id": "support-and-rollback-check",
       "sequence": 4,
-      "description": "Check compatibility, support-window, rollback, and long-horizon evidence before public migration claims.",
+      "description": "Check compatibility-report boundaries, support-window status, rollback-risk inventory, and long-horizon evidence before public adoption claims.",
       "required_paths": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
@@ -122,9 +122,16 @@
     "compatibility_report",
     "rollback_target"
   ],
+  "hard_cutover_truthfulness": {
+    "source_compatibility_claims_allowed": false,
+    "migration_or_fallback_support_claims_allowed": false,
+    "compatibility_report_boundary": "compatibility_report is a replay field for risk inventory only, not a source-compatibility guarantee",
+    "rollback_target_boundary": "rollback_target identifies evidence-linked release operations state, not fallback support for retired behavior",
+    "wrapper_only_publication_allowed": false
+  },
   "publication_policy": {
     "metadata_projection": "evaluator_publication.migration_phases",
-    "support_state": "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison",
+    "support_state": "evaluator-ready-with-same-major-porting-orientation-and-evidence-linked-comparison",
     "blocker_metadata_projection": "claim_audit.blocker_metadata.migration_playbook",
     "requires_public_actions": [
       "validate-adoption-legibility",
@@ -136,6 +143,7 @@
     "phase omits concrete paths or workflow actions",
     "interop guidance axis omits a runnable showcase anchor",
     "same-major support or rollback evidence is not named",
-    "migration replay fields drift from long-horizon support semantics"
+    "migration replay fields drift from long-horizon support semantics",
+    "playbook wording implies source-compatible migration support or fallback support"
   ]
 }

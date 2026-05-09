@@ -61,6 +61,29 @@
     "source_authority": "checked-in-package-ecosystem-contracts",
     "report_only_allowed": false
   },
+  "owner_contracts": {
+    "registry_publication_owner": {
+      "role": "package-ecosystem-registry-owner",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+      "required_actions": [
+        "validate-package-mirror",
+        "validate-package-ecosystem",
+        "validate-runnable-package-ecosystem"
+      ],
+      "required_evidence_contracts": [
+        "objc3c.package_ecosystem.registry_publication_semantics.v1",
+        "objc3c.package_ecosystem.artifact_contract.v1"
+      ],
+      "claim_boundary": "local generated registry metadata only; hosted registry availability and package-manager parity are release-blocking overclaims"
+    }
+  },
+  "claim_truth_policy": {
+    "source_compatibility_claims_allowed": false,
+    "migration_or_fallback_support_claims_allowed": false,
+    "hosted_registry_claim_allowed": false,
+    "report_only_allowed": false,
+    "wrapper_only_allowed": false
+  },
   "blocker_metadata": {
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
@@ -68,7 +91,9 @@
       "publication metadata contains an unlocked package identity",
       "offline mirror validation requires network access",
       "registry index is hand-authored instead of generated",
-      "release/update metadata drifts from package ecosystem evidence"
+      "release/update metadata drifts from package ecosystem evidence",
+      "registry publication owner contract is missing",
+      "registry publication action is wrapper-only"
     ]
   },
   "required_actions": [

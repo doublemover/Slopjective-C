@@ -6,6 +6,9 @@ from .ecosystem_publication_contracts import (
     ADOPTION_LEGIBILITY_INTEGRATION_PY,
     ADOPTION_LEGIBILITY_PUBLICATION_PY,
 )
+from .ecosystem_publication_owner_contracts import (
+    require_ecosystem_publication_owner_contract,
+)
 from .ecosystem_publication_runner import run_publication_action
 
 ADOPTION_LEGIBILITY_VALIDATE_ACTION = "validate-adoption-legibility"
@@ -17,10 +20,12 @@ ADOPTION_LEGIBILITY_PUBLIC_ACTIONS = (
 
 
 def action_validate_adoption_legibility(_: list[str]) -> int:
+    require_ecosystem_publication_owner_contract(ADOPTION_LEGIBILITY_VALIDATE_ACTION)
     return run_publication_action(ADOPTION_LEGIBILITY_VALIDATE_ACTION)
 
 
 def action_publish_adoption_legibility(_: list[str]) -> int:
+    require_ecosystem_publication_owner_contract(ADOPTION_LEGIBILITY_PUBLISH_ACTION)
     return run_publication_action(ADOPTION_LEGIBILITY_PUBLISH_ACTION)
 
 

@@ -41,6 +41,14 @@
       "blocker_projection": "claim_audit.blocker_metadata.metadata_publication"
     }
   },
+  "hard_cutover_claim_policy": {
+    "source_compatibility_claims_allowed": false,
+    "migration_or_fallback_support_claims_allowed": false,
+    "manual_adoption_metrics_allowed": false,
+    "report_only_allowed": false,
+    "wrapper_only_publication_allowed": false,
+    "required_owner_contract_module": "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py"
+  },
   "source_contracts": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
@@ -73,7 +81,9 @@
     "tmp/ artifacts and reports are replay outputs, never canonical source authority.",
     "Evaluator, migration, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims.",
-    "Public-claim, comparison, playbook, and publication blockers must project through claim_audit.blocker_metadata."
+    "Public-claim, comparison, playbook, and publication blockers must project through claim_audit.blocker_metadata.",
+    "Adoption publication actions must have owner contracts and may not be wrapper-only.",
+    "Adoption claims must not imply Objective-C 2 source compatibility, automatic migration, fallback support, or adoption counts."
   ],
   "metadata_publication_rules": [
     "Publication consumes the generated evidence artifact and does not widen public claims.",

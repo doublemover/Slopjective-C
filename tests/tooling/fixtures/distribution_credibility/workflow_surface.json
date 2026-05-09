@@ -15,8 +15,11 @@
   "owner_policy": {
     "source_owner": "distribution-credibility-source",
     "gate_owner": "distribution-credibility-gate",
+    "trust_owner": "distribution-credibility-trust-owner",
+    "release_drill_owner": "distribution-credibility-release-drill-owner",
     "blocker_owner": "distribution-credibility-blockers",
     "report_only_allowed": false,
+    "wrapper_only_allowed": false,
     "owned_actions": [
       "check-distribution-credibility-surface",
       "check-distribution-credibility-schema-surface",
@@ -37,6 +40,32 @@
       "build-distribution-credibility-dashboard",
       "publish-distribution-credibility"
     ]
+  },
+  "owner_contracts": {
+    "source_owner": {
+      "role": "distribution-credibility-source-owner",
+      "required_actions": [
+        "check-distribution-credibility-surface",
+        "check-distribution-credibility-schema-surface"
+      ],
+      "claim_boundary": "source and schema summaries are inputs to the credibility gate, never standalone trust evidence"
+    },
+    "trust_owner": {
+      "role": "distribution-credibility-trust-owner",
+      "required_actions": [
+        "build-distribution-credibility-dashboard",
+        "publish-distribution-credibility"
+      ],
+      "claim_boundary": "trust publication is credible only when attached to live release drill artifacts and registered schemas"
+    },
+    "release_drill_owner": {
+      "role": "distribution-credibility-release-drill-owner",
+      "required_actions": [
+        "validate-distribution-credibility",
+        "validate-distribution-credibility-end-to-end"
+      ],
+      "claim_boundary": "release readiness requires package-channel, release-operations, and release-evidence drill outputs"
+    }
   },
   "integrated_required_steps": [
     "validate-release-operations",

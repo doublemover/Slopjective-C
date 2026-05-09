@@ -12,10 +12,14 @@ from .release_governance_distribution_credibility_paths import (
     DISTRIBUTION_CREDIBILITY_PUBLICATION_PY,
     DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY,
 )
+from .release_governance_distribution_credibility_owner_contracts import (
+    require_distribution_credibility_owner_contract,
+)
 from .schema_surfaces import DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY
 
 
 def action_validate_distribution_credibility(_: list[str]) -> int:
+    require_distribution_credibility_owner_contract("validate-distribution-credibility")
     return run_composite_validation(
         "validate-distribution-credibility",
         [
@@ -41,6 +45,7 @@ def action_validate_distribution_credibility(_: list[str]) -> int:
 
 
 def action_validate_distribution_credibility_end_to_end(_: list[str]) -> int:
+    require_distribution_credibility_owner_contract("validate-distribution-credibility-end-to-end")
     return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_END_TO_END_PY)])
 
 

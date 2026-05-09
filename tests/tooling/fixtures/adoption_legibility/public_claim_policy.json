@@ -39,13 +39,13 @@
     },
     {
       "claim_id": "incremental-objc2-migration",
-      "allowed_scope": "same-major incremental migration with generated compatibility, package-lock, rollback, and tutorial evidence",
-      "support_class": "same-major-migration",
+      "allowed_scope": "same-major adoption orientation with checked-in porting examples, package-lock evidence, rollback-risk inventory, and tutorial evidence",
+      "support_class": "same-major-porting-orientation",
       "requires_evidence": [
         "objc2-migration-guide",
-        "release-compatibility-policy",
+        "release-risk-policy",
         "package-lock-workflow",
-        "long-horizon-migration-rollback"
+        "long-horizon-rollback-risk-inventory"
       ],
       "required_reference_surfaces": [
         "docs/tutorials/objc2_to_objc3_migration.md",
@@ -72,9 +72,23 @@
       ]
     }
   ],
+  "hard_cutover_truthfulness": {
+    "source_compatibility_claims_allowed": false,
+    "migration_or_fallback_support_claims_allowed": false,
+    "manual_adoption_metrics_allowed": false,
+    "requires_owner_contracts": [
+      "public_claim_owner",
+      "adoption_comparison_owner",
+      "migration_playbook_owner",
+      "publication_owner"
+    ],
+    "claim_boundary": "adoption wording may describe evidence-linked evaluator paths and porting orientation only; it must not claim source compatibility, automatic migration, fallback support, or adoption volume"
+  },
   "fail_closed_conditions": [
     "claim omits a checked-in evidence surface",
     "claim says or implies cross-major migration safety",
+    "claim says or implies source-compatible migration support",
+    "claim says or implies fallback support for retired Objective-C 2 behavior",
     "claim says or implies hosted registry, package-manager parity, or IDE marketplace parity",
     "claim says or implies performance leadership without release-ready performance governance status",
     "claim says or implies full source compatibility with Objective-C 2",
@@ -90,7 +104,9 @@
     "hosted registry available",
     "IDE marketplace ready",
     "automatic cross-major migration",
-    "manual adoption metric"
+    "manual adoption metric",
+    "source-compatible migration support",
+    "fallback support path"
   ],
   "required_publication_fields": [
     "claim_id",

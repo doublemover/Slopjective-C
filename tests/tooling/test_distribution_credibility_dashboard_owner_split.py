@@ -18,6 +18,11 @@ from objc3c_distribution_credibility_dashboard.paths import (
     SUMMARY_CONTRACT_ID,
 )
 from objc3c_distribution_credibility_dashboard.rendering import dashboard_summary_payload
+from objc3c_shared.json_io import load_json_object
+from scripts.objc3c_workflow.actions.release_governance_distribution_credibility_owner_contracts import (
+    DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS,
+    require_distribution_credibility_owner_contract,
+)
 
 
 OWNER_MODULES = (
@@ -193,3 +198,65 @@ def test_distribution_credibility_dashboard_model_preserves_public_contract() ->
     assert payload["upstream_reports"]["release_operations_end_to_end"] == (
         "tmp/reports/release-operations/end-to-end-summary.json"
     )
+
+
+def test_distribution_credibility_actions_have_trust_and_release_drill_owner_contracts() -> None:
+    assert set(DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS) == {
+        "check-distribution-credibility-surface",
+        "check-distribution-credibility-schema-surface",
+        "build-distribution-credibility-dashboard",
+        "publish-distribution-credibility",
+        "validate-distribution-credibility",
+        "validate-distribution-credibility-end-to-end",
+    }
+
+    owner_roles = {
+        require_distribution_credibility_owner_contract(action_name).owner_role
+        for action_name in DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS
+    }
+    assert {
+        "distribution-credibility-source-owner",
+        "distribution-credibility-schema-owner",
+        "distribution-credibility-dashboard-owner",
+        "distribution-credibility-trust-owner",
+        "distribution-credibility-gate-owner",
+        "distribution-credibility-release-drill-owner",
+    } == owner_roles
+
+    for action_name in DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS:
+        contract = require_distribution_credibility_owner_contract(action_name)
+        assert contract.source_contracts
+        assert contract.required_artifacts
+        assert contract.claim_boundary
+        assert not contract.report_only_allowed
+        assert not contract.wrapper_only_allowed
+        assert "report-only" in " ".join(contract.blocking_conditions)
+        assert "wrapper-only" in " ".join(contract.blocking_conditions)
+
+
+def test_distribution_credibility_fixtures_reject_report_only_trust_evidence() -> None:
+    fixture_root = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibility"
+    workflow_surface = load_json_object(fixture_root / "workflow_surface.json")
+    trust_architecture = load_json_object(fixture_root / "trust_signal_architecture.json")
+    release_drill = load_json_object(fixture_root / "release_drill_policy.json")
+    artifact_surface = load_json_object(fixture_root / "artifact_surface.json")
+
+    owner_policy = workflow_surface["owner_policy"]
+    assert owner_policy["trust_owner"] == "distribution-credibility-trust-owner"
+    assert owner_policy["release_drill_owner"] == "distribution-credibility-release-drill-owner"
+    assert owner_policy["report_only_allowed"] is False
+    assert owner_policy["wrapper_only_allowed"] is False
+
+    trust_owner = trust_architecture["owner_contracts"]["trust_owner"]
+    assert trust_owner["report_only_allowed"] is False
+    assert "not independent manual badges" in trust_owner["claim_boundary"]
+
+    release_drill_owner = release_drill["owner_contract"]
+    assert release_drill_owner["report_only_allowed"] is False
+    assert release_drill_owner["wrapper_only_allowed"] is False
+    assert "cannot substitute for the drill" in release_drill_owner["claim_boundary"]
+
+    claim_policy = artifact_surface["artifact_claim_policy"]
+    assert claim_policy["report_only_allowed"] is False
+    assert claim_policy["wrapper_only_allowed"] is False
+    assert "release-drill" in claim_policy["trust_report_boundary"]
