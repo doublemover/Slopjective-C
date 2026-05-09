@@ -1,10 +1,4 @@
 #pragma once
 
-#include <string_view>
-
-namespace objc3c::support {
-
-bool IsConcurrencyTaskCreationSymbol(std::string_view symbol);
-bool IsConcurrencyDetachedTaskCreationSymbol(std::string_view symbol);
-
-}  // namespace objc3c::support
+#include "support/objc3_concurrency_detached_task_symbols.h"
+#include "support/objc3_concurrency_task_creation_symbols.h"

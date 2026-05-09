@@ -16,7 +16,10 @@ add_library(objc3c_support STATIC
   objc3_concurrency_task_group_symbols.h
   objc3_concurrency_task_group_wait_symbols.cpp
   objc3_concurrency_task_group_wait_symbols.h
-  objc3_concurrency_task_symbols.cpp
+  objc3_concurrency_detached_task_symbols.cpp
+  objc3_concurrency_detached_task_symbols.h
+  objc3_concurrency_task_creation_symbols.cpp
+  objc3_concurrency_task_creation_symbols.h
   objc3_concurrency_task_symbols.h
   objc3_file_reading.cpp
   objc3_file_reading.h
