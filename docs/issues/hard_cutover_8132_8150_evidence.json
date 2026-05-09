@@ -257,6 +257,22 @@
         "#8138",
         "#8146"
       ]
+    },
+    {
+      "ref": "12787c606",
+      "summary": "HC split receiver support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ]
+    },
+    {
+      "ref": "1897efd7a",
+      "summary": "HC move runtime registration owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ]
     }
   ],
   "hard_cutover_disposition": {

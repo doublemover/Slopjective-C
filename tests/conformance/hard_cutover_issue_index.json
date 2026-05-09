@@ -383,6 +383,31 @@
         "native/objc3c/src/support/objc3_objc_type_surface_profiles.h",
         "native/objc3c/src/support/objc3_type_spelling_consistency.cpp"
       ]
+    },
+    {
+      "ref": "12787c606",
+      "summary": "HC split receiver support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_method_family_profiles.h",
+        "native/objc3c/src/support/objc3_receiver_dispatch_profiles.cpp",
+        "native/objc3c/src/support/objc3_receiver_dispatch_profiles.h"
+      ]
+    },
+    {
+      "ref": "1897efd7a",
+      "summary": "HC move runtime registration owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/images/registration.h"
+      ]
     }
   ],
   "global_policy": {

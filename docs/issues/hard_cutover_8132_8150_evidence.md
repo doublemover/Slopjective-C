@@ -70,6 +70,9 @@ pass:
   and `#8148`.
 - `ed3273640` adds Objective-C type support profile evidence for `#8138` and
   `#8146`.
+- `12787c606` adds receiver support profile evidence for `#8138` and `#8146`.
+- `1897efd7a` adds runtime registration owner evidence for `#8133` and
+  `#8143`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

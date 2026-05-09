@@ -27,7 +27,8 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "6a9b0b23f",
-        "ebe18944b"
+        "ebe18944b",
+        "1897efd7a"
       ]
     },
     {
@@ -79,7 +80,8 @@
         "25bde4f7f",
         "4653e8d07",
         "b0e6a33a5",
-        "ed3273640"
+        "ed3273640",
+        "12787c606"
       ]
     },
     {
@@ -127,7 +129,8 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "6a9b0b23f",
-        "ebe18944b"
+        "ebe18944b",
+        "1897efd7a"
       ]
     },
     {
@@ -160,7 +163,8 @@
       "primary_refresh_commits": [
         "c64fe1597",
         "7e743549d",
-        "ed3273640"
+        "ed3273640",
+        "12787c606"
       ]
     },
     {
