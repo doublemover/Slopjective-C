@@ -1,5 +1,5 @@
 #pragma once
 
-#include "sema/objc3_sema_contract_parts/objc3_sema_contract_part_001.inc"
-#include "sema/objc3_sema_contract_parts/objc3_sema_contract_part_002.inc"
-#include "sema/objc3_sema_contract_parts/objc3_sema_contract_part_003.inc"
+#include "sema/objc3_sema_contract_core.h"
+#include "sema/objc3_sema_contract_feature_surfaces.h"
+#include "sema/objc3_sema_contract_type_handoff.h"
