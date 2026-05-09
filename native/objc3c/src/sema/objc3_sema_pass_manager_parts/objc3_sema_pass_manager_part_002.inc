@@ -957,33 +957,10 @@
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
-  result.sema_pass_flow_summary.diagnostics_after_pass = result.diagnostics_after_pass;
-  result.sema_pass_flow_summary.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
-  result.sema_pass_flow_summary.diagnostics_accounting_consistent = result.diagnostics_accounting_consistent;
-  result.sema_pass_flow_summary.diagnostics_bus_publish_consistent = result.diagnostics_bus_publish_consistent;
-  result.sema_pass_flow_summary.diagnostics_canonicalized = result.diagnostics_canonicalized;
-  result.sema_pass_flow_summary.diagnostics_hardening_satisfied = result.diagnostics_hardening_satisfied;
-  result.sema_pass_flow_summary.parser_recovery_replay_ready = parser_recovery_replay_ready;
-  result.sema_pass_flow_summary.parser_recovery_replay_case_present = parser_recovery_replay_case_present;
-  result.sema_pass_flow_summary.parser_recovery_replay_case_passed = parser_recovery_replay_case_passed;
-  result.sema_pass_flow_summary.recovery_replay_contract_satisfied =
-      parser_recovery_replay_contract_satisfied;
-  result.sema_pass_flow_summary.recovery_replay_key = recovery_replay_key;
-  result.sema_pass_flow_summary.recovery_replay_key_deterministic = recovery_replay_key_deterministic;
-  result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied =
-      recovery_determinism_hardening_satisfied;
-  FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,
-                                   result.integration_surface,
-                                   result.type_metadata_handoff,
-                                   diagnostics_after_pass_monotonic,
-                                   pass_order_matches_contract &&
-                                       pass_iteration_index == kObjc3SemaPassOrder.size(),
-                                   result.deterministic_semantic_diagnostics,
-                                   result.deterministic_type_metadata_handoff);
-  result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied =
-      result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied &&
-      result.sema_pass_flow_summary.diagnostics_hardening_satisfied &&
-      result.sema_pass_flow_summary.robustness_guardrails_satisfied;
+  PublishObjc3SemaPassFlowSummary(
+      handoff_publication,
+      diagnostics_run,
+      result);
 
   result.parity_surface.parser_sema_conformance_matrix =
       result.parser_sema_conformance_matrix;

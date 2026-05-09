@@ -184,7 +184,7 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // runnable-arc-closeout anchor: lane-E closes the current ARC
   // tranche by consuming this preserved semantic state through integrated smoke
   // and runbook proof rather than widening semantic acceptance here.
-  if (fn.throws_declared && !context.allow_source_only_error_runtime_surface) {
+  if (fn.throws_declared && ShouldRejectThrowsFeatureClaim(context)) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
         fn.line,
@@ -198,14 +198,14 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
       FunctionBodyContainsBlockLiteral(fn);
   const bool allow_runnable_block_owned_bindings =
       FunctionBodyContainsRunnableBlockLiteral(fn);
-  const bool allow_arc_mode_owned_bindings = context.arc_mode_enabled;
   for (const auto &param : fn.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
-    if (allow_source_only_block_owned_bindings ||
-        allow_runnable_block_owned_bindings ||
-        allow_arc_mode_owned_bindings) {
+    if (!ShouldRejectOwnershipQualifierFeatureClaim(
+            context,
+            allow_source_only_block_owned_bindings,
+            allow_runnable_block_owned_bindings)) {
       // byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -221,9 +221,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
         stats);
   }
   if (fn.has_return_ownership_qualifier &&
-      !allow_source_only_block_owned_bindings &&
-      !allow_runnable_block_owned_bindings &&
-      !allow_arc_mode_owned_bindings) {
+      ShouldRejectOwnershipQualifierFeatureClaim(
+          context,
+          allow_source_only_block_owned_bindings,
+          allow_runnable_block_owned_bindings)) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -258,7 +259,7 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   // ownership qualifiers still terminate in semantic unsupported-feature
   // diagnostics while the preserved lowering summaries remain the only
   // ownership hook surface available to IR closeout.
-  if (method.throws_declared && !context.allow_source_only_error_runtime_surface) {
+  if (method.throws_declared && ShouldRejectThrowsFeatureClaim(context)) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
         method.line,
@@ -272,14 +273,14 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
       MethodBodyContainsBlockLiteral(method);
   const bool allow_runnable_block_owned_bindings =
       MethodBodyContainsRunnableBlockLiteral(method);
-  const bool allow_arc_mode_owned_bindings = context.arc_mode_enabled;
   for (const auto &param : method.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
-    if (allow_source_only_block_owned_bindings ||
-        allow_runnable_block_owned_bindings ||
-        allow_arc_mode_owned_bindings) {
+    if (!ShouldRejectOwnershipQualifierFeatureClaim(
+            context,
+            allow_source_only_block_owned_bindings,
+            allow_runnable_block_owned_bindings)) {
       // byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -295,9 +296,10 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
         stats);
   }
   if (method.has_return_ownership_qualifier &&
-      !allow_source_only_block_owned_bindings &&
-      !allow_runnable_block_owned_bindings &&
-      !allow_arc_mode_owned_bindings) {
+      ShouldRejectOwnershipQualifierFeatureClaim(
+          context,
+          allow_source_only_block_owned_bindings,
+          allow_runnable_block_owned_bindings)) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(

@@ -1,4 +1,5 @@
 #include "sema/objc3_semantic_passes.h"
+#include "sema/objc3_semantic_collection_helpers.h"
 #include "sema/objc3_semantic_context.h"
 #include "sema/objc3_semantic_feature_claims.h"
 #include "sema/objc3_semantic_pass_helpers.h"
@@ -894,7 +895,7 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
     if (stmt->block_stmt == nullptr) {
       return;
     }
-    if (!context.allow_source_only_defer_statements) {
+    if (ShouldRejectDeferFeatureClaim(context)) {
       diagnostics.push_back(MakeDiag(
           stmt->line,
           stmt->column,
@@ -943,17 +944,17 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     // block-runtime-semantic-rules freeze anchor: current semantic
     // behavior is intentionally split between source-only admission and native
     // fail-closed rejection, with no runnable block object semantics implied.
-    if (context.allow_source_only_block_literals ||
-        BlockLiteralUsesRunnableC002Subset(*expr)) {
-      return;
+    if (ShouldRejectBlockLiteralFeatureClaim(
+            context,
+            BlockLiteralUsesRunnableC002Subset(*expr))) {
+      RecordUnsupportedFeatureClaimDiagnostic(
+          stats.blocks_source_rejection_site_count,
+          expr->line,
+          expr->column,
+          "unsupported feature claim: block literals are not yet runnable in Objective-C 3 native mode",
+          diagnostics,
+          stats);
     }
-    RecordUnsupportedFeatureClaimDiagnostic(
-        stats.blocks_source_rejection_site_count,
-        expr->line,
-        expr->column,
-        "unsupported feature claim: block literals are not yet runnable in Objective-C 3 native mode",
-        diagnostics,
-        stats);
     return;
   case Expr::Kind::Call:
     for (const auto &arg : expr->args) {

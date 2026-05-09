@@ -32,6 +32,18 @@ Objc3UnsupportedFeatureClaimContext BuildUnsupportedFeatureClaimContext(
     bool allow_source_only_error_runtime_surface,
     bool arc_mode_enabled);
 
+bool ShouldRejectThrowsFeatureClaim(
+    const Objc3UnsupportedFeatureClaimContext &context);
+bool ShouldRejectDeferFeatureClaim(
+    const Objc3UnsupportedFeatureClaimContext &context);
+bool ShouldRejectBlockLiteralFeatureClaim(
+    const Objc3UnsupportedFeatureClaimContext &context,
+    bool block_literal_uses_runnable_subset);
+bool ShouldRejectOwnershipQualifierFeatureClaim(
+    const Objc3UnsupportedFeatureClaimContext &context,
+    bool source_only_block_literal_scope,
+    bool runnable_block_literal_scope);
+
 unsigned OwnershipQualifierLine(
     const std::vector<Objc3SemaTokenMetadata> &tokens,
     unsigned default_line);

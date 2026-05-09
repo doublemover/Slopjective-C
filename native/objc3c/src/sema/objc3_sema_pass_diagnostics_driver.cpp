@@ -1,0 +1,120 @@
+#include "sema/objc3_sema_pass_diagnostics_driver.h"
+
+#include <numeric>
+#include <vector>
+
+#include "sema/objc3_sema_diagnostic_contract.h"
+#include "sema/objc3_sema_diagnostics_bus.h"
+#include "sema/objc3_sema_pass_flow_scaffold.h"
+#include "sema/objc3_semantic_passes.h"
+
+Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3ParserSemaHandoffScaffold &handoff,
+    Objc3SemaPassManagerResult &result) {
+  Objc3SemaPassDiagnosticsRun run;
+  result.executed = true;
+  result.sema_pass_flow_summary.language_profile = input.language_profile;
+  result.sema_pass_flow_summary.migration_legacy_literal_total =
+      input.migration_hints.legacy_total();
+
+  bool deterministic_semantic_diagnostics = handoff.deterministic;
+  bool diagnostics_canonicalized = true;
+  bool diagnostics_accounting_consistent = true;
+  bool diagnostics_bus_publish_consistent = true;
+  std::size_t expected_diagnostics_size = 0u;
+
+  for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {
+    run.pass_order_matches_contract =
+        run.pass_order_matches_contract &&
+        run.pass_iteration_count < kObjc3SemaPassOrder.size() &&
+        kObjc3SemaPassOrder[run.pass_iteration_count] == pass;
+    ++run.pass_iteration_count;
+
+    const std::size_t pass_index = static_cast<std::size_t>(pass);
+    MarkObjc3SemaPassExecuted(result.sema_pass_flow_summary, pass);
+
+    std::vector<std::string> pass_diagnostics;
+    if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
+      result.integration_surface =
+          BuildSemanticIntegrationSurface(
+              *input.program,
+              input.validation_options.allow_source_only_block_literals,
+              input.validation_options.allow_source_only_defer_statements,
+              input.validation_options.allow_source_only_error_runtime_surface,
+              input.validation_options.arc_mode_enabled,
+              pass_diagnostics);
+    } else if (pass == Objc3SemaPassId::ValidateBodies) {
+      ValidateSemanticBodies(
+          *input.program,
+          result.integration_surface,
+          input.validation_options,
+          pass_diagnostics);
+      RefreshSemanticIntegrationSurfaceAfterBodyValidation(
+          *input.program,
+          result.integration_surface);
+    } else {
+      ValidatePureContractSemanticDiagnostics(
+          *input.program,
+          result.integration_surface.functions,
+          pass_diagnostics);
+    }
+
+    CanonicalizeObjc3SemaPassDiagnostics(pass_diagnostics);
+    const bool pass_diagnostics_canonical =
+        AreObjc3SemaPassDiagnosticsCanonical(pass_diagnostics);
+    diagnostics_canonicalized =
+        diagnostics_canonicalized && pass_diagnostics_canonical;
+    deterministic_semantic_diagnostics =
+        deterministic_semantic_diagnostics && pass_diagnostics_canonical;
+
+    const std::size_t diagnostics_bus_count_before_publish =
+        Objc3SemaDiagnosticsBusCount(input.diagnostics_bus);
+    result.diagnostics.insert(
+        result.diagnostics.end(),
+        pass_diagnostics.begin(),
+        pass_diagnostics.end());
+    expected_diagnostics_size += pass_diagnostics.size();
+    diagnostics_accounting_consistent =
+        diagnostics_accounting_consistent &&
+        result.diagnostics.size() == expected_diagnostics_size;
+    PublishObjc3SemaDiagnostics(input.diagnostics_bus, pass_diagnostics);
+    const std::size_t diagnostics_bus_count_after_publish =
+        Objc3SemaDiagnosticsBusCount(input.diagnostics_bus);
+    const bool pass_bus_publish_consistent =
+        !Objc3SemaDiagnosticsBusHasSink(input.diagnostics_bus) ||
+        diagnostics_bus_count_after_publish ==
+            diagnostics_bus_count_before_publish + pass_diagnostics.size();
+    diagnostics_bus_publish_consistent =
+        diagnostics_bus_publish_consistent && pass_bus_publish_consistent;
+    result.diagnostics_after_pass[static_cast<std::size_t>(pass)] =
+        result.diagnostics.size();
+    result.diagnostics_emitted_by_pass[pass_index] = pass_diagnostics.size();
+  }
+
+  const std::size_t diagnostics_emitted_total = std::accumulate(
+      result.diagnostics_emitted_by_pass.begin(),
+      result.diagnostics_emitted_by_pass.end(),
+      static_cast<std::size_t>(0u));
+  const bool diagnostics_emission_totals_consistent =
+      diagnostics_emitted_total == result.diagnostics.size();
+  run.diagnostics_after_pass_monotonic =
+      IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  const bool diagnostics_hardening_has_required_budgets =
+      diagnostics_bus_publish_consistent &&
+      diagnostics_emission_totals_consistent &&
+      run.diagnostics_after_pass_monotonic;
+
+  result.diagnostics_accounting_consistent = diagnostics_accounting_consistent;
+  result.diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent;
+  result.diagnostics_canonicalized = diagnostics_canonicalized;
+  result.diagnostics_hardening_satisfied =
+      result.diagnostics_accounting_consistent &&
+      result.diagnostics_bus_publish_consistent &&
+      result.diagnostics_canonicalized &&
+      diagnostics_hardening_has_required_budgets;
+  result.deterministic_semantic_diagnostics =
+      deterministic_semantic_diagnostics &&
+      result.diagnostics_hardening_satisfied;
+  return run;
+}
