@@ -22,4 +22,13 @@ BuildToolingDiagnosticTaxonomyPortabilityContractSummaryJson(
 [[nodiscard]] std::string BuildToolingFeatureSpecificFixitSynthesisSummaryJson(
     const Objc3ToolingFeatureSpecificFixitSynthesisSummary &summary);
 
+[[nodiscard]] Objc3ToolingLegacyCanonicalMigrationSemanticsSummary
+BuildToolingLegacyCanonicalMigrationSemanticsSummary(
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+        &compatibility_summary,
+    const Objc3ToolingFeatureSpecificFixitSynthesisSummary &fixit_summary);
+
+[[nodiscard]] std::string BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
+    const Objc3ToolingLegacyCanonicalMigrationSemanticsSummary &summary);
+
 }  // namespace objc3::artifacts::frontend
