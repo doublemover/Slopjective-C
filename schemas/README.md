@@ -33,7 +33,7 @@ tables or examples.
 
 | Schema | Owns |
 | ------ | ---- |
-| `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, and claim-audit evidence without retired-surface support claims. |
+| `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, current-support replay, and claim-audit evidence without retired-surface support claims. |
 | `objc3c-long-horizon-operations-evidence-v1.schema.json` | Support-window, upgrade replay, revert-readiness, soak, and aging-regression evidence. |
 | `objc3c-upgrade-support-report-v1.schema.json` | Upgrade support reporting, support windows, warnings, and revert guidance. |
 | `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
@@ -73,8 +73,10 @@ mirrors or copied schema fragments.
   states.
 - Retired surface terms listed in `docs/support/capability_matrix.json` are
   not alternate states.
-- Historical wording may appear only through retired-surface examples; active
-  fields use upgrade, adoption, support, and revert terminology.
+- Historical wording may appear only through retired-surface examples or
+  explicitly owned evidence-section identifiers. Active prose, support rows,
+  and capability claims use upgrade, adoption, support, replay, and revert
+  terminology.
 - Internal rows may identify implementation owners, schema owners, workflow
   owners, or report owners without claiming public Objective-C 3.0 language
   behavior.

@@ -70,6 +70,10 @@ validator rejects duplicate, missing, or extra evidence-map keys.
   canonical capability names.
 - Retired alternate surfaces are diagnostics, history, or anti-examples; they
   are not support modes.
+- Evidence schema section identifiers are not public capability labels. If a
+  checked-in artifact carries older section names, support prose must describe
+  the row through current adoption, replay, upgrade, support, or rejection
+  terminology and point back to the matrix/evidence map.
 - Runtime, object-model, stdlib, or workflow prose must not upgrade an
   `internal` or `reserved` row into public behavior. Link the matrix row and
   evidence instead.
