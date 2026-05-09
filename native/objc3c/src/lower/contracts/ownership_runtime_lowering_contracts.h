@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "lower/contracts/ownership_system_extension_contracts.h"
+
 // Runtime-backed object ownership is the lowering-owned boundary where
 // property/member ownership facts become emitted runtime metadata instead of
 // manifest-only evidence.
@@ -139,33 +141,6 @@ inline constexpr const char *kObjc3OwnershipRuntimeGateNonGoalModel =
 inline constexpr const char *kObjc3OwnershipRuntimeGateFailClosedModel =
     "integration-gate-must-not-claim-more-than-the-supported-runtime-backed-ownership-baseline";
 
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeContractId =
-    "objc3c.ownership.system.helper.runtime.contract.v1";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeSourceModel =
-    "cleanup-resource-invalidation-and-retainable-family-runtime-proof-reuses-existing-private-arc-autorelease-and-snapshot-helpers";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeAbiModel =
-    "private-retain-release-autorelease-autoreleasepool-and-testing-snapshot-helper-cluster";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimePackagingModel =
-    "same-packaged-runtime-archive-no-public-runtime-header-widening-and-no-new-ownership-import-surface";
-inline constexpr const char *kObjc3OwnershipSystemHelperRuntimeFailClosedModel =
-    "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
-
-inline constexpr const char
-    *kObjc3OwnershipLiveCleanupRetainableIntegrationContractId =
-        "objc3c.ownership.live.cleanup.retainable.runtime.integration.v1";
-inline constexpr const char
-    *kObjc3OwnershipLiveCleanupRetainableIntegrationSourceModel =
-        "supported-ownership-cleanup-resource-and-retainable-family-sites-now-link-and-execute-through-emitted-cleanup-calls-and-the-private-helper-cluster";
-inline constexpr const char
-    *kObjc3OwnershipLiveCleanupRetainableIntegrationExecutionModel =
-        "linked-native-probes-execute-lifo-cleanup-resource-invalidation-and-retainable-family-helper-traffic-on-the-supported-slice";
-inline constexpr const char
-    *kObjc3OwnershipLiveCleanupRetainableIntegrationPackagingModel =
-        "linked-module-object-plus-existing-runtime-support-archive-no-new-runtime-package-surface";
-inline constexpr const char
-    *kObjc3OwnershipLiveCleanupRetainableIntegrationFailClosedModel =
-        "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
-
 std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
 std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
@@ -175,5 +150,3 @@ std::string Objc3OwnershipRuntimeHookEmissionSummary();
 std::string Objc3RuntimeMemoryManagementApiSummary();
 std::string Objc3RuntimeMemoryManagementImplementationSummary();
 std::string Objc3OwnershipRuntimeGateSummary();
-std::string Objc3OwnershipSystemHelperRuntimeContractSummary();
-std::string Objc3OwnershipLiveCleanupRetainableIntegrationSummary();

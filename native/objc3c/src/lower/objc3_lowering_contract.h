@@ -12,6 +12,7 @@
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
 #include "lower/contracts/ownership_runtime_lowering_contracts.h"
+#include "lower/contracts/ownership_system_extension_contracts.h"
 #include "lower/contracts/runtime_dispatch_lowering_contracts.h"
 #include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
@@ -485,28 +486,6 @@ inline constexpr const char *kObjc3CrossModuleConformanceLoweringLaneContract =
     "objc3c.cross.module.conformance.lowering.v1";
 inline constexpr const char *kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract =
     "objc3c.error.diagnostics.recovery.lowering.v1";
-// lowering-freeze anchor: Part 8 now freezes one explicit emitted
-// lowering contract that carries cleanup/resource ownership counts, borrowed
-// boundary counts, and retainable-family callable counts into manifests and IR
-// metadata without overclaiming live runtime cleanup or borrowed lifetime
-// execution. Runtime integration must widen this exact contract family rather than inventing
-// a second system-extension lowering boundary.
-// lowering-implementation anchor: live Part 8 lowering now consumes
-// this frozen contract directly for native helper emission and object proof.
-// Stack/local cleanup-resource capture lowering is implemented; actual escaping
-// move-capture promotion stays fail-closed until later runtime ownership
-// transfer work widens the same boundary explicitly.
-inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringContractId =
-    "objc3c.ownership.system.extension.lowering.contract.v1";
-inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_ownership_system_extension_lowering_contract";
-inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringModel =
-    "cleanup-resource-borrowed-and-retainable-family-sema-packets-now-feed-one-deterministic-ownership-lowering-contract-for-manifest-and-ir-carriage";
-inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringDeferredModel =
-    "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-system-extension-runtime-work";
-inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringLaneContract =
-    "objc3c.ownership.system.extension.lowering.contract.v1";
 // expansion/lowering freeze anchor: lane-C freezes one deterministic
 // Part 10 lowering packet over derived selector inventory, macro replay
 // visibility, and synthesized property metadata carriage. Runnable derive body
@@ -609,18 +588,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";
-// ABI/artifact completion anchor: keep the frozen Part 8 lowering
-// contract from C001 as the single lowering boundary, but publish one
-// dedicated ABI/replay packet above it for borrowed-return contracts and
-// retainable-family callable inventories so lane-D runtime work can consume a
-// stable artifact surface instead of re-deriving those call-boundary facts.
-inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionContractId =
-    "objc3c.ownership.borrowed.retainable.family.abi.completion.v1";
-inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_ownership_borrowed_pointer_and_retainable_family_abi_completion";
-inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionLaneContract =
-    "objc3c.ownership.borrowed.retainable.family.abi.completion.v1";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "objc3c.unsafe.pointer.extension.gating.lowering.v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
@@ -985,23 +952,6 @@ struct Objc3ErrorDiagnosticsRecoveryLoweringContract {
   bool deterministic = true;
 };
 
-struct Objc3OwnershipSystemExtensionLoweringContract {
-  std::size_t cleanup_hook_sites = 0;
-  std::size_t resource_local_sites = 0;
-  std::size_t cleanup_owned_local_sites = 0;
-  std::size_t resource_move_capture_sites = 0;
-  std::size_t borrowed_parameter_sites = 0;
-  std::size_t borrowed_return_callable_sites = 0;
-  std::size_t borrowed_escape_candidate_sites = 0;
-  std::size_t explicit_capture_item_sites = 0;
-  std::size_t retainable_family_callable_sites = 0;
-  std::size_t retainable_family_operation_callable_sites = 0;
-  std::size_t retainable_family_alias_callable_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 struct Objc3MetaprogrammingExpansionLoweringContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t derived_selector_artifact_sites = 0;
@@ -1250,10 +1200,6 @@ bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
     const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
 std::string Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(
     const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
-bool IsValidObjc3OwnershipSystemExtensionLoweringContract(
-    const Objc3OwnershipSystemExtensionLoweringContract &contract);
-std::string Objc3OwnershipSystemExtensionLoweringReplayKey(
-    const Objc3OwnershipSystemExtensionLoweringContract &contract);
 bool IsValidObjc3MetaprogrammingExpansionLoweringContract(
     const Objc3MetaprogrammingExpansionLoweringContract &contract);
 std::string Objc3MetaprogrammingExpansionLoweringReplayKey(
