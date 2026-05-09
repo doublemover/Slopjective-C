@@ -4,40 +4,38 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-from typing import Any
+
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import python_script_command, run_completed
-
-ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_MANIFEST = ROOT / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
-PACKAGED_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "platform_hardening" / "packaged_smoke_integration_contract.json"
-BUILD_PACKAGE_VALIDATION_PY = ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"
-TOOLCHAIN_RANGE_REPLAY_PY = ROOT / "scripts" / "check_platform_hardening_toolchain_range_replay.py"
-INSTALL_MATRIX_INTEGRATION_PY = ROOT / "scripts" / "check_platform_hardening_install_matrix_integration.py"
-SUPPORT_MATRIX_PATH = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
-BUILD_PACKAGE_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "build-package-validation-summary.json"
-TOOLCHAIN_RANGE_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "toolchain-range-replay-summary.json"
-INSTALL_MATRIX_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "install-matrix-integration-summary.json"
-PACKAGE_CHANNELS_SUMMARY = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
-RELEASE_OPERATIONS_SUMMARY = ROOT / "tmp" / "reports" / "release-operations" / "publication-summary.json"
-UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
-COMPATIBILITY_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-compatibility-report.json"
-CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
-SUMMARY_OUT = ROOT / "tmp" / "reports" / "platform-hardening" / "integration-summary.json"
+from platform_hardening_contracts import (
+    BUILD_PACKAGE_VALIDATION_SCRIPT,
+    BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+    CHANNEL_CATALOG_PATH,
+    COMPATIBILITY_REPORT_PATH,
+    INSTALL_MATRIX_INTEGRATION_SCRIPT,
+    INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH,
+    PACKAGE_CHANNELS_SUMMARY_PATH,
+    PACKAGE_MANIFEST_PATH,
+    PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH,
+    PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH,
+    PLATFORM_HARDENING_SUMMARY_BUILDERS,
+    PLATFORM_HARDENING_SUMMARY_PATHS,
+    RELEASE_PUBLICATION_SUMMARY_PATH,
+    ROOT,
+    SUPPORT_MATRIX_ARTIFACT_PATH,
+    TOOLCHAIN_RANGE_REPLAY_SCRIPT,
+    TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+    UPDATE_MANIFEST_PATH,
+    summary_passes,
+)
 
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
     completed = run_completed(command, cwd=ROOT, capture_output=False)
     return {"name": name, "command": command, "exit_code": completed.returncode}
-
-
-def summary_passes(payload: dict[str, Any]) -> bool:
-    return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
-
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:
@@ -47,8 +45,8 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 def main() -> int:
     if not (ROOT / "native" / "objc3c" / "src" / "main.cpp").is_file():
-        contract = load_json(PACKAGED_CONTRACT)
-        manifest = load_json(PACKAGE_MANIFEST)
+        contract = load_json(PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH)
+        manifest = load_json(PACKAGE_MANIFEST_PATH)
         failures: list[str] = []
         for field in contract["manifest_fields"]:
             expect(manifest.get(field) not in (None, "", []), f"package manifest missing {field}", failures)
@@ -67,12 +65,12 @@ def main() -> int:
             "failures": failures,
             "mode": "packaged-bundle-smoke",
             "reports": {
-                "package_manifest": repo_rel(PACKAGE_MANIFEST),
+                "package_manifest": repo_rel(PACKAGE_MANIFEST_PATH),
             },
         }
-        SUMMARY_OUT.parent.mkdir(parents=True, exist_ok=True)
-        write_json_file(SUMMARY_OUT, payload)
-        print(f"summary_path: {repo_rel(SUMMARY_OUT)}")
+        PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        write_json_file(PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH, payload)
+        print(f"summary_path: {repo_rel(PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH)}")
         if failures:
             print("platform-hardening-integration: FAIL", file=sys.stderr)
             for failure in failures:
@@ -83,15 +81,19 @@ def main() -> int:
 
     steps = [
         run_step("build-platform-support-matrix", public_workflow_command("build-platform-support-matrix")),
-        run_step("check-platform-hardening-build-package-validation", python_script_command(BUILD_PACKAGE_VALIDATION_PY)),
-        run_step("check-platform-hardening-toolchain-range-replay", python_script_command(TOOLCHAIN_RANGE_REPLAY_PY)),
-        run_step("check-platform-hardening-install-matrix-integration", python_script_command(INSTALL_MATRIX_INTEGRATION_PY)),
+        *(
+            run_step(f"summary-builder:{repo_rel(builder)}", python_script_command(builder))
+            for builder in PLATFORM_HARDENING_SUMMARY_BUILDERS
+        ),
+        run_step("check-platform-hardening-build-package-validation", python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT)),
+        run_step("check-platform-hardening-toolchain-range-replay", python_script_command(TOOLCHAIN_RANGE_REPLAY_SCRIPT)),
+        run_step("check-platform-hardening-install-matrix-integration", python_script_command(INSTALL_MATRIX_INTEGRATION_SCRIPT)),
     ]
     failures: list[str] = []
     step_summary_paths = {
-        "check-platform-hardening-build-package-validation": BUILD_PACKAGE_SUMMARY,
-        "check-platform-hardening-toolchain-range-replay": TOOLCHAIN_RANGE_SUMMARY,
-        "check-platform-hardening-install-matrix-integration": INSTALL_MATRIX_SUMMARY,
+        "check-platform-hardening-build-package-validation": BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+        "check-platform-hardening-toolchain-range-replay": TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+        "check-platform-hardening-install-matrix-integration": INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH,
     }
     for step in steps:
         summary_path = step_summary_paths.get(str(step["name"]))
@@ -110,30 +112,32 @@ def main() -> int:
         expect(step["exit_code"] == 0, f"{step['name']} failed", failures)
 
     required_paths = (
-        SUPPORT_MATRIX_PATH,
-        BUILD_PACKAGE_SUMMARY,
-        TOOLCHAIN_RANGE_SUMMARY,
-        INSTALL_MATRIX_SUMMARY,
-        PACKAGE_CHANNELS_SUMMARY,
-        RELEASE_OPERATIONS_SUMMARY,
-        UPDATE_MANIFEST,
-        COMPATIBILITY_REPORT,
-        CHANNEL_CATALOG,
+        SUPPORT_MATRIX_ARTIFACT_PATH,
+        *PLATFORM_HARDENING_SUMMARY_PATHS,
+        BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+        TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+        INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH,
+        PACKAGE_CHANNELS_SUMMARY_PATH,
+        RELEASE_PUBLICATION_SUMMARY_PATH,
+        UPDATE_MANIFEST_PATH,
+        COMPATIBILITY_REPORT_PATH,
+        CHANNEL_CATALOG_PATH,
     )
     for path in required_paths:
         expect(path.is_file(), f"missing expected report: {repo_rel(path)}", failures)
 
-    support_matrix = load_json(SUPPORT_MATRIX_PATH) if SUPPORT_MATRIX_PATH.is_file() else {}
-    build_package_summary = load_json(BUILD_PACKAGE_SUMMARY) if BUILD_PACKAGE_SUMMARY.is_file() else {}
-    toolchain_range_summary = load_json(TOOLCHAIN_RANGE_SUMMARY) if TOOLCHAIN_RANGE_SUMMARY.is_file() else {}
-    install_matrix_summary = load_json(INSTALL_MATRIX_SUMMARY) if INSTALL_MATRIX_SUMMARY.is_file() else {}
-    package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY) if PACKAGE_CHANNELS_SUMMARY.is_file() else {}
-    update_manifest = load_json(UPDATE_MANIFEST) if UPDATE_MANIFEST.is_file() else {}
-    compatibility_report = load_json(COMPATIBILITY_REPORT) if COMPATIBILITY_REPORT.is_file() else {}
-    channel_catalog = load_json(CHANNEL_CATALOG) if CHANNEL_CATALOG.is_file() else {}
+    support_matrix = load_json(SUPPORT_MATRIX_ARTIFACT_PATH) if SUPPORT_MATRIX_ARTIFACT_PATH.is_file() else {}
+    build_package_summary = load_json(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH) if BUILD_PACKAGE_VALIDATION_SUMMARY_PATH.is_file() else {}
+    toolchain_range_summary = load_json(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH) if TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH.is_file() else {}
+    install_matrix_summary = load_json(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH) if INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH.is_file() else {}
+    package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY_PATH) if PACKAGE_CHANNELS_SUMMARY_PATH.is_file() else {}
+    update_manifest = load_json(UPDATE_MANIFEST_PATH) if UPDATE_MANIFEST_PATH.is_file() else {}
+    compatibility_report = load_json(COMPATIBILITY_REPORT_PATH) if COMPATIBILITY_REPORT_PATH.is_file() else {}
+    channel_catalog = load_json(CHANNEL_CATALOG_PATH) if CHANNEL_CATALOG_PATH.is_file() else {}
 
     publication_surface = support_matrix.get("publication_surface", {})
     expected_surface = {
+        "package_bridge": "objc3c",
         "inspect_support_matrix_command": "build-platform-support-matrix",
         "package_command": "package-runnable-toolchain",
         "package_channels_command": "build-package-channels",
@@ -150,16 +154,16 @@ def main() -> int:
     expect(summary_passes(build_package_summary), "build/package validation summary did not report PASS", failures)
     expect(summary_passes(toolchain_range_summary), "toolchain-range replay summary did not report PASS", failures)
     expect(summary_passes(install_matrix_summary), "install-matrix integration summary did not report PASS", failures)
-    expect(package_channels_summary.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "package-channels summary missing platform support matrix link", failures)
-    expect(update_manifest.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "update manifest missing platform support matrix link", failures)
+    expect(package_channels_summary.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "package-channels summary missing platform support matrix link", failures)
+    expect(update_manifest.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "update manifest missing platform support matrix link", failures)
     expect(update_manifest.get("default_platform_id") == support_matrix.get("default_platform_id"), "update manifest default_platform_id drifted", failures)
     expect(update_manifest.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "update manifest supported_platform_ids drifted", failures)
     expect(update_manifest.get("support_tiers") == support_matrix.get("tiers"), "update manifest support tiers drifted", failures)
-    expect(compatibility_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "compatibility report missing platform support matrix link", failures)
+    expect(compatibility_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "compatibility report missing platform support matrix link", failures)
     expect(compatibility_report.get("default_platform_id") == support_matrix.get("default_platform_id"), "compatibility report default platform drifted", failures)
     expect(compatibility_report.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "compatibility report supported platform ids drifted", failures)
     expect(compatibility_report.get("support_tiers") == support_matrix.get("tiers"), "compatibility report support tiers drifted", failures)
-    expect(channel_catalog.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "channel catalog missing platform support matrix link", failures)
+    expect(channel_catalog.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "channel catalog missing platform support matrix link", failures)
     expect(channel_catalog.get("default_platform_id") == support_matrix.get("default_platform_id"), "channel catalog default platform drifted", failures)
     expect(channel_catalog.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "channel catalog supported platform ids drifted", failures)
     expect(channel_catalog.get("support_tiers") == support_matrix.get("tiers"), "channel catalog support tiers drifted", failures)
@@ -170,19 +174,20 @@ def main() -> int:
         "failures": failures,
         "steps": steps,
         "reports": {
-            "support_matrix": repo_rel(SUPPORT_MATRIX_PATH),
-            "build_package_validation": repo_rel(BUILD_PACKAGE_SUMMARY),
-            "toolchain_range_replay": repo_rel(TOOLCHAIN_RANGE_SUMMARY),
-            "install_matrix_integration": repo_rel(INSTALL_MATRIX_SUMMARY),
-            "package_channels": repo_rel(PACKAGE_CHANNELS_SUMMARY),
-            "update_manifest": repo_rel(UPDATE_MANIFEST),
-            "compatibility_report": repo_rel(COMPATIBILITY_REPORT),
-            "channel_catalog": repo_rel(CHANNEL_CATALOG),
+            "support_matrix": repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
+            "summary_builders": [repo_rel(path) for path in PLATFORM_HARDENING_SUMMARY_PATHS],
+            "build_package_validation": repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
+            "toolchain_range_replay": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
+            "install_matrix_integration": repo_rel(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH),
+            "package_channels": repo_rel(PACKAGE_CHANNELS_SUMMARY_PATH),
+            "update_manifest": repo_rel(UPDATE_MANIFEST_PATH),
+            "compatibility_report": repo_rel(COMPATIBILITY_REPORT_PATH),
+            "channel_catalog": repo_rel(CHANNEL_CATALOG_PATH),
         },
     }
-    SUMMARY_OUT.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(SUMMARY_OUT, payload)
-    print(f"summary_path: {repo_rel(SUMMARY_OUT)}")
+    PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH, payload)
+    print(f"summary_path: {repo_rel(PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH)}")
     if failures:
         print("platform-hardening-integration: FAIL", file=sys.stderr)
         for failure in failures:

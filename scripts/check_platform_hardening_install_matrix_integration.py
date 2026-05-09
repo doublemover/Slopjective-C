@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
 import os
-from pathlib import Path
-from typing import Any
+
 from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
-
-ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json"
-SUMMARY_PATH = ROOT / "tmp/reports/platform-hardening/install-matrix-integration-summary.json"
-
-
-
-def read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
+from platform_hardening_contracts import (
+    BUILD_PACKAGE_VALIDATION_SCRIPT,
+    BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+    INSTALL_MATRIX_INTEGRATION_CONTRACT_PATH,
+    INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH,
+    PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+    ROOT,
+    SUPPORT_MATRIX_ARTIFACT_PATH,
+    TOOLCHAIN_RANGE_REPLAY_SCRIPT,
+    TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+    load_json_object,
+    require_paths_exist,
+    summary_passes,
+    write_json,
+)
 
 
 def run(command: list[str]) -> None:
@@ -28,14 +29,15 @@ def run(command: list[str]) -> None:
 
 
 def main() -> int:
-    contract = read_json(CONTRACT_PATH)
-    run(python_script_command(ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"))
-    run(python_script_command(ROOT / "scripts" / "check_platform_hardening_toolchain_range_replay.py"))
+    contract = load_json_object(INSTALL_MATRIX_INTEGRATION_CONTRACT_PATH)
+    run(python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT))
+    run(python_script_command(TOOLCHAIN_RANGE_REPLAY_SCRIPT))
+    require_paths_exist((ROOT / raw_path for raw_path in contract["required_inputs"]), description="install-matrix input")
 
-    matrix = read_json(ROOT / "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json")
-    build_package = read_json(ROOT / "tmp/reports/platform-hardening/build-package-validation-summary.json")
-    toolchain_replay = read_json(ROOT / "tmp/reports/platform-hardening/toolchain-range-replay-summary.json")
-    packaging_e2e = read_json(ROOT / "tmp/reports/package-channels/end-to-end-summary.json")
+    matrix = load_json_object(SUPPORT_MATRIX_ARTIFACT_PATH)
+    build_package = load_json_object(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH)
+    toolchain_replay = load_json_object(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH)
+    packaging_e2e = load_json_object(PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH)
 
     install_root = ROOT / packaging_e2e["install_root"].replace("/", os.sep)
     offline_install_root = ROOT / packaging_e2e["offline_install_root"].replace("/", os.sep)
@@ -43,8 +45,8 @@ def main() -> int:
 
     checks = {
         "matrix_platform_is_windows_x64": matrix["default_platform_id"] == "windows-x64",
-        "build_package_validation_passes": build_package["status"] == "PASS",
-        "toolchain_range_replay_passes": toolchain_replay["status"] == "PASS",
+        "build_package_validation_passes": summary_passes(build_package),
+        "toolchain_range_replay_passes": summary_passes(toolchain_replay),
         "primary_install_root_rolled_back": not (install_root / "objc3c").exists(),
         "offline_install_root_kept_native_executable": offline_native.is_file(),
     }
@@ -56,11 +58,11 @@ def main() -> int:
         "build_package_validation_summary": "tmp/reports/platform-hardening/build-package-validation-summary.json",
         "toolchain_range_replay_summary": "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",
         "packaging_end_to_end_summary": "tmp/reports/package-channels/end-to-end-summary.json",
+        "required_checks": contract["required_checks"],
         "checks": checks,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    write_json(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH, summary)
+    print(f"summary_path: {repo_rel(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH)}")
     print("objc3c-platform-install-matrix-integration: PASS")
     return 0 if summary["status"] == "PASS" else 1
 

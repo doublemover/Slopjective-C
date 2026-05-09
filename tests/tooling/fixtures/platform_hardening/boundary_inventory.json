@@ -23,10 +23,21 @@
     "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
     "tests/tooling/fixtures/packaging_channels/installer_policy.json",
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-    "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
+    "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json",
+    "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
+    "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
+    "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
   ],
   "package_bridge": "objc3c",
   "public_actions": [
+    "build-platform-support-matrix",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end",
     "package-runnable-toolchain",
     "build-package-channels",
     "validate-packaging-channels",
@@ -45,7 +56,19 @@
     "tmp/reports/release-operations/update-manifest-summary.json",
     "tmp/reports/release-operations/publication-summary.json",
     "tmp/reports/release-operations/integration-summary.json",
-    "tmp/reports/release-operations/end-to-end-summary.json"
+    "tmp/reports/release-operations/end-to-end-summary.json",
+    "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+    "tmp/reports/platform-hardening/platform-support-matrix-summary.json",
+    "tmp/reports/platform-hardening/boundary-inventory/boundary_inventory_summary.json",
+    "tmp/reports/platform-hardening/support-tier-policy/support_tier_policy_summary.json",
+    "tmp/reports/platform-hardening/unsupported-host-policy/unsupported_host_policy_summary.json",
+    "tmp/reports/platform-hardening/toolchain-archive-policy/toolchain_archive_policy_summary.json",
+    "tmp/reports/platform-hardening/artifact-contract/artifact_contract_summary.json",
+    "tmp/reports/platform-hardening/build-package-validation-summary.json",
+    "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",
+    "tmp/reports/platform-hardening/install-matrix-integration-summary.json",
+    "tmp/reports/platform-hardening/integration-summary.json",
+    "tmp/reports/platform-hardening/runnable-end-to-end-summary.json"
   ],
   "supported_tier_buckets": [
     "tier-1",

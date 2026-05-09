@@ -31,6 +31,7 @@
     "release_operations"
   ],
   "required_publication_surface_fields": [
+    "package_bridge",
     "inspect_support_matrix_command",
     "package_command",
     "package_channels_command",

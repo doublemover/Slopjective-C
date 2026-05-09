@@ -41,7 +41,7 @@
       "required_behavior": "fail-closed"
     }
   ],
-  "allowed_non_build_actions": [
+  "allowed_fail_closed_non_build_actions": [
     {
       "action_id": "capability-inspection-only",
       "allowed_actions": [
