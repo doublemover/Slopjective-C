@@ -47,6 +47,10 @@ pass:
 - `f0ba25851` adds public API ownership contract evidence for `#8141` and
   `#8145`.
 - `db4fe91cf` adds JSON schema support owner evidence for `#8148`.
+- `c64fe1597` adds frontend header ownership boundary evidence for `#8140`,
+  `#8141`, and `#8146`.
+- `f35a96292` adds the refreshed closeout payload index for `#8144` and
+  `#8150`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

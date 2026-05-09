@@ -209,6 +209,35 @@
         "native/objc3c/src/io/json/json_pointer.cpp",
         "native/objc3c/src/io/json/json_schema_type.cpp"
       ]
+    },
+    {
+      "ref": "c64fe1597",
+      "summary": "HC mark frontend header ownership boundaries",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "docs/compiler/public_c_api.md",
+        "docs/objc3c-native/src/library-api.md",
+        "native/objc3c/src/libobjc3c_frontend/objc3c_frontend_result_ownership.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result.h"
+      ]
+    },
+    {
+      "ref": "f35a96292",
+      "summary": "HC index refreshed closeout payloads",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
     }
   ],
   "global_policy": {

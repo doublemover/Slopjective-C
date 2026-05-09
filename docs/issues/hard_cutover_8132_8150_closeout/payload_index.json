@@ -87,13 +87,16 @@
       "issue": "#8140",
       "anchor": "#8140",
       "status_for_tracker": "evidence-ready",
-      "primary_refresh_commits": []
+      "primary_refresh_commits": [
+        "c64fe1597"
+      ]
     },
     {
       "issue": "#8141",
       "anchor": "#8141",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
+        "c64fe1597",
         "f0ba25851"
       ]
     },
@@ -117,7 +120,8 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "645e9c25f",
-        "239871c25"
+        "239871c25",
+        "f35a96292"
       ]
     },
     {
@@ -125,6 +129,7 @@
       "anchor": "#8145",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
+        "c64fe1597",
         "8dead58b3",
         "f0ba25851"
       ]
@@ -134,6 +139,7 @@
       "anchor": "#8146",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
+        "c64fe1597",
         "7e743549d"
       ]
     },
@@ -168,7 +174,8 @@
       "status_for_tracker": "local-evidence-ready-not-remotely-closed",
       "primary_refresh_commits": [
         "645e9c25f",
-        "239871c25"
+        "239871c25",
+        "f35a96292"
       ]
     }
   ]
