@@ -9,6 +9,7 @@ add_library(objc3c_parse STATIC
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
   objc3_parser_attributes.cpp
+  objc3_parser_borrowed_attribute_profiles.cpp
   objc3_parser_block_literal_source.cpp
   objc3_parser_core.cpp
   objc3_parser_cstyle_type_classifier.cpp
@@ -16,6 +17,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_cursor.cpp
   objc3_parser_declaration_surface.cpp
   objc3_parser_diagnostic_builder.cpp
+  objc3_parser_error_bridge_attribute_profiles.cpp
   objc3_parser_expression_nodes.cpp
   objc3_parser_expression_surface.cpp
   objc3_parser_profile_helpers.cpp
