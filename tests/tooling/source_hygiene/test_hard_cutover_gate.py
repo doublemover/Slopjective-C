@@ -392,11 +392,20 @@ def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
         tmp_path / "site/src/index.body.md",
         "The publicScripts metadata field is still displayed.\n",
     )
+    write(
+        tmp_path / "stdlib/workspace.json",
+        '{"publicScriptAliases": ["test:fast"]}\n',
+    )
 
-    report = build_report(root=tmp_path, scan_roots=("docs", "site"), excludes=())
+    report = build_report(
+        root=tmp_path,
+        scan_roots=("docs", "site", "stdlib"),
+        excludes=(),
+    )
 
     assert report["ok"] is False
     assert [finding["pattern_id"] for finding in report["active_findings"]] == [
+        "retired-public-script-alias-metadata",
         "retired-public-script-alias-metadata",
         "retired-public-script-alias-metadata",
     ]

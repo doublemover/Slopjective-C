@@ -57,7 +57,10 @@ WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
         "Retired public script alias metadata must not reappear on active hard-cutover surfaces.",
         r"(?<![A-Za-z0-9_])public_scripts(?![A-Za-z0-9_])"
         r"|(?<![A-Za-z0-9_])publicScripts(?![A-Za-z0-9_])"
-        r"|(?<![A-Za-z0-9_])public[-_\s]+scripts?(?:[-_\s]+alias(?:es)?)?(?![A-Za-z0-9_])",
+        r"|(?<![A-Za-z0-9_])public_script_aliases(?![A-Za-z0-9_])"
+        r"|(?<![A-Za-z0-9_])publicScriptAliases(?![A-Za-z0-9_])"
+        r"|(?<![A-Za-z0-9_])public[-_\s]+scripts?(?:[-_\s]+alias(?:es)?)?(?![A-Za-z0-9_])"
+        r"|(?<![A-Za-z0-9_])public[-_\s]+script[-_\s]+alternates?(?![A-Za-z0-9_])",
         residue_class="alias-residue",
     ),
     ForbiddenPattern(
