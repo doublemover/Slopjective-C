@@ -1,15 +1,13 @@
 #pragma once
 
+#include "runtime/selectors/keypath_descriptor.h"
+
 #include <cstdint>
 
 namespace objc3c::runtime {
 
-struct EmittedKeyPathDescriptor;
 struct RuntimeState;
 
-bool RuntimeKeyPathHandleIsValid(std::uint64_t stable_id);
-bool RuntimeKeyPathDescriptorIsMaterializable(const char *root_name,
-                                              const char *component_path);
 bool MaterializeKeyPathDescriptorUnlocked(
     RuntimeState &state,
     const EmittedKeyPathDescriptor &descriptor,
