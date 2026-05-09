@@ -3,13 +3,13 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-from scripts.objc3c_workflow.composite_step_nested import RUNNER_SCRIPT_PATH
+from scripts.objc3c_workflow.composite_step_nested import (
+    NPM_WORKFLOW_ACTION_OFFSET,
+    npm_bridge_action_offset,
+)
 from scripts.objc3c_workflow.composite_step_payload import composite_step_payload
 from scripts.objc3c_workflow.composite_step_runtime_reuse import (
     runtime_acceptance_reuse_step,
-)
-from scripts.objc3c_workflow.composite_steps import (
-    RUNNER_SCRIPT_PATH as PUBLIC_RUNNER_SCRIPT_PATH,
 )
 from scripts.objc3c_workflow.composite_steps import (
     runtime_acceptance_reuse_step as public_runtime_acceptance_reuse_step,
@@ -37,7 +37,10 @@ def test_composite_steps_is_public_execution_facade() -> None:
 
 
 def test_composite_steps_preserves_nested_and_reuse_public_imports() -> None:
-    assert PUBLIC_RUNNER_SCRIPT_PATH == RUNNER_SCRIPT_PATH
+    assert npm_bridge_action_offset(["npm", "run", "objc3c", "--", "lint"]) == (
+        NPM_WORKFLOW_ACTION_OFFSET
+    )
+    assert npm_bridge_action_offset(["python", "scripts/objc3c_workflow/runner.py", "lint"]) is None
     assert public_runtime_acceptance_reuse_step is runtime_acceptance_reuse_step
 
 

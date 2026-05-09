@@ -220,7 +220,6 @@ $requiredRelativeFiles = @(
   "scripts/objc3c_native_compile.ps1",
   "scripts/objc3c_workflow/__init__.py",
   "scripts/objc3c_workflow/__main__.py",
-  "scripts/objc3c_workflow/runner.py",
   "scripts/materialize_objc3c_project_template.py",
   "scripts/materialize_objc3c_canonical_application_workspace.py",
   "scripts/check_application_architecture_template_harness.py",

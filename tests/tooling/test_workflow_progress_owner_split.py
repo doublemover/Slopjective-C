@@ -6,6 +6,6 @@ from scripts.objc3c_workflow.progress_format import format_command as owned_form
 
 def test_progress_facade_exports_owned_command_formatter() -> None:
     assert format_command is owned_format_command
-    assert format_command(["python", "-m", "scripts.objc3c_workflow", "lint"]) == (
-        "python -m scripts.objc3c_workflow lint"
+    assert format_command(["npm", "run", "objc3c", "--", "lint"]) == (
+        "npm run objc3c -- lint"
     )

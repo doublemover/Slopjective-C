@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-
-from .environment import WORKFLOW_MODULE
+from .public_bridge_constants import WORKFLOW_BRIDGE_SCRIPT
 
 
 def workflow_command(action: str, *args: str) -> list[str]:
-    return [sys.executable, "-m", WORKFLOW_MODULE, action, *args]
+    return ["npm", "run", WORKFLOW_BRIDGE_SCRIPT, "--", action, *args]
 
 
 __all__ = ["workflow_command"]

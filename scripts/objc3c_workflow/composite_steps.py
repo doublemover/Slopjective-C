@@ -5,11 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from time import perf_counter
 
-from .composite_step_nested import (
-    RUNNER_SCRIPT_PATH,
-    execute_nested_action,
-    in_process_nested_step,
-)
+from .composite_step_nested import execute_nested_action, in_process_nested_step
 from .composite_step_payload import composite_step_payload, step_duration
 from .composite_step_runtime_reuse import runtime_acceptance_reuse_step
 from .composite_step_subprocess import subprocess_step
@@ -28,7 +24,6 @@ def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]
 
 
 __all__ = [
-    "RUNNER_SCRIPT_PATH",
     "composite_step_payload",
     "execute_nested_action",
     "in_process_nested_step",

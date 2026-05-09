@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import shutil
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_completed
 from platform_hardening_contracts import (
     PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH,
@@ -112,10 +112,8 @@ def main() -> int:
         expect(action in public_actions, f"package manifest missing platform-hardening public action: {action}")
     expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}")
 
-    packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
-
     matrix_exit_code = run_step(
-        [sys.executable, str(packaged_runner), "build-platform-support-matrix"],
+        public_workflow_command("build-platform-support-matrix"),
         cwd=package_root,
     )
     if matrix_exit_code != 0:
@@ -129,7 +127,7 @@ def main() -> int:
     expect(support_matrix.get("default_platform_id") == "windows-x64", "packaged support matrix default platform drifted")
 
     integration_exit_code = run_step(
-        [sys.executable, str(packaged_runner), "validate-platform-hardening"],
+        public_workflow_command("validate-platform-hardening"),
         cwd=package_root,
     )
     if integration_exit_code != 0:

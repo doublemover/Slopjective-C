@@ -12,6 +12,15 @@ from objc3c_tooling.paths import ROOT
 WORKFLOW_MODULE = "scripts.objc3c_workflow"
 WORKFLOW_DISPATCH_MODULE = "scripts.objc3c_workflow.action_dispatch"
 DEFAULT_DISPATCH_PATH = ROOT / "scripts" / "objc3c_workflow" / "action_dispatch.py"
+WORKFLOW_PACKAGE_MANAGER = "npm"
+WORKFLOW_PACKAGE_SCRIPT = "objc3c"
+WORKFLOW_NPM_ARGUMENT_SEPARATOR = "--"
+WORKFLOW_PUBLIC_COMMAND_PREFIX = (
+    WORKFLOW_PACKAGE_MANAGER,
+    "run",
+    WORKFLOW_PACKAGE_SCRIPT,
+    WORKFLOW_NPM_ARGUMENT_SEPARATOR,
+)
 SCRIPT_ROOT = ROOT / "scripts"
 for import_root in (ROOT, SCRIPT_ROOT):
     if str(import_root) not in sys.path:
@@ -19,7 +28,7 @@ for import_root in (ROOT, SCRIPT_ROOT):
 
 
 def public_workflow_command(*args: str) -> list[str]:
-    return [sys.executable, "-m", WORKFLOW_MODULE, *args]
+    return [*WORKFLOW_PUBLIC_COMMAND_PREFIX, *args]
 
 
 def public_workflow_command_tuple(*args: str) -> tuple[str, ...]:

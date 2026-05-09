@@ -99,7 +99,6 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
     )
 
     monkeypatch.setattr(checker, "ROOT", root)
-    monkeypatch.setattr(checker, "PUBLIC_RUNNER", root / "scripts" / "objc3c_workflow" / "runner.py")
     monkeypatch.setattr(checker, "CONTRACT_PATH", contract_path)
     monkeypatch.setattr(
         checker,
@@ -108,6 +107,7 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
     )
 
     def fake_run_step(name: str, command: list[str]) -> dict[str, object]:
+        assert command[:4] == ["npm", "run", "objc3c", "--"]
         return {
             "name": name,
             "command": command,

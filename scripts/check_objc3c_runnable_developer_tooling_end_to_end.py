@@ -6,12 +6,12 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from objc3c_tooling.public_runner import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
 from objc3c_tooling.public_workflow_output import extract_report_paths
@@ -116,13 +116,12 @@ def main() -> int:
         expect(action in public_actions, f"package manifest missing developer tooling public action: {action}")
     expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}")
 
-    packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
     hello_source = package_path(package_root, str(manifest["developer_tooling_example_source"]))
     format_source = package_path(package_root, str(manifest["developer_tooling_formatter_source"]))
     expected_formatted_source = package_path(package_root, str(manifest["developer_tooling_expected_formatted_source"]))
 
     inspect_result = run_capture(
-        [sys.executable, str(packaged_runner), "inspect-editor-tooling", str(hello_source)],
+        public_workflow_command("inspect-editor-tooling", str(hello_source)),
         cwd=package_root,
     )
     if inspect_result.returncode != 0:
@@ -147,7 +146,7 @@ def main() -> int:
     expect(int(debug_payload.get("declaration_breakpoint_anchor_count", 0)) >= 3, "packaged editor surface did not publish enough breakpoint anchors")
 
     format_result = run_capture(
-        [sys.executable, str(packaged_runner), "format-objc3c", str(format_source)],
+        public_workflow_command("format-objc3c", str(format_source)),
         cwd=package_root,
     )
     if format_result.returncode != 0:
@@ -164,7 +163,7 @@ def main() -> int:
     )
 
     workspace_result = run_capture(
-        [sys.executable, str(packaged_runner), "materialize-playground-workspace", str(hello_source)],
+        public_workflow_command("materialize-playground-workspace", str(hello_source)),
         cwd=package_root,
     )
     if workspace_result.returncode != 0:
@@ -186,7 +185,7 @@ def main() -> int:
         expect(action in workspace.get("public_actions", []), f"packaged workspace missing public action {action}")
 
     integrated_result = run_capture(
-        [sys.executable, str(packaged_runner), "validate-developer-tooling"],
+        public_workflow_command("validate-developer-tooling"),
         cwd=package_root,
     )
     if integrated_result.returncode != 0:
