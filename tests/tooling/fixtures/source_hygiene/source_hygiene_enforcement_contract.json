@@ -5,7 +5,7 @@
   "classification_contract": "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
   "genuine_provenance_contract": "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
   "future_archive_boundary_contract": "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json",
-  "future_live_audit_entrypoint": "python scripts/check_source_hygiene_authenticity.py",
+  "future_live_audit_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
   "generated_report_root": "tmp/reports/source_hygiene",
   "enforcement_checks": [
     {

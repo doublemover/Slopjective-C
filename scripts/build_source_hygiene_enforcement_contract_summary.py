@@ -31,7 +31,7 @@ def main() -> int:
         "policy_link_matches": contract["policy_contract"] == "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
         "classification_link_matches": contract["classification_contract"] == "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
         "genuine_contract_link_matches": contract["genuine_provenance_contract"] == "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
-        "future_live_audit_entrypoint_declared": contract["future_live_audit_entrypoint"] == "python scripts/check_source_hygiene_authenticity.py",
+        "future_live_audit_entrypoint_declared": contract["future_live_audit_entrypoint"] == "npm run objc3c -- check-source-hygiene-authenticity",
         "generated_report_root_under_tmp_reports": contract["generated_report_root"].startswith("tmp/reports/"),
         "check_ids_unique": len(check_ids) == len(set(check_ids)),
         "contract_has_expected_check_count": len(contract["enforcement_checks"]) == 4,

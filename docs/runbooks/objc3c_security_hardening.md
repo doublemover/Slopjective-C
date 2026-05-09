@@ -35,7 +35,7 @@ Replayable generators and validators:
 - `python scripts/check_objc3c_security_hardening_integration.py`
 - `python scripts/check_objc3c_security_hardening_integration.py`
 - `python scripts/check_release_evidence.py`
-- `python scripts/check_source_hygiene_authenticity.py`
+- `npm run objc3c -- check-source-hygiene-authenticity`
 - `python scripts/check_objc3c_distribution_credibility_integration.py`
 - `python scripts/check_objc3c_distribution_credibility_end_to_end.py`
 - `python scripts/check_objc3c_release_operations_integration.py`
