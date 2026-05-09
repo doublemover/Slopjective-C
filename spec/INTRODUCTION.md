@@ -84,6 +84,17 @@ executable evidence. Spec sections may describe future language shape, but
 public support claims only count when the capability matrix marks the surface
 implemented.
 
+The current command source of truth is the single `package.json` bridge:
+`npm run objc3c -- <action>`. Actions are owned by
+`scripts/objc3c_workflow/registry.py`; local spec prose must not advertise
+retired package-script aliases or direct helper commands as public workflow
+surface.
+
+The current implementation evidence boundary is split across native compiler
+modules, runtime C API headers, and checked-in JSON/schema owners. Compiler
+module decomposition, public C runtime result types, and shared schema helpers
+are evidence surfaces until a capability row marks a behavior implemented.
+
 The goal is to converge by:
 
 - marking implementable subsets with evidence as they become real,

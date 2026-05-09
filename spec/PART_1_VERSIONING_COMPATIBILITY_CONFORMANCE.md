@@ -21,6 +21,12 @@ Public support truth lives in:
 Any local claim in this part is subordinate to those capability and evidence
 surfaces.
 
+Public command truth lives in `package.json` and
+`scripts/objc3c_workflow/registry.py`. The supported command shape is
+`npm run objc3c -- <action>`; direct helper commands and retired package-script
+aliases are implementation details unless a public workflow document generated
+from the registry lists them through the npm bridge.
+
 ## 1.2 Language mode selection {#part-1-2}
 
 ### 1.2.1 Canonical compiler surface {#part-1-2-1}
@@ -29,6 +35,11 @@ A conforming implementation exposes Objective-C 3.0 as one canonical source
 language. The current public command surface must not expose a second language
 profile, source mode, or command switch that accepts retired spelling families
 as supported input.
+
+In this repository, the public command bridge is intentionally single-script:
+`package.json` exposes `objc3c`, and `npm run objc3c -- <action>` dispatches to
+`python -m scripts.objc3c_workflow`. Action names, validation tiers, and
+guarantee owners are registry-owned, not duplicated in per-doc command lists.
 
 A command-line mechanism equivalent to the following may select Objective-C 3.0
 for toolchains that also host other languages:
@@ -170,6 +181,9 @@ Public reports use the capability states defined in
 - `internal`
 
 These states are the support vocabulary for Objective-C 3.0 public docs.
+Internal rows may describe compiler decomposition, workflow bridges,
+runtime-public-header ownership, or schema helpers. They do not claim public
+language behavior without an implemented behavior row and evidence map entry.
 
 ### 1.4.4 `__has_feature` integration {#part-1-4-4}
 
@@ -201,6 +215,14 @@ Objective-C 3.0 v1 uses these public support states:
 A conforming implementation claims support through a machine-readable matrix and
 human-readable evidence map. Local docs must not widen support beyond those
 files.
+
+Evidence map rows may cite source owners such as
+`native/objc3c/src/runtime/public/objc3_runtime_api.h`,
+`native/objc3c/src/runtime/public/objc3_runtime_result.h`,
+`native/objc3c/src/io/json/`, or
+`native/objc3c/src/artifacts/json/`. Those owner rows keep command, runtime, and
+schema truth explicit without converting implementation surfaces into new
+language features.
 
 ### 1.5.3 Diagnostic escalation rule {#part-1-5-3}
 

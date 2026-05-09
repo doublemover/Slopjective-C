@@ -1,21 +1,37 @@
 # Objective-C 3.0 Capability Matrix
 
-This is the public support matrix. Product docs should link here for support
-truth instead of carrying local planning or archived cross-reference claims.
-Rows list public replay commands only when they go through `npm run objc3c --`.
-Helper tests can be evidence without becoming direct workflow commands.
+This is the public support matrix. Product docs link here for support truth
+instead of carrying local planning or archived cross-reference claims. Rows list
+public replay commands only when they go through `npm run objc3c -- <action>`.
+Helper tests and source files can be evidence without becoming public workflow
+commands.
 
-| Capability                         | State       | Support claim                                      | Evidence                                                                                                       |
-| ---------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Canonical parser syntax            | implemented | `objc3c.behavior.parser.canonical-syntax`          | `tests/native/parser/positive/canonical_module_main.objc3`; `tests/tooling/test_objc3c_parser_extraction.py`   |
-| Typed semantic flow                | implemented | `objc3c.behavior.sema.typed-flow`                  | `tests/native/sema/types/typed_i32_bool_flow.objc3`                                                            |
-| Canonical semantic rejection       | rejected    |                                                    | `tests/conformance/diagnostics/manifest.json`; `tests/tooling/test_objc3c_parser_contract_sema_integration.py` |
-| Strict runtime dispatch lowering   | implemented | `objc3c.behavior.lowering.strict-runtime-dispatch` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`                               |
-| IR module emission                 | implemented | `objc3c.behavior.ir.module-emission`               | `tests/native/ir/module/basic_i32_return_main.objc3`                                                           |
-| Runtime dispatch strict diagnostic | implemented | `objc3c.behavior.runtime.strict-dispatch-error`    | `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`                                            |
-| Runnable smoke path                | implemented | `objc3c.behavior.e2e.runnable-smoke`               | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                                           |
-| Async and actor runtime closure    | reserved    |                                                    | `docs/spec/concurrency_reserved.md`; `tests/conformance/diagnostics/manifest.json`                             |
-| JSON and schema registry helpers   | internal    |                                                    | `docs/support/capability_matrix.schema.json`; `tests/tooling/test_objc3c_shared_json_schema.py`                |
+Command and evidence truth is hard-cut to the current surfaces:
+
+- `package.json` exposes one public bridge: `objc3c`.
+- `npm run objc3c -- <action>` dispatches into
+  `python -m scripts.objc3c_workflow`.
+- `scripts/objc3c_workflow/registry.py` owns action names and guarantee
+  owners. There is no `public_scripts` alias table.
+- Runtime dispatch claims are owned by the strict runtime C API and result
+  headers under `native/objc3c/src/runtime/public/`.
+- Shared JSON/schema claims are owned by checked-in schema files and the native
+  `objc3c_json` / artifact JSON modules, not by prose-only summaries.
+
+| Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
+| ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Canonical parser syntax                     | implemented | `objc3c.behavior.parser.canonical-syntax`          | `tests/native/parser/positive/canonical_module_main.objc3`; `tests/tooling/test_objc3c_parser_extraction.py`   |
+| Typed semantic flow                         | implemented | `objc3c.behavior.sema.typed-flow`                  | `tests/native/sema/types/typed_i32_bool_flow.objc3`                                                            |
+| Canonical semantic rejection                | rejected    |                                                    | `tests/conformance/diagnostics/manifest.json`; `tests/tooling/test_objc3c_parser_contract_sema_integration.py` |
+| Strict runtime dispatch lowering            | implemented | `objc3c.behavior.lowering.strict-runtime-dispatch` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`                               |
+| IR module emission                          | implemented | `objc3c.behavior.ir.module-emission`               | `tests/native/ir/module/basic_i32_return_main.objc3`                                                           |
+| Runtime dispatch strict diagnostic          | implemented | `objc3c.behavior.runtime.strict-dispatch-error`    | `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`; `native/objc3c/src/runtime/errors/`       |
+| Runnable smoke path                         | implemented | `objc3c.behavior.e2e.runnable-smoke`               | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                                           |
+| Async and actor runtime closure             | reserved    |                                                    | `docs/spec/concurrency_reserved.md`; `tests/conformance/diagnostics/manifest.json`                             |
+| Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; `native/objc3c/src/{parse,sema,lower,ir,pipeline,artifacts,runtime}/`      |
+| Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h` |
+| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/registry.py`; `docs/runbooks/objc3c_public_command_surface.md`       |
+| Shared JSON and schema registry helpers     | internal    |                                                    | `docs/support/capability_matrix.schema.json`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
 
 State meanings:
 
@@ -27,4 +43,8 @@ State meanings:
 Command rule:
 
 - Capability docs may advertise `npm run objc3c -- <action>` commands only.
-- Implementation-helper invocations, retired aliases, and success-without-evidence dispatch paths are not support claims.
+- Implementation-helper invocations, retired package-script aliases, and
+  success-without-evidence dispatch paths are not support claims.
+- Direct `python`, `pwsh`, CMake, or native helper invocations may appear as
+  evidence owners, but public docs must not present them as user-facing command
+  surface.

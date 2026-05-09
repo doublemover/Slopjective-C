@@ -99,7 +99,7 @@
       "id": "runtime.dispatch.strict-error",
       "title": "Runtime dispatch strict diagnostic",
       "state": "implemented",
-      "summary": "Runtime dispatch unresolved-symbol behavior is exercised as a strict executable diagnostic.",
+      "summary": "Runtime dispatch unresolved-symbol behavior is exercised as a strict executable diagnostic. Runtime-owned diagnostic codes and messages come from the strict result surface.",
       "support_claims": [
         "objc3c.behavior.runtime.strict-dispatch-error"
       ],
@@ -108,6 +108,10 @@
           "kind": "test",
           "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
           "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/errors/runtime_error.cpp"
         }
       ]
     },
@@ -144,14 +148,82 @@
       ]
     },
     {
+      "id": "compiler.architecture.module-decomposition",
+      "title": "Native compiler module decomposition",
+      "state": "internal",
+      "summary": "The native compiler target graph is decomposed into explicit lexer, parser, semantic, lowering, IR, IO/JSON, pipeline, artifact, runtime, frontend, and driver modules. This is implementation ownership evidence, not a public language behavior claim.",
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/runtime_metadata_layout_policy.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.public-c-api.strict-result",
+      "title": "Public C runtime dispatch result surface",
+      "state": "internal",
+      "summary": "The public C runtime API owns image registration, selector lookup, checked i32 dispatch results, plain i32 dispatch abort semantics, and testing snapshots through the strict runtime public headers.",
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/image_descriptor.cpp"
+        }
+      ]
+    },
+    {
+      "id": "workflow.command.npm-objc3c-bridge",
+      "title": "npm objc3c workflow bridge",
+      "state": "internal",
+      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names and guarantee owners live in the registry; retired package-script alias surfaces are not support claims.",
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "package.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/registry.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_public_command_surface.md"
+        }
+      ]
+    },
+    {
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
-      "summary": "The capability matrix schema, evidence map, and shared JSON helpers own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
+      "summary": "The capability matrix schema, evidence map, native objc3c_json module, and artifact schema registry own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
       "evidence": [
         {
           "kind": "schema",
           "path": "docs/support/capability_matrix.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
         },
         {
           "kind": "test",
