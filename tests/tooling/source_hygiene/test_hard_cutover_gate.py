@@ -8,6 +8,10 @@ from scripts.source_hygiene.gate_contracts import (
     REQUIRED_RESIDUE_CLASSES,
     RETIRED_ALLOWLIST_REPORT_FIELDS,
 )
+from scripts.source_hygiene.generated_reports import (
+    GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY,
+    GENERATED_TRUTH_BOUNDARY_CONTRACT_ID,
+)
 from scripts.source_hygiene.patterns_cutover import HARD_CUTOVER_RESIDUE_PATTERNS
 from scripts.source_hygiene.patterns_implementation_fallbacks import (
     IMPLEMENTATION_FALLBACK_PATTERNS,
@@ -491,6 +495,11 @@ def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> 
         owner_contract["generated_report_owner"]["owner_id"]
         == SOURCE_HYGIENE_GENERATED_REPORT_OWNER
     )
+    assert owner_contract["generated_report_owner"]["generated_boundary_policy"] == {
+        "boundary_contract": GENERATED_TRUTH_BOUNDARY_CONTRACT_ID,
+        "claim_policy": GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY,
+        "generated_output_is_claim_source": False,
+    }
     assert (
         owner_contract["blocker_metadata"]["blocker_owner"]
         == SOURCE_HYGIENE_BLOCKER_METADATA_OWNER
@@ -500,6 +509,16 @@ def test_hard_cutover_report_declares_source_owned_contracts(tmp_path: Path) -> 
     assert {
         boundary["owner_id"] for boundary in report["generated_truth_boundaries"]
     } == {SOURCE_HYGIENE_GENERATED_REPORT_OWNER}
+    assert {
+        boundary["contract_id"] for boundary in report["generated_truth_boundaries"]
+    } == {GENERATED_TRUTH_BOUNDARY_CONTRACT_ID}
+    assert {
+        boundary["generated_output_is_claim_source"]
+        for boundary in report["generated_truth_boundaries"]
+    } == {False}
+    assert {
+        boundary["claim_policy"] for boundary in report["generated_truth_boundaries"]
+    } == {GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY}
 
 
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:

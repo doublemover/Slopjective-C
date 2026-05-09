@@ -20,6 +20,12 @@ SOURCE_HYGIENE_BLOCKER_METADATA = {
     "blocker_owner_surface": SOURCE_HYGIENE_BLOCKER_METADATA_OWNER_SURFACE,
 }
 
+SOURCE_HYGIENE_GENERATED_BOUNDARY_POLICY = {
+    "boundary_contract": "source-hygiene-generated-truth-boundary-v1",
+    "claim_policy": "source-inputs-and-generator-own-truth",
+    "generated_output_is_claim_source": False,
+}
+
 
 def owner_record(owner_id: str, owner_surface: str) -> dict[str, str]:
     return {
@@ -55,6 +61,7 @@ def generated_report_owner_summary(boundary_paths: Iterable[str]) -> dict[str, A
             SOURCE_HYGIENE_GENERATED_REPORT_OWNER_SURFACE,
         ),
         "generated_truth_outputs": list(boundary_paths),
+        "generated_boundary_policy": dict(SOURCE_HYGIENE_GENERATED_BOUNDARY_POLICY),
     }
 
 

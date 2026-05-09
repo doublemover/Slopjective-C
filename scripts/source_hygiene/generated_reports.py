@@ -9,6 +9,9 @@ from .owners import (
     SOURCE_HYGIENE_GENERATED_REPORT_OWNER_SURFACE,
 )
 
+GENERATED_TRUTH_BOUNDARY_CONTRACT_ID = "source-hygiene-generated-truth-boundary-v1"
+GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY = "source-inputs-and-generator-own-truth"
+
 
 @dataclass(frozen=True)
 class GeneratedTruthBoundary:
@@ -17,6 +20,11 @@ class GeneratedTruthBoundary:
     generator_path: str
     owner_id: str = SOURCE_HYGIENE_GENERATED_REPORT_OWNER
     owner_surface: str = SOURCE_HYGIENE_GENERATED_REPORT_OWNER_SURFACE
+    contract_id: str = GENERATED_TRUTH_BOUNDARY_CONTRACT_ID
+    claim_policy: str = GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY
+    generated_output_is_claim_source: bool = False
+    generator_required: bool = True
+    source_paths_required: bool = True
 
 
 GENERATED_TRUTH_BOUNDARIES: tuple[GeneratedTruthBoundary, ...] = (
@@ -106,6 +114,7 @@ def generated_truth_boundary_report(root: Path) -> dict[str, list[dict[str, obje
             "output_tracked": output_tracked,
             "missing_source_paths": missing_sources,
             "generator_exists": generator_exists,
+            "claim_source_path_count": len(boundary.source_paths),
         }
         boundaries.append(boundary_payload)
         if not output_exists:
@@ -135,3 +144,13 @@ def generated_truth_boundary_report(root: Path) -> dict[str, list[dict[str, obje
             )
 
     return {"boundaries": boundaries, "findings": findings}
+
+
+__all__ = [
+    "GENERATED_TRUTH_BOUNDARIES",
+    "GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY",
+    "GENERATED_TRUTH_BOUNDARY_CONTRACT_ID",
+    "GeneratedTruthBoundary",
+    "generated_truth_boundary_report",
+    "tracked_generated_reports",
+]
