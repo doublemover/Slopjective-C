@@ -22,6 +22,30 @@ from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_public_workflow_report_paths as extract_report_paths
 
 from scripts.objc3c_workflow.action_spec import ActionHandler, ActionSpec
+from scripts.objc3c_workflow.actions.application_surfaces import (
+    CONFORMANCE_CORPUS_INTEGRATION_PY,
+    STDLIB_ADVANCED_INTEGRATION_PY,
+    STDLIB_FOUNDATION_INTEGRATION_PY,
+    STDLIB_PROGRAM_INTEGRATION_PY,
+    action_check_showcase_surface,
+    action_check_stdlib_surface,
+    action_materialize_canonical_application_workspace,
+    action_materialize_stdlib_workspace,
+    action_validate_application_architecture,
+    action_validate_conformance_corpus,
+    action_validate_getting_started,
+    action_validate_runnable_application_architecture,
+    action_validate_runnable_conformance_corpus,
+    action_validate_runnable_showcase,
+    action_validate_runnable_stdlib_advanced,
+    action_validate_runnable_stdlib_foundation,
+    action_validate_runnable_stdlib_program,
+    action_validate_showcase,
+    action_validate_showcase_runtime,
+    action_validate_stdlib_advanced,
+    action_validate_stdlib_foundation,
+    action_validate_stdlib_program,
+)
 from scripts.objc3c_workflow.actions.developer_tooling import (
     BONUS_EXPERIENCE_INTEGRATION_PY,
     DEVELOPER_TOOLING_INTEGRATION_PY,
@@ -202,24 +226,6 @@ RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
 MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
 NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
-SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
-SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
-SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
-RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
-GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
-CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
-RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
-STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
-MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
-STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
-STDLIB_ADVANCED_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_advanced_integration.py"
-STDLIB_PROGRAM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_program_integration.py"
-RUNNABLE_STDLIB_FOUNDATION_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_foundation_end_to_end.py"
-RUNNABLE_STDLIB_ADVANCED_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_advanced_end_to_end.py"
-RUNNABLE_STDLIB_PROGRAM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_program_end_to_end.py"
-CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_canonical_application_workspace.py"
-APPLICATION_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_application_architecture_integration.py"
-RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_application_architecture_end_to_end.py"
 PACKAGE_LOCK_PY = ROOT / "scripts" / "build_objc3c_package_lock.py"
 PACKAGE_AUTHORING_WORKFLOW_PY = ROOT / "scripts" / "check_objc3c_package_authoring_workflow.py"
 PACKAGE_MIRROR_REPRODUCIBILITY_PY = ROOT / "scripts" / "check_objc3c_package_registry_mirror_reproducibility.py"
@@ -278,50 +284,6 @@ def action_check_repo_superclean_surface(_: list[str]) -> int:
     return run([sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)])
 
 
-def action_check_showcase_surface(rest: list[str]) -> int:
-    return run([sys.executable, str(SHOWCASE_SURFACE_PY), *rest])
-
-
-def action_check_stdlib_surface(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_SURFACE_PY)])
-
-
-def action_materialize_stdlib_workspace(rest: list[str]) -> int:
-    return run([sys.executable, str(MATERIALIZE_STDLIB_PY), *rest])
-
-
-def action_materialize_canonical_application_workspace(rest: list[str]) -> int:
-    return run([sys.executable, str(CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY), *rest])
-
-
-def action_validate_showcase_runtime(rest: list[str]) -> int:
-    return pwsh_file(SHOWCASE_RUNTIME_PS1, *rest)
-
-
-def action_validate_showcase(_: list[str]) -> int:
-    return run([sys.executable, str(SHOWCASE_INTEGRATION_PY)])
-
-
-def action_validate_stdlib_foundation(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)])
-
-
-def action_validate_stdlib_advanced(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)])
-
-
-def action_validate_stdlib_program(_: list[str]) -> int:
-    return run([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
-
-
-def action_validate_application_architecture(_: list[str]) -> int:
-    return run([sys.executable, str(APPLICATION_ARCHITECTURE_INTEGRATION_PY)])
-
-
-def action_validate_runnable_application_architecture(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY)])
-
-
 def action_build_package_lock(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGE_LOCK_PY)])
 
@@ -374,22 +336,6 @@ def action_check_planning_publication_drift(rest: list[str]) -> int:
     return run([sys.executable, str(PLANNING_PUBLICATION_AUDIT_PY), "--check", *rest])
 
 
-def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_ADVANCED_E2E_PY)])
-
-
-def action_validate_runnable_stdlib_program(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_PROGRAM_E2E_PY)])
-
-
-def action_validate_runnable_showcase(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_SHOWCASE_E2E_PY)])
-
-
-def action_validate_getting_started(_: list[str]) -> int:
-    return run([sys.executable, str(GETTING_STARTED_INTEGRATION_PY)])
-
-
 def action_validate_repo_superclean(_: list[str]) -> int:
     return run_composite_validation(
         "validate-repo-superclean",
@@ -399,18 +345,6 @@ def action_validate_repo_superclean(_: list[str]) -> int:
             ("source-hygiene", [sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)]),
         ],
     )
-
-
-def action_validate_conformance_corpus(_: list[str]) -> int:
-    return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
-
-
-def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
-
-
-def action_validate_runnable_stdlib_foundation(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_STDLIB_FOUNDATION_E2E_PY)])
 
 
 def action_lint_spec(_: list[str]) -> int:
