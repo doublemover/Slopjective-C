@@ -35,6 +35,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_statement_surface.cpp
   objc3_parser_token_metadata.cpp
   objc3_parser_unsafe_pointer_profiles.cpp
+  objc3_parser_unwind_cleanup_profiles.cpp
   objc3_parser_unary_expression_nodes.cpp
   objc3_type_feature_profiles.cpp
   objc3_type_generic_profiles.cpp

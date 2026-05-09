@@ -29,6 +29,7 @@
 #include "parse/objc3_parser_statement_surface.h"
 #include "parse/objc3_parser_token_metadata.h"
 #include "parse/objc3_parser_unsafe_pointer_profiles.h"
+#include "parse/objc3_parser_unwind_cleanup_profiles.h"
 #include "parse/objc3_type_feature_profiles.h"
 #include "support/objc3_method_family.h"
 
