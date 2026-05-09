@@ -4,11 +4,36 @@
 
 #include "ast/objc3_ast_declarations.h"
 #include "lower/contracts/optional_keypath_lowering_contracts.h"
+#include "lower/contracts/type_system_generic_lowering_contract_records.h"
 #include "runtime/metadata/runtime_metadata_model.h"
 #include "sema/objc3_sema_contract_core.h"
 #include "sema/objc3_sema_contract_type_handoff.h"
 
 namespace objc3::artifacts::frontend {
+
+[[nodiscard]] Objc3TypeSystemOptionalKeypathLoweringContract
+BuildTypeSystemOptionalKeypathLoweringContract(
+    const Objc3TypeSystemTypeSemanticModelSummary &summary);
+
+[[nodiscard]] Objc3LightweightGenericsConstraintLoweringContract
+BuildLightweightGenericsConstraintLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3NullabilityFlowWarningPrecisionLoweringContract
+BuildNullabilityFlowWarningPrecisionLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3ProtocolQualifiedObjectTypeLoweringContract
+BuildProtocolQualifiedObjectTypeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3VarianceBridgeCastLoweringContract
+BuildVarianceBridgeCastLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
+[[nodiscard]] Objc3GenericMetadataAbiLoweringContract
+BuildGenericMetadataAbiLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
 
 [[nodiscard]] std::string BuildTypeSystemGenericContractPreservationJson(
     const Objc3SemanticTypeMetadataHandoff &handoff,
