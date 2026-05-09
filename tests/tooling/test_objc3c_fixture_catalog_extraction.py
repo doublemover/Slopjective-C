@@ -12,6 +12,9 @@ PARSER_MANIFEST = PARSER_CORPUS / "manifest.json"
 NEGATIVE_EXECUTION = (
     ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "negative"
 )
+POSITIVE_EXECUTION = (
+    ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive"
+)
 
 
 def _read_json(path: Path) -> dict:
@@ -103,3 +106,41 @@ def test_unsupported_feature_claim_sidecars_are_compile_rejections() -> None:
 def test_retired_unsupported_feature_claim_duplicates_are_absent() -> None:
     native_root = ROOT / "tests" / "tooling" / "fixtures" / "native"
     assert list(native_root.glob("unsupported_feature_claim_*.objc3")) == []
+
+
+def test_positive_execution_runtime_dispatch_sidecars_are_canonical_live_dispatch() -> None:
+    live_dispatch_sidecars = []
+    for sidecar_path in POSITIVE_EXECUTION.glob("*.meta.json"):
+        sidecar = _read_json(sidecar_path)
+        execution = sidecar.get("execution", {})
+        serialized = json.dumps(sidecar, sort_keys=True)
+
+        assert "expect_failure" not in sidecar
+        assert "objc3_msgsend_i32" not in serialized
+        assert "compatibility_runtime_dispatch_symbol" not in serialized
+        if execution.get("requires_live_runtime_dispatch", False):
+            live_dispatch_sidecars.append(sidecar_path.name)
+            assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
+
+    assert live_dispatch_sidecars
+
+
+def test_negative_execution_runtime_dispatch_sidecars_are_strict_failures() -> None:
+    runtime_dispatch_sidecars = sorted(NEGATIVE_EXECUTION.glob("*runtime_dispatch*.meta.json"))
+    assert runtime_dispatch_sidecars
+
+    for sidecar_path in runtime_dispatch_sidecars:
+        sidecar = _read_json(sidecar_path)
+        execution = sidecar.get("execution", {})
+        tokens = sidecar["expect_failure"]["required_diagnostic_tokens"]
+        serialized = json.dumps(sidecar, sort_keys=True)
+
+        assert sidecar["expect_failure"]["stage"] in {"link", "run"}
+        assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
+        assert execution["requires_live_runtime_dispatch"] is True
+        assert "objc3_msgsend_i32" not in serialized
+        assert "compatibility_runtime_dispatch_symbol" not in serialized
+        assert (
+            "O3RT002" in tokens
+            or "link.unresolved_symbol:objc3_runtime_dispatch_i32" in tokens
+        )
