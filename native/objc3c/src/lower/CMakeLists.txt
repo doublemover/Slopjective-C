@@ -2,6 +2,7 @@ add_library(objc3c_lower STATIC
   contracts/block_arc_lowering_plan.cpp
   contracts/function_method_lowering_state.cpp
   contracts/lowering_extended_contracts.cpp
+  contracts/lowering_dispatch_and_arc_contracts.cpp
   contracts/lowering_diagnostics.cpp
   contracts/lowering_phase_io.cpp
   contracts/lowering_contract_validators.cpp
