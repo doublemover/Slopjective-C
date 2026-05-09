@@ -6,7 +6,9 @@ from scripts.objc3c_workflow.action_handler_integrity import (
     missing_action_handlers,
     orphan_action_handlers,
 )
+from scripts.objc3c_workflow.action_handler_groups import ACTION_HANDLER_SECTION_GROUPS
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
+from scripts.objc3c_workflow.action_catalog_groups import ACTION_CATALOG_SECTION_GROUPS
 from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
 from scripts.objc3c_workflow.argument_requests import (
     DescribeActionRequest as OwnedDescribeActionRequest,
@@ -70,6 +72,8 @@ def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None
 
 
 def test_handler_registry_matches_action_catalog() -> None:
+    assert len(ACTION_CATALOG_SECTION_GROUPS) == 5
+    assert len(ACTION_HANDLER_SECTION_GROUPS) == 5
     assert action_handler_registry_is_complete()
     assert missing_action_handlers() == []
     assert orphan_action_handlers() == []

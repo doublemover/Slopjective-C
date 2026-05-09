@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
-from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
-from scripts.objc3c_workflow.registry_views import action_names
+from scripts.objc3c_workflow.action_handler_drift import action_handler_drift
 
 
 def missing_action_handlers() -> list[str]:
-    return sorted(set(action_names()) - set(ACTION_HANDLERS))
+    return action_handler_drift().missing
 
 
 def orphan_action_handlers() -> list[str]:
-    return sorted(set(ACTION_HANDLERS) - set(action_names()))
+    return action_handler_drift().orphaned
 
 
 def action_handler_registry_is_complete() -> bool:
-    return not missing_action_handlers() and not orphan_action_handlers()
+    return action_handler_drift().complete
+
+
+__all__ = [
+    "action_handler_registry_is_complete",
+    "missing_action_handlers",
+    "orphan_action_handlers",
+]
