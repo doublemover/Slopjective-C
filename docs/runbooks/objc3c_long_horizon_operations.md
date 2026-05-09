@@ -2,16 +2,16 @@
 
 ## Working Boundary
 
-This runbook defines the compatibility-maintenance, migration, rollback, soak,
-aging-regression, and support-window boundary for objc3c.
+This runbook defines release support-window maintenance, canonical conversion,
+rollback, soak, aging-regression, and support-window boundaries for objc3c.
 
 Use it when changing:
 
 - release support windows, channel aging, and deprecation policy
-- migration replay and rollback drills
+- conversion replay and rollback drills
 - long-running soak or aging-regression evidence
-- operator-facing compatibility and support claims
-- package and canonical-application workflows that feed compatibility evidence
+- operator-facing support-window claims
+- package and canonical-application workflows that feed support evidence
 
 Canonical checked-in boundary surfaces:
 
@@ -40,7 +40,7 @@ surfaces and adds durable maintenance evidence around them.
 
 The current usable substrate is:
 
-- release operations: update manifests, compatibility reports, release-channel
+- release operations: update manifests, support-window reports, release-channel
   catalogs, rollback guidance, and support windows
 - package ecosystem: deterministic local package locks, package authoring, and
   offline mirror validation
@@ -54,23 +54,23 @@ The current usable substrate is:
 
 Supported in this boundary:
 
-- same-major compatibility maintenance tied to generated release metadata
+- same-major support-window maintenance tied to generated release metadata
 - explicit deprecation and support-window policy
-- migration replay drills over checked-in package and application surfaces
+- conversion replay drills over checked-in package and application surfaces
 - rollback drills that consume generated update and release-operation metadata
 - soak and aging evidence that can be replayed under `tmp/reports/`
 - operator-visible support-window publication through the `npm run objc3c -- <action>` bridge
 
 Not supported in this boundary:
 
-- evergreen or forever-compatible release claims
-- cross-major compatibility without a generated migration proof
+- evergreen support or forever-supported release claims
+- cross-major support without a generated conversion proof
 - hosted registry availability or network-backed dependency resolution
 - background auto-update behavior
-- manual waiver-only compatibility status
+- manual waiver-only support status
 - soak evidence that cannot be regenerated from checked-in contracts
 
-## Deprecation And Compatibility Maintenance Policy
+## Deprecation And Support-Window Maintenance Policy
 
 The canonical policy contract is checked in at:
 
@@ -80,8 +80,8 @@ Replay it with:
 
 - `npm run objc3c -- validate-long-horizon-operations`
 
-Compatibility maintenance is a support-window promise over generated release
-metadata, not a forever-compatible language/runtime claim. Deprecations must:
+Support-window maintenance is a generated release metadata promise, not a
+forever-supported language/runtime claim. Deprecations must:
 
 - name the affected public surface, warning channel, support window, and
   successor behavior
@@ -89,10 +89,10 @@ metadata, not a forever-compatible language/runtime claim. Deprecations must:
   `tests/tooling/fixtures/release_operations/update_channel_policy.json`
 - fail closed when a public claim uses forbidden release-operation phrases from
   `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
-- remain demoted until migration replay and rollback evidence exists for the
+- remain demoted until conversion replay and rollback evidence exists for the
   affected package/application path
 
-## Migration, Rollback, And Support Windows
+## Conversion, Rollback, And Support Windows
 
 The canonical semantics contract is checked in at:
 
@@ -102,15 +102,15 @@ Replay it with:
 
 - `npm run objc3c -- validate-long-horizon-operations`
 
-Migration and rollback are operator-visible behaviors. The replay path uses:
+Conversion and rollback are operator-visible behaviors. The replay path uses:
 
 - `npm run objc3c -- build-update-manifest`
 - `npm run objc3c -- publish-release-operations`
 
-Generated evidence is valid only when the update manifest and compatibility
+Generated evidence is valid only when the update manifest and support-window
 report agree on the current version, supported platform ids, support windows,
-upgrade paths, and rollback guidance. Cross-major migration claims remain
-blocked unless a generated long-horizon migration replay artifact names the
+upgrade paths, and rollback guidance. Cross-major conversion claims remain
+blocked unless a generated long-horizon conversion replay artifact names the
 source version, target version, package lock, canonical application workspace,
 and rollback target.
 
@@ -192,7 +192,7 @@ It maps to:
 - `npm run objc3c -- publish-long-horizon-operations`
 
 The public workflow validates the generated evidence artifact shape, claim
-audit, migration evidence, rollback channel coverage, and soak evidence family
+audit, conversion evidence, rollback channel coverage, and soak evidence family
 coverage.
 
 Support-window publication emits:
@@ -208,12 +208,12 @@ The closeout gate is:
 
 It replays all long-horizon summaries, integration, support-window publication, public
 command rendering, documentation/repository surface checks, and source hygiene.
-The gate rejects widened compatibility claims, missing public runner actions,
+The gate rejects widened support-window claims, missing public runner actions,
 missing operator publication metadata, stale package manifest fields, and any
 claim audit release blocker.
 
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
-claims about release cadence, compatibility, or stability must consume generated
+claims about release cadence, support windows, or stability must consume generated
 long-horizon evidence rather than manually restating release intent.

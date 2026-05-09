@@ -5,8 +5,8 @@
 This runbook defines the checked-in release-operations surface for objc3c:
 
 - semantic versioning claims over the published objc3c release payloads
-- compatibility windows and support-window classes for published channels
-- machine-owned update manifests and compatibility warning payloads
+- support windows and support-window classes for published channels
+- machine-owned update manifests and support warning payloads
 - rollback, deprecation, and upgrade-path publication derived from checked-in contracts
 - release-operations validation over the existing release-foundation and packaging-channel outputs
 
@@ -17,8 +17,8 @@ or package-manager-specific upgrade logic.
 
 The canonical public version shape is semantic versioning:
 
-- `major`: breaking compatibility boundary
-- `minor`: additive compatible release within one major line
+- `major`: breaking support boundary
+- `minor`: additive release within one major line
 - `patch`: non-breaking repair release within one minor line
 
 Version claims in this milestone are contract-driven and machine-published. No
@@ -31,16 +31,16 @@ Support windows are intentionally narrow and channel-scoped:
 
 - `stable`: supported and preferred for normal users
 - `candidate`: supported for release-drill and pre-publish verification
-- `preview`: best-effort for short-lived compatibility probes only
+- `preview`: best-effort for short-lived support-window probes only
 
 Within one major line:
 
-- `stable` must advertise a compatibility window for the current minor line
+- `stable` must advertise a support window for the current minor line
 - `candidate` may overlap the current `stable` line for upgrade rehearsal
 - `preview` may carry warnings, but must still publish machine-readable
-  compatibility status and rollback guidance
+  support status and rollback guidance
 
-Do not claim indefinite support, cross-major forward compatibility, or a hosted
+Do not claim indefinite support, cross-major forward support, or a hosted
 long-term support program in this milestone.
 
 ## Channel And Upgrade Boundary
@@ -55,7 +55,7 @@ canonical payload remains the runnable toolchain package and its release-
 foundation evidence. Packaging channels remain the installable transport.
 
 Do not introduce a second update payload, a parallel installer tree, or a
-package-manager-only compatibility source of truth.
+package-manager-only support source of truth.
 
 Current platform support-tier boundary:
 
@@ -65,12 +65,12 @@ Current platform support-tier boundary:
 - release-operations metadata must not imply support on any host outside the
   checked-in `windows-x64` package-channel set
 
-## Compatibility And Warning Policy
+## Support And Warning Policy
 
-Compatibility publication for this milestone must emit:
+Support publication for this milestone must emit:
 
 - a machine-owned update manifest with channel, version, and artifact pointers
-- a machine-owned compatibility report with support-window, upgrade-path, and
+- a machine-owned support-window report with support-window, upgrade-path, and
   warning details
 - explicit rollback guidance tied to the published installer/offline channels
 - ABI/runtime/data-format rejection diagnostics as checked-in policy contracts
@@ -83,7 +83,7 @@ as:
 - cross-major upgrade requests
 - deprecated channel usage
 - runtime/data-format rejection requirements
-- support-tier or archive compatibility overclaim attempts outside the checked-in
+- support-tier or archive support overclaim attempts outside the checked-in
   `windows-x64` package/install/update surface
 
 ## Release-Operations Workflow
@@ -101,7 +101,7 @@ These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge an
 machine-owned artifacts under `tmp/reports/release-operations/` and
 `tmp/artifacts/release-operations/`.
 
-The update manifest, compatibility report, and channel catalog must also
+The update manifest, support-window report, and channel catalog must also
 publish:
 
 - the machine-owned platform support matrix path
@@ -118,4 +118,4 @@ Those fields must stay aligned with
 - no background updater or scheduler
 - no package-manager upgrade semantics
 - no cross-platform support claim beyond the checked-in `windows-x64` channel set
-- no manual compatibility spreadsheet or hand-authored release-operation digest
+- no manual support spreadsheet or hand-authored release-operation digest

@@ -20,7 +20,7 @@ The canonical upstream surfaces are:
 
 - release-foundation manifests, SBOMs, and provenance attestations
 - packaging-channel payloads, install receipts, and rollback proofs
-- release-operations update manifests, compatibility reports, and rollback guidance
+- release-operations update manifests, support-window reports, and rollback guidance
 - the existing release-evidence index from `npm run objc3c -- check-release-evidence`
 
 Implementation helper paths under `scripts/` are action-registry anchors, not a
@@ -35,7 +35,7 @@ The machine-owned trust story for this milestone is limited to:
 
 - release payload provenance and reproducibility
 - install and rollback smoke over the packaged channels
-- update-manifest and compatibility publication coherence
+- update-manifest and support-window publication coherence
 - release-evidence gate coverage over the published conformance artifacts
 - explicit recovery and operator drill guidance for the live package surfaces
 
@@ -100,7 +100,7 @@ Do not publish a trust-positive summary when the state is `blocked`.
 This milestone uses the existing package and metadata surfaces for release drills:
 
 - package-channel install and rollback smoke from the packaging-channel surface
-- update-manifest and compatibility publication from the release-operations surface
+- update-manifest and support-window publication from the release-operations surface
 - release-evidence index generation from the existing evidence gate
 
 The drill model is intentionally narrow:

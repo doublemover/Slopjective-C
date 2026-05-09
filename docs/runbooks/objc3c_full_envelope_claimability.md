@@ -92,7 +92,7 @@ The canonical release blockers for this milestone are:
 - public conformance reporting is `blocked`
 - performance governance is `blocked` or not claim-ready
 - release-foundation publication artifacts are missing
-- release-operations compatibility or update artifacts are missing
+- release-operations support-window or update artifacts are missing
 - distribution credibility is not `ready`
 - a surface is marked `unsupported` but is being promoted as `supported`
 - the full-envelope dashboard projection would publish `preview-only` or
@@ -168,7 +168,7 @@ soak or external-validation truth surface.
 The full-envelope evidence package for this milestone must terminate in the live:
 
 - release-foundation manifest, SBOM, and attestation
-- release-operations update manifest, compatibility report, and channel catalog
+- release-operations update manifest, support-window report, and channel catalog
 - distribution-credibility trust report
 - full-envelope dashboard and public summary
 
@@ -220,7 +220,7 @@ Claims must be demoted when any of the following conditions hold:
 
 - required integrated evidence is missing or not passing
 - required packaged release or update evidence is missing
-- required trust, publication, or compatibility evidence is missing
+- required trust, publication, or support-window evidence is missing
 - a surface is still intentionally fail-closed or explicitly unsupported in its
   checked-in runtime closure runbook
 
@@ -261,10 +261,10 @@ matrix:
 Follow-on work for stronger claims or wider support belongs in:
 
 - developer tooling, LSP, formatting, and debugger integration
-- cross-platform, toolchain-matrix, and compatibility hardening
+- cross-platform, toolchain-matrix, and platform-support hardening
 - security hardening, macro trust, and supply-chain resilience
-- compatibility maintenance, migrations, soak, and long-horizon operations
+- support-window maintenance, canonical conversion replay, soak, and long-horizon operations
 - package manager, registry, and dependency workflow ecosystem
 - testing framework, templates, and canonical application architecture surfaces
-- adoption program, migration playbooks, and ecosystem legibility
+- adoption program, conversion playbooks, and ecosystem legibility
 - governance, extension lifecycle, and ecosystem sustainability

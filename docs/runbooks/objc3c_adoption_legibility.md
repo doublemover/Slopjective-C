@@ -2,13 +2,15 @@
 
 ## Working Boundary
 
-This runbook defines the adoption, migration, capability-comparison, onboarding,
-and evaluator-legibility boundary for objc3c.
+This runbook defines the adoption, canonical conversion,
+capability-comparison, onboarding, and evaluator-legibility boundary for
+objc3c.
 
 Use it when changing:
 
-- README, site, tutorial, showcase, or migration-guide entry points
-- migration guidance from Objective-C 2, Swift, C++, and package-based projects
+- README, site, tutorial, showcase, or conversion-guide entry points
+- canonical conversion guidance from Objective-C 2, Swift, C++, and
+  package-based projects
 - capability-comparison wording against the support matrix and conformance data
 - evaluator-facing public command discovery
 - onboarding paths that depend on templates, package locks, canonical apps, or
@@ -34,7 +36,7 @@ Replayable boundary inventory:
 - covered by `npm run objc3c -- validate-adoption-legibility`
 - implementation helper: `scripts/build_adoption_legibility_boundary_inventory_summary.py`
 
-## Public Adoption And Migration Claim Policy
+## Public Adoption And Conversion Claim Policy
 
 The canonical public-claim policy is checked in at:
 
@@ -45,25 +47,25 @@ Replay it with:
 - `npm run objc3c -- validate-adoption-legibility`
 - implementation helper: `scripts/build_adoption_legibility_public_claim_policy_summary.py`
 
-Public adoption and migration claims are intentionally narrower than the
+Public adoption and conversion claims are intentionally narrower than the
 available implementation surface. Any claim that describes production fit,
-migration safety, ecosystem maturity, performance, conformance, or support must
+conversion safety, ecosystem maturity, performance, conformance, or support must
 name its evidence class and must stay inside the support class published by the
 release, package, conformance, performance, and long-horizon runbooks.
 
 Adoption copy may say that objc3c has a runnable evaluator path only when it
 points to checked-in README, site, tutorial, showcase, public-command,
-package, and support evidence. Migration copy may describe incremental
-Objective-C 2 migration only when it stays same-major scoped and names package
-locks, compatibility support, rollback guidance, and deferred unsupported
-runtime behavior.
+package, and support evidence. Conversion copy may describe incremental
+Objective-C 2 conversion only when it stays same-major scoped and names package
+locks, support windows, rollback guidance, and deferred unsupported runtime
+behavior.
 
 The policy fails closed on:
 
-- unsupported source-compatibility or performance-leadership claims
-- cross-major migration safety without generated migration evidence
+- unsupported source-acceptance or performance-leadership claims
+- cross-major conversion safety without generated conversion evidence
 - package-manager, hosted registry, or IDE marketplace parity claims
-- tutorial-only migration guidance that bypasses support-window evidence
+- tutorial-only conversion guidance that bypasses support-window evidence
 - adoption metrics that are hand-maintained instead of generated
 
 ## Capability Narrative And Comparison Semantics
@@ -79,12 +81,12 @@ Replay it with:
 
 Comparison language must answer a concrete evaluator question, name the
 Objective-C 2, Swift, or C++ comparison axis, then link to runnable examples and
-evidence. It must not claim parity, superiority, or migration safety unless the
+evidence. It must not claim parity, superiority, or conversion safety unless the
 claim is backed by conformance, performance, interop, package, release, and
 support evidence. Unsupported or intentionally deferred behavior must remain
 visible in the comparison text.
 
-## Migration Playbook And Interop Guidance
+## Canonical Conversion Playbook And Interop Guidance
 
 The canonical migration playbook semantics contract is checked in at:
 
@@ -95,7 +97,7 @@ Replay it with:
 - `npm run objc3c -- validate-adoption-legibility`
 - implementation helper: `scripts/build_adoption_legibility_migration_playbook_summary.py`
 
-Migration guidance has four ordered phases: orient on public docs, compile the
+Conversion guidance has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
 check support and rollback evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
@@ -121,7 +123,7 @@ Generated machine-owned outputs stay under:
 - `tmp/artifacts/adoption-legibility/`
 - `tmp/reports/adoption-legibility/`
 
-No evaluator, migration, comparison, onboarding, or adoption claim is canonical
+No evaluator, conversion, comparison, onboarding, or adoption claim is canonical
 unless it can be regenerated from checked-in contracts and validated through the
 schema above.
 
@@ -139,7 +141,7 @@ It generates:
 - `tmp/reports/adoption-legibility/evidence-summary.json`
 
 The generator replays the boundary inventory, public claim policy, comparison
-semantics, migration playbook semantics, and artifact contract summaries before
+semantics, conversion playbook semantics, and artifact contract summaries before
 writing artifacts. Generated evidence is temporary output; checked-in contracts,
 docs, and scripts remain the source of truth.
 
@@ -158,7 +160,7 @@ It maps to:
 - implementation helper: `scripts/publish_objc3c_adoption_legibility_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, evaluator
-entrypoints, migration phases, comparison axes, onboarding workspaces, support
+entrypoints, conversion phases, comparison axes, onboarding workspaces, support
 state, and claim-audit blockers.
 
 Evaluator metadata publication emits:
@@ -173,14 +175,14 @@ marketing layer. The repo already has evaluator-facing docs, tutorials,
 showcase projects, conformance reporting, package workflows, release operations,
 performance governance, and long-horizon support evidence. This boundary
 connects those surfaces into a coherent path for people deciding whether to
-evaluate, migrate to, or build with objc3c.
+evaluate, convert code toward, or build with objc3c.
 
 ## Claim Boundary
 
 Supported in this boundary:
 
 - evaluator entry points that name the exact commands and docs to read first
-- migration guidance grounded in checked-in tutorials, package workflows, and
+- conversion guidance grounded in checked-in tutorials, package workflows, and
   runnable canonical application surfaces
 - comparison wording tied to public conformance, performance, package, release,
   and support evidence
@@ -190,11 +192,11 @@ Supported in this boundary:
 
 Not supported in this boundary:
 
-- unsupported claims about source compatibility, performance leadership, or
+- unsupported claims about source acceptance, performance leadership, or
   ecosystem maturity
 - hand-maintained adoption counts without replayable queries
-- tutorial-only migration claims that bypass package locks or compatibility
-  support evidence
+- tutorial-only conversion claims that bypass package locks or support-window
+  evidence
 - hosted service, registry, IDE marketplace, or community-program commitments
 - private maintainer context as a prerequisite for external evaluation
 
@@ -204,7 +206,7 @@ This boundary consumes:
 
 - public command discovery from `npm run objc3c -- build-public-command-surface`
 - package workflow evidence from `docs/runbooks/objc3c_package_ecosystem.md`
-- release and compatibility evidence from `docs/runbooks/objc3c_release_operations.md`
+- release and support-window evidence from `docs/runbooks/objc3c_release_operations.md`
 - conformance scorecard evidence from
   `docs/runbooks/objc3c_public_conformance_reporting.md`
 - performance claim governance from `docs/runbooks/objc3c_performance_governance.md`

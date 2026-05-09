@@ -15,7 +15,7 @@ Governance focus:
 - measure the live repo shape before setting or tightening budgets
 - keep budget and anti-noise claims tied to existing enforcement anchors
 - treat exceptions and drift as explicit recorded objects instead of tribal knowledge
-- ground extension and compatibility governance in package, adoption, support,
+- ground extension and support-impact governance in package, adoption, support,
   release, distribution, and security evidence that already exists
 
 Sustainable progress policy:
@@ -48,7 +48,7 @@ Replayable policy summary:
 
 - `npm run objc3c -- validate-governance-sustainability`
 
-Extension, RFC, and compatibility review policy:
+Extension, RFC, and support-impact review policy:
 
 - `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json`
 - `tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json`
@@ -56,9 +56,9 @@ Extension, RFC, and compatibility review policy:
 - publication: `npm run objc3c -- publish-governance-sustainability`
 
 Extension review is allowed to advance only when the proposal names its
-language surface, review class, compatibility classification, evidence
+language surface, review class, support-impact classification, evidence
 dependencies, package/release impact, adoption impact, and rollback or
-demotion path. Compatibility-impacting changes must consume release operations,
+demotion path. Support-impacting changes must consume release operations,
 long-horizon support, package ecosystem, adoption-legibility, and security
 hardening evidence instead of standing on prose-only review.
 
@@ -70,9 +70,9 @@ Maintainer, contributor, and package stewardship semantics:
 Stewardship review keeps normal contributors on `CONTRIBUTING.md`, maintainers
 on `docs/runbooks/objc3c_maintainer_workflows.md`, and package-governance
 changes on the package ecosystem contracts. Any governance change that widens
-public package scripts, public workflow actions, package metadata, or support
-claims must run the maintainer review checks and either stay within budget or
-carry a checked-in waiver.
+the public package bridge, public workflow actions, package metadata, or
+support claims must run the maintainer review checks and either stay within
+budget or carry a checked-in waiver.
 
 Machine-owned governance schema surface:
 
@@ -129,7 +129,7 @@ Current governance entry surfaces:
 
 Current budget surfaces measured by the governance inventory summary:
 
-- package script count and category mix
+- public package bridge count and category mix
 - public workflow action count
 - checked-in runbook count
 - checked-in schema count

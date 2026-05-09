@@ -3,10 +3,10 @@
 ## Working Boundary
 
 This runbook defines the live platform, toolchain, packaging, install, and
-compatibility claim surface for objc3c.
+support claim surface for objc3c.
 
 Use it when changing host support claims, toolchain version expectations,
-packaged install behavior, or archive/update compatibility rules.
+packaged install behavior, or archive/update support rules.
 
 Downstream platform work must stay on the existing implementation paths below
 instead of inventing a second portability harness or publishing broader support
@@ -47,7 +47,7 @@ actions above, not separate current-facing commands.
   - `npm run objc3c -- build-package-channels`
   - `npm run objc3c -- validate-packaging-channels`
   - `npm run objc3c -- validate-packaging-channels-end-to-end`
-- release/update compatibility flow:
+- release/update support flow:
   - `npm run objc3c -- build-update-manifest`
   - `npm run objc3c -- publish-release-operations`
   - `npm run objc3c -- validate-release-operations`
@@ -129,38 +129,38 @@ Tier publication rules:
 - `windows-x64` is the only host family that may currently be described as
   supported on the public workflow surface
 
-## Install And Archive Compatibility Boundary
+## Install And Archive Support Boundary
 
-Packaging and install compatibility is part of platform support, not a separate
+Packaging and install support is part of platform support, not a separate
 story.
 
 - the canonical payload remains the runnable toolchain package
 - package channels are transport views over that payload
 - install receipts, bootstrap scripts, rollback, and update metadata must all
   resolve back to the same packaged payload family
-- archive and installer compatibility claims remain `windows-x64` only until
+- archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
-## Toolchain-Range And Archive Compatibility Policy
+## Toolchain-Range And Archive Support Policy
 
-Toolchain-range and archive compatibility claims must also stay narrower than
+Toolchain-range and archive support claims must also stay narrower than
 the evidence.
 
 - the current live claim boundary is the checked-in `windows-x64` package and
   install surface produced from the local runnable toolchain bundle
 - packaged archive reuse, installer replay, rollback, and update publication
   are only claimable for the same checked-in host family
-- toolchain presence by itself does not imply archive or install compatibility
+- toolchain presence by itself does not imply archive or install support
 - a new LLVM or Clang major line is not automatically supported just because the
   current host can launch it
 
-Archive compatibility rules:
+Archive support rules:
 
 - portable archive, installer archive, and offline bundle must all resolve to
   the same runnable payload family
 - package-channel publication and release-operations metadata must describe the
   same host and channel boundary
-- archive compatibility claims remain fail-closed outside the checked-in
+- archive support claims remain fail-closed outside the checked-in
   `windows-x64` package/install/update path
 
 ## Explicit Unsupported-Host Behavior
@@ -183,7 +183,7 @@ Hard-fail classes:
 - host OS or host architecture outside the checked-in support matrix
 - missing required local tools for the claimed host tier
 - installer or package-channel invocation outside the published host/channel set
-- update or compatibility publication that implies support outside the checked-in
+- update or support publication that implies support outside the checked-in
   matrix
 
 Allowed fail-closed behavior:
@@ -203,7 +203,7 @@ No unsupported host may be described as:
 
 - treat the `package.json` bridge, `npm run objc3c -- <action>`, as the
   only public command routing surface
-- keep support-tier and compatibility publication machine-owned
+- keep support-tier and support-window publication machine-owned
 - keep transient package/install reports and matrix captures under `tmp/`
 - keep checked-in platform policy under `docs/runbooks/`,
   `tests/tooling/fixtures/`, and `schemas/`
@@ -266,13 +266,13 @@ verifies that the published support boundary still resolves to exactly:
 - default platform: `windows-x64`
 - supported platform ids: `windows-x64`
 - unpublished tiers: `tier-2`, `experimental`
-- package, release, and compatibility artifacts all reference the same support
+- package, release, and support artifacts all reference the same support
   matrix
 
-## Toolchain Replay And Compatibility Evidence
+## Toolchain Replay And Support Evidence
 
 Toolchain-range evidence for this milestone must come from replayable host
-probes plus the checked-in release/update compatibility outputs.
+probes plus the checked-in release/update support outputs.
 
 The replay surface for this slice is:
 
@@ -290,7 +290,7 @@ The runnable install-matrix proof for this milestone is the composition of:
 
 - support-matrix generation
 - build/package validation on the checked-in host tier
-- toolchain/release compatibility replay
+- toolchain/release support replay
 - installer and offline-bundle smoke under temp-owned roots
 
 The integrator for this slice is:
@@ -311,7 +311,7 @@ release/update metadata surfaces:
   - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - update metadata:
   - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
-- compatibility publication:
+- support publication:
   - `tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json`
   - `tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json`
 
