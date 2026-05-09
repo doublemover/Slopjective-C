@@ -1,92 +1,7 @@
 #include "io/objc3_process_internal.h"
 
-std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds() {
-  return BuildFixedStringVector(
-      {"core", "strict", "strict-concurrency", "strict-system"});
-}
-
-std::vector<std::string> BuildObjc3RejectedConformanceProfileIds() {
-  return {};
-}
-
-std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
-  return BuildFixedStringVector({"strict", "strict-concurrency", "strict-system"});
-}
-
-std::vector<std::filesystem::path>
-BuildObjc3RetiredClaimSidecarPaths(
-    const std::filesystem::path &out_dir,
-    const std::string &emit_prefix) {
-  return {
-      out_dir / (emit_prefix + ".objc3-release-runtime-claim-matrix.json"),
-      out_dir / (emit_prefix + ".objc3-dashboard-ready-summary.json"),
-      out_dir / (emit_prefix + ".objc3-toolchain-runtime-ga-operations-scaffold.json"),
-  };
-}
-
-bool DiagnoseObjc3RetiredClaimSidecars(
-    const std::filesystem::path &out_dir,
-    const std::string &emit_prefix,
-    std::string &error) {
-  error.clear();
-  std::vector<std::string> retired_sidecars;
-  for (const auto &path :
-       BuildObjc3RetiredClaimSidecarPaths(out_dir, emit_prefix)) {
-    if (std::filesystem::exists(path)) {
-      retired_sidecars.push_back(path.filename().string());
-    }
-  }
-  if (retired_sidecars.empty()) {
-    return true;
-  }
-
-  std::ostringstream out;
-  out << "retired claim sidecar(s) detected next to the active release artifacts: ";
-  for (std::size_t index = 0; index < retired_sidecars.size(); ++index) {
-    if (index != 0u) {
-      out << ", ";
-    }
-    out << retired_sidecars[index];
-  }
-  out << " (remove them; the canonical release surface is the integrated "
-         ".objc3-conformance-publication.json, "
-         ".objc3-conformance-validation.json, "
-         ".objc3-release-evidence-operation.json, "
-         ".objc3-dashboard-status.json, "
-         ".objc3-advanced-feature-gate.json, and "
-         ".objc3-release-candidate-matrix.json artifacts in the active output directory, while reports and other transient evidence belong under tmp/)";
-  error = out.str();
-  return false;
-}
-
-bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id) {
-  return profile_id == "core" || profile_id == "strict" ||
-         profile_id == "strict-concurrency" || profile_id == "strict-system";
-}
-
-bool IsObjc3JsonConformanceFormat(const std::string &format) {
-  return format == "json";
-}
-
-std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
-    const std::string &profile_id) {
-  std::ostringstream out;
-  out << "unsupported --objc3-conformance-profile selection: " << profile_id
-      << " (claimed profiles: core, strict, strict-concurrency, strict-system; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
-      << kObjc3ConformanceProfileClaimPolicyModel << ")";
-  return out.str();
-}
-
-std::string BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
-    const std::string &format) {
-  std::ostringstream out;
-  out << "unsupported --emit-objc3-conformance-format selection: " << format
-      << " (claimed publication format: json; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
-      << kObjc3ConformanceFormatClaimPolicyModel << ")";
-  return out.str();
-}
-
-int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
+int RunProcess(const std::string &executable,
+               const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
   owned_argv.reserve(args.size() + 1);
   std::string argv0 = executable;
@@ -111,10 +26,12 @@ int RunProcess(const std::string &executable, const std::vector<std::string> &ar
 
 #if defined(_WIN32)
   const bool has_explicit_path =
-      executable.find('\\') != std::string::npos || executable.find('/') != std::string::npos ||
+      executable.find('\\') != std::string::npos ||
+      executable.find('/') != std::string::npos ||
       executable.find(':') != std::string::npos;
-  const int status = has_explicit_path ? _spawnv(_P_WAIT, executable.c_str(), argv.data())
-                                       : _spawnvp(_P_WAIT, executable.c_str(), argv.data());
+  const int status =
+      has_explicit_path ? _spawnv(_P_WAIT, executable.c_str(), argv.data())
+                        : _spawnvp(_P_WAIT, executable.c_str(), argv.data());
   if (status == -1) {
     return 127;
   }
@@ -130,8 +47,11 @@ int RunProcess(const std::string &executable, const std::vector<std::string> &ar
   const bool has_explicit_path = executable.find('/') != std::string::npos;
   pid_t child_pid = 0;
   const int spawn_status =
-      has_explicit_path ? posix_spawn(&child_pid, executable.c_str(), nullptr, nullptr, mutable_argv.data(), environ)
-                        : posix_spawnp(&child_pid, executable.c_str(), nullptr, nullptr, mutable_argv.data(), environ);
+      has_explicit_path
+          ? posix_spawn(&child_pid, executable.c_str(), nullptr, nullptr,
+                        mutable_argv.data(), environ)
+          : posix_spawnp(&child_pid, executable.c_str(), nullptr, nullptr,
+                         mutable_argv.data(), environ);
   if (spawn_status != 0) {
     return 127;
   }
@@ -149,18 +69,22 @@ int RunProcess(const std::string &executable, const std::vector<std::string> &ar
   return 127;
 #endif
 }
+
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
                          const std::filesystem::path &input,
                          const std::filesystem::path &object_out) {
   const std::string clang_exe = clang_path.string();
-  const int syntax_status =
-      RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-fsyntax-only", input.string()});
+  const int syntax_status = RunProcess(
+      clang_exe,
+      {"-x", "objective-c", "-std=gnu11", "-fsyntax-only", input.string()});
   if (syntax_status != 0) {
     return syntax_status;
   }
 
-  const int compile_status = RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c", input.string(), "-o",
-                                                    object_out.string(), "-fno-color-diagnostics"});
+  const int compile_status =
+      RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c",
+                             input.string(), "-o", object_out.string(),
+                             "-fno-color-diagnostics"});
   if (compile_status == 0) {
     NormalizeObjectDeterminism(object_out);
   }
@@ -171,8 +95,9 @@ int RunIRCompile(const std::filesystem::path &clang_path,
                  const std::filesystem::path &ir_path,
                  const std::filesystem::path &object_out) {
   const std::string clang_exe = clang_path.string();
-  const int compile_status = RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
-                                                    "-fno-color-diagnostics"});
+  const int compile_status =
+      RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o",
+                             object_out.string(), "-fno-color-diagnostics"});
   if (compile_status == 0) {
     NormalizeObjectDeterminism(object_out);
   }
@@ -243,18 +168,20 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // module link-plan path must carry those artifacts forward without silently
   // degrading them into generic metadata-only packaging.
   // backend may not drop, pool, or reshape those member records opportunistically.
-  const int llc_status =
-      RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
+  const int llc_status = RunProcess(
+      llc_path.string(), {"-filetype=obj", "-o", object_out.string(),
+                          ir_path.string()});
   if (llc_status == 0) {
     NormalizeObjectDeterminism(object_out);
     return 0;
   }
   if (llc_status == 127) {
-    error = "llvm-direct object emission failed: llc executable not found: " + llc_path.string();
+    error = "llvm-direct object emission failed: llc executable not found: " +
+            llc_path.string();
     return 125;
   }
-  error = "llvm-direct object emission failed: llc exited with status " + std::to_string(llc_status) + " for " +
-          ir_path.string();
+  error = "llvm-direct object emission failed: llc exited with status " +
+          std::to_string(llc_status) + " for " + ir_path.string();
   return llc_status;
 #else
   (void)llc_path;

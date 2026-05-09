@@ -11,6 +11,7 @@ add_library(objc3c_json STATIC
   json/json_schema_validation.cpp
   json/json_schema_type.cpp
   json/json_schema_type_names.cpp
+  json/json_string_escape.cpp
   json/json_string_array_writer.cpp
   json/json_value.cpp
   json/json_value_container_writer.cpp
@@ -41,12 +42,14 @@ add_library(objc3c_runtime_abi STATIC
   objc3_conformance_dashboard_artifact_document.cpp
   objc3_conformance_release_artifact_document.cpp
   objc3_conformance_artifact_documents.cpp
+  objc3_conformance_profile_selection.cpp
   objc3_cross_module_imported_modules_document.cpp
   objc3_metaprogramming_macro_host_cache_document.cpp
   objc3_object_format.cpp
-  objc3_process.cpp
+  objc3_process_execution.cpp
   objc3_process_boundary_tokens.cpp
   objc3_process_json_helpers.cpp
+  objc3_retired_claim_sidecars.cpp
   objc3_runtime_artifact_contracts.cpp
   objc3_runtime_artifact_documents.cpp
   objc3_runtime_metadata_discovery_document.cpp
