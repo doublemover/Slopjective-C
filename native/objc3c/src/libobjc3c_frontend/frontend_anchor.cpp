@@ -1,2 +1,0 @@
-#include "libobjc3c_frontend/frontend_anchor_parts/frontend_anchor_part_001.inc"
-#include "libobjc3c_frontend/frontend_anchor_parts/frontend_anchor_part_002.inc"

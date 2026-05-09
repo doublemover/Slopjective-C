@@ -10,7 +10,7 @@ add_library(objc3c_frontend STATIC
   c_api_result_lifecycle.cpp
   c_api_stage_summary.cpp
   c_api_string_bridge.cpp
-  frontend_anchor.cpp
+  frontend_compile_entrypoints.cpp
   objc3c_frontend_abi_surface.cpp
   objc3c_frontend_artifact_plan.cpp
   objc3c_frontend_artifact_publication.cpp
