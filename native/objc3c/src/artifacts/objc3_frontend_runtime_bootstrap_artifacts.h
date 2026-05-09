@@ -55,6 +55,22 @@ BuildRuntimeBootstrapLegalityFailureContractSummary(
 [[nodiscard]] std::string BuildRuntimeBootstrapLegalityFailureContractSummaryJson(
     const Objc3RuntimeBootstrapLegalityFailureContractSummary &summary);
 
+[[nodiscard]] std::string BuildRuntimeBootstrapLegalitySemanticsReplayKey(
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary &summary);
+
+[[nodiscard]] Objc3RuntimeBootstrapLegalitySemanticsSummary
+BuildRuntimeBootstrapLegalitySemanticsSummary(
+    const Objc3BootstrapLegalitySemanticsSummary &semantic_boundary,
+    const Objc3RuntimeBootstrapLegalityFailureContractSummary
+        &bootstrap_legality_failure_contract,
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+        &registration_descriptor_frontend_closure,
+    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics,
+    const std::string &translation_unit_identity_key);
+
+[[nodiscard]] std::string BuildRuntimeBootstrapLegalitySemanticsSummaryJson(
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary &summary);
+
 [[nodiscard]] std::string BuildRuntimeBootstrapApiReplayKey(
     const Objc3RuntimeBootstrapApiSummary &summary);
 
