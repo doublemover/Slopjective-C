@@ -85,6 +85,26 @@ unsupported-feature claims, or runtime-dispatch paths as positive behavior. When
 unavailable feature configuration, the expected result is a strict error with
 stable diagnostic metadata, not fallback acceptance.
 
+Behavior ownership is phase-first:
+
+| Boundary | Positive authority | Rejection / strict-error authority |
+| --- | --- | --- |
+| parser | `tests/native/parser/positive` | `tests/native/parser/negative` for old-mode literals and removed mode/fallback flags |
+| semantic | `tests/native/sema/{types,ownership,objc,control_flow,concurrency}` | `tests/native/sema/{negative,errors,concurrency}` for retired adapter gates and unsupported feature claims |
+| lowering ABI | `tests/native/lowering` and canonical `tests/conformance/lowering_abi` ABI fixtures | `tests/native/lowering/errors` and strict lowering/link diagnostics for removed runtime fallback paths |
+| IR/module | `tests/native/ir/{module,function,metadata,runtime_calls}` | `tests/native/ir/runtime_calls` strict linkage evidence for unsupported runtime helpers |
+| runtime | `tests/native/runtime/{object_model,storage,arc,blocks,concurrency}` and runtime probe ownership metadata | `tests/native/runtime/{dispatch,errors}` for strict dispatch and unresolved-symbol outcomes |
+| e2e | `tests/native/e2e/{smoke,feature_matrix}` | `tests/native/e2e/negative_execution` for execution-boundary rejection and strict-error outcomes |
+| generated fixtures | none | none; generated artifacts are replay/schema provenance only |
+
+`tests/conformance/hard_cutover_fixture_boundary_contracts.json` is the
+machine-readable owner matrix for these boundaries. `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json`
+keeps stable negative detector pattern ids such as `O3C002`,
+`OBJC3-E-REMOVED-FALLBACK-FLAG`, `OBJC3-E-REMOVED-COMPATIBILITY-SHIM`,
+`OBJC3-E-REMOVED-RUNTIME-FALLBACK`, `link.unresolved_symbol`, and `O3RT002`
+attached to rejection or strict-error fixture families. These ids are
+intentional negative residues, not positive compatibility support.
+
 Runtime probe metadata under `tests/tooling/runtime/` is treated as fixture
 evidence for canonical runtime ownership only. Storage, reflection, registration,
 object-model, and public ABI probes may anchor live owner paths; strict dispatch

@@ -32,6 +32,71 @@
       "positive_support": false
     }
   },
+  "phase_behavior_boundaries": [
+    {
+      "phase": "parser",
+      "owner_index_area": "parser_lexer_ast",
+      "positive_authority": "tests/native/parser/positive",
+      "negative_authority": "tests/native/parser/negative",
+      "retired_surface_disposition": "old-mode literals and removed parser mode/fallback flags are parse or compile rejections",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "sema",
+      "owner_index_area": "semantic_diagnostics",
+      "positive_authority": "tests/native/sema/{types,ownership,objc,control_flow,concurrency}",
+      "negative_authority": "tests/native/sema/{negative,errors,concurrency}",
+      "retired_surface_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "lowering_abi",
+      "owner_index_area": "lowering_and_ir",
+      "positive_authority": "tests/native/lowering plus tests/conformance/lowering_abi canonical ABI fixtures",
+      "negative_authority": "tests/native/lowering/errors and strict lowering/link diagnostics",
+      "retired_surface_disposition": "removed runtime fallback flags and non-nil dispatch fallback linkage are strict-error or rejection evidence",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "ir",
+      "owner_index_area": "lowering_and_ir",
+      "positive_authority": "tests/native/ir/{module,function,metadata,runtime_calls}",
+      "negative_authority": "tests/native/ir/runtime_calls",
+      "retired_surface_disposition": "runtime helper call residues are strict linkage diagnostics, not fallback support",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "runtime",
+      "owner_index_area": "runtime_dispatch_registration",
+      "positive_authority": "tests/native/runtime/{object_model,storage,arc,blocks,concurrency} plus runtime probe ownership metadata",
+      "negative_authority": "tests/native/runtime/{dispatch,errors}",
+      "retired_surface_disposition": "unknown dispatch and unresolved dispatch symbols are strict errors; probes do not widen support",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "e2e",
+      "owner_index_area": "canonical_behavior_fixtures",
+      "positive_authority": "tests/native/e2e/{smoke,feature_matrix}",
+      "negative_authority": "tests/native/e2e/negative_execution",
+      "retired_surface_disposition": "execution-boundary retired behavior remains rejection or strict-error evidence",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "generated_fixtures",
+      "owner_index_area": "generated-fixture-provenance",
+      "positive_authority": "none",
+      "negative_authority": "none",
+      "retired_surface_disposition": "generated artifacts are replay/schema provenance only and cannot satisfy support or rejection ownership by themselves",
+      "generated_fixture_authority": true,
+      "closeout_authority": false
+    }
+  ],
   "contract_families": [
     {
       "family": "phase_owner_contracts",

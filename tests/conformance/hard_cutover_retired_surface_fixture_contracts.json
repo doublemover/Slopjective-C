@@ -7,7 +7,8 @@
     "positive_expectation_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are never positive expectations",
     "fixture_owner_rule": "each retired surface must name its canonical native fixture family, behavior outcome, diagnostic owner, and sidecar metadata",
     "strict_naming_rule": "retired-surface fixture names must end in _rejected, _strict_error, or _contract according to their rejection or strict-error disposition",
-    "absence_rule": "retired-source lane behavior support has no fixture because the positive support surface is absent"
+    "absence_rule": "retired-source lane behavior support has no fixture because the positive support surface is absent",
+    "negative_detector_pattern_id_rule": "stable detector pattern ids are retained as rejection or strict-error identities and must not be renamed into positive compatibility labels"
   },
   "surface_families": [
     {
@@ -16,6 +17,7 @@
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "parser_rejection",
       "diagnostic_owner": "O3C002",
+      "negative_detector_pattern_id": "O3C002",
       "canonical_fixture_family": "parser/negative",
       "retired_tags": [
         "old-mode"
@@ -69,6 +71,7 @@
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "parser_rejection",
       "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
       "canonical_fixture_family": "parser/negative",
       "retired_tags": [
         "old-mode"
@@ -90,6 +93,7 @@
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "parser_rejection",
       "diagnostic_owner": "OBJC3-E-REMOVED-FALLBACK-FLAG",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-FALLBACK-FLAG",
       "canonical_fixture_family": "parser/negative",
       "retired_tags": [
         "old-mode"
@@ -111,6 +115,7 @@
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "semantic_rejection",
       "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
       "canonical_fixture_family": "sema/errors",
       "retired_tags": [
         "runtime-adapter"
@@ -132,6 +137,7 @@
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "lowering_or_link_strict_error",
       "diagnostic_owner": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
       "canonical_fixture_family": "lowering/errors",
       "retired_tags": [
         "runtime-dispatch"
@@ -153,6 +159,7 @@
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "lowering_or_link_strict_error",
       "diagnostic_owner": "link.unresolved_symbol",
+      "negative_detector_pattern_id": "link.unresolved_symbol",
       "canonical_fixture_family": "lowering+ir+runtime strict-error linkage",
       "retired_tags": [
         "runtime-dispatch"
@@ -214,6 +221,7 @@
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "runtime_strict_error",
       "diagnostic_owner": "O3RT002",
+      "negative_detector_pattern_id": "O3RT002",
       "canonical_fixture_family": "runtime/dispatch + e2e/negative_execution",
       "retired_tags": [
         "runtime-dispatch"

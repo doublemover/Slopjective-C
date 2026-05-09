@@ -14,6 +14,11 @@ The manifest mirrors each fixture sidecar instead of replacing it. A canonical
 positive must have no diagnostic code or retired-surface tag. A canonical
 rejection or strict-error fixture must declare the stable diagnostic code and,
 when it covers a retired surface, the retired tag used by the behavior harness.
+The phase owner decides the fixture boundary before path convenience does:
+parser owns syntax rejections, semantic owns typed diagnostics, lowering ABI and
+IR own strict lowering/link failures, runtime owns dispatch/status failures, and
+e2e owns execution-boundary confirmation. No canonical entry should describe a
+retired surface as fallback, shim, compatibility, or migration support.
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` is the
 fixture-contract index for those retired surfaces: it names the owning behavior
 outcome, diagnostic owner, sidecar file, and non-positive disposition for each

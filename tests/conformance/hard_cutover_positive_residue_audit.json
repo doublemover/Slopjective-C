@@ -9,6 +9,48 @@
     "lexical_false_positive": "document why the token is ordinary source text and not a compatibility support claim",
     "negative_fixture": "keep retained names only when the sidecar or index states rejection/strict-error behavior"
   },
+  "intentional_negative_residue_policy": {
+    "preserve_detector_pattern_ids": true,
+    "rule": "negative-looking compat, shim, fallback, old-mode, and migration tokens remain allowed only when the fixture or index explicitly records rejection, strict-error, absent-support, or lexical false-positive disposition",
+    "owner_index": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json"
+  },
+  "intentional_negative_detector_pattern_ids": [
+    {
+      "pattern_id": "O3C002",
+      "surface": "old-mode literal aliases",
+      "boundary": "parser and e2e rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+      "surface": "removed compatibility mode flag",
+      "boundary": "parser rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-FALLBACK-FLAG",
+      "surface": "removed parser fallback flag",
+      "boundary": "parser rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+      "surface": "removed compatibility shim gate",
+      "boundary": "semantic rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
+      "surface": "removed runtime dispatch fallback flag",
+      "boundary": "lowering strict-error evidence"
+    },
+    {
+      "pattern_id": "link.unresolved_symbol",
+      "surface": "non-nil runtime dispatch fallback linkage",
+      "boundary": "lowering, ir, and runtime strict-error evidence"
+    },
+    {
+      "pattern_id": "O3RT002",
+      "surface": "unknown receiver runtime dispatch",
+      "boundary": "runtime and e2e strict-error evidence"
+    }
+  ],
   "confirmed_rejections": [
     "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
     "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
