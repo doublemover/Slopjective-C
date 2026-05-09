@@ -5,6 +5,14 @@
   "issue": "M322-B002",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_scheduler_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "runtime",
+    "e2e",
+    "canonical_rejection"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "workload_rules": [
     "executor selection, cancellation polling, cancellation callbacks, and executor hops are supported only through the current private runtime helper cluster and shared acceptance evidence",
     "scheduler and executor claims remain bounded by the existing task-runtime and actor-runtime probes plus the packaged runnable concurrency workflow",

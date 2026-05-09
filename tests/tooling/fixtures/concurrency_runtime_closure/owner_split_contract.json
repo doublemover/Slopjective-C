@@ -3,6 +3,7 @@
   "surface_kind": "concurrency-runtime-closure-owner-split",
   "family": "concurrency_runtime_closure",
   "boundary_inventory": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
   "owner_policy": {
     "source_authority": "checked-in-runtime-closure-owner-contracts",
     "missing_artifact_behavior": "fail-closed",
@@ -10,7 +11,9 @@
     "fallback_allowed": false,
     "compatibility_shims_allowed": false,
     "generated_reports_are_source": false,
-    "public_claims_require_executable_proof": true
+    "public_claims_require_executable_proof": true,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json"
   },
   "closure_publication_contract": {
     "source_owner_role": "semantic_model_owner",
@@ -27,48 +30,93 @@
     "semantic_model_owner": {
       "owner": "concurrency-runtime-unified-semantic-model",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/unified_concurrency_runtime_semantic_model.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_semantic_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "lowering_abi_owner": {
       "owner": "concurrency-runtime-lowering-abi",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "runtime_abi_owner": {
       "owner": "concurrency-runtime-private-helper-abi",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
       "claim_scope": "private-helper-abi-only"
     },
     "executable_proof_owner": {
       "owner": "concurrency-runtime-runnable-proof-gate",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "artifact_owner": {
       "owner": "concurrency-runtime-lowering-artifact-replay",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "provenance",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "boundary_inventory_owner": {
       "owner": "concurrency-runtime-closure-boundary-inventory",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "scheduler_task_lifecycle_owner": {
       "owner": "concurrency-runtime-scheduler-task-lifecycle",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
       "claim_scope": "current-runtime-closure"
     },
     "bridge_policy_owner": {
       "owner": "concurrency-runtime-error-bridge-interaction-successor-boundary",
       "source": "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "canonical_rejection",
+        "provenance"
+      ],
       "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "successor-boundary-no-current-error-bridge-claim"
     }

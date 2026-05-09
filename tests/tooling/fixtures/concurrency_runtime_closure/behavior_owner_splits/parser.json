@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/unified_concurrency_runtime_semantic_model.json"
+  ],
+  "support_boundary": "parser ownership covers checked-in async, task, actor, continuation, executor, mailbox, and cross-module actor fixtures before semantic, lowering, runtime, or e2e owners claim behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/async_lowering_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/continuation_runtime_helper_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser spellings, parser fallback flags, compatibility parser labels, and source-only concurrency support claims are canonical rejection or provenance-only evidence"
+}

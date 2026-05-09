@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/unified_concurrency_runtime_semantic_model.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
+  ],
+  "split_policy": {
+    "primary_axis": "behavior phase before concurrency source owner, task lifecycle contract, actor isolation contract, scheduler policy, private helper ABI, generated report, runtime acceptance artifact, public command, or packaged runnable proof",
+    "positive_rule": "concurrency runtime closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
+    "provenance_rule": "runtime acceptance reports, runnable concurrency reports, compile manifests, runtime-registration descriptors, private helper snapshots, probe payload counts, public workflow labels, and generated reports are provenance until a phase owner claims behavior",
+    "retired_surface_rule": "fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-report-only source truth, public runtime ABI widening, wrapper-only runnable actions, stdlib actor-shaped narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop overclaims, and cross-module claims without manifest/runtime-registration replay proof are canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json"
+    }
+  ]
+}

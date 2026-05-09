@@ -5,8 +5,10 @@
   "issue": "M322-A001",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
   "owner_split_contract": "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
   "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/concurrency-runtime-closure/boundary-inventory",
+  "generated_report_behavior_boundary": "generated concurrency-runtime closure reports are provenance-only and cannot establish positive runtime, e2e, compatibility, or public ABI support",
   "focus_tracks": [
     "continuation-and-task-runtime-closure",
     "actor-runtime-isolation-and-mailbox-closure",
@@ -100,6 +102,7 @@
     "validate-runnable-concurrency"
   ],
   "fail_closed_boundary_inventory": {
+    "missing_behavior_owner_split": "fail-closed",
     "missing_owner_split_contract": "fail-closed",
     "missing_authoritative_code_path": "fail-closed",
     "missing_authoritative_runtime_symbol": "fail-closed",
@@ -108,6 +111,7 @@
     "missing_public_workflow_action": "fail-closed",
     "missing_executable_proof": "fail-closed"
   },
+  "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "current_gaps": [
     "shared conformance and packaged e2e reports exist, but there is no checked-in milestone runbook or closure contract tying task runtime, actor runtime, scheduler/executor behavior, and isolation claims together",
     "the docs currently freeze source, normalization, and lowering boundaries, but they do not publish a matching runtime-closure runbook for the live concurrency helper cluster",
