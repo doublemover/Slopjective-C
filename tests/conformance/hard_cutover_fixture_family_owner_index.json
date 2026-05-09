@@ -177,7 +177,38 @@
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
       ],
-      "retired_disposition": "old-mode spelling and removed parser flags are parser rejections"
+      "retired_disposition": "parser behavior rows are resolved through parser-family owner splits before any parser fixture is cited; canonical parser positives remain hand-authored parser fixtures, while old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only parser rows are rejection or provenance-only evidence"
+    },
+    {
+      "family": "parser_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/parser/behavior_owner_splits",
+      "acceptance_area": "parser_lexer_ast",
+      "owning_issues": [
+        "#8132",
+        "#8134",
+        "#8144",
+        "#8146"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "index_evidence": [
+        "tests/native/parser/behavior_owner_splits/index.json",
+        "tests/native/parser/behavior_owner_splits/parser.json",
+        "tests/native/parser/behavior_owner_splits/docs_evidence.json",
+        "tests/native/parser/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "parser fixture positives, parser diagnostic negatives, diagnostic snapshots, and parser-family index rows are split into parser behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only parser claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "sema_behavior",
@@ -952,6 +983,10 @@
     "tests/conformance/phase_owner_contract_splits/e2e.json",
     "tests/conformance/phase_owner_contract_splits/docs_evidence.json",
     "tests/conformance/phase_owner_contract_splits/rejection_provenance.json",
+    "tests/native/parser/behavior_owner_splits/index.json",
+    "tests/native/parser/behavior_owner_splits/parser.json",
+    "tests/native/parser/behavior_owner_splits/docs_evidence.json",
+    "tests/native/parser/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",

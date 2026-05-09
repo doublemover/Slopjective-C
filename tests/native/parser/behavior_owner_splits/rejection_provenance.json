@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-behavior-family-owner-split",
+  "owner_boundary": "rejection_provenance",
+  "source_family": "tests/native/parser",
+  "support_boundary": "rejection/provenance ownership covers parser old-mode literals, removed compatibility flags, removed parser fallback flags, and any generated-only, report-only, or migration-only parser claims",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "negative/legacy_boolean_and_null_aliases_rejected.meta.json",
+    "negative/legacy_null_literal_alias_rejected.meta.json",
+    "negative/legacy_yes_literal_alias_rejected.meta.json",
+    "negative/legacy_no_literal_alias_rejected.meta.json",
+    "negative/removed_compatibility_mode_flag_rejected.meta.json",
+    "negative/removed_parser_fallback_flag_rejected.meta.json",
+    "negative/*.meta.json:boundary.behavior_contract=canonical-rejection",
+    "negative/*.meta.json:boundary.retired_positive_surface=true",
+    "negative/*.meta.json:boundary.fallback_allowed=false",
+    "negative/*.meta.json:boundary.shim_allowed=false",
+    "*old-mode*",
+    "*compatibility-shim*",
+    "*fallback*",
+    "*generated-only*",
+    "*report-only*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/native/parser/negative",
+  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only parser surfaces are canonical rejection or provenance-only evidence, never positive parser behavior truth"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-behavior-family-owner-split",
+  "owner_boundary": "parser",
+  "source_family": "tests/native/parser",
+  "support_boundary": "parser ownership covers canonical syntax positives, parser diagnostic negatives, and diagnostic snapshots under tests/native/parser only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "positive/*.objc3",
+    "positive/*.meta.json",
+    "negative/*.objc3",
+    "negative/*.meta.json",
+    "snapshots/*.diagnostics.txt",
+    "positive/canonical_module_main.meta.json:boundary.canonical_behavior_source=true",
+    "positive/objc_property_surface.meta.json:boundary.canonical_behavior_source=true",
+    "negative/*.meta.json:owner_phase=parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "parser positives are limited to canonical syntax support; parser negatives are parser rejection evidence and never compatibility, shim, fallback, generated-only, report-only, or migration support"
+}
