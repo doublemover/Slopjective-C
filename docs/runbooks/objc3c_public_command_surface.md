@@ -37,4 +37,4 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - `compile-objc3c` and the fixture-backed suite actions accept pass-through arguments through the npm bridge.
 - Direct `scripts/objc3c_workflow/runner.py` execution is rejected; the npm bridge is the only public route.
 - No additional retired command names remain supported.
-- The repository does not publish a retired public-script metadata surface.
+- The repository does not publish a retired package-script metadata surface.

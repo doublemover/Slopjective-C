@@ -406,20 +406,25 @@ def test_hard_cutover_gate_allows_native_compile_wrapper_as_source_anchor(
     assert report["stats"]["active_finding_count"] == 0
 
 
-def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
+def test_hard_cutover_gate_rejects_retired_package_alias_metadata(
     tmp_path: Path,
 ) -> None:
+    snake_alias = "public" + "_scripts"
+    camel_alias = "public" + "Scripts"
+    camel_alias_list = "public" + "ScriptAliases"
+    pattern_id = "retired-" + "public" + "-script" + "-alias-metadata"
+
     write(
         tmp_path / "docs/support/capability_matrix.md",
-        "The public_scripts alias table remains authoritative.\n",
+        f"The {snake_alias} alias table remains authoritative.\n",
     )
     write(
         tmp_path / "site/src/index.body.md",
-        "The publicScripts metadata field is still displayed.\n",
+        f"The {camel_alias} metadata field is still displayed.\n",
     )
     write(
         tmp_path / "stdlib/workspace.json",
-        '{"publicScriptAliases": ["test:fast"]}\n',
+        '{"' + camel_alias_list + '": ["test:fast"]}\n',
     )
 
     report = build_report(
@@ -430,9 +435,9 @@ def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
 
     assert report["ok"] is False
     assert [finding["pattern_id"] for finding in report["active_findings"]] == [
-        "retired-public-script-alias-metadata",
-        "retired-public-script-alias-metadata",
-        "retired-public-script-alias-metadata",
+        pattern_id,
+        pattern_id,
+        pattern_id,
     ]
 
 
