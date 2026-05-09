@@ -71,7 +71,39 @@
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
       "generated_fixture_authority": false,
-      "retired_disposition": "phase owner support claims are backed by hand-authored native fixture families; generated artifacts are provenance-only and retired surfaces stay rejection, strict-error, or absent-support"
+      "retired_disposition": "phase owner support claims are resolved through behavior/provenance owner splits before any contract row is cited; hand-authored native fixture families own positive behavior, while docs/evidence, generated artifacts, absent-support rows, old-mode, shim, fallback, report-only, generated-only, migration-only, retired-source, unsupported-feature, and alternate acceptance contracts remain rejection, strict-error, absent-support, or provenance-only"
+    },
+    {
+      "family": "phase_owner_contract_behavior_provenance_splits",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/conformance/phase_owner_contract_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "index_evidence": [
+        "tests/conformance/phase_owner_contract_splits/index.json",
+        "tests/conformance/phase_owner_contract_splits/parser.json",
+        "tests/conformance/phase_owner_contract_splits/sema.json",
+        "tests/conformance/phase_owner_contract_splits/lowering.json",
+        "tests/conformance/phase_owner_contract_splits/ir.json",
+        "tests/conformance/phase_owner_contract_splits/runtime.json",
+        "tests/conformance/phase_owner_contract_splits/e2e.json",
+        "tests/conformance/phase_owner_contract_splits/docs_evidence.json",
+        "tests/conformance/phase_owner_contract_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "phase owner contracts are split into parser, sema, lowering, IR, runtime, e2e, docs/evidence, and rejection/provenance boundaries; old-mode, shim, fallback, report-only, generated-only, migration-only, retired-source, unsupported-feature, and alternate acceptance contracts are strict rejection, absent-support, or provenance-only rather than positive behavior truth"
     },
     {
       "family": "retired_surface_matrix",
@@ -911,6 +943,15 @@
     "tests/conformance/hard_cutover_retired_surface_absence.json",
     "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "tests/conformance/phase_owner_contract_splits/index.json",
+    "tests/conformance/phase_owner_contract_splits/parser.json",
+    "tests/conformance/phase_owner_contract_splits/sema.json",
+    "tests/conformance/phase_owner_contract_splits/lowering.json",
+    "tests/conformance/phase_owner_contract_splits/ir.json",
+    "tests/conformance/phase_owner_contract_splits/runtime.json",
+    "tests/conformance/phase_owner_contract_splits/e2e.json",
+    "tests/conformance/phase_owner_contract_splits/docs_evidence.json",
+    "tests/conformance/phase_owner_contract_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",

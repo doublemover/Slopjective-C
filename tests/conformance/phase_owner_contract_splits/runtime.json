@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "runtime",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "runtime ownership covers strict-dispatch-error support claims, dispatch, object model, storage, ARC, blocks, errors, and concurrency runtime fixture families only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=runtime]",
+    "support_claim=objc3c.behavior.runtime.strict-dispatch-error",
+    "fixture_root=tests/native/runtime",
+    "required_families:dispatch",
+    "required_families:object_model",
+    "required_families:storage",
+    "required_families:arc",
+    "required_families:blocks",
+    "required_families:errors",
+    "required_families:concurrency",
+    "tests/native/runtime/object_model/interface_method_table_contract.objc3"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime dispatch fallback, unresolved dispatch symbols, shim runtime claims, generated-only runtime reports, and report-only runtime claims remain strict-error, canonical rejection, or provenance-only evidence"
+}

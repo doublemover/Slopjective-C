@@ -9,6 +9,17 @@
     "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported-feature claims, and runtime-dispatch residues are rejection, strict-error, or absent-support evidence only",
     "owner_claim_rule": "each phase owner must have exactly one support claim in tests/fixtures/canonical/manifest.json and must point at executable behavior-matrix evidence"
   },
+  "behavior_provenance_owner_split_index": "tests/conformance/phase_owner_contract_splits/index.json",
+  "behavior_provenance_owner_splits": [
+    "tests/conformance/phase_owner_contract_splits/parser.json",
+    "tests/conformance/phase_owner_contract_splits/sema.json",
+    "tests/conformance/phase_owner_contract_splits/lowering.json",
+    "tests/conformance/phase_owner_contract_splits/ir.json",
+    "tests/conformance/phase_owner_contract_splits/runtime.json",
+    "tests/conformance/phase_owner_contract_splits/e2e.json",
+    "tests/conformance/phase_owner_contract_splits/docs_evidence.json",
+    "tests/conformance/phase_owner_contract_splits/rejection_provenance.json"
+  ],
   "phase_order": [
     "parser",
     "sema",

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "parser",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "parser ownership covers parser_lexer_ast support claims, parser fixture families, canonical parser positives, and parser rejection evidence only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=parser]",
+    "support_claim=objc3c.behavior.parser.canonical-syntax",
+    "fixture_root=tests/native/parser",
+    "required_families:positive",
+    "required_families:negative",
+    "required_families:snapshots",
+    "tests/native/parser/positive/canonical_module_main.objc3",
+    "tests/native/parser/positive/objc_property_surface.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "legacy literal aliases, old-mode parser flags, removed compatibility mode flags, and fallback parser flags remain parser rejection evidence"
+}

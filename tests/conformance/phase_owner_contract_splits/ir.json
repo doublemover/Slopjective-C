@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "ir",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "IR ownership covers module-emission support claims, module, function, metadata, and runtime_call fixture families only; generated artifacts do not define IR behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=ir]",
+    "support_claim=objc3c.behavior.ir.module-emission",
+    "fixture_root=tests/native/ir",
+    "required_families:module",
+    "required_families:function",
+    "required_families:metadata",
+    "required_families:runtime_calls",
+    "tests/native/ir/module/basic_i32_return_main.objc3",
+    "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "non-nil runtime helper calls, generated-only IR packets, placeholder artifacts, and report-only IR claims remain strict linkage evidence or provenance-only evidence"
+}
