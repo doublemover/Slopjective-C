@@ -51,6 +51,23 @@ def test_registry_capability_truth_fields_use_schema_owner_ref() -> None:
     assert fields["machine_readable"] is True
     assert fields["action_payload_schema_ref"] == ACTION_PAYLOAD_SCHEMA_REF
     assert fields["owned_fields"] == ["capability_truth"]
+    assert fields["retired_surface_claims_allowed"] is False
+    assert fields["workflow_surface_contracts"]["public_bridge_integrity"] == {
+        "contract_id": "objc3c-workflow-public-bridge-integrity-v1",
+        "owner_surface": "scripts/objc3c_workflow/public_bridge_integrity.py",
+    }
+    assert fields["workflow_surface_contracts"]["package_script_lookup"] == {
+        "contract_id": "objc3c-workflow-package-script-lookup-v1",
+        "owner_surface": "objc3c-workflow-package-script-lookup",
+    }
+    assert fields["workflow_surface_contracts"]["argument_options"] == {
+        "contract_id": "objc3c-workflow-argument-options-v1",
+        "owner_surface": "scripts/objc3c_workflow/argument_option_contracts.py",
+    }
+    assert fields["workflow_surface_contracts"]["argument_usage"] == {
+        "contract_id": "objc3c-workflow-argument-usage-v1",
+        "owner_surface": "scripts/objc3c_workflow/argument_usage.py",
+    }
 
 
 def test_registry_payload_composes_owner_fields() -> None:

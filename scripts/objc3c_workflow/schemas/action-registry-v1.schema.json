@@ -212,7 +212,33 @@
           "items": { "type": "string", "minLength": 1 },
           "minItems": 1
         },
-        "action_payload_schema_ref": { "type": "string", "minLength": 1 }
+        "action_payload_schema_ref": { "type": "string", "minLength": 1 },
+        "workflow_surface_contracts": {
+          "type": "object",
+          "required": [
+            "public_bridge_integrity",
+            "package_script_lookup",
+            "argument_options",
+            "argument_usage"
+          ],
+          "properties": {
+            "public_bridge_integrity": { "$ref": "#/$defs/ownedContractRef" },
+            "package_script_lookup": { "$ref": "#/$defs/ownedContractRef" },
+            "argument_options": { "$ref": "#/$defs/ownedContractRef" },
+            "argument_usage": { "$ref": "#/$defs/ownedContractRef" }
+          },
+          "additionalProperties": false
+        },
+        "retired_surface_claims_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "ownedContractRef": {
+      "type": "object",
+      "required": ["contract_id", "owner_surface"],
+      "properties": {
+        "contract_id": { "type": "string", "minLength": 1 },
+        "owner_surface": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
