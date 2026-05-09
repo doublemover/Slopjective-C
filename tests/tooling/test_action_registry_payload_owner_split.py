@@ -74,7 +74,7 @@ def test_registry_payload_composes_owner_fields() -> None:
     payload = build_registry_payload(
         [
             ActionSpec(
-                "sample-action",
+                "check-sample-action",
                 "sample action",
                 "runner-internal sample",
             )
@@ -87,8 +87,8 @@ def test_registry_payload_composes_owner_fields() -> None:
     assert payload["capability_truth"] == registry_capability_truth_fields()[
         "capability_truth"
     ]
-    assert payload["actions"][0]["action"] == "sample-action"
-    assert payload["actions"][0]["payload_owner_action"] == "sample-action"
+    assert payload["actions"][0]["action"] == "check-sample-action"
+    assert payload["actions"][0]["payload_owner_action"] == "check-sample-action"
     assert payload["actions"][0]["payload_field_owner_map"]["public_command"] == (
         "scripts/objc3c_workflow/action_payload_public_fields.py"
     )
