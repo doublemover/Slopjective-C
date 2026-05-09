@@ -17,7 +17,7 @@ A conformance claim applies to the **toolchain bundle**:
 - runtime support (Objective‑C runtime + concurrency runtime hooks where applicable),
 - standard libraries/modules required by the language features,
 - interface emission + module metadata support,
-- diagnostics and migration tooling requirements.
+- diagnostics, canonicalization fix-its, and rejection evidence requirements.
 
 ### E.1.2 Tags {#e-1-2}
 
@@ -79,7 +79,7 @@ A toolchain claiming **ObjC 3.0 v1 Core** shall:
 A toolchain claiming **ObjC 3.0 v1 Strict** shall:
 
 - support strictness selection ([Part 1](#part-1)) and treat “strict-ill‑formed” constructs as errors,
-- provide the required diagnostics and fix-its for migration ([Part 12](#part-12)),
+- provide the required diagnostics and fix-its for rejected noncanonical source forms ([Part 12](#part-12)),
 - ensure canonical spellings are emitted in textual interfaces ([B](#b), [Part 2](#part-2), [Part 12](#part-12)).
 
 ### E.2.3 ObjC 3.0 v1 Strict Concurrency {#e-2-3}
@@ -215,7 +215,7 @@ M271-A002 implementation note:
 M271-A003 implementation note:
 
 - the frontend now admits retainable C-family callable annotations and the
-  canonical compatibility aliases before later `M271` legality and runtime
+  imported ownership attributes before later `M271` legality and runtime
   integration work
 
 M271-B001 implementation note:
@@ -250,7 +250,7 @@ M271-B004 implementation note:
   `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
 - live sema now fails closed on duplicate explicit captures, weak/unowned
   explicit captures on non-object bindings, conflicting retainable-family
-  annotations, and compatibility aliases without a supporting object return
+  annotations, and imported ownership attributes without a supporting object return
   before later `M271` lowering and runtime work
 
 M271-D001 implementation note:
@@ -459,7 +459,9 @@ A serious conformance claim should ship with:
   - module interfaces round-trip (emit → import) without semantic loss,
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
   - runtime contracts for `throws` and `async` behave correctly under optimization,
-- migration tooling notes for large codebases (warning groups, fix-its, staged adoption).
+- canonicalization notes for rejected legacy spelling inputs, including warning
+  groups and fix-its, without claiming staged adoption as another accepted
+  language mode.
 
 ## M264 frontend claim truth packet (implementation note)
 
@@ -682,6 +684,9 @@ The advanced runnable tranche now has one explicit frontend inventory packet:
 
 Current truthful scope:
 
+- migration-named packet IDs in this section are diagnostic/canonicalization
+  inventories; they do not create a migration lane that accepts retired source
+  forms
 - the packet aggregates the already-landed Part 6 through Part 11 source
   closure/completion packets
 - legacy migration-hint counters for `yes` / `no` / `null` are included when

@@ -376,7 +376,7 @@ To avoid blocking a future value optional design:
 - `T?`/`T!` in v1 remain reference-nullability sugar only and shall not imply a value layout contract.
 - v1 parser and interface emitters shall keep the reserved spellings above unavailable for unrelated language/library features.
 - Module metadata and textual interfaces shall preserve optional/nullability semantics via extensible encoding so a future value-optional kind can be added without redefining existing v1 fields.
-- Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving forward migration paths.
+- Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
 
 #### 3.3.5.2 Canonical future spelling policy (v0.11 decision) {#part-3-3-5-2}
 
@@ -384,7 +384,9 @@ Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature
 `Optional<T>` as the canonical source spelling.
 
 - `optional<T>` is not canonical and shall not be treated as an alias.
-- Canonical mode rejects `optional<T>` with `O3C004` and may provide a fix-it to `Optional<T>`.
+- Canonical mode rejects `optional<T>` with `O3C004` and may provide a
+  canonicalization fix-it to `Optional<T>`; the fix-it does not make
+  `optional<T>` an accepted compatibility spelling.
 - Canonical textual interface emission for future value-optionals shall use `Optional<T>`.
 
 ---
@@ -774,7 +776,7 @@ Required diagnostics:
 - optional member access used on scalar members,
 - ordinary message sends on nullable receivers in strict mode (suggest optional send or binding).
 
-Required optional-spelling fix-it behavior (`optional<T>` -> `Optional<T>`):
+Canonicalization fix-it behavior for rejected optional spellings (`optional<T>` -> `Optional<T>`):
 
 1. For `O3C004`, rewrite only the identifier token `optional` to `Optional`.
 2. Preserve generic argument text and punctuation exactly (`<...>` unchanged).
@@ -786,7 +788,7 @@ Profile severity behavior for optional-spelling diagnostics:
 
 | Validation condition                                            | Core                                    | Strict                          | Strict Concurrency              | Strict System                   |
 | --------------------------------------------------------------- | --------------------------------------- | ------------------------------- | ------------------------------- | ------------------------------- |
-| `O3C004` (canonical mode lowercase alias)                       | Error with required fix-it              | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
+| `O3C004` (canonical mode lowercase retired spelling)            | Error with required fix-it              | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
 | `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail)              | Error                                   | Error                           | Error                           | Error                           |
 | `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable | Note (paired with owning warning/error) | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
 
@@ -858,7 +860,8 @@ These tests should be run at least across ObjC and ObjC++ import modes; C-mode i
 
 ### 3.7.6 Future value-optional spelling conformance ideas {#part-3-7-6}
 
-Conforming suites should include reserved-spelling occupancy and migration-path tests such as:
+Conforming suites should include reserved-spelling occupancy and
+canonicalization-rejection tests such as:
 
 - `VO-01`: Declaring `typedef int Optional;` in ObjC 3.0 mode is rejected; an escaped raw identifier form is accepted.
 - `VO-02`: Declaring unescaped `some`/`none` identifiers in ObjC 3.0 mode is rejected; escaped raw identifier forms are accepted.
@@ -866,11 +869,14 @@ Conforming suites should include reserved-spelling occupancy and migration-path 
 - `VO-04`: Module import of APIs that used escaped raw identifiers for reserved spellings preserves identity without enabling unescaped spellings.
 - `VO-05`: Future value-optional-enabled mode parses canonical `Optional<int>` and accepts with no optional-spelling diagnostic.
 - `VO-06`: Canonical mode rejects `optional<int>` with `O3C004`, plus one-step fix-it to `Optional<int>`.
-- `VO-07`: Canonical mode rejects nested lowercase optional aliases before type admission.
+- `VO-07`: Canonical mode rejects nested lowercase optional spellings before type admission.
 - `VO-08`: v1 mode parsing `Optional<int>` or `optional<int>` emits `OPT-SPELL-RESERVED-V1` with reserved-for-future wording (severity per [§3.7.2](#part-3-7-2)).
 - `VO-09`: Interface/module emission is not reached after noncanonical lowercase optional source.
 - `VO-10`: Noncanonical spelling originating in non-rewritable macro expansion emits the owning spelling diagnostic plus `OPT-SPELL-NOFIX-MACRO`, and no invalid edit.
-- `VO-11`: Batch migrator over source files containing `optional<...>` rewrites occurrences to `Optional<...>` with no semantic delta and no unrelated token changes.
+- `VO-11`: An optional batch canonicalization tool over source files containing
+  `optional<...>` rewrites occurrences to `Optional<...>` with no semantic
+  delta and no unrelated token changes; this tool remains separate from
+  compiler acceptance.
 
 ### 3.7.7 Generic method/function conformance ideas (future-feature gate) {#part-3-7-7}
 

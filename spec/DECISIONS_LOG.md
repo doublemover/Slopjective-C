@@ -181,15 +181,19 @@ It is required for **any operation that may suspend**, including:
 ## D-013: Future value-optionals use canonical `Optional<T>` spelling {#decisions-d-013}
 
 **Decision:** If a future value-optional feature is standardized, its canonical source spelling is `Optional<T>`.
-`optional<T>` is not canonical and remains a reserved compatibility surface.
+`optional<T>` is not canonical and remains a reserved rejected spelling.
 
 In conforming modes:
 
 - parsers and interface emitters shall treat `Optional<T>` as the canonical spelling,
 - textual interfaces shall emit `Optional<T>` when value-optionals are represented,
-- any compatibility acceptance of `optional<T>` shall diagnose and offer a migration fix-it to `Optional<T>`.
+- `optional<T>` shall be rejected before type admission; diagnostics may offer a
+  canonicalization fix-it to `Optional<T>` but shall not accept the lowercase
+  spelling as a compatibility alias.
 
-**Rationale:** A single canonical spelling avoids dual-surface drift in tooling, formatting, metadata round-trips, and diagnostics while preserving a migration path for compatibility aliases.
+**Rationale:** A single canonical spelling avoids dual-surface drift in tooling,
+formatting, metadata round-trips, and diagnostics. A fix-it is rejection
+evidence, not a second source surface.
 
 **Spec impact:** [Part 3](#part-3) [§3.3.5](#part-3-3-5) and [§3.9](#part-3-9).
 

@@ -149,7 +149,7 @@ Canonical spellings are defined in **[B](#b)**.
 This draft does not require a particular distribution format (text vs binary).
 However, the format must be sufficient to support:
 
-- strictness/migration tooling ([Part 1](#part-1)),
+- strictness and canonicalization diagnostics ([Part 1](#part-1)),
 - diagnostics for effect mismatches ([C.2](#c-2)),
 - cross-module concurrency checking ([Part 7](#part-7)),
 - and metadata version/capability checks with ignorable-field forward compatibility ([D.2](#d-2), [D.3.4](#d-3-4)).

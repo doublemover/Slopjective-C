@@ -106,7 +106,7 @@ Freshness and replay rules:
 
 | Trigger ID | Condition                                                                          |
 | ---------- | ---------------------------------------------------------------------------------- |
-| `DP-01`    | Valid replacement and low-risk migration path exists.                              |
+| `DP-01`    | Valid replacement and low-risk canonical replacement plan exists.                  |
 | `DP-02`    | Current shape has unfixable or disproportionate safety or maintenance risk.        |
 | `DP-03`    | Low adoption with disproportionate maintenance burden and bounded consumer impact. |
 

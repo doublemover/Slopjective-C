@@ -853,8 +853,8 @@ M271-A002 frontend completion note:
 
 M271-A003 retainable-family source note:
 
-- the frontend now admits retainable C-family callable attributes and the
-  canonical compatibility aliases on function and method declarations
+- the frontend now admits retainable C-family callable attributes and imported
+  ownership attributes on function and method declarations
 - the current truthful source slice does not yet claim family legality,
   ARC-family interop, or runnable retainable-family runtime behavior
 - the next issue is `M271-B001`
@@ -907,10 +907,10 @@ M271-B004 capture-list/family legality note:
   `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
 - the packet consumes the already-landed `M271-B003` sema packet and completes
   the remaining legality edge cases for explicit capture lists and
-  retainable-family compatibility aliases
+  retainable-family imported ownership attributes
 - live sema rejects duplicate explicit captures, weak/unowned explicit captures
   on non-object bindings, conflicting retainable-family annotations, and
-  compatibility aliases without supporting object-return family surfaces
+  imported ownership attributes without supporting object-return family surfaces
 - lowering and runtime behavior remain later `M271` work
 
 M271-C001 lowering note:
@@ -1190,8 +1190,8 @@ M275-B003 legacy/canonical migration semantics note:
 
 - the frontend now also publishes
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
-- this packet is tied to the live semantic migration path rather than a
-  placeholder contract:
+- this packet is tied to the live semantic canonicalization/rejection path
+  rather than a placeholder contract:
   - canonical mode plus canonical rejection rejects legacy `YES` / `NO` / `NULL`
     with `O3S216`
   - canonical literals remain accepted on the happy path

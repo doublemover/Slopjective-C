@@ -10,7 +10,10 @@ To keep separate compilation reliable and to keep module interfaces stable, this
 - all conforming implementations shall accept; and
 - any interface-generation tool shall emit.
 
-Implementations may accept additional “sugar” spellings (keywords, pragmas, macros), but those spellings are **not** required for conformance unless explicitly stated elsewhere.
+Implementations may recognize additional “sugar” spellings (keywords, pragmas,
+macros) only when a capability row and evidence define that input. Those
+spellings are **not** public aliases, are not required for conformance unless
+explicitly stated elsewhere, and shall not appear in emitted interfaces.
 
 ## B.1 Canonical vs. optional spellings {#b-1}
 
@@ -26,8 +29,10 @@ The canonical spellings use forms already widely supported by LLVM/Clang-family 
 
 Implementations may additionally provide sugar spellings such as:
 
-- `@`-directives (e.g., `@assume_nonnull_begin`) as aliases for pragmas.
-- Framework macros (e.g., `NS_ASSUME_NONNULL_BEGIN`) as aliases for pragmas.
+- `@`-directives (e.g., `@assume_nonnull_begin`) that lower to canonical
+  pragmas.
+- Framework macros (e.g., `NS_ASSUME_NONNULL_BEGIN`) that lower to canonical
+  pragmas.
 - Alternative attribute syntaxes (e.g., C++11 `[[...]]`) when compiling as ObjC++.
 
 Such sugar spellings shall not change semantics.
@@ -46,12 +51,16 @@ Objective‑C 3.0 defines a nonnull-by-default region using:
 
 Semantics are defined in [Part 3](#part-3) ([§3.2.4](#part-3-2-4)).
 
-### B.2.2 Optional aliases (non-normative) {#b-2-2}
+### B.2.2 Noncanonical nonnull inputs (non-normative) {#b-2-2}
 
-Implementations may treat the following as aliases with identical semantics:
+Implementations may recognize the following as imported-source conveniences that
+canonicalize to the Objective-C 3.0 pragma form:
 
 - `#pragma clang assume_nonnull begin/end`
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
+
+These inputs are not emitted as Objective-C 3.0 interface spellings and do not
+create a compatibility mode.
 
 ### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
 
@@ -296,7 +305,7 @@ M271-A003 retainable-family source completion:
 - `__attribute__((objc_family_retain(FamilyName)))`
 - `__attribute__((objc_family_release(FamilyName)))`
 - `__attribute__((objc_family_autorelease(FamilyName)))`
-- compatibility aliases on callables:
+- imported callable ownership attributes:
   `os_returns_retained`, `os_returns_not_retained`, `os_consumed`,
   `cf_returns_retained`, `cf_returns_not_retained`, `cf_consumed`,
   `ns_returns_retained`, `ns_returns_not_retained`, `ns_consumed`
@@ -325,8 +334,8 @@ M271-B003 semantic note:
 M271-B004 semantic note:
 - `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
 - duplicate explicit captures, weak/unowned explicit captures on non-object
-  bindings, conflicting retainable-family annotations, and compatibility
-  aliases without supporting object-return family surfaces now fail closed
+  bindings, conflicting retainable-family annotations, and imported ownership
+  attributes without supporting object-return family surfaces now fail closed
 
 Current implementation status (`M271-C001`):
 - `frontend.pipeline.semantic_surface.objc_part8_system_extension_lowering_contract`
@@ -349,8 +358,8 @@ Current implementation status (`M271-C003`):
 - emitted manifests and IR now preserve one dedicated borrowed/retainable ABI
   packet above the frozen Part 8 lowering contract
 - the packet carries borrowed-return attribute inventory together with
-  retainable-family operation/compatibility-alias inventories on the supported
-  native direct-call path
+  retainable-family operation/imported-ownership-attribute inventories on the
+  supported native direct-call path
 - borrowed lifetime runtime interop and runnable retainable-family behavior
   remain later `M271` lane-D work
 
@@ -591,7 +600,7 @@ __attribute__((NSObject))
 
 - When present on the family typedef under Objective‑C compilation, the family is treated as ObjC-integrated for ARC semantics per [Part 8](#part-8) [§8.4](#part-8-4).
 
-**Compatibility aliases (accepted when semantically equivalent):**
+**Imported ownership attributes (recognized when semantically equivalent):**
 
 - `os_returns_retained` / `os_returns_not_retained` / `os_consumed`
 - `cf_returns_retained` / `cf_returns_not_retained` / `cf_consumed`
