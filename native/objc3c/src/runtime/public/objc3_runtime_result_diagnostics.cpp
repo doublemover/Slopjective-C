@@ -1,4 +1,5 @@
-#include "runtime/public/objc3_runtime_result_contract.h"
+#include "runtime/public/objc3_runtime_result_code_contract.h"
+#include "runtime/public/objc3_runtime_result_message_contract.h"
 
 #include "runtime/public/objc3_runtime_dispatch_diagnostics.h"
 

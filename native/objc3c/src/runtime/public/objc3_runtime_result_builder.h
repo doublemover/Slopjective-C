@@ -1,10 +1,10 @@
 #pragma once
 
-#include "runtime/public/objc3_runtime_result.h"
-
 namespace objc3c::runtime {
 
-objc3_runtime_dispatch_i32_result BuildRuntimeDispatchI32Result(
-    objc3_runtime_dispatch_status_code status_code, int value);
+/*
+ * Result materialization is owned by
+ * objc3_runtime_result_materialization_contract.h.
+ */
 
 }  // namespace objc3c::runtime
