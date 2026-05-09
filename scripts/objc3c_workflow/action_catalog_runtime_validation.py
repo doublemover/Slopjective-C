@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
+from .actions.runtime_acceptance_routes import RUNTIME_ACCEPTANCE_ROUTES
 from .action_spec import ActionSpec
 
+
+def _runtime_acceptance_specs() -> dict[str, ActionSpec]:
+    return {
+        action: ActionSpec(
+            route.action,
+            route.title,
+            route.target,
+            validation_tier=route.validation_tier,
+            guarantee_owner=route.guarantee_owner,
+        )
+        for action, route in RUNTIME_ACCEPTANCE_ROUTES.items()
+    }
+
+
 RUNTIME_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
-    "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "full runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite full", validation_tier="full", guarantee_owner="exhaustive runtime acceptance and ABI/accessor proof"),
-    "test-runtime-acceptance-fast": ActionSpec("test-runtime-acceptance-fast", "fast runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite fast", validation_tier="fast", guarantee_owner="high-signal runtime acceptance slice for developer validation"),
-    "test-runtime-acceptance-diagnostics": ActionSpec("test-runtime-acceptance-diagnostics", "diagnostic runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite diagnostics", validation_tier="fast", guarantee_owner="negative diagnostics and fail-closed runtime acceptance surfaces"),
-    "test-runtime-acceptance-cross-module": ActionSpec("test-runtime-acceptance-cross-module", "cross-module runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite cross-module", validation_tier="fast", guarantee_owner="cross-module import, replay, package, and link-plan runtime acceptance surfaces"),
-    "test-runtime-acceptance-block-arc": ActionSpec("test-runtime-acceptance-block-arc", "Block/ARC runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite block-arc", validation_tier="fast", guarantee_owner="Block, byref, ownership transfer, and ARC runtime acceptance surfaces"),
-    "test-runtime-acceptance-concurrency": ActionSpec("test-runtime-acceptance-concurrency", "concurrency runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite concurrency", validation_tier="fast", guarantee_owner="async/task/actor runtime acceptance surfaces"),
+    **_runtime_acceptance_specs(),
     "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture evidence bundle", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py"),
     "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and evidence bundle", "python:scripts/check_objc3c_runtime_architecture_integration.py", validation_tier="full", guarantee_owner="full public workflow and runtime architecture evidence bundle alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
