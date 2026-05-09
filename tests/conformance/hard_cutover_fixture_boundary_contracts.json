@@ -8,12 +8,14 @@
     "generated_manifest_rule": "tests/fixtures/generated/manifest.json is provenance-only and cannot define native behavior support",
     "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and unresolved runtime surfaces must be rejection, strict-error, absent-support, or documented lexical false-positive evidence",
     "reference_anchor_rule": "docs/reference/legacy_spec_anchor_index.md references in conformance fixtures are historical spec provenance, not old-mode support claims",
+    "phase_owner_rule": "parser, sema, lowering, ir, runtime, and e2e support claims must be backed by tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "closeout_rule": "issue closeout and evidence topology indexes point at owned fixture boundaries and cannot create behavior support by themselves"
   },
   "manifests": {
     "canonical_behavior": {
       "path": "tests/fixtures/canonical/manifest.json",
       "source_of_truth": "tests/native",
+      "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
       "allowed_positive_sources": [
         "tests/native"
       ],
@@ -22,6 +24,8 @@
     "generated_provenance": {
       "path": "tests/fixtures/generated/manifest.json",
       "source_of_truth": "generator-output",
+      "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "phase_support_claim_authority": false,
       "allowed_path_roots": [
         "tests/tooling/fixtures/objc3c"
       ],
@@ -29,6 +33,22 @@
     }
   },
   "contract_families": [
+    {
+      "family": "phase_owner_contracts",
+      "contract": "phase-owned-behavior-authority",
+      "owner_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "positive_support": true,
+      "phase_order": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "generated_fixture_authority": false,
+      "boundary": "phase support claims are satisfied only by hand-authored canonical native behavior fixtures; retired evidence remains rejection or strict-error"
+    },
     {
       "family": "canonical_positive_behavior",
       "contract": "canonical-positive",
@@ -108,6 +128,7 @@
   "cross_indexes": [
     "tests/fixtures/canonical/manifest.json",
     "tests/fixtures/generated/manifest.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "tests/conformance/hard_cutover_catalog.json",
     "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "tests/conformance/hard_cutover_fixture_family_owner_index.json",

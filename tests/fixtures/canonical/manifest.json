@@ -13,7 +13,8 @@
     ],
     "positive_fixture_policy": "positive fixtures cover canonical behavior only",
     "retired_surface_policy": "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata",
-    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
+    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
   },
   "support_claims": [
     {

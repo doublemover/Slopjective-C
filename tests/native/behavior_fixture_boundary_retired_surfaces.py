@@ -1,6 +1,7 @@
 from behavior_fixture_boundary_support import (
     EXPECTED_FIXTURE_FAMILY_INDEX,
     NATIVE_ROOT,
+    PHASE_OWNER_CONTRACTS,
     POSITIVE_RESIDUE_AUDIT,
     REQUIRED_TREE,
     RETIRED_SURFACE_CONTRACT_INDEX,
@@ -325,6 +326,46 @@ def test_behavior_outcome_index_partitions_positive_rejection_and_provenance() -
         path = ROOT / relative_path
         assert path.is_file(), relative_path
         assert not path.is_relative_to(NATIVE_ROOT)
+
+
+def test_phase_owner_contracts_keep_retired_surfaces_out_of_positive_support() -> None:
+    contracts = load_json(PHASE_OWNER_CONTRACTS)
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+    generated_paths = {
+        entry["path"]
+        for entry in load_json(ROOT / "tests" / "fixtures" / "generated" / "manifest.json")["fixtures"]
+    }
+
+    assert contracts["policy"]["generated_boundary_rule"].endswith(
+        "cannot satisfy phase support claims"
+    )
+    assert contracts["generated_fixture_boundary"]["positive_support"] is False
+    assert contracts["generated_fixture_boundary"]["phase_support_claim_authority"] is False
+    assert contracts["generated_fixture_boundary"]["boundary"] == "generated-provenance-only"
+
+    positive_contract_paths: set[str] = set()
+    retired_contract_paths: set[str] = set()
+    for contract in contracts["phase_contracts"]:
+        assert contract["generated_fixture_authority"] is False
+        positive_contract_paths.update(contract["canonical_positive_evidence"])
+        retired_contract_paths.update(contract["retired_surface_evidence"])
+
+    assert positive_contract_paths.isdisjoint(generated_paths)
+    assert retired_contract_paths.isdisjoint(generated_paths)
+
+    for relative_path in positive_contract_paths:
+        fixture = behavior_by_path[relative_path]
+        assert fixture.fixture_kind == "positive"
+        assert not fixture.retired_surface_tags
+
+    for relative_path in retired_contract_paths:
+        fixture = behavior_by_path[relative_path]
+        assert fixture.fixture_kind in STRICT_KINDS
+        assert fixture.expected_diagnostic_code
+
+    for absence in contracts["absent_support_contracts"]:
+        assert absence["disposition"] == "absent-support"
+        assert absence["positive_support"] is False
 
 
 def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:

@@ -12,6 +12,7 @@ metadata, and issue payloads each have a bounded role.
 | Fixture Family | Source | Issues | Boundary |
 | --- | --- | --- | --- |
 | Canonical native manifest | `tests/fixtures/canonical/manifest.json` | `#8144`, `#8150` | hand-authored canonical positives only |
+| Phase owner contracts | `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json` | `#8144`, `#8150` | parser, sema, lowering, IR, runtime, and e2e support claims are backed by native fixture families only |
 | Retired surface matrix | `tests/native/retired_surface_matrix.json` | `#8144`, `#8150` | old-mode, shim, fallback, runtime-dispatch, and migration-lane surfaces are rejection, strict-error, or absent-support evidence |
 | Parser behavior | `tests/native/parser` | `#8132`, `#8134`, `#8146` | parser positives are canonical; removed compatibility and fallback flags are parser rejections |
 | Sema behavior | `tests/native/sema` | `#8135`, `#8145`, `#8146`, `#8147` | semantic positives are canonical; compatibility-shim and unsupported-feature claims are diagnostics |

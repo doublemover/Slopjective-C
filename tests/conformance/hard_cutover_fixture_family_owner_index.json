@@ -38,6 +38,42 @@
       "retired_disposition": "canonical manifest positives are canonical behavior only; retired behavior is referenced through negative or strict-error families"
     },
     {
+      "family": "phase_owner_contracts",
+      "kind": "phase_owner_contract_index",
+      "source": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "positive_evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/e2e/smoke/basic_i32_return_main.objc3"
+      ],
+      "rejection_evidence": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "generated_fixture_authority": false,
+      "retired_disposition": "phase owner support claims are backed by hand-authored native fixture families; generated artifacts are provenance-only and retired surfaces stay rejection, strict-error, or absent-support"
+    },
+    {
       "family": "retired_surface_matrix",
       "kind": "retired_surface_index",
       "source": "tests/native/retired_surface_matrix.json",
@@ -314,6 +350,7 @@
     "tests/conformance/hard_cutover_catalog.json",
     "tests/conformance/hard_cutover_issue_index.json",
     "tests/conformance/hard_cutover_acceptance_area_owners.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
     "tests/conformance/hard_cutover_retired_surface_absence.json",

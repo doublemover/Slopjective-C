@@ -5,6 +5,7 @@ from behavior_fixture_boundary_support import (
     FIXTURE_ROOT,
     NATIVE_ROOT,
     PHASE_ORDER,
+    PHASE_OWNER_CONTRACTS,
     POSITIVE_RESIDUE_AUDIT,
     ROOT,
     generated_manifest_entries,
@@ -44,6 +45,9 @@ def test_canonical_fixture_manifest_matches_native_behavior_catalog() -> None:
     assert canonical_boundary["boundary_contract_index"] == (
         "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
     )
+    assert canonical_boundary["phase_owner_contract_index"] == (
+        "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+    )
 
 
 def test_canonical_and_generated_fixture_paths_are_disjoint() -> None:
@@ -73,6 +77,10 @@ def test_generated_fixture_manifest_is_provenance_only() -> None:
     assert generated_boundary["boundary_contract_index"] == (
         "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
     )
+    assert generated_boundary["phase_owner_contract_index"] == (
+        "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+    )
+    assert generated_boundary["phase_support_claim_authority"] is False
     generated_allowed_roots = tuple(ROOT / root for root in generated_boundary["allowed_path_roots"])
 
     for entry in generated_entries:
@@ -84,6 +92,7 @@ def test_generated_fixture_manifest_is_provenance_only() -> None:
         assert entry["boundary"] == "generated-contract-artifact"
         assert entry["behavior_boundary"] == "generated-provenance-only"
         assert entry["canonical_behavior_source"] is False
+        assert entry["phase_support_claim_authority"] is False
         assert not path.is_relative_to(NATIVE_ROOT)
         assert any(path.is_relative_to(root) for root in generated_allowed_roots)
 
@@ -111,6 +120,7 @@ def test_generated_manifest_cannot_reference_native_behavior_or_retired_support(
         assert not path.is_relative_to(NATIVE_ROOT)
         assert entry["behavior_boundary"] == "generated-provenance-only"
         assert entry["canonical_behavior_source"] is False
+        assert entry["phase_support_claim_authority"] is False
         for token in forbidden_support_tokens:
             assert token not in serialized
 
@@ -144,11 +154,24 @@ def test_fixture_boundary_contract_index_links_all_boundary_families() -> None:
     assert contracts["manifests"]["canonical_behavior"]["path"] == (
         FIXTURE_ROOT / "canonical" / "manifest.json"
     ).relative_to(ROOT).as_posix()
+    assert contracts["manifests"]["canonical_behavior"]["phase_owner_contract_index"] == (
+        PHASE_OWNER_CONTRACTS.relative_to(ROOT).as_posix()
+    )
     assert contracts["manifests"]["canonical_behavior"]["positive_support"] is True
     assert contracts["manifests"]["generated_provenance"]["path"] == (
         FIXTURE_ROOT / "generated" / "manifest.json"
     ).relative_to(ROOT).as_posix()
+    assert contracts["manifests"]["generated_provenance"]["phase_owner_contract_index"] == (
+        PHASE_OWNER_CONTRACTS.relative_to(ROOT).as_posix()
+    )
+    assert contracts["manifests"]["generated_provenance"]["phase_support_claim_authority"] is False
     assert contracts["manifests"]["generated_provenance"]["positive_support"] is False
+
+    phase_owner = families["phase_owner_contracts"]
+    assert phase_owner["owner_index"] == PHASE_OWNER_CONTRACTS.relative_to(ROOT).as_posix()
+    assert phase_owner["phase_order"] == list(PHASE_ORDER)
+    assert phase_owner["generated_fixture_authority"] is False
+    assert phase_owner["positive_support"] is True
 
     canonical = families["canonical_positive_behavior"]
     assert canonical["positive_support"] is True

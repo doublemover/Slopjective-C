@@ -9,7 +9,9 @@
     ],
     "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations",
     "positive_fixture_policy": "generated artifacts never define positive native behavior",
-    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json"
+    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "phase_support_claim_authority": false
   },
   "fixtures": [
     {
@@ -20,6 +22,7 @@
       "boundary": "generated-contract-artifact",
       "behavior_boundary": "generated-provenance-only",
       "canonical_behavior_source": false,
+      "phase_support_claim_authority": false,
       "owner": "generated-fixture-provenance"
     },
     {
@@ -30,6 +33,7 @@
       "boundary": "generated-contract-artifact",
       "behavior_boundary": "generated-provenance-only",
       "canonical_behavior_source": false,
+      "phase_support_claim_authority": false,
       "owner": "generated-fixture-provenance"
     }
   ]

@@ -42,6 +42,9 @@ POSITIVE_RESIDUE_AUDIT = (
 FIXTURE_BOUNDARY_CONTRACTS = (
     ROOT / "tests" / "conformance" / "hard_cutover_fixture_boundary_contracts.json"
 )
+PHASE_OWNER_CONTRACTS = (
+    ROOT / "tests" / "conformance" / "hard_cutover_behavior_phase_owner_contracts.json"
+)
 STRICT_REJECTION_NAME_SUFFIXES = (
     "_rejected.objc3",
     "_strict_error.objc3",
@@ -49,6 +52,7 @@ STRICT_REJECTION_NAME_SUFFIXES = (
 )
 EXPECTED_FIXTURE_FAMILY_INDEX = {
     "canonical_native_manifest": ("behavior_manifest", "canonical_behavior_fixtures"),
+    "phase_owner_contracts": ("phase_owner_contract_index", "canonical_behavior_fixtures"),
     "retired_surface_matrix": ("retired_surface_index", "canonical_behavior_fixtures"),
     "parser_behavior": ("phase_fixture_family", "parser_lexer_ast"),
     "sema_behavior": ("phase_fixture_family", "semantic_diagnostics"),

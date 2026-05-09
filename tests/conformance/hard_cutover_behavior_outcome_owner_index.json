@@ -14,6 +14,7 @@
       "kind": "positive",
       "owning_indexes": [
         "tests/fixtures/canonical/manifest.json",
+        "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
         "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_fixture_family_owner_index.json",
         "tests/conformance/hard_cutover_behavior_evidence_topology.json"
@@ -198,6 +199,7 @@
       "kind": "provenance-only",
       "owning_indexes": [
         "tests/fixtures/generated/manifest.json",
+        "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
         "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
         "tests/conformance/hard_cutover_fixture_family_owner_index.json"
       ],
@@ -292,6 +294,7 @@
     "tests/conformance/hard_cutover_catalog.json",
     "tests/conformance/hard_cutover_issue_index.json",
     "tests/conformance/hard_cutover_acceptance_area_owners.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "tests/conformance/hard_cutover_fixture_family_owner_index.json",
     "tests/conformance/hard_cutover_fixture_boundary_contracts.json",

@@ -3,6 +3,7 @@ from behavior_fixture_boundary_support import (
     HARD_CUTOVER_CONTRACTS,
     NATIVE_ROOT,
     PHASE_ORDER,
+    PHASE_OWNER_CONTRACTS,
     REQUIRED_TREE,
     RETIRED_POSITIVE_SURFACE_TERMS,
     ROOT,
@@ -122,3 +123,48 @@ def test_hard_cutover_catalog_links_live_native_behavior_fixtures() -> None:
         assert owned_root.exists(), boundary["owned_fixture_root"]
         for fixture_path in boundary.get("native_behavior_fixtures", []):
             assert fixture_path in behavior_paths
+
+
+def test_phase_owner_contracts_match_required_fixture_topology() -> None:
+    phase_contracts = load_json(PHASE_OWNER_CONTRACTS)
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+    generated_paths = {
+        entry["path"]
+        for entry in load_manifest_fixture_entries(ROOT / "tests" / "fixtures" / "generated" / "manifest.json")
+    }
+    support_claims = {
+        claim["owner_phase"]: claim
+        for claim in load_json(ROOT / "tests" / "fixtures" / "canonical" / "manifest.json")["support_claims"]
+    }
+
+    assert phase_contracts["phase_order"] == list(PHASE_ORDER)
+    assert [entry["phase"] for entry in phase_contracts["phase_contracts"]] == list(PHASE_ORDER)
+    assert phase_contracts["generated_fixture_boundary"]["phase_support_claim_authority"] is False
+
+    for contract in phase_contracts["phase_contracts"]:
+        phase = contract["phase"]
+        fixture_root = ROOT / contract["fixture_root"]
+        support_claim = support_claims[phase]
+
+        assert fixture_root == NATIVE_ROOT / phase
+        assert contract["required_families"] == list(REQUIRED_TREE[phase])
+        assert contract["support_claim"] == support_claim["claim_id"]
+        assert support_claim["behavior_fixture"] in contract["canonical_positive_evidence"] + contract[
+            "retired_surface_evidence"
+        ]
+        assert support_claim["executable_command"] == "npm run objc3c -- test-behavior-matrix"
+        assert contract["generated_fixture_authority"] is False
+        assert set(contract["canonical_positive_evidence"]).isdisjoint(generated_paths)
+        assert set(contract["retired_surface_evidence"]).isdisjoint(generated_paths)
+
+        for relative_path in contract["canonical_positive_evidence"]:
+            fixture = behavior_by_path[relative_path]
+            assert fixture.owner_phase == phase
+            assert fixture.fixture_kind == "positive"
+            assert not fixture.retired_surface_tags
+
+        for relative_path in contract["retired_surface_evidence"]:
+            fixture = behavior_by_path[relative_path]
+            assert fixture.owner_phase == phase
+            assert fixture.fixture_kind in STRICT_KINDS
+            assert fixture.expected_diagnostic_code
