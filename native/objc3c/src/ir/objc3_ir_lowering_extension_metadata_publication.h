@@ -18,3 +18,6 @@ void EmitObjc3IRDispatchMetadataPreservationNodes(
 
 void EmitObjc3IROwnershipExtensionMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRLoweringExtensionCommentPublication(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
