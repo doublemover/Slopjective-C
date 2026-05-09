@@ -7,6 +7,7 @@
     "schema_version",
     "matrix_path",
     "matrix_schema_path",
+    "projection_contract",
     "evidence_policy",
     "rows"
   ],
@@ -21,6 +22,45 @@
     "matrix_schema_path": {
       "type": "string",
       "const": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    "projection_contract": {
+      "type": "object",
+      "required": [
+        "source",
+        "owner",
+        "row_key",
+        "drift_rule"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "docs/support/capability_matrix.json#/capabilities/*/evidence"
+        },
+        "owner": {
+          "type": "string",
+          "const": "scripts/capability_docs_validator/evidence_map.py"
+        },
+        "row_key": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "capability_id",
+              "support_claim",
+              "evidence_kind",
+              "path",
+              "command"
+            ]
+          },
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "drift_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
     },
     "evidence_policy": {
       "type": "object",

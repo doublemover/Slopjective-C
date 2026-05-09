@@ -13,6 +13,12 @@ capability matrix schema is `schemas/objc3c-capability-matrix-v1.schema.json`.
 Example rows and anti-examples live in
 `docs/support/capability_schema_examples.md`.
 
+`projection_contract` in the JSON file makes this table a flattened projection
+of `docs/support/capability_matrix.json#/capabilities/*/evidence`. Its stable
+row key is `capability_id`, `support_claim`, `evidence_kind`, `path`, and
+`command`; `scripts/capability_docs_validator/evidence_map.py` owns duplicate,
+missing, and extra-key drift checks.
+
 `evidence_policy` in the JSON file is part of the contract. A command cell is
 only for replayable implemented behavior evidence through `npm run objc3c --
 <action>`. Blank command cells identify owner files, schemas, diagnostics, or

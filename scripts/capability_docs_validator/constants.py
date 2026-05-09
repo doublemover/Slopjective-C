@@ -5,7 +5,9 @@ import re
 from objc3c_tooling.paths import ROOT
 
 MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
+EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
 SCHEMA_PATH = ROOT / "docs" / "support" / "capability_matrix.schema.json"
+EVIDENCE_MAP_SCHEMA_PATH = ROOT / "schemas" / "objc3c-capability-evidence-map-v1.schema.json"
 MATRIX_DOC = ROOT / "docs" / "support" / "capability_matrix.md"
 EVIDENCE_DOC = ROOT / "docs" / "support" / "evidence_map.md"
 CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
@@ -20,7 +22,7 @@ CAPABILITY_DOCS_SURFACE_OWNER = "capability-docs.docs-surface-owner"
 
 CAPABILITY_TRUTH_OWNER_SURFACE = "scripts/capability_docs_validator/validation.py"
 CAPABILITY_MATRIX_OWNER_SURFACE = "scripts/capability_docs_validator/matrix.py"
-CAPABILITY_EVIDENCE_OWNER_SURFACE = "scripts/capability_docs_validator/support_links.py"
+CAPABILITY_EVIDENCE_OWNER_SURFACE = "scripts/capability_docs_validator/evidence_map.py"
 CAPABILITY_MANIFEST_OWNER_SURFACE = "scripts/capability_docs_validator/manifest.py"
 CAPABILITY_DOCS_SURFACE_OWNER_SURFACE = "scripts/capability_docs_validator/docs.py"
 
@@ -47,6 +49,8 @@ def capability_truth_owner_contract() -> dict[str, object]:
         "evidence_owner": {
             "owner_id": CAPABILITY_EVIDENCE_OWNER,
             "owner_surface": CAPABILITY_EVIDENCE_OWNER_SURFACE,
+            "evidence_map_path": EVIDENCE_MAP_PATH.relative_to(ROOT).as_posix(),
+            "evidence_map_schema_path": EVIDENCE_MAP_SCHEMA_PATH.relative_to(ROOT).as_posix(),
             "evidence_doc": EVIDENCE_DOC.relative_to(ROOT).as_posix(),
         },
         "manifest_owner": {

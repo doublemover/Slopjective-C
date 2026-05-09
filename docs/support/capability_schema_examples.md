@@ -103,6 +103,32 @@ Rules shown by this row:
 
 ## Evidence Policy
 
+Projection contract:
+
+```json
+{
+  "source": "docs/support/capability_matrix.json#/capabilities/*/evidence",
+  "owner": "scripts/capability_docs_validator/evidence_map.py",
+  "row_key": [
+    "capability_id",
+    "support_claim",
+    "evidence_kind",
+    "path",
+    "command"
+  ],
+  "drift_rule": "The evidence map is a flattened projection of capability matrix evidence rows. Validators fail on duplicate, missing, or extra row keys."
+}
+```
+
+Rules shown by this contract:
+
+- Evidence-map rows are keyed projections of matrix evidence, not independent
+  support claims.
+- `support_claim` and `command` are key fields when present; blank cells remain
+  part of the ownership-boundary key.
+- A row can be added or removed only by keeping the matrix and evidence map in
+  exact key agreement.
+
 ```json
 {
   "public_command_surface": "npm run objc3c -- <action>",

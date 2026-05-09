@@ -34,10 +34,18 @@ The canonical schema registry entries live under `schemas/`:
 the authoritative data files, schema sources, and human projections so consumers
 can distinguish source truth from reader-facing summaries.
 
+`evidence_map.json` carries `projection_contract`. That contract makes the
+evidence map a flattened projection of
+`docs/support/capability_matrix.json#/capabilities/*/evidence`, owned by
+`scripts/capability_docs_validator/evidence_map.py`. The stable row key is
+`capability_id`, `support_claim`, `evidence_kind`, `path`, and `command`; the
+validator rejects duplicate, missing, or extra evidence-map keys.
+
 ## Change Rules
 
 - Add or change a support claim in `capability_matrix.json` first.
-- Add matching evidence rows in `evidence_map.json`.
+- Add matching evidence rows in `evidence_map.json`; the row key must match
+  the matrix evidence projection exactly.
 - Use `owner_modules` for internal implementation boundaries that support a
   claim without becoming public command surface.
 - Update the markdown projections in this directory when the machine-readable
@@ -66,4 +74,5 @@ can distinguish source truth from reader-facing summaries.
 `scripts/validate_capability_docs.py` remains the stable public validator
 entrypoint. Its implementation is split under
 `scripts/capability_docs_validator/` so matrix shape, support-claim manifest
-truth, docs/evidence-map references, and CLI behavior have separate owners.
+truth, evidence-map projection keys, docs references, and CLI behavior have
+separate owners.
