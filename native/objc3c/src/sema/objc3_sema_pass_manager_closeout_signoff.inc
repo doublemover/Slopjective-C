@@ -73,51 +73,8 @@
       result.parity_surface.weak_unowned_semantics_summary.deterministic &&
       result.parity_surface.arc_diagnostics_fixit_summary.deterministic &&
       result.parity_surface.autoreleasepool_scope_summary.deterministic;
-  const bool closeout_parser_sema_ready =
-      result.parity_surface
-          .deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          result.parity_surface.parser_sema_contract_readiness_record);
-  const bool closeout_pass_manager_publication_ready =
-      result.parity_surface.deterministic_pass_manager_publication_record &&
-      IsReadyObjc3SemaPassManagerPublicationRecord(
-          result.parity_surface.pass_manager_publication_record);
-  const bool closeout_type_metadata_publication_ready =
-      result.parity_surface.deterministic_type_metadata_publication_record &&
-      IsReadyObjc3SemaTypeMetadataPublicationRecord(
-          result.parity_surface.type_metadata_publication_record);
-  const bool closeout_diagnostics_publication_ready =
-      result.parity_surface.deterministic_diagnostics_publication_record &&
-      IsReadyObjc3SemaDiagnosticsPublicationRecord(
-          result.parity_surface.diagnostics_publication_record);
-  const bool closeout_pass_flow_recovery_ready =
-      result.parity_surface.deterministic_pass_flow_recovery_record &&
-      IsReadyObjc3SemaPassFlowRecoveryRecord(
-          result.parity_surface.pass_flow_recovery_record);
-  const bool closeout_type_metadata_handoff_ready =
-      result.parity_surface
-          .deterministic_type_metadata_mapping_readiness_record &&
-      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-          result.parity_surface.type_metadata_mapping_readiness_record);
-  const bool closeout_typed_semantic_handoffs_ready =
-      result.parity_surface.deterministic_typed_semantic_handoff_record &&
-      IsReadyObjc3SemaTypedSemanticHandoffRecord(
-          result.parity_surface.typed_semantic_handoff_record);
-  const bool closeout_parity_validation_ready =
-      result.parity_surface.ready &&
-      result.parity_surface.deterministic_parity_validation_record &&
-      IsReadyObjc3SemaParityValidationRecord(
-          result.parity_surface.parity_validation_record);
   result.closeout_signoff_record = BuildObjc3SemaCloseoutSignoffRecord(
-      input,
-      closeout_parity_validation_ready,
-      closeout_parser_sema_ready,
-      closeout_pass_manager_publication_ready,
-      closeout_type_metadata_publication_ready,
-      closeout_diagnostics_publication_ready,
-      closeout_pass_flow_recovery_ready,
-      closeout_type_metadata_handoff_ready,
-      closeout_typed_semantic_handoffs_ready);
+      input, result.parity_surface);
   result.deterministic_closeout_signoff_record =
       IsReadyObjc3SemaCloseoutSignoffRecord(result.closeout_signoff_record);
   result.parity_surface.closeout_signoff_record = result.closeout_signoff_record;
