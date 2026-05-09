@@ -1,9 +1,12 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
 #include "lower/contracts/interop_foreign_call_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_runtime_import_surface.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -23,6 +26,39 @@ BuildInteropForeignCallLifetimeLoweringContract(
     const Objc3InteropCppInteropInteractionSummary &cpp_summary,
     const Objc3InteropForeignSurfaceInterfacePreservationSummary
         &preservation_summary);
+
+[[nodiscard]] Objc3InteropForeignSurfaceInterfacePreservationSummary
+BuildInteropForeignSurfaceInterfacePreservationSummary(
+    const Objc3Program &program,
+    const Objc3FrontendInteropForeignImportSourceClosureSummary
+        &foreign_import_source_summary,
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+        &cpp_swift_source_summary,
+    bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces);
+
+[[nodiscard]] Objc3InteropFfiMetadataInterfacePreservationContract
+BuildInteropFfiMetadataInterfacePreservationContract(
+    const Objc3InteropForeignCallLifetimeLoweringContract &lowering_contract,
+    const std::string &lowering_replay_key,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces,
+    bool runtime_import_artifact_ready,
+    std::string &replay_key_out);
+
+[[nodiscard]] Objc3InteropHeaderModuleBridgeGenerationSummary
+BuildInteropHeaderModuleBridgeGenerationSummary(
+    const Objc3Program &program,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropFfiMetadataInterfacePreservationContract
+        &ffi_preservation_contract,
+    const std::string &ffi_preservation_replay_key,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces);
 
 [[nodiscard]] std::string BuildInteropInteropSemanticModelSummaryJson(
     const Objc3InteropInteropSemanticModelSummary &summary);
@@ -59,6 +95,14 @@ BuildInteropForeignSurfaceInterfacePreservationSummaryJson(
     const Objc3InteropForeignSurfaceInterfacePreservationSummary
         &preservation_summary,
     const Objc3InteropForeignCallLifetimeLoweringContract &contract,
+    const std::string &replay_key);
+
+[[nodiscard]] std::string BuildInteropFfiMetadataInterfacePreservationContractJson(
+    const Objc3InteropForeignCallLifetimeLoweringContract &lowering_contract,
+    const std::string &lowering_replay_key,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropFfiMetadataInterfacePreservationContract &contract,
     const std::string &replay_key);
 
 }  // namespace objc3::artifacts::frontend
