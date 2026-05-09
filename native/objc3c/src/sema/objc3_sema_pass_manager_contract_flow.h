@@ -29,6 +29,8 @@ inline constexpr const char *kObjc3ParserSemaConformanceEvidenceOwner =
     "native.frontend.parser-sema.conformance-evidence";
 inline constexpr const char *kObjc3ParserSemaHandoffPublicationEvidenceOwner =
     "native.frontend.parser-sema.handoff-publication-evidence";
+inline constexpr const char *kObjc3ParserSemaHandoffScaffoldReadinessOwner =
+    "native.frontend.parser-sema.handoff-scaffold-readiness";
 inline constexpr const char *kObjc3ParserSemaContractReadinessOwner =
     "native.frontend.parser-sema.contract-readiness";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
@@ -1130,6 +1132,48 @@ inline bool IsReadyObjc3ParserSemaHandoffPublicationEvidenceRecord(
          record.recovery_replay_key_deterministic &&
          record.recovery_determinism_hardening_satisfied &&
          record.deterministic;
+}
+
+struct Objc3ParserSemaHandoffScaffoldReadinessRecord {
+  std::string handoff_scaffold_readiness_owner =
+      kObjc3ParserSemaHandoffScaffoldReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string parser_sema_contract_handoff_owner =
+      kObjc3ParserSemaContractHandoffOwner;
+  std::string parser_sema_conformance_evidence_owner =
+      kObjc3ParserSemaConformanceEvidenceOwner;
+  std::string parser_sema_contract_readiness_owner =
+      kObjc3ParserSemaContractReadinessOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool owner_record_ready = false;
+  bool snapshot_evidence_ready = false;
+  bool snapshot_normalization_ready = false;
+  bool canonical_rejection_ready = false;
+  bool conformance_evidence_ready = false;
+  bool parser_contract_readiness_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3ParserSemaHandoffScaffoldReadinessRecord(
+    const Objc3ParserSemaHandoffScaffoldReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.handoff_scaffold_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_conformance_evidence_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_readiness_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_record_ready && record.snapshot_evidence_ready &&
+         record.snapshot_normalization_ready &&
+         record.canonical_rejection_ready &&
+         record.conformance_evidence_ready &&
+         record.parser_contract_readiness_ready && record.deterministic;
 }
 
 struct Objc3ParserSemaPerformanceQualityGuardrails {
