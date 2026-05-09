@@ -7,8 +7,14 @@ bool Objc3TypedSemaToLoweringBoundaryIsReady(
   return boundary.deterministic && boundary.all_callable_returns_typed &&
          boundary.all_params_have_concrete_type_surface &&
          boundary.diagnostics_clear && boundary.owner_split_explicit &&
+         boundary.sema_to_lowering_owner_contract_recorded &&
          Objc3LoweringStrictOwnerModelIsReady(
              boundary.typed_semantic_handoff_owner,
+             boundary.strict_contract_owner_model,
+             boundary.strict_no_fallback,
+             boundary.strict_no_compatibility) &&
+         Objc3LoweringStrictOwnerModelIsReady(
+             boundary.lowering_consumer_owner,
              boundary.strict_contract_owner_model,
              boundary.strict_no_fallback,
              boundary.strict_no_compatibility);
@@ -46,7 +52,10 @@ std::string Objc3TypedSemaToLoweringBoundaryReplayKey(
       << ";diagnostics_clear="
       << (boundary.diagnostics_clear ? "true" : "false")
       << ";owner_split_explicit="
-      << (boundary.owner_split_explicit ? "true" : "false") << ";"
+      << (boundary.owner_split_explicit ? "true" : "false")
+      << ";sema_to_lowering_owner_contract_recorded="
+      << (boundary.sema_to_lowering_owner_contract_recorded ? "true" : "false")
+      << ";lowering_consumer_owner=" << boundary.lowering_consumer_owner << ";"
       << Objc3LoweringOwnerReplayKey(
              boundary.typed_semantic_handoff_owner,
              boundary.strict_contract_owner_model,

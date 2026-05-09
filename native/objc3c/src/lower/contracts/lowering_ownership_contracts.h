@@ -16,6 +16,18 @@ inline constexpr const char *kObjc3RuntimeDispatchLoweringOwner =
     "native.lower.runtime-dispatch";
 inline constexpr const char *kObjc3LoweringBackendHandoffOwner =
     "native.lower.backend-handoff";
+inline constexpr const char *kObjc3LoweringSemanticBoundaryConsumerOwner =
+    "native.lower.semantic-boundary-consumer";
+inline constexpr const char *kObjc3RuntimeMetadataHandoffOwner =
+    "native.lower.runtime-metadata-handoff";
+inline constexpr const char *kObjc3RuntimeRegistrationDescriptorLoweringOwner =
+    "native.lower.runtime-registration-descriptor";
+inline constexpr const char *kObjc3RuntimeConstructorRootPublicationOwner =
+    "native.lower.runtime-constructor-root-publication";
+inline constexpr const char *kObjc3RuntimeInitStubPublicationOwner =
+    "native.lower.runtime-init-stub-publication";
+inline constexpr const char *kObjc3RuntimeRegistrationTablePublicationOwner =
+    "native.lower.runtime-registration-table-publication";
 inline constexpr const char *kObjc3IRModuleArtifactOwner =
     "native.ir.module-artifact";
 inline constexpr const char *kObjc3IRRuntimeDispatchResultOwner =

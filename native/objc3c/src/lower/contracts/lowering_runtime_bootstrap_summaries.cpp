@@ -81,6 +81,17 @@ std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
       << kObjc3RuntimeBootstrapRegistrationDescriptorArtifact
       << ";registration_descriptor_handoff_model="
       << kObjc3RuntimeBootstrapRegistrationDescriptorHandoffModel
+      << ";publication_owner_contract_id="
+      << kObjc3RuntimeRegistrationPublicationContractId
+      << ";metadata_handoff_owner=" << kObjc3RuntimeMetadataHandoffOwner
+      << ";descriptor_lowering_owner="
+      << kObjc3RuntimeRegistrationDescriptorLoweringOwner
+      << ";constructor_root_publication_owner="
+      << kObjc3RuntimeConstructorRootPublicationOwner
+      << ";init_stub_publication_owner="
+      << kObjc3RuntimeInitStubPublicationOwner
+      << ";registration_table_publication_owner="
+      << kObjc3RuntimeRegistrationTablePublicationOwner
       << ";constructor_root_symbol="
       << kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol
       << ";init_stub_symbol_prefix="
@@ -124,6 +135,10 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
       << kObjc3RuntimeBootstrapRegistrationDescriptorPayloadModel
       << ";image_root_payload_model="
       << kObjc3RuntimeBootstrapImageRootPayloadModel
+      << ";publication_owner_contract_id="
+      << kObjc3RuntimeRegistrationPublicationContractId
+      << ";descriptor_lowering_owner="
+      << kObjc3RuntimeRegistrationDescriptorLoweringOwner
       << ";non_goals=no-cross-translation-unit-root-deduplication-or-runtime-fanout-merge";
   return out.str();
 }

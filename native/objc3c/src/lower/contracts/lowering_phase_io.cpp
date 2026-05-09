@@ -40,6 +40,9 @@ Objc3LoweringPhaseInput Objc3BuildLoweringPhaseInput(
 bool Objc3LoweringPhaseInputIsReady(const Objc3LoweringPhaseInput &input) {
   return input.program != nullptr && !input.module_name.empty() &&
          Objc3TypedSemaToLoweringBoundaryIsReady(input.typed_boundary) &&
+         (!input.artifacts.emit_runtime_metadata ||
+          Objc3RuntimeMetadataLoweringHandoffIsReady(
+              input.runtime_metadata_handoff)) &&
          Objc3LoweringBackendHandoffIsReady(input.backend_handoff) &&
          Objc3LoweringIRHandoffIsReady(input.lower_to_ir_handoff) &&
          input.owner_split_explicit &&
