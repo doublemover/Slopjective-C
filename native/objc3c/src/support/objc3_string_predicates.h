@@ -1,13 +1,5 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-
-namespace objc3c::support {
-
-std::string LowercaseAscii(std::string_view value);
-bool StartsWith(std::string_view value, std::string_view prefix);
-bool EndsWith(std::string_view value, std::string_view suffix);
-bool Contains(std::string_view value, std::string_view needle);
-
-}  // namespace objc3c::support
+#include "support/objc3_ascii_case_transform.h"
+#include "support/objc3_string_affix_predicates.h"
+#include "support/objc3_string_search_predicates.h"

@@ -1,4 +1,6 @@
 add_library(objc3c_support STATIC
+  objc3_ascii_case_transform.cpp
+  objc3_ascii_case_transform.h
   objc3_ascii_predicates.h
   objc3_concurrency_cancellation_symbols.cpp
   objc3_concurrency_cancellation_symbols.h
@@ -70,8 +72,11 @@ add_library(objc3c_support STATIC
   objc3_runtime_metadata_protocol_reference_counts.h
   objc3_runtime_metadata_reference_counts.h
   objc3_runtime_metadata_record_set.h
-  objc3_string_predicates.cpp
+  objc3_string_affix_predicates.cpp
+  objc3_string_affix_predicates.h
   objc3_string_predicates.h
+  objc3_string_search_predicates.cpp
+  objc3_string_search_predicates.h
   objc3_type_spelling_consistency.cpp
   objc3_type_spelling_consistency.h
   objc3_type_profile_helpers.h
