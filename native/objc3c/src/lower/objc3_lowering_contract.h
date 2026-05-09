@@ -4,6 +4,7 @@
 #include "lower/contracts/arc_boundary_lowering_contracts.h"
 #include "lower/contracts/block_arc_lowering_plan.h"
 #include "lower/contracts/block_runtime_lowering_contracts.h"
+#include "lower/contracts/diagnostic_recovery_lowering_contracts.h"
 #include "lower/contracts/dispatch_control_lowering_contracts.h"
 #include "lower/contracts/error_handling_lowering_contracts.h"
 #include "lower/contracts/function_method_lowering_state.h"
@@ -18,6 +19,7 @@
 #include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
+#include "lower/contracts/unsafe_intrinsic_governance_contracts.h"
 
 #include <cstddef>
 #include <string>
@@ -485,12 +487,6 @@ inline constexpr const char *kObjc3IncrementalModuleCacheInvalidationLoweringLan
     "objc3c.incremental.module.cache.invalidation.lowering.v1";
 inline constexpr const char *kObjc3CrossModuleConformanceLoweringLaneContract =
     "objc3c.cross.module.conformance.lowering.v1";
-inline constexpr const char *kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract =
-    "objc3c.error.diagnostics.recovery.lowering.v1";
-inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
-    "objc3c.unsafe.pointer.extension.gating.lowering.v1";
-inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
-    "objc3c.inline.asm.intrinsic.governance.lowering.v1";
 
 struct Objc3LoweringContract {
   std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;
@@ -838,43 +834,6 @@ struct Objc3CrossModuleConformanceLoweringContract {
   bool deterministic = true;
 };
 
-struct Objc3ErrorDiagnosticsRecoveryLoweringContract {
-  std::size_t error_diagnostic_sites = 0;
-  std::size_t parser_diagnostic_sites = 0;
-  std::size_t semantic_diagnostic_sites = 0;
-  std::size_t fixit_hint_sites = 0;
-  std::size_t recovery_candidate_sites = 0;
-  std::size_t recovery_applied_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3UnsafePointerExtensionLoweringContract {
-  std::size_t unsafe_pointer_extension_sites = 0;
-  std::size_t unsafe_keyword_sites = 0;
-  std::size_t pointer_arithmetic_sites = 0;
-  std::size_t raw_pointer_type_sites = 0;
-  std::size_t unsafe_operation_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t gate_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3InlineAsmIntrinsicGovernanceLoweringContract {
-  std::size_t inline_asm_intrinsic_sites = 0;
-  std::size_t inline_asm_sites = 0;
-  std::size_t intrinsic_sites = 0;
-  std::size_t governed_intrinsic_sites = 0;
-  std::size_t privileged_intrinsic_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t gate_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -1069,15 +1028,3 @@ bool IsValidObjc3CrossModuleConformanceLoweringContract(
     const Objc3CrossModuleConformanceLoweringContract &contract);
 std::string Objc3CrossModuleConformanceLoweringReplayKey(
     const Objc3CrossModuleConformanceLoweringContract &contract);
-bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
-    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
-std::string Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(
-    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
-bool IsValidObjc3UnsafePointerExtensionLoweringContract(
-    const Objc3UnsafePointerExtensionLoweringContract &contract);
-std::string Objc3UnsafePointerExtensionLoweringReplayKey(
-    const Objc3UnsafePointerExtensionLoweringContract &contract);
-bool IsValidObjc3InlineAsmIntrinsicGovernanceLoweringContract(
-    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract);
-std::string Objc3InlineAsmIntrinsicGovernanceLoweringReplayKey(
-    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract);
