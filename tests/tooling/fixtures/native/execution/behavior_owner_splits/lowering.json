@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-tooling-native-execution-metadata-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_family": "tests/tooling/fixtures/native/execution",
+  "support_boundary": "lowering ownership covers sidecars where canonical lowering intentionally retains runtime dispatch linkage, nil/non-nil dispatch shape, or unresolved external symbol evidence before runtime or e2e owners cite support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "negative/README.md:lowering-owned cases fail at link stage when canonical lowering requires a runtime symbol",
+    "negative/runtime_dispatch_unresolved_symbol.meta.json",
+    "negative/nil_receiver_runtime_dispatch_unresolved_symbol.meta.json",
+    "negative/numeric_zero_receiver_runtime_dispatch_unresolved_symbol.meta.json",
+    "negative/shadowed_nil_binding_runtime_dispatch_unresolved_symbol.meta.json",
+    "negative/prototype_unresolved_external.meta.json",
+    "positive/message_send_direct_nil_receiver_elision.meta.json",
+    "positive/message_send_nil_bound_identifier_keyword_elision.meta.json"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime-dispatch fallback lowering, non-fast-path labels, unresolved-symbol success claims, and sidecar-only lowering support remain strict-error, canonical rejection, or provenance-only evidence"
+}

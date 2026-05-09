@@ -367,7 +367,37 @@
         "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.meta.json",
         "tests/tooling/fixtures/native/execution/negative/numeric_zero_receiver_runtime_dispatch_unresolved_symbol.meta.json"
       ],
-      "retired_disposition": "tooling execution metadata mirrors positive/negative native behavior; negative runtime dispatch metadata does not widen runtime support"
+      "retired_disposition": "tooling execution metadata is resolved through behavior-first phase indexes before any sidecar is cited as parser, sema, lowering, IR, runtime, or e2e support; negative runtime dispatch metadata, unsupported runnable claims, fallback-looking names, shim-looking names, compatibility-looking names, non-fast-path labels, unresolved-symbol sidecars, sidecar-only claims, migration labels, and alternate runtime acceptance claims do not widen support"
+    },
+    {
+      "family": "tooling_native_execution_metadata_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/native/execution/behavior_owner_splits",
+      "acceptance_area": "runtime_dispatch_registration",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/native/execution/behavior_owner_splits/canonical_rejection.json"
+      ],
+      "retired_disposition": "native execution sidecars, expected exit codes, runtime dispatch symbols, native compile args, fixture basenames, positive compile-link-run metadata, and negative diagnostic metadata are resolved through behavior-first phase indexes before any execution row is cited as support; legacy-looking, fallback-looking, shim-looking, compatibility-looking, unsupported-feature, strict-dispatch, unresolved-symbol, non-fast-path, sidecar-only, report-only, migration, and alternate-runtime-acceptance metadata remain canonical rejection, strict-error, or provenance-only evidence"
     },
     {
       "family": "tooling_native_owner_split_indexes",
@@ -839,6 +869,14 @@
     "tests/tooling/fixtures/native/owner_splits/runtime.json",
     "tests/tooling/fixtures/native/owner_splits/e2e.json",
     "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/index.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/parser.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/sema.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/lowering.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/ir.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/runtime.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/e2e.json",
+    "tests/tooling/fixtures/native/execution/behavior_owner_splits/canonical_rejection.json",
     "tests/tooling/runtime/behavior_owner_splits/index.json",
     "tests/tooling/runtime/behavior_owner_splits/sema.json",
     "tests/tooling/runtime/behavior_owner_splits/lowering.json",

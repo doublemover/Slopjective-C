@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-tooling-native-execution-metadata-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_family": "tests/tooling/fixtures/native/execution",
+  "support_boundary": "parser ownership covers negative execution sidecars whose first failure is compile-stage lexical, grammar, qualifier-placement, or syntax diagnostics with O3L or O3P tokens",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "negative/README.md:parser-owned cases fail at compile stage with O3P* diagnostics",
+    "negative/block_comment_unterminated.meta.json",
+    "negative/block_comment_nested.meta.json",
+    "negative/block_comment_stray_terminator.meta.json",
+    "negative/compound_assignment_missing_rhs.meta.json",
+    "negative/for_missing_lparen.meta.json",
+    "negative/id_parser_missing_param_colon.meta.json",
+    "negative/foundation_alias_parser_missing_param_colon.meta.json",
+    "negative/misplaced_qualifier_*.meta.json"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser spellings, removed parser flags, malformed qualifier compatibility claims, and parser fallback names remain canonical rejection or parser diagnostics"
+}

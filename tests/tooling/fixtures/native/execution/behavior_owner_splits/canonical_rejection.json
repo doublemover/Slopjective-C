@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-tooling-native-execution-metadata-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_family": "tests/tooling/fixtures/native/execution",
+  "support_boundary": "execution metadata rows that mention legacy, fallback, unsupported, compatibility-looking, shim-looking, non-fast-path, strict-dispatch, unresolved-symbol, sidecar-only, report-only, migration, or alternate runtime acceptance claims are non-positive unless canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "negative/README.md:hard-cutover rejection contracts",
+    "negative/README.md:legacy, fallback, unsupported, or compatibility-looking basename",
+    "negative/README.md:canonical-rejection cases cover retired modes, unsupported runnable claims, compatibility-looking names, shim-looking names, and fallback-looking names",
+    "positive/README.md:must not be cited as shim, fallback, compatibility, migration, or alternate runtime acceptance support",
+    "negative/unsupported_feature_claim_*.meta.json",
+    "negative/message_send_runtime_dispatch_strict_error.meta.json",
+    "negative/runtime_dispatch_unresolved_symbol.meta.json",
+    "negative/*_unsupported.meta.json",
+    "negative/*_conservative_reject.meta.json",
+    "*legacy*",
+    "*fallback*",
+    "*shim*",
+    "*compatibility*",
+    "*unsupported*",
+    "*strict_error*",
+    "*unresolved_symbol*",
+    "*non_fast_path*",
+    "*sidecar-only*",
+    "*report-only*",
+    "*migration*",
+    "*alternate-runtime-acceptance*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "legacy, fallback, shim, compatibility, unsupported runnable claims, strict dispatch, unresolved symbol, non-fast-path, report-only, sidecar-only, migration, and alternate runtime acceptance metadata remain canonical rejection, strict-error, or provenance-only evidence"
+}
