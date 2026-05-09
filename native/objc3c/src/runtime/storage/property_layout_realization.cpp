@@ -4,12 +4,10 @@
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/state/runtime_state_records.h"
-#include "runtime/storage/property_accessors.h"
+#include "runtime/storage/property_accessor_records.h"
 #include "runtime/storage/property_ivar_layout_index.h"
-#include "runtime/storage/property_layout_rules.h"
 
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -47,18 +45,14 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
     const auto *descriptor = static_cast<const EmittedPropertyDescriptor *>(
         RuntimeAggregateEntry(node.image->property_descriptor_root, index));
     if (descriptor == nullptr ||
-        descriptor->declaration_owner_identity == nullptr ||
-        descriptor->property_name == nullptr ||
-        descriptor->effective_getter_selector == nullptr ||
-        !RuntimePropertyAccessorSelectorIsMaterializable(
-            descriptor->effective_getter_selector)) {
+        !RuntimePropertyDescriptorHasRealizableAccessorShape(*descriptor)) {
       return false;
     }
     if (node.bundle_owner_identity != descriptor->declaration_owner_identity) {
       continue;
     }
-    if (descriptor->synthesized_binding_symbol == nullptr ||
-        descriptor->synthesized_binding_symbol[0] == '\0') {
+    if (!RuntimePropertyDescriptorDeclaresSynthesizedStorageBinding(
+            *descriptor)) {
       continue;
     }
     const EmittedIvarDescriptor *ivar_descriptor =
@@ -68,24 +62,9 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
       continue;
     }
     RealizedPropertyAccessor accessor;
-    accessor.property_descriptor = descriptor;
-    accessor.ivar_descriptor = ivar_descriptor;
-    accessor.getter_return_kind =
-        ClassifyRuntimePropertyAccessorReturnType(*descriptor);
-    accessor.getter_owner_identity = BuildRuntimePropertyAccessorOwnerIdentity(
-        descriptor->declaration_owner_identity,
-        descriptor->effective_getter_selector);
-    if (descriptor->effective_setter_available &&
-        descriptor->effective_setter_selector != nullptr &&
-        descriptor->effective_setter_selector[0] != '\0') {
-      if (!RuntimePropertyAccessorSelectorIsMaterializable(
-              descriptor->effective_setter_selector) ||
-          !RuntimePropertySetterHasSupportedArity(1)) {
-        return false;
-      }
-      accessor.setter_owner_identity = BuildRuntimePropertyAccessorOwnerIdentity(
-          descriptor->declaration_owner_identity,
-          descriptor->effective_setter_selector);
+    if (!BuildRuntimePropertyAccessorRecord(*descriptor, *ivar_descriptor,
+                                            accessor)) {
+      return false;
     }
     node.runtime_property_accessors.push_back(std::move(accessor));
   }

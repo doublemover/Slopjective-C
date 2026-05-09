@@ -1,12 +1,10 @@
 #include "runtime/storage/property_layout_rules.h"
 
 #include "runtime/metadata/runtime_emitted_records.h"
-#include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/storage/ivar_layout.h"
 
 #include <algorithm>
 #include <limits>
-#include <tuple>
 
 namespace objc3c::runtime {
 
@@ -58,49 +56,6 @@ bool RuntimePropertyIvarStorageExtentIsAddressable(std::size_t offset,
                                                    std::size_t size) {
   return RuntimeIvarLayoutSlotIsAddressable(
       offset, size, std::numeric_limits<std::size_t>::max());
-}
-
-std::string BuildRuntimePropertyAccessorOwnerIdentity(
-    const char *declaration_owner_identity,
-    const char *selector) {
-  const std::string owner =
-      declaration_owner_identity != nullptr ? declaration_owner_identity : "";
-  const std::string selector_text = selector != nullptr ? selector : "";
-  return owner + "::instance_method:" + selector_text;
-}
-
-RuntimeMethodReturnKind ClassifyRuntimePropertyAccessorReturnType(
-    const EmittedPropertyDescriptor &descriptor) {
-  return ClassifyRuntimeReturnType(descriptor.type_name);
-}
-
-bool RuntimePropertyAccessorSortsBefore(
-    const RealizedPropertyAccessor &lhs,
-    const RealizedPropertyAccessor &rhs) {
-  const std::string lhs_owner =
-      lhs.property_descriptor != nullptr &&
-              lhs.property_descriptor->declaration_owner_identity != nullptr
-          ? lhs.property_descriptor->declaration_owner_identity
-          : "";
-  const std::string rhs_owner =
-      rhs.property_descriptor != nullptr &&
-              rhs.property_descriptor->declaration_owner_identity != nullptr
-          ? rhs.property_descriptor->declaration_owner_identity
-          : "";
-  const std::string lhs_name =
-      lhs.property_descriptor != nullptr &&
-              lhs.property_descriptor->property_name != nullptr
-          ? lhs.property_descriptor->property_name
-          : "";
-  const std::string rhs_name =
-      rhs.property_descriptor != nullptr &&
-              rhs.property_descriptor->property_name != nullptr
-          ? rhs.property_descriptor->property_name
-          : "";
-  return std::tie(lhs_owner, lhs_name, lhs.getter_owner_identity,
-                  lhs.setter_owner_identity) <
-         std::tie(rhs_owner, rhs_name, rhs.getter_owner_identity,
-                  rhs.setter_owner_identity);
 }
 
 }  // namespace objc3c::runtime

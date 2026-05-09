@@ -2,7 +2,9 @@
 
 #include <cstddef>
 
+#include "runtime/storage/property_accessor_dispatch_record.h"
 #include "runtime/storage/property_accessor_profiles.h"
+#include "runtime/storage/property_accessor_records.h"
 #include "runtime/storage/property_accessor_resolution.h"
 #include "runtime/storage/property_layout_realization.h"
 #include "runtime/storage/property_lookup.h"
