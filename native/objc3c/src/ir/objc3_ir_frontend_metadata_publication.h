@@ -39,3 +39,6 @@ void EmitObjc3IRDispatchOwnershipMetadataNodes(
 
 void EmitObjc3IRBlockArcMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRErrorHandlingMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
