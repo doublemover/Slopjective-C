@@ -17,26 +17,19 @@
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emission_prologue.h"
 #include "ir/objc3_ir_emission_readiness_publication.h"
-#include "ir/objc3_ir_entry_point_emission.h"
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
 #include "ir/objc3_ir_function_orchestration.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
-#include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
-#include "ir/objc3_ir_module_emission_surface.h"
+#include "ir/objc3_ir_module_body_orchestration.h"
 #include "ir/objc3_ir_property_metadata_comment_emission.h"
-#include "ir/objc3_ir_prototype_declarations.h"
-#include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
-#include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
 #include "ir/objc3_ir_runtime_helper_calls.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
-#include "ir/objc3_ir_runtime_metadata_scaffold_emission.h"
 #include "ir/objc3_ir_statement_orchestration.h"
-#include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
 #include "ir/objc3_ir_value_materialization.h"
 #include "parse/objc3_parse_support.h"
@@ -118,49 +111,23 @@ class Objc3IREmitter {
       error = boundary_error_;
       return false;
     }
-    if (!ValidateObjc3IRMessageSendArityContract(
-            program_, lowering_ir_boundary_.runtime_dispatch_arg_slots,
-            error)) {
-      return false;
-    }
-
+    Objc3IRModuleBodyOrchestrationOptions module_body_options =
+        ModuleBodyOrchestrationOptions();
     std::ostringstream body;
-
-    if (!EmitObjc3IRStaticData(
-            Objc3IRStaticDataEmissionOptions{
-                program_.globals, mutable_global_symbols_,
-                metaprogramming_global_artifacts_, global_const_values_,
-                global_nil_proven_symbols_,
+    if (!EmitObjc3IRModuleBodyOrchestration(
+            module_body_options,
+            Objc3IRModuleBodyOrchestrationCallbacks{
                 [this](const Expr *expr) {
                   return IsObjc3IRCompileTimeGlobalNilExpr(
                       expr, CompileTimeProofAnalysisContext());
+                },
+                [this]() { return FunctionOrchestrationOptions(); },
+                [this](const std::string &reason) {
+                  EmitUnsupportedI32Value(reason);
                 }},
             body, error)) {
       return false;
     }
-
-    EmitRuntimeMetadataSectionScaffold(body);
-
-    EmitPrototypeDeclarations(body);
-
-    EmitRuntimeBootstrapLoweringFunctions(body);
-
-    for (const FunctionDecl *fn : function_definitions_) {
-      EmitObjc3IRFunctionOrchestration(
-          *fn, FunctionOrchestrationOptions(), body);
-      body << "\n";
-    }
-    for (const Objc3IRMethodDefinition &method_def : method_definitions_) {
-      EmitObjc3IRMethodOrchestration(
-          method_def, FunctionOrchestrationOptions(), body);
-      body << "\n";
-    }
-    for (const std::string &definition : block_function_definitions_) {
-      body << definition << "\n";
-    }
-
-    EmitEntryPoint(body);
-    EmitRuntimeDispatchDeclarations(body);
 
     if (unsupported_fail_closed_path_triggered_) {
       error = "lowering encountered unsupported fail-closed path: " + unsupported_fail_closed_path_reason_;
@@ -1951,85 +1918,22 @@ class Objc3IREmitter {
         << ", deterministic_symbol_graph_scope_resolution_handoff_key="
         << frontend_metadata_.deterministic_symbol_graph_scope_resolution_handoff_key << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
-    EmitFrontendMetadata(out);
+    EmitObjc3IRModuleFrontendMetadataBoundaryPublication(
+        module_body_options, out);
     // Historical extraction contract markers retained for fail-closed tooling:
     // out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
     // for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
     //   out << ", i32";
     // }
     // out << ")\n\n";
-    EmitObjc3IRRuntimeDispatchDeclarationSurface(
-        lowering_ir_boundary_, runtime_dispatch_call_state_, out);
-    EmitObjc3IRSynthesizedAccessorEmissionSurface(
-        Objc3IRSynthesizedAccessorEmissionStats{
-            synthetic_method_stats_.getter_definition_count,
-            synthetic_method_stats_.setter_definition_count,
-            synthetic_method_stats_.current_property_read_helper_call_count,
-            synthetic_method_stats_.current_property_write_helper_call_count,
-            synthetic_method_stats_.current_property_exchange_helper_call_count,
-            synthetic_method_stats_.weak_current_property_load_helper_call_count,
-            synthetic_method_stats_.weak_current_property_store_helper_call_count,
-            synthetic_method_stats_.retain_helper_call_count,
-            synthetic_method_stats_.release_helper_call_count,
-            synthetic_method_stats_.autorelease_helper_call_count},
-        out);
-    EmitObjc3IRMethodDispatchEmissionSurface(
-        lowering_ir_boundary_, runtime_dispatch_call_state_,
-        Objc3IRMethodDispatchEmissionStats{
-            selector_pool_globals_.size(),
-            frontend_metadata_
-                .dispatch_dispatch_control_lowering_direct_call_candidate_sites,
-            frontend_metadata_
-                .dispatch_dispatch_control_lowering_dynamic_opt_out_sites,
-            !selector_pool_globals_.empty()},
-        out);
+    EmitObjc3IRModuleEmissionSurfacePublications(
+        module_body_options, synthetic_method_stats_, out);
     out << body.str();
     ir = out.str();
     return true;
   }
 
  private:
-  bool ShouldEmitRuntimeBootstrapLowering() const {
-    return Objc3IRRuntimeBootstrapLoweringReady(frontend_metadata_);
-  }
-
-  bool ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering() const {
-    return Objc3IRRuntimeBootstrapRegistrationDescriptorImageRootLoweringReady(
-        frontend_metadata_);
-  }
-
-  void EmitFrontendMetadata(std::ostringstream &out) const {
-    EmitObjc3IRFrontendMetadataPublication(
-        frontend_metadata_, runtime_metadata_symbols_, selector_pool_globals_.size(),
-        runtime_string_pool_globals_.size(),
-        synthesized_property_accessor_count_, out);
-  }
-
-  void EmitRuntimeMetadataSectionScaffold(std::ostringstream &out) const {
-    std::string scaffold_error;
-    if (!EmitObjc3IRRuntimeMetadataSectionScaffold(
-            Objc3IRRuntimeMetadataScaffoldEmissionOptions{
-                program_.module_name,
-                frontend_metadata_,
-                runtime_metadata_symbols_,
-                selector_pool_globals_,
-                runtime_string_pool_globals_,
-                typed_keypath_artifacts_,
-                method_definitions_,
-                ShouldEmitRuntimeBootstrapLowering(),
-                ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()},
-            out, scaffold_error)) {
-      if (!unsupported_fail_closed_path_triggered_) {
-        unsupported_fail_closed_path_triggered_ = true;
-        unsupported_fail_closed_path_reason_ =
-            scaffold_error.empty()
-                ? "runtime metadata scaffold emission failed"
-                : scaffold_error;
-      }
-      return;
-    }
-  }
-
   std::string NewTemp(FunctionContext &ctx) const { return "%t" + std::to_string(ctx.temp_counter++); }
 
   std::string NewLabel(FunctionContext &ctx, const std::string &prefix) const {
@@ -2174,36 +2078,35 @@ class Objc3IREmitter {
         synthetic_method_stats_};
   }
 
+  Objc3IRModuleBodyOrchestrationOptions ModuleBodyOrchestrationOptions() {
+    return Objc3IRModuleBodyOrchestrationOptions{
+        program_,
+        frontend_metadata_,
+        lowering_ir_boundary_,
+        runtime_metadata_symbols_,
+        mutable_global_symbols_,
+        global_const_values_,
+        global_nil_proven_symbols_,
+        metaprogramming_global_artifacts_,
+        function_definitions_,
+        method_definitions_,
+        block_function_definitions_,
+        function_signatures_,
+        defined_functions_,
+        function_arity_,
+        selector_pool_globals_,
+        runtime_string_pool_globals_,
+        typed_keypath_artifacts_,
+        synthesized_property_accessor_count_,
+        runtime_dispatch_call_state_};
+  }
+
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
     if (!unsupported_fail_closed_path_triggered_) {
       unsupported_fail_closed_path_triggered_ = true;
       unsupported_fail_closed_path_reason_ = reason;
     }
     return "poison";
-  }
-
-  void EmitPrototypeDeclarations(std::ostringstream &out) const {
-    EmitObjc3IRPrototypeDeclarations(
-        Objc3IRPrototypeDeclarationOptions{
-            program_, frontend_metadata_, method_definitions_,
-            function_signatures_, defined_functions_,
-            synthesized_property_accessor_count_,
-            ShouldEmitRuntimeBootstrapLowering()},
-        out);
-  }
-
-  void EmitRuntimeBootstrapLoweringFunctions(std::ostringstream &out) const {
-    EmitObjc3IRRuntimeBootstrapLoweringFunctions(
-        frontend_metadata_, runtime_metadata_symbols_, out);
-  }
-
-  void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
-    EmitObjc3IRRuntimeDispatchDeclarations(lowering_ir_boundary_,
-                                           runtime_dispatch_call_state_, out);
-  }
-
-  void EmitEntryPoint(std::ostringstream &out) const {
-    EmitObjc3IREntryPoint(program_, function_arity_, function_signatures_, out);
   }
 
   const Objc3Program &program_;
