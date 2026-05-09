@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from .command_result_model import WorkflowCommandResult
+from .command_result_status import (
+    STATUS_ACCEPTED,
+    STATUS_EXTRA_ARGUMENTS_REJECTED,
+    STATUS_UNKNOWN_ACTION,
+)
 
 
 def accepted_action(action: str, arg_count: int) -> WorkflowCommandResult:
     return WorkflowCommandResult(
         action=action,
-        status="accepted",
+        status=STATUS_ACCEPTED,
         exit_code=0,
         pass_through_arg_count=arg_count,
     )
@@ -17,7 +22,7 @@ def accepted_action(action: str, arg_count: int) -> WorkflowCommandResult:
 def unknown_action(action: str) -> WorkflowCommandResult:
     return WorkflowCommandResult(
         action=action,
-        status="unknown-action",
+        status=STATUS_UNKNOWN_ACTION,
         exit_code=2,
         message=f"unknown action: {action}",
         accepted=False,
@@ -27,7 +32,7 @@ def unknown_action(action: str) -> WorkflowCommandResult:
 def rejected_extra_args(action: str, arg_count: int) -> WorkflowCommandResult:
     return WorkflowCommandResult(
         action=action,
-        status="extra-arguments-rejected",
+        status=STATUS_EXTRA_ARGUMENTS_REJECTED,
         exit_code=2,
         message=f"action does not accept extra arguments: {action}",
         accepted=False,

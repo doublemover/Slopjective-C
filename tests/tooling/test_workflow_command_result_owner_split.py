@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+from scripts.objc3c_workflow.command_result_acceptance import (
+    accepted_action,
+    rejected_extra_args,
+    unknown_action,
+)
+from scripts.objc3c_workflow.command_result_completion import completed_action
+from scripts.objc3c_workflow.command_result_status import (
+    REJECTED_STATUSES,
+    STATUS_ACCEPTED,
+    STATUS_COMPLETED,
+    STATUS_EXTRA_ARGUMENTS_REJECTED,
+    STATUS_FAILED,
+    STATUS_UNKNOWN_ACTION,
+    completion_status,
+)
+
+
+def test_workflow_command_result_status_owner_drives_factories() -> None:
+    assert accepted_action("lint", 0).status == STATUS_ACCEPTED
+    assert unknown_action("missing").status == STATUS_UNKNOWN_ACTION
+    assert rejected_extra_args("lint", 1).status == STATUS_EXTRA_ARGUMENTS_REJECTED
+    assert completed_action("lint", 0, 0).status == STATUS_COMPLETED
+    assert completed_action("lint", 1, 0).status == STATUS_FAILED
+    assert completion_status(0) == STATUS_COMPLETED
+    assert completion_status(2) == STATUS_FAILED
+
+
+def test_rejected_statuses_match_unaccepted_result_payloads() -> None:
+    unknown = unknown_action("missing")
+    rejected = rejected_extra_args("lint", 1)
+
+    assert REJECTED_STATUSES == {
+        STATUS_EXTRA_ARGUMENTS_REJECTED,
+        STATUS_UNKNOWN_ACTION,
+    }
+    assert unknown.status in REJECTED_STATUSES
+    assert rejected.status in REJECTED_STATUSES
+    assert unknown.to_payload()["accepted"] is False
+    assert rejected.to_payload()["accepted"] is False
