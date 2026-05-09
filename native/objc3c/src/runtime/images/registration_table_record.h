@@ -1,7 +1,7 @@
 #pragma once
 
 #include "runtime/images/registration_table_shape.h"
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/state/runtime_bootstrap_contracts.h"
 
 namespace objc3c::runtime {
 

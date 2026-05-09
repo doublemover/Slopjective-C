@@ -5,8 +5,8 @@
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
-#include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "runtime/public/objc3_runtime_result.h"
+#include "runtime/state/runtime_bootstrap_contracts.h"
 #include "runtime/storage/runtime_instance_records.h"
 #include "runtime/blocks/block_runtime_records.h"
 

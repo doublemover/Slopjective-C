@@ -1,7 +1,7 @@
 #pragma once
 
 #include "runtime/metadata/runtime_ownership_contracts.h"
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/state/runtime_bootstrap_contracts.h"
 
 #include <cstdint>
 #include <string>

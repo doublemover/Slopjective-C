@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/classes/runtime_object_snapshot_contracts.h"
 
 namespace objc3c::runtime {
 

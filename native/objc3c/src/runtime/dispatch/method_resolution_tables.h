@@ -2,7 +2,6 @@
 
 #include "runtime/dispatch/method_list_resolution.h"
 #include "runtime/dispatch/protocol_selector_declarations.h"
-#include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <cstdint>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/memory/runtime_ownership_snapshot_contracts.h"
 #include "runtime/state/runtime_thread_records.h"
 
 #include <cstdint>

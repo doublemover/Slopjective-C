@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/selectors/runtime_selector_snapshot_contracts.h"
 #include "runtime/selectors/keypath_query.h"
 #include "runtime/strings/borrowed_string.h"
 
