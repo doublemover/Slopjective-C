@@ -3,19 +3,21 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import write_report_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SURFACE_PATH = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "source_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "source-surface-summary.json"
+SURFACE_CONTRACT_ID = "objc3c.stress.source.surface.v1"
 SUMMARY_CONTRACT_ID = "objc3c.stress.source.surface.summary.v1"
+SOURCE_CHECK_SCRIPT = "scripts/check_stress_source_surface.py"
 EXPECTED_FAMILIES = [
     "parser-sema-fuzz",
     "lowering-runtime-stress",
@@ -43,7 +45,7 @@ def main() -> int:
         return fail(f"missing stress source surface contract: {repo_rel(SURFACE_PATH)}")
 
     surface = load_json(SURFACE_PATH)
-    if surface.get("contract_id") != "objc3c.stress.source.surface.v1":
+    if surface.get("contract_id") != SURFACE_CONTRACT_ID:
         return fail("stress source surface contract_id drifted")
     if surface.get("schema_version") != 1:
         return fail("stress source surface schema_version drifted")
@@ -51,7 +53,7 @@ def main() -> int:
         return fail("stress source surface runbook drifted")
     if surface.get("source_root") != "tests/tooling/fixtures/stress":
         return fail("stress source surface source_root drifted")
-    if surface.get("source_check_script") != "scripts/check_stress_source_surface.py":
+    if surface.get("source_check_script") != SOURCE_CHECK_SCRIPT:
         return fail("stress source surface source_check_script drifted")
     if surface.get("safety_policy") != "tests/tooling/fixtures/stress/safety_policy.json":
         return fail("stress source surface safety_policy drifted")
@@ -169,8 +171,7 @@ def main() -> int:
         "summary_report_count": len(artifact_surface["summary_reports"]),
         "family_summaries": family_summaries,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("stress-source-surface: OK")
     return 0
