@@ -14,7 +14,7 @@
     "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
     "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
     "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
-    "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+    "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
     "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
     "tests/tooling/fixtures/native/compatibility_alias_without_object_return_rejected.objc3",
     "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",

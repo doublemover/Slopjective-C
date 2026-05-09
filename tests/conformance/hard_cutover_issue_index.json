@@ -927,7 +927,7 @@
         "61ccee955 HC split runtime dispatch wrapper"
       ],
       "behavior_evidence": [
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
@@ -1138,7 +1138,7 @@
       ],
       "behavior_evidence": [
         "tests/tooling/runtime/README.md",
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
       "retired_surface_disposition": "runtime acceptance evidence keeps unsupported dispatch as strict error, not fallback success"

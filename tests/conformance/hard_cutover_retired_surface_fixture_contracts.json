@@ -199,11 +199,11 @@
           "positive_expectation": false
         },
         {
-          "path": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol.objc3",
-          "sidecar": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol.meta.json",
+          "path": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3",
+          "sidecar": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.meta.json",
           "fixture_kind": "strict-error",
           "expected_stage": "link",
-          "strict_rejection_name": false,
+          "strict_rejection_name": true,
           "positive_expectation": false
         }
       ]
@@ -220,11 +220,11 @@
       ],
       "fixtures": [
         {
-          "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
-          "sidecar": "tests/native/runtime/dispatch/message_send_runtime_dispatch.meta.json",
+          "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.meta.json",
           "fixture_kind": "strict-error",
           "expected_stage": "run",
-          "strict_rejection_name": false,
+          "strict_rejection_name": true,
           "positive_expectation": false
         },
         {

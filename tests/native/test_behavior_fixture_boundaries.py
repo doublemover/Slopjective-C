@@ -660,7 +660,7 @@ def test_behavior_outcome_index_partitions_positive_rejection_and_provenance() -
 def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:
     negative_root = ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "negative"
     strict_runtime_cases = (
-        "message_send_runtime_dispatch.objc3",
+        "message_send_runtime_dispatch_strict_error.objc3",
         "message_send_six_args_custom_cap.objc3",
     )
 

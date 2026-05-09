@@ -95,7 +95,7 @@
       "manifest": "tests/tooling/fixtures/native/fixture_family_catalog.json",
       "owned_fixture_root": "tests/tooling/fixtures/native/execution",
       "native_behavior_fixtures": [
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],

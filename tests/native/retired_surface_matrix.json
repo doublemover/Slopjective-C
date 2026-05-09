@@ -48,7 +48,7 @@
     {
       "surface": "unknown-receiver-runtime-dispatch",
       "retired_tag": "runtime-dispatch",
-      "fixture_path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+      "fixture_path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
       "expected_stage": "run",
       "diagnostic_code": "O3RT002"
     },

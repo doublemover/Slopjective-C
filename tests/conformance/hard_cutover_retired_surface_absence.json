@@ -111,7 +111,7 @@
         "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
         "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
-        "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol.objc3"
+        "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
       ],
       "diagnostic_codes": [
         "link.unresolved_symbol"
@@ -121,7 +121,7 @@
       "surface": "unknown receiver runtime dispatch fallback",
       "status": "strict-error",
       "evidence": [
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"

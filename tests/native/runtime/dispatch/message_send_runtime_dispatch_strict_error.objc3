@@ -1,5 +1,5 @@
 // Canonical runtime strict-error fixture: unknown receiver dispatch hard-fails.
-module MessageSendRuntimeDispatchBehavior;
+module MessageSendRuntimeDispatchStrictError;
 
 fn main() -> i32 {
   let receiver = 9;

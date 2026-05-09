@@ -20,7 +20,7 @@ PARSER_CLAIM = {
 RUNTIME_CLAIM = {
     "claim_id": "objc3c.behavior.runtime.strict-dispatch-error",
     "owner_phase": "runtime",
-    "behavior_fixture": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+    "behavior_fixture": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
     "executable_command": "npm run objc3c -- test-behavior-matrix",
 }
 

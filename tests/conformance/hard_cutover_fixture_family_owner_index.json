@@ -61,7 +61,7 @@
         "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
       "retired_disposition": "retired surfaces are explicit rejection, strict-error, or absent-support evidence"
@@ -174,7 +174,7 @@
         "tests/native/runtime/concurrency/actor_executor_contract.objc3"
       ],
       "rejection_evidence": [
-        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
         "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
@@ -268,7 +268,7 @@
         "tests/tooling/fixtures/native/execution/positive/registration_reset_replay_runtime_entrypoints.meta.json"
       ],
       "rejection_evidence": [
-        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch.meta.json",
+        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.meta.json",
         "tests/tooling/fixtures/native/execution/negative/runtime_dispatch_unresolved_symbol.meta.json",
         "tests/tooling/fixtures/native/execution/negative/numeric_zero_receiver_runtime_dispatch_unresolved_symbol.meta.json"
       ],

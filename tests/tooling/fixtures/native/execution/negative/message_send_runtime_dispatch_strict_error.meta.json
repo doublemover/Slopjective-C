@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "message_send_runtime_dispatch.objc3",
+  "fixture": "message_send_runtime_dispatch_strict_error.objc3",
   "expect_failure": {
     "stage": "run",
     "required_diagnostic_tokens": [

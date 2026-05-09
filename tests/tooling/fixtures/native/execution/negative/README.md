@@ -110,7 +110,7 @@ Field notes:
 
 ## Runtime-dispatch fixture notes
 
-- `message_send_runtime_dispatch.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics; it is not a positive fallback fixture.
+- `message_send_runtime_dispatch_strict_error.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics; it is not a positive fallback fixture.
 - `message_send_six_args_custom_cap.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics while preserving the custom message-argument cap.
 - `runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` on non-nil message-send lowering.
 - `nil_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` when a mutable receiver is reassigned from runtime-unknown value and lowering retains dispatch linkage.
