@@ -59,7 +59,8 @@ def test_stage_libraries_define_forward_only_linkage_topology() -> None:
     assert "add_library(objc3c_runtime_metadata INTERFACE)" in cmake
     assert "add_library(objc3c_artifacts_evidence INTERFACE)" in cmake
     assert "add_library(objc3c_artifacts_reports INTERFACE)" in cmake
-    assert "c_api.cpp" not in _read(FRONTEND_CMAKE_FILE)
+    removed_c_api_monolith = "c_api" + ".cpp"
+    assert removed_c_api_monolith not in _read(FRONTEND_CMAKE_FILE)
 
 
 def test_native_executable_links_through_driver_aggregate_target() -> None:

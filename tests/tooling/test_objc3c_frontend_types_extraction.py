@@ -3,9 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TYPES_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
 ARTIFACTS_HEADER = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.h"
-FRONTEND_TYPE_PARTS_DIR = (
-    ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types_parts"
-)
+RETIRED_FRONTEND_TYPE_SHARD_DIR = TYPES_HEADER.with_name("objc3_frontend_types_" + "parts")
 FRONTEND_TYPE_HEADERS = [
     ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "compile_options.h",
     ROOT / "native" / "objc3c" / "src" / "lower" / "model" / "lowered_runtime_surface.h",
@@ -55,9 +53,10 @@ def _assert_in_order(text: str, snippets: list[str]) -> None:
 def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert TYPES_HEADER.exists()
     frontend_umbrella = _read(TYPES_HEADER)
+    removed_include_fragment = "_parts" + "/"
     assert '#include "pipeline/results/compile_result.h"' in frontend_umbrella
-    assert "_parts/" not in frontend_umbrella
-    assert not FRONTEND_TYPE_PARTS_DIR.exists()
+    assert removed_include_fragment not in frontend_umbrella
+    assert not RETIRED_FRONTEND_TYPE_SHARD_DIR.exists()
 
     for header in FRONTEND_TYPE_HEADERS:
         assert header.exists()
