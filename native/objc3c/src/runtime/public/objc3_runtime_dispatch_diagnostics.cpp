@@ -40,9 +40,4 @@ const RuntimeDispatchDiagnosticRecord &RuntimeDispatchDiagnosticForStatus(
   return kInternalDispatchDiagnostic;
 }
 
-bool RuntimeDispatchStatusCarriesValue(
-    objc3_runtime_dispatch_status_code status_code) {
-  return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-}
-
 }  // namespace objc3c::runtime

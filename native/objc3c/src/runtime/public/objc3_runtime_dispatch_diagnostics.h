@@ -12,7 +12,5 @@ struct RuntimeDispatchDiagnosticRecord {
 
 const RuntimeDispatchDiagnosticRecord &RuntimeDispatchDiagnosticForStatus(
     objc3_runtime_dispatch_status_code status_code);
-bool RuntimeDispatchStatusCarriesValue(
-    objc3_runtime_dispatch_status_code status_code);
 
 }  // namespace objc3c::runtime
