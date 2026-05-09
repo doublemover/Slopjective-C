@@ -630,6 +630,31 @@ BuildIdClassSelObjectPointerTypecheckContract(const Objc3Program &program) {
   return contract;
 }
 
+Objc3PropertySynthesisIvarBindingContract
+BuildPropertySynthesisIvarBindingContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  const Objc3PropertySynthesisIvarBindingSummary &summary =
+      sema_parity_surface.property_synthesis_ivar_binding_summary;
+  Objc3PropertySynthesisIvarBindingContract contract;
+  contract.property_synthesis_sites = summary.property_synthesis_sites;
+  contract.property_synthesis_explicit_ivar_bindings =
+      summary.property_synthesis_explicit_ivar_bindings;
+  contract.property_synthesis_default_ivar_bindings =
+      summary.property_synthesis_default_ivar_bindings;
+  contract.interface_owned_property_synthesis_sites =
+      summary.interface_owned_property_synthesis_sites;
+  contract.implementation_property_redeclaration_sites =
+      summary.implementation_property_redeclaration_sites;
+  contract.ivar_binding_sites = summary.ivar_binding_sites;
+  contract.ivar_binding_resolved = summary.ivar_binding_resolved;
+  contract.ivar_binding_missing = summary.ivar_binding_missing;
+  contract.ivar_binding_conflicts = summary.ivar_binding_conflicts;
+  contract.deterministic =
+      summary.deterministic &&
+      sema_parity_surface.deterministic_property_synthesis_ivar_binding_handoff;
+  return contract;
+}
+
 std::string BuildDispatchDispatchIntentSemanticModelSummaryJson(
     const Objc3DispatchDispatchIntentSemanticModelSummary &summary) {
   std::ostringstream out;

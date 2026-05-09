@@ -38,6 +38,10 @@ BuildDispatchSurfaceClassificationContract(const Objc3Program &program);
 [[nodiscard]] Objc3IdClassSelObjectPointerTypecheckContract
 BuildIdClassSelObjectPointerTypecheckContract(const Objc3Program &program);
 
+[[nodiscard]] Objc3PropertySynthesisIvarBindingContract
+BuildPropertySynthesisIvarBindingContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface);
+
 [[nodiscard]] Objc3MessageSendSelectorLoweringContract
 BuildMessageSendSelectorLoweringContract(const Objc3Program &program);
 
