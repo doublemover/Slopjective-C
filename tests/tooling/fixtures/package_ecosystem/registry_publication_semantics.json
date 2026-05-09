@@ -51,13 +51,14 @@
     "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
     "offline mirror publication must remain usable without network access"
   ],
-  "required_public_scripts": [
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "release_blocking_conditions": [
     "hosted registry claimed as supported",

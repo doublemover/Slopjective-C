@@ -73,13 +73,7 @@ def main() -> int:
     package_payload = load_json(PACKAGE_JSON)
     scripts = package_payload.get("scripts", {})
     expect(isinstance(scripts, dict), "package.json scripts drifted from object form")
-    for script_name in (
-        "check:stress:surface",
-        "test:objc3c:stress",
-        "test:objc3c:stress:integration",
-        "test:objc3c:stress:e2e",
-    ):
-        expect(script_name in scripts, f"package.json missing {script_name}")
+    expect("objc3c" in scripts, "package.json missing objc3c package bridge")
 
     runner_text = RUNNER.read_text(encoding="utf-8")
     nightly_block = runner_text.partition("def action_test_nightly(_: list[str]) -> int:")[2].partition(
@@ -98,12 +92,12 @@ def main() -> int:
     )
 
     command_surface_text = COMMAND_SURFACE.read_text(encoding="utf-8")
-    expect("test:objc3c:stress" in command_surface_text, "public command surface is missing test:objc3c:stress")
+    expect("validate-stress" in command_surface_text, "public command surface is missing validate-stress")
     expect(
-        "test:objc3c:stress:integration" in command_surface_text,
-        "public command surface is missing test:objc3c:stress:integration",
+        "validate-stress-integration" in command_surface_text,
+        "public command surface is missing validate-stress-integration",
     )
-    expect("test:objc3c:stress:e2e" in command_surface_text, "public command surface is missing test:objc3c:stress:e2e")
+    expect("validate-stress-end-to-end" in command_surface_text, "public command surface is missing validate-stress-end-to-end")
 
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -114,11 +108,12 @@ def main() -> int:
         "nightly_validation_tier": nightly_payload["validation_tier"],
         "nightly_includes_validate_stress": True,
         "command_surface_path": repo_rel(COMMAND_SURFACE),
-        "required_package_scripts": [
-            "check:stress:surface",
-            "test:objc3c:stress",
-            "test:objc3c:stress:integration",
-            "test:objc3c:stress:e2e",
+        "package_bridge": "objc3c",
+        "required_actions": [
+            "check-stress-surface",
+            "validate-stress",
+            "validate-stress-integration",
+            "validate-stress-end-to-end",
         ],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

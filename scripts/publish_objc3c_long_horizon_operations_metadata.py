@@ -23,10 +23,7 @@ EXPECTED_PUBLIC_ACTIONS = [
     "validate-long-horizon-operations",
     "publish-long-horizon-operations",
 ]
-EXPECTED_PUBLIC_SCRIPTS = [
-    "test:objc3c:long-horizon-operations",
-    "publish:objc3c:long-horizon-operations",
-]
+PACKAGE_BRIDGE = "objc3c"
 
 
 
@@ -67,7 +64,7 @@ def main() -> int:
         "publication_id": "objc3c.long_horizon_operations.support_window_publication.v1",
         "support_state": claim_audit.get("support_state"),
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "package_bridge": PACKAGE_BRIDGE,
         "operator_runbook": "docs/runbooks/objc3c_long_horizon_operations.md",
         "support_window_summary": evidence.get("support_window", {}),
         "rollback_channels": evidence.get("rollback", {}).get("channels", []) if isinstance(evidence.get("rollback"), dict) else [],
@@ -86,7 +83,7 @@ def main() -> int:
         "integration_summary": repo_rel(INTEGRATION_SUMMARY),
         "support_state": claim_audit.get("support_state"),
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "package_bridge": PACKAGE_BRIDGE,
         "rollback_channel_count": len(publication["operator_publication"]["rollback_channels"]),
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }

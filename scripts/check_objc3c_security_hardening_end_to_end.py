@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,14 +35,6 @@ REQUIRED_STEPS = [
     "check-security-hardening-schema-surface",
     "build-security-posture",
     "publish-security-advisories",
-]
-REQUIRED_SCRIPTS = [
-    "check:objc3c:security-hardening:surface",
-    "check:objc3c:security-hardening:schemas",
-    "inspect:objc3c:security-posture",
-    "publish:objc3c:security-advisories",
-    "test:objc3c:security-hardening",
-    "test:objc3c:security-hardening:e2e",
 ]
 
 
@@ -100,13 +93,14 @@ def main() -> int:
     posture_summary = load_json(POSTURE_SUMMARY)
     expect(publication.get("security_state") == posture_summary.get("security_state"), "publication drifted from posture state")
 
-    command_surface_text = COMMAND_SURFACE.read_text(encoding="utf-8")
     package = load_json(PACKAGE_JSON)
     package_scripts = package.get("scripts", {})
     expect(isinstance(package_scripts, dict), "package.json scripts drifted from object")
-    for script_name in REQUIRED_SCRIPTS:
-        expect(script_name in command_surface_text, f"public command surface missing {script_name}")
-        expect(script_name in package_scripts, f"package.json missing {script_name}")
+    package_bridge = str(workflow_surface["package_bridge"])
+    expect(package_bridge in package_scripts, f"package.json missing package bridge {package_bridge}")
+    registered_actions = set(action_names())
+    for action in workflow_surface["required_actions"]:
+        expect(str(action) in registered_actions, f"workflow registry missing action {action}")
 
     payload = {
         "contract_id": "objc3c.security.hardening.end_to_end.summary.v1",
@@ -123,6 +117,8 @@ def main() -> int:
             repo_rel(PUBLICATION_SUMMARY),
         ],
         "security_state": publication.get("security_state"),
+        "package_bridge": package_bridge,
+        "required_actions": workflow_surface["required_actions"],
         "publication_summary_path": repo_rel(PUBLICATION_SUMMARY),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -35,17 +35,18 @@
     "registry metadata must be generated from lock and mirror evidence",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
-  "required_public_scripts": [
-    "package:objc3c-native:runnable-toolchain",
-    "build:objc3c:package-lock",
-    "test:objc3c:package-authoring",
-    "test:objc3c:package-mirror",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "package-runnable-toolchain",
+    "build-package-lock",
+    "validate-package-authoring",
+    "validate-package-mirror",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ]
 }

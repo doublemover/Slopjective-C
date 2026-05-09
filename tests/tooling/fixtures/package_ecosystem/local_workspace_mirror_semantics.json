@@ -34,7 +34,7 @@
     "ordering": "stable-by-package-id-then-source-path",
     "identity_model": "canonical-module-id-plus-source-package-surface",
     "digest_model": "source-path-and-generator-command-digest-inputs",
-    "replay_model": "public-workflow-runner-command-list"
+    "replay_model": "objc3c-package-bridge-action-list"
   },
   "offline_mirror_semantics": {
     "mirror_contract_id": "objc3c.package_ecosystem.offline_mirror.v1",
@@ -50,14 +50,15 @@
     "offline mirrors are valid only when derived from the current lock graph",
     "canonical applications and stdlib programs must pressure the same package semantics"
   ],
-  "required_public_scripts": [
-    "build:objc3c:stdlib",
-    "build:objc3c:application-workspace",
-    "package:objc3c-native:runnable-toolchain",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "materialize-stdlib-workspace",
+    "materialize-canonical-application-workspace",
+    "package-runnable-toolchain",
+    "validate-stdlib-program",
+    "validate-runnable-stdlib-program",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture"
   ],
   "non_goals": [
     "hosted mirror service",

@@ -34,11 +34,11 @@ def load_contract(contract_path: Path) -> dict[str, object]:
 
 def render_rows(entries: list[dict[str, object]]) -> list[str]:
     return markdown_table(
-        ['Package script', 'Runner action', 'Tier', 'Guarantee owner', 'Extra args', 'Backend'],
+        ['Action', 'Category', 'Tier', 'Guarantee owner', 'Extra args', 'Backend'],
         [
             [
-                f"`{entry['package_script']}`",
                 f"`{entry['action']}`",
+                f"`{entry['category']}`",
                 f"`{entry.get('validation_tier', '') or '-'}`",
                 f"`{entry.get('guarantee_owner', '') or '-'}`",
                 f"`{'pass-through' if entry['pass_through_args'] else 'fixed-shape'}`",
@@ -51,9 +51,9 @@ def render_rows(entries: list[dict[str, object]]) -> list[str]:
 
 def render_markdown(contract_path: Path) -> str:
     contract = load_contract(contract_path)
-    package_entries: list[dict[str, object]] = contract['package_scripts']  # type: ignore[assignment]
-    operator_entries = [entry for entry in package_entries if entry['audience'] == 'operator']
-    maintainer_entries = [entry for entry in package_entries if entry['audience'] == 'maintainer']
+    action_entries: list[dict[str, object]] = contract['actions']  # type: ignore[assignment]
+    operator_entries = [entry for entry in action_entries if entry.get('audience') == 'operator']
+    maintainer_entries = [entry for entry in action_entries if entry.get('audience') == 'maintainer']
 
     lines: list[str] = [
         '# Objective-C 3 Public Command Surface',
@@ -61,9 +61,9 @@ def render_markdown(contract_path: Path) -> str:
         'This runbook is generated from the canonical public command contract.',
         'It is an operator-facing appendix, not the primary onboarding or project-explanation surface.',
         '',
-        f"- Current package script count: `{contract['package_script_count']}`",
-        f"- Operator command count: `{contract['operator_script_count']}`",
-        f"- Maintainer command count: `{contract['maintainer_script_count']}`",
+        f"- Package bridge count: `{contract['package_bridge_count']}`",
+        f"- Operator action count: `{contract['operator_action_count']}`",
+        f"- Maintainer action count: `{contract['maintainer_action_count']}`",
         f"- Runner path: `{contract['runner_path']}`",
         f"- Contract builder: `{CONTRACT_BUILDER.relative_to(ROOT).as_posix()}`",
         f"- Contract artifact: `{contract_path.relative_to(ROOT).as_posix()}`",

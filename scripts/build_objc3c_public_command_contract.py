@@ -43,31 +43,30 @@ def build_contract() -> dict[str, object]:
     list_payload = runner.list_actions_payload()
     package_scripts = package['scripts']
 
-    package_script_names = sorted(package_scripts)
-    bridge_scripts = {'objc3c'}
-    unmapped_scripts = sorted(set(package_script_names) - bridge_scripts)
-    unexpected_runner_package_scripts: list[str] = []
+    package_bridge_names = sorted(name for name in package_scripts if name == 'objc3c')
+    missing_package_bridge = [] if package_bridge_names == ['objc3c'] else ['objc3c']
+    unexpected_package_bridges = sorted(name for name in package_scripts if name != 'objc3c')
 
     action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
-    package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]
-    operator_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'operator')
-    maintainer_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'maintainer')
+    package_bridge_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_bridge_names]
+    operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
+    maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 
     return {
         'contract_id': 'objc3c-public-command-contract-v1',
+        'issue': 'workflow-public-command-contract',
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
-        'package_script_count': len(package_script_names),
-        'package_bridge_count': list_payload['package_bridge_count'],
+        'package_bridge_count': len(package_bridge_names),
         'workflow_action_count': list_payload['action_count'],
         'internal_action_count': list_payload['internal_action_count'],
-        'operator_script_count': operator_script_count,
-        'maintainer_script_count': maintainer_script_count,
-        'unmapped_scripts': unmapped_scripts,
-        'unexpected_runner_package_scripts': unexpected_runner_package_scripts,
+        'operator_action_count': operator_action_count,
+        'maintainer_action_count': maintainer_action_count,
+        'missing_package_bridge': missing_package_bridge,
+        'unexpected_package_bridges': unexpected_package_bridges,
         'actions': action_payloads,
-        'package_scripts': package_script_payloads,
+        'package_bridges': package_bridge_payloads,
     }
 
 

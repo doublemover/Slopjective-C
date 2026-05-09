@@ -88,8 +88,8 @@ def main() -> int:
             "prose-only governance approval",
         ],
         "measured_budget_state": {
-            "package_script_count": measured.get("package_script_count"),
-            "package_script_budget": measured.get("package_script_budget"),
+            "package_bridge_count": measured.get("package_bridge_count"),
+            "package_bridge_budget": measured.get("package_bridge_budget"),
             "public_workflow_action_count": measured.get("public_workflow_action_count"),
             "live_check_script_count": measured.get("live_check_script_count"),
         },
@@ -124,10 +124,7 @@ def main() -> int:
                 "validate-governance-sustainability",
                 "publish-governance-sustainability",
             ],
-            "public_scripts": [
-                "test:objc3c:governance-sustainability",
-                "publish:objc3c:governance-sustainability",
-            ],
+            "package_bridge": "objc3c",
         },
         "claim_audit": claim_audit,
         "failures": failures,

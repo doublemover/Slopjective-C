@@ -12,7 +12,7 @@
     "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json"
   ],
   "tracked_metrics": [
-    "package_script_count",
+    "package_bridge_count",
     "public_workflow_action_count",
     "runbook_count",
     "schema_count",

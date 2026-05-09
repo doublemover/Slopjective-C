@@ -18,18 +18,7 @@
     "native/objc3c/src/lower/objc3_lowering_contract.h",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp"
   ],
-  "public_commands": [
-    "build:objc3c:playground",
-    "inspect:objc3c:editor",
-    "format:objc3c",
-    "inspect:objc3c:observability",
-    "inspect:objc3c:runtime",
-    "inspect:objc3c:capabilities",
-    "inspect:objc3c:benchmark",
-    "trace:objc3c:stages",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling"
-  ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "materialize-playground-workspace",
     "inspect-editor-tooling",

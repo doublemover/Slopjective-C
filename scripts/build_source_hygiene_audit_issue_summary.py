@@ -33,7 +33,7 @@ def main() -> int:
         "issue": "source-hygiene-audit-issue-summary",
         "audit_script": "scripts/check_source_hygiene_authenticity.py",
         "runner_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
-        "package_script": "objc3c",
+        "package_bridge": "objc3c",
         "check_count": len(payload["checks"]),
         "generator_exit_zero": result.returncode == 0,
         "audit_ok": payload.get("ok") is True,
@@ -50,7 +50,7 @@ def main() -> int:
         "# Source Hygiene Audit Summary\n\n"
         f"- Audit script: `{summary['audit_script']}`\n"
         f"- Runner entrypoint: `{summary['runner_entrypoint']}`\n"
-        f"- Package script: `{summary['package_script']}`\n"
+        f"- Package bridge: `{summary['package_bridge']}`\n"
         f"- Enforced checks: `{', '.join(summary['check_ids'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
         encoding="utf-8",

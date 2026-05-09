@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,8 +41,11 @@ def main() -> int:
         ]
         if not (ROOT / path).is_file()
     ]
-    required_public_scripts = [str(name) for name in semantics["required_public_scripts"]]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    package_bridge = str(semantics["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in semantics["required_actions"]]
+    registered_actions = set(action_names())
+    missing_actions = [name for name in required_actions if name not in registered_actions]
 
     registry_layers = semantics.get("registry_layers", [])
     publication_rules = semantics.get("publication_rules", [])
@@ -62,7 +66,7 @@ def main() -> int:
         "hosted_registry_deferred": layer_states.get("hosted-registry") == "deferred-release-blocking-if-claimed",
         "release_blockers_include_hosted_claim": "hosted registry claimed as supported" in release_blocking_conditions,
     }
-    ok = not missing_paths and not missing_public_scripts and all(checks.values())
+    ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.registry_publication_semantics.summary.v1",
@@ -75,15 +79,18 @@ def main() -> int:
         "publication_input_count": len(publication_inputs),
         "registry_layer_count": len(registry_layers) if isinstance(registry_layers, list) else 0,
         "publication_rule_count": len(publication_rules) if isinstance(publication_rules, list) else 0,
-        "required_public_script_count": len(required_public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "release_blocking_condition_count": len(release_blocking_conditions) if isinstance(release_blocking_conditions, list) else 0,
         "publication_inputs": publication_inputs,
         "registry_layers": registry_layers,
         "publication_rules": publication_rules,
-        "required_public_scripts": required_public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
         "release_blocking_conditions": release_blocking_conditions,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "checks": checks,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -25,17 +25,7 @@
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json"
   ],
-  "public_commands": [
-    "package:objc3c-native:runnable-toolchain",
-    "package:objc3c:channels",
-    "test:objc3c:packaging-channels",
-    "test:objc3c:packaging-channels:e2e",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations"
-  ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "package-runnable-toolchain",
     "build-package-channels",

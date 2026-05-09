@@ -245,9 +245,8 @@ def main() -> int:
         class_counts[classification["retention_class"]] += 1
         kind_counts[classification["surface_kind"]] += 1
 
-    package_test_scripts = {name: command for name, command in package.items() if name.startswith("test:")}
-    package_check_scripts = {name: command for name, command in package.items() if name.startswith("check:")}
-    package_build_scripts = {name: command for name, command in package.items() if name.startswith("build:")}
+    package_bridge = "objc3c"
+    package_bridge_count = 1 if package_bridge in package else 0
 
     retained_static_guards = [entry for entry in inventory_entries if entry["surface_kind"] == "retained_static_guard"]
     migration_map = {
@@ -272,10 +271,7 @@ def main() -> int:
         "issue": "validation-surface-inventory",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "measured_counts": {
-            "package_scripts_total": len(package),
-            "package_test_scripts": len(package_test_scripts),
-            "package_check_scripts": len(package_check_scripts),
-            "package_build_scripts": len(package_build_scripts),
+            "package_bridge_count": package_bridge_count,
             "check_py_files": len(check_files),
             "test_check_py_files": len(test_check_files),
             "validation_ps1_files": len(ps1_files),
@@ -292,10 +288,7 @@ def main() -> int:
         "unreferenced_check_surfaces": unreferenced_entries,
         "acceptance_harness_catalog": acceptance_catalog,
         "validation_ps1_files": [repo_rel(path) for path in ps1_files],
-        "package_script_inventory": {
-            "test": sorted(package_test_scripts),
-            "check": sorted(package_check_scripts),
-        },
+        "package_bridge": package_bridge if package_bridge_count else "",
         "check_surface_inventory": inventory_entries,
         "non_goals": [
             "This inventory does not collapse or rename validation commands yet; that belongs to later validation-consolidation steps.",
@@ -311,9 +304,7 @@ def main() -> int:
         "# validation-surface-inventory Validation Surface Inventory",
         "",
         f"- generated_at: `{report['generated_at']}`",
-        f"- package_scripts_total: `{report['measured_counts']['package_scripts_total']}`",
-        f"- package_test_scripts: `{report['measured_counts']['package_test_scripts']}`",
-        f"- package_check_scripts: `{report['measured_counts']['package_check_scripts']}`",
+        f"- package_bridge_count: `{report['measured_counts']['package_bridge_count']}`",
         f"- check_py_files: `{report['measured_counts']['check_py_files']}`",
         f"- test_check_py_files: `{report['measured_counts']['test_check_py_files']}`",
         f"- validation_ps1_files: `{report['measured_counts']['validation_ps1_files']}`",

@@ -14,12 +14,13 @@
     "mirror_summary": "tmp/reports/package-ecosystem/package-mirror-summary.json",
     "reproducibility_summary": "tmp/reports/package-ecosystem/registry-mirror-reproducibility-summary.json"
   },
-  "required_public_scripts": [
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "reproducibility_rules": [
     "mirror package ids must match the generated lock package ids",

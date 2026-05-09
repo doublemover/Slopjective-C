@@ -45,9 +45,9 @@
     {
       "fallback_id": "capability-inspection-only",
       "allowed_actions": [
-        "check:objc3c:llvm-capabilities",
-        "check:docs:surface",
-        "check:repo:surface"
+        "check-llvm-capabilities",
+        "check-documentation-surface",
+        "check-repo-superclean-surface"
       ],
       "claim_boundary": "must not widen support-tier or install claims"
     }

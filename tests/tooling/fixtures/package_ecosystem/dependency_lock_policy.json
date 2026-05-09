@@ -39,7 +39,7 @@
       "stage_id": "replay-locked-workflow",
       "input": "lock artifact plus public workflow commands",
       "output": "reproducibility report under tmp/reports/package-ecosystem",
-      "failure_mode": "a lock that cannot replay through the public runner is unsupported"
+      "failure_mode": "a lock that cannot replay through the objc3c package bridge is unsupported"
     }
   ],
   "lock_required_fields": [
@@ -63,14 +63,15 @@
     "manual-sidecar-manifest",
     "tmp-only-source-of-truth"
   ],
-  "required_public_scripts": [
-    "build:objc3c:stdlib",
-    "build:objc3c:application-workspace",
-    "package:objc3c-native:runnable-toolchain",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "materialize-stdlib-workspace",
+    "materialize-canonical-application-workspace",
+    "package-runnable-toolchain",
+    "validate-stdlib-program",
+    "validate-runnable-stdlib-program",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture"
   ],
   "claim_rules": [
     "dependency resolution starts from checked-in local package surfaces",

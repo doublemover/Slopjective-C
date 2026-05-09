@@ -8,16 +8,15 @@
     "issue",
     "runner_mode",
     "runner_path",
-    "package_script_count",
     "package_bridge_count",
     "workflow_action_count",
     "internal_action_count",
-    "operator_script_count",
-    "maintainer_script_count",
-    "unmapped_scripts",
-    "unexpected_runner_package_scripts",
+    "operator_action_count",
+    "maintainer_action_count",
+    "missing_package_bridge",
+    "unexpected_package_bridges",
     "actions",
-    "package_scripts"
+    "package_bridges"
   ],
   "properties": {
     "contract_id": {
@@ -33,10 +32,6 @@
     "runner_path": {
       "type": "string"
     },
-    "package_script_count": {
-      "type": "integer",
-      "minimum": 0
-    },
     "package_bridge_count": {
       "type": "integer",
       "minimum": 0
@@ -49,21 +44,21 @@
       "type": "integer",
       "minimum": 0
     },
-    "operator_script_count": {
+    "operator_action_count": {
       "type": "integer",
       "minimum": 0
     },
-    "maintainer_script_count": {
+    "maintainer_action_count": {
       "type": "integer",
       "minimum": 0
     },
-    "unmapped_scripts": {
+    "missing_package_bridge": {
       "type": "array",
       "items": {
         "type": "string"
       }
     },
-    "unexpected_runner_package_scripts": {
+    "unexpected_package_bridges": {
       "type": "array",
       "items": {
         "type": "string"
@@ -75,10 +70,10 @@
         "$ref": "#/$defs/action"
       }
     },
-    "package_scripts": {
+    "package_bridges": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/package_script"
+        "$ref": "#/$defs/package_bridge"
       }
     }
   },
@@ -111,10 +106,10 @@
       },
       "additionalProperties": true
     },
-    "package_script": {
+    "package_bridge": {
       "type": "object",
       "required": [
-        "package_script",
+        "package_bridge",
         "action",
         "audience",
         "category",
@@ -122,7 +117,7 @@
         "runner_path"
       ],
       "properties": {
-        "package_script": { "type": "string" },
+        "package_bridge": { "type": "string" },
         "action": { "type": "string" },
         "summary": { "type": "string" },
         "audience": {

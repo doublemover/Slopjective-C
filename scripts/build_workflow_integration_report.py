@@ -66,15 +66,14 @@ def main() -> None:
 
     payload = {
         'issue': 'workflow-integration',
-        'package_script_count': contract['package_script_count'],
         'package_bridge_count': contract['package_bridge_count'],
-        'operator_script_count': contract['operator_script_count'],
-        'maintainer_script_count': contract['maintainer_script_count'],
+        'operator_action_count': contract['operator_action_count'],
+        'maintainer_action_count': contract['maintainer_action_count'],
         'runner_mode': contract['runner_mode'],
         'maintainer_runbook_path': MAINTAINER_RUNBOOK_PATH.relative_to(ROOT).as_posix(),
         'readme_path': README_PATH.relative_to(ROOT).as_posix(),
         'package_bridge': {
-            'package_script': package_bridge['package_script'],
+            'package_bridge': package_bridge['package_bridge'],
             'action': package_bridge['action'],
             'backend': package_bridge['backend'],
         },
@@ -110,14 +109,13 @@ def main() -> None:
     lines = [
         '# workflow-integration Workflow Integration Report',
         '',
-        f"- package_script_count: `{payload['package_script_count']}`",
         f"- package_bridge_count: `{payload['package_bridge_count']}`",
-        f"- operator_script_count: `{payload['operator_script_count']}`",
-        f"- maintainer_script_count: `{payload['maintainer_script_count']}`",
+        f"- operator_action_count: `{payload['operator_action_count']}`",
+        f"- maintainer_action_count: `{payload['maintainer_action_count']}`",
         f"- runner_mode: `{payload['runner_mode']}`",
         '',
         '## Package bridge',
-        f"- `{payload['package_bridge']['package_script']}` -> `{payload['package_bridge']['backend']}`",
+        f"- `{payload['package_bridge']['package_bridge']}` -> `{payload['package_bridge']['backend']}`",
         '',
         '## Operator examples',
     ]

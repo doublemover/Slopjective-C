@@ -33,15 +33,14 @@ def main() -> None:
     list_payload = runner.list_actions_payload()
     package_scripts = package['scripts']
 
-    package_script_names = sorted(package_scripts)
-    bridge_scripts = {'objc3c'}
-    unmapped_scripts = sorted(set(package_script_names) - bridge_scripts)
-    unexpected_runner_package_scripts: list[str] = []
+    package_bridge_names = sorted(name for name in package_scripts if name == 'objc3c')
+    missing_package_bridge = [] if package_bridge_names == ['objc3c'] else ['objc3c']
+    unexpected_package_bridges = sorted(name for name in package_scripts if name != 'objc3c')
 
     action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
-    package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]
-    operator_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'operator')
-    maintainer_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'maintainer')
+    package_bridge_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_bridge_names]
+    operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
+    maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 
     contract = {
         'contract_id': 'objc3c-public-command-contract-v1',
@@ -49,16 +48,15 @@ def main() -> None:
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
-        'package_script_count': len(package_script_names),
-        'package_bridge_count': list_payload['package_bridge_count'],
+        'package_bridge_count': len(package_bridge_names),
         'workflow_action_count': list_payload['action_count'],
         'internal_action_count': list_payload['internal_action_count'],
-        'operator_script_count': operator_script_count,
-        'maintainer_script_count': maintainer_script_count,
-        'unmapped_scripts': unmapped_scripts,
-        'unexpected_runner_package_scripts': unexpected_runner_package_scripts,
+        'operator_action_count': operator_action_count,
+        'maintainer_action_count': maintainer_action_count,
+        'missing_package_bridge': missing_package_bridge,
+        'unexpected_package_bridges': unexpected_package_bridges,
         'actions': action_payloads,
-        'package_scripts': package_script_payloads,
+        'package_bridges': package_bridge_payloads,
         'next_issue': 'workflow-api-implementation',
     }
     write_json_file(PLAN_JSON_PATH, contract)
@@ -68,25 +66,23 @@ def main() -> None:
         '# workflow-public-command-contract Public Command Contract',
         '',
         f"- contract_id: `{contract['contract_id']}`",
-        f"- package_script_count: `{contract['package_script_count']}`",
         f"- package_bridge_count: `{contract['package_bridge_count']}`",
         f"- workflow_action_count: `{contract['workflow_action_count']}`",
         f"- internal_action_count: `{contract['internal_action_count']}`",
-        f"- operator_script_count: `{contract['operator_script_count']}`",
-        f"- maintainer_script_count: `{contract['maintainer_script_count']}`",
+        f"- operator_action_count: `{contract['operator_action_count']}`",
+        f"- maintainer_action_count: `{contract['maintainer_action_count']}`",
         f"- schema: `{SCHEMA_PATH.relative_to(ROOT).as_posix()}`",
         '',
         '## Drift checks',
-        f"- unmapped_scripts: `{len(unmapped_scripts)}`",
-        f"- unexpected_runner_package_scripts: `{len(unexpected_runner_package_scripts)}`",
+        f"- missing_package_bridge: `{len(missing_package_bridge)}`",
+        f"- unexpected_package_bridges: `{len(unexpected_package_bridges)}`",
         '',
-        '## Maintainer package scripts',
+        '## Package bridges',
     ]
-    for payload in package_script_payloads:
-        if payload['audience'] == 'maintainer':
-            lines.append(f"- `{payload['package_script']}` -> `{payload['action']}`")
+    for payload in package_bridge_payloads:
+        lines.append(f"- `{payload['package_bridge']}` -> `{payload['backend']}`")
     lines.extend(['', '## Contract status'])
-    status = 'PASS' if not unmapped_scripts and not unexpected_runner_package_scripts else 'FAIL'
+    status = 'PASS' if not missing_package_bridge and not unexpected_package_bridges else 'FAIL'
     lines.append(f'- status: `{status}`')
     lines.extend(['', 'Next issue: `workflow-api-implementation`', ''])
     markdown = '\n'.join(lines)

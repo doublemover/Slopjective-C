@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 COMMAND_SURFACE_PY = ROOT / 'scripts' / 'render_objc3c_public_command_surface.py'
 DEFAULT_CONTRACT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
-CANONICAL_CATEGORIES = ['bridge']
-MAX_MAINTAINER_SCRIPTS = 9
+CANONICAL_BRIDGE = 'objc3c'
+MAX_PACKAGE_BRIDGES = 1
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -33,31 +33,26 @@ def main(argv: Sequence[str]) -> int:
     contract = json.loads(DEFAULT_CONTRACT.read_text(encoding='utf-8'))
     subprocess.run([sys.executable, str(COMMAND_SURFACE_PY), '--check'], cwd=ROOT, check=True)
 
-    operator_categories = sorted({entry['category'] for entry in contract['package_scripts'] if entry['audience'] == 'operator'})
-    maintainer_categories = sorted({entry['category'] for entry in contract['package_scripts'] if entry['audience'] == 'maintainer'})
+    package_bridges = [entry['package_bridge'] for entry in contract['package_bridges']]
     failures: list[str] = []
-    if contract['unmapped_scripts']:
-        failures.append(f"unmapped package scripts present: {contract['unmapped_scripts']}")
-    if contract['unexpected_runner_package_scripts']:
-        failures.append(f"runner advertises unexpected package scripts: {contract['unexpected_runner_package_scripts']}")
-    if operator_categories != CANONICAL_CATEGORIES:
-        failures.append(f"operator categories drifted: expected {CANONICAL_CATEGORIES} got {operator_categories}")
-    if contract['maintainer_script_count'] > MAX_MAINTAINER_SCRIPTS:
-        failures.append(
-            f"maintainer script budget exceeded: {contract['maintainer_script_count']} > {MAX_MAINTAINER_SCRIPTS}"
-        )
+    if contract['missing_package_bridge']:
+        failures.append(f"missing package bridge: {contract['missing_package_bridge']}")
+    if contract['unexpected_package_bridges']:
+        failures.append(f"unexpected package bridges present: {contract['unexpected_package_bridges']}")
+    if package_bridges != [CANONICAL_BRIDGE]:
+        failures.append(f"package bridge drifted: expected {[CANONICAL_BRIDGE]} got {package_bridges}")
+    if contract['package_bridge_count'] > MAX_PACKAGE_BRIDGES:
+        failures.append(f"package bridge budget exceeded: {contract['package_bridge_count']} > {MAX_PACKAGE_BRIDGES}")
 
     summary = {
         'status': 'PASS' if not failures else 'FAIL',
-        'package_script_count': contract['package_script_count'],
         'package_bridge_count': contract['package_bridge_count'],
         'workflow_action_count': contract['workflow_action_count'],
         'internal_action_count': contract['internal_action_count'],
-        'operator_script_count': contract['operator_script_count'],
-        'maintainer_script_count': contract['maintainer_script_count'],
-        'operator_categories': operator_categories,
-        'maintainer_categories': maintainer_categories,
-        'max_maintainer_scripts': MAX_MAINTAINER_SCRIPTS,
+        'operator_action_count': contract['operator_action_count'],
+        'maintainer_action_count': contract['maintainer_action_count'],
+        'package_bridges': package_bridges,
+        'max_package_bridges': MAX_PACKAGE_BRIDGES,
         'failures': failures,
         'contract_path': DEFAULT_CONTRACT.relative_to(ROOT).as_posix(),
     }
@@ -68,20 +63,16 @@ def main(argv: Sequence[str]) -> int:
             '# Public Command Budget Report',
             '',
             f"- status: `{summary['status']}`",
-            f"- package_script_count: `{summary['package_script_count']}`",
             f"- package_bridge_count: `{summary['package_bridge_count']}`",
             f"- workflow_action_count: `{summary['workflow_action_count']}`",
             f"- internal_action_count: `{summary['internal_action_count']}`",
-            f"- operator_script_count: `{summary['operator_script_count']}`",
-            f"- maintainer_script_count: `{summary['maintainer_script_count']}` / `{summary['max_maintainer_scripts']}`",
+            f"- operator_action_count: `{summary['operator_action_count']}`",
+            f"- maintainer_action_count: `{summary['maintainer_action_count']}`",
             '',
-            '## Operator categories',
+            '## Package bridges',
         ]
-        for category in operator_categories:
-            lines.append(f"- `{category}`")
-        lines.extend(['', '## Maintainer categories'])
-        for category in maintainer_categories:
-            lines.append(f"- `{category}`")
+        for package_bridge in package_bridges:
+            lines.append(f"- `{package_bridge}`")
         lines.extend(['', '## Failures'])
         if failures:
             for failure in failures:

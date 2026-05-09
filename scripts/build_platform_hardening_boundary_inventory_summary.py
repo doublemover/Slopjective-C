@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
+from objc3c_workflow.registry import action_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
@@ -55,6 +56,12 @@ def main() -> int:
     contract = read_json(CONTRACT_PATH)
     supported_platforms = read_json(SUPPORTED_PLATFORMS_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    registered_actions = set(action_names())
+    missing_actions = [
+        str(action)
+        for action in contract["public_actions"]
+        if str(action) not in registered_actions
+    ]
 
     python_probe = {
         "command": [sys.executable, "--version"],
@@ -84,6 +91,7 @@ def main() -> int:
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_platform_hardening_boundary_inventory_summary.py",
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_policy_contract_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["policy_contract_paths"]),
+        "all_public_actions_registered": not missing_actions,
         "supported_platform_fixture_matches_boundary": sorted(entry["platform_id"] for entry in supported_platform_entries) == sorted(contract["supported_platform_ids"]),
         "default_platform_is_supported": supported_platforms.get("default_platform_id") in contract["supported_platform_ids"],
         "runbook_mentions_current_support_matrix": "## Current Support Matrix" in runbook_text,
@@ -100,8 +108,9 @@ def main() -> int:
         "runner_path": "scripts/build_platform_hardening_boundary_inventory_summary.py",
         "authoritative_code_path_count": len(contract["authoritative_code_paths"]),
         "policy_contract_path_count": len(contract["policy_contract_paths"]),
-        "public_command_count": len(contract["public_commands"]),
+        "package_bridge": contract["package_bridge"],
         "public_action_count": len(contract["public_actions"]),
+        "missing_actions": missing_actions,
         "report_path_count": len(contract["report_paths"]),
         "supported_platform_count": len(contract["supported_platform_ids"]),
         "supported_channel_count": len(contract["supported_channels"]),
@@ -123,7 +132,7 @@ def main() -> int:
         f"- Contract: `{payload['source_contract_id']}`\n"
         f"- Authoritative code paths: `{payload['authoritative_code_path_count']}`\n"
         f"- Policy contracts: `{payload['policy_contract_path_count']}`\n"
-        f"- Public commands: `{payload['public_command_count']}`\n"
+        f"- Package bridge: `{payload['package_bridge']}`\n"
         f"- Public actions: `{payload['public_action_count']}`\n"
         f"- Supported platforms: `{payload['supported_platform_count']}`\n"
         f"- Supported channels: `{payload['supported_channel_count']}`\n"

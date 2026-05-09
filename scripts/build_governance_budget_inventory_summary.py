@@ -23,14 +23,6 @@ def count_action_definitions(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("def action_"))
 
 
-def count_package_script_categories(package_json: dict[str, Any]) -> dict[str, int]:
-    categories: dict[str, int] = {}
-    for name in package_json.get("scripts", {}):
-        key = name.split(":", 1)[0] if ":" in name else name
-        categories[key] = categories.get(key, 0) + 1
-    return dict(sorted(categories.items()))
-
-
 def iter_live_files(roots: list[Path]):
     for root in roots:
         if not root.exists():
@@ -50,7 +42,7 @@ def main() -> int:
     task_hygiene_text = TASK_HYGIENE_PATH.read_text(encoding="utf-8")
 
     package_scripts = package_json.get("scripts", {})
-    script_categories = count_package_script_categories(package_json)
+    package_bridge_count = 1 if isinstance(package_scripts, dict) and "objc3c" in package_scripts else 0
     live_roots = [
         ROOT / ".github",
         ROOT / "docs",
@@ -80,10 +72,9 @@ def main() -> int:
             milestone_checker_ref_hits.append(path.relative_to(ROOT).as_posix())
 
     measured = {
-        "package_script_count": len(package_scripts),
-        "package_script_budget": int(re.search(r"PACKAGE_SCRIPT_BUDGET = (\d+)", task_hygiene_text).group(1)),
-        "package_script_category_count": len(script_categories),
-        "package_script_categories": script_categories,
+        "package_bridge_count": package_bridge_count,
+        "package_bridge_budget": int(re.search(r"PACKAGE_BRIDGE_BUDGET = (\d+)", task_hygiene_text).group(1)),
+        "package_bridge": "objc3c" if package_bridge_count else "",
         "public_workflow_action_count": count_action_definitions(ROOT / "scripts/objc3c_workflow/runner.py"),
         "runbook_count": len(list((ROOT / "docs/runbooks").glob("*.md"))),
         "schema_count": len(list((ROOT / "schemas").glob("*.json"))),
@@ -122,7 +113,8 @@ def main() -> int:
         [
             summary["runbook_mentions_contract"],
             summary["summary_script_matches_runbook"],
-            measured["package_script_count"] <= measured["package_script_budget"],
+            measured["package_bridge_count"] <= measured["package_bridge_budget"],
+            measured["package_bridge_count"] == 1,
             measured["must_remain_absent"]["docs_contracts_exists"] is False,
             measured["must_remain_absent"]["spec_planning_exists"] is False,
             measured["must_remain_absent"]["compiler_tree_exists"] is False,

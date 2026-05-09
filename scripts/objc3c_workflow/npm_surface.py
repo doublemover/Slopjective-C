@@ -8,7 +8,7 @@ from .environment import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
 def describe_package_script_payload(script_name: str) -> dict[str, object]:
     if script_name == "objc3c":
         return {
-            "package_script": "objc3c",
+            "package_bridge": "objc3c",
             "action": "<action>",
             "summary": "canonical npm bridge for the objc3c workflow action registry",
             "audience": "operator",

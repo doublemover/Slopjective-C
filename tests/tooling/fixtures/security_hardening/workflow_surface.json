@@ -5,13 +5,14 @@
   "publish_action": "publish-security-advisories",
   "validate_action": "validate-security-hardening",
   "end_to_end_action": "validate-security-hardening-end-to-end",
-  "public_scripts": [
-    "check:objc3c:security-hardening:surface",
-    "check:objc3c:security-hardening:schemas",
-    "inspect:objc3c:security-posture",
-    "publish:objc3c:security-advisories",
-    "test:objc3c:security-hardening",
-    "test:objc3c:security-hardening:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-security-hardening-surface",
+    "check-security-hardening-schema-surface",
+    "build-security-posture",
+    "publish-security-advisories",
+    "validate-security-hardening",
+    "validate-security-hardening-end-to-end"
   ],
   "upstream_validate_actions": [
     "validate-release-operations",

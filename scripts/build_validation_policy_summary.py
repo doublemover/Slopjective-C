@@ -39,7 +39,7 @@ def main() -> None:
         '',
         f"- policy_id: `{summary['policy_id']}`",
         f"- inventory_issue: `{summary['inventory_issue']}`",
-        f"- package_scripts_total: `{measured['package_scripts_total']}`",
+        f"- package_bridge_count: `{measured['package_bridge_count']}`",
         f"- check_py_files: `{measured['check_py_files']}`",
         f"- retained_static_guard_count: `{measured['retained_static_guard_count']}`",
         f"- executable_validation_count: `{measured['executable_validation_count']}`",

@@ -175,10 +175,11 @@ def main() -> int:
         "trust_boundaries": trust_boundaries,
         "evidence_paths": evidence_paths,
         "publication_surface": {
-            "inspect_security_posture_command": "inspect:objc3c:security-posture",
-            "publish_security_advisories_command": "publish:objc3c:security-advisories",
-            "validate_security_hardening_command": "test:objc3c:security-hardening",
-            "validate_security_hardening_end_to_end_command": "test:objc3c:security-hardening:e2e"
+            "package_bridge": "objc3c",
+            "inspect_security_posture_command": "build-security-posture",
+            "publish_security_advisories_command": "publish-security-advisories",
+            "validate_security_hardening_command": "validate-security-hardening",
+            "validate_security_hardening_end_to_end_command": "validate-security-hardening-end-to-end"
         }
     }
     POSTURE_PATH.parent.mkdir(parents=True, exist_ok=True)

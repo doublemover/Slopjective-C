@@ -43,7 +43,7 @@
     },
     "evaluator_path": {
       "type": "object",
-      "required": ["status", "entrypoints", "public_commands"],
+      "required": ["status", "entrypoints", "package_bridge", "required_actions"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "entrypoints": {
@@ -51,7 +51,11 @@
           "items": {"type": "string"},
           "minItems": 1
         },
-        "public_commands": {
+        "package_bridge": {
+          "type": "string",
+          "const": "objc3c"
+        },
+        "required_actions": {
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1
@@ -102,7 +106,7 @@
     },
     "onboarding": {
       "type": "object",
-      "required": ["status", "tutorials", "showcase_workspaces", "package_commands"],
+      "required": ["status", "tutorials", "showcase_workspaces", "package_actions"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "tutorials": {
@@ -115,7 +119,7 @@
           "items": {"type": "string"},
           "minItems": 1
         },
-        "package_commands": {
+        "package_actions": {
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1

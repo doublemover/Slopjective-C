@@ -45,26 +45,7 @@
     "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
     "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
   ],
-  "public_commands": [
-    "publish:objc3c:release-provenance",
-    "publish:objc3c:release-operations",
-    "publish:objc3c:distribution-credibility",
-    "publish:objc3c:security-advisories",
-    "inspect:objc3c:security-posture",
-    "test:objc3c:release-foundation",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e",
-    "test:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility:e2e",
-    "test:objc3c:security-hardening",
-    "test:objc3c:security-hardening:e2e",
-    "test:objc3c:platform-hardening",
-    "test:objc3c:runtime-acceptance",
-    "check:objc3c:security-hardening:surface",
-    "check:objc3c:security-hardening:schemas",
-    "check:release-evidence",
-    "check:objc3c:source-hygiene"
-  ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "publish-release-provenance",
     "publish-release-operations",

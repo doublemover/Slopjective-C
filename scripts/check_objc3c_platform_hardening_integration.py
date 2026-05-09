@@ -57,11 +57,11 @@ def main() -> int:
         for command_name in contract["required_command_surfaces"]:
             expect(command_name in command_surfaces, f"package manifest missing command surface {command_name}", failures)
         public_actions = manifest.get("platform_hardening_public_actions", [])
-        public_scripts = manifest.get("platform_hardening_public_scripts", [])
+        package_bridge = str(contract["package_bridge"])
+        manifest_package_bridge = manifest.get("package_bridge")
         for action in contract["public_actions"]:
             expect(action in public_actions, f"package manifest missing public action {action}", failures)
-        for script in contract["public_scripts"]:
-            expect(script in public_scripts, f"package manifest missing public script {script}", failures)
+        expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}", failures)
         payload = {
             "contract_id": "objc3c.platform.hardening.integration.summary.v1",
             "ok": not failures,
@@ -135,15 +135,15 @@ def main() -> int:
 
     publication_surface = support_matrix.get("publication_surface", {})
     expected_surface = {
-        "inspect_support_matrix_command": "inspect:objc3c:platform-matrix",
-        "package_command": "package:objc3c-native:runnable-toolchain",
-        "package_channels_command": "package:objc3c:channels",
-        "packaging_validation_command": "test:objc3c:packaging-channels",
-        "packaging_end_to_end_command": "test:objc3c:packaging-channels:e2e",
-        "platform_hardening_validation_command": "test:objc3c:platform-hardening",
-        "platform_hardening_end_to_end_command": "test:objc3c:platform-hardening:e2e",
-        "release_operations_command": "test:objc3c:release-operations",
-        "release_operations_end_to_end_command": "test:objc3c:release-operations:e2e",
+        "inspect_support_matrix_command": "build-platform-support-matrix",
+        "package_command": "package-runnable-toolchain",
+        "package_channels_command": "build-package-channels",
+        "packaging_validation_command": "validate-packaging-channels",
+        "packaging_end_to_end_command": "validate-packaging-channels-end-to-end",
+        "platform_hardening_validation_command": "validate-platform-hardening",
+        "platform_hardening_end_to_end_command": "validate-platform-hardening-end-to-end",
+        "release_operations_command": "validate-release-operations",
+        "release_operations_end_to_end_command": "validate-release-operations-end-to-end",
     }
     for key, expected in expected_surface.items():
         expect(publication_surface.get(key) == expected, f"support matrix publication surface drifted for {key}", failures)

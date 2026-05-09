@@ -642,13 +642,7 @@ $manifestPayload = [ordered]@{
     "validate-developer-tooling",
     "validate-runnable-developer-tooling"
   )
-  developer_tooling_public_scripts = @(
-    "inspect:objc3c:editor",
-    "format:objc3c",
-    "build:objc3c:playground",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling"
-  )
+  package_bridge = "objc3c"
   application_architecture_runbook = "docs/runbooks/objc3c_application_architecture_testing.md"
   application_architecture_boundary_inventory = "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json"
   application_architecture_testing_semantics = "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json"
@@ -678,12 +672,6 @@ $manifestPayload = [ordered]@{
     "materialize-canonical-application-workspace",
     "validate-application-architecture",
     "validate-runnable-application-architecture"
-  )
-  application_architecture_public_scripts = @(
-    "build:objc3c:template",
-    "build:objc3c:application-workspace",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e"
   )
   package_ecosystem_runbook = "docs/runbooks/objc3c_package_ecosystem.md"
   package_ecosystem_boundary_inventory = "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json"
@@ -723,13 +711,6 @@ $manifestPayload = [ordered]@{
     "validate-package-ecosystem",
     "validate-runnable-package-ecosystem"
   )
-  package_ecosystem_public_scripts = @(
-    "build:objc3c:package-lock",
-    "test:objc3c:package-authoring",
-    "test:objc3c:package-mirror",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e"
-  )
   long_horizon_operations_runbook = "docs/runbooks/objc3c_long_horizon_operations.md"
   long_horizon_operations_artifact_contract = "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json"
   long_horizon_operations_schema = "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
@@ -741,10 +722,6 @@ $manifestPayload = [ordered]@{
   long_horizon_operations_public_actions = @(
     "validate-long-horizon-operations",
     "publish-long-horizon-operations"
-  )
-  long_horizon_operations_public_scripts = @(
-    "test:objc3c:long-horizon-operations",
-    "publish:objc3c:long-horizon-operations"
   )
   adoption_legibility_runbook = "docs/runbooks/objc3c_adoption_legibility.md"
   adoption_legibility_artifact_contract = "tests/tooling/fixtures/adoption_legibility/artifact_contract.json"
@@ -762,10 +739,6 @@ $manifestPayload = [ordered]@{
     "validate-adoption-legibility",
     "publish-adoption-legibility"
   )
-  adoption_legibility_public_scripts = @(
-    "test:objc3c:adoption-legibility",
-    "publish:objc3c:adoption-legibility"
-  )
   governance_sustainability_runbook = "docs/runbooks/objc3c_governance_sustainability.md"
   governance_sustainability_artifact_contract = "tests/tooling/fixtures/governance_sustainability/artifact_contract.json"
   governance_sustainability_schema = "schemas/objc3c-governance-sustainability-evidence-v1.schema.json"
@@ -780,10 +753,6 @@ $manifestPayload = [ordered]@{
   governance_sustainability_public_actions = @(
     "validate-governance-sustainability",
     "publish-governance-sustainability"
-  )
-  governance_sustainability_public_scripts = @(
-    "test:objc3c:governance-sustainability",
-    "publish:objc3c:governance-sustainability"
   )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
@@ -813,11 +782,6 @@ $manifestPayload = [ordered]@{
     "build-platform-support-matrix",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end"
-  )
-  platform_hardening_public_scripts = @(
-    "inspect:objc3c:platform-matrix",
-    "test:objc3c:platform-hardening",
-    "test:objc3c:platform-hardening:e2e"
   )
   object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
   block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"

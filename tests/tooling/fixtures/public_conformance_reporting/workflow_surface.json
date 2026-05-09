@@ -1,35 +1,15 @@
 {
   "contract_id": "objc3c.public_conformance_reporting.workflow.surface.v1",
   "schema_version": 1,
+  "package_bridge": "objc3c",
   "actions": [
-    {
-      "action": "check-public-conformance-reporting-surface",
-      "package_script": "check:objc3c:public-conformance:surface"
-    },
-    {
-      "action": "check-public-conformance-schema-surface",
-      "package_script": "check:objc3c:public-conformance:schemas"
-    },
-    {
-      "action": "build-public-conformance-scorecard",
-      "package_script": "inspect:objc3c:public-conformance:scorecard"
-    },
-    {
-      "action": "publish-public-conformance-report",
-      "package_script": "publish:objc3c:public-conformance"
-    },
-    {
-      "action": "validate-public-conformance-reporting",
-      "package_script": "test:objc3c:public-conformance"
-    },
-    {
-      "action": "validate-public-conformance-reporting-integration",
-      "package_script": "test:objc3c:public-conformance:integration"
-    },
-    {
-      "action": "validate-public-conformance-reporting-end-to-end",
-      "package_script": "test:objc3c:public-conformance:e2e"
-    }
+    "check-public-conformance-reporting-surface",
+    "check-public-conformance-schema-surface",
+    "build-public-conformance-scorecard",
+    "publish-public-conformance-report",
+    "validate-public-conformance-reporting",
+    "validate-public-conformance-reporting-integration",
+    "validate-public-conformance-reporting-end-to-end"
   ],
   "report_paths": [
     "tmp/reports/public-conformance/source-surface-summary.json",

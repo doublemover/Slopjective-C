@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,12 +32,19 @@ def read_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    registered_actions = set(action_names())
+    missing_actions = [
+        str(action)
+        for action in contract["public_actions"]
+        if str(action) not in registered_actions
+    ]
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_security_hardening_boundary_inventory_summary.py",
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_policy_contract_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["policy_contract_paths"]),
         "all_macro_security_fixture_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["macro_security_fixture_paths"]),
+        "all_public_actions_registered": not missing_actions,
         "runbook_mentions_current_security_posture": "## Current Security Posture" in runbook_text,
         "runbook_mentions_macro_package_and_provenance": "### Macro, Package, And Provenance Trust" in runbook_text,
         "runbook_mentions_installer_update_and_release_trust": "### Installer, Update, And Release Trust" in runbook_text,
@@ -53,8 +61,9 @@ def main() -> int:
         "authoritative_code_path_count": len(contract["authoritative_code_paths"]),
         "policy_contract_path_count": len(contract["policy_contract_paths"]),
         "macro_security_fixture_count": len(contract["macro_security_fixture_paths"]),
-        "public_command_count": len(contract["public_commands"]),
+        "package_bridge": contract["package_bridge"],
         "public_action_count": len(contract["public_actions"]),
+        "missing_actions": missing_actions,
         "report_path_count": len(contract["report_paths"]),
         "gap_claim_count": len(contract["gap_claims"]),
         "checks": checks,
@@ -68,7 +77,7 @@ def main() -> int:
         f"- Authoritative code paths: `{payload['authoritative_code_path_count']}`\n"
         f"- Policy contracts: `{payload['policy_contract_path_count']}`\n"
         f"- Macro security fixtures: `{payload['macro_security_fixture_count']}`\n"
-        f"- Public commands: `{payload['public_command_count']}`\n"
+        f"- Package bridge: `{payload['package_bridge']}`\n"
         f"- Public actions: `{payload['public_action_count']}`\n"
         f"- Report paths: `{payload['report_path_count']}`\n"
         f"- Gap claims: `{payload['gap_claim_count']}`\n"

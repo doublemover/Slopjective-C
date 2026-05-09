@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,8 +66,10 @@ def main() -> int:
     registry = load_json(REGISTRY_PATH) if REGISTRY_PATH.is_file() else {}
     publication = load_json(PUBLICATION_PATH) if PUBLICATION_PATH.is_file() else {}
     mirror_summary = load_json(MIRROR_SUMMARY_PATH) if MIRROR_SUMMARY_PATH.is_file() else {}
-    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    missing_actions = [name for name in required_actions if name not in set(action_names())]
 
     lock_ids = package_ids(lock)
     mirror_ids = package_ids(mirror)
@@ -78,7 +81,8 @@ def main() -> int:
     expect(publication.get("network_resolution_support") == "unsupported", "network resolution support claim drifted", failures)
     expect(mirror_summary.get("status") == "PASS", "mirror summary did not report PASS", failures)
     expect(mirror_summary.get("package_count") == len(lock_ids), "mirror summary package count drifted", failures)
-    expect(not missing_public_scripts, "registry/mirror workflow missing public scripts", failures)
+    expect(package_bridge_exists, f"registry/mirror workflow missing package bridge {package_bridge}", failures)
+    expect(not missing_actions, "registry/mirror workflow missing required actions", failures)
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.registry_mirror_reproducibility.summary.v1",
@@ -92,8 +96,10 @@ def main() -> int:
         "package_count": len(lock_ids),
         "network_policy": mirror.get("network_policy"),
         "hosted_registry_support": publication.get("hosted_registry_support"),
-        "required_public_scripts": required_public_scripts,
-        "missing_public_scripts": missing_public_scripts,
+        "package_bridge": package_bridge,
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "required_actions": required_actions,
+        "missing_actions": missing_actions,
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

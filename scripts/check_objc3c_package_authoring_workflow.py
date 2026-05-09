@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,8 +58,10 @@ def main() -> int:
     provenance = lock.get("provenance", [])
     digest_inputs = lock.get("digest_inputs", [])
     replay = lock.get("replay", {})
-    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    missing_actions = [name for name in required_actions if name not in set(action_names())]
 
     expect(lock.get("contract_id") == "objc3c.package_ecosystem.lockfile.v1", "lock contract id drifted", failures)
     expect(isinstance(packages, list) and len(packages) == lock_summary.get("package_count"), "lock package count drifted", failures)
@@ -68,7 +71,8 @@ def main() -> int:
     expect(isinstance(packages, list) and packages == sorted(packages, key=lambda entry: entry["package_id"]), "lock packages are not sorted", failures)
     expect(isinstance(dependencies, list) and dependencies == sorted(dependencies, key=lambda entry: (entry["from"], entry["to"])), "lock dependencies are not sorted", failures)
     expect(isinstance(replay, dict) and "python scripts/check_objc3c_package_authoring_workflow.py" in replay.get("commands", []), "lock replay commands missing authoring check", failures)
-    expect(not missing_public_scripts, "package authoring workflow missing public scripts", failures)
+    expect(package_bridge_exists, f"package authoring workflow missing package bridge {package_bridge}", failures)
+    expect(not missing_actions, "package authoring workflow missing required actions", failures)
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.package_authoring_workflow.summary.v1",
@@ -80,8 +84,10 @@ def main() -> int:
         "dependency_count": len(dependencies) if isinstance(dependencies, list) else 0,
         "provenance_count": len(provenance) if isinstance(provenance, list) else 0,
         "digest_input_count": len(digest_inputs) if isinstance(digest_inputs, list) else 0,
-        "required_public_scripts": required_public_scripts,
-        "missing_public_scripts": missing_public_scripts,
+        "package_bridge": package_bridge,
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "required_actions": required_actions,
+        "missing_actions": missing_actions,
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

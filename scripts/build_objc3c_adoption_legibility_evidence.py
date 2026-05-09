@@ -110,12 +110,12 @@ def main() -> int:
         for phase in migration_semantics.get("playbook_phases", [])
         if isinstance(phase, dict)
     ]
-    migration_public_scripts = sorted(
+    migration_actions = sorted(
         {
-            str(script)
+            str(action)
             for phase in migration_semantics.get("playbook_phases", [])
             if isinstance(phase, dict)
-            for script in phase.get("required_public_scripts", [])
+            for action in phase.get("required_actions", [])
         }
     )
     interop_axes = [
@@ -123,10 +123,10 @@ def main() -> int:
         for axis in migration_semantics.get("interop_guidance_axes", [])
         if isinstance(axis, dict)
     ]
-    package_commands = [
-        script
-        for script in migration_public_scripts
-        if "package" in script or "application" in script or "release" in script or "long-horizon" in script
+    package_actions = [
+        action
+        for action in migration_actions
+        if "package" in action or "application" in action or "release" in action or "long-horizon" in action
     ]
 
     boundary_summary = reports.get("boundary", {})
@@ -151,7 +151,8 @@ def main() -> int:
         "evaluator_path": {
             "status": "PASS" if not release_blockers else "FAIL",
             "entrypoints": boundary.get("primary_evaluator_surfaces", []),
-            "public_commands": boundary.get("required_existing_public_scripts", []),
+            "package_bridge": boundary.get("package_bridge"),
+            "required_actions": boundary.get("required_actions", []),
             "tutorial_doc_count": boundary_summary.get("tutorial_doc_count"),
             "showcase_source_count": boundary_summary.get("showcase_source_count"),
         },
@@ -160,7 +161,8 @@ def main() -> int:
             "phases": migration_phases,
             "interop_axes": interop_axes,
             "replay_fields": migration_semantics.get("required_migration_replay_fields", []),
-            "public_commands": migration_public_scripts,
+            "package_bridge": migration_semantics.get("package_bridge"),
+            "required_actions": migration_actions,
         },
         "comparison_matrix": {
             "status": "PASS" if not release_blockers else "FAIL",
@@ -172,7 +174,7 @@ def main() -> int:
             "status": "PASS" if not release_blockers else "FAIL",
             "tutorials": boundary_summary.get("tutorial_docs", []),
             "showcase_workspaces": boundary_summary.get("showcase_workspaces", []),
-            "package_commands": package_commands,
+            "package_actions": package_actions,
         },
         "candidate_claims": {
             "status": "PASS" if not release_blockers else "FAIL",
@@ -183,10 +185,10 @@ def main() -> int:
         "claim_audit": {
             "support_state": "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison",
             "earned_claims": [
-                "external evaluator path links README, site, tutorials, showcase, commands, package workflows, and support evidence",
+                "external evaluator path links README, site, tutorials, showcase, workflow actions, package workflows, and support evidence",
                 "Objective-C 2 migration guidance is same-major scoped and package/support-window aware",
                 "Swift and C++ comparison guidance is evidence-linked and parity-claim guarded",
-                "onboarding uses checked-in tutorials, showcase workspaces, and public package scripts",
+                "onboarding uses checked-in tutorials, showcase workspaces, and objc3c workflow actions",
             ],
             "demoted_or_out_of_scope_claims": [
                 "drop-in Objective-C 2 replacement",
@@ -224,7 +226,7 @@ def main() -> int:
         "steps": steps,
         "report_count": len(required_reports),
         "evaluator_entrypoint_count": len(artifact["evaluator_path"]["entrypoints"]),
-        "public_command_count": len(artifact["evaluator_path"]["public_commands"]),
+        "required_action_count": len(artifact["evaluator_path"]["required_actions"]),
         "migration_phase_count": len(migration_phases),
         "interop_axis_count": len(interop_axes),
         "comparison_axis_count": len(comparison_axes),

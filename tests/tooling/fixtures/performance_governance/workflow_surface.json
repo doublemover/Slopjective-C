@@ -3,12 +3,13 @@
   "validate_action": "validate-performance-governance",
   "integration_action": "validate-performance-governance-integration",
   "end_to_end_action": "validate-performance-governance-end-to-end",
-  "public_scripts": [
-    "test:objc3c:performance-governance",
-    "test:objc3c:performance-governance:integration",
-    "test:objc3c:performance-governance:e2e",
-    "inspect:objc3c:performance-dashboard",
-    "publish:objc3c:performance-report"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "validate-performance-governance",
+    "validate-performance-governance-integration",
+    "validate-performance-governance-end-to-end",
+    "build-performance-dashboard",
+    "publish-performance-report"
   ],
   "release_evidence_paths": [
     "tmp/reports/performance-governance/dashboard-summary.json",

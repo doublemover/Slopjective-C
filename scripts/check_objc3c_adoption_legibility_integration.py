@@ -70,7 +70,8 @@ def main() -> int:
     claim_audit = artifact.get("claim_audit", {}) if isinstance(artifact.get("claim_audit"), dict) else {}
 
     expect(len(evaluator_path.get("entrypoints", [])) >= 8, "evaluator entrypoint surface is too narrow", failures)
-    expect(len(evaluator_path.get("public_commands", [])) >= 10, "public command surface is too narrow", failures)
+    expect(evaluator_path.get("package_bridge") == "objc3c", "evaluator path package bridge drifted", failures)
+    expect(len(evaluator_path.get("required_actions", [])) >= 10, "workflow action surface is too narrow", failures)
     expect(len(migration.get("phases", [])) >= 4, "migration playbook phase coverage is too narrow", failures)
     expect(len(migration.get("interop_axes", [])) >= 3, "interop axis coverage is too narrow", failures)
     expect(len(comparison.get("axes", [])) >= 3, "comparison axis coverage is too narrow", failures)
@@ -91,7 +92,7 @@ def main() -> int:
         "evidence_summary": repo_rel(EVIDENCE_SUMMARY),
         "support_state": claim_audit.get("support_state"),
         "evaluator_entrypoint_count": len(evaluator_path.get("entrypoints", [])),
-        "public_command_count": len(evaluator_path.get("public_commands", [])),
+        "required_action_count": len(evaluator_path.get("required_actions", [])),
         "migration_phase_count": len(migration.get("phases", [])),
         "interop_axis_count": len(migration.get("interop_axes", [])),
         "comparison_axis_count": len(comparison.get("axes", [])),

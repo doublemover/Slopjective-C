@@ -49,7 +49,7 @@ def main() -> None:
                     'scripts/build_validation_surface_inventory.py'
                 ],
                 'highlights': {
-                    'package_scripts_total': inventory['measured_counts']['package_scripts_total'],
+                    'package_bridge_count': inventory['measured_counts']['package_bridge_count'],
                     'check_py_files': inventory['measured_counts']['check_py_files'],
                     'retained_static_guard_count': inventory['measured_counts']['retained_static_guard_count'],
                     'executable_validation_count': inventory['measured_counts']['executable_validation_count'],

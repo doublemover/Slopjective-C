@@ -97,15 +97,16 @@ def main() -> int:
           "forbidden_claims": tier_policy["forbidden_claims"],
         },
         "publication_surface": {
-          "inspect_support_matrix_command": "inspect:objc3c:platform-matrix",
-          "package_command": "package:objc3c-native:runnable-toolchain",
-          "package_channels_command": "package:objc3c:channels",
-          "packaging_validation_command": "test:objc3c:packaging-channels",
-          "packaging_end_to_end_command": "test:objc3c:packaging-channels:e2e",
-          "platform_hardening_validation_command": "test:objc3c:platform-hardening",
-          "platform_hardening_end_to_end_command": "test:objc3c:platform-hardening:e2e",
-          "release_operations_command": "test:objc3c:release-operations",
-          "release_operations_end_to_end_command": "test:objc3c:release-operations:e2e"
+          "package_bridge": "objc3c",
+          "inspect_support_matrix_command": "build-platform-support-matrix",
+          "package_command": "package-runnable-toolchain",
+          "package_channels_command": "build-package-channels",
+          "packaging_validation_command": "validate-packaging-channels",
+          "packaging_end_to_end_command": "validate-packaging-channels-end-to-end",
+          "platform_hardening_validation_command": "validate-platform-hardening",
+          "platform_hardening_end_to_end_command": "validate-platform-hardening-end-to-end",
+          "release_operations_command": "validate-release-operations",
+          "release_operations_end_to_end_command": "validate-release-operations-end-to-end"
         }
     }
 

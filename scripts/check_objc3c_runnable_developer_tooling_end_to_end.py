@@ -110,11 +110,11 @@ def main() -> int:
         expect(command_name in command_surfaces, f"package manifest missing developer tooling command surface: {command_name}")
 
     public_actions = manifest.get("developer_tooling_public_actions", [])
-    public_scripts = manifest.get("developer_tooling_public_scripts", [])
+    package_bridge = str(contract["package_bridge"])
+    manifest_package_bridge = manifest.get("package_bridge")
     for action in contract["public_actions"]:
         expect(action in public_actions, f"package manifest missing developer tooling public action: {action}")
-    for script in contract["public_scripts"]:
-        expect(script in public_scripts, f"package manifest missing developer tooling public script: {script}")
+    expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}")
 
     packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
     hello_source = package_path(package_root, str(manifest["developer_tooling_example_source"]))
@@ -208,7 +208,8 @@ def main() -> int:
         "packaged_workspace_path": repo_rel(package_root / normalize_rel_path(str(workspace_path_text))),
         "packaged_integration_summary_path": repo_rel(package_root / normalize_rel_path(str(integrated_summary_path_text))),
         "packaged_public_actions": public_actions,
-        "packaged_public_scripts": public_scripts,
+        "package_bridge": package_bridge,
+        "packaged_package_bridge": manifest_package_bridge,
         "child_report_paths": [
             *extract_report_paths(package_result.stdout),
             *extract_report_paths(inspect_result.stdout),

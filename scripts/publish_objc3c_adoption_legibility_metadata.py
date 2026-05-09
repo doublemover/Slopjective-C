@@ -23,10 +23,7 @@ EXPECTED_PUBLIC_ACTIONS = [
     "validate-adoption-legibility",
     "publish-adoption-legibility",
 ]
-EXPECTED_PUBLIC_SCRIPTS = [
-    "test:objc3c:adoption-legibility",
-    "publish:objc3c:adoption-legibility",
-]
+PACKAGE_BRIDGE = "objc3c"
 
 
 
@@ -72,10 +69,10 @@ def main() -> int:
         "publication_id": "objc3c.adoption_legibility.evaluator_publication.v1",
         "support_state": claim_audit.get("support_state"),
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "package_bridge": PACKAGE_BRIDGE,
         "operator_runbook": "docs/runbooks/objc3c_adoption_legibility.md",
         "entrypoints": evaluator_path.get("entrypoints", []),
-        "public_commands": evaluator_path.get("public_commands", []),
+        "required_actions": evaluator_path.get("required_actions", []),
         "migration_phases": migration.get("phases", []),
         "interop_axes": migration.get("interop_axes", []),
         "comparison_axes": comparison.get("axes", []),
@@ -96,7 +93,7 @@ def main() -> int:
         "integration_summary": repo_rel(INTEGRATION_SUMMARY),
         "support_state": claim_audit.get("support_state"),
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "package_bridge": PACKAGE_BRIDGE,
         "entrypoint_count": len(publication["evaluator_publication"]["entrypoints"]),
         "migration_phase_count": len(publication["evaluator_publication"]["migration_phases"]),
         "comparison_axis_count": len(publication["evaluator_publication"]["comparison_axes"]),

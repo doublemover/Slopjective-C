@@ -3,13 +3,14 @@
   "schema_version": 1,
   "validate_action": "validate-distribution-credibility",
   "end_to_end_action": "validate-distribution-credibility-end-to-end",
-  "public_scripts": [
-    "check:objc3c:distribution-credibility:surface",
-    "check:objc3c:distribution-credibility:schemas",
-    "inspect:objc3c:distribution-credibility",
-    "publish:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility",
+    "validate-distribution-credibility",
+    "validate-distribution-credibility-end-to-end"
   ],
   "upstream_validate_actions": [
     "validate-release-foundation",

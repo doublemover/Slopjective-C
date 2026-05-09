@@ -53,12 +53,11 @@ def main() -> int:
     manifest = load_json(manifest_path)
     package_surface = manifest.get("package_ecosystem_surface", {})
     public_actions = manifest.get("package_ecosystem_public_actions", [])
-    public_scripts = manifest.get("package_ecosystem_public_scripts", [])
+    manifest_package_bridge = manifest.get("package_bridge")
     expect(isinstance(package_surface, dict), "package manifest missing package_ecosystem_surface", failures)
     for action in ("build-package-lock", "validate-package-authoring", "validate-package-mirror", "validate-runnable-package-ecosystem"):
         expect(action in public_actions, f"package manifest missing public action {action}", failures)
-    for script in ("build:objc3c:package-lock", "test:objc3c:package-authoring", "test:objc3c:package-mirror", "test:objc3c:package-ecosystem:e2e"):
-        expect(script in public_scripts, f"package manifest missing public script {script}", failures)
+    expect(manifest_package_bridge == "objc3c", "package manifest missing objc3c package bridge", failures)
 
     packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
     packaged_authoring = run_capture(
@@ -90,7 +89,8 @@ def main() -> int:
         "manifest_path": repo_rel(manifest_path),
         "package_ecosystem_surface": package_surface,
         "package_ecosystem_public_actions": public_actions,
-        "package_ecosystem_public_scripts": public_scripts,
+        "package_bridge": "objc3c",
+        "packaged_package_bridge": manifest_package_bridge,
         "failures": failures,
         "packaged_reports": {
             "authoring_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"),

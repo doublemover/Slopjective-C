@@ -125,13 +125,7 @@ def main() -> int:
                 "architecture_layers": contract["architecture_layers"],
                 "included_examples": included_examples,
                 "public_actions": contract["required_evidence_actions"],
-                "public_scripts": [
-                    "test:showcase",
-                    "test:showcase:e2e",
-                    "test:stdlib:program",
-                    "test:stdlib:program:e2e",
-                    "package:objc3c-native:runnable-toolchain",
-                ],
+                "package_bridge": "objc3c",
                 "copied_roots": [
                     "examples",
                     "stdlib",
@@ -156,13 +150,7 @@ def main() -> int:
         "copied_path_count": len(copied_paths),
         "included_examples": included_examples,
         "public_actions": contract["required_evidence_actions"],
-        "public_scripts": [
-            "test:showcase",
-            "test:showcase:e2e",
-            "test:stdlib:program",
-            "test:stdlib:program:e2e",
-            "package:objc3c-native:runnable-toolchain",
-        ],
+        "package_bridge": "objc3c",
         "stdlib_publish_model": stdlib_program_surface.get("publish_model"),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

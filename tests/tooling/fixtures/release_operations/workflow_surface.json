@@ -3,13 +3,14 @@
   "schema_version": 1,
   "validate_action": "validate-release-operations",
   "end_to_end_action": "validate-release-operations-end-to-end",
-  "public_scripts": [
-    "check:objc3c:release-operations:surface",
-    "check:objc3c:release-operations:schemas",
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "upstream_validate_actions": [
     "validate-release-foundation",

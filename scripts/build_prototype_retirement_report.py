@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
-import subprocess
 from pathlib import Path
 from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
 
@@ -11,7 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-prototype-retirement'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-NPM = shutil.which('npm.cmd') or shutil.which('npm') or 'npm'
 PLAN_JSON_PATH = PLAN_DIR / 'prototype_retirement_report.json'
 PLAN_MD_PATH = PLAN_DIR / 'prototype_retirement_report.md'
 REPORT_JSON_PATH = REPORT_DIR / 'prototype_retirement_report.json'
@@ -105,23 +102,22 @@ def iter_markdown_paths() -> list[Path]:
     return paths
 
 
-def collect_invalid_npm_refs(package_scripts: set[str]) -> list[dict[str, str]]:
+def collect_invalid_npm_refs(package_bridge: str) -> list[dict[str, str]]:
     failures: list[dict[str, str]] = []
     for path in iter_markdown_paths():
         text = path.read_text(encoding='utf-8')
         for match in NPM_RUN_PATTERN.finditer(text):
             command = match.group(1)
-            if command not in package_scripts:
+            if command != package_bridge:
                 failures.append({'path': path.relative_to(ROOT).as_posix(), 'command': command})
     return failures
 
 
 def main() -> None:
-    subprocess.run([NPM, 'run', 'build:docs:native'], cwd=ROOT, check=True)
-    subprocess.run([NPM, 'run', 'check:docs:native'], cwd=ROOT, check=True)
-
-    package_scripts = set(json.loads(PACKAGE_JSON_PATH.read_text(encoding='utf-8'))['scripts'])
-    invalid_npm_refs = collect_invalid_npm_refs(package_scripts)
+    package_bridge = 'objc3c'
+    package_scripts = json.loads(PACKAGE_JSON_PATH.read_text(encoding='utf-8'))['scripts']
+    package_bridge_count = 1 if package_bridge in package_scripts else 0
+    invalid_npm_refs = collect_invalid_npm_refs(package_bridge)
     forbidden_hits: dict[str, list[str]] = {}
     required_missing: dict[str, list[str]] = {}
 
@@ -139,7 +135,8 @@ def main() -> None:
 
     payload = {
         'issue': 'workflow-prototype-retirement',
-        'package_script_count': len(package_scripts),
+        'package_bridge': package_bridge if package_bridge_count else '',
+        'package_bridge_count': package_bridge_count,
         'invalid_npm_run_references': invalid_npm_refs,
         'forbidden_hits': forbidden_hits,
         'required_missing': required_missing,
@@ -155,7 +152,8 @@ def main() -> None:
         '# workflow-prototype-retirement Prototype Retirement Report',
         '',
         f"- status: `{payload['status']}`",
-        f"- package_script_count: `{payload['package_script_count']}`",
+        f"- package_bridge_count: `{payload['package_bridge_count']}`",
+        f"- package_bridge: `{payload['package_bridge']}`",
         f"- invalid_npm_run_references: `{len(invalid_npm_refs)}`",
         f"- forbidden_hits: `{sum(len(v) for v in forbidden_hits.values())}`",
         f"- required_missing: `{sum(len(v) for v in required_missing.values())}`",

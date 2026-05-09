@@ -38,10 +38,9 @@ def main() -> None:
             'check-public-command-contract',
         ],
         'runner_mode': contract['runner_mode'],
-        'package_script_count': contract['package_script_count'],
         'package_bridge_count': contract['package_bridge_count'],
-        'unmapped_scripts': contract['unmapped_scripts'],
-        'unexpected_runner_package_scripts': contract['unexpected_runner_package_scripts'],
+        'missing_package_bridge': contract['missing_package_bridge'],
+        'unexpected_package_bridges': contract['unexpected_package_bridges'],
         'lint_script_action': describe_lint['action'],
         'next_issue': 'workflow-command-budget',
     }
@@ -54,7 +53,6 @@ def main() -> None:
         f"- contract_builder: `{payload['contract_builder']}`",
         f"- default_contract_path: `{payload['default_contract_path']}`",
         f"- runner_mode: `{payload['runner_mode']}`",
-        f"- package_script_count: `{payload['package_script_count']}`",
         f"- package_bridge_count: `{payload['package_bridge_count']}`",
         f"- lint_script_action: `{payload['lint_script_action']}`",
         '',
@@ -63,8 +61,8 @@ def main() -> None:
     for action_name in payload['runner_internal_actions']:
         lines.append(f"- `{action_name}`")
     lines.extend(['', '## Drift checks'])
-    lines.append(f"- unmapped_scripts: `{len(payload['unmapped_scripts'])}`")
-    lines.append(f"- unexpected_runner_package_scripts: `{len(payload['unexpected_runner_package_scripts'])}`")
+    lines.append(f"- missing_package_bridge: `{len(payload['missing_package_bridge'])}`")
+    lines.append(f"- unexpected_package_bridges: `{len(payload['unexpected_package_bridges'])}`")
     lines.extend(['', 'Next issue: `workflow-command-budget`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
