@@ -6,6 +6,7 @@
 
 #include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
+#include "io/json/json_schema_applicator_contract_validation.h"
 #include "io/json/json_schema_composition_contract_validation.h"
 #include "io/json/json_schema_contract_validation.h"
 #include "io/json/json_schema_errors.h"
@@ -125,22 +126,6 @@ void ValidateJsonSchemaNonnegativeNumberKeyword(const JsonValue &schema,
   }
 }
 
-void ValidateJsonSchemaObjectOfSchemas(const JsonValue &schema_root,
-                                       const JsonValue &container,
-                                       const std::string &schema_path,
-                                       JsonSchemaResult &result) {
-  if (!container.IsObject()) {
-    AddJsonSchemaContractError(result, "invalid_schema_map", schema_path,
-                               "schema map must be an object");
-    return;
-  }
-  for (const auto &[key, child] : container.AsObject()) {
-    ValidateJsonSchemaNodeContract(schema_root, child,
-                                   JsonInstancePropertyPath(schema_path, key),
-                                   result);
-  }
-}
-
 void ValidateJsonSchemaEnumContract(const JsonValue &enum_values,
                                     const std::string &schema_path,
                                     JsonSchemaResult &result) {
@@ -236,46 +221,8 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
   }
   ValidateJsonSchemaCompositionContracts(schema_root, schema, schema_path,
                                          result);
-  if (const JsonValue *properties = schema.Find("properties");
-      properties != nullptr) {
-    ValidateJsonSchemaObjectOfSchemas(
-        schema_root, *properties,
-        JsonSchemaKeywordPath(schema_path, "properties"), result);
-  }
-  if (const JsonValue *defs = schema.Find("$defs"); defs != nullptr) {
-    ValidateJsonSchemaObjectOfSchemas(
-        schema_root, *defs, JsonSchemaKeywordPath(schema_path, "$defs"),
-        result);
-  }
-  if (const JsonValue *defs = schema.Find("definitions"); defs != nullptr) {
-    ValidateJsonSchemaObjectOfSchemas(
-        schema_root, *defs, JsonSchemaKeywordPath(schema_path, "definitions"),
-        result);
-  }
-  if (const JsonValue *additional = schema.Find("additionalProperties");
-      additional != nullptr) {
-    if (additional->IsObject()) {
-      ValidateJsonSchemaNodeContract(
-          schema_root, *additional,
-          JsonSchemaKeywordPath(schema_path, "additionalProperties"), result);
-    } else if (!additional->IsBool()) {
-      AddJsonSchemaContractError(
-          result, "invalid_additional_properties",
-          JsonSchemaKeywordPath(schema_path, "additionalProperties"),
-          "additionalProperties must be false, true, or a schema object");
-    }
-  }
-  if (const JsonValue *items = schema.Find("items"); items != nullptr) {
-    ValidateJsonSchemaNodeContract(
-        schema_root, *items, JsonSchemaKeywordPath(schema_path, "items"),
-        result);
-  }
-  if (const JsonValue *contains = schema.Find("contains");
-      contains != nullptr) {
-    ValidateJsonSchemaNodeContract(
-        schema_root, *contains, JsonSchemaKeywordPath(schema_path, "contains"),
-        result);
-  }
+  ValidateJsonSchemaApplicatorContracts(schema_root, schema, schema_path,
+                                        result);
   if (const JsonValue *required = schema.Find("required");
       required != nullptr) {
     ValidateJsonSchemaRequiredContract(
