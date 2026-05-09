@@ -12,6 +12,21 @@ from scripts.objc3c_workflow.action_handler_integrity import (
     orphan_action_handlers,
 )
 from scripts.objc3c_workflow.action_handler_groups import ACTION_HANDLER_SECTION_GROUPS
+from scripts.objc3c_workflow.action_handlers_distribution_credibility import (
+    DISTRIBUTION_CREDIBILITY_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_packaging_channels import (
+    PACKAGING_CHANNEL_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_release_foundation import (
+    RELEASE_FOUNDATION_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_release_operations import (
+    RELEASE_OPERATIONS_ACTION_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_reporting_release_channels import (
+    REPORTING_RELEASE_CHANNEL_HANDLERS,
+)
 from scripts.objc3c_workflow.action_handlers_runtime_acceptance import (
     RUNTIME_ACCEPTANCE_ACTION_HANDLERS,
 )
@@ -186,6 +201,21 @@ def test_release_channel_catalog_aggregates_owner_catalogs() -> None:
     for catalog in owner_catalogs:
         for action, spec in catalog.items():
             assert RELEASE_CHANNEL_ACTION_SPECS[action] is spec
+
+
+def test_release_channel_handlers_aggregate_owner_handlers() -> None:
+    owner_handlers = (
+        RELEASE_FOUNDATION_ACTION_HANDLERS,
+        PACKAGING_CHANNEL_ACTION_HANDLERS,
+        RELEASE_OPERATIONS_ACTION_HANDLERS,
+        DISTRIBUTION_CREDIBILITY_ACTION_HANDLERS,
+    )
+    owner_actions = set().union(*(handlers.keys() for handlers in owner_handlers))
+
+    assert owner_actions == set(REPORTING_RELEASE_CHANNEL_HANDLERS)
+    for handlers in owner_handlers:
+        for action, handler in handlers.items():
+            assert REPORTING_RELEASE_CHANNEL_HANDLERS[action] is handler
 
 
 def test_runtime_validation_catalog_aggregates_owner_catalogs() -> None:
