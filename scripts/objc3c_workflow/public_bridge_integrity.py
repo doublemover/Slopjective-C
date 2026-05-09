@@ -31,7 +31,6 @@ class PublicBridgeIntegrity:
     canonical_package_bridge: str
     canonical_invocation_template: str
     single_package_bridge_only: bool
-    retired_metadata_allowed: bool
     pass_through_args_required: bool
     validation_errors: tuple[str, ...]
 
@@ -100,7 +99,6 @@ def public_bridge_integrity(
         canonical_package_bridge=WORKFLOW_BRIDGE_SCRIPT,
         canonical_invocation_template=WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
         single_package_bridge_only=True,
-        retired_metadata_allowed=False,
         pass_through_args_required=True,
         validation_errors=tuple(errors),
     )

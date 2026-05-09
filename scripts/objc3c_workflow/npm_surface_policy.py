@@ -28,7 +28,6 @@ class PackageScriptLookupDecision:
     canonical_invocation_template: str
     public_bridge_integrity_contract: str
     registered_script_count: int
-    retired_metadata_allowed: bool
     validation_errors: tuple[str, ...]
 
 
@@ -51,7 +50,6 @@ def package_script_lookup_decision(
         canonical_invocation_template=WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
         public_bridge_integrity_contract=PUBLIC_BRIDGE_INTEGRITY_CONTRACT_ID,
         registered_script_count=len(package_bridges),
-        retired_metadata_allowed=False,
         validation_errors=tuple(errors),
     )
 

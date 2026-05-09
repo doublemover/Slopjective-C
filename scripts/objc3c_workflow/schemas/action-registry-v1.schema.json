@@ -251,7 +251,6 @@
         "canonical_package_bridge",
         "canonical_invocation_template",
         "single_package_bridge_only",
-        "retired_metadata_allowed",
         "pass_through_args_required",
         "validation_errors"
       ],
@@ -268,7 +267,6 @@
           "const": "npm run objc3c -- <action>"
         },
         "single_package_bridge_only": { "const": true },
-        "retired_metadata_allowed": { "const": false },
         "pass_through_args_required": { "const": true },
         "validation_errors": {
           "type": "array",

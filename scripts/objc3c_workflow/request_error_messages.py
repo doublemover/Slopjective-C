@@ -23,7 +23,6 @@ def request_error_message_contract_fields() -> dict[str, object]:
         ),
         "canonical_command_template": WORKFLOW_PUBLIC_COMMAND_TEMPLATE,
         "canonical_package_script": WORKFLOW_BRIDGE_SCRIPT,
-        "retired_metadata_allowed": False,
     }
 
 

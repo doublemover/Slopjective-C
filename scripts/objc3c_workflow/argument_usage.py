@@ -30,7 +30,6 @@ def usage_contract_payload() -> dict[str, object]:
         "option_owner_surface": ARGUMENT_OPTION_OWNER_SURFACE,
         "canonical_command": WORKFLOW_COMMAND_TEXT,
         "public_usage_text": usage_text(),
-        "retired_option_metadata_allowed": False,
     }
 
 

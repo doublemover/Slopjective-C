@@ -70,7 +70,6 @@ def workflow_argument_options_payload() -> dict[str, object]:
         "owner_surface": ARGUMENT_OPTION_OWNER_SURFACE,
         "options": [asdict(option) for option in WORKFLOW_ARGUMENT_OPTIONS],
         "execute_action_passthrough": True,
-        "retired_option_metadata_allowed": False,
     }
 
 

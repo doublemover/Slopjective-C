@@ -21,9 +21,9 @@ The public command model is:
   appendix for the package bridge.
 
 User-facing workflow docs advertise the npm bridge only. Retired command names,
-public-script metadata tables, direct runner.py invocation, helper invocations,
-native build commands, and implementation-only script names are not public
-command surface.
+retired metadata tables, direct runner.py invocation, helper invocations, native
+build commands, and implementation-only script names are not public command
+surface.
 
 Capability docs may cite command evidence only when the command matches the
 matrix schema pattern, `npm run objc3c -- <action>`. Direct helper invocations,
