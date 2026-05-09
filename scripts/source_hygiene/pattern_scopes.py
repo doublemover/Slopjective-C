@@ -25,6 +25,17 @@ IMPLEMENTATION_SOURCE_PATHS: tuple[str, ...] = (
     "scripts/**",
 )
 
+WORKFLOW_COMMAND_SOURCE_PATHS: tuple[str, ...] = (
+    "scripts/**",
+    "tests/**",
+)
+
+WORKFLOW_COMMAND_SOURCE_EXCLUDES: tuple[str, ...] = (
+    "scripts/source_hygiene/**",
+    "scripts/objc3c_workflow/runner.py",
+    "tests/tooling/source_hygiene/**",
+)
+
 PACKAGE_MANIFEST_PATHS: tuple[str, ...] = ("package.json",)
 
 CANONICAL_REJECTION_REGISTRY_PATHS: tuple[str, ...] = (

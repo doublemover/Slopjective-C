@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from .pattern_model import ForbiddenPattern
-from .pattern_scopes import PACKAGE_MANIFEST_PATHS, PUBLIC_SURFACE_PATHS
+from .pattern_scopes import (
+    PACKAGE_MANIFEST_PATHS,
+    PUBLIC_SURFACE_PATHS,
+    WORKFLOW_COMMAND_SOURCE_EXCLUDES,
+    WORKFLOW_COMMAND_SOURCE_PATHS,
+)
 
 
 WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
@@ -62,6 +67,17 @@ WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"|(?<![A-Za-z0-9_])public[-_\s]+scripts?(?:[-_\s]+alias(?:es)?)?(?![A-Za-z0-9_])"
         r"|(?<![A-Za-z0-9_])public[-_\s]+script[-_\s]+alternates?(?![A-Za-z0-9_])",
         residue_class="alias-residue",
+    ),
+    ForbiddenPattern(
+        "direct-retired-workflow-runner-command-source",
+        "Workflow command source must use npm run objc3c -- <action>, not direct runner.py command variables.",
+        r"\bPUBLIC_RUNNER\b"
+        r"|\bpackaged_runner\b"
+        r"|sys\.executable[^\n]{0,160}scripts[\\/]+objc3c_workflow[\\/]+runner\.py"
+        r"|sys\.executable[^\n]{0,160}objc3c_workflow[\\/]+runner\.py",
+        include_paths=WORKFLOW_COMMAND_SOURCE_PATHS,
+        exclude_paths=WORKFLOW_COMMAND_SOURCE_EXCLUDES,
+        residue_class="old-public-command-surface",
     ),
     ForbiddenPattern(
         "retired-command-lane-support-wording",

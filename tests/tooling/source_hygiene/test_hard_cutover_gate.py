@@ -436,6 +436,41 @@ def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
     ]
 
 
+def test_hard_cutover_gate_rejects_direct_runner_command_variables(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "scripts/check_packaged_surface.py",
+        'PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"\n',
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("scripts",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == (
+        "direct-retired-workflow-runner-command-source"
+    )
+
+
+def test_hard_cutover_gate_rejects_packaged_runner_direct_commands(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "tests/tooling/test_packaged_surface.py",
+        (
+            'packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"\n'
+            'run_capture([sys.executable, str(packaged_runner), "lint"])\n'
+        ),
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("tests",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == (
+        "direct-retired-workflow-runner-command-source"
+    )
+
+
 def test_hard_cutover_gate_rejects_retired_workflow_registry_facade(
     tmp_path: Path,
 ) -> None:
