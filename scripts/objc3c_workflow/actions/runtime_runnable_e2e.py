@@ -1,66 +1,40 @@
-"""Runnable runtime end-to-end workflow actions."""
+"""Runnable runtime end-to-end workflow action facade."""
 
 from __future__ import annotations
 
-from ..environment import ROOT
-from .runtime_test_acceptance import run_python_check
-
-RUNNABLE_BOOTSTRAP_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_bootstrap_end_to_end.py"
+from .runtime_runnable_block_arc import (
+    RUNNABLE_BLOCK_ARC_E2E_PY,
+    action_validate_runnable_block_arc,
 )
-RUNNABLE_BLOCK_ARC_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_block_arc_end_to_end.py"
+from .runtime_runnable_bootstrap import (
+    RUNNABLE_BOOTSTRAP_E2E_PY,
+    action_validate_runnable_bootstrap,
 )
-RUNNABLE_CONCURRENCY_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_concurrency_end_to_end.py"
+from .runtime_runnable_concurrency import (
+    RUNNABLE_CONCURRENCY_E2E_PY,
+    action_validate_runnable_concurrency,
 )
-RUNNABLE_OBJECT_MODEL_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_object_model_end_to_end.py"
+from .runtime_runnable_error import (
+    RUNNABLE_ERROR_E2E_PY,
+    action_validate_runnable_error,
 )
-RUNNABLE_STORAGE_REFLECTION_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_storage_reflection_end_to_end.py"
+from .runtime_runnable_interop import (
+    RUNNABLE_INTEROP_E2E_PY,
+    action_validate_runnable_interop,
 )
-RUNNABLE_ERROR_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_error_end_to_end.py"
-RUNNABLE_INTEROP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_interop_end_to_end.py"
-RUNNABLE_METAPROGRAMMING_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_end_to_end.py"
+from .runtime_runnable_metaprogramming import (
+    RUNNABLE_METAPROGRAMMING_E2E_PY,
+    action_validate_runnable_metaprogramming,
 )
-RUNNABLE_RELEASE_CANDIDATE_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_release_candidate_end_to_end.py"
+from .runtime_runnable_object_model import (
+    RUNNABLE_OBJECT_MODEL_E2E_PY,
+    action_validate_runnable_object_model,
 )
-
-
-def action_validate_runnable_bootstrap(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_BOOTSTRAP_E2E_PY)
-
-
-def action_validate_runnable_block_arc(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_BLOCK_ARC_E2E_PY)
-
-
-def action_validate_runnable_concurrency(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_CONCURRENCY_E2E_PY)
-
-
-def action_validate_runnable_object_model(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_OBJECT_MODEL_E2E_PY)
-
-
-def action_validate_runnable_storage_reflection(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_STORAGE_REFLECTION_E2E_PY)
-
-
-def action_validate_runnable_error(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_ERROR_E2E_PY)
-
-
-def action_validate_runnable_interop(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_INTEROP_E2E_PY)
-
-
-def action_validate_runnable_metaprogramming(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_METAPROGRAMMING_E2E_PY)
-
-
-def action_validate_runnable_release_candidate(_: list[str]) -> int:
-    return run_python_check(RUNNABLE_RELEASE_CANDIDATE_E2E_PY)
+from .runtime_runnable_release_candidate import (
+    RUNNABLE_RELEASE_CANDIDATE_E2E_PY,
+    action_validate_runnable_release_candidate,
+)
+from .runtime_runnable_storage_reflection import (
+    RUNNABLE_STORAGE_REFLECTION_E2E_PY,
+    action_validate_runnable_storage_reflection,
+)
