@@ -1,112 +1,14 @@
 #include "runtime/memory/arc.h"
 
-#include "runtime/classes/class_graph.h"
 #include "runtime/memory/arc_debug_state.h"
 #include "runtime/memory/autorelease_pool.h"
-#include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
-#include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state.h"
-#include "runtime/storage/property_accessors.h"
-#include "runtime/storage/weak_slots.h"
+#include "runtime/state/runtime_state_records.h"
+#include "runtime/state/runtime_state_store.h"
 
 #include <mutex>
-#include <utility>
 #include <vector>
-
-namespace objc3c::runtime {
-
-namespace {
-
-void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
-  const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
-  if (instance_it == state.runtime_instances_by_receiver.end()) {
-    return;
-  }
-  RuntimeInstanceRecord instance = std::move(instance_it->second);
-  state.runtime_instances_by_receiver.erase(instance_it);
-  state.live_runtime_instance_count =
-      static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
-
-  ZeroWeakSlotRefsForTargetUnlocked(state, receiver);
-  RemoveWeakSlotRefsOwnedByReceiverUnlocked(state, receiver);
-
-  const RealizedClassNode *node =
-      FindRealizedClassNodeByBaseIdentityUnlocked(state,
-                                                  instance.base_identity);
-  std::vector<int> owned_values_to_release;
-  if (node != nullptr && node->runtime_layout_ready) {
-    owned_values_to_release.reserve(node->runtime_property_accessors.size());
-    for (const RealizedPropertyAccessor &accessor :
-         node->runtime_property_accessors) {
-      if (!UsesStrongOwnedRuntimeHooks(accessor)) {
-        continue;
-      }
-      int stored_value = 0;
-      if (ReadRuntimeManagedPropertyValueRaw(instance, accessor,
-                                             stored_value) &&
-          stored_value != 0) {
-        owned_values_to_release.push_back(stored_value);
-      }
-    }
-  }
-  for (int stored_value : owned_values_to_release) {
-    ReleaseRuntimeValueUnlocked(state, stored_value);
-  }
-}
-
-}  // namespace
-
-bool RuntimeArcValueIsRetainable(int value) {
-  return value != 0;
-}
-
-void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
-  if (!RuntimeArcValueIsRetainable(value)) {
-    return;
-  }
-  const auto instance_it = state.runtime_instances_by_receiver.find(value);
-  if (instance_it != state.runtime_instances_by_receiver.end()) {
-    ++instance_it->second.retain_count;
-    return;
-  }
-  const auto block_it = state.runtime_blocks_by_handle.find(value);
-  if (block_it == state.runtime_blocks_by_handle.end()) {
-    return;
-  }
-  ++block_it->second.retain_count;
-}
-
-void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
-  if (!RuntimeArcValueIsRetainable(value)) {
-    return;
-  }
-  const auto instance_it = state.runtime_instances_by_receiver.find(value);
-  if (instance_it != state.runtime_instances_by_receiver.end()) {
-    if (instance_it->second.retain_count > 1u) {
-      --instance_it->second.retain_count;
-      return;
-    }
-    DestroyRuntimeInstanceUnlocked(state, value);
-    return;
-  }
-  const auto block_it = state.runtime_blocks_by_handle.find(value);
-  if (block_it == state.runtime_blocks_by_handle.end()) {
-    return;
-  }
-  if (block_it->second.retain_count > 1u) {
-    --block_it->second.retain_count;
-    return;
-  }
-  // Final block-handle release owns copy/dispose teardown in the ARC module.
-  if (block_it->second.dispose_helper != nullptr &&
-      !block_it->second.storage_words.empty()) {
-    block_it->second.dispose_helper(block_it->second.storage_words.data());
-  }
-  state.runtime_blocks_by_handle.erase(block_it);
-}
-
-}  // namespace objc3c::runtime
 
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
   objc3c::runtime::RuntimeArcDebugState &arc_debug =

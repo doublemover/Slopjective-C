@@ -127,20 +127,6 @@ const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
 
-std::size_t AlignTo(std::size_t value, std::size_t alignment) {
-  const std::size_t effective_alignment = std::max<std::size_t>(alignment, 1u);
-  const std::size_t remainder = value % effective_alignment;
-  return remainder == 0u ? value : value + (effective_alignment - remainder);
-}
-
-std::string BuildSynthesizedInstanceMethodOwnerIdentity(
-    const char *declaration_owner_identity, const char *selector) {
-  const std::string owner =
-      declaration_owner_identity != nullptr ? declaration_owner_identity : "";
-  const std::string selector_text = selector != nullptr ? selector : "";
-  return owner + "::instance_method:" + selector_text;
-}
-
 const EmittedMethodListEntry *MethodListEntries(
     const EmittedMethodListHeader *header) {
   return header == nullptr

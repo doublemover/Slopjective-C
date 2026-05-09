@@ -16,6 +16,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp
   blocks/block_capture_storage.h
   blocks/block_arc_snapshot.cpp
+  blocks/block_invocation.cpp
+  blocks/block_invocation.h
+  blocks/block_lifetime.cpp
+  blocks/block_lifetime.h
+  blocks/block_pointer_capture_storage.cpp
+  blocks/block_pointer_capture_storage.h
+  blocks/block_promotion.cpp
+  blocks/block_promotion.h
   blocks/block_record.cpp
   blocks/block_record.h
   blocks/block_runtime_api.cpp
@@ -32,12 +40,18 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/protocol_conformance.h
   concurrency/actor.cpp
   concurrency/actor.h
+  concurrency/actor_state.cpp
+  concurrency/actor_state.h
+  concurrency/continuation_state.cpp
+  concurrency/continuation_state.h
   concurrency/executor.cpp
   concurrency/executor.h
   concurrency/runtime_debug.cpp
   concurrency/runtime_debug.h
   concurrency/task.cpp
   concurrency/task.h
+  concurrency/task_state.cpp
+  concurrency/task_state.h
   dispatch/builtin_methods.cpp
   dispatch/builtin_methods.h
   dispatch/dispatch_result_state.cpp
@@ -73,8 +87,13 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/arc.h
   memory/arc_debug_state.cpp
   memory/arc_debug_state.h
+  memory/arc_value_lifetime.cpp
+  memory/arc_value_lifetime.h
   memory/autorelease_pool.cpp
   memory/autorelease_pool.h
+  memory/memory_management_snapshot.cpp
+  memory/runtime_instance_lifetime.cpp
+  memory/runtime_instance_lifetime.h
   metadata/runtime_capability_contracts.h
   metadata/runtime_emitted_records.h
   metadata/runtime_snapshot_helpers.cpp
@@ -89,8 +108,9 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/keypath_table.h
   selectors/selector_table.cpp
   selectors/selector_table.h
-  storage/current_property_context.cpp
+  storage/current_property_binding.cpp
   storage/current_property_context.h
+  storage/current_property_value.cpp
   state/runtime_reset.cpp
   state/runtime_reset.h
   state/runtime_state_clear.cpp
@@ -107,9 +127,21 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/instance_storage.h
   storage/ivar_layout.cpp
   storage/ivar_layout.h
+  storage/property_accessor_profiles.cpp
+  storage/property_accessor_profiles.h
+  storage/property_accessor_resolution.cpp
+  storage/property_accessor_resolution.h
   storage/property_accessors.cpp
   storage/property_accessors.h
+  storage/property_layout_realization.cpp
+  storage/property_layout_realization.h
+  storage/property_lookup.cpp
+  storage/property_lookup.h
+  storage/property_snapshot.cpp
+  storage/property_value_storage.cpp
+  storage/property_value_storage.h
   storage/runtime_instance_records.h
+  storage/storage_accessor_snapshot.cpp
   storage/weak_slots.cpp
   storage/weak_slots.h
 )
