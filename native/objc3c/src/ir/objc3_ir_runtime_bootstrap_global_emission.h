@@ -21,3 +21,8 @@ void EmitObjc3IRRuntimeBootstrapGlobals(
     const Objc3IRRuntimeMetadataSymbols &runtime_metadata_symbols,
     const Objc3IRRuntimeBootstrapGlobalEmissionOptions &options,
     std::ostringstream &out, std::vector<std::string> &retained_globals);
+
+void EmitObjc3IRRuntimeBootstrapLoweringFunctions(
+    const Objc3IRFrontendMetadata &frontend_metadata,
+    const Objc3IRRuntimeMetadataSymbols &runtime_metadata_symbols,
+    std::ostringstream &out);

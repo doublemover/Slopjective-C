@@ -2950,10 +2950,6 @@ class Objc3IREmitter {
     return runtime_metadata_symbols_.image_local_init_state_symbol;
   }
 
-  static const char *RuntimeBootstrapRegistrationTableType() {
-    return Objc3IRRuntimeBootstrapRegistrationTableType();
-  }
-
   void EmitFrontendMetadata(std::ostringstream &out) const {
     // executable source-closure freeze anchor: IR currently
     // publishes interface/protocol/category/linking metadata as the canonical
@@ -12724,54 +12720,8 @@ class Objc3IREmitter {
   }
 
   void EmitRuntimeBootstrapLoweringFunctions(std::ostringstream &out) const {
-    if (!ShouldEmitRuntimeBootstrapLowering()) {
-      return;
-    }
-
-    const std::string init_stub_symbol =
-        "@" + RuntimeBootstrapInitStubSymbol();
-    const std::string ctor_root_symbol =
-        "@" +
-        frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol;
-    const std::string registration_table_symbol =
-        "@" + RuntimeBootstrapRegistrationTableSymbol();
-    const std::string register_image_symbol =
-        "@" +
-        frontend_metadata_.runtime_bootstrap_lowering_registration_entrypoint_symbol;
-
-    out << "define internal void " << init_stub_symbol << "() {\n";
-    out << "entry:\n";
-    out << "  %bootstrap_state_slot = getelementptr inbounds "
-        << RuntimeBootstrapRegistrationTableType() << ", ptr "
-        << registration_table_symbol << ", i32 0, i32 13\n";
-    out << "  %bootstrap_state_cell = load ptr, ptr %bootstrap_state_slot, align 8\n";
-    out << "  %bootstrap_state = load i8, ptr %bootstrap_state_cell, align 1\n";
-    out << "  %bootstrap_already_initialized = icmp ne i8 %bootstrap_state, 0\n";
-    out << "  br i1 %bootstrap_already_initialized, label %bootstrap_success, label %bootstrap_register\n";
-    out << "bootstrap_register:\n";
-    out << "  call void @" << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
-        << "(ptr " << registration_table_symbol << ")\n";
-    out << "  %bootstrap_image_slot = getelementptr inbounds "
-        << RuntimeBootstrapRegistrationTableType() << ", ptr "
-        << registration_table_symbol << ", i32 0, i32 2\n";
-    out << "  %bootstrap_image = load ptr, ptr %bootstrap_image_slot, align 8\n";
-    out << "  %bootstrap_status = call i32 " << register_image_symbol
-        << "(ptr %bootstrap_image)\n";
-    out << "  %bootstrap_ok = icmp eq i32 %bootstrap_status, 0\n";
-    out << "  br i1 %bootstrap_ok, label %bootstrap_success, label %bootstrap_fail\n";
-    out << "bootstrap_fail:\n";
-    out << "  call void @abort()\n";
-    out << "  unreachable\n";
-    out << "bootstrap_success:\n";
-    out << "  store i8 1, ptr %bootstrap_state_cell, align 1\n";
-    out << "  ret void\n";
-    out << "}\n\n";
-
-    out << "define internal void " << ctor_root_symbol << "() {\n";
-    out << "entry:\n";
-    out << "  call void " << init_stub_symbol << "()\n";
-    out << "  ret void\n";
-    out << "}\n\n";
+    EmitObjc3IRRuntimeBootstrapLoweringFunctions(
+        frontend_metadata_, runtime_metadata_symbols_, out);
   }
 
   void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
