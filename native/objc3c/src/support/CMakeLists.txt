@@ -29,6 +29,8 @@ add_library(objc3c_support STATIC
   objc3_objc_return_type_surface_profiles.h
   objc3_objc_runtime_type_surface_profiles.h
   objc3_objc_type_surface_profiles.h
+  objc3_nil_receiver_profile.cpp
+  objc3_nil_receiver_profile.h
   objc3_current_property_runtime_profiles.cpp
   objc3_current_property_runtime_profiles.h
   objc3_property_accessor_profile_builder.cpp
@@ -49,8 +51,9 @@ add_library(objc3c_support STATIC
   objc3_property_storage_modifier_support.cpp
   objc3_property_storage_modifier_support.h
   objc3_property_storage_modifiers.h
-  objc3_receiver_dispatch_profiles.cpp
   objc3_receiver_dispatch_profiles.h
+  objc3_super_dispatch_profile.cpp
+  objc3_super_dispatch_profile.h
   objc3_receiver_profile_helpers.h
   objc3_method_family.cpp
   objc3_profile_token_match.cpp
