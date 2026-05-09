@@ -25,7 +25,10 @@ add_library(objc3c_ast STATIC
   objc3_ast_block_signature.cpp
   objc3_ast_block_storage.cpp
   objc3_ast_ordering.cpp
-  objc3_ast_scope_surface.cpp
+  objc3_ast_scope_lookup.cpp
+  objc3_ast_scope_members.cpp
+  objc3_ast_scope_paths.cpp
+  objc3_ast_scope_semantic_links.cpp
   objc3_ast_signature_surface.cpp
   objc3_ast_type_surface.cpp
 )
