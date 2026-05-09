@@ -24,6 +24,7 @@ add_library(objc3c_pipeline STATIC
   frontend_runtime_metadata_boundary_helpers.cpp
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
+  readiness/objc3_final_readiness_gate_advanced_keys.cpp
   readiness/objc3_final_readiness_gate_failure_reasons.cpp
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
