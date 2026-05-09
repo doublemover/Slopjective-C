@@ -1,4 +1,16 @@
 add_library(objc3c_support STATIC
+  ascii/character_predicates.h
+  concurrency/symbol_profiles.h
+  concurrency/task_group_symbols.h
+  concurrency/task_symbols.h
+  metadata/record_set_counts.h
+  metadata/reference_counts/category_record_reference_counts.h
+  metadata/reference_counts/class_record_reference_counts.h
+  metadata/reference_counts/method_record_reference_counts.h
+  metadata/reference_counts/property_record_reference_counts.h
+  metadata/reference_counts/protocol_record_reference_counts.h
+  metadata/reference_counts/source_record_set_reference_counts.h
+  metadata/source_record_set_declaration_counts.h
   objc3_ascii_case_transform.cpp
   objc3_ascii_case_transform.h
   objc3_ascii_predicates.h
@@ -106,7 +118,6 @@ add_library(objc3c_support STATIC
   objc3_runtime_dispatch_symbol_characters.cpp
   objc3_runtime_dispatch_symbol_characters.h
   objc3_runtime_dispatch_symbol.h
-  objc3_runtime_dispatch_symbol_validation.cpp
   objc3_runtime_dispatch_symbol_validation.h
   objc3_runtime_metadata_category_reference_counts.h
   objc3_runtime_metadata_class_reference_counts.h
@@ -129,6 +140,12 @@ add_library(objc3c_support STATIC
   objc3_value_type_names.h
   objc3_weak_property_runtime_helper_profile.cpp
   objc3_weak_property_runtime_helper_profile.h
+  profiles/property_profile_helpers.h
+  profiles/receiver_profile_helpers.h
+  profiles/type_profile_helpers.h
+  properties/current_property_runtime_profiles.h
+  runtime_dispatch/symbol_validation.cpp
+  runtime_dispatch/symbol_validation.h
   selectors/metadata_selector_validation.cpp
   selectors/metadata_selector_validation.h
   selectors/selector_argument_slots.cpp
@@ -139,8 +156,10 @@ add_library(objc3c_support STATIC
   selectors/selector_identity_normalization.h
   selectors/selector_normalization.h
   selectors/selector_spelling.h
-  selectors/selector_validation.cpp
+  selectors/selector_spelling_validation.cpp
+  selectors/selector_spelling_validation.h
   selectors/selector_validation.h
+  strings/string_predicates.h
 )
 objc3c_apply_build_defaults(objc3c_support)
 target_link_libraries(objc3c_support PUBLIC

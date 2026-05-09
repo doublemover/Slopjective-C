@@ -1,4 +1,4 @@
-#include "support/objc3_runtime_dispatch_symbol_validation.h"
+#include "support/runtime_dispatch/symbol_validation.h"
 
 #include <cstddef>
 
