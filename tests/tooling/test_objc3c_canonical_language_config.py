@@ -6,6 +6,14 @@ CONFIG_HEADER = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_language_
 LANGUAGE_VERSION_HEADER = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_language_version.h"
 FEATURE_STATE_HEADER = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_feature_state_catalog.h"
 REMOVED_OPTIONS_HEADER = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_removed_command_options.h"
+REMOVED_OPTION_CONTRACT_HEADER = (
+    ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "config"
+    / "objc3_removed_command_option_contract.h"
+)
 REMOVED_LANGUAGE_OPTIONS = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_rejected_command_option_language_data.cpp"
 REMOVED_REPORTING_OPTIONS = ROOT / "native" / "objc3c" / "src" / "config" / "objc3_rejected_command_option_reporting_data.cpp"
 CLI_HEADER = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.h"
@@ -43,6 +51,7 @@ def test_canonical_language_config_surface_exists() -> None:
     version = _read(LANGUAGE_VERSION_HEADER)
     feature_state = _read(FEATURE_STATE_HEADER)
     removed_options = _read(REMOVED_OPTIONS_HEADER)
+    removed_option_contract = _read(REMOVED_OPTION_CONTRACT_HEADER)
     removed_language_options = _read(REMOVED_LANGUAGE_OPTIONS)
     removed_reporting_options = _read(REMOVED_REPORTING_OPTIONS)
 
@@ -53,6 +62,10 @@ def test_canonical_language_config_surface_exists() -> None:
     assert "enum class FeatureState" in feature_state
     assert "CanonicalFeatureStates()" in feature_state
     assert "RemovedCommandOptions()" in removed_options
+    assert "enum class RemovedCommandOptionOwner" in removed_options
+    assert "RemovedCommandOptionOwnerName(" in removed_options
+    assert "BuildRemovedCommandOptionValidationContractSummary()" in removed_option_contract
+    assert "fail_closed_removed_option_table" in removed_option_contract
     assert '"--objc3-compat-mode"' in removed_language_options
     assert '"--objc3-migration-assist"' in removed_language_options
     assert '"--objc3-canonical-rejection-diagnostics"' in removed_reporting_options
@@ -76,6 +89,7 @@ def test_cmake_registers_config_target() -> None:
     cmake = _read(CONFIG_CMAKE_FILE)
     assert "add_library(objc3c_config STATIC" in cmake
     assert "objc3_language_profile_data.cpp" in cmake
+    assert "objc3_removed_command_option_contract.cpp" in cmake
     assert "objc3_removed_command_options.cpp" in cmake
     assert "objc3_rejected_command_option_language_data.cpp" in cmake
     assert "objc3c_config" in cmake

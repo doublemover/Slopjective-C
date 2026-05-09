@@ -8,13 +8,17 @@ namespace {
 constexpr std::array<CommandOptionState,
                      kRejectedLanguageModeCommandOptionDataCount>
     kRejectedLanguageModeCommandOptions = {{
-        {"--objc3-compat-mode", FeatureState::Rejected, "O3C001",
+        {"--objc3-compat-mode", RemovedCommandOptionOwner::kLanguageMode,
+         FeatureState::Rejected, "O3C001",
          "Retired compat-mode flags are rejected; Objective-C 3.0 is canonical-only."},
-        {"--objc3-legacy-mode", FeatureState::Rejected, "O3C001",
+        {"--objc3-legacy-mode", RemovedCommandOptionOwner::kLanguageMode,
+         FeatureState::Rejected, "O3C001",
          "Legacy Objective-C mode spellings are removed from the native command surface."},
-        {"--objc3-old-mode", FeatureState::Rejected, "O3C001",
+        {"--objc3-old-mode", RemovedCommandOptionOwner::kLanguageMode,
+         FeatureState::Rejected, "O3C001",
          "Old-mode spellings are rejected instead of normalized."},
-        {"--objc3-migration-assist", FeatureState::Rejected, "O3C003",
+        {"--objc3-migration-assist", RemovedCommandOptionOwner::kLanguageMode,
+         FeatureState::Rejected, "O3C003",
          "Migration-assist mode was removed from the hard-cutover command surface."},
     }};
 

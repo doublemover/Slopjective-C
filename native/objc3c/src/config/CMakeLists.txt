@@ -19,6 +19,7 @@ add_library(objc3c_config STATIC
   objc3_language_version_messages.cpp
   objc3_language_version_parse.cpp
   objc3_language_version_validation.cpp
+  objc3_removed_command_option_contract.cpp
   objc3_removed_command_option_table.cpp
   objc3_removed_command_option_validation.cpp
   objc3_removed_command_options.cpp

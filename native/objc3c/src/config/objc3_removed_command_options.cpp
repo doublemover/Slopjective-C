@@ -7,6 +7,18 @@
 
 namespace objc3c::config {
 
+const char *RemovedCommandOptionOwnerName(RemovedCommandOptionOwner owner) {
+  switch (owner) {
+    case RemovedCommandOptionOwner::kLanguageMode:
+      return "language-mode";
+    case RemovedCommandOptionOwner::kReporting:
+      return "reporting";
+    case RemovedCommandOptionOwner::kRuntime:
+      return "runtime";
+  }
+  return "unknown";
+}
+
 std::span<const CommandOptionState> RemovedCommandOptions() {
   return RemovedCommandOptionTable();
 }

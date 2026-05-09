@@ -8,10 +8,12 @@ namespace {
 constexpr std::array<CommandOptionState,
                      kRejectedReportingCommandOptionDataCount>
     kRejectedReportingCommandOptions = {{
-        {"--objc3-canonical-rejection-diagnostics", FeatureState::Rejected,
+        {"--objc3-canonical-rejection-diagnostics",
+         RemovedCommandOptionOwner::kReporting, FeatureState::Rejected,
          "O3C003",
          "Report-only canonical rejection diagnostics were removed from the active command surface."},
-        {"--objc3-report-only", FeatureState::Rejected, "O3C003",
+        {"--objc3-report-only", RemovedCommandOptionOwner::kReporting,
+         FeatureState::Rejected, "O3C003",
          "Report-only diagnostics are retired from the active command surface."},
     }};
 
