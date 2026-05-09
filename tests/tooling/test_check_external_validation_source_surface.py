@@ -24,6 +24,24 @@ def _load_checker():
     return module
 
 
+def test_external_validation_source_surface_owner_modules_are_importable() -> None:
+    import external_validation_source_surface.paths as paths
+    import external_validation_source_surface.publication as publication
+    import external_validation_source_surface.rendering as rendering
+    import external_validation_source_surface.source_model as source_model
+    import external_validation_source_surface.validation as validation
+
+    checker = _load_checker()
+
+    assert checker.ROOT == paths.ROOT
+    assert checker.SOURCE_SURFACE == paths.SOURCE_SURFACE
+    assert checker.SUMMARY_PATH == paths.SUMMARY_PATH
+    assert checker.SUMMARY_CONTRACT_ID == source_model.SUMMARY_CONTRACT_ID
+    assert callable(validation.validate_source_surface)
+    assert callable(rendering.render_summary)
+    assert callable(publication.publish_summary)
+
+
 def test_external_validation_source_surface_writes_named_summary_fields() -> None:
     checker = _load_checker()
     checker.SUMMARY_PATH = ROOT / "tmp" / "tests" / "external-validation-source-surface-summary.json"
