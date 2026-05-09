@@ -6,7 +6,7 @@ namespace objc3c::adr {
 
 namespace {
 
-constexpr std::array<Objc3AdrRecord, 3> kFrontendAdrRecords = {{
+constexpr std::array<Objc3AdrRecord, 4> kFrontendAdrRecords = {{
     {.number = 1,
      .slug = "layered-frontend-boundaries",
      .title = "Layered Frontend Boundaries",
@@ -30,6 +30,14 @@ constexpr std::array<Objc3AdrRecord, 3> kFrontendAdrRecords = {{
      .deciders = "objc3c native maintainers",
      .related_surfaces =
          "objc3c.frontend.layeredboundaries.v1;objc3c.frontend.diagnosticsdeterminism.probe.v1;objc3c.frontend.diagnosticsdeterminism.closeout.v1"},
+    {.number = 4,
+     .slug = "frontend-result-and-sema-ownership-cutover",
+     .title = "Frontend Result and Sema Ownership Cutover",
+     .status = Objc3AdrStatus::Accepted,
+     .date = "2026-05-09",
+     .deciders = "objc3c native maintainers",
+     .related_surfaces =
+         "objc3c.frontend.capi.resultownership.v1;objc3c.frontend.artifactpublication.v1;objc3c.sema.featureclaims.v1;objc3c.sema.passowners.v1"},
 }};
 
 bool SurfaceListContains(std::string_view surface_list,

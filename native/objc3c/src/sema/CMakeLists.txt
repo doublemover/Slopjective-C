@@ -3,7 +3,11 @@ add_library(objc3c_sema STATIC
   objc3_parser_sema_handoff_scaffold.h
   objc3_semantic_collection_helpers.cpp
   objc3_semantic_context.cpp
+  objc3_semantic_feature_claim_context.cpp
+  objc3_semantic_feature_claim_rules.cpp
   objc3_semantic_feature_claims.cpp
+  objc3_semantic_body_validation.h
+  objc3_semantic_integration_surface.h
   objc3_sema_control_flow_equivalence.cpp
   objc3_sema_diagnostic_contract.cpp
   objc3_sema_dispatch_ownership_equivalence.cpp
@@ -19,6 +23,7 @@ add_library(objc3c_sema STATIC
   objc3_semantic_pass_helpers.cpp
   objc3_semantic_symbol_lookup.cpp
   objc3_semantic_type_factory.cpp
+  objc3_semantic_type_metadata_handoff.h
   objc3_semantic_type_relations.cpp
   objc3_semantic_type_predicates.cpp
   objc3_sema_pass_manager.cpp

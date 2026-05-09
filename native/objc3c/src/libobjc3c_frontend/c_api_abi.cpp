@@ -1,0 +1,55 @@
+#include "libobjc3c_frontend/c_api.h"
+
+#include <type_traits>
+
+static_assert(OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u,
+              "unexpected c api wrapper abi version");
+static_assert(std::is_same_v<objc3c_frontend_c_context_t,
+                             objc3c_frontend_context_t>,
+              "context alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t,
+                             objc3c_frontend_compile_options_t>,
+              "compile options alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_compile_result_t,
+                             objc3c_frontend_compile_result_t>,
+              "compile result alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_artifact_kind_t,
+                             objc3c_frontend_artifact_kind_t>,
+              "artifact kind alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_string_t,
+                             objc3c_frontend_string_t>,
+              "string alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_string_view_t,
+                             objc3c_frontend_string_view_t>,
+              "string view alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t,
+                             objc3c_frontend_stage_summary_t>,
+              "stage summary alias mismatch");
+static_assert(std::is_same_v<objc3c_frontend_c_version_t,
+                             objc3c_frontend_version_t>,
+              "version alias mismatch");
+
+extern "C" OBJC3C_FRONTEND_API uint32_t
+objc3c_frontend_c_api_abi_version(void) {
+  return OBJC3C_FRONTEND_C_API_ABI_VERSION;
+}
+
+extern "C" OBJC3C_FRONTEND_API uint8_t
+objc3c_frontend_c_is_abi_compatible(uint32_t requested_abi_version) {
+  return objc3c_frontend_is_abi_compatible(requested_abi_version);
+}
+
+extern "C" OBJC3C_FRONTEND_API uint32_t
+objc3c_frontend_c_abi_version(void) {
+  return objc3c_frontend_abi_version();
+}
+
+extern "C" OBJC3C_FRONTEND_API objc3c_frontend_c_version_t
+objc3c_frontend_c_version(void) {
+  return objc3c_frontend_version();
+}
+
+extern "C" OBJC3C_FRONTEND_API const char *
+objc3c_frontend_c_version_string(void) {
+  return objc3c_frontend_version_string();
+}

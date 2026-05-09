@@ -2,19 +2,27 @@ add_library(objc3c_frontend STATIC
   ../adr/objc3_adr_markdown.cpp
   ../adr/objc3_adr_record.cpp
   ../adr/objc3_adr_registry.cpp
-  c_api.cpp
-  c_api_result_bridge.cpp
+  c_api_abi.cpp
+  c_api_compile.cpp
+  c_api_lifecycle.cpp
+  c_api_result_artifacts.cpp
+  c_api_result_error.cpp
+  c_api_result_lifecycle.cpp
   c_api_stage_summary.cpp
+  c_api_string_bridge.cpp
   frontend_anchor.cpp
   objc3c_frontend_abi_surface.cpp
   objc3c_frontend_artifact_plan.cpp
+  objc3c_frontend_artifact_publication.cpp
   objc3c_frontend_basic_artifacts.cpp
   objc3c_frontend_compile_contract.cpp
   objc3c_frontend_context_state.cpp
+  objc3c_frontend_core_artifacts.cpp
   objc3c_frontend_diagnostics.cpp
   objc3c_frontend_file_output.cpp
   objc3c_frontend_result_accessors.cpp
   objc3c_frontend_result_ownership.cpp
+  objc3c_frontend_runtime_artifacts.cpp
   objc3c_frontend_string_api.cpp
   objc3_cli_frontend.cpp
 )

@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#include "sema/objc3_semantic_body_validation.h"
+#include "sema/objc3_semantic_integration_surface.h"
+#include "sema/objc3_semantic_type_metadata_handoff.h"
 #include "sema/objc3_sema_contract.h"
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary;

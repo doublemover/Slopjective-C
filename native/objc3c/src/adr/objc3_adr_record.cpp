@@ -20,6 +20,9 @@ std::string_view Objc3AdrFileName(const Objc3AdrRecord &record) {
   if (record.number == 3) {
     return "ADR-0003-diagnostics-determinism-contract.md";
   }
+  if (record.number == 4) {
+    return "ADR-0004-frontend-result-and-sema-ownership-cutover.md";
+  }
   return {};
 }
 
