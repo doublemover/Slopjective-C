@@ -11,6 +11,7 @@
 #include "parse/objc3_parse_support.h"
 #include "parse/objc3_parser_async_continuation_profiles.h"
 #include "parse/objc3_parser_attributes.h"
+#include "parse/objc3_parser_await_suspension_profiles.h"
 #include "parse/objc3_parser_block_literal_source.h"
 #include "parse/objc3_parser_cstyle_type_classifier.h"
 #include "parse/objc3_parser_cstyle_type_parser.h"
