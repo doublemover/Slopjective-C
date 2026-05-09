@@ -71,6 +71,8 @@ add_library(objc3c_artifacts_frontend_runtime STATIC
   objc3_frontend_runtime_capability_artifacts.h
   objc3_frontend_runtime_import_artifacts.cpp
   objc3_frontend_runtime_import_artifacts.h
+  objc3_runtime_import_preservation_artifact_builders.cpp
+  objc3_runtime_import_preservation_artifact_builders.h
   objc3_runtime_state_publication_paths.cpp
   objc3_runtime_state_publication_paths.h
 )
@@ -142,6 +144,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_ownership_semantic_artifacts.h
   objc3_frontend_parser_diagnostic_artifacts.cpp
   objc3_frontend_parser_diagnostic_artifacts.h
+  objc3_runtime_bootstrap_contract_artifact_builders.cpp
+  objc3_runtime_bootstrap_contract_artifact_builders.h
   objc3_frontend_runtime_bootstrap_artifacts.cpp
   objc3_frontend_runtime_bootstrap_artifacts.h
   objc3_frontend_runtime_descriptor_artifacts.cpp
@@ -150,6 +154,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_source_closure_artifacts.h
   objc3_frontend_runtime_ingest_binary_artifacts.cpp
   objc3_frontend_runtime_ingest_binary_artifacts.h
+  objc3_runtime_metadata_section_publication_artifact_builders.cpp
+  objc3_runtime_metadata_section_publication_artifact_builders.h
   objc3_frontend_runtime_metadata_section_artifacts.cpp
   objc3_frontend_runtime_metadata_section_artifacts.h
   objc3_frontend_runtime_registration_artifacts.cpp
