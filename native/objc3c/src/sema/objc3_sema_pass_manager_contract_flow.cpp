@@ -531,3 +531,33 @@ BuildObjc3SemaCloseoutSurfaceReadinessRecord(
       IsReadyObjc3SemaCloseoutSurfaceReadinessInputs(readiness);
   return record;
 }
+
+Objc3SemaCloseoutSignoffRecord BuildObjc3SemaCloseoutSignoffRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  const Objc3SemaParityCloseoutPublicationReadinessRecord
+      &closeout_readiness =
+          surface.parity_closeout_publication_readiness_record;
+  return BuildObjc3SemaCloseoutSignoffRecord(
+      input,
+      surface.ready && surface.deterministic_parity_validation_record &&
+          IsReadyObjc3SemaParityValidationRecord(
+              surface.parity_validation_record),
+      closeout_readiness.parser_sema_contract_ready,
+      surface.deterministic_pass_manager_publication_record &&
+          IsReadyObjc3SemaPassManagerPublicationRecord(
+              surface.pass_manager_publication_record),
+      surface.deterministic_type_metadata_publication_record &&
+          IsReadyObjc3SemaTypeMetadataPublicationRecord(
+              surface.type_metadata_publication_record),
+      closeout_readiness.diagnostics_publication_ready,
+      closeout_readiness.pass_flow_recovery_ready,
+      closeout_readiness.mapping_summaries_ready,
+      closeout_readiness.typed_semantic_handoffs_ready);
+}
+
+bool IsReadyObjc3SemaParityContractSurface(
+    const Objc3SemaParityContractSurface &surface) {
+  return IsReadyObjc3SemaParityContractSurfaceReadinessGates(
+      BuildObjc3SemaParityContractSurfaceReadinessGates(surface));
+}
