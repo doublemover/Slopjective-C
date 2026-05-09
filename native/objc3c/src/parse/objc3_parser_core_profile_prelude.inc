@@ -9,6 +9,7 @@
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_message_send_profiles.h"
 #include "parse/objc3_parse_support.h"
+#include "parse/objc3_parser_async_continuation_profiles.h"
 #include "parse/objc3_parser_attributes.h"
 #include "parse/objc3_parser_block_literal_source.h"
 #include "parse/objc3_parser_cstyle_type_classifier.h"
