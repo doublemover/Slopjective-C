@@ -8,8 +8,8 @@ closure work must extend this path, not bypass it.
 ## Working Boundary
 
 - compiler-owned compile path:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
+  - build action: `npm run objc3c -- build-native-binaries`
+  - compile action: `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
   - `native/objc3c/src/main.cpp`
   - `native/objc3c/src/driver/objc3_driver_main.cpp`
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
@@ -49,19 +49,18 @@ closure work must extend this path, not bypass it.
   - `<prefix>.runtime-registration-descriptor.json`
   - `<prefix>.compile-provenance.json`
 - validation-owned evidence path:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/objc3c_runtime_launch_contract.ps1`
+  - `npm run objc3c -- test-runtime-acceptance`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- test-execution-smoke`
   - `scripts/shared_compiler_runtime_acceptance_harness.py`
 
 ## Execution Flow
 
-1. `scripts/build_objc3c_native.ps1` publishes `artifacts/bin/objc3c-native.exe`
-   and `artifacts/lib/objc3_runtime.lib`.
-2. `scripts/objc3c_native_compile.ps1` or the native executable drives the live
-   `.objc3` compile path through driver, lowering, IR emission, and object
-   emission.
+1. `npm run objc3c -- build-native-binaries` publishes
+   `artifacts/bin/objc3c-native.exe` and `artifacts/lib/objc3_runtime.lib`.
+2. `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
+   drives the live `.objc3` compile path through driver, lowering, IR emission,
+   and object emission.
 3. The compile path emits the object, LLVM IR, registration manifest, and
    compile provenance as one coupled artifact set.
 4. The runtime installs emitted image state through

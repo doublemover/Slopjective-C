@@ -5074,7 +5074,7 @@ smoke:
   `registration-manifest-runtime-archive-path-is-authoritative`
 - linker-flag consumption model
   `registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands`
-- compile wrapper script `scripts/objc3c_native_compile.ps1`
+- compile package bridge action `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
 - compile proof script `scripts/run_objc3c_native_compile_proof.ps1`
 - execution smoke script `scripts/check_objc3c_native_execution_smoke.ps1`
 - launch integration ready flag `launch_integration_ready`
@@ -6740,7 +6740,7 @@ implementation.
   `fail-closed-on-unsupported-packaging-or-runtime-operations-claim-drift`
 - frozen operations
   - `npm run objc3c -- build-native-binaries`
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  - `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
   - `npm run objc3c -- test-execution-smoke`
   - `npm run objc3c -- test-execution-replay`
 - truthful boundary
@@ -6765,7 +6765,7 @@ local package root.
 - required workflow continuity
   - build remains `npm run objc3c -- build-native-binaries`
   - packaging is `npm run objc3c -- package-runnable-toolchain`
-  - packaged compile remains `scripts/objc3c_native_compile.ps1`
+  - packaged compile remains `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
   - packaged smoke remains `scripts/check_objc3c_native_execution_smoke.ps1`
   - packaged replay remains `scripts/check_objc3c_execution_replay_proof.ps1`
 - required package payload continuity

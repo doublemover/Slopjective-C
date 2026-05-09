@@ -129,7 +129,8 @@ One authoritative owner per guarantee:
 Compiler-throughput work is only valid when it preserves these invariants:
 
 - the authoritative compile surface remains
-  `scripts/objc3c_native_compile.ps1` plus `artifacts/bin/objc3c-native.exe`
+  `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  backed by `artifacts/bin/objc3c-native.exe`
 - cache-hit claims remain coupled to compile-output provenance and the runtime
   launch contract
 - incremental invalidation claims remain rooted in the live manifest/replay-key
