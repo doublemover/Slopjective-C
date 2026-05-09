@@ -89,6 +89,24 @@ BuildMetaprogrammingExpansionLoweringContract(
     const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
         &property_legality_summary);
 
+[[nodiscard]] std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
+BuildMetaprogrammingDerivedMethodBundles(const Objc3Program &program);
+
+[[nodiscard]] std::vector<Objc3IRMetaprogrammingMacroArtifactBundle>
+BuildMetaprogrammingMacroArtifactBundles(const Objc3Program &program);
+
+[[nodiscard]] std::vector<Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle>
+BuildMetaprogrammingPropertyBehaviorArtifactBundles(const Objc3Program &program);
+
+[[nodiscard]] Objc3MetaprogrammingSynthesizedArtifactEmissionContract
+BuildMetaprogrammingSynthesizedArtifactEmissionContract(
+    const Objc3MetaprogrammingExpansionLoweringContract &dependency_contract,
+    const std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
+        &derive_bundles,
+    const std::vector<Objc3IRMetaprogrammingMacroArtifactBundle> &macro_bundles,
+    const std::vector<Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle>
+        &property_behavior_bundles);
+
 [[nodiscard]] std::string
 BuildMetaprogrammingExpansionBehaviorSemanticModelSummaryJson(
     const Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary &summary);
