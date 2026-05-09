@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
-from scripts.objc3c_workflow.command_result import (
-    WorkflowCommandResult,
+from scripts.objc3c_workflow.command_result_model import WorkflowCommandResult
+from scripts.objc3c_workflow.command_result_states import (
     accepted_action,
     rejected_extra_args,
     unknown_action,
