@@ -85,11 +85,11 @@ using objc3::artifacts::frontend::BuildPublicConformanceReportJson;
 using objc3::artifacts::frontend::BuildRuntimeCapabilityReportJson;
 using objc3::artifacts::frontend::Objc3ParserDiagnosticCodeCoverage;
 using objc3::artifacts::frontend::
-    BuildExecutableMetadataRuntimeIngestBinaryBoundaryReplayKey;
+    BuildExecutableMetadataRuntimeIngestBinaryBoundarySummary;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson;
 using objc3::artifacts::frontend::
-    BuildExecutableMetadataRuntimeIngestBinaryEnvelopePayload;
+    BuildExecutableMetadataRuntimeIngestBinaryEnvelope;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataRuntimeIngestPackagingContractSummary;
 using objc3::artifacts::frontend::
@@ -6430,78 +6430,6 @@ BuildExecutableAccessorLayoutLoweringSummary(
     }
   }
   summary.ivar_layout_owner_entries = ivar_layout_owner_identities.size();
-  return summary;
-}
-
-std::string BuildExecutableMetadataRuntimeIngestBinaryEnvelope(
-    const Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary
-        &packaging_contract,
-    const Objc3ExecutableMetadataTypedLoweringHandoff &typed_lowering_handoff,
-    const Objc3ExecutableMetadataDebugProjectionSummary &debug_projection) {
-  if (!IsReadyObjc3ExecutableMetadataRuntimeIngestPackagingContractSummary(
-          packaging_contract) ||
-      !IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
-          typed_lowering_handoff) ||
-      !IsReadyObjc3ExecutableMetadataDebugProjectionSummary(debug_projection)) {
-    return {};
-  }
-
-  const std::string packaging_json =
-      BuildExecutableMetadataRuntimeIngestPackagingContractSummaryJson(
-          packaging_contract);
-  const std::string typed_handoff_json =
-      BuildExecutableMetadataTypedLoweringHandoffJson(typed_lowering_handoff);
-  const std::string debug_projection_json =
-      BuildExecutableMetadataDebugProjectionSummaryJson(debug_projection);
-
-  return BuildExecutableMetadataRuntimeIngestBinaryEnvelopePayload(
-      packaging_json, typed_handoff_json, debug_projection_json);
-}
-
-Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary
-BuildExecutableMetadataRuntimeIngestBinaryBoundarySummary(
-    const Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary
-        &packaging_contract,
-    const Objc3ExecutableMetadataTypedLoweringHandoff &typed_lowering_handoff,
-    const Objc3ExecutableMetadataDebugProjectionSummary &debug_projection,
-    const std::string &binary_payload) {
-  Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary summary;
-  summary.fail_closed = true;
-  summary.packaging_contract_ready =
-      IsReadyObjc3ExecutableMetadataRuntimeIngestPackagingContractSummary(
-          packaging_contract);
-  summary.typed_lowering_handoff_ready =
-      IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
-          typed_lowering_handoff);
-  summary.debug_projection_ready =
-      IsReadyObjc3ExecutableMetadataDebugProjectionSummary(debug_projection);
-  if (summary.packaging_contract_ready) {
-    summary.packaging_contract_replay_key = packaging_contract.replay_key;
-  }
-  if (summary.typed_lowering_handoff_ready) {
-    summary.typed_lowering_handoff_replay_key = typed_lowering_handoff.replay_key;
-  }
-  if (summary.debug_projection_ready) {
-    summary.debug_projection_replay_key = debug_projection.replay_key;
-  }
-  summary.binary_payload_present = !binary_payload.empty();
-  summary.binary_boundary_emitted = summary.binary_payload_present;
-  summary.binary_envelope_deterministic =
-      summary.binary_payload_present && summary.packaging_contract_ready &&
-      summary.typed_lowering_handoff_ready &&
-      summary.debug_projection_ready;
-  summary.ready_for_section_emission_handoff =
-      summary.packaging_contract_ready && summary.binary_envelope_deterministic;
-  summary.payload_bytes = binary_payload.size();
-  if (summary.ready_for_section_emission_handoff) {
-    summary.replay_key =
-        BuildExecutableMetadataRuntimeIngestBinaryBoundaryReplayKey(summary);
-  }
-  if (!IsReadyObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary(
-          summary)) {
-    summary.failure_reason =
-        "runtime ingest binary boundary payload is incomplete";
-  }
   return summary;
 }
 
