@@ -40,6 +40,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_conformance_dashboard_artifact_document.cpp
   objc3_conformance_release_artifact_document.cpp
   objc3_conformance_artifact_documents.cpp
+  objc3_cross_module_imported_modules_document.cpp
   objc3_object_format.cpp
   objc3_process.cpp
   objc3_process_boundary_tokens.cpp
