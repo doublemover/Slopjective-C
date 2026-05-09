@@ -10,15 +10,12 @@ add_library(objc3c_diag STATIC
   objc3_diag_record_factory.cpp
   objc3_diag_record_validation.cpp
   objc3_diag_render.cpp
-  objc3_diag_render_invalid.cpp
-  objc3_diag_render_unchecked.cpp
   objc3_diag_route.cpp
   objc3_diag_severity_failure.cpp
   objc3_diag_severity_parse.cpp
   objc3_diag_severity_rank.cpp
   objc3_diag_severity_spelling.cpp
-  objc3_diag_sink_emit_helpers.cpp
-  objc3_diag_sink_methods.cpp
+  objc3_diag_sink.cpp
   objc3_diag_sort_key.cpp
   objc3_diag_sort_normalize.cpp
   objc3_diag_catalog_lookup.cpp
