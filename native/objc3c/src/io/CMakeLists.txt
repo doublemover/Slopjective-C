@@ -24,9 +24,11 @@ objc3c_apply_build_defaults(objc3c_runtime_abi)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
 target_link_libraries(objc3c_runtime_abi PUBLIC
   objc3c_json
+  objc3c_support
 )
 target_link_libraries(objc3c_io PUBLIC
   objc3c_diag
   objc3c_json
   objc3c_runtime_abi
+  objc3c_support
 )

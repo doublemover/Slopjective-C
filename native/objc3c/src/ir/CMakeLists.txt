@@ -6,4 +6,5 @@ objc3c_apply_llvm_direct_config(objc3c_ir)
 target_link_libraries(objc3c_ir PUBLIC
   objc3c_lower
   objc3c_sema_type_system
+  objc3c_support
 )

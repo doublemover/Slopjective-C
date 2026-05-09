@@ -12,4 +12,5 @@ target_link_libraries(objc3c_tools_frontend_c_api_runner PRIVATE
   objc3c_driver
   objc3c_diagnostics_modes
   objc3c_json
+  objc3c_support
 )

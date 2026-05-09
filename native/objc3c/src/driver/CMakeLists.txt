@@ -17,6 +17,7 @@ target_link_libraries(objc3c_driver PUBLIC
   objc3c_diagnostics_modes
   objc3c_frontend
   objc3c_io
+  objc3c_support
 )
 if (TARGET objc3c_libclang)
   target_link_libraries(objc3c_driver PUBLIC

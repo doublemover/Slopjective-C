@@ -6,4 +6,5 @@ objc3c_apply_llvm_direct_config(objc3c_lex)
 target_link_libraries(objc3c_lex PUBLIC
   objc3c_config
   objc3c_diag
+  objc3c_support
 )

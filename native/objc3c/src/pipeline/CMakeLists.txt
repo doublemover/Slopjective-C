@@ -17,4 +17,5 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_diag
   objc3c_json
   objc3c_pipeline_results
+  objc3c_support
 )

@@ -1,4 +1,5 @@
 add_subdirectory(config)
+add_subdirectory(support)
 
 # Dependency-direction authority is defined in `ARCHITECTURE.md` and checked
 # by `scripts/check_objc3c_dependency_boundaries.py`. The hard-cutover graph uses

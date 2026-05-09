@@ -23,4 +23,5 @@ target_link_libraries(objc3c_artifacts PUBLIC
   objc3c_artifacts_reports
   objc3c_pipeline
   objc3c_json
+  objc3c_support
 )

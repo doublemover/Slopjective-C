@@ -10,4 +10,5 @@ target_link_libraries(objc3c_frontend PUBLIC
   objc3c_pipeline
   objc3c_runtime_abi
   objc3c_json
+  objc3c_support
 )
