@@ -24,7 +24,9 @@
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
 #include "artifacts/objc3_frontend_concurrency_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_error_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_truth_artifacts.h"
 #include "artifacts/objc3_frontend_interop_semantic_artifacts.h"
@@ -84,9 +86,13 @@ using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentCompatibilitySummaryJson;
+using objc3::artifacts::frontend::
+    BuildControlFlowControlFlowSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildDispatchDispatchIntentLegalitySummaryJson;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentSemanticModelSummaryJson;
+using objc3::artifacts::frontend::
+    BuildErrorHandlingErrorSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildEffectsOwnershipSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildInteropCppInteropInteractionSummaryJson;
 using objc3::artifacts::frontend::BuildInteropInteropRuntimeParitySummaryJson;
@@ -446,174 +452,6 @@ const char *ArcModeName(Objc3FrontendArcMode mode) {
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
   return objc3::io::json::RenderJsonStringArray(values);
-}
-
-std::string BuildControlFlowControlFlowSemanticModelSummaryJson(
-    const Objc3ControlFlowControlFlowSemanticModelSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"frontend_dependency_contract_id\":\""
-      << EscapeJsonString(summary.frontend_dependency_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\""
-      << EscapeJsonString(summary.semantic_model)
-      << "\",\"defer_model\":\"" << EscapeJsonString(summary.defer_model)
-      << "\",\"match_model\":\"" << EscapeJsonString(summary.match_model)
-      << "\",\"non_local_exit_model\":\""
-      << EscapeJsonString(summary.non_local_exit_model)
-      << "\",\"guard_binding_semantic_sites\":"
-      << summary.guard_binding_semantic_sites
-      << ",\"guard_binding_clause_semantic_sites\":"
-      << summary.guard_binding_clause_semantic_sites
-      << ",\"guard_condition_statement_sites\":"
-      << summary.guard_condition_statement_sites
-      << ",\"guard_condition_clause_semantic_sites\":"
-      << summary.guard_condition_clause_semantic_sites
-      << ",\"guard_exit_enforcement_sites\":"
-      << summary.guard_exit_enforcement_sites
-      << ",\"guard_refinement_sites\":" << summary.guard_refinement_sites
-      << ",\"match_statement_semantic_sites\":"
-      << summary.match_statement_semantic_sites
-      << ",\"match_default_pattern_sites\":"
-      << summary.match_default_pattern_sites
-      << ",\"match_wildcard_pattern_sites\":"
-      << summary.match_wildcard_pattern_sites
-      << ",\"match_literal_pattern_sites\":"
-      << summary.match_literal_pattern_sites
-      << ",\"match_binding_scope_sites\":"
-      << summary.match_binding_scope_sites
-      << ",\"match_result_case_scope_sites\":"
-      << summary.match_result_case_scope_sites
-      << ",\"match_exhaustive_statement_sites\":"
-      << summary.match_exhaustive_statement_sites
-      << ",\"match_bool_exhaustive_sites\":"
-      << summary.match_bool_exhaustive_sites
-      << ",\"match_result_case_exhaustive_sites\":"
-      << summary.match_result_case_exhaustive_sites
-      << ",\"match_non_exhaustive_diagnostic_sites\":"
-      << summary.match_non_exhaustive_diagnostic_sites
-      << ",\"match_exhaustiveness_deferred_sites\":"
-      << summary.match_exhaustiveness_deferred_sites
-      << ",\"defer_statement_semantic_sites\":"
-      << summary.defer_statement_semantic_sites
-      << ",\"defer_scope_cleanup_order_sites\":"
-      << summary.defer_scope_cleanup_order_sites
-      << ",\"defer_nonlocal_exit_diagnostic_sites\":"
-      << summary.defer_nonlocal_exit_diagnostic_sites
-      << ",\"break_statement_sites\":" << summary.break_statement_sites
-      << ",\"continue_statement_sites\":"
-      << summary.continue_statement_sites
-      << ",\"break_restriction_diagnostic_sites\":"
-      << summary.break_restriction_diagnostic_sites
-      << ",\"continue_restriction_diagnostic_sites\":"
-      << summary.continue_restriction_diagnostic_sites
-      << ",\"source_dependency_required\":"
-      << (summary.source_dependency_required ? "true" : "false")
-      << ",\"guard_refinement_semantics_landed\":"
-      << (summary.guard_refinement_semantics_landed ? "true" : "false")
-      << ",\"guard_exit_enforcement_landed\":"
-      << (summary.guard_exit_enforcement_landed ? "true" : "false")
-      << ",\"match_binding_scope_semantics_landed\":"
-      << (summary.match_binding_scope_semantics_landed ? "true" : "false")
-      << ",\"match_result_case_scope_semantics_landed\":"
-      << (summary.match_result_case_scope_semantics_landed ? "true" : "false")
-      << ",\"match_exhaustiveness_semantics_landed\":"
-      << (summary.match_exhaustiveness_semantics_landed ? "true" : "false")
-      << ",\"match_exhaustiveness_deferred\":"
-      << (summary.match_exhaustiveness_deferred ? "true" : "false")
-      << ",\"defer_cleanup_order_semantics_landed\":"
-      << (summary.defer_cleanup_order_semantics_landed ? "true" : "false")
-      << ",\"defer_nonlocal_exit_semantics_landed\":"
-      << (summary.defer_nonlocal_exit_semantics_landed ? "true" : "false")
-      << ",\"defer_cleanup_order_deferred\":"
-      << (summary.defer_cleanup_order_deferred ? "true" : "false")
-      << ",\"defer_nonlocal_exit_deferred\":"
-      << (summary.defer_nonlocal_exit_deferred ? "true" : "false")
-      << ",\"non_local_exit_restrictions_landed\":"
-      << (summary.non_local_exit_restrictions_landed ? "true" : "false")
-      << ",\"deterministic\":"
-      << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason)
-      << "\""
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
-}
-
-std::string BuildErrorHandlingErrorSemanticModelSummaryJson(
-    const Objc3ErrorHandlingErrorSemanticModelSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"frontend_dependency_contract_id\":\""
-      << EscapeJsonString(summary.frontend_dependency_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\""
-      << EscapeJsonString(summary.semantic_model)
-      << "\",\"deferred_model\":\""
-      << EscapeJsonString(summary.deferred_model)
-      << "\",\"throws_declaration_sites\":" << summary.throws_declaration_sites
-      << ",\"function_throws_declaration_sites\":"
-      << summary.function_throws_declaration_sites
-      << ",\"method_throws_declaration_sites\":"
-      << summary.method_throws_declaration_sites
-      << ",\"result_like_sites\":" << summary.result_like_sites
-      << ",\"result_success_sites\":" << summary.result_success_sites
-      << ",\"result_failure_sites\":" << summary.result_failure_sites
-      << ",\"result_branch_sites\":" << summary.result_branch_sites
-      << ",\"result_payload_sites\":" << summary.result_payload_sites
-      << ",\"ns_error_bridging_sites\":" << summary.ns_error_bridging_sites
-      << ",\"ns_error_out_parameter_sites\":"
-      << summary.ns_error_out_parameter_sites
-      << ",\"ns_error_bridge_path_sites\":"
-      << summary.ns_error_bridge_path_sites
-      << ",\"objc_nserror_attribute_sites\":"
-      << summary.objc_nserror_attribute_sites
-      << ",\"objc_status_code_attribute_sites\":"
-      << summary.objc_status_code_attribute_sites
-      << ",\"status_code_success_clause_sites\":"
-      << summary.status_code_success_clause_sites
-      << ",\"status_code_error_type_clause_sites\":"
-      << summary.status_code_error_type_clause_sites
-      << ",\"status_code_mapping_clause_sites\":"
-      << summary.status_code_mapping_clause_sites
-      << ",\"placeholder_throws_propagation_sites\":"
-      << summary.placeholder_throws_propagation_sites
-      << ",\"placeholder_unwind_cleanup_sites\":"
-      << summary.placeholder_unwind_cleanup_sites
-      << ",\"source_dependency_required\":"
-      << (summary.source_dependency_required ? "true" : "false")
-      << ",\"throws_declaration_semantics_landed\":"
-      << (summary.throws_declaration_semantics_landed ? "true" : "false")
-      << ",\"result_carrier_profile_semantics_landed\":"
-      << (summary.result_carrier_profile_semantics_landed ? "true" : "false")
-      << ",\"ns_error_bridging_profile_semantics_landed\":"
-      << (summary.ns_error_bridging_profile_semantics_landed ? "true" : "false")
-      << ",\"bridge_marker_semantics_landed\":"
-      << (summary.bridge_marker_semantics_landed ? "true" : "false")
-      << ",\"parser_fail_closed_boundary_required\":"
-      << (summary.parser_fail_closed_boundary_required ? "true" : "false")
-      << ",\"parser_fail_closed_boundary_preserved\":"
-      << (summary.parser_fail_closed_boundary_preserved ? "true" : "false")
-      << ",\"propagation_runtime_deferred\":"
-      << (summary.propagation_runtime_deferred ? "true" : "false")
-      << ",\"status_to_error_runtime_deferred\":"
-      << (summary.status_to_error_runtime_deferred ? "true" : "false")
-      << ",\"native_error_abi_deferred\":"
-      << (summary.native_error_abi_deferred ? "true" : "false")
-      << ",\"placeholder_throws_summary_carried\":"
-      << (summary.placeholder_throws_summary_carried ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
 }
 
 std::string BuildConcurrencyTaskExecutorCancellationSemanticModelSummaryJson(
