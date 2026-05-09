@@ -82,6 +82,13 @@ commits that landed after the first docs commit.
 | `#8142`, `#8144`, `#8149`, `#8150` | `c26e133a5`, `8f4e91f1f`, `6ef6ab779` | Stress workflow, external validation, and public test orchestration owner splits now refresh workflow/control-plane evidence. They stay under the same npm bridge and do not assert validation. |
 | `#8144`, `#8145`, `#8150` | `f737d848e`, `0350f4a4a` | Behavior fixture boundary contracts and positive fixture lexical residue docs now refresh retired-surface evidence. Residue remains lexical/symbol evidence only, not support for shim, fallback, migration, old-mode, or compatibility behavior. |
 
+## Post-`0350f4a4a` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8132`, `#8134`, `#8140`, `#8146`, `#8150` | `0a2204b59` | CMake target topology and frontend type extraction checks no longer carry stale monolith literals, keeping split-owner tooling evidence aligned with hard-cutover ownership. |
+| `#8138`, `#8142`, `#8145`, `#8149`, `#8150` | `2bee2d918`, `0d2111b18` | Ecosystem publication and application workflow owners now refresh internal publication/application evidence without adding compatibility or direct-helper support. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -370,7 +377,8 @@ alignment, plus tooling catalog specs, public command budget contracts, and
 source-hygiene residue guardrails, plus validation timing report owners, release
 governance owner splits, playground workflow owners, runtime workflow owners,
 performance workflow owners, stress workflow owners, external validation owners,
-and public test orchestration owners.
+public test orchestration owners, ecosystem publication owners, and application
+workflow owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -386,7 +394,8 @@ committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
 through `89959f6cc`, plus the post-`89959f6cc` owner wave through `e760e3450`.
 It also includes the post-`e760e3450` owner wave through `0350f4a4a`. Remote
 issue closure, push, and validation remain deferred under the current worker
-constraints.
+constraints. The post-`0350f4a4a` owner wave through `0d2111b18` is also folded
+into these local payloads.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

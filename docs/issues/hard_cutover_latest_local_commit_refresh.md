@@ -155,6 +155,31 @@ worktree edits.
 | `#8149` | Source hygiene/control-plane evidence is refreshed by stress, external validation, and public test orchestration owner splits. |
 | `#8150` | Local closeout evidence now also includes the committed post-`e760e3450` owner wave through `0350f4a4a`; remote closeout remains deferred. |
 
+## Post-`0350f4a4a` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `0350f4a4a`
+through `0d2111b18`. It excludes uncommitted worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Split-owner tooling literal cleanup | `#8132`, `#8134`, `#8140`, `#8146`, `#8150` | `0a2204b59` | CMake target topology and frontend type extraction checks no longer carry stale monolith literals, keeping split-owner tooling evidence aligned with hard-cutover ownership. |
+| Ecosystem publication workflow owners | `#8138`, `#8142`, `#8145`, `#8149`, `#8150` | `2bee2d918` | Ecosystem publication contracts and metadata owners refresh workflow/publication evidence under the existing command boundary. |
+| Application workflow owners | `#8138`, `#8142`, `#8145`, `#8149`, `#8150` | `0d2111b18` | Application architecture, conformance, showcase, stdlib, surface path, and surface owner splits refresh application workflow evidence without creating direct helper support. |
+
+## Post-`0350f4a4a` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8132` | Compiler/module split evidence is refreshed by tooling checks with stale monolith literals removed. |
+| `#8134` | Parser split evidence is refreshed by split-owner tooling checks that no longer reference monolith owner literals. |
+| `#8138` | Publication/application workflow owners refresh internal pipeline/artifact evidence. |
+| `#8140` | Driver/frontend evidence is refreshed by CMake/topology tooling cleanup. |
+| `#8142` | Workflow evidence is refreshed by ecosystem publication and application workflow owner splits under the npm bridge. |
+| `#8145` | Capability truth evidence is refreshed by ecosystem publication/application surface owners without adding compatibility claims. |
+| `#8146` | Frontend type-surface evidence is refreshed by frontend type extraction cleanup. |
+| `#8149` | Control-plane evidence is refreshed by ecosystem publication and application workflow owners. |
+| `#8150` | Local closeout evidence now also includes the committed post-`0350f4a4a` owner wave through `0d2111b18`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -201,3 +226,6 @@ This post-`89959f6cc` refresh references `7aa3372d1`, `2befd1155`,
 
 This post-`e760e3450` refresh references `c26e133a5`, `f737d848e`,
 `8f4e91f1f`, `6ef6ab779`, and `0350f4a4a`.
+
+This post-`0350f4a4a` refresh references `0a2204b59`, `2bee2d918`, and
+`0d2111b18`.

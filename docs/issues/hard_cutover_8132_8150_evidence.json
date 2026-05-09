@@ -1075,6 +1075,45 @@
       }
     ]
   },
+  "post_0350_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "0350f4a4a",
+    "through_commit": "0d2111b18",
+    "commit_count": 3,
+    "count_policy": "counts committed owner/evidence commits after the 0350f4a4a closeout refresh and excludes docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8140",
+          "#8146",
+          "#8150"
+        ],
+        "commits": [
+          "0a2204b59"
+        ],
+        "owner_boundary": "CMake target topology and frontend type extraction checks remove stale monolith literals and align split-owner tooling evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "2bee2d918",
+          "0d2111b18"
+        ],
+        "owner_boundary": "ecosystem publication and application workflow owners are internal publication/application evidence under the public command boundary"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",
