@@ -12,8 +12,10 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_sequence.cpp
   frontend_pipeline_stage_runner.cpp
   runtime_import_json_helpers.cpp
+  runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation.cpp
   runtime_import_record_parsing.cpp
+  runtime_import_type_system_preservation.cpp
   frontend_pipeline_defaults.h
   frontend_pipeline_result_contract.h
   frontend_pipeline_result_handoff.h
@@ -25,7 +27,9 @@ add_library(objc3c_pipeline STATIC
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
+  runtime_import_packaging_peer_artifacts.h
   runtime_import_record_parsing.h
+  runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
   objc3_frontend_pipeline.h
   objc3_ir_emission_core_feature_implementation_surface.h
