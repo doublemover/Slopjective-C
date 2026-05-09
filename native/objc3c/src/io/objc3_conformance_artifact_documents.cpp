@@ -1,4 +1,5 @@
 #include "io/objc3_process_internal.h"
+#include "io/objc3_conformance_release_artifact_document.h"
 
 bool TryBuildObjc3ConformanceReportPublicationArtifact(
     const Objc3ConformanceReportPublicationArtifactInputs &inputs,
@@ -31,55 +32,8 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
     return false;
   }
 
-  std::ostringstream out;
-  JsonObjectWriter publication(out);
-  publication.StringField("contract_id", inputs.contract_id);
-  publication.StringField("schema_id", inputs.schema_id);
-  publication.StringField("selected_profile", inputs.selected_profile);
-  publication.BoolField("selected_profile_supported",
-                        inputs.selected_profile_supported);
-  publication.RawJsonField(
-      "supported_profile_ids",
-      BuildIndentedStringArrayJson(inputs.supported_profile_ids, "    "));
-  publication.RawJsonField(
-      "rejected_profile_ids",
-      BuildIndentedStringArrayJson(inputs.rejected_profile_ids, "    "));
-  publication.StringField("effective_language_profile",
-                          inputs.effective_language_profile);
-  publication.BoolField("canonical_literal_rejection_diagnostics_enabled",
-                        inputs.canonical_literal_rejection_diagnostics_enabled);
-  publication.StringField("publication_model", inputs.publication_model);
-  publication.StringField("publication_surface_kind",
-                          inputs.publication_surface_kind);
-  publication.StringField("fail_closed_diagnostic_model",
-                          inputs.fail_closed_diagnostic_model);
-  publication.StringField("lowered_report_contract_id",
-                          inputs.lowered_report_contract_id);
-  publication.StringField("runtime_capability_contract_id",
-                          inputs.runtime_capability_contract_id);
-  publication.StringField("public_conformance_schema_id",
-                          inputs.public_conformance_schema_id);
-  publication.StringField("advanced_feature_ops_contract_id",
-                          inputs.advanced_feature_ops_contract_id);
-  publication.StringField("advanced_feature_reporting_contract_id",
-                          inputs.advanced_feature_reporting_contract_id);
-  publication.StringField(
-      "advanced_feature_release_evidence_contract_id",
-      inputs.advanced_feature_release_evidence_contract_id);
-  publication.RawJsonField(
-      "advanced_feature_targeted_profile_ids",
-      BuildIndentedStringArrayJson(inputs.advanced_feature_targeted_profile_ids,
-                                   "    "));
-  publication.StringField("ci_release_evidence_gate_script_path",
-                          inputs.ci_release_evidence_gate_script_path);
-  publication.StringField("runbook_reference_path",
-                          inputs.runbook_reference_path);
-  publication.StringField("dashboard_schema_path",
-                          inputs.dashboard_schema_path);
-  publication.StringField("report_artifact",
-                          inputs.report_artifact_relative_path);
-  publication.BoolField("ready", true);
-  artifact_json = FinishJsonObject(publication, out);
+  artifact_json =
+      BuildObjc3ConformanceReportPublicationArtifactDocumentJson(inputs);
   return true;
 }
 
@@ -291,56 +245,14 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     return false;
   }
 
-  std::ostringstream out;
-  JsonObjectWriter validation(out);
-  validation.StringField("contract_id",
-                         kObjc3ToolchainConformanceClaimOperationsContractId);
-  validation.StringField("schema_id",
-                         kObjc3ToolchainConformanceClaimValidationSchemaId);
-  validation.StringField("validation_model",
-                         kObjc3ToolchainConformanceClaimValidationModel);
-  validation.StringField("consumption_model",
-                         kObjc3ToolchainConformanceClaimConsumptionModel);
-  validation.StringField("format", "json");
-  validation.StringField("validated_report_artifact",
-                         inputs.report_artifact_path);
-  validation.StringField("validated_publication_artifact",
-                         inputs.publication_artifact_path);
-  validation.StringField("report_schema_id", report_schema_id);
-  validation.StringField("report_contract_id", report_contract_id);
-  validation.StringField("runtime_capability_contract_id",
-                         runtime_capability_contract_id);
-  validation.StringField("public_conformance_schema_id",
-                         public_conformance_schema_id);
-  validation.StringField("advanced_feature_ops_contract_id",
-                         kObjc3AdvancedFeatureOpsContractId);
-  validation.StringField("advanced_feature_reporting_contract_id",
-                         kObjc3AdvancedFeatureReportingContractId);
-  validation.StringField("advanced_feature_release_evidence_contract_id",
-                         kObjc3AdvancedFeatureReleaseEvidenceContractId);
-  validation.RawJsonField(
-      "advanced_feature_targeted_profile_ids",
-      BuildIndentedStringArrayJson(advanced_feature_targeted_profile_ids,
-                                   "    "));
-  validation.StringField("ci_release_evidence_gate_script_path",
-                         ci_release_evidence_gate_script_path);
-  validation.StringField("runbook_reference_path", runbook_reference_path);
-  validation.StringField("dashboard_schema_path", dashboard_schema_path);
-  validation.StringField("selected_profile", selected_profile);
-  validation.BoolField("selected_profile_supported", selected_profile_supported);
-  validation.RawJsonField("supported_profile_ids",
-                          BuildIndentedStringArrayJson(supported_profile_ids,
-                                                       "    "));
-  validation.RawJsonField("rejected_profile_ids",
-                          BuildIndentedStringArrayJson(rejected_profile_ids,
-                                                       "    "));
-  validation.StringField("effective_language_profile",
-                         effective_language_profile);
-  validation.BoolField("canonical_literal_rejection_diagnostics_enabled",
-                       canonical_literal_rejection_diagnostics_enabled);
-  validation.StringField("publication_surface_kind", publication_surface_kind);
-  validation.BoolField("ready", true);
-  artifact_json = FinishJsonObject(validation, out);
+  artifact_json = BuildObjc3ConformanceClaimValidationArtifactDocumentJson(
+      inputs, report_schema_id, report_contract_id,
+      runtime_capability_contract_id, public_conformance_schema_id,
+      advanced_feature_targeted_profile_ids, ci_release_evidence_gate_script_path,
+      runbook_reference_path, dashboard_schema_path, selected_profile,
+      selected_profile_supported, supported_profile_ids, rejected_profile_ids,
+      effective_language_profile, canonical_literal_rejection_diagnostics_enabled,
+      publication_surface_kind);
   return true;
 }
 
@@ -392,62 +304,8 @@ bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
     return false;
   }
 
-  std::ostringstream out;
-  JsonObjectWriter operation(out);
-  operation.StringField("contract_id", kObjc3ReleaseEvidenceOperationContractId);
-  operation.StringField("schema_id", kObjc3ReleaseEvidenceOperationSchemaId);
-  operation.RawJsonField(
-      "dependency_contract_ids",
-      BuildIndentedStringArrayJson(
-          {kObjc3AdvancedFeatureOpsContractId,
-           kObjc3AdvancedFeatureReleaseEvidenceContractId},
-          "    "));
-  operation.StringField("validation_contract_id",
-                        kObjc3ToolchainConformanceClaimOperationsContractId);
-  operation.StringField("dashboard_contract_id",
-                        kObjc3DashboardStatusPublicationContractId);
-  operation.StringField(
-      "operation_model",
-      "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set");
-  operation.StringField("release_label", kObjc3AdvancedFeatureReleaseLabel);
-  operation.RawJsonField(
-      "command_tokens",
-      BuildIndentedStringArrayJson(
-          {"python", kObjc3AdvancedFeatureEvidenceGateScriptPath}, "    "));
-  operation.StringField("report_artifact", inputs.report_artifact_path);
-  operation.StringField("publication_artifact",
-                        inputs.publication_artifact_path);
-  operation.StringField("validation_artifact", inputs.validation_artifact_path);
-  operation.StringField("dashboard_artifact", inputs.dashboard_artifact_path);
-  operation.StringField("gate_script_path",
-                        kObjc3AdvancedFeatureEvidenceGateScriptPath);
-  operation.StringField("runbook_reference_path",
-                        kObjc3AdvancedFeatureEvidenceRunbookPath);
-  operation.StringField("dashboard_schema_path",
-                        kObjc3AdvancedFeatureDashboardSchemaPath);
-  operation.StringField("release_evidence_checklist_path",
-                        "spec/conformance/profile_release_evidence_checklist.md");
-  operation.StringField(
-      "release_evidence_schema_path",
-      "spec/conformance/objc3_conformance_evidence_bundle_schema.md");
-  operation.RawJsonField(
-      "targeted_profile_ids",
-      BuildIndentedStringArrayJson(
-          {"strict", "strict-concurrency", "strict-system"}, "    "));
-  operation.RawJsonField(
-      "corpus_shard_ids",
-      BuildIndentedStringArrayJson({"parser", "semantic", "lowering_abi",
-                                    "module_roundtrip", "diagnostics"},
-                                   "    "));
-  operation.RawJsonField(
-      "release_evidence_artifact_ids",
-      BuildIndentedStringArrayJson({"EVID-01", "EVID-02", "EVID-03",
-                                    "EVID-04", "EVID-07", "EVID-08",
-                                    "EVID-09", "EVID-10", "EVID-11"},
-                                   "    "));
-  operation.StringField("generated_at", kObjc3DeterministicReplayTimestamp);
-  operation.BoolField("ready", true);
-  artifact_json = FinishJsonObject(operation, out);
+  artifact_json =
+      BuildObjc3ReleaseEvidenceOperationArtifactDocumentJson(inputs);
   return true;
 }
 
@@ -490,38 +348,7 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
     return false;
   }
 
-  std::ostringstream out;
-  JsonObjectWriter gate(out);
-  gate.StringField("contract_id", kObjc3AdvancedFeatureGateContractId);
-  gate.StringField("schema_id", kObjc3AdvancedFeatureGateSchemaId);
-  gate.RawJsonField(
-      "dependency_contract_ids",
-      BuildIndentedStringArrayJson(
-          {"objc3c.tooling.frontend.migration.canonicalization.source.completion.v1",
-           "objc3c.tooling.legacy.canonical.migration.semantics.v1",
-           kObjc3AdvancedFeatureReleaseEvidenceContractId,
-           kObjc3ReleaseEvidenceOperationContractId},
-          "    "));
-  gate.StringField("surface_kind", inputs.surface_kind);
-  gate.StringField("report_artifact", inputs.report_artifact_path);
-  gate.StringField("publication_artifact", inputs.publication_artifact_path);
-  gate.StringField("validation_artifact_expected",
-                   inputs.validation_artifact_path);
-  gate.StringField("release_evidence_operation_artifact_expected",
-                   inputs.release_evidence_operation_artifact_path);
-  gate.StringField("dashboard_artifact_expected", inputs.dashboard_artifact_path);
-  gate.StringField(
-      "gate_model",
-      "integrated-advanced-feature-gate-consumes-report-publication-and-native-validation-sidecars");
-  gate.RawJsonField(
-      "targeted_profile_ids",
-      BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
-                                   "    "));
-  gate.BoolField("native_validation_required", true);
-  gate.BoolField("report_payload_ready", true);
-  gate.BoolField("release_evidence_ready", true);
-  gate.BoolField("ready", true);
-  artifact_json = FinishJsonObject(gate, out);
+  artifact_json = BuildObjc3AdvancedFeatureGateArtifactDocumentJson(inputs);
   return true;
 }
 
@@ -569,61 +396,6 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
     return false;
   }
 
-  std::ostringstream out;
-  JsonValue::Array matrix_rows;
-  matrix_rows.push_back(JsonValue::ObjectValue(
-      {{"lane", JsonValue::String("A")},
-       {"contract_id", JsonValue::String(
-                           "objc3c.tooling.migration.canonicalization.source.completion.v1")},
-       {"status", JsonValue::String("pass")}}));
-  matrix_rows.push_back(JsonValue::ObjectValue(
-      {{"lane", JsonValue::String("B")},
-       {"contract_id", JsonValue::String(
-                           "objc3c.tooling.legacy.canonical.migration.semantics.v1")},
-       {"status", JsonValue::String("pass")}}));
-  matrix_rows.push_back(JsonValue::ObjectValue(
-      {{"lane", JsonValue::String("C")},
-       {"contract_id", JsonValue::String(
-                           "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1")},
-       {"status", JsonValue::String("pass")}}));
-  matrix_rows.push_back(JsonValue::ObjectValue(
-      {{"lane", JsonValue::String("D")},
-       {"contract_id", JsonValue::String(
-                           "objc3c.tooling.release.evidence.toolchain.operations.v1")},
-       {"status", JsonValue::String("pass")}}));
-  matrix_rows.push_back(JsonValue::ObjectValue(
-      {{"lane", JsonValue::String("E")},
-       {"contract_id", JsonValue::String(
-                           "objc3c.tooling.integrated.advanced.feature.gate.v1")},
-       {"status", JsonValue::String("pass")}}));
-
-  JsonObjectWriter matrix(out);
-  matrix.StringField("contract_id", kObjc3ReleaseCandidateMatrixContractId);
-  matrix.StringField("schema_id", kObjc3ReleaseCandidateMatrixSchemaId);
-  matrix.StringField("surface_kind", inputs.surface_kind);
-  matrix.StringField("release_label", kObjc3AdvancedFeatureReleaseLabel);
-  matrix.StringField("report_artifact", inputs.report_artifact_path);
-  matrix.StringField("publication_artifact", inputs.publication_artifact_path);
-  matrix.StringField("advanced_feature_gate_artifact",
-                     inputs.advanced_feature_gate_artifact_path);
-  matrix.StringField("validation_artifact_expected",
-                     inputs.validation_artifact_path);
-  matrix.StringField("release_evidence_operation_artifact_expected",
-                     inputs.release_evidence_operation_artifact_path);
-  matrix.StringField("dashboard_artifact_expected",
-                     inputs.dashboard_artifact_path);
-  matrix.RawJsonField(
-      "targeted_profile_ids",
-      BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
-                                   "    "));
-  matrix.RawJsonField(
-      "matrix_rows",
-      objc3::io::json::RenderJson(
-          JsonValue::ArrayValue(std::move(matrix_rows))));
-  matrix.StringField(
-      "matrix_model",
-      "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set");
-  matrix.BoolField("ready", true);
-  artifact_json = FinishJsonObject(matrix, out);
+  artifact_json = BuildObjc3ReleaseCandidateMatrixArtifactDocumentJson(inputs);
   return true;
 }

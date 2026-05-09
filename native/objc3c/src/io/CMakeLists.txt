@@ -27,8 +27,10 @@ objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3c_runtime_abi STATIC
   objc3_conformance_dashboard_artifact_document.cpp
+  objc3_conformance_release_artifact_document.cpp
   objc3_conformance_artifact_documents.cpp
   objc3_process.cpp
+  objc3_runtime_artifact_document_renderers.cpp
   objc3_runtime_artifact_documents.cpp
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi)
