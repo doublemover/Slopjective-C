@@ -91,12 +91,12 @@ bool JsonValue::IsObject() const {
   return kind_ == Kind::kObject;
 }
 
-bool JsonValue::AsBool(bool fallback) const {
-  return IsBool() ? bool_value_ : fallback;
+bool JsonValue::AsBool(bool default_value) const {
+  return IsBool() ? bool_value_ : default_value;
 }
 
-double JsonValue::AsNumber(double fallback) const {
-  return IsNumber() ? number_value_ : fallback;
+double JsonValue::AsNumber(double default_value) const {
+  return IsNumber() ? number_value_ : default_value;
 }
 
 const std::string &JsonValue::AsString() const {

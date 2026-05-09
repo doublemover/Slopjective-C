@@ -41,8 +41,8 @@ class JsonValue {
   [[nodiscard]] bool IsArray() const;
   [[nodiscard]] bool IsObject() const;
 
-  [[nodiscard]] bool AsBool(bool fallback = false) const;
-  [[nodiscard]] double AsNumber(double fallback = 0.0) const;
+  [[nodiscard]] bool AsBool(bool default_value = false) const;
+  [[nodiscard]] double AsNumber(double default_value = 0.0) const;
   [[nodiscard]] const std::string &AsString() const;
   [[nodiscard]] const Array &AsArray() const;
   [[nodiscard]] const Object &AsObject() const;
