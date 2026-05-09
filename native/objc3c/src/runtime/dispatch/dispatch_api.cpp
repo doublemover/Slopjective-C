@@ -1,10 +1,13 @@
 #include "runtime/dispatch/dispatch_api.h"
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/public/objc3_runtime_api.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
 #include "runtime/strings/borrowed_string.h"
 
+#include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <mutex>
 
@@ -86,4 +89,21 @@ extern "C" int objc3_runtime_copy_dispatch_state_for_testing(
   snapshot->last_resolved_owner_identity =
       objc3c::runtime::BorrowRuntimeCString(state.last_resolved_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+extern "C" int objc3_runtime_dispatch_i32(int receiver, const char *selector,
+                                          int a0, int a1, int a2, int a3) {
+  const objc3_runtime_dispatch_i32_result result =
+      objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
+  if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
+    std::fprintf(
+        stderr,
+        "%s [%s]\n",
+        result.diagnostic_message != nullptr ? result.diagnostic_message
+                                             : "runtime dispatch failed",
+        result.diagnostic_code != nullptr ? result.diagnostic_code
+                                          : "O3RT000");
+    std::abort();
+  }
+  return result.value;
 }

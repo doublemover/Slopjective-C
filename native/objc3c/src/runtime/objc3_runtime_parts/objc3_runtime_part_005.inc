@@ -316,21 +316,3 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
   }
   return objc3c::runtime::MakeRuntimeDispatchI32Result(dispatch_status, 0);
 }
-
-int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
-                               int a1, int a2, int a3) {
-  const objc3_runtime_dispatch_i32_result result =
-      objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
-  if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
-    std::fprintf(
-        stderr,
-        "%s [%s]\n",
-        result.diagnostic_message != nullptr ? result.diagnostic_message
-                                             : "runtime dispatch failed",
-        result.diagnostic_code != nullptr ? result.diagnostic_code
-                                          : "O3RT000");
-    std::abort();
-  }
-  return result.value;
-}
-
