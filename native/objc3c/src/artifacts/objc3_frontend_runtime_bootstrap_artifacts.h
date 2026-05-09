@@ -42,4 +42,15 @@ BuildRuntimeBootstrapSemanticsSummary(
 [[nodiscard]] std::string BuildRuntimeBootstrapLoweringSummaryJson(
     const Objc3RuntimeBootstrapLoweringSummary &summary);
 
+[[nodiscard]] std::string BuildRuntimeBootstrapApiReplayKey(
+    const Objc3RuntimeBootstrapApiSummary &summary);
+
+[[nodiscard]] Objc3RuntimeBootstrapApiSummary BuildRuntimeBootstrapApiSummary(
+    const Objc3RuntimeSupportLibraryCoreFeatureSummary &runtime_support_library,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary
+        &runtime_support_library_link_wiring);
+
+[[nodiscard]] std::string BuildRuntimeBootstrapApiSummaryJson(
+    const Objc3RuntimeBootstrapApiSummary &summary);
+
 }  // namespace objc3::artifacts::frontend
