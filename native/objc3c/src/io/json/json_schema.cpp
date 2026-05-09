@@ -1,7 +1,5 @@
 #include "io/json/json_schema.h"
 
-#include <string_view>
-
 #include "io/json/json_pointer.h"
 #include "io/json/json_schema_annotation_contract_validation.h"
 #include "io/json/json_schema_applicator_contract_validation.h"
@@ -13,37 +11,11 @@
 #include "io/json/json_schema_pattern_contract_validation.h"
 #include "io/json/json_schema_required_contract_validation.h"
 #include "io/json/json_schema_type_contract_validation.h"
+#include "io/json/json_schema_unique_items_contract_validation.h"
+#include "io/json/json_schema_unsupported_keyword_contracts.h"
 #include "io/json/json_schema_validation.h"
 
 namespace objc3::io::json {
-namespace {
-
-bool IsJsonSchemaAnnotationKeyword(std::string_view key) {
-  return key == "$schema" || key == "$id" || key == "$comment" ||
-         key == "title" || key == "description" || key == "format";
-}
-
-bool IsJsonSchemaApplicatorKeyword(std::string_view key) {
-  return key == "$ref" || key == "$defs" || key == "definitions" ||
-         key == "allOf" || key == "anyOf" || key == "properties" ||
-         key == "additionalProperties" || key == "items" ||
-         key == "contains";
-}
-
-bool IsJsonSchemaAssertionKeyword(std::string_view key) {
-  return key == "type" || key == "required" || key == "const" ||
-         key == "enum" || key == "minimum" || key == "maximum" ||
-         key == "minLength" || key == "maxLength" || key == "pattern" ||
-         key == "minItems" || key == "maxItems" || key == "uniqueItems";
-}
-
-bool IsSupportedJsonSchemaKeyword(std::string_view key) {
-  return IsJsonSchemaAnnotationKeyword(key) ||
-         IsJsonSchemaApplicatorKeyword(key) ||
-         IsJsonSchemaAssertionKeyword(key);
-}
-
-}  // namespace
 
 void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
                                     const JsonValue &schema,
@@ -54,15 +26,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
                                "schema node must be a JSON object");
     return;
   }
-  for (const auto &[key, value] : schema.AsObject()) {
-    (void)value;
-    if (!IsSupportedJsonSchemaKeyword(key)) {
-      AddJsonSchemaContractError(
-          result, "unsupported_keyword",
-          JsonSchemaKeywordPath(schema_path, key),
-          "unsupported JSON Schema keyword " + key);
-    }
-  }
+  ValidateJsonSchemaUnsupportedKeywordContracts(schema, schema_path, result);
   ValidateJsonSchemaAnnotationContracts(schema, schema_path, result);
 
   if (const JsonValue *ref = schema.Find("$ref"); ref != nullptr) {
@@ -97,13 +61,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
         *enum_values, JsonSchemaKeywordPath(schema_path, "enum"), result);
   }
   ValidateJsonSchemaNumericAssertionContracts(schema, schema_path, result);
-  if (const JsonValue *unique = schema.Find("uniqueItems");
-      unique != nullptr && !unique->IsBool()) {
-    AddJsonSchemaContractError(
-        result, "invalid_unique_items",
-        JsonSchemaKeywordPath(schema_path, "uniqueItems"),
-        "uniqueItems must be a boolean");
-  }
+  ValidateJsonSchemaUniqueItemsContract(schema, schema_path, result);
   ValidateJsonSchemaPatternContract(schema, schema_path, result);
 }
 
