@@ -6,6 +6,7 @@
 #include "lower/contracts/error_handling_lowering_contracts.h"
 #include "lower/contracts/function_method_lowering_state.h"
 #include "lower/contracts/interop_lowering_contracts.h"
+#include "lower/contracts/lowering_concurrency_contracts.h"
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
 #include "lower/contracts/ownership_runtime_lowering_contracts.h"
@@ -166,45 +167,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3AccessorStorageLoweringHelperSelectionModel =
         "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers";
-inline constexpr const char *kObjc3RuntimeAllocateAsyncContinuationI32Symbol =
-    "objc3_runtime_allocate_async_continuation_i32";
-inline constexpr const char
-    *kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol =
-        "objc3_runtime_handoff_async_continuation_to_executor_i32";
-inline constexpr const char *kObjc3RuntimeResumeAsyncContinuationI32Symbol =
-    "objc3_runtime_resume_async_continuation_i32";
-inline constexpr const char *kObjc3RuntimeSpawnTaskI32Symbol =
-    "objc3_runtime_spawn_task_i32";
-inline constexpr const char *kObjc3RuntimeEnterTaskGroupScopeI32Symbol =
-    "objc3_runtime_enter_task_group_scope_i32";
-inline constexpr const char *kObjc3RuntimeAddTaskGroupTaskI32Symbol =
-    "objc3_runtime_add_task_group_task_i32";
-inline constexpr const char *kObjc3RuntimeWaitTaskGroupNextI32Symbol =
-    "objc3_runtime_wait_task_group_next_i32";
-inline constexpr const char *kObjc3RuntimeCancelTaskGroupI32Symbol =
-    "objc3_runtime_cancel_task_group_i32";
-inline constexpr const char *kObjc3RuntimeTaskIsCancelledI32Symbol =
-    "objc3_runtime_task_is_cancelled_i32";
-inline constexpr const char *kObjc3RuntimeTaskOnCancelI32Symbol =
-    "objc3_runtime_task_on_cancel_i32";
-inline constexpr const char *kObjc3RuntimeExecutorHopI32Symbol =
-    "objc3_runtime_executor_hop_i32";
-inline constexpr const char *kObjc3RuntimeActorEnterIsolationThunkI32Symbol =
-    "objc3_runtime_actor_enter_isolation_thunk_i32";
-inline constexpr const char *kObjc3RuntimeActorEnterNonisolatedI32Symbol =
-    "objc3_runtime_actor_enter_nonisolated_i32";
-inline constexpr const char *kObjc3RuntimeActorHopToExecutorI32Symbol =
-    "objc3_runtime_actor_hop_to_executor_i32";
-inline constexpr const char *kObjc3RuntimeActorRecordReplayProofI32Symbol =
-    "objc3_runtime_actor_record_replay_proof_i32";
-inline constexpr const char *kObjc3RuntimeActorRecordRaceGuardI32Symbol =
-    "objc3_runtime_actor_record_race_guard_i32";
-inline constexpr const char *kObjc3RuntimeActorBindExecutorI32Symbol =
-    "objc3_runtime_actor_bind_executor_i32";
-inline constexpr const char *kObjc3RuntimeActorMailboxEnqueueI32Symbol =
-    "objc3_runtime_actor_mailbox_enqueue_i32";
-inline constexpr const char *kObjc3RuntimeActorMailboxDrainNextI32Symbol =
-    "objc3_runtime_actor_mailbox_drain_next_i32";
 inline constexpr const char *kObjc3RuntimePromoteBlockI32Symbol =
     "objc3_runtime_promote_block_i32";
 inline constexpr const char *kObjc3RuntimeInvokeBlockI32Symbol =
@@ -262,81 +224,6 @@ inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
     "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
     "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
-// continuation/runtime-helper freeze anchor: lane-D now freezes a
-// private Part 7 helper ABI for logical continuation handles, resume traffic,
-// and executor handoff without pretending the current direct-call async slice
-// already emits live suspension or scheduler traffic through it.
-inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperContractId =
-    "objc3c.concurrency.continuation.runtime.helper.api.v1";
-inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperSourceModel =
-    "concurrency-lowering-publishes-a-private-runtime-helper-abi-for-logical-continuation-allocation-resume-and-executor-handoff";
-inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperAbiModel =
-    "i32-backed-logical-continuation-handles-resume-entry-tags-and-executor-tags-remain-bootstrap-internal-runtime-abi";
-inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperExecutionModel =
-    "runtime-helpers-materialize-deterministic-logical-continuation-handles-resume-traffic-and-executor-handoff-without-public-header-widening";
-inline constexpr const char *kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel =
-    "no-public-async-runtime-header-no-suspension-state-machine-no-executor-runtime-scheduling-claim-yet";
-std::string Objc3ConcurrencyContinuationRuntimeHelperSummary();
-inline constexpr const char *kObjc3ConcurrencyLiveContinuationRuntimeIntegrationContractId =
-    "objc3c.concurrency.live.continuation.runtime.integration.v1";
-inline constexpr const char *kObjc3ConcurrencyLiveContinuationRuntimeIntegrationSourceModel =
-    "supported-direct-call-await-sites-now-execute-through-the-private-continuation-helper-cluster";
-inline constexpr const char *kObjc3ConcurrencyLiveContinuationRuntimeIntegrationExecutionModel =
-    "non-suspending-async-functions-and-methods-allocate-handoff-and-resume-logical-continuations-through-runtime-owned-helpers";
-inline constexpr const char *kObjc3ConcurrencyLiveContinuationRuntimeIntegrationPackagingModel =
-    "driver-emitted-object-artifacts-link-against-the-existing-runtime-support-archive-for-live-concurrency-helper-execution";
-inline constexpr const char *kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel =
-    "no-suspension-state-machine-no-general-executor-runtime-no-cross-module-live-claim-yet";
-std::string Objc3ConcurrencyLiveContinuationRuntimeIntegrationSummary();
-// scheduler/executor runtime freeze anchor: lane-D freezes the
-// private Part 7 helper/runtime boundary that already exists after C002/C003.
-// Task spawn, task-group scope/add/wait/cancel, cancellation polling, executor
-// hops, and task-state snapshot publication remain bootstrap-internal runtime
-// ABI and do not widen the public runtime header yet.
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimeContractId =
-    "objc3c.concurrency.scheduler.executor.runtime.contract.v1";
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimeSourceModel =
-    "helper-backed-task-runtime-abi-completion-freezes-one-private-scheduler-executor-task-and-cancellation-runtime-boundary";
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimeAbiModel =
-    "private-bootstrap-internal-task-runtime-helpers-and-snapshot-publish-executor-tags-task-state-and-cancellation-observation";
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimeExecutionModel =
-    "runtime-library-materializes-deterministic-task-spawn-task-group-cancellation-and-executor-hop-helper-traffic-without-public-abi-widening";
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimePackagingModel =
-    "native-driver-and-runtime-probes-link-against-the-existing-runtime-support-archive-for-private-task-runtime-helper-execution";
-inline constexpr const char *kObjc3ConcurrencySchedulerExecutorRuntimeFailClosedModel =
-    "no-public-task-runtime-header-no-general-scheduler-implementation-claim-no-cross-module-task-runtime-claim-yet";
-std::string Objc3ConcurrencySchedulerExecutorRuntimeSummary();
-// live task runtime anchor: lane-D now publishes the existing helper
-// cluster as a live private runtime execution boundary. Supported task spawn,
-// task-group, cancellation, and executor-hop traffic executes through the
-// runtime library and packaged object/runtime probe path, while broader
-// metadata-export and cross-module scheduler work remains deferred.
-inline constexpr const char *kObjc3ConcurrencyLiveTaskRuntimeIntegrationContractId =
-    "objc3c.concurrency.live.task.runtime.integration.v1";
-inline constexpr const char *kObjc3ConcurrencyLiveTaskRuntimeIntegrationSourceModel =
-    "supported-task-spawn-task-group-cancellation-and-executor-hop-sites-now-execute-through-the-private-task-runtime-helper-cluster";
-inline constexpr const char *kObjc3ConcurrencyLiveTaskRuntimeIntegrationExecutionModel =
-    "native-runtime-helpers-materialize-deterministic-task-spawn-task-group-cancellation-and-executor-hop-results-through-linked-runtime-probes";
-inline constexpr const char *kObjc3ConcurrencyLiveTaskRuntimeIntegrationPackagingModel =
-    "driver-emitted-object-artifacts-and-runtime-probes-link-against-the-existing-runtime-support-archive-for-live-concurrency-task-execution";
-inline constexpr const char *kObjc3ConcurrencyLiveTaskRuntimeIntegrationFailClosedModel =
-    "retained-runtime-metadata-export-gates-and-no-public-task-runtime-header-mean-broader-native-task-scheduler-claims-remain-deferred";
-std::string Objc3ConcurrencyLiveTaskRuntimeIntegrationSummary();
-// hardening anchor: lane-D now freezes one truthful edge-case
-// completion surface above the live task runtime boundary. The current helper
-// cluster must remain deterministic across cancellation paths, autoreleasepool
-// scopes, and explicit runtime resets used by issue-local replay probes.
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeHardeningContractId =
-    "objc3c.concurrency.task.runtime.hardening.v1";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeHardeningSourceModel =
-    "supported-task-runtime-helper-traffic-now-preserves-cancellation-cleanup-autorelease-scope-and-reset-replay-determinism";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeHardeningExecutionModel =
-    "task-runtime-helper-state-memory-management-scope-state-and-arc-debug-counters-remain-stable-across-reset-and-autorelease-boundaries";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeHardeningPackagingModel =
-    "linked-runtime-probes-consume-the-existing-runtime-support-archive-and-validate-two-pass-reset-stable-task-runtime-state";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeHardeningFailClosedModel =
-    "no-public-task-scheduler-abi-no-cross-module-task-runtime-claim-and-no-broader-front-door-metadata-export-unblock-claim-yet";
-std::string Objc3ConcurrencyTaskRuntimeHardeningSummary();
 // executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -682,41 +569,6 @@ inline constexpr const char *kObjc3CrossModuleConformanceLoweringLaneContract =
     "objc3c.cross.module.conformance.lowering.v1";
 inline constexpr const char *kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract =
     "objc3c.error.diagnostics.recovery.lowering.v1";
-inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
-    "objc3c.async.continuation.lowering.v1";
-inline constexpr const char
-    *kObjc3AwaitLoweringSuspensionStateLoweringLaneContract =
-        "objc3c.await.lowering.suspension.state.lowering.v1";
-// freeze anchor: these lane contracts become the explicit Part 7
-// continuation ABI / await suspension lowering boundary once frontend artifacts
-// publish the replay-stable handoff packet into emitted manifests and IR.
-// implementation anchor: the currently supported runnable lowering
-// slice is narrower than the lane-contract names imply. Async entry points and
-// await-marked expressions lower through the existing direct-call/object path
-// only for the non-suspending happy path, while continuation allocation,
-// suspend/resume, and executor scheduling remain deferred.
-// integration anchor: the same supported async slice composes with
-// existing autoreleasepool-scope and defer-cleanup lowering rather than a
-// separate suspension cleanup runtime. Later work still has to widen that
-// into real suspension-frame cleanup and executor resume behavior.
-inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
-    "objc3c.actor.isolation.sendability.lowering.v1";
-// lowering-freeze anchor: Part 7 actor lowering now freezes one
-// dedicated emitted contract for actor metadata carriage, isolation-thunk
-// planning, and hop-artifact planning. Live thunk bodies and runtime entrypoints
-// remain later C002/C003 work, but this packet is the canonical lowering
-// handoff for actor-focused IR metadata and manifest truth.
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataContractId =
-    "objc3c.concurrency.actor.lowering.and.metadata.contract.v1";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_concurrency_actor_lowering_and_metadata_contract";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataModel =
-    "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataDeferredModel =
-    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-actor-lowering-and-replay-runtime-work";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataLaneContract =
-    "objc3c.actor.lowering.metadata.contract.v1";
 // lowering-freeze anchor: Part 8 now freezes one explicit emitted
 // lowering contract that carries cleanup/resource ownership counts, borrowed
 // boundary counts, and retainable-family callable counts into manifests and IR
@@ -892,29 +744,6 @@ inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionSurfa
     "objc_ownership_borrowed_pointer_and_retainable_family_abi_completion";
 inline constexpr const char *kObjc3OwnershipBorrowedRetainableAbiCompletionLaneContract =
     "objc3c.ownership.borrowed.retainable.family.abi.completion.v1";
-inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
-    "objc3c.task.runtime.interop.cancellation.lowering.v1";
-inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
-    "objc3c.concurrency.replay.race.guard.lowering.v1";
-// lowering-freeze anchor: these existing Part 7 concurrency lane
-// contracts now become the explicit task-runtime lowering handoff for task
-// creation, executor hops, cancellation polling, and task-group artifacts.
-// Later lane-C work must widen the same contract family with native
-// spawn/hop/cancel entrypoints and task-group ABI completion rather than
-// inventing a second lowering boundary.
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringContractId =
-    "objc3c.concurrency.task.runtime.lowering.contract.v1";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_concurrency_task_runtime_lowering_contract";
-// ABI/artifact completion anchor: the supported Part 7 helper-backed
-// lowering slice now also publishes a dedicated runtime-ABI packet and IR
-// boundary so later lane-D runtime freezes consume a stable artifact surface
-// instead of rediscovering helper names ad hoc.
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId =
-    "objc3c.concurrency.task.runtime.abi.completion.v1";
-inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_concurrency_task_group_and_runtime_abi_completion";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "objc3c.unsafe.pointer.extension.gating.lowering.v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
@@ -1384,61 +1213,6 @@ struct Objc3ErrorDiagnosticsRecoveryLoweringContract {
   bool deterministic = true;
 };
 
-struct Objc3AsyncContinuationLoweringContract {
-  std::size_t async_continuation_sites = 0;
-  std::size_t async_keyword_sites = 0;
-  std::size_t async_function_sites = 0;
-  std::size_t continuation_allocation_sites = 0;
-  std::size_t continuation_resume_sites = 0;
-  std::size_t continuation_suspend_sites = 0;
-  std::size_t async_state_machine_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t gate_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3AwaitLoweringSuspensionStateLoweringContract {
-  std::size_t await_suspension_sites = 0;
-  std::size_t await_keyword_sites = 0;
-  std::size_t await_suspension_point_sites = 0;
-  std::size_t await_resume_sites = 0;
-  std::size_t await_state_machine_sites = 0;
-  std::size_t await_continuation_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t gate_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3ActorIsolationSendabilityLoweringContract {
-  std::size_t actor_isolation_sites = 0;
-  std::size_t sendability_check_sites = 0;
-  std::size_t cross_actor_hop_sites = 0;
-  std::size_t non_sendable_capture_sites = 0;
-  std::size_t sendable_transfer_sites = 0;
-  std::size_t isolation_boundary_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3ActorLoweringMetadataContract {
-  std::size_t actor_interface_sites = 0;
-  std::size_t actor_method_sites = 0;
-  std::size_t actor_metadata_record_sites = 0;
-  std::size_t nonisolated_entry_sites = 0;
-  std::size_t executor_affinity_sites = 0;
-  std::size_t actor_hop_artifact_sites = 0;
-  std::size_t actor_isolation_thunk_sites = 0;
-  std::size_t replay_proof_dependency_sites = 0;
-  std::size_t race_guard_dependency_sites = 0;
-  std::size_t task_handoff_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 struct Objc3OwnershipSystemExtensionLoweringContract {
   std::size_t cleanup_hook_sites = 0;
   std::size_t resource_local_sites = 0;
@@ -1491,31 +1265,6 @@ struct Objc3MetaprogrammingSynthesizedArtifactEmissionContract {
   std::size_t emitted_property_behavior_artifact_sites = 0;
   std::size_t emitted_global_artifact_sites = 0;
   std::size_t emitted_runtime_method_list_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3TaskRuntimeInteropCancellationLoweringContract {
-  std::size_t task_runtime_sites = 0;
-  std::size_t task_runtime_interop_sites = 0;
-  std::size_t cancellation_probe_sites = 0;
-  std::size_t cancellation_handler_sites = 0;
-  std::size_t runtime_resume_sites = 0;
-  std::size_t runtime_cancel_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3ConcurrencyReplayRaceGuardLoweringContract {
-  std::size_t concurrency_replay_sites = 0;
-  std::size_t replay_proof_sites = 0;
-  std::size_t race_guard_sites = 0;
-  std::size_t task_handoff_sites = 0;
-  std::size_t actor_isolation_sites = 0;
-  std::size_t deterministic_schedule_sites = 0;
   std::size_t guard_blocked_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
@@ -1785,22 +1534,6 @@ bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
     const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
 std::string Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(
     const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
-bool IsValidObjc3AsyncContinuationLoweringContract(
-    const Objc3AsyncContinuationLoweringContract &contract);
-std::string Objc3AsyncContinuationLoweringReplayKey(
-    const Objc3AsyncContinuationLoweringContract &contract);
-bool IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
-    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract);
-std::string Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
-    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract);
-bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
-    const Objc3ActorIsolationSendabilityLoweringContract &contract);
-std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
-    const Objc3ActorIsolationSendabilityLoweringContract &contract);
-bool IsValidObjc3ActorLoweringMetadataContract(
-    const Objc3ActorLoweringMetadataContract &contract);
-std::string Objc3ActorLoweringMetadataReplayKey(
-    const Objc3ActorLoweringMetadataContract &contract);
 bool IsValidObjc3OwnershipSystemExtensionLoweringContract(
     const Objc3OwnershipSystemExtensionLoweringContract &contract);
 std::string Objc3OwnershipSystemExtensionLoweringReplayKey(
@@ -1821,14 +1554,6 @@ std::string Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary();
 std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary();
 std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary();
 std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary();
-bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
-    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
-std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
-    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
-bool IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
-    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract);
-std::string Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
-    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract);
 bool IsValidObjc3UnsafePointerExtensionLoweringContract(
     const Objc3UnsafePointerExtensionLoweringContract &contract);
 std::string Objc3UnsafePointerExtensionLoweringReplayKey(
