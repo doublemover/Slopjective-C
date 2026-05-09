@@ -374,6 +374,11 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
+      "path": "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
       "path": "docs/support/evidence_map.json"
     },
     {
