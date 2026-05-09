@@ -3,268 +3,31 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
 from ..environment import ROOT, WORKFLOW_COMMAND_TEXT, WORKFLOW_RUNNER_SURFACE
+from .validation_timing_budgets import (
+    validation_budget_violations,
+    validation_speed_budget_mode,
+    validation_speed_budgets,
+)
+from .validation_timing_reports import (
+    dashboard_section_from_report,
+    latest_json_file,
+    load_child_reports,
+    load_latest_report_payload,
+    load_surface_from_report,
+    relative_path_or_none,
+    safe_float,
+    summarize_execution_replay_report,
+    summarize_execution_smoke_report,
+    summarize_runtime_acceptance_report,
+)
 
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
-
-
-def load_surface_from_report(
-    steps: Sequence[dict[str, object]], surface_key: str
-) -> dict[str, object] | None:
-    for step in steps:
-        report_paths = step.get("report_paths", [])
-        if not isinstance(report_paths, list):
-            continue
-        for raw_path in report_paths:
-            if not isinstance(raw_path, str):
-                continue
-            candidate = ROOT / raw_path
-            if not candidate.is_file():
-                continue
-            try:
-                payload = json.loads(candidate.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
-                continue
-            surface = payload.get(surface_key)
-            if isinstance(surface, dict):
-                return surface
-    return None
-
-
-def safe_float(value: object, default: float = 0.0) -> float:
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return default
-    return default
-
-
-def load_json_report(raw_path: str) -> dict[str, object] | None:
-    candidate = ROOT / raw_path
-    if not candidate.is_file():
-        return None
-    try:
-        payload = json.loads(candidate.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-    if isinstance(payload, dict):
-        return payload
-    return None
-
-
-def load_child_reports(
-    steps: Sequence[dict[str, object]]
-) -> list[dict[str, object]]:
-    reports: list[dict[str, object]] = []
-    for step in steps:
-        report_paths = step.get("report_paths", [])
-        if not isinstance(report_paths, list):
-            continue
-        for raw_path in report_paths:
-            if not isinstance(raw_path, str):
-                continue
-            payload = load_json_report(raw_path)
-            if payload is None:
-                continue
-            reports.append(
-                {
-                    "step_action": str(step.get("action", "")),
-                    "path": raw_path,
-                    "payload": payload,
-                    "report_reused": bool(step.get("report_reused", False)),
-                    "step_duration_seconds": safe_float(
-                        step.get("duration_seconds", 0.0)
-                    ),
-                }
-            )
-    return reports
-
-
-def classify_runtime_command(command: object) -> str:
-    text = str(command).replace("\\", "/").lower()
-    if "objc3c_native_compile.ps1" in text:
-        return "wrapper"
-    if "objc3c-native" in text:
-        return "native"
-    if "clang++" in text:
-        return "clang++"
-    if ".exe" in text:
-        return "probe"
-    return "other"
-
-
-def summarize_runtime_acceptance_report(
-    path: str, payload: dict[str, object], *, report_reused: bool
-) -> dict[str, object]:
-    timing = payload.get("timing", {})
-    timing_payload = timing if isinstance(timing, dict) else {}
-    command_timings = timing_payload.get("command_timings", [])
-    command_groups: dict[str, dict[str, object]] = {}
-    if isinstance(command_timings, list):
-        for entry in command_timings:
-            if not isinstance(entry, dict):
-                continue
-            group = classify_runtime_command(entry.get("command", ""))
-            bucket = command_groups.setdefault(
-                group,
-                {"count": 0, "duration_seconds": 0.0},
-            )
-            bucket["count"] = int(bucket["count"]) + 1
-            bucket["duration_seconds"] = round(
-                safe_float(bucket["duration_seconds"])
-                + safe_float(entry.get("duration_seconds", 0.0)),
-                6,
-            )
-    return {
-        "report_path": path,
-        "report_reused": report_reused,
-        "elapsed_seconds": safe_float(timing_payload.get("elapsed_seconds", 0.0)),
-        "case_count": payload.get("case_count")
-        or timing_payload.get("total_case_count"),
-        "completed_case_count": timing_payload.get("completed_case_count"),
-        "command_count": len(command_timings)
-        if isinstance(command_timings, list)
-        else None,
-        "default_compile_backend": payload.get("default_compile_backend"),
-        "direct_compile_backend": payload.get("direct_compile_backend"),
-        "wrapper_compile_backend": payload.get("wrapper_compile_backend"),
-        "command_groups": command_groups,
-        "slowest_cases": timing_payload.get("slowest_cases", []),
-        "slowest_commands": timing_payload.get("slowest_commands", []),
-    }
-
-
-def summarize_execution_smoke_report(
-    path: str, payload: dict[str, object]
-) -> dict[str, object]:
-    timing = payload.get("timing", {})
-    timing_payload = timing if isinstance(timing, dict) else {}
-    selection = payload.get("selection", {})
-    selection_payload = selection if isinstance(selection, dict) else {}
-    return {
-        "report_path": path,
-        "elapsed_seconds": safe_float(timing_payload.get("elapsed_seconds", 0.0)),
-        "status": payload.get("status"),
-        "total": payload.get("total"),
-        "passed": payload.get("passed"),
-        "failed": payload.get("failed"),
-        "selection": selection_payload,
-        "stage_totals": timing_payload.get("stage_totals", {}),
-        "slowest_fixtures": timing_payload.get("slowest_fixtures", []),
-    }
-
-
-def summarize_execution_replay_report(
-    path: str, payload: dict[str, object]
-) -> dict[str, object]:
-    timing = payload.get("timing", {})
-    timing_payload = timing if isinstance(timing, dict) else {}
-    return {
-        "report_path": path,
-        "elapsed_seconds": safe_float(timing_payload.get("elapsed_seconds", 0.0)),
-        "status": payload.get("status"),
-        "proof_run_id": payload.get("proof_run_id"),
-        "selection": payload.get("selection", {}),
-        "stage_totals": timing_payload.get("stage_totals", {}),
-        "slowest_cases": timing_payload.get("slowest_cases", []),
-    }
-
-
-def validation_speed_budget_mode() -> str:
-    budget_mode = os.environ.get(
-        "OBJC3C_VALIDATION_SPEED_BUDGET_MODE",
-        "warn",
-    ).strip().lower()
-    if budget_mode not in {"warn", "fail"}:
-        return "warn"
-    return budget_mode
-
-
-def validation_speed_budgets(
-    runtime_acceptance: dict[str, object] | None,
-    execution_smoke: dict[str, object] | None,
-    execution_replay: dict[str, object] | None,
-    total_seconds: float,
-) -> list[dict[str, object]]:
-    budget_mode = validation_speed_budget_mode()
-    budgets = [
-        {
-            "name": "runtime_acceptance_elapsed_seconds",
-            "threshold_seconds": 60.0,
-            "actual_seconds": safe_float(
-                runtime_acceptance.get("elapsed_seconds") if runtime_acceptance else None
-            ),
-        },
-        {
-            "name": "execution_smoke_elapsed_seconds",
-            "threshold_seconds": 90.0,
-            "actual_seconds": safe_float(
-                execution_smoke.get("elapsed_seconds") if execution_smoke else None
-            ),
-        },
-        {
-            "name": "execution_replay_elapsed_seconds",
-            "threshold_seconds": 30.0,
-            "actual_seconds": safe_float(
-                execution_replay.get("elapsed_seconds") if execution_replay else None
-            ),
-        },
-        {
-            "name": "composite_elapsed_seconds",
-            "threshold_seconds": 120.0,
-            "actual_seconds": total_seconds,
-        },
-    ]
-    for budget in budgets:
-        actual = safe_float(budget["actual_seconds"])
-        threshold = safe_float(budget["threshold_seconds"])
-        if actual == 0.0:
-            budget["status"] = "UNKNOWN"
-        elif actual <= threshold:
-            budget["status"] = "PASS"
-        else:
-            budget["status"] = "WARN"
-        budget["mode"] = "fail" if budget_mode == "fail" else "warning-only"
-    if runtime_acceptance is not None:
-        command_groups = runtime_acceptance.get("command_groups", {})
-        wrapper_count = None
-        if isinstance(command_groups, dict):
-            wrapper = command_groups.get("wrapper", {})
-            if isinstance(wrapper, dict):
-                wrapper_count = wrapper.get("count")
-        budgets.append(
-            {
-                "name": "runtime_acceptance_wrapper_invocations",
-                "threshold_count": 1,
-                "actual_count": wrapper_count,
-                "status": "PASS"
-                if isinstance(wrapper_count, int) and wrapper_count <= 1
-                else "UNKNOWN"
-                if wrapper_count is None
-                else "WARN",
-                "mode": "fail" if budget_mode == "fail" else "warning-only",
-            }
-        )
-    return budgets
-
-
-def validation_budget_violations(
-    budgets: Sequence[dict[str, object]],
-) -> list[dict[str, object]]:
-    return [
-        budget
-        for budget in budgets
-        if budget.get("mode") == "fail" and budget.get("status") == "WARN"
-    ]
 
 
 def collect_child_timing(
