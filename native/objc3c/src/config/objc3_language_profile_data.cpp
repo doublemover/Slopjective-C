@@ -1,14 +1,11 @@
 #include "config/objc3_language_profile.h"
 
+#include "config/objc3_language_profile_table.h"
+
 namespace objc3c::config {
-namespace {
-
-constexpr LanguageProfileContract kCanonicalProfile{};
-
-}  // namespace
 
 const LanguageProfileContract &CanonicalLanguageProfile() {
-  return kCanonicalProfile;
+  return LanguageProfileTable()[0];
 }
 
 }  // namespace objc3c::config

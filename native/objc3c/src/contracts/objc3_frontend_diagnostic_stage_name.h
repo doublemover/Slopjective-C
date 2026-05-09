@@ -2,19 +2,14 @@
 
 #include <string_view>
 
-#include "contracts/objc3_frontend_diagnostic_stage_kind.h"
+#include "contracts/objc3_frontend_diagnostic_stage_table.h"
 
 inline std::string_view Objc3FrontendDiagnosticStageName(
     Objc3FrontendDiagnosticStage stage) {
-  switch (stage) {
-    case Objc3FrontendDiagnosticStage::kLexer:
-      return "lexer";
-    case Objc3FrontendDiagnosticStage::kParser:
-      return "parser";
-    case Objc3FrontendDiagnosticStage::kSemantic:
-      return "semantic";
-    case Objc3FrontendDiagnosticStage::kPostPipeline:
-      return "post-pipeline";
+  for (const auto &descriptor : kObjc3FrontendDiagnosticStageTable) {
+    if (descriptor.stage == stage) {
+      return descriptor.name;
+    }
   }
   return {};
 }
