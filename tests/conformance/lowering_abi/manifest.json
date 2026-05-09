@@ -46,7 +46,7 @@
         "HC-NOSHIM-01.json"
       ],
       "hard_cutover": {
-        "positive_fixture_policy": "no lowering, migration-lane, or runtime ABI fallback positives",
+        "positive_fixture_policy": "no lowering retired-source lane or runtime ABI alternate acceptance positives",
         "replacement_behavior": "canonical typed dispatch ABI or fail-closed diagnostic"
       }
     },

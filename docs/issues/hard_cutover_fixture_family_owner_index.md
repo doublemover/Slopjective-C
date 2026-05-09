@@ -13,9 +13,9 @@ metadata, and issue payloads each have a bounded role.
 | --- | --- | --- | --- |
 | Canonical native manifest | `tests/fixtures/canonical/manifest.json` | `#8144`, `#8150` | hand-authored canonical positives only |
 | Phase owner contracts | `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json` | `#8144`, `#8150` | parser, sema, lowering, IR, runtime, and e2e support claims are backed by native fixture families only |
-| Retired surface matrix | `tests/native/retired_surface_matrix.json` | `#8144`, `#8150` | old-mode, shim, fallback, runtime-dispatch, and migration-lane surfaces are rejection, strict-error, or absent-support evidence |
+| Retired surface matrix | `tests/native/retired_surface_matrix.json` | `#8144`, `#8150` | retired modes, retired adapters, alternate acceptance paths, runtime-dispatch, and retired-source lanes are rejection, strict-error, or absent-support evidence |
 | Parser behavior | `tests/native/parser` | `#8132`, `#8134`, `#8146` | parser positives are canonical; removed compatibility and fallback flags are parser rejections |
-| Sema behavior | `tests/native/sema` | `#8135`, `#8145`, `#8146`, `#8147` | semantic positives are canonical; compatibility-shim and unsupported-feature claims are diagnostics |
+| Sema behavior | `tests/native/sema` | `#8135`, `#8145`, `#8146`, `#8147` | semantic positives are canonical; retired adapter and unsupported-feature claims are diagnostics |
 | Lowering behavior | `tests/native/lowering` | `#8136`, `#8137`, `#8147` | runtime-dispatch fallback lowering is strict-error or removed-flag rejection evidence |
 | IR behavior | `tests/native/ir` | `#8137`, `#8147` | runtime helper/call evidence does not introduce fallback support |
 | Runtime behavior | `tests/native/runtime` | `#8133`, `#8143`, `#8144` | object/runtime positives are canonical; dispatch fallback is strict-error behavior |

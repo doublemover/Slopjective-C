@@ -14,7 +14,7 @@ satisfy a phase support claim.
 | Phase | Owner | Support Claim | Boundary |
 | --- | --- | --- | --- |
 | Parser | `parser_lexer_ast` | `objc3c.behavior.parser.canonical-syntax` | canonical parser positives plus old-mode/removed-flag rejections |
-| Sema | `semantic_diagnostics` | `objc3c.behavior.sema.typed-flow` | canonical type/control/objective behavior plus compatibility-shim and unsupported-feature diagnostics |
+| Sema | `semantic_diagnostics` | `objc3c.behavior.sema.typed-flow` | canonical type/control/objective behavior plus retired adapter and unsupported-feature diagnostics |
 | Lowering | `lowering_and_ir` | `objc3c.behavior.lowering.strict-runtime-dispatch` | canonical nil-elision/lowering positives plus runtime-dispatch strict errors |
 | IR | `lowering_and_ir` | `objc3c.behavior.ir.module-emission` | canonical module/function/metadata/runtime-call positives plus non-nil helper strict-error linkage |
 | Runtime | `runtime_dispatch_registration` | `objc3c.behavior.runtime.strict-dispatch-error` | canonical object/storage/ARC/block/concurrency positives plus dispatch strict errors |

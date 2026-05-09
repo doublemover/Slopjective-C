@@ -1,15 +1,15 @@
 # Native Fixture Catalog
 
 Native fixtures are behavior-first test inputs for the Objective-C 3.0 hard
-cutover. Positive fixtures prove canonical behavior only. Retired old-mode,
-shim, fallback, compatibility, migration-lane, unsupported-feature, and
-runtime-dispatch behavior belongs in negative metadata with strict diagnostic
-expectations.
+cutover. Positive fixtures prove canonical behavior only. Retired adapters,
+alternate acceptance paths, retired-source lanes, unsupported-feature claims,
+and runtime-dispatch behavior belongs in negative metadata with strict
+diagnostic expectations.
 
 ## Fixture Families
 
 - `execution/positive/`: runnable e2e fixtures that compile, link, and return a
-  deterministic exit code without relying on compatibility shims.
+  deterministic exit code through canonical behavior only.
 - `execution/negative/`: compile, link, or run failures with sidecar
   `*.meta.json` diagnostic metadata.
 - `execution/negative/unsupported_feature_claim_*.objc3`: parsed source

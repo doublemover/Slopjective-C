@@ -3,7 +3,7 @@
   "catalog": "objc3-hard-cutover-positive-residue-audit",
   "source_basis": "read-only text inspection over tests/native, tests/fixtures, tests/tooling/fixtures/native, tests/conformance, and docs/issues on 2026-05-09",
   "validation": "not run",
-  "result": "no remaining old-mode, shim, fallback, compatibility, or migration-lane positive expectation was found that requires conversion",
+  "result": "no remaining retired mode, retired adapter, alternate acceptance path, or retired-source lane positive expectation was found that requires conversion",
   "conversion_policy": {
     "true_retired_positive": "rename or move to canonical rejection/strict-error fixture metadata",
     "lexical_false_positive": "document why the token is ordinary source text and not a compatibility support claim",
@@ -63,7 +63,7 @@
       "path": "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
       "token": "fallback",
       "classification": "ordinary optional-flow fallback value in canonical semantics",
-      "disposition": "not an old-mode or migration lane"
+      "disposition": "not a retired mode or retired-source lane"
     },
     {
       "path": "tests/tooling/fixtures/native/optional_binding_send_coalescing_keypath_positive.objc3",
@@ -147,31 +147,31 @@
       "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
       "token": "BridgeProviderShim",
       "classification": "foreign bridge symbol name in interop packaging evidence",
-      "disposition": "not a compatibility shim feature gate"
+      "disposition": "not a retired adapter feature gate"
     },
     {
       "path": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
       "token": "BridgeProviderShim",
       "classification": "foreign bridge symbol name in header-module evidence",
-      "disposition": "not a compatibility shim feature gate"
+      "disposition": "not a retired adapter feature gate"
     },
     {
       "path": "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
       "token": "SemanticBridgeShim",
       "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
-      "disposition": "not a compatibility shim feature gate"
+      "disposition": "not a retired adapter feature gate"
     },
     {
       "path": "tests/conformance/semantic/XMOD-8015-01.json",
       "token": "SemanticBridgeShim",
       "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
-      "disposition": "not a compatibility shim feature gate"
+      "disposition": "not a retired adapter feature gate"
     },
     {
       "path": "tests/tooling/fixtures/native/diagnostics_migrator_source_inventory_positive.objc3",
       "token": "migrator",
       "classification": "diagnostic inventory naming for source migration reporting",
-      "disposition": "not a migration lane that accepts old syntax"
+      "disposition": "not a retired-source lane that accepts old syntax"
     }
   ]
 }

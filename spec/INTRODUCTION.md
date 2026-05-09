@@ -87,8 +87,7 @@ implemented.
 The current command source of truth is the single `package.json` bridge:
 `npm run objc3c -- <action>`. Actions are owned by
 `scripts/objc3c_workflow/action_catalog.py`; local spec prose must not advertise
-retired package-script aliases or direct helper commands as public workflow
-surface.
+retired command surfaces or direct helper commands as public workflow surface.
 
 The current implementation evidence boundary is split across native compiler
 modules, runtime C API headers, and checked-in JSON/schema owners. Compiler

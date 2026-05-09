@@ -26,8 +26,8 @@ registry ids, not by local schema fragments in this part.
 
 Public command truth lives in `package.json` and
 `scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
-`npm run objc3c -- <action>`; direct helper commands and retired package-script
-aliases are implementation details unless a public workflow document generated
+`npm run objc3c -- <action>`; direct helper commands and retired command
+surfaces are implementation details unless a public workflow document generated
 from the action catalog lists them through the npm bridge.
 
 ## 1.2 Language mode selection {#part-1-2}

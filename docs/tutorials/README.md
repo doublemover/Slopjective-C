@@ -125,4 +125,4 @@ text that explains that example.
 - no machine-owned paths such as `tmp/` or `artifacts/` treated as tutorials
 - no screenshots or slide-deck-only teaching material with no checked-in source
 - no historical redirect material used as the primary learning path
-- no separate command list when the public package-script surface already exists
+- no separate command list when the public npm bridge surface already exists

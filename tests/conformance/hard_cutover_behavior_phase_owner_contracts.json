@@ -6,7 +6,7 @@
     "primary_axis": "phase-owned behavior contracts before fixture path convenience",
     "canonical_positive_rule": "parser, sema, lowering, ir, runtime, and e2e positives must come from tests/native hand-authored fixture families only",
     "generated_boundary_rule": "generated fixtures are provenance-only and cannot satisfy phase support claims",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and runtime-dispatch residues are rejection, strict-error, or absent-support evidence only",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported-feature claims, and runtime-dispatch residues are rejection, strict-error, or absent-support evidence only",
     "owner_claim_rule": "each phase owner must have exactly one support claim in tests/fixtures/canonical/manifest.json and must point at executable behavior-matrix evidence"
   },
   "phase_order": [
@@ -70,7 +70,7 @@
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
       "generated_fixture_authority": false,
-      "retired_disposition": "compatibility-shim and unsupported-feature claims are semantic diagnostics"
+      "retired_disposition": "retired adapter and unsupported-feature claims are semantic diagnostics"
     },
     {
       "phase": "lowering",
@@ -191,7 +191,7 @@
   },
   "absent_support_contracts": [
     {
-      "surface": "migration-lane behavior support",
+      "surface": "retired-source lane behavior support",
       "disposition": "absent-support",
       "positive_support": false,
       "owning_indexes": [

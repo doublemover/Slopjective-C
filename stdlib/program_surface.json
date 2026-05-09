@@ -22,7 +22,7 @@
     "canonical_template": "npm run objc3c -- <action>",
     "authoritative_script": "package.json#scripts.objc3c",
     "retired_public_semantics": [
-      "package-script aliases",
+      "retired command surfaces",
       "direct helper script commands",
       "stdlib-local wrappers",
       "alternate import or package support lanes",

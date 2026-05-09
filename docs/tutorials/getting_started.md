@@ -138,4 +138,4 @@ This getting-started tutorial should stay coupled to these live inputs:
 - no tutorial path rooted in `tmp/` or other machine outputs
 - no slide-deck or screenshot-first onboarding path
 - no maintainer-only workflow notes in the primary getting-started flow
-- no extra command names beyond the public package-script surface
+- no extra command names beyond the public npm bridge surface

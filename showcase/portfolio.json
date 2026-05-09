@@ -11,7 +11,7 @@
     "canonical_template": "npm run objc3c -- <action>",
     "authoritative_script": "package.json#scripts.objc3c",
     "retired_public_semantics": [
-      "package-script aliases",
+      "retired command surfaces",
       "direct helper script commands",
       "showcase-local wrappers",
       "alternate compile or runtime support lanes",

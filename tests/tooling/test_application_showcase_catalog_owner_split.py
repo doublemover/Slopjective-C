@@ -119,7 +119,7 @@ def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
         "canonical_template": "npm run objc3c -- <action>",
         "authoritative_script": "package.json#scripts.objc3c",
         "retired_public_semantics": [
-            "package-script aliases",
+            "retired command surfaces",
             "direct helper script commands",
             "showcase-local wrappers",
             "alternate compile or runtime support lanes",
@@ -197,7 +197,7 @@ def test_stdlib_program_surface_records_canonical_command_model() -> None:
         "canonical_template": "npm run objc3c -- <action>",
         "authoritative_script": "package.json#scripts.objc3c",
         "retired_public_semantics": [
-            "package-script aliases",
+            "retired command surfaces",
             "direct helper script commands",
             "stdlib-local wrappers",
             "alternate import or package support lanes",
@@ -224,7 +224,7 @@ def test_site_index_contract_records_public_command_model() -> None:
         "canonical_template": "npm run objc3c -- <action>",
         "authoritative_script": "package.json#scripts.objc3c",
         "forbidden_public_command_semantics": [
-            "package-script aliases",
+            "retired command surfaces",
             "direct helper script commands",
             "alternate command support lanes",
             "retired-source support claims",

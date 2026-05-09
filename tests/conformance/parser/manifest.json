@@ -41,7 +41,7 @@
         "HC-LEGACY-02.json"
       ],
       "hard_cutover": {
-        "positive_fixture_policy": "no old-mode, compatibility-shim, fallback, or migration-lane parser positives",
+        "positive_fixture_policy": "no retired mode, retired adapter, alternate acceptance path, or retired-source lane parser positives",
         "replacement_behavior": "stable parser diagnostics with canonical Objective-C 3 mode fix-it or no-fix strict rejection"
       }
     },

@@ -9,7 +9,7 @@
   ],
   "policy": {
     "positive_fixtures": "canonical Objective-C 3 behavior only",
-    "retired_surfaces": "old-mode, compatibility shim, parser fallback, runtime fallback, and migration-lane residues must be explicit rejection or strict-error evidence",
+    "retired_surfaces": "retired adapters, parser and runtime alternate acceptance paths, and retired-source lanes must be explicit rejection or strict-error evidence",
     "absence_claim": "when a retired surface has no positive fixture, the index names the rejection fixture or documents the surface as absent from public support"
   },
   "forbidden_positive_surface_tokens": [
@@ -47,7 +47,7 @@
   "runtime_probe_roots": [
     "tests/tooling/runtime"
   ],
-  "runtime_probe_policy": "runtime probes may prove canonical storage, reflection, public ABI, registration, and object-model behavior or strict dispatch errors; they are not compatibility, shim, fallback, or migration-lane positive support",
+  "runtime_probe_policy": "runtime probes may prove canonical storage, reflection, public ABI, registration, and object-model behavior or strict dispatch errors; they are not retired adapter, alternate acceptance path, or retired-source lane positive support",
   "retired_surface_disposition": [
     {
       "surface": "old-mode literal aliases",
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "surface": "removed compatibility shim gate",
+      "surface": "removed retired adapter gate",
       "status": "rejected",
       "evidence": [
         "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3"
@@ -131,7 +131,7 @@
       ]
     },
     {
-      "surface": "migration lane as behavior support",
+      "surface": "retired-source lane as behavior support",
       "status": "absent",
       "evidence": [
         "tests/fixtures/README.md",

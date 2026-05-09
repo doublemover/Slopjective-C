@@ -8,7 +8,7 @@ Use it when you need the exact commands and artifact expectations behind the rea
 
 The tutorial workflow must stay on the normal public compiler and showcase surfaces.
 
-- build the native toolchain through the public package-script surface
+- build the native toolchain through the public npm bridge surface
 - compile showcase examples through `npm run objc3c -- compile-objc3c`
 - verify the checked-in example portfolio through the showcase surface and integrated validation
 - treat `tmp/artifacts/showcase/` and `tmp/reports/showcase/` as outputs, not as tutorial sources
@@ -115,5 +115,5 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 ## Explicit Non-Goals
 
 - no tutorial-specific compiler wrapper
-- no sidecar validation commands that bypass the public package-script surface
+- no sidecar validation commands that bypass the public npm bridge surface
 - no checked-in tutorial claims rooted in `tmp/` outputs instead of source inputs

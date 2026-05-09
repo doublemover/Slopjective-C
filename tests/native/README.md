@@ -15,10 +15,10 @@ phase first, then by behavior family:
   concurrency behavior.
 - `e2e`: smoke, feature-matrix, and negative-execution behavior.
 
-Positive fixtures prove canonical Objective-C 3 behavior only. Retired
-old-mode flags, compatibility shims, migration lanes, fallback dispatch routes,
-unsupported-feature claims, and legacy literal aliases must live as rejection,
-strict-error, or absent-support metadata with stable diagnostic ownership. The
+Positive fixtures prove canonical Objective-C 3 behavior only. Retired mode
+flags, retired adapters, retired-source lanes, alternate dispatch acceptance
+routes, unsupported-feature claims, and legacy literal aliases must live as
+rejection, strict-error, or absent-support metadata with stable diagnostic ownership. The
 retired-surface contract index under
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` records
 the fixture family, outcome owner, diagnostic owner, sidecar, and positive

@@ -65,7 +65,7 @@ Shared live tooling:
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 
-Package-script aliases, direct helper scripts, showcase-local wrappers,
+Retired command surfaces, direct helper scripts, showcase-local wrappers,
 alternate compile/runtime support lanes, and retired-source support claims are not
 public entrypoints for this portfolio.
 

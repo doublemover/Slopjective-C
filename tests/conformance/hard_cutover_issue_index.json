@@ -878,7 +878,7 @@
   "global_policy": {
     "public_command_bridge": "npm run objc3c -- <action>",
     "positive_behavior_rule": "positive fixtures prove canonical Objective-C 3 behavior only",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, and migration-lane residues are documented as rejection, strict-error, or absent surfaces",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, and retired-source lane residues are documented as rejection, strict-error, or absent surfaces",
     "issue_closeout_artifacts": [
       "docs/issues/hard_cutover_8132_8150_evidence.json",
       "docs/issues/hard_cutover_8132_8150_evidence.md"
@@ -976,7 +976,7 @@
         "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
-      "retired_surface_disposition": "semantic compatibility shim gate is a rejection fixture"
+      "retired_surface_disposition": "semantic retired adapter gate is a rejection fixture"
     },
     {
       "issue": "#8136",
@@ -1117,7 +1117,7 @@
         "docs/support/capability_matrix.json",
         "docs/support/evidence_map.json"
       ],
-      "retired_surface_disposition": "direct helpers, package-script aliases, and registry facades are absent as public command claims"
+      "retired_surface_disposition": "direct helpers, retired command surfaces, and registry facades are absent as public command claims"
     },
     {
       "issue": "#8143",
@@ -1188,7 +1188,7 @@
         "docs/support/evidence_map.json",
         "docs/support/evidence_map.md"
       ],
-      "retired_surface_disposition": "capability docs explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims"
+      "retired_surface_disposition": "capability docs explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims"
     },
     {
       "issue": "#8146",

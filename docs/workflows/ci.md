@@ -16,4 +16,4 @@ Workflow files, local docs, and site source must agree on these facts:
 - shared JSON/schema ownership comes from checked-in schemas and the native
   `objc3c_json` / artifact JSON modules.
 
-CI docs must not mention retired package-script names as supported entrypoints.
+CI docs must not mention retired command names as supported entrypoints.

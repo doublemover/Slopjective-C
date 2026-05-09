@@ -5,7 +5,7 @@
   "policy": {
     "primary_axis": "behavior outcome before fixture tree or issue number",
     "positive_outcome_rule": "positive outcomes must be canonical Objective-C 3 behavior only",
-    "rejection_outcome_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and unresolved runtime surfaces are rejection, strict-error, absent-support, or provenance-only outcomes",
+    "rejection_outcome_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are rejection, strict-error, absent-support, or provenance-only outcomes",
     "closeout_outcome_rule": "issue closeout artifacts summarize outcome ownership and cannot create support claims"
   },
   "outcomes": [
@@ -91,7 +91,7 @@
         "O3S221",
         "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
       ],
-      "support_boundary": "unsupported feature and compatibility-shim claims are semantic diagnostics, not opt-in support"
+      "support_boundary": "unsupported feature and retired adapter claims are semantic diagnostics, not opt-in support"
     },
     {
       "outcome": "lowering_or_link_strict_error",
@@ -170,7 +170,7 @@
         "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
         "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
       ],
-      "support_boundary": "runtime probes anchor storage, reflection, and public ABI ownership; they do not make rejected dispatch, shim, fallback, compatibility, or migration-lane behavior positive"
+      "support_boundary": "runtime probes anchor storage, reflection, and public ABI ownership; they do not make rejected dispatch, retired adapter, alternate acceptance path, or retired-source lane behavior positive"
     },
     {
       "outcome": "negative_execution",

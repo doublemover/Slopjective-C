@@ -3,7 +3,7 @@
   "catalog": "native-fixture-family-boundaries",
   "policy": {
     "positive_fixture_rule": "canonical Objective-C 3.0 behavior only",
-    "negative_fixture_rule": "retired old-mode, shim, fallback, compatibility, migration-lane, and removed feature-toggle behavior must be represented as strict rejection metadata",
+    "negative_fixture_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, and removed feature-toggle behavior must be represented as strict rejection metadata",
     "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes",
     "canonical_behavior_root": "tests/native",
     "canonical_behavior_manifest": "tests/fixtures/canonical/manifest.json",

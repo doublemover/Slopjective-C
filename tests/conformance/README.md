@@ -68,7 +68,7 @@ Machine-readable indexes:
   (diagnostic/strict-error code owner index for retired and unsupported
   behavior outcomes)
 - `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
-  old-mode, shim, fallback, compatibility, and migration-lane surfaces mapped
+  modes, retired adapters, alternate acceptance paths, and retired-source lanes mapped
   to rejection, strict-error, or absent support)
 - `tests/conformance/hard_cutover_positive_residue_audit.json` (read-only
   positive-fixture residue audit documenting compatibility-looking lexical hits
@@ -80,16 +80,16 @@ Machine-readable indexes:
 ## Hard-Cutover Fixture Policy
 
 Conformance metadata is canonical-first. Fixtures must not preserve retired
-old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, or
-runtime-dispatch paths as positive behavior. When a fixture documents an
+modes, retired adapters, alternate acceptance paths, retired-source lanes,
+unsupported-feature claims, or runtime-dispatch paths as positive behavior. When a fixture documents an
 unavailable feature configuration, the expected result is a strict error with
 stable diagnostic metadata, not fallback acceptance.
 
 Runtime probe metadata under `tests/tooling/runtime/` is treated as fixture
 evidence for canonical runtime ownership only. Storage, reflection, registration,
 object-model, and public ABI probes may anchor live owner paths; strict dispatch
-probes remain rejection/strict-error evidence and must not become legacy shim,
-fallback, compatibility, or migration-lane positive claims.
+probes remain rejection/strict-error evidence and must not become retired
+adapter, alternate acceptance path, or retired-source lane positive claims.
 
 Live validation entrypoints:
 

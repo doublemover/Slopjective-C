@@ -130,7 +130,7 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `7e743549d`.
 
 Retired-surface state: internal architecture evidence only; no shim, fallback,
-compatibility mode, or migration lane is claimed as public behavior.
+compatibility mode, or retired-source lane is claimed as public behavior.
 
 ## #8133
 
@@ -176,7 +176,7 @@ Evidence: `tests/native/sema/types/typed_i32_bool_flow.objc3`,
 `tests/native/sema/concurrency/throws_feature_claim_rejected.objc3`, commits
 `121c069aa`, `8b103d250`, `112256a5a`, `232997ba4`, `8dead58b3`.
 
-Retired-surface state: compatibility shim and unsupported feature claims are
+Retired-surface state: retired adapter gates and unsupported feature claims are
 semantic rejection evidence.
 
 ## #8136
@@ -274,7 +274,7 @@ compatibility wrapper.
 ## #8142
 
 Workflow command-surface evidence is indexed around the single public npm bridge
-and the retirement of direct helpers, package-script aliases, and registry
+and the retirement of direct helpers, retired command surfaces, and registry
 facades. The follow-up handler registry and catalog core-spec splits keep that
 surface hard-cut to `npm run objc3c -- <action>`, with application catalog specs
 release catalog specs, native driver public-workflow command owners, and public
@@ -341,8 +341,8 @@ Evidence: `docs/support/capability_matrix.json`,
 `49c78c2ae`, `e782c6074`, `295984cb6`, `9034bf1f5`, `709148d75`,
 `016683b19`, `8dead58b3`.
 
-Retired-surface state: docs reject shim, fallback, migration-lane, and
-compatibility-mode support claims.
+Retired-surface state: docs reject retired adapters, alternate acceptance paths,
+retired-source lanes, and compatibility-mode support claims.
 
 ## #8146
 

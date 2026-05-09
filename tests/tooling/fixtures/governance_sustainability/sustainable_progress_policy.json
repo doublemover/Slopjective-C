@@ -14,7 +14,7 @@
   },
   "governed_budget_surfaces": [
     {
-      "surface_id": "package-script-budget",
+      "surface_id": "public-command-budget",
       "owner_surface": "scripts/ci/check_task_hygiene.py",
       "default_disposition": "block-on-exceed",
       "budget_change_requires_measured_delta": true,

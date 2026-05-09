@@ -5,7 +5,7 @@
   "policy": {
     "primary_axis": "diagnostic or strict-error code before fixture path",
     "code_ownership_rule": "diagnostic codes identify the rejecting owner for retired or unsupported surfaces",
-    "absence_rule": "absent migration-lane support has no diagnostic code because no accepted public surface exists",
+    "absence_rule": "absent retired-source lane support has no diagnostic code because no accepted public surface exists",
     "support_rule": "a code entry is rejection or strict-error evidence, not compatibility support"
   },
   "codes": [
@@ -58,7 +58,7 @@
     {
       "code": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
       "outcome": "semantic_rejection",
-      "retired_surface": "removed compatibility shim gate",
+      "retired_surface": "removed retired adapter gate",
       "owning_issues": [
         "#8135",
         "#8145",
@@ -67,7 +67,7 @@
       "fixtures": [
         "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3"
       ],
-      "owner_boundary": "compatibility shim gates are semantic diagnostics"
+      "owner_boundary": "retired adapter gates are semantic diagnostics"
     },
     {
       "code": "O3S214",
@@ -159,7 +159,7 @@
     {
       "code": "absent-support",
       "outcome": "absent_support",
-      "retired_surface": "migration lane as behavior support",
+      "retired_surface": "retired-source lane as behavior support",
       "owning_issues": [
         "#8145",
         "#8149",
@@ -171,7 +171,7 @@
         "docs/support/capability_matrix.json",
         "docs/support/capability_matrix.md"
       ],
-      "owner_boundary": "migration-lane support is absent from public support and positive fixtures"
+      "owner_boundary": "retired-source lane support is absent from public support and positive fixtures"
     }
   ],
   "cross_indexes": [

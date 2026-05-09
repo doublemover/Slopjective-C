@@ -6,7 +6,7 @@
     "primary_axis": "fixture boundary before issue closeout",
     "canonical_manifest_rule": "tests/fixtures/canonical/manifest.json is the only fixture manifest that can define positive native behavior",
     "generated_manifest_rule": "tests/fixtures/generated/manifest.json is provenance-only and cannot define native behavior support",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and unresolved runtime surfaces must be rejection, strict-error, absent-support, or documented lexical false-positive evidence",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported-feature claims, and unresolved runtime surfaces must be rejection, strict-error, absent-support, or documented lexical false-positive evidence",
     "reference_anchor_rule": "docs/reference/legacy_spec_anchor_index.md references in conformance fixtures are historical spec provenance, not old-mode support claims",
     "phase_owner_rule": "parser, sema, lowering, ir, runtime, and e2e support claims must be backed by tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "closeout_rule": "issue closeout and evidence topology indexes point at owned fixture boundaries and cannot create behavior support by themselves"

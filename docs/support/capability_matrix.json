@@ -16,8 +16,8 @@
     "unsupported_public_surfaces": [
       "direct python or PowerShell helper invocations",
       "direct CMake or native helper invocations",
-      "retired package-script aliases",
-      "retired public command alias metadata",
+      "retired command surfaces",
+      "retired command metadata",
       "workflow registry facade claims",
       "success-without-evidence capability claims",
       "runtime-behavior claims not represented by implemented matrix rows"
@@ -69,7 +69,7 @@
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },
     {
-      "term": "package-script alias",
+      "term": "retired command surface",
       "canonical_handling": "Reject as public command surface; use npm run objc3c -- <action>.",
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },
@@ -446,7 +446,7 @@
       "id": "workflow.command.npm-objc3c-bridge",
       "title": "npm objc3c workflow bridge",
       "state": "internal",
-      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, guarantee owners, registry views, action-handler integrity checks, request dispatch, and direct-entrypoint import roots live under scripts/objc3c_workflow; retired registry facades and package-script alias surfaces are not support claims.",
+      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, guarantee owners, registry views, action-handler integrity checks, request dispatch, and direct-entrypoint import roots live under scripts/objc3c_workflow; retired registry facades and retired command surfaces are not support claims.",
       "owner_modules": [
         "scripts/objc3c_workflow/action_catalog.py",
         "scripts/objc3c_workflow/registry_views.py",

@@ -5,7 +5,7 @@
   "policy": {
     "primary_axis": "fixture family ownership before issue closeout",
     "canonical_positive_rule": "only hand-authored canonical Objective-C 3 behavior fixtures may be positive behavior evidence",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and unresolved runtime surfaces are rejection, strict-error, or absent-support evidence",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are rejection, strict-error, or absent-support evidence",
     "generated_fixture_rule": "generated artifacts are provenance and schema evidence only; they never define positive native behavior",
     "issue_closeout_rule": "issue docs summarize committed evidence and must point back to owned fixture families or owner indexes"
   },
@@ -146,7 +146,7 @@
         "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
-      "retired_disposition": "compatibility shim and unsupported feature claims are semantic diagnostics"
+      "retired_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics"
     },
     {
       "family": "lowering_behavior",
@@ -343,7 +343,7 @@
         "docs/issues/hard_cutover_behavior_evidence_topology.md",
         "docs/issues/hard_cutover_fixture_family_owner_index.md"
       ],
-      "retired_disposition": "issue closeout evidence is a local map over committed code/docs/tests evidence and cannot itself create a shim, fallback, migration lane, or public compatibility claim"
+      "retired_disposition": "issue closeout evidence is a local map over committed code/docs/tests evidence and cannot itself create a retired adapter, alternate acceptance path, retired-source lane, or public compatibility claim"
     }
   ],
   "cross_indexes": [

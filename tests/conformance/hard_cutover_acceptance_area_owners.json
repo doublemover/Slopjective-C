@@ -4,7 +4,7 @@
   "source_basis": "local hard-cutover commits indexed through 2026-05-09; no validation, gh, npm, cmake, tests, builds, lints, or generators were run for this index",
   "policy": {
     "positive_behavior": "canonical Objective-C 3 behavior only",
-    "retired_behavior": "old-mode, shim, fallback, compatibility, and migration-lane surfaces must be rejection, strict-error, or absent support",
+    "retired_behavior": "retired modes, retired adapters, alternate acceptance paths, and retired-source lanes must be rejection, strict-error, or absent support",
     "public_command_surface": "npm run objc3c -- <action>",
     "source_paths": "code-path references are ownership evidence, not validation results"
   },
@@ -66,7 +66,7 @@
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
         "tests/conformance/diagnostics/manifest.json"
       ],
-      "retired_surface_disposition": "compatibility shim and unsupported feature claims are semantic diagnostics"
+      "retired_surface_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics"
     },
     {
       "area": "lowering_and_ir",
@@ -150,7 +150,7 @@
         "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
         "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
       ],
-      "retired_surface_disposition": "storage, reflection, and public ABI probes are canonical runtime ownership evidence; strict-result probes keep rejected dispatch as strict errors and do not create shim, fallback, compatibility, or migration-lane support"
+      "retired_surface_disposition": "storage, reflection, and public ABI probes are canonical runtime ownership evidence; strict-result probes keep rejected dispatch as strict errors and do not create retired adapter, alternate acceptance path, or retired-source lane support"
     },
     {
       "area": "frontend_public_c_api_runner",
@@ -274,7 +274,7 @@
         "docs/issues/hard_cutover_8132_8150_evidence.json",
         "docs/issues/hard_cutover_8132_8150_evidence.md"
       ],
-      "retired_surface_disposition": "docs and support matrices reject shim, fallback, compatibility-mode, and migration-lane support claims"
+      "retired_surface_disposition": "docs and support matrices reject retired adapter, alternate acceptance path, compatibility-mode, and retired-source lane support claims"
     }
   ]
 }

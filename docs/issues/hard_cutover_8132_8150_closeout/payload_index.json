@@ -112,7 +112,7 @@
       }
     ]
   },
-  "retired_surface_policy": "old-mode, shim, fallback, compatibility, and migration-lane support must be rejection, strict-error, or absent evidence",
+  "retired_surface_policy": "retired modes, retired adapters, alternate acceptance paths, compatibility-mode support, and retired-source lane support must be rejection, strict-error, or absent evidence",
   "latest_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_docs_issue_commit": "abc203478",

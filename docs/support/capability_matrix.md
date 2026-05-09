@@ -83,8 +83,8 @@ State meanings:
 Command rule:
 
 - Capability docs may advertise `npm run objc3c -- <action>` commands only.
-- Implementation-helper invocations, retired package-script aliases, registry
-  facades, and success-without-evidence dispatch paths are not support claims.
+- Implementation-helper invocations, retired command surfaces, registry facades,
+  and success-without-evidence dispatch paths are not support claims.
 - Direct `python`, `pwsh`, CMake, or native helper invocations may appear as
   evidence owners, but public docs must not present them as user-facing command
   surface.

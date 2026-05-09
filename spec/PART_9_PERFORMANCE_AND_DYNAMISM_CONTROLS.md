@@ -143,7 +143,7 @@ __attribute__((objc_sealed))
 Toolchains may recognize existing equivalent attributes (for example,
 “subclassing restricted”) as imported-source interop annotations, but emitted
 Objective-C 3.0 interfaces shall use `objc_sealed` and shall not advertise a
-second alias surface.
+second public spelling surface.
 
 ### 9.4.3 Semantics (normative) {#part-9-4-3}
 

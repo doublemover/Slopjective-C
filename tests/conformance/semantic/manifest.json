@@ -60,12 +60,12 @@
     },
     {
       "name": "hard_cutover_compatibility_shim_gate_rejections",
-      "feature": "compatibility shim feature gates are strict semantic errors",
+      "feature": "retired adapter feature gates are strict semantic errors",
       "files": [
         "HC-GATE-01.json"
       ],
       "hard_cutover": {
-        "positive_fixture_policy": "no semantic compatibility-shim or migration-lane positives",
+        "positive_fixture_policy": "no semantic retired adapter or retired-source lane positives",
         "replacement_behavior": "strict semantic diagnostic before any shimmed behavior can be claimed"
       }
     },

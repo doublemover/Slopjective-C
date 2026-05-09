@@ -37,7 +37,7 @@
   "payload_families": [
     "native-binaries",
     "runtime-library",
-    "public-runner-and-package-scripts",
+    "public-runner-and-command-surface",
     "checked-in-runbooks-and-docs",
     "showcase-and-tutorial-sources",
     "stdlib-sources-and-contracts",

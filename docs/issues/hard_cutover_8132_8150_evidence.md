@@ -43,9 +43,9 @@ Retired hard-cutover surfaces are documented this way:
 - old-mode literals: parser/e2e rejection fixtures with `O3C002`
 - removed compatibility mode flag: parser rejection fixture
 - removed parser fallback flag: parser rejection fixture
-- compatibility shim gate: semantic rejection fixture
+- retired adapter gate: semantic rejection fixture
 - runtime dispatch fallback: lowering, IR, runtime, and e2e strict-error fixtures
-- migration lane as behavior support: absent from public support and not a
+- retired-source lane as behavior support: absent from public support and not a
   positive fixture class
 
 Acceptance area ownership is now indexed in
@@ -53,7 +53,7 @@ Acceptance area ownership is now indexed in
 in `tests/conformance/hard_cutover_positive_residue_audit.json` records that the
 remaining positive-fixture lexical hits for `fallback`, `shim`, and `migrator`
 are ordinary variable/function/symbol names or diagnostic inventory labels, not
-old-mode, compatibility-shim, fallback-dispatch, or migration-lane acceptance.
+retired mode, retired adapter, alternate-dispatch acceptance, or retired-source lane acceptance.
 The phase/family topology in
 `tests/conformance/hard_cutover_behavior_evidence_topology.json` makes the
 behavior-first split explicit for parser, sema, lowering, IR, runtime, e2e, and
@@ -240,7 +240,7 @@ Post-`f4bf6228e` local owner refresh:
 - Developer tooling evidence is refreshed by playground input, runner, and
   workspace owner splits for `#8138`, `#8142`, and `#8149`.
 - These commits keep the hard-cutover boundary intact: no direct helper command,
-  fallback path, compatibility shim, migration lane, or public compatibility
+  alternate acceptance path, retired adapter, retired-source lane, or public compatibility
   mode is introduced.
 
 Post-`89959f6cc` local owner refresh:
@@ -311,7 +311,7 @@ Post-`2fb0664e0` local owner refresh:
 | `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, schema, parser owner-path, tooling expectation, split-owner tooling-check, and stale-monolith cleanup commits. |
 | `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class-chain resolution, dispatch status, public ABI records, class graph, dispatch state, receiver identity, dispatch resolution state/target, protocol conformance, registration API/table, property/storage reflection, strict-error fixture renames, and wrapper commits; runtime fallback remains strict-error evidence. |
 | `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, AST ownership, parser/token tooling-check splits, and stale-monolith cleanup are indexed; old-mode and parser fallback flags are rejection fixtures. |
-| `#8135` | evidence-ready | Semantic, diagnostic, config, and parser-contract/sema integration owner splits are tied to typed-flow, unsupported-feature, and compatibility-shim rejection fixtures. |
+| `#8135` | evidence-ready | Semantic, diagnostic, config, and parser-contract/sema integration owner splits are tied to typed-flow, unsupported-feature, and retired adapter rejection fixtures. |
 | `#8136` | evidence-ready | Lowering owner splits, typed sema-to-lowering handoff, parse/lowering readiness keys, and runtime dispatch lowering contracts are tied to strict runtime-dispatch and removed fallback fixtures. |
 | `#8137` | evidence-ready | IR emitter, message-send validation, runtime metadata, typed handoff, artifact-claim metadata, pipeline result handoff, runtime dispatch support, parse/lowering readiness, and runtime dispatch lowering contract splits are tied to canonical IR fixture evidence. |
 | `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, runtime registration manifest/artifact builder, cross-module runtime link plan/input/ordering, developer tooling/playground/bonus/LLVM, performance workflow/artifact, ecosystem publication, application workflow, parse/lowering readiness keys, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
@@ -321,7 +321,7 @@ Post-`2fb0664e0` local owner refresh:
 | `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, release/tooling specs, release-governance owners, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, public command budget contracts, validation timing report owners, native driver public-workflow owners, and public docs command-surface alignment replace direct helpers, aliases, and registry facades. |
 | `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup/class-chain/status, dispatch state/resolution, receiver identity, protocol conformance, public ABI, registration API/table/manifest owners, property/storage reflection snapshots, runtime probe metadata, runtime fixture anchors, runtime workflow test owners, strict-error fixture renames, and strict runtime behavior fixtures. |
 | `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, runtime probe metadata, strict-error fixture renames, C API runner source-test, driver CLI split owner tests, split-owner tooling checks, stress/test-orchestration workflow owners, source-hygiene cutover residue guardrails, runtime workflow/fixture anchors, positive lexical residue docs, and issue evidence maps. |
-| `#8145` | evidence-ready | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, release-governance credibility/security owners, conformance runtime-probe metadata, strict-error fixture naming, positive lexical residue docs, ecosystem/application surface owners, and evidence maps explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims. |
+| `#8145` | evidence-ready | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, release-governance credibility/security owners, conformance runtime-probe metadata, strict-error fixture naming, positive lexical residue docs, ecosystem/application surface owners, and evidence maps explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims. |
 | `#8146` | evidence-ready | Frontend type surfaces are indexed against canonical typed-flow, canonical literal, typed metadata handoff, tooling split evidence, and frontend type extraction cleanup. |
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |

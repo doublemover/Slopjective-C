@@ -42,7 +42,7 @@ Current public support states:
 | Native module decomposition, public C runtime result APIs, workflow bridge, and JSON/schema helpers | `internal` | Owner and evidence surfaces, not language support claims. |
 | Full object-model runtime realization and property/ivar/reflection closure | `reserved` | Unclaimed until implemented matrix rows link executable evidence. |
 | Blocks, full ARC automation, `throws`, async/task/actor runtime closure, metaprogramming/property behavior runtime closure, and broader interop | `reserved` unless narrower rows say otherwise | Unavailable as public support outside exact implemented rows. |
-| Old modes, compatibility modes, aliases, fallback paths, shims, migration lanes, direct helper commands, and report-only completion | retired wording, not a support state | Negative evidence or source-hygiene inventory only. |
+| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and report-only completion | retired wording, not a support state | Negative evidence or source-hygiene inventory only. |
 
 ## Runnable Subset
 

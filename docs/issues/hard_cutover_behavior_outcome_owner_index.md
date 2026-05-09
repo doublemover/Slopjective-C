@@ -15,7 +15,7 @@ prove absence or traceability.
 | Canonical positive behavior | positive | `tests/fixtures/canonical/manifest.json` and native positive fixtures | supported behavior is canonical Objective-C 3 only |
 | Phase owner contracts | phase-owned behavior authority | `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json` | phase support claims resolve to hand-authored native fixture families, not generated artifacts |
 | Parser rejection | rejection | parser negative fixtures and retired-surface indexes | legacy literals and removed parser flags reject old-mode/fallback surfaces |
-| Semantic rejection | rejection | sema errors and acceptance-area owner index | compatibility-shim and unsupported-feature claims are diagnostics |
+| Semantic rejection | rejection | sema errors and acceptance-area owner index | retired adapter and unsupported-feature claims are diagnostics |
 | Lowering or link strict error | strict-error | lowering/IR strict-error fixtures | runtime fallback lowering remains removed or unresolved, not supported |
 | Runtime strict error | strict-error | runtime dispatch/error fixtures | runtime dispatch fallback and unresolved symbols are strict errors |
 | Negative execution | negative-execution | e2e negative execution fixtures | retired behavior remains rejected at runnable boundaries |

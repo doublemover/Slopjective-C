@@ -20,7 +20,7 @@ The public command model is:
 - `docs/runbooks/objc3c_public_command_surface.md` is the operator-facing
   appendix for the package bridge.
 
-User-facing workflow docs advertise the npm bridge only. Retired package-script
+User-facing workflow docs advertise the npm bridge only. Retired command
 names, public-script metadata tables, helper invocations, native build commands,
 and implementation-only script names are not public command surface.
 

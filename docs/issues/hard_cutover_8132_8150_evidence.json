@@ -1401,7 +1401,7 @@
     {
       "issue": "#8135",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Semantic owner surfaces are locally split and tied to typed-flow plus strict unsupported-feature and compatibility-shim rejection fixtures.",
+      "closeout_summary": "Semantic owner surfaces are locally split and tied to typed-flow plus strict unsupported-feature and retired adapter rejection fixtures.",
       "local_commits": [
         "121c069aa",
         "8b103d250",
@@ -1584,7 +1584,7 @@
     {
       "issue": "#8145",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Capability truth docs and evidence maps are indexed and explicitly reject shim, fallback, migration-lane, and compatibility-mode claims.",
+      "closeout_summary": "Capability truth docs and evidence maps are indexed and explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode claims.",
       "local_commits": [
         "cb19d16ed",
         "6d7c78009",

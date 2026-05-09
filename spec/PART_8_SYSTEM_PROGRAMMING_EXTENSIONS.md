@@ -230,7 +230,7 @@ A conforming implementation may recognize the following widely deployed Clang
 attributes as imported-source interop annotations when they represent
 equivalent semantics. Emitted Objective-C 3.0 interfaces shall use the canonical
 spellings; these imported attributes do not create a compatibility language
-mode or alias surface:
+mode or alternate public spelling surface:
 
 - `__attribute__((NSObject))` on typedefs for ObjC-integrated retainable family types,
 - ownership-transfer attributes on APIs returning/consuming family values:

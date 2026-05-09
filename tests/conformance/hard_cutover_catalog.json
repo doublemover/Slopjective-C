@@ -5,9 +5,9 @@
     "language_mode": "canonical_objc3_only",
     "retired_positive_claims": [
       "old-mode acceptance",
-      "compatibility shim acceptance",
-      "fallback feature implementation acceptance",
-      "migration-lane acceptance",
+      "retired adapter acceptance",
+      "alternate acceptance path implementation",
+      "retired-source lane acceptance",
       "extension flag opt-in for deferred v1 features"
     ],
     "required_replacement": "canonical rejection or strict-error metadata with stable diagnostic codes",
@@ -27,7 +27,7 @@
   },
   "fixture_shape_policy": {
     "positive_cases": "must prove canonical behavior only",
-    "negative_cases": "own retired spelling, removed flag, shim, fallback, migration-lane, unsupported feature, and strict-error expectations",
+    "negative_cases": "own retired spelling, removed flag, retired adapter, alternate acceptance path, retired-source lane, unsupported feature, and strict-error expectations",
     "manifest_fields": [
       "bucket",
       "profile",

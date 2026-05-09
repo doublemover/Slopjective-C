@@ -5,7 +5,7 @@
   "policy": {
     "primary_axis": "behavior phase before issue number",
     "positive_fixture_rule": "positive fixtures remain canonical Objective-C 3 behavior only",
-    "negative_fixture_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and unresolved runtime surfaces are rejection or strict-error evidence",
+    "negative_fixture_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are rejection or strict-error evidence",
     "generated_fixture_rule": "generated artifacts are provenance evidence and cannot define positive behavior",
     "closeout_rule": "issue closeout points to behavior fixtures and owner paths, not prose-only completion claims"
   },
@@ -63,7 +63,7 @@
         "#8145",
         "#8147"
       ],
-      "retired_surface_disposition": "compatibility shim and unsupported feature gates are semantic diagnostics"
+      "retired_surface_disposition": "retired adapter gates and unsupported feature gates are semantic diagnostics"
     },
     {
       "phase": "lowering",
