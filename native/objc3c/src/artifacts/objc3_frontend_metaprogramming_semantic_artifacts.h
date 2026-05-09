@@ -97,6 +97,22 @@ BuildMetaprogrammingPropertyBehaviorLegalityCompatibilitySummaryJson(
     const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
         &summary);
 
+[[nodiscard]] std::string BuildMetaprogrammingExpansionLoweringContractJson(
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+        &property_source_summary,
+    const Objc3MetaprogrammingDeriveExpansionInventorySummary &derive_summary,
+    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &macro_summary,
+    const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+        &property_legality_summary,
+    const Objc3MetaprogrammingExpansionLoweringContract &contract,
+    const std::string &replay_key);
+
+[[nodiscard]] std::string
+BuildMetaprogrammingSynthesizedArtifactEmissionContractJson(
+    const Objc3MetaprogrammingExpansionLoweringContract &dependency_contract,
+    const Objc3MetaprogrammingSynthesizedArtifactEmissionContract &contract,
+    const std::string &replay_key);
+
 [[nodiscard]] Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary
 BuildMetaprogrammingModuleInterfaceReplayPreservationSummary(
     const Objc3MetaprogrammingExpansionLoweringContract &expansion_contract,
