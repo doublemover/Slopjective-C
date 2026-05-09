@@ -200,6 +200,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_contract.cpp
   public/objc3_runtime_result_contract.h
   public/objc3_runtime_result_diagnostics.cpp
+  public/objc3_runtime_result_ownership.cpp
+  public/objc3_runtime_result_ownership.h
   public/objc3_runtime_selector.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
