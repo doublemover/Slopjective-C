@@ -3,6 +3,9 @@ target_link_libraries(objc3c_ast_core INTERFACE
   objc3c_build_defaults
 )
 target_sources(objc3c_ast_core INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_callable_type_nodes.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_core.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_source_location.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_symbol_context.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_value_type.h
 )
@@ -11,10 +14,16 @@ add_library(objc3c_ast_contracts INTERFACE)
 target_link_libraries(objc3c_ast_contracts INTERFACE
   objc3c_build_defaults
 )
+target_sources(objc3c_ast_contracts INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_contracts.h
+)
 
 add_library(objc3c_ast_declarations INTERFACE)
 target_link_libraries(objc3c_ast_declarations INTERFACE
   objc3c_ast_core
+)
+target_sources(objc3c_ast_declarations INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_declarations.h
 )
 
 add_library(objc3c_ast STATIC

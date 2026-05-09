@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast/objc3_ast_core.h"
+#include "token/objc3_token_contract.h"
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,
