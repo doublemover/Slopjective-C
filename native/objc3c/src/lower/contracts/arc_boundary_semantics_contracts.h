@@ -1,0 +1,67 @@
+#pragma once
+
+#include <string>
+
+// ARC boundary semantics own source-mode admission, explicit ARC mode
+// threading, forbidden semantic forms, and the bounded inference/interaction
+// rules that keep broader ARC automation fail-closed.
+inline constexpr const char *kObjc3ArcSourceModeBoundaryContractId =
+    "objc3c.arc.source.mode.boundary.freeze.v1";
+inline constexpr const char *kObjc3ArcSourceModeBoundarySourceModel =
+    "ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryModeModel =
+    "native-driver-admits-fobjc-arc-and-fno-objc-arc-while-runnable-arc-stays-bounded-to-the-helper-backed-supported-slice";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryNonGoalModel =
+    "no-generalized-arc-cleanup-insertion-no-public-arc-runtime-abi-mode-split-no-full-arc-automation-beyond-the-supported-helper-backed-slice";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
+    "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
+
+inline constexpr const char *kObjc3ArcModeHandlingContractId =
+    "objc3c.arc.mode.handling.v1";
+inline constexpr const char *kObjc3ArcModeHandlingSourceModel =
+    "ownership-qualified-method-property-return-and-block-capture-surfaces-are-runnable-under-explicit-arc-mode";
+inline constexpr const char *kObjc3ArcModeHandlingModeModel =
+    "driver-admits-fobjc-arc-and-fno-objc-arc-and-threads-arc-mode-through-frontend-sema-and-ir";
+inline constexpr const char *kObjc3ArcModeHandlingFailClosedModel =
+    "non-arc-mode-still-rejects-executable-ownership-qualified-method-and-function-signatures";
+inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
+    "no-implicit-nonarc-promotion-no-cross-module-arc-mode-inference-no-full-arc-automation-beyond-the-supported-helper-backed-slice";
+
+inline constexpr const char *kObjc3ArcSemanticRulesContractId =
+    "objc3c.arc.semantic.rules.v1";
+inline constexpr const char *kObjc3ArcSemanticRulesSourceModel =
+    "explicit-arc-mode-admits-only-explicit-ownership-surfaces-while-forbidden-property-forms-and-broad-inference-remain-fail-closed";
+inline constexpr const char *kObjc3ArcSemanticRulesSemanticModel =
+    "conflicting-property-ownership-forms-and-atomic-ownership-aware-storage-still-fail-closed-while-general-arc-inference-remains-deferred";
+inline constexpr const char *kObjc3ArcSemanticRulesFailClosedModel =
+    "forbidden-arc-property-forms-and-non-inferred-lifetime-semantics-terminate-deterministically";
+inline constexpr const char *kObjc3ArcSemanticRulesNonGoalModel =
+    "no-implicit-retain-release-inference-no-lifetime-extension-no-method-family-based-arc-semantics-yet";
+
+inline constexpr const char *kObjc3ArcInferenceLifetimeContractId =
+    "objc3c.arc.inference.lifetime.v1";
+inline constexpr const char *kObjc3ArcInferenceLifetimeSourceModel =
+    "explicit-arc-mode-now-infers-strong-owned-executable-object-signatures-for-the-supported-runnable-slice";
+inline constexpr const char *kObjc3ArcInferenceLifetimeSemanticModel =
+    "arc-enabled-unqualified-object-signatures-now-produce-canonical-retain-release-lifetime-accounting-while-nonarc-remains-zero-inference";
+inline constexpr const char *kObjc3ArcInferenceLifetimeFailClosedModel =
+    "non-arc-mode-keeps-unqualified-object-signatures-non-inferred-and-zero-retain-release-lifetime-accounting";
+inline constexpr const char *kObjc3ArcInferenceLifetimeNonGoalModel =
+    "no-full-arc-cleanup-synthesis-no-weak-autorelease-return-property-synthesis-or-block-interaction-arc-semantics-yet";
+
+inline constexpr const char *kObjc3ArcInteractionSemanticsContractId =
+    "objc3c.arc.interaction.semantics.v1";
+inline constexpr const char *kObjc3ArcInteractionSemanticsSourceModel =
+    "explicit-arc-mode-now-covers-weak-autorelease-return-property-synthesis-and-block-ownership-interactions-for-the-supported-runnable-slice";
+inline constexpr const char *kObjc3ArcInteractionSemanticsSemanticModel =
+    "weak-properties-and-nonowning-captures-stay-nonretaining-autorelease-returns-stay-profiled-and-synthesized-property-accessors-publish-owned-lifetime-packets-under-arc";
+inline constexpr const char *kObjc3ArcInteractionSemanticsFailClosedModel =
+    "unsupported-arc-cleanup-and-broader-interactions-still-remain-explicitly-deferred";
+inline constexpr const char *kObjc3ArcInteractionSemanticsNonGoalModel =
+    "no-general-arc-cleanup-insertion-no-cross-module-arc-interop-no-full-method-family-automation-yet";
+
+std::string Objc3ArcSourceModeBoundarySummary();
+std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);
+std::string Objc3ArcSemanticRulesSummary();
+std::string Objc3ArcInferenceLifetimeSummary();
+std::string Objc3ArcInteractionSemanticsSummary();
