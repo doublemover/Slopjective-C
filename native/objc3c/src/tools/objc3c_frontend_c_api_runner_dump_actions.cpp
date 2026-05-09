@@ -1,25 +1,12 @@
 #include "tools/objc3c_frontend_c_api_runner_dump_actions.h"
 
-#include <iostream>
 #include <string>
 
+#include "tools/objc3c_frontend_c_api_runner_dump_emitter.h"
 #include "tools/objc3c_frontend_c_api_runner_observability_json.h"
 #include "tools/objc3c_frontend_c_api_runner_playground_repro_json.h"
 #include "tools/objc3c_frontend_c_api_runner_runtime_inspector_json.h"
 #include "tools/objc3c_frontend_c_api_runner_stage_trace_json.h"
-
-namespace {
-
-void EmitFrontendCApiRunnerDumpJson(const std::string &payload,
-                                    bool &emitted_dump) {
-  if (emitted_dump) {
-    std::cout << "\n";
-  }
-  std::cout << payload;
-  emitted_dump = true;
-}
-
-}  // namespace
 
 bool ShouldEmitFrontendCApiRunnerDumpActions(
     const FrontendCApiRunnerOptions &options) {
@@ -36,36 +23,31 @@ void EmitFrontendCApiRunnerDumpActions(
     const std::string &result_error_message,
     const std::string &runtime_metadata_binary_path_text,
     const std::string &summary_json) {
-  bool emitted_dump = false;
+  FrontendCApiRunnerDumpEmitter emitter;
   if (options.dump_summary_json) {
-    EmitFrontendCApiRunnerDumpJson(summary_json, emitted_dump);
+    emitter.EmitJsonPayload(summary_json);
   }
   if (options.dump_observability_json) {
-    EmitFrontendCApiRunnerDumpJson(
+    emitter.EmitJsonPayload(
         BuildFrontendCApiRunnerObservabilityJson(
             summary_path,
             result,
             status,
             result_error_message,
-            runtime_metadata_binary_path_text),
-        emitted_dump);
+            runtime_metadata_binary_path_text));
   }
   if (options.dump_playground_repro_json) {
-    EmitFrontendCApiRunnerDumpJson(
+    emitter.EmitJsonPayload(
         BuildFrontendCApiRunnerPlaygroundReproJson(
             options,
             result,
-            summary_path),
-        emitted_dump);
+            summary_path));
   }
   if (options.dump_runtime_inspector_json) {
-    EmitFrontendCApiRunnerDumpJson(
-        BuildFrontendCApiRunnerRuntimeInspectorJson(options, result),
-        emitted_dump);
+    emitter.EmitJsonPayload(
+        BuildFrontendCApiRunnerRuntimeInspectorJson(options, result));
   }
   if (options.dump_stage_trace_json) {
-    EmitFrontendCApiRunnerDumpJson(
-        BuildFrontendCApiRunnerStageTraceJson(result),
-        emitted_dump);
+    emitter.EmitJsonPayload(BuildFrontendCApiRunnerStageTraceJson(result));
   }
 }
