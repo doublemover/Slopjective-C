@@ -19,5 +19,6 @@ bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
                             std::uint64_t &normalized_receiver_identity);
 const RealizedClassNode *FindRealizedClassNodeByBaseIdentityUnlocked(
     const RuntimeState &state, std::uint64_t base_identity);
+void RebuildRealizedClassGraphUnlocked(RuntimeState &state);
 
 }  // namespace objc3c::runtime

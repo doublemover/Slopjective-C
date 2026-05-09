@@ -1,12 +1,27 @@
 #include "runtime/classes/class_graph.h"
 
+#include "runtime/classes/category_attachment.h"
+#include "runtime/classes/metaclass_graph.h"
+#include "runtime/classes/protocol_conformance.h"
 #include "runtime/dispatch/dispatch_family.h"
+#include "runtime/images/image_descriptor.h"
+#include "runtime/images/multi_image_ordering.h"
+#include "runtime/metadata/runtime_emitted_records.h"
+#include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/state/runtime_state_clear.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
 #include "runtime/strings/borrowed_string.h"
+#include "runtime/storage/property_layout_realization.h"
 
+#include <algorithm>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <mutex>
 
 namespace objc3c::runtime {
@@ -105,6 +120,376 @@ const RealizedClassNode *FindRealizedClassNodeByBaseIdentityUnlocked(
     }
   }
   return nullptr;
+}
+
+namespace {
+
+const void *ClassGraphAggregateEntry(
+    const objc3_runtime_pointer_aggregate *aggregate, std::uint64_t index) {
+  return RuntimeAggregateEntry(aggregate, index);
+}
+
+bool IsImplementationOwnerIdentity(const char *owner_identity) {
+  if (owner_identity == nullptr) {
+    return false;
+  }
+  static constexpr char kImplementationPrefix[] = "implementation:";
+  return std::string(owner_identity).rfind(kImplementationPrefix, 0) == 0;
+}
+
+std::vector<const RegisteredImageMetadata *> OrderedRegisteredImages(
+    const RuntimeState &state) {
+  std::vector<const RegisteredImageMetadata *> ordered;
+  ordered.reserve(state.registered_image_metadata_by_identity_key.size());
+  for (const auto &entry : state.registered_image_metadata_by_identity_key) {
+    ordered.push_back(&entry.second);
+  }
+  std::sort(
+      ordered.begin(), ordered.end(),
+      [](const RegisteredImageMetadata *lhs,
+         const RegisteredImageMetadata *rhs) {
+        return CompareRuntimeImageRegistrationOrder(
+                   lhs->registration_order_ordinal,
+                   lhs->translation_unit_identity_key.c_str(),
+                   rhs->registration_order_ordinal,
+                   rhs->translation_unit_identity_key.c_str()) < 0;
+      });
+  return ordered;
+}
+
+bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
+                                  std::vector<std::string> &class_names) {
+  std::unordered_set<std::string> seen;
+  seen.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        ClassGraphAggregateEntry(record.class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        bundle->class_record.class_name[0] == '\0') {
+      return false;
+    }
+    seen.insert(bundle->class_record.class_name);
+  }
+  class_names.assign(seen.begin(), seen.end());
+  std::sort(class_names.begin(), class_names.end());
+  return true;
+}
+
+std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name) {
+  std::vector<const EmittedClassBundle *> implementation_bundles;
+  std::vector<const EmittedClassBundle *> candidate_bundles;
+  implementation_bundles.reserve(
+      static_cast<std::size_t>(record.class_descriptor_count));
+  candidate_bundles.reserve(
+      static_cast<std::size_t>(record.class_descriptor_count));
+  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        ClassGraphAggregateEntry(record.class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        class_name != bundle->class_record.class_name) {
+      continue;
+    }
+    const bool implementation_backed =
+        bundle->class_record.method_list_ref != nullptr &&
+        IsImplementationOwnerIdentity(
+            bundle->class_record.method_list_ref->owner_identity);
+    if (implementation_backed) {
+      implementation_bundles.push_back(bundle);
+    } else {
+      candidate_bundles.push_back(bundle);
+    }
+  }
+  return implementation_bundles.empty() ? candidate_bundles
+                                        : implementation_bundles;
+}
+
+bool CollectPreferredCategoryRecordsForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name,
+    std::vector<const EmittedCategoryRecord *> &preferred_records) {
+  // class-realization-runtime freeze anchor: category attachment is
+  // resolved from emitted category records only after one concrete class name
+  // has been selected. Runtime prefers implementation records over interface
+  // records per category name and fails closed on conflicting attachments.
+  std::unordered_map<std::string, const EmittedCategoryRecord *> grouped_records;
+  grouped_records.reserve(
+      static_cast<std::size_t>(record.category_descriptor_count));
+  for (std::uint64_t index = 0; index < record.category_descriptor_count;
+       ++index) {
+    const auto *category_record = static_cast<const EmittedCategoryRecord *>(
+        ClassGraphAggregateEntry(record.category_descriptor_root, index));
+    if (category_record == nullptr || category_record->class_name == nullptr ||
+        category_record->category_name == nullptr ||
+        category_record->record_kind == nullptr ||
+        category_record->owner_identity == nullptr) {
+      return false;
+    }
+    if (class_name != category_record->class_name) {
+      continue;
+    }
+    const std::string key = category_record->category_name;
+    const bool is_implementation =
+        std::string(category_record->record_kind) == "implementation";
+    auto existing = grouped_records.find(key);
+    if (existing == grouped_records.end()) {
+      grouped_records.emplace(key, category_record);
+      continue;
+    }
+    const bool existing_is_implementation =
+        std::string(existing->second->record_kind) == "implementation";
+    if (existing_is_implementation == is_implementation &&
+        std::string(existing->second->owner_identity) !=
+            std::string(category_record->owner_identity)) {
+      return false;
+    }
+    if (!existing_is_implementation && is_implementation) {
+      existing->second = category_record;
+    }
+  }
+  preferred_records.clear();
+  preferred_records.reserve(grouped_records.size());
+  for (const auto &entry : grouped_records) {
+    preferred_records.push_back(entry.second);
+  }
+  std::sort(
+      preferred_records.begin(), preferred_records.end(),
+      [](const EmittedCategoryRecord *lhs,
+         const EmittedCategoryRecord *rhs) {
+        return std::make_tuple(std::string(lhs->class_name),
+                               std::string(lhs->category_name),
+                               std::string(lhs->record_kind),
+                               std::string(lhs->owner_identity)) <
+               std::make_tuple(std::string(rhs->class_name),
+                               std::string(rhs->category_name),
+                               std::string(rhs->record_kind),
+                               std::string(rhs->owner_identity));
+      });
+  return true;
+}
+
+bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
+                                           RealizedClassNode &node) {
+  // category-attachment-protocol-conformance anchor: realized class
+  // nodes now own preferred category attachments and direct protocol edges so
+  // later dispatch/query paths consume the published graph instead of
+  // rediscovering category/protocol relationships on each lookup.
+  node.attached_category_records.clear();
+  node.runtime_attachment_ready = false;
+  if (node.image == nullptr) {
+    return false;
+  }
+  std::vector<const EmittedCategoryRecord *> category_records;
+  if (!CollectPreferredCategoryRecordsForImage(*node.image, node.class_name,
+                                               category_records)) {
+    return false;
+  }
+  for (const EmittedCategoryRecord *category_record : category_records) {
+    if (category_record == nullptr ||
+        category_record->class_owner_identity == nullptr ||
+        category_record->category_owner_identity == nullptr ||
+        category_record->owner_identity == nullptr ||
+        !RuntimeCategoryAttachmentIsMaterializable(
+            category_record->category_name, node.class_name.c_str())) {
+      return false;
+    }
+    if (node.class_owner_identity != category_record->class_owner_identity) {
+      return false;
+    }
+    node.attached_category_records.push_back(category_record);
+    state.last_attached_category_owner_identity =
+        category_record->category_owner_identity;
+    state.last_attached_category_name =
+        category_record->category_name != nullptr ? category_record->category_name
+                                                  : "";
+    if (category_record->adopted_protocol_refs != nullptr) {
+      state.realized_protocol_conformance_edge_count +=
+          category_record->adopted_protocol_refs->count;
+    }
+  }
+  state.realized_attached_category_count +=
+      static_cast<std::uint64_t>(node.attached_category_records.size());
+  if (node.bundle != nullptr &&
+      node.bundle->class_record.adopted_protocol_refs != nullptr) {
+    state.realized_protocol_conformance_edge_count +=
+        node.bundle->class_record.adopted_protocol_refs->count;
+  }
+  node.runtime_attachment_ready = true;
+  return true;
+}
+
+}  // namespace
+
+void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
+  // metaclass-graph-root-class anchor: runtime now republishes a
+  // realized class/metaclass graph keyed by stable receiver base identities,
+  // preserving root classes as explicit graph nodes rather than rediscovering
+  // the class family from emitted bundles on every dispatch.
+  ClearRealizedClassGraphUnlocked(state);
+
+  std::vector<const RegisteredImageMetadata *> ordered_images =
+      OrderedRegisteredImages(state);
+  std::size_t estimated_realized_node_count = 0;
+  std::unordered_set<std::string> global_class_name_set;
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    if (record == nullptr) {
+      continue;
+    }
+    estimated_realized_node_count +=
+        static_cast<std::size_t>(record->class_descriptor_count);
+  }
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    std::vector<std::string> class_names;
+    if (!CollectSortedImageClassNames(*record, class_names)) {
+      continue;
+    }
+    global_class_name_set.reserve(global_class_name_set.size() +
+                                  class_names.size());
+    for (const std::string &class_name : class_names) {
+      global_class_name_set.insert(class_name);
+    }
+  }
+
+  std::vector<std::string> global_class_names(global_class_name_set.begin(),
+                                             global_class_name_set.end());
+  std::sort(global_class_names.begin(), global_class_names.end());
+  std::unordered_map<std::string, std::size_t> global_ordinal_by_class_name;
+  global_ordinal_by_class_name.reserve(global_class_names.size());
+  state.realized_class_name_by_base_identity.reserve(global_class_names.size());
+  for (std::size_t ordinal = 0; ordinal < global_class_names.size(); ++ordinal) {
+    const std::string &class_name = global_class_names[ordinal];
+    global_ordinal_by_class_name.emplace(class_name, ordinal);
+    const std::uint64_t base_identity = BuildReceiverBaseIdentity(ordinal);
+    state.realized_class_name_by_base_identity.emplace(base_identity,
+                                                       class_name);
+  }
+  state.receiver_class_binding_count =
+      static_cast<std::uint64_t>(
+          state.realized_class_name_by_base_identity.size());
+
+  std::unordered_map<const EmittedClassBundle *, std::size_t>
+      node_index_by_bundle;
+  node_index_by_bundle.reserve(estimated_realized_node_count);
+  state.realized_class_nodes.reserve(estimated_realized_node_count);
+  state.realized_class_node_indices_by_name.reserve(global_class_names.size());
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    std::vector<std::string> class_names;
+    if (!CollectSortedImageClassNames(*record, class_names)) {
+      continue;
+    }
+    for (const std::string &class_name : class_names) {
+      const auto ordinal_it = global_ordinal_by_class_name.find(class_name);
+      if (ordinal_it == global_ordinal_by_class_name.end()) {
+        continue;
+      }
+      const auto bundles =
+          CollectPreferredClassBundlesForImage(*record, class_name);
+      for (const EmittedClassBundle *bundle : bundles) {
+        if (bundle == nullptr) {
+          continue;
+        }
+        RealizedClassNode node;
+        node.module_name = record->module_name;
+        node.translation_unit_identity_key =
+            record->translation_unit_identity_key;
+        node.class_name = class_name;
+        node.bundle_owner_identity =
+            bundle->class_record.bundle_owner_identity != nullptr
+                ? bundle->class_record.bundle_owner_identity
+                : "";
+        node.interface_owner_identity = node.bundle_owner_identity;
+        for (std::uint64_t candidate_index = 0;
+             candidate_index < record->class_descriptor_count;
+             ++candidate_index) {
+          const auto *candidate = static_cast<const EmittedClassBundle *>(
+              ClassGraphAggregateEntry(record->class_descriptor_root,
+                                       candidate_index));
+          if (candidate == nullptr ||
+              candidate->class_record.class_name == nullptr ||
+              candidate->class_record.bundle_owner_identity == nullptr) {
+            continue;
+          }
+          if (class_name != candidate->class_record.class_name) {
+            continue;
+          }
+          if (std::string(candidate->class_record.bundle_owner_identity).rfind(
+                  "interface:", 0) == 0) {
+            node.interface_owner_identity =
+                candidate->class_record.bundle_owner_identity;
+            break;
+          }
+        }
+        node.class_owner_identity =
+            bundle->class_record.object_owner_identity != nullptr
+                ? bundle->class_record.object_owner_identity
+                : "";
+        node.metaclass_owner_identity =
+            bundle->metaclass_record.object_owner_identity != nullptr
+                ? bundle->metaclass_record.object_owner_identity
+                : "";
+        if (!RuntimeMetaclassEdgeIsMaterializable(
+                node.class_owner_identity.c_str(),
+                node.metaclass_owner_identity.c_str())) {
+          continue;
+        }
+        node.super_class_owner_identity =
+            bundle->class_record.super_owner_identity != nullptr
+                ? bundle->class_record.super_owner_identity
+                : "";
+        node.super_metaclass_owner_identity =
+            bundle->metaclass_record.super_owner_identity != nullptr
+                ? bundle->metaclass_record.super_owner_identity
+                : "";
+        node.registration_order_ordinal = record->registration_order_ordinal;
+        node.base_identity = BuildReceiverBaseIdentity(ordinal_it->second);
+        node.is_root_class = bundle->class_record.super_bundle == nullptr;
+        node.implementation_backed =
+            (bundle->class_record.method_list_ref != nullptr &&
+             IsImplementationOwnerIdentity(
+                 bundle->class_record.method_list_ref->owner_identity)) ||
+            (bundle->metaclass_record.method_list_ref != nullptr &&
+             IsImplementationOwnerIdentity(
+                 bundle->metaclass_record.method_list_ref->owner_identity));
+        node.objc_final_declared = bundle->class_record.objc_final_declared;
+        node.objc_sealed_declared = bundle->class_record.objc_sealed_declared;
+        node.image = record;
+        node.bundle = bundle;
+        const std::size_t node_index = state.realized_class_nodes.size();
+        state.realized_class_nodes.push_back(std::move(node));
+        node_index_by_bundle.emplace(bundle, node_index);
+        state.realized_class_node_indices_by_name[class_name].push_back(
+            node_index);
+      }
+    }
+  }
+
+  for (std::size_t index = 0; index < state.realized_class_nodes.size();
+       ++index) {
+    RealizedClassNode &node = state.realized_class_nodes[index];
+    if (node.bundle != nullptr &&
+        node.bundle->class_record.super_bundle != nullptr) {
+      const auto super_it = node_index_by_bundle.find(
+          static_cast<const EmittedClassBundle *>(
+              node.bundle->class_record.super_bundle));
+      if (super_it != node_index_by_bundle.end()) {
+        node.super_node_index = super_it->second;
+        node.has_super_node = true;
+        ++state.realized_metaclass_edge_count;
+      }
+    }
+    if (node.is_root_class) {
+      ++state.realized_root_class_count;
+    }
+    (void)AttachRealizedCategoryRecordsUnlocked(state, node);
+    (void)AttachRealizedPropertyLayoutRecordsUnlocked(state, node);
+  }
+
+  if (!state.realized_class_nodes.empty()) {
+    const RealizedClassNode &last_node = state.realized_class_nodes.back();
+    state.last_realized_class_name = last_node.class_name;
+    state.last_realized_class_owner_identity = last_node.class_owner_identity;
+    state.last_realized_metaclass_owner_identity =
+        last_node.metaclass_owner_identity;
+  }
 }
 
 }  // namespace objc3c::runtime
