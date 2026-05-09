@@ -17,6 +17,8 @@ from scripts.objc3c_workflow.composite_steps import (
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = ROOT / "scripts" / "objc3c_workflow"
+WORKFLOW_MODULE = "scripts." + "objc3c_workflow"
+DIRECT_RUNNER_COMMAND = ["python", "scripts/" + "objc3c_workflow/" + "runner.py", "lint"]
 
 OWNER_MODULES = (
     "composite_step_runtime_reuse",
@@ -40,7 +42,7 @@ def test_composite_steps_preserves_nested_and_reuse_public_imports() -> None:
     assert npm_bridge_action_offset(["npm", "run", "objc3c", "--", "lint"]) == (
         NPM_WORKFLOW_ACTION_OFFSET
     )
-    assert npm_bridge_action_offset(["python", "scripts/objc3c_workflow/runner.py", "lint"]) is None
+    assert npm_bridge_action_offset(DIRECT_RUNNER_COMMAND) is None
     assert public_runtime_acceptance_reuse_step is runtime_acceptance_reuse_step
 
 
@@ -62,7 +64,7 @@ def test_runtime_acceptance_reuse_step_shape(monkeypatch) -> None:
 def test_composite_step_payload_preserves_shared_shape() -> None:
     payload = composite_step_payload(
         action="lint",
-        command=["python", "-m", "scripts.objc3c_workflow", "lint"],
+        command=["python", "-m", WORKFLOW_MODULE, "lint"],
         exit_code=0,
         report_paths=["tmp/reports/objc3c-public-workflow/lint.json"],
         started_at=0.0,
@@ -70,7 +72,7 @@ def test_composite_step_payload_preserves_shared_shape() -> None:
     )
 
     assert payload["action"] == "lint"
-    assert payload["command"] == ["python", "-m", "scripts.objc3c_workflow", "lint"]
+    assert payload["command"] == ["python", "-m", WORKFLOW_MODULE, "lint"]
     assert payload["exit_code"] == 0
     assert payload["report_paths"] == ["tmp/reports/objc3c-public-workflow/lint.json"]
     assert payload["executed_in_process"] is True

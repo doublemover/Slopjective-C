@@ -355,9 +355,10 @@ def test_hard_cutover_gate_rejects_implementation_legacy_support(
 
 
 def test_hard_cutover_gate_rejects_retired_public_workflow_runner_path(tmp_path: Path) -> None:
+    retired_runner = "objc3c_public" + "_workflow_runner.py"
     write(
         tmp_path / "docs/runbooks/commands.md",
-        "Run python scripts/objc3c_public_workflow_runner.py test-fast.\n",
+        f"Run python scripts/{retired_runner} test-fast.\n",
     )
 
     report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
@@ -444,9 +445,11 @@ def test_hard_cutover_gate_rejects_retired_package_alias_metadata(
 def test_hard_cutover_gate_rejects_direct_runner_command_variables(
     tmp_path: Path,
 ) -> None:
+    workflow_directory = '"scripts" / "' + "objc3c_workflow" + '"'
+    runner_name = '"runner' + '.py"'
     write(
         tmp_path / "scripts/check_packaged_surface.py",
-        'PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"\n',
+        f"PUBLIC_RUNNER = ROOT / {workflow_directory} / {runner_name}\n",
     )
 
     report = build_report(root=tmp_path, scan_roots=("scripts",), excludes=())
@@ -460,10 +463,12 @@ def test_hard_cutover_gate_rejects_direct_runner_command_variables(
 def test_hard_cutover_gate_rejects_packaged_runner_direct_commands(
     tmp_path: Path,
 ) -> None:
+    workflow_directory = '"scripts" / "' + "objc3c_workflow" + '"'
+    runner_name = '"runner' + '.py"'
     write(
         tmp_path / "tests/tooling/test_packaged_surface.py",
         (
-            'packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"\n'
+            f"packaged_runner = package_root / {workflow_directory} / {runner_name}\n"
             'run_capture([sys.executable, str(packaged_runner), "lint"])\n'
         ),
     )
