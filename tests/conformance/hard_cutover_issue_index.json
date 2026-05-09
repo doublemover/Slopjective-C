@@ -746,8 +746,9 @@
         "#8146"
       ],
       "evidence_paths": [
-        "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters.inc",
-        "native/objc3c/src/parse/objc3_parser_core_interop_profiles.inc",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_parser.cpp",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_classifier.cpp",
+        "native/objc3c/src/parse/objc3_type_feature_profiles.cpp",
         "native/objc3c/src/support/objc3_property_storage_modifier_counts.cpp",
         "native/objc3c/src/support/objc3_property_storage_modifier_support.cpp"
       ]
@@ -812,9 +813,10 @@
       ],
       "evidence_paths": [
         "native/objc3c/src/parse/objc3_parser_core.cpp",
-        "native/objc3c/src/parse/objc3_parser_core_blocks_and_expressions.inc",
-        "native/objc3c/src/parse/objc3_parser_core_concurrency_profiles.inc",
-        "native/objc3c/src/parse/objc3_parser_core_profile_prelude.inc"
+        "native/objc3c/src/parse/objc3_parser_expression_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_block_literal_source.cpp",
+        "native/objc3c/src/parse/objc3_parser_async_continuation_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_profile_helpers.cpp"
       ]
     },
     {
