@@ -49,7 +49,6 @@ add_library(objc3c_support STATIC
   objc3_nil_receiver_profile.h
   objc3_pointer_declarator_depth_consistency.cpp
   objc3_pointer_declarator_depth_consistency.h
-  objc3_current_property_runtime_profiles.cpp
   objc3_current_property_runtime_profiles.h
   objc3_property_attribute_profile_match.cpp
   objc3_property_attribute_profile_match.h
@@ -76,6 +75,8 @@ add_library(objc3c_support STATIC
   objc3_property_storage_modifier_support.h
   objc3_property_storage_modifiers.h
   objc3_receiver_dispatch_profiles.h
+  objc3_strong_owned_property_exchange_profile.cpp
+  objc3_strong_owned_property_exchange_profile.h
   objc3_super_dispatch_profile.cpp
   objc3_super_dispatch_profile.h
   objc3_receiver_profile_helpers.h
@@ -111,6 +112,8 @@ add_library(objc3c_support STATIC
   objc3_type_profile_helpers.h
   objc3_value_type_names.cpp
   objc3_value_type_names.h
+  objc3_weak_property_runtime_helper_profile.cpp
+  objc3_weak_property_runtime_helper_profile.h
   selectors/metadata_selector_validation.cpp
   selectors/metadata_selector_validation.h
   selectors/selector_argument_slots.cpp

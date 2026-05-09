@@ -1,13 +1,9 @@
-#include "support/objc3_current_property_runtime_profiles.h"
+#include "support/objc3_strong_owned_property_exchange_profile.h"
 
-#include "support/objc3_property_profile_tokens.h"
+#include "support/objc3_property_attribute_profile_match.h"
+#include "support/objc3_property_ownership_profile_tokens.h"
 
 namespace objc3c::support {
-
-bool UsesWeakCurrentPropertyRuntimeHelper(
-    std::string_view ownership_runtime_hook_profile) {
-  return ownership_runtime_hook_profile == kObjc3PropertyWeakRuntimeHookProfile;
-}
 
 bool UsesStrongOwnedCurrentPropertyExchange(
     std::string_view ownership_lifetime_profile,
