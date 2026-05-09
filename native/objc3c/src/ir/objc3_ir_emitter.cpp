@@ -1,6 +1,5 @@
 #include "ir/objc3_ir_emitter.h"
 
-#include <cstdint>
 #include <map>
 #include <set>
 #include <sstream>
@@ -48,7 +47,7 @@
 #include "ir/objc3_ir_scope_cleanup_emission.h"
 #include "ir/objc3_ir_statement_emission.h"
 #include "ir/objc3_ir_static_data_emission.h"
-#include "ir/objc3_ir_synthesized_property_accessors.h"
+#include "ir/objc3_ir_synthetic_method_emission.h"
 #include "parse/objc3_parse_support.h"
 
 class Objc3IREmitter {
@@ -115,16 +114,7 @@ class Objc3IREmitter {
 
   bool Emit(std::string &ir, std::string &error) {
     runtime_dispatch_call_state_.Reset();
-    synthesized_getter_definition_count_ = 0;
-    synthesized_setter_definition_count_ = 0;
-    current_property_read_helper_call_count_ = 0;
-    current_property_write_helper_call_count_ = 0;
-    current_property_exchange_helper_call_count_ = 0;
-    weak_current_property_load_helper_call_count_ = 0;
-    weak_current_property_store_helper_call_count_ = 0;
-    retain_helper_call_count_ = 0;
-    release_helper_call_count_ = 0;
-    autorelease_helper_call_count_ = 0;
+    synthetic_method_stats_ = {};
     unsupported_fail_closed_path_triggered_ = false;
     unsupported_fail_closed_path_reason_.clear();
     block_function_definitions_.clear();
@@ -1978,16 +1968,16 @@ class Objc3IREmitter {
         lowering_ir_boundary_, runtime_dispatch_call_state_, out);
     EmitObjc3IRSynthesizedAccessorEmissionSurface(
         Objc3IRSynthesizedAccessorEmissionStats{
-            synthesized_getter_definition_count_,
-            synthesized_setter_definition_count_,
-            current_property_read_helper_call_count_,
-            current_property_write_helper_call_count_,
-            current_property_exchange_helper_call_count_,
-            weak_current_property_load_helper_call_count_,
-            weak_current_property_store_helper_call_count_,
-            retain_helper_call_count_,
-            release_helper_call_count_,
-            autorelease_helper_call_count_},
+            synthetic_method_stats_.getter_definition_count,
+            synthetic_method_stats_.setter_definition_count,
+            synthetic_method_stats_.current_property_read_helper_call_count,
+            synthetic_method_stats_.current_property_write_helper_call_count,
+            synthetic_method_stats_.current_property_exchange_helper_call_count,
+            synthetic_method_stats_.weak_current_property_load_helper_call_count,
+            synthetic_method_stats_.weak_current_property_store_helper_call_count,
+            synthetic_method_stats_.retain_helper_call_count,
+            synthetic_method_stats_.release_helper_call_count,
+            synthetic_method_stats_.autorelease_helper_call_count},
         out);
     EmitObjc3IRMethodDispatchEmissionSurface(
         lowering_ir_boundary_, runtime_dispatch_call_state_,
@@ -2543,7 +2533,9 @@ class Objc3IREmitter {
           return LookupClassReceiverIdentityValue(class_name);
         },
         [this](const Objc3IRMethodDefinition &method_def,
-               std::ostringstream &out) { EmitSyntheticMethod(method_def, out); }};
+               std::ostringstream &out) {
+          EmitObjc3IRSyntheticMethod(method_def, out, synthetic_method_stats_);
+        }};
   }
 
   void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {
@@ -2557,54 +2549,6 @@ class Objc3IREmitter {
     EmitObjc3IRMethodDefinition(
         method_def, frontend_metadata_.arc_mode_enabled,
         BuildFunctionDefinitionEmissionCallbacks(), out);
-  }
-
-  void EmitSyntheticMethod(const Objc3IRMethodDefinition &method_def,
-                           std::ostringstream &out) const {
-    if (method_def.synthetic_method_kind ==
-        Objc3IRSyntheticMethodKind::MetaprogrammingDerivedEquality) {
-      out << "define i32 @" << method_def.symbol << "(i32 %arg0) {\n";
-      out << "entry:\n";
-      out << "  ret i32 1\n";
-      out << "}\n";
-      return;
-    }
-    if (method_def.synthetic_method_kind ==
-            Objc3IRSyntheticMethodKind::MetaprogrammingDerivedHash ||
-        method_def.synthetic_method_kind ==
-            Objc3IRSyntheticMethodKind::MetaprogrammingDerivedDebugDescription) {
-      std::uint32_t seed = 2166136261u;
-      for (unsigned char ch : method_def.symbol) {
-        seed ^= static_cast<std::uint32_t>(ch);
-        seed *= 16777619u;
-      }
-      out << "define i32 @" << method_def.symbol << "() {\n";
-      out << "entry:\n";
-      out << "  ret i32 " << static_cast<unsigned long long>(seed & 0x7fffffffu)
-          << "\n";
-      out << "}\n";
-      return;
-    }
-    Objc3IRSynthesizedPropertyAccessorEmissionStats property_stats;
-    if (!EmitObjc3IRSynthesizedPropertyAccessorMethod(method_def, out,
-                                                      property_stats)) {
-      return;
-    }
-    synthesized_getter_definition_count_ += property_stats.getter_definition_count;
-    synthesized_setter_definition_count_ += property_stats.setter_definition_count;
-    current_property_read_helper_call_count_ +=
-        property_stats.current_property_read_helper_call_count;
-    current_property_write_helper_call_count_ +=
-        property_stats.current_property_write_helper_call_count;
-    current_property_exchange_helper_call_count_ +=
-        property_stats.current_property_exchange_helper_call_count;
-    weak_current_property_load_helper_call_count_ +=
-        property_stats.weak_current_property_load_helper_call_count;
-    weak_current_property_store_helper_call_count_ +=
-        property_stats.weak_current_property_store_helper_call_count;
-    retain_helper_call_count_ += property_stats.retain_helper_call_count;
-    release_helper_call_count_ += property_stats.release_helper_call_count;
-    autorelease_helper_call_count_ += property_stats.autorelease_helper_call_count;
   }
 
   void EmitEntryPoint(std::ostringstream &out) const {
@@ -2642,16 +2586,7 @@ class Objc3IREmitter {
   mutable std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
   mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
   mutable Objc3IRRuntimeDispatchCallState runtime_dispatch_call_state_;
-  mutable std::size_t synthesized_getter_definition_count_ = 0;
-  mutable std::size_t synthesized_setter_definition_count_ = 0;
-  mutable std::size_t current_property_read_helper_call_count_ = 0;
-  mutable std::size_t current_property_write_helper_call_count_ = 0;
-  mutable std::size_t current_property_exchange_helper_call_count_ = 0;
-  mutable std::size_t weak_current_property_load_helper_call_count_ = 0;
-  mutable std::size_t weak_current_property_store_helper_call_count_ = 0;
-  mutable std::size_t retain_helper_call_count_ = 0;
-  mutable std::size_t release_helper_call_count_ = 0;
-  mutable std::size_t autorelease_helper_call_count_ = 0;
+  mutable Objc3IRSyntheticMethodEmissionStats synthetic_method_stats_;
   mutable bool unsupported_fail_closed_path_triggered_ = false;
   mutable std::string unsupported_fail_closed_path_reason_;
 };
