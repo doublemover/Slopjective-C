@@ -96,6 +96,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   images/registration_snapshots.h
   memory/arc.cpp
   memory/arc.h
+  memory/arc_debug_events.cpp
+  memory/arc_debug_events.h
   memory/arc_debug_state.cpp
   memory/arc_debug_state.h
   memory/arc_value_lifetime.cpp
