@@ -62,6 +62,8 @@ from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
 from objc3c_runtime_acceptance.reports import write_json_report
+from objc3c_runtime_acceptance.surfaces import build_acceptance_suite_surface
+from objc3c_runtime_acceptance.surfaces import build_claim_boundary
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -684,61 +686,6 @@ def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
     )
 
 
-def build_claim_boundary() -> dict[str, Any]:
-    return {
-        "contract_id": "objc3c.runtime.execution.claim.boundary.v1",
-        "authoritative_claim_classes": {
-            "linked-runtime-probe": {
-                "requires_runtime_library_or_emitted_object": True,
-                "requires_executable_probe": True,
-                "requires_runtime_backed_execution_or_snapshot": True,
-            },
-            "compile-coupled-inspection": {
-                "requires_real_compile": True,
-                "requires_compile_output_truthfulness": True,
-                "requires_coupled_registration_manifest": True,
-            },
-        },
-        "non_authoritative_inputs": [
-            "hand-authored llvm ir without matching compile output",
-            "sidecar-only manifests or reports with no coupled object/probe path",
-            "non-authoritative test surfaces without a coupled emitted object and runtime probe",
-            "comment-only or placeholder-only capability claims",
-        ],
-        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
-    }
-
-
-def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path) -> dict[str, Any]:
-    compile_coupled_case_ids = [result.case_id for result in results if result.fixture is not None]
-    linked_runtime_probe_case_ids = [
-        result.case_id for result in results if result.claim_class == "linked-runtime-probe"
-    ]
-    compile_coupled_inspection_case_ids = [
-        result.case_id for result in results if result.claim_class == "compile-coupled-inspection"
-    ]
-    return {
-        "contract_id": RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
-        "suite_path": "scripts/check_objc3c_runtime_acceptance.py",
-        "report_path": str(report_path.relative_to(ROOT)).replace("\\", "/"),
-        "consumes_runtime_state_publication_surface_contract_id": RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
-        "authoritative_claim_classes": [
-            "linked-runtime-probe",
-            "compile-coupled-inspection",
-        ],
-        "linked_runtime_probe_case_ids": linked_runtime_probe_case_ids,
-        "compile_coupled_case_ids": compile_coupled_case_ids,
-        "compile_coupled_inspection_case_ids": compile_coupled_inspection_case_ids,
-        "compile_output_provenance_contract_id": COMPILE_PROVENANCE_CONTRACT_ID,
-        "compile_output_truthfulness_contract_id": COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
-        "coupled_artifact_requirements": [
-            "<emit-prefix>.manifest.json",
-            "<emit-prefix>.runtime-registration-manifest.json",
-            "<emit-prefix>.compile-provenance.json",
-        ],
-    }
-
-
 def check_cross_module_block_ownership_artifact_preservation_case(
     run_dir: Path,
 ) -> CaseResult:
@@ -1195,7 +1142,7 @@ def main(argv: list[str] | None = None) -> int:
             }
             for result in results
         ],
-        "claim_boundary": build_claim_boundary(),
+        "claim_boundary": build_claim_boundary(PUBLIC_RUNTIME_ABI_BOUNDARY),
         "runtime_state_publication_surface": build_runtime_state_publication_surface(
             PUBLIC_RUNTIME_ABI_BOUNDARY
         ),
@@ -1397,7 +1344,21 @@ def main(argv: list[str] | None = None) -> int:
         "runtime_reflection_visibility_coherence_diagnostics_surface": (
             object_model_domain.build_runtime_reflection_visibility_coherence_diagnostics_surface(results)
         ),
-        "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
+        "acceptance_suite_surface": build_acceptance_suite_surface(
+            results,
+            report_path,
+            root=ROOT,
+            runtime_acceptance_suite_surface_contract_id=(
+                RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID
+            ),
+            runtime_state_publication_surface_contract_id=(
+                RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID
+            ),
+            compile_provenance_contract_id=COMPILE_PROVENANCE_CONTRACT_ID,
+            compile_output_truthfulness_contract_id=(
+                COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID
+            ),
+        ),
         "runtime_installation_abi_surface": registration_domain.build_runtime_installation_abi_surface(),
         "runtime_loader_lifecycle_surface": registration_domain.build_runtime_loader_lifecycle_surface(results),
         "dispatch_accessor_runtime_abi_surface": {
