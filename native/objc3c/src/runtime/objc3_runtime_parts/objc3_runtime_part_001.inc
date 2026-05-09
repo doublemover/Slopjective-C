@@ -29,6 +29,7 @@
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
+#include "runtime/storage/runtime_instance_records.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -52,10 +53,13 @@ using objc3c::runtime::PromotePointerCaptureCellsIntoRuntimeOwnedStorage;
 using objc3c::runtime::PropertyLookupCacheEntry;
 using objc3c::runtime::PropertyLookupCacheKey;
 using objc3c::runtime::PropertyLookupCacheKeyHash;
+using objc3c::runtime::RealizedClassNode;
 using objc3c::runtime::RealizedPropertyAccessor;
 using objc3c::runtime::RegisteredImageMetadata;
 using objc3c::runtime::RuntimeBlockInvokeFn;
 using objc3c::runtime::RuntimeBlockRecord;
+using objc3c::runtime::RuntimeInstanceRecord;
+using objc3c::runtime::RuntimeWeakSlotRef;
 using objc3c::runtime::SelectorSlot;
 using objc3c::runtime::SlowPathResolution;
 
@@ -135,48 +139,6 @@ const char *MetaprogrammingHostCacheRootForTesting() {
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureDashboardStatusPublicationContractId =
         "objc3c.tooling.dashboard.status.publication.v1";
-
-struct RuntimeWeakSlotRef {
-  int owner_receiver = 0;
-  std::size_t offset = 0;
-  std::size_t size = 0;
-};
-
-struct RuntimeInstanceRecord {
-  std::uint64_t receiver_identity = 0;
-  std::uint64_t base_identity = 0;
-  std::string class_name;
-  std::size_t instance_size_bytes = 0;
-  std::vector<unsigned char> storage_bytes;
-  std::uint64_t retain_count = 1;
-};
-
-struct RealizedClassNode {
-  std::string module_name;
-  std::string translation_unit_identity_key;
-  std::string class_name;
-  std::string bundle_owner_identity;
-  std::string interface_owner_identity;
-  std::string class_owner_identity;
-  std::string metaclass_owner_identity;
-  std::string super_class_owner_identity;
-  std::string super_metaclass_owner_identity;
-  std::uint64_t registration_order_ordinal = 0;
-  std::uint64_t base_identity = 0;
-  bool is_root_class = false;
-  bool implementation_backed = false;
-  bool objc_final_declared = false;
-  bool objc_sealed_declared = false;
-  bool runtime_attachment_ready = false;
-  bool runtime_layout_ready = false;
-  std::size_t runtime_instance_size_bytes = 0;
-  const RegisteredImageMetadata *image = nullptr;
-  const EmittedClassBundle *bundle = nullptr;
-  std::vector<const EmittedCategoryRecord *> attached_category_records;
-  std::vector<RealizedPropertyAccessor> runtime_property_accessors;
-  std::size_t super_node_index = 0;
-  bool has_super_node = false;
-};
 
 struct RuntimeState {
   std::mutex mutex;

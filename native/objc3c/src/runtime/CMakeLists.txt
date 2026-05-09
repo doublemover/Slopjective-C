@@ -85,6 +85,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/ivar_layout.h
   storage/property_accessors.cpp
   storage/property_accessors.h
+  storage/runtime_instance_records.h
   storage/weak_slots.cpp
   storage/weak_slots.h
 )
