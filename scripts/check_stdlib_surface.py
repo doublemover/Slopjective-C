@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json
+from objc3c_tooling.json_io import write_report_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -822,40 +822,36 @@ def main() -> int:
         if not all(isinstance(value, str) and value for value in (canonical_module, implementation_module, manifest, source, smoke_source)):
             return fail("advanced helper package surface published a malformed module entry")
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(
-        json.dumps(
-            {
-                "contract_id": SUMMARY_CONTRACT_ID,
-                "schema_version": 1,
-                "status": "PASS",
-                "workspace_contract": repo_rel(WORKSPACE_PATH),
-                "module_inventory": repo_rel(MODULE_INVENTORY_PATH),
-                "stability_policy": repo_rel(STABILITY_POLICY_PATH),
-                "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
-                "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
-                "advanced_architecture": repo_rel(ADVANCED_ARCHITECTURE_PATH),
-                "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
-                "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
-                "advanced_helper_package_surface": repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH),
-                "program_surface": repo_rel(PROGRAM_SURFACE_PATH),
-                "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
-                "canonical_modules": inventory_rows,
-                "layers": layers,
-                "module_imports": module_imports,
-                "api_families": architecture_api_families,
-                "advanced_api_families": advanced_api_families,
-                "required_exports": architecture_required_exports,
-                "advanced_required_exports": advanced_required_exports,
-                "module_semver": semantic_module_semver,
-                "artifact_filenames": artifact_filenames,
-                "advanced_helper_modules": advanced_helper_modules,
-                "capability_demo_examples": capability_demo_examples,
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
+    write_report_json(
+        SUMMARY_PATH,
+        {
+            "contract_id": SUMMARY_CONTRACT_ID,
+            "schema_version": 1,
+            "status": "PASS",
+            "workspace_contract": repo_rel(WORKSPACE_PATH),
+            "module_inventory": repo_rel(MODULE_INVENTORY_PATH),
+            "stability_policy": repo_rel(STABILITY_POLICY_PATH),
+            "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
+            "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
+            "advanced_architecture": repo_rel(ADVANCED_ARCHITECTURE_PATH),
+            "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
+            "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
+            "advanced_helper_package_surface": repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH),
+            "program_surface": repo_rel(PROGRAM_SURFACE_PATH),
+            "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
+            "canonical_modules": inventory_rows,
+            "layers": layers,
+            "module_imports": module_imports,
+            "api_families": architecture_api_families,
+            "advanced_api_families": advanced_api_families,
+            "required_exports": architecture_required_exports,
+            "advanced_required_exports": advanced_required_exports,
+            "module_semver": semantic_module_semver,
+            "artifact_filenames": artifact_filenames,
+            "advanced_helper_modules": advanced_helper_modules,
+            "capability_demo_examples": capability_demo_examples,
+        },
+        sort_keys=False,
     )
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     return 0
