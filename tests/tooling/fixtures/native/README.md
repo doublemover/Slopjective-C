@@ -14,8 +14,8 @@ diagnostic expectations.
   `*.meta.json` diagnostic metadata.
 - `execution/negative/unsupported_feature_claim_*.objc3`: parsed source
   surfaces that must fail closed as compile-stage runnable-claim rejections.
-- `recovery/positive/`: canonical parser/sema/lowering recovery fixtures and IR
-  expectations for accepted source forms.
+- `recovery/positive/`: canonical parser/sema/lowering/IR recovery fixtures
+  and expectations for accepted source forms.
 - `recovery/negative/`: rejected recovery fixtures for parser and semantic
   diagnostics.
 - `parser_split/`, `lexer_split/`, and `driver_split/`: fixture-only source
@@ -34,8 +34,10 @@ coverage:
 - parser owns canonical syntax acceptance and grammar rejections.
 - sema owns typed diagnostics, unsupported-feature runnable-claim rejections,
   and conservative semantic analysis boundaries.
-- lowering owns canonical lowering, ABI handoff, IR-shape, and strict link
-  errors for required runtime symbols.
+- lowering owns canonical lowering, ABI handoff, and strict link errors for
+  required runtime symbols.
+- IR owns module, function, metadata, runtime-call, and expectation-file
+  evidence.
 - runtime owns live dispatch/status failures and runtime-backed behavior.
 - e2e owns deterministic compile-link-run positives.
 - canonical_rejection owns legacy-looking, fallback-looking, shim-looking,

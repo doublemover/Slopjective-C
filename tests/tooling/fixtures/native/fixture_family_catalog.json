@@ -14,6 +14,7 @@
       "parser",
       "sema",
       "lowering",
+      "ir",
       "runtime",
       "e2e",
       "canonical_rejection"
@@ -89,14 +90,22 @@
       "hard_cutover_rule": "semantic positives prove canonical type/effect behavior; unsupported aliases and retired suffixes stay negative"
     },
     {
-      "family": "lowering_ir",
+      "family": "lowering",
       "paths": [
         "tests/native/lowering",
+        "tests/tooling/fixtures/native/recovery/positive"
+      ],
+      "metadata": "lowering source fixtures and accepted-source ABI handoff witnesses",
+      "hard_cutover_rule": "lowering fixtures use canonical ABI handoff only and must not encode alternate shim paths"
+    },
+    {
+      "family": "ir",
+      "paths": [
         "tests/native/ir",
         "tests/tooling/fixtures/native/recovery/positive"
       ],
-      "metadata": "IR expectation files paired with accepted source fixtures",
-      "hard_cutover_rule": "IR expectations use canonical lowering only and must not encode alternate shim paths"
+      "metadata": "IR expectation files and module/function/metadata emission fixtures",
+      "hard_cutover_rule": "IR expectations are first-class IR evidence and must not be cited as lowering, shim, or fallback support"
     },
     {
       "family": "artifact_manifest",
@@ -182,10 +191,18 @@
             "message_send_*_elision.objc3",
             "message_send_*_short_circuit.objc3",
             "main_bool_entrypoint.objc3",
-            "*-ir.expect.txt",
             "unary_plus_*.objc3"
           ],
           "disposition": "canonical lowering or ABI handoff evidence only; no runtime fallback acceptance"
+        },
+        {
+          "owner": "ir",
+          "selectors": [
+            "*-ir.expect.txt",
+            "synthesized_ast_ir_*.objc3",
+            "typed_keypath_artifact_positive.objc3"
+          ],
+          "disposition": "IR expectation provenance for accepted canonical source forms"
         },
         {
           "owner": "runtime",
@@ -296,10 +313,18 @@
           "owner": "lowering",
           "selectors": [
             "*lowering_positive.objc3",
-            "*ir_*",
-            "*artifact_positive.objc3"
+            "*lowering_abi_contract_positive.objc3"
           ],
-          "disposition": "lowering, IR, or artifact-shape evidence only"
+          "disposition": "lowering evidence only"
+        },
+        {
+          "owner": "ir",
+          "selectors": [
+            "*ir_*",
+            "*artifact_positive.objc3",
+            "artifact_replay_producer.objc3"
+          ],
+          "disposition": "IR or artifact-shape evidence only"
         },
         {
           "owner": "runtime",

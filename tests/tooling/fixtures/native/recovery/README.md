@@ -1,8 +1,8 @@
 # Native Recovery Fixture Boundaries
 
 `recovery/positive` and `recovery/negative` are mixed parser, sema, lowering,
-runtime, and canonical-rejection fixture surfaces. The directory name does not
-create a generic support owner.
+IR, runtime, and canonical-rejection fixture surfaces. The directory name does
+not create a generic support owner.
 
 ## Positive Surface
 
@@ -13,8 +13,9 @@ Positive recovery fixtures are phase provenance only:
 - sema-owned positives cover type flow, alias signatures, assignment,
   increment/decrement, compound assignment, and return-path behavior.
 - lowering-owned positives cover canonical lowering, entrypoint ABI handoff,
-  nil elision, short-circuit lowering, unary-plus lowering, and paired
-  `*-ir.expect.txt` files.
+  nil elision, short-circuit lowering, and unary-plus lowering.
+- IR-owned expectations cover paired `*-ir.expect.txt` files and
+  accepted-source IR-shape provenance.
 - runtime-owned positives cover live-dispatch and fast-path dispatch evidence
   only when the canonical runtime entrypoint remains required.
 
