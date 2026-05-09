@@ -1,2 +1,0 @@
-#include "pipeline/objc3_runtime_import_surface_parts/objc3_runtime_import_surface_part_001.inc"
-#include "pipeline/objc3_runtime_import_surface_parts/objc3_runtime_import_surface_part_002.inc"

@@ -1,15 +1,20 @@
 add_library(objc3c_pipeline STATIC
   dispatch_surface_classification.cpp
+  frontend_pipeline_orchestration.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_pipeline_sema_stage_runner.cpp
   frontend_pipeline_stage_runner.cpp
-  objc3_frontend_pipeline.cpp
-  objc3_runtime_import_surface.cpp
+  runtime_import_preservation.cpp
   frontend_pipeline_phase_io.h
   frontend_pipeline_result_contract.h
   frontend_pipeline_sema_stage_runner.h
   frontend_pipeline_stage_contract.h
   frontend_pipeline_stage_runner.h
+  objc3_final_readiness_gate_core_feature_implementation_surface.h
+  objc3_frontend_pipeline.h
+  objc3_ir_emission_core_feature_implementation_surface.h
+  objc3_parse_lowering_readiness_surface.h
+  objc3_runtime_import_surface.h
   objc3_typed_sema_to_lowering_contract_surface_core.h
   objc3_typed_sema_to_lowering_contract_surface.h
   objc3_ir_emission_completeness_scaffold.cpp

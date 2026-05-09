@@ -1,6 +1,0 @@
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_001.inc"
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_002.inc"
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_003.inc"
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_004.inc"
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_005.inc"
-#include "pipeline/objc3_frontend_pipeline_parts/objc3_frontend_pipeline_part_006.inc"
