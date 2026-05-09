@@ -30,7 +30,9 @@ Canonical behavior and no-compatibility indexes:
 
 Current branch head covered by the support/evidence closeout map:
 
-- `4fddfacb7` (`HC split frontend result API owners`)
+- `97df6515a` (`HC extract IR lowering extension publication`)
+- prior covered head: `b3361c3d4` (`HC move block lowering contract builders`)
+- prior covered head: `4fddfacb7` (`HC split frontend result API owners`)
 - baseline refresh commit: `98d10a61c`
 - prior refreshed commit before that baseline: `9676679c2`
 - committed owner/evidence commits covered by the baseline refresh after
@@ -324,7 +326,23 @@ Post-`98d10a61c` local owner refresh:
 - Artifact, IO, JSON/schema, conformance-reporting, package, site, runbook, and
   capability-truth owner splits refresh evidence for `#8138`, `#8145`,
   `#8148`, and `#8150` without creating report-only completion.
-- The latest committed head folded into this docs-only map is `4fddfacb7`.
+- The committed head folded into that docs-only map was `4fddfacb7`.
+  Validation, GitHub commands, push, and remote issue edits remain deferred.
+
+Post-`4fddfacb7` local owner refresh:
+
+- Lowering, IR, interop, ownership, and block contract owner splits refresh
+  compiler pipeline, deep handoff, artifact, and semantic ownership evidence
+  for `#8136`, `#8137`, `#8138`, `#8141`, `#8147`, and `#8150`.
+- Parser inline-asm finalizer, semantic constant evaluator, and runtime dispatch
+  entrypoint owners refresh parser, sema, runtime dispatch, and runtime
+  acceptance evidence for `#8133`, `#8134`, `#8135`, `#8143`, `#8146`,
+  `#8147`, and `#8150`.
+- Workflow metadata pruning, runtime/C API acceptance split, release-readiness
+  schema registration, and docs support-truth alignment refresh command,
+  acceptance, schema, capability, and closeout evidence for `#8141`, `#8142`,
+  `#8144`, `#8145`, `#8148`, `#8149`, and `#8150`.
+- The latest committed head folded into this docs-only map is `97df6515a`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
 | Issue | Evidence Status | Local Evidence Summary |
@@ -347,7 +365,7 @@ Post-`98d10a61c` local owner refresh:
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
 | `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | branch-evidence-ready-remote-deferred | Closure evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, and the current docs-only owner refresh through `4fddfacb7`. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8150` | branch-evidence-ready-remote-deferred | Closure evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed owner refresh through `97df6515a`. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

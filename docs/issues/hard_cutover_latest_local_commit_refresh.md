@@ -356,7 +356,7 @@ This post-`a20f67559` refresh references `442f1d2e2`, `c18da62ff`,
 
 This post-`98d10a61c` docs-only refresh folds the committed branch head forward
 to `4fddfacb7` without running validation, GitHub commands, push, or remote
-issue edits. It groups the latest owner evidence as follows:
+issue edits. It groups that owner evidence as follows:
 
 - workflow, command, schema, release, package, source-hygiene, and final
   readiness owners: `cef820749`, `58edb82a8`, `8e79a7ab4`, `bb0815a69`,
@@ -369,6 +369,17 @@ issue edits. It groups the latest owner evidence as follows:
 - artifact, IO, JSON/schema, site, runbook, and capability-truth owners:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
+This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
+to `97df6515a` without running validation, GitHub commands, push, or remote
+issue edits. It groups the latest owner evidence as follows:
+
+- lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
+  `3a20d7886`, `ac55f3ae0`, `82a293066`, `b3361c3d4`, `97df6515a`
+- parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
+  `4f5351c17`
+- workflow, release-readiness schema, acceptance, and docs truth owners:
+  `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a`
+
 These remain committed-owner evidence only. They do not introduce direct helper
-commands, compatibility aliases, fallback paths, report-only completion, or
-remote closeout claims.
+commands, alternate acceptance paths, report-only completion, validation claims,
+or remote closeout claims.

@@ -22,7 +22,9 @@ remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces. The
-current covered head is `4fddfacb7` (`HC split frontend result API owners`). The
+current covered head is `97df6515a` (`HC extract IR lowering extension publication`).
+Prior covered heads were `b3361c3d4` (`HC move block lowering contract builders`)
+and `4fddfacb7` (`HC split frontend result API owners`). The
 baseline refresh through `98d10a61c` covered 186 committed owner/evidence
 commits after `9676679c2`, and later docs-only refreshes fold committed owner
 work forward to the current head. `tmp/` reports, generated summaries, and
@@ -127,6 +129,14 @@ commits that landed after the first docs commit.
 | `#8132`, `#8134`, `#8135`, `#8136`, `#8137`, `#8140`, `#8141`, `#8146`, `#8147` | `0fb488ff8`, `03d0eda67`, `22a814b61`, `aab946e78`, `ae5a996ff`, `abb2eaeeb`, `e25918639` | Parser, sema, lowering, IR, frontend, and fixture owner splits refresh compiler architecture and behavior-boundary evidence without widening public language support. |
 | `#8133`, `#8141`, `#8143`, `#8147` | `16292722b`, `92176025a`, `394471c38`, `d090c3e84`, `4fddfacb7` | Runtime dispatch, public-result, memory, and frontend result API owner splits refresh runtime/API contract evidence; unsupported dispatch remains rejection or strict-error evidence. |
 | `#8138`, `#8145`, `#8148`, `#8150` | `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd` | Artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits remain evidence projections and do not create report-only completion. |
+
+## Post-`4fddfacb7` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8136`, `#8137`, `#8138`, `#8141`, `#8147`, `#8150` | `1b588a61c`, `3a20d7886`, `ac55f3ae0`, `82a293066`, `b3361c3d4`, `97df6515a` | Lowering, IR, interop, ownership, block contract, and lowering-extension publication owner splits refresh compiler pipeline, artifact, and deep handoff evidence. |
+| `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
+| `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 
 ## #8132
 
