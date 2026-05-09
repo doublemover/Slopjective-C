@@ -6,6 +6,18 @@
 
 namespace objc3::artifacts::frontend {
 
+[[nodiscard]] std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract);
+
+[[nodiscard]] std::string BuildRuntimeAwareImportModuleSurfaceSummaryJson(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
