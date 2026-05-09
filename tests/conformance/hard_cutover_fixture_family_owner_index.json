@@ -907,7 +907,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "performance_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
@@ -917,9 +918,10 @@
         "tests/tooling/fixtures/performance/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/performance/behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/performance/behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/performance/behavior_owner_splits/performance_provenance.json"
       ],
-      "retired_disposition": "performance benchmark workloads, comparative baselines, report roots, raw samples, telemetry, machine profiles, package staging, public command wrappers, and normalized values are resolved through behavior-first phase indexes before any benchmark row is cited as support; compatibility, fallback, shim, old-mode, unsupported, wrapper-only, local-only, report-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline support claims remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "performance benchmark workloads, comparative baselines, benchmark classes, measured workload lists, timing rows, cache rows, report roots, artifact roots, output roots, raw samples, telemetry, generated reports, machine profiles, tool versions, package staging, public command wrappers, normalized values, availability probes, compile invocations, runtime invocations, generated-only rows, report-only rows, migration-only rows, local-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, and foreign-baseline rows are resolved through behavior-first phase indexes and performance provenance before any benchmark row, timing row, raw sample, report, cache row, public command, or comparative baseline is cited as support; compatibility, fallback, shim, old-mode, unsupported, wrapper-only, public-wrapper-only, local-only, report-only, generated-only, migration-only, timing-only, cache-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline support claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
       "family": "metaprogramming_interop_closure_owner_split_indexes",
@@ -1286,6 +1288,7 @@
     "tests/tooling/fixtures/performance/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/performance/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/performance/behavior_owner_splits/performance_provenance.json",
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/sema.json",

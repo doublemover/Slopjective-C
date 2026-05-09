@@ -4,10 +4,10 @@
   "policy_kind": "fair-measurement-and-claimability",
   "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
   "measurement_boundary": {
-    "primary_axis": "behavior owner before performance claim class",
-    "support_authority": "performance policy rows define measurement claimability only; canonical behavior support must be cited through behavior owner splits",
-    "artifact_rule": "raw sample packets, machine profiles, report entries, and normalized values are provenance artifacts and never define parser, sema, lowering, IR, runtime, or e2e support",
-    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, local-only, report-only, screenshot-derived, and hand-normalized claims are canonical rejection or provenance-only evidence"
+    "primary_axis": "behavior owner before performance claim class, raw sample packet, report entry, artifact root, timing row, cache row, machine profile, tool version, normalized value, generated report, public command wrapper, or retired-surface claim",
+    "support_authority": "performance policy rows define measurement claimability only; canonical behavior support must be cited through behavior owner splits and cannot be inferred from allowed claim class, raw sample presence, report publication, tool version capture, or normalized value",
+    "artifact_rule": "raw sample packets, machine profiles, report entries, tool versions, normalized values, generated reports, cache rows, timing rows, and public command wrappers are provenance artifacts and never define parser, sema, lowering, IR, runtime, or e2e support",
+    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, local-only, report-only, generated-only, migration-only, timing-only, cache-only, screenshot-derived, hand-normalized, cross-machine, and foreign-baseline claims are canonical rejection or performance_provenance evidence"
   },
   "sample_policy": {
     "warmup_runs": 1,

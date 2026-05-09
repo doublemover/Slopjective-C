@@ -4,7 +4,7 @@
   "owner_phase": "parser",
   "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
   "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
-  "support_boundary": "parser ownership covers source-form provenance for Objective-C 3 showcase workloads only after canonical parser fixtures claim syntax support; benchmark timing does not create parser support",
+  "support_boundary": "parser ownership covers source-form provenance for Objective-C 3 showcase workloads only after canonical parser fixtures claim syntax support; benchmark timing, raw samples, reports, generated rows, cache rows, comparative baselines, package staging, machine profiles, tool versions, and public command wrappers do not create parser support",
   "phase_support_claim_authority": false,
   "selectors": [
     "workloads:auroraBoard",
@@ -15,5 +15,5 @@
     "source:showcase/patchKit/main.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "legacy syntax, old-mode Objective-C 2 baseline inputs, parser fallback flags, and compatibility parser lanes remain parser rejection or comparative-provenance evidence"
+  "retired_surface_rule": "legacy syntax, old-mode Objective-C 2 baseline inputs, parser fallback flags, parser shims, compatibility parser lanes, generated-only parser rows, report-only parser rows, migration-only parser rows, timing-only parser rows, cache-only parser rows, wrapper-only parser rows, local-only parser rows, and foreign-baseline parser rows remain parser rejection, strict-error, or comparative-provenance evidence"
 }

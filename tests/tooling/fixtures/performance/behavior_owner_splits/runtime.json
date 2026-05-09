@@ -4,7 +4,7 @@
   "owner_phase": "runtime",
   "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
   "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
-  "support_boundary": "runtime ownership covers runtime-wall-clock provenance for Objective-C 3 workloads only after canonical runtime fixtures own the behavior",
+  "support_boundary": "runtime ownership covers runtime-wall-clock provenance for Objective-C 3 workloads only after canonical runtime fixtures own the behavior; timing rows, raw samples, reports, generated rows, cache rows, comparative baselines, package staging, machine profiles, tool versions, public command wrappers, and expected exit-code rows remain provenance unless canonical runtime owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "benchmark_classes:runtime-wall-clock",
@@ -18,5 +18,5 @@
     "expected_exit_code:7"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "missing runtime support, fallback runtime execution, compatibility runtime lanes, and wrapper-only package actions are availability-limited, strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "missing runtime support, fallback runtime execution, compatibility runtime lanes, runtime shims, old-mode runtime rows, wrapper-only package actions, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, timing-only runtime rows, cache-only runtime rows, local-only runtime rows, cross-machine runtime rows, and foreign-baseline runtime rows are availability-limited, strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }
