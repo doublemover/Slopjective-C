@@ -3,7 +3,9 @@ add_library(objc3c_parse STATIC
   objc3_ast_builder_contract.cpp
   objc3_diagnostic_grammar_hooks_core_feature.cpp
   objc3_diagnostic_source_precision_scaffold.cpp
-  objc3_message_send_profiles.cpp
+  objc3_message_send_dispatch_abi_profiles.cpp
+  objc3_message_send_form_profiles.cpp
+  objc3_message_send_runtime_profiles.cpp
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
   objc3_parser_attributes.cpp
