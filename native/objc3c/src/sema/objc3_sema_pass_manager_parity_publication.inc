@@ -630,6 +630,10 @@
       result.sema_pass_flow_summary.recovery_replay_key_deterministic;
   result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied =
       result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied;
+  result.parity_surface.deterministic_diagnostics_publication_record =
+      result.deterministic_diagnostics_publication_record &&
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(
+          result.parity_surface.diagnostics_publication_record);
   result.parity_surface.deterministic_pass_manager_publication_record =
       result.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(

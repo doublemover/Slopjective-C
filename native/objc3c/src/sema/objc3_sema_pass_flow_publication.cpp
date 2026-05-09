@@ -48,11 +48,19 @@ void PublishObjc3SemaPassFlowSummary(
       result.sema_pass_flow_summary.diagnostics_hardening_satisfied &&
       result.sema_pass_flow_summary.robustness_guardrails_satisfied;
 
+  result.diagnostics_publication_record =
+      BuildObjc3SemaDiagnosticsPublicationRecord(
+          result.sema_pass_flow_summary,
+          result.deterministic_semantic_diagnostics);
+  result.deterministic_diagnostics_publication_record =
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(
+          result.diagnostics_publication_record);
+
   result.pass_manager_publication_record =
       BuildObjc3SemaPassManagerPublicationRecord(
           handoff_publication.owner_record,
           result.sema_pass_flow_summary,
-          result.deterministic_semantic_diagnostics,
+          result.diagnostics_publication_record,
           result.deterministic_type_metadata_handoff);
   result.deterministic_pass_manager_publication_record =
       IsReadyObjc3SemaPassManagerPublicationRecord(

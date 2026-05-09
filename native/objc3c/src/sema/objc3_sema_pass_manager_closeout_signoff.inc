@@ -247,12 +247,9 @@
       IsReadyObjc3SemaTypeMetadataPublicationRecord(
           result.parity_surface.type_metadata_publication_record);
   const bool closeout_diagnostics_publication_ready =
-      result.parity_surface.diagnostics_accounting_consistent &&
-      result.parity_surface.diagnostics_bus_publish_consistent &&
-      result.parity_surface.diagnostics_canonicalized &&
-      result.parity_surface.diagnostics_hardening_satisfied &&
-      result.parity_surface.diagnostics_after_pass_monotonic &&
-      result.parity_surface.deterministic_semantic_diagnostics;
+      result.parity_surface.deterministic_diagnostics_publication_record &&
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(
+          result.parity_surface.diagnostics_publication_record);
   const bool closeout_pass_flow_recovery_ready =
       result.parity_surface.pass_flow_recovery_replay_contract_satisfied &&
       !result.parity_surface.pass_flow_recovery_replay_key.empty() &&

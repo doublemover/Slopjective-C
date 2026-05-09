@@ -27,6 +27,8 @@ inline constexpr const char *kObjc3ParserSemaCanonicalRejectionOwner =
     "native.frontend.parser-sema.canonical-rejection";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
     "native.frontend.sema.diagnostic-stage";
+inline constexpr const char *kObjc3SemaDiagnosticsPublicationOwner =
+    "native.frontend.sema.diagnostics-publication";
 inline constexpr const char *kObjc3SemaPassManagerPublicationOwner =
     "native.frontend.sema.pass-manager-publication";
 inline constexpr const char *kObjc3SemaTypeMetadataPublicationOwner =
@@ -217,6 +219,107 @@ struct Objc3SemaDiagnosticsBus {
   }
 };
 
+struct Objc3SemaDiagnosticsPublicationRecord {
+  std::string diagnostics_publication_owner =
+      kObjc3SemaDiagnosticsPublicationOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string diagnostic_catalog_owner =
+      std::string(::kObjc3SemaDiagnosticCatalogOwner);
+  std::string diagnostic_fixit_owner =
+      std::string(::kObjc3SemaDiagnosticFixitOwner);
+  std::string diagnostic_recovery_owner =
+      std::string(::kObjc3SemaDiagnosticRecoveryOwner);
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool recovery_counts_as_success = false;
+  std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
+  std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  std::size_t diagnostics_total = 0;
+  bool diagnostics_after_pass_monotonic = false;
+  bool diagnostics_emission_totals_consistent = false;
+  bool diagnostics_accounting_consistent = false;
+  bool diagnostics_bus_publish_consistent = false;
+  bool diagnostics_canonicalized = false;
+  bool diagnostics_hardening_satisfied = false;
+  bool semantic_diagnostics_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaDiagnosticsPublicationRecord(
+    const Objc3SemaDiagnosticsPublicationRecord &record) {
+  return Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostic_catalog_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostic_fixit_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostic_recovery_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         !record.recovery_counts_as_success &&
+         record.diagnostics_total == record.diagnostics_after_pass.back() &&
+         record.diagnostics_after_pass_monotonic &&
+         record.diagnostics_emission_totals_consistent &&
+         record.diagnostics_accounting_consistent &&
+         record.diagnostics_bus_publish_consistent &&
+         record.diagnostics_canonicalized &&
+         record.diagnostics_hardening_satisfied &&
+         record.semantic_diagnostics_ready && record.deterministic;
+}
+
+inline Objc3SemaDiagnosticsPublicationRecord
+BuildObjc3SemaDiagnosticsPublicationRecord(
+    const Objc3SemaPassFlowSummary &pass_flow_summary,
+    bool deterministic_semantic_diagnostics) {
+  Objc3SemaDiagnosticsPublicationRecord record;
+  record.stage_input_owner = pass_flow_summary.stage_input_owner;
+  record.diagnostic_handoff_owner = pass_flow_summary.diagnostic_handoff_owner;
+  record.diagnostic_catalog_owner = pass_flow_summary.diagnostic_catalog_owner;
+  record.diagnostic_fixit_owner = pass_flow_summary.diagnostic_fixit_owner;
+  record.diagnostic_recovery_owner = pass_flow_summary.diagnostic_recovery_owner;
+  record.owner_model = pass_flow_summary.owner_model;
+  record.strict_no_fallback = pass_flow_summary.strict_no_fallback;
+  record.strict_no_compatibility = pass_flow_summary.strict_no_compatibility;
+  record.recovery_counts_as_success =
+      pass_flow_summary.recovery_counts_as_success;
+  record.diagnostics_after_pass = pass_flow_summary.diagnostics_after_pass;
+  record.diagnostics_emitted_by_pass =
+      pass_flow_summary.diagnostics_emitted_by_pass;
+  record.diagnostics_total = pass_flow_summary.diagnostics_total;
+  record.diagnostics_after_pass_monotonic =
+      pass_flow_summary.diagnostics_after_pass_monotonic;
+  record.diagnostics_emission_totals_consistent =
+      pass_flow_summary.diagnostics_emission_totals_consistent;
+  record.diagnostics_accounting_consistent =
+      pass_flow_summary.diagnostics_accounting_consistent;
+  record.diagnostics_bus_publish_consistent =
+      pass_flow_summary.diagnostics_bus_publish_consistent;
+  record.diagnostics_canonicalized = pass_flow_summary.diagnostics_canonicalized;
+  record.diagnostics_hardening_satisfied =
+      pass_flow_summary.diagnostics_hardening_satisfied;
+  record.semantic_diagnostics_ready = deterministic_semantic_diagnostics;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostic_catalog_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostic_fixit_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostic_recovery_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      !record.recovery_counts_as_success &&
+      record.diagnostics_total == record.diagnostics_after_pass.back() &&
+      record.diagnostics_after_pass_monotonic &&
+      record.diagnostics_emission_totals_consistent &&
+      record.diagnostics_accounting_consistent &&
+      record.diagnostics_bus_publish_consistent &&
+      record.diagnostics_canonicalized &&
+      record.diagnostics_hardening_satisfied &&
+      record.semantic_diagnostics_ready;
+  return record;
+}
+
 struct Objc3SemaPassManagerInput {
   const Objc3ParsedProgram *program = nullptr;
   const Objc3ParserContractSnapshot *parser_contract_snapshot = nullptr;
@@ -288,6 +391,7 @@ BuildObjc3ParserSemaHandoffOwnerRecord(const Objc3SemaPassManagerInput &input) {
 
 struct Objc3SemaPassManagerPublicationRecord {
   Objc3ParserSemaHandoffOwnerRecord parser_sema_handoff_owner_record;
+  Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
   std::string pass_manager_publication_owner =
       kObjc3SemaPassManagerPublicationOwner;
   std::string pass_flow_owner = kObjc3SemaStageInputOwner;
@@ -302,6 +406,7 @@ struct Objc3SemaPassManagerPublicationRecord {
   bool semantic_diagnostics_ready = false;
   bool type_metadata_handoff_ready = false;
   bool diagnostics_publication_ready = false;
+  bool diagnostics_publication_record_ready = false;
   bool deterministic = false;
 };
 
@@ -318,17 +423,19 @@ inline bool IsReadyObjc3SemaPassManagerPublicationRecord(
          record.parser_sema_handoff_owner_ready &&
          record.pass_flow_summary_ready && record.semantic_diagnostics_ready &&
          record.type_metadata_handoff_ready &&
-         record.diagnostics_publication_ready && record.deterministic;
+         record.diagnostics_publication_ready &&
+         record.diagnostics_publication_record_ready && record.deterministic;
 }
 
 inline Objc3SemaPassManagerPublicationRecord
 BuildObjc3SemaPassManagerPublicationRecord(
     const Objc3ParserSemaHandoffOwnerRecord &parser_owner_record,
     const Objc3SemaPassFlowSummary &pass_flow_summary,
-    bool deterministic_semantic_diagnostics,
+    const Objc3SemaDiagnosticsPublicationRecord &diagnostics_record,
     bool deterministic_type_metadata_handoff) {
   Objc3SemaPassManagerPublicationRecord record;
   record.parser_sema_handoff_owner_record = parser_owner_record;
+  record.diagnostics_publication_record = diagnostics_record;
   record.pass_flow_owner = pass_flow_summary.stage_input_owner;
   record.diagnostic_handoff_owner = pass_flow_summary.diagnostic_handoff_owner;
   record.owner_model = pass_flow_summary.owner_model;
@@ -338,12 +445,15 @@ BuildObjc3SemaPassManagerPublicationRecord(
       IsReadyObjc3ParserSemaHandoffOwnerRecord(parser_owner_record);
   record.pass_flow_summary_ready =
       IsReadyObjc3SemaPassFlowSummary(pass_flow_summary);
-  record.semantic_diagnostics_ready = deterministic_semantic_diagnostics;
+  record.semantic_diagnostics_ready =
+      diagnostics_record.semantic_diagnostics_ready;
   record.type_metadata_handoff_ready = deterministic_type_metadata_handoff;
   record.diagnostics_publication_ready =
       pass_flow_summary.diagnostics_hardening_satisfied &&
       pass_flow_summary.diagnostics_bus_publish_consistent &&
       pass_flow_summary.diagnostics_canonicalized;
+  record.diagnostics_publication_record_ready =
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(diagnostics_record);
   record.deterministic =
       Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.pass_flow_owner) &&
@@ -354,7 +464,8 @@ BuildObjc3SemaPassManagerPublicationRecord(
       record.parser_sema_handoff_owner_ready &&
       record.pass_flow_summary_ready && record.semantic_diagnostics_ready &&
       record.type_metadata_handoff_ready &&
-      record.diagnostics_publication_ready;
+      record.diagnostics_publication_ready &&
+      record.diagnostics_publication_record_ready;
   return record;
 }
 
@@ -895,6 +1006,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
+  Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
   Objc3SemaPassManagerPublicationRecord pass_manager_publication_record;
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
   Objc3SemaParityValidationRecord parity_validation_record;
@@ -1323,6 +1435,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_advanced_contract_rejection_shard2 = false;
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   bool deterministic_parser_sema_integration_closeout_signoff = false;
+  bool deterministic_diagnostics_publication_record = false;
   bool deterministic_pass_manager_publication_record = false;
   bool deterministic_type_metadata_publication_record = false;
   bool deterministic_parity_validation_record = false;
@@ -1454,8 +1567,11 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
          surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
          surface.deterministic_parser_sema_integration_closeout_signoff &&
+         surface.deterministic_diagnostics_publication_record &&
          surface.deterministic_pass_manager_publication_record &&
          IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
+         IsReadyObjc3SemaDiagnosticsPublicationRecord(
+             surface.diagnostics_publication_record) &&
          IsReadyObjc3SemaPassManagerPublicationRecord(
              surface.pass_manager_publication_record) &&
          surface.deterministic_type_metadata_publication_record &&

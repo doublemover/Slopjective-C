@@ -1008,6 +1008,8 @@
   result.parity_surface.parser_sema_integration_closeout_signoff =
       result.parser_sema_integration_closeout_signoff;
   result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;
+  result.parity_surface.diagnostics_publication_record =
+      result.diagnostics_publication_record;
   result.parity_surface.pass_manager_publication_record =
       result.pass_manager_publication_record;
   result.parity_surface.type_metadata_publication_record =
