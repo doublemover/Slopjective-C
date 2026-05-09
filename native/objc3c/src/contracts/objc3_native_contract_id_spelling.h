@@ -2,35 +2,25 @@
 
 #include <string_view>
 
+#include "contracts/objc3_config_contract_id_spelling.h"
+#include "contracts/objc3_frontend_contract_id_spelling.h"
 #include "contracts/objc3_native_contract_id_kind.h"
+#include "contracts/objc3_runtime_metadata_contract_id_spelling.h"
 
 inline constexpr std::string_view Objc3NativeContractIdSpelling(
     Objc3NativeContractId contract_id) {
-  switch (contract_id) {
-    case Objc3NativeContractId::kDiagnosticPayloadV1:
-      return "objc3c.diagnostic.payload.v1";
-    case Objc3NativeContractId::kFrontendDiagnosticsBusV1:
-      return "objc3c.frontend.diagnostics_bus.v1";
-    case Objc3NativeContractId::kCanonicalLanguageProfileV1:
-      return "objc3c.config.language_profile.canonical.v1";
-    case Objc3NativeContractId::kCanonicalFeatureStateCatalogV1:
-      return "objc3c.config.feature_state_catalog.canonical.v1";
-    case Objc3NativeContractId::kRemovedOptionValidationV1:
-      return "objc3c.config.removed_option_validation.v1";
-    case Objc3NativeContractId::kRuntimeMetadataSourceOwnershipFreezeV1:
-      return "objc3c.runtime.metadata.source.ownership.freeze.v1";
-    case Objc3NativeContractId::kRuntimeMetadataSectionAbiSymbolPolicyFreezeV1:
-      return "objc3c.runtime.metadata.section.abi.symbol.policy.freeze.v1";
-    case Objc3NativeContractId::kRuntimeMetadataSectionPublicationV1:
-      return "objc3c.runtime.metadata.section.publication.v1";
-    case Objc3NativeContractId::kRuntimeMetadataObjectInspectionHarnessV1:
-      return "objc3c.runtime.metadata.object.inspection.harness.v1";
-    case Objc3NativeContractId::kRuntimeMetadataSourceToSectionMatrixV1:
-      return "objc3c.runtime.metadata.source.to.section.matrix.v1";
-    case Objc3NativeContractId::kRuntimeMetadataEmissionGateV1:
-      return "objc3c.runtime.metadata.emission.gate.v1";
-    case Objc3NativeContractId::kRuntimeMetadataObjectEmissionCloseoutV1:
-      return "objc3c.runtime.cross.lane.object.emission.closeout.v1";
+  if (const auto frontend = Objc3FrontendContractIdSpelling(contract_id);
+      !frontend.empty()) {
+    return frontend;
+  }
+  if (const auto config = Objc3ConfigContractIdSpelling(contract_id);
+      !config.empty()) {
+    return config;
+  }
+  if (const auto runtime_metadata =
+          Objc3RuntimeMetadataContractIdSpelling(contract_id);
+      !runtime_metadata.empty()) {
+    return runtime_metadata;
   }
   return {};
 }
