@@ -23,7 +23,9 @@
     "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "docs/issues/hard_cutover_behavior_evidence_topology.md",
     "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-    "docs/issues/hard_cutover_fixture_family_owner_index.md"
+    "docs/issues/hard_cutover_fixture_family_owner_index.md",
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
+    "docs/issues/hard_cutover_behavior_outcome_owner_index.md"
   ],
   "post_index_local_commit_refresh": [
     {
