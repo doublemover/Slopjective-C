@@ -47,6 +47,7 @@ tables or examples.
 | `objc3c-developer-tooling-editor-surface-v1.schema.json` | Combined editor tooling surface summaries for diagnostics, navigation, formatting, debug, and unpublished capability metadata. |
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |
 | `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated truth, fixtures, and archive references without support-claim inflation. |
+| `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated reports, and active rejection findings. |
 
 The canonical data files are:
 

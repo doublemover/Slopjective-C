@@ -26,6 +26,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-artifact-authenticity-v1": ROOT
     / "schemas"
     / "objc3c-artifact-authenticity-v1.schema.json",
+    "source-hygiene-hard-cutover-report-v1": ROOT
+    / "schemas"
+    / "source-hygiene-hard-cutover-report-v1.schema.json",
     "objc3c-governance-anti-regression-summary-v1": ROOT
     / "schemas"
     / "objc3c-governance-anti-regression-summary-v1.schema.json",
@@ -66,7 +69,6 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-performance-telemetry-v1": ROOT
     / "schemas"
     / "objc3c-performance-telemetry-v1.schema.json",
-    "objc3c-compatibility-report-v1": ROOT / "schemas" / "objc3c-compatibility-report-v1.schema.json",
     "objc3c-performance-dashboard-summary-v1": ROOT
     / "schemas"
     / "objc3c-performance-dashboard-summary-v1.schema.json",

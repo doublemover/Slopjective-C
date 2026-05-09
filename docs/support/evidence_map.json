@@ -394,6 +394,11 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
+      "path": "schemas/source-hygiene-hard-cutover-report-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
       "path": "docs/support/evidence_map.json"
     },
     {

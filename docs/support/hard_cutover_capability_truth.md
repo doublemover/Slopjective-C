@@ -53,6 +53,15 @@ by linking back to the capability matrix and evidence map. A prose statement is
 not a support claim unless an `implemented` capability row carries the matching
 evidence.
 
+Source-hygiene hard-cutover reports are registry-owned negative-evidence
+surfaces:
+
+- `schemas/source-hygiene-hard-cutover-report-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
+
+They classify retired-surface residue and generated-report inventory; they do
+not define compatibility support or create report-only claims.
+
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They
 must not round that into full runtime behavior, compatibility support, or an
