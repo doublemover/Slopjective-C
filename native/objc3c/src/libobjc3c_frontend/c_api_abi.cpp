@@ -29,6 +29,14 @@ static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t,
 static_assert(std::is_same_v<objc3c_frontend_c_version_t,
                              objc3c_frontend_version_t>,
               "version ABI mirror mismatch");
+static_assert(OBJC3C_FRONTEND_C_API_OWNER_RESULT_LIFECYCLE == 1,
+              "result lifecycle owner id drift");
+static_assert(OBJC3C_FRONTEND_C_API_OWNER_PUBLIC_PRIVATE_PARTITION == 8,
+              "public/private partition owner id drift");
+static_assert(OBJC3C_FRONTEND_C_API_POLICY_CALLER_OWNS_RESULT_STORAGE == 1,
+              "result storage policy id drift");
+static_assert(OBJC3C_FRONTEND_C_API_POLICY_C_NAMES_OWN_PACKAGE_SURFACE == 8,
+              "public C package surface policy id drift");
 
 extern "C" OBJC3C_FRONTEND_API uint32_t
 objc3c_frontend_c_api_abi_version(void) {

@@ -20,6 +20,7 @@ ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_error.h"
 ARTIFACT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_artifact.h"
 STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
+C_API_CONTRACT_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_contract.h"
 C_API_TYPES_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_types.h"
 C_API_VERSION_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_version.h"
 C_API_LIFECYCLE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_lifecycle.h"
@@ -29,6 +30,7 @@ C_API_STRING_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_string.h"
 C_API_STAGE_SUMMARY_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_stage_summary.h"
 C_API_HEADER_PATHS = [
     C_API_H,
+    C_API_CONTRACT_H,
     C_API_TYPES_H,
     C_API_VERSION_H,
     C_API_LIFECYCLE_H,
@@ -81,6 +83,7 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     string_header = _read(STRING_H)
 
     assert "#include \"c_api_types.h\"" in header
+    assert "#include \"c_api_contract.h\"" in header
     assert "#include \"c_api_version.h\"" in header
     assert "#include \"c_api_lifecycle.h\"" in header
     assert "#include \"c_api_compile.h\"" in header
@@ -116,6 +119,17 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;" in c_api_surface
     assert "typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;" in c_api_surface
     assert "typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;" in c_api_surface
+    assert "#define OBJC3C_FRONTEND_C_API_CONTRACT_ID" in c_api_surface
+    assert "objc3c_frontend_c_api_owner_t" in c_api_surface
+    assert "objc3c_frontend_c_api_policy_t" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_RESULT_LIFECYCLE_OWNER owns result destruction" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_STRING_OWNER owns standalone string release/view" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_DIAGNOSTICS_OWNER owns diagnostics artifact access" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_ARTIFACT_OWNER owns artifact selectors" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_STAGE_SUMMARY_OWNER owns stage summary predicates" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_NULL_INVALID_INPUT_OWNER owns fail-closed NULL" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_ABI_VERSION_OWNER owns exact ABI version gating" in c_api_surface
+    assert "OBJC3C_FRONTEND_C_API_PUBLIC_PRIVATE_PARTITION_OWNER owns the rule" in c_api_surface
 
     assert "uint32_t objc3c_frontend_c_api_abi_version(void);" in c_api_surface
     assert "uint8_t objc3c_frontend_c_is_abi_compatible(" in c_api_surface
@@ -182,7 +196,7 @@ def test_public_frontend_surface_has_no_lane_or_roadmap_comments() -> None:
             assert term not in text, f"{term!r} remains in {path}"
 
 
-def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
+def test_c_api_cpp_pins_core_compile_and_c_only_helper_owners() -> None:
     for source_path in C_API_SOURCES:
         assert source_path.exists(), source_path
 
@@ -194,13 +208,15 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     assert "return objc3c_frontend_abi_version();" in source
     assert "return objc3c_frontend_version();" in source
     assert "return objc3c_frontend_version_string();" in source
-    assert "return objc3c_frontend_context_create();" in source
-    assert "objc3c_frontend_context_destroy(context);" in source
+    assert "new (std::nothrow) objc3c_frontend_c_context_t();" in source
+    assert "delete context;" in source
     assert "return objc3c_frontend_compile_file(context, options, result);" in source
     assert "return objc3c_frontend_compile_source(context, options, result);" in source
     assert "return objc3c_frontend_copy_last_error(context, buffer, buffer_size);" in source
     assert "static_assert(std::is_same_v<objc3c_frontend_c_string_t, objc3c_frontend_string_t>" in squashed_source
     assert "static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t, objc3c_frontend_stage_summary_t>" in squashed_source
+    assert "OBJC3C_FRONTEND_C_API_OWNER_RESULT_LIFECYCLE == 1" in source
+    assert "OBJC3C_FRONTEND_C_API_POLICY_C_NAMES_OWN_PACKAGE_SURFACE == 8" in source
     assert "objc3c_frontend_c_result_destroy(" in source
     assert "ReleaseCompileResultOwnedStrings(result);" in source
     assert "*result = {};" in source
@@ -216,10 +232,12 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     assert "return result == nullptr ? nullptr : result->error_message;" in source
     assert "objc3c_frontend_c_result_error_message_view(" in source
     assert "objc3c_frontend_c_string_view(" in source
-    assert "return objc3c_frontend_string_view(string);" in source
+    assert "if (string == nullptr || string->data == nullptr)" in source
+    assert "return {string->data, string->size};" in source
     assert "objc3c_frontend_c_string_release(" in source
-    assert "objc3c_frontend_string_release(string);" in source
+    assert "ReleaseOwnedFrontendString(string);" in source
     assert "objc3c_frontend_c_stage_summary_is_well_formed(" in source
+    assert "IsDefinedFrontendCApiStage(expected_stage)" in source
     assert "if (summary == nullptr || summary->stage != expected_stage)" in source
     assert "summary->attempted > 1u || summary->skipped > 1u" in source
     assert "severity_total == summary->diagnostics_total ? 1u : 0u" in source
@@ -242,6 +260,7 @@ def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helper
     assert contract["header_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.h"
     assert contract["header_paths"] == [
         "native/objc3c/src/libobjc3c_frontend/c_api.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_contract.h",
         "native/objc3c/src/libobjc3c_frontend/c_api_types.h",
         "native/objc3c/src/libobjc3c_frontend/c_api_version.h",
         "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.h",

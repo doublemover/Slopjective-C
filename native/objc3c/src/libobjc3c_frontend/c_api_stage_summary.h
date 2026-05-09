@@ -9,6 +9,12 @@
 extern "C" {
 #endif
 
+/*
+ * Stage-summary owner for C-only embedders. Predicates inspect only the
+ * by-value public summary record and reject NULL, undefined stage ids, mutually
+ * exclusive attempted/skipped states, and severity totals that drift from
+ * diagnostics_total.
+ */
 OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_stage_summary_is_well_formed(
     const objc3c_frontend_c_stage_summary_t *summary,
     objc3c_frontend_c_stage_id_t expected_stage);

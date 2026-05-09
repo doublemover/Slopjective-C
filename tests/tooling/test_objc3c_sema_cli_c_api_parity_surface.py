@@ -105,8 +105,14 @@ def test_frontend_c_api_contract_fixtures_pin_owner_truth_surfaces() -> None:
     assert helper_contract["owner_contract"] == {
         "helper_owner": "frontend-c-api-helper-contract",
         "runner_owner": "frontend-c-api-runner",
+        "result_lifecycle_owner": "frontend-c-api-result-lifecycle",
+        "string_owner": "frontend-c-api-string-lifecycle",
+        "diagnostics_owner": "frontend-c-api-diagnostics-artifact",
         "result_owner": "frontend-c-api-helper-result-accessor",
         "artifact_owner": "frontend-c-api-helper-artifact-accessor",
         "status_owner": "frontend-c-api-helper-stage-status",
+        "null_invalid_input_owner": "frontend-c-api-null-invalid-input",
+        "abi_version_owner": "frontend-c-api-abi-version",
+        "public_private_partition_owner": "frontend-c-api-public-private-partition",
         "no_fallback_or_report_only_claims": True,
     }

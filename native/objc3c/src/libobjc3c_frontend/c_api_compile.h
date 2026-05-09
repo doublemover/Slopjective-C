@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+/*
+ * Compile/error owner for C-only embedders. Entry points require non-NULL
+ * context, options, and result pointers; invalid inputs fail closed with
+ * OBJC3C_FRONTEND_STATUS_USAGE_ERROR and no fallback compile path.
+ */
 OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(
     objc3c_frontend_c_context_t *context,
     const objc3c_frontend_c_compile_options_t *options,

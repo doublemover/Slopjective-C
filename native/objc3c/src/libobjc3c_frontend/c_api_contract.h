@@ -1,0 +1,50 @@
+#ifndef OBJC3C_LIBOBJC3C_FRONTEND_C_API_CONTRACT_H_
+#define OBJC3C_LIBOBJC3C_FRONTEND_C_API_CONTRACT_H_
+
+/*
+ * Public C API owner registry. These constants are source-level contract
+ * anchors for embedders and static tooling; they are not compatibility aliases
+ * for retired headers or entrypoints.
+ */
+#define OBJC3C_FRONTEND_C_API_CONTRACT_ID \
+  "objc3c.frontend.c_api.public_contract.v2"
+#define OBJC3C_FRONTEND_C_API_RESULT_LIFECYCLE_OWNER \
+  "frontend-c-api-result-lifecycle"
+#define OBJC3C_FRONTEND_C_API_STRING_OWNER \
+  "frontend-c-api-string-lifecycle"
+#define OBJC3C_FRONTEND_C_API_DIAGNOSTICS_OWNER \
+  "frontend-c-api-diagnostics-artifact"
+#define OBJC3C_FRONTEND_C_API_ARTIFACT_OWNER \
+  "frontend-c-api-artifact-accessor"
+#define OBJC3C_FRONTEND_C_API_STAGE_SUMMARY_OWNER \
+  "frontend-c-api-stage-summary"
+#define OBJC3C_FRONTEND_C_API_NULL_INVALID_INPUT_OWNER \
+  "frontend-c-api-null-invalid-input"
+#define OBJC3C_FRONTEND_C_API_ABI_VERSION_OWNER \
+  "frontend-c-api-abi-version"
+#define OBJC3C_FRONTEND_C_API_PUBLIC_PRIVATE_PARTITION_OWNER \
+  "frontend-c-api-public-private-partition"
+
+typedef enum objc3c_frontend_c_api_owner {
+  OBJC3C_FRONTEND_C_API_OWNER_RESULT_LIFECYCLE = 1,
+  OBJC3C_FRONTEND_C_API_OWNER_STRING_LIFECYCLE = 2,
+  OBJC3C_FRONTEND_C_API_OWNER_DIAGNOSTICS_ARTIFACT = 3,
+  OBJC3C_FRONTEND_C_API_OWNER_ARTIFACT_ACCESSOR = 4,
+  OBJC3C_FRONTEND_C_API_OWNER_STAGE_SUMMARY = 5,
+  OBJC3C_FRONTEND_C_API_OWNER_NULL_INVALID_INPUT = 6,
+  OBJC3C_FRONTEND_C_API_OWNER_ABI_VERSION = 7,
+  OBJC3C_FRONTEND_C_API_OWNER_PUBLIC_PRIVATE_PARTITION = 8
+} objc3c_frontend_c_api_owner_t;
+
+typedef enum objc3c_frontend_c_api_policy {
+  OBJC3C_FRONTEND_C_API_POLICY_CALLER_OWNS_RESULT_STORAGE = 1,
+  OBJC3C_FRONTEND_C_API_POLICY_RESULT_OWNS_PAYLOAD_STRINGS = 2,
+  OBJC3C_FRONTEND_C_API_POLICY_STANDALONE_STRING_RELEASE_ONLY = 3,
+  OBJC3C_FRONTEND_C_API_POLICY_BORROWED_OPTIONS_FOR_CALL_DURATION = 4,
+  OBJC3C_FRONTEND_C_API_POLICY_DIAGNOSTICS_THROUGH_ARTIFACT_PATH = 5,
+  OBJC3C_FRONTEND_C_API_POLICY_NULL_INVALID_FAIL_CLOSED = 6,
+  OBJC3C_FRONTEND_C_API_POLICY_EXACT_ABI_VERSION_ONLY = 7,
+  OBJC3C_FRONTEND_C_API_POLICY_C_NAMES_OWN_PACKAGE_SURFACE = 8
+} objc3c_frontend_c_api_policy_t;
+
+#endif  // OBJC3C_LIBOBJC3C_FRONTEND_C_API_CONTRACT_H_

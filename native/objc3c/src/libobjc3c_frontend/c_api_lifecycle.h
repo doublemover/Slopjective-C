@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+/*
+ * Context lifecycle owner for C-only embedders. NULL destruction is a no-op;
+ * contexts are opaque and may only be released by this API surface.
+ */
 OBJC3C_FRONTEND_API objc3c_frontend_c_context_t *
 objc3c_frontend_c_context_create(void);
 OBJC3C_FRONTEND_API void objc3c_frontend_c_context_destroy(
