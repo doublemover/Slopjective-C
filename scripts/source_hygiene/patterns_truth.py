@@ -27,8 +27,15 @@ TRUTH_BOUNDARY_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "report-only-claim",
         "Report-only completion or support claims must not replace executable evidence.",
-        r"\breport[-_\s]+only\s+(?:claims?|completion|evidence|proof)\b"
+        r"\breport[-_\s]+only(?:[-_\s]+(?:claims?|completion|evidence|proof|mode|gate|check|validation|support|surface|path))?\b"
         r"|(?:\bclaim\b|\bcomplete\b|\bsupport\b)[^\n]{0,100}\breport[-_\s]+only\b",
+    ),
+    ForbiddenPattern(
+        "source-hygiene-allowlist-residue",
+        "Source-hygiene allowlist behavior is retired from the hard-cutover gate.",
+        r"\bsource[-_\s]+hygiene[^\n]{0,100}\ballow[-_\s]?list\b"
+        r"|\ballow[-_\s]?list[^\n]{0,100}\bsource[-_\s]+hygiene\b"
+        r"|\bsource[-_\s]+hygiene[-_\s]+hard[-_\s]+cutover[-_\s]+allow[-_\s]?list\.json\b",
     ),
     ForbiddenPattern(
         "local-only-report-truth",

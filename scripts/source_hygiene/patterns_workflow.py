@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .pattern_model import ForbiddenPattern
-from .pattern_scopes import PACKAGE_MANIFEST_PATHS
+from .pattern_scopes import PACKAGE_MANIFEST_PATHS, PUBLIC_SURFACE_PATHS
 
 
 WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
@@ -25,11 +25,25 @@ WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
         "direct-workflow-module-doc-command",
         "Public workflow instructions must expose the npm bridge instead of direct scripts.objc3c_workflow module commands.",
         r"(?<![A-Za-z0-9_.-])python\s+-m\s+scripts\.objc3c_workflow\b",
+        include_paths=PUBLIC_SURFACE_PATHS,
+        exclude_paths=PACKAGE_MANIFEST_PATHS,
+    ),
+    ForbiddenPattern(
+        "direct-public-script-command",
+        "Public workflow instructions must expose npm run objc3c -- <action>, not direct script commands.",
+        r"(?<![A-Za-z0-9_.-])(?:python(?:\s+-m)?|py|pwsh|powershell(?:\.exe)?|bash|sh)\s+(?:\.?[\\/])?scripts[\\/][^\n`]+",
+        include_paths=PUBLIC_SURFACE_PATHS,
     ),
     ForbiddenPattern(
         "direct-native-compile-wrapper-command",
         "Public native compile instructions must expose npm run objc3c -- compile-objc3c instead of direct PowerShell wrapper commands.",
         r"\b(?:pwsh|powershell(?:\.exe)?)\s+[^\n]{0,180}\bscripts[\\/]+objc3c_native_compile\.ps1\b",
+        include_paths=PUBLIC_SURFACE_PATHS,
+    ),
+    ForbiddenPattern(
+        "retired-lint-default-action",
+        "The retired lint-default action must not reappear; use npm run objc3c -- lint.",
+        r"\bnpm\s+run\s+objc3c\s+--\s+lint-default\b|(?<![A-Za-z0-9_-])lint-default(?![A-Za-z0-9_-])",
     ),
     ForbiddenPattern(
         "retired-public-script-alias-metadata",

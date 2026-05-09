@@ -20,6 +20,11 @@ ACTIVE_SOURCE_PATHS: tuple[str, ...] = PUBLIC_SURFACE_PATHS + (
     "tests/**",
 )
 
+IMPLEMENTATION_SOURCE_PATHS: tuple[str, ...] = (
+    "native/objc3c/**",
+    "scripts/**",
+)
+
 PACKAGE_MANIFEST_PATHS: tuple[str, ...] = ("package.json",)
 
 CANONICAL_REJECTION_REGISTRY_PATHS: tuple[str, ...] = (
