@@ -16,12 +16,4 @@ const char *FeatureStateName(FeatureState state) {
   return "unknown";
 }
 
-bool FeatureStateIsAccepted(FeatureState state) {
-  return state == FeatureState::Implemented || state == FeatureState::Internal;
-}
-
-bool FeatureStateIsRejected(FeatureState state) {
-  return state == FeatureState::Rejected || state == FeatureState::Reserved;
-}
-
 }  // namespace objc3c::config
