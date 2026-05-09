@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-retired-surface-absence",
+  "source_of_truth": [
+    "tests/native/retired_surface_matrix.json",
+    "tests/fixtures/canonical/manifest.json",
+    "tests/conformance/hard_cutover_catalog.json"
+  ],
+  "policy": {
+    "positive_fixtures": "canonical Objective-C 3 behavior only",
+    "retired_surfaces": "old-mode, compatibility shim, parser fallback, runtime fallback, and migration-lane residues must be explicit rejection or strict-error evidence",
+    "absence_claim": "when a retired surface has no positive fixture, the index names the rejection fixture or documents the surface as absent from public support"
+  },
+  "forbidden_positive_surface_tokens": [
+    "old-mode",
+    "old_mode",
+    "shim",
+    "fallback",
+    "compat",
+    "compatibility",
+    "migration"
+  ],
+  "positive_roots": [
+    "tests/native/parser/positive",
+    "tests/native/sema/types",
+    "tests/native/sema/ownership",
+    "tests/native/sema/objc",
+    "tests/native/sema/control_flow",
+    "tests/native/sema/concurrency",
+    "tests/native/lowering/expressions",
+    "tests/native/lowering/statements",
+    "tests/native/lowering/objc_runtime",
+    "tests/native/lowering/ownership",
+    "tests/native/ir/module",
+    "tests/native/ir/function",
+    "tests/native/ir/metadata",
+    "tests/native/ir/runtime_calls",
+    "tests/native/runtime/object_model",
+    "tests/native/runtime/storage",
+    "tests/native/runtime/arc",
+    "tests/native/runtime/blocks",
+    "tests/native/runtime/concurrency",
+    "tests/native/e2e/smoke",
+    "tests/native/e2e/feature_matrix"
+  ],
+  "retired_surface_disposition": [
+    {
+      "surface": "old-mode literal aliases",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+        "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "O3C002"
+      ]
+    },
+    {
+      "surface": "removed compatibility mode flag",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+      ]
+    },
+    {
+      "surface": "removed parser fallback flag",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-FALLBACK-FLAG"
+      ]
+    },
+    {
+      "surface": "removed compatibility shim gate",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
+      ]
+    },
+    {
+      "surface": "removed runtime dispatch fallback flag",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
+      ]
+    },
+    {
+      "surface": "non-nil runtime dispatch fallback linkage",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol.objc3"
+      ],
+      "diagnostic_codes": [
+        "link.unresolved_symbol"
+      ]
+    },
+    {
+      "surface": "unknown receiver runtime dispatch fallback",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "diagnostic_codes": [
+        "O3RT002"
+      ]
+    },
+    {
+      "surface": "migration lane as behavior support",
+      "status": "absent",
+      "evidence": [
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md"
+      ],
+      "diagnostic_codes": []
+    }
+  ]
+}

@@ -45,6 +45,11 @@ Machine-readable indexes:
 - `tests/conformance/hard_cutover_catalog.json` (behavior boundary and
   no-compatibility policy for parser, semantic, lowering/ABI, IR/module, and
   runtime/e2e fixture groups)
+- `tests/conformance/hard_cutover_issue_index.json` (local issue evidence map
+  for `#8132`-`#8150`, keyed to behavior fixture boundaries and local commits)
+- `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
+  old-mode, shim, fallback, compatibility, and migration-lane surfaces mapped
+  to rejection, strict-error, or absent support)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)

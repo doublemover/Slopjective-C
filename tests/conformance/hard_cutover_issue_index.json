@@ -1,0 +1,425 @@
+{
+  "schema_version": 1,
+  "program": "objc3-hard-cutover-8132-8150",
+  "source_basis": "local commits on hard-cutover/hc-000-full-program as indexed on 2026-05-09; validation and GitHub updates intentionally not run by this worker",
+  "global_policy": {
+    "public_command_bridge": "npm run objc3c -- <action>",
+    "positive_behavior_rule": "positive fixtures prove canonical Objective-C 3 behavior only",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, and migration-lane residues are documented as rejection, strict-error, or absent surfaces",
+    "issue_closeout_artifacts": [
+      "docs/issues/hard_cutover_8132_8150_evidence.json",
+      "docs/issues/hard_cutover_8132_8150_evidence.md"
+    ]
+  },
+  "shared_behavior_indexes": [
+    "tests/fixtures/canonical/manifest.json",
+    "tests/native/retired_surface_matrix.json",
+    "tests/conformance/hard_cutover_catalog.json",
+    "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/tooling/fixtures/native/fixture_family_catalog.json"
+  ],
+  "issues": [
+    {
+      "issue": "#8132",
+      "title": "Compiler architecture module decomposition",
+      "lane": "compiler architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "1877caeb7 HC split remaining root CMake targets",
+        "df28562af HC split frontend and driver CMake targets",
+        "87f958c8c HC split AST target surfaces",
+        "d61aad21e HC split native ownership and schema surfaces",
+        "bd3905d5c HC split IR and pipeline owner modules",
+        "28a65a27a HC split lexer parser sema owners",
+        "fb443536f HC split driver and C API runner owners"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "tests/fixtures/canonical/manifest.json"
+      ],
+      "retired_surface_disposition": "not a public behavior surface; no shim, fallback, compatibility, or migration support claimed"
+    },
+    {
+      "issue": "#8133",
+      "title": "Runtime strict typed dispatch",
+      "lane": "runtime dispatch",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "d8552e07a HC enforce strict typed runtime dispatch",
+        "d53083a92 HC split runtime dispatch result owners",
+        "6d10280d0 HC split runtime selector table ownership",
+        "790be44b6 HC split runtime keypath table ownership",
+        "8c35392ea HC split runtime method cache snapshots",
+        "228d345b9 HC split runtime dispatch state snapshots",
+        "61ccee955 HC split runtime dispatch wrapper"
+      ],
+      "behavior_evidence": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "dispatch fallback is strict-error evidence, not a positive behavior lane"
+    },
+    {
+      "issue": "#8134",
+      "title": "Parser, lexer, token, and AST owner split",
+      "lane": "compiler parser architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "28a65a27a HC split lexer parser sema owners",
+        "b0f031ef5 HC split parser expression statement owners",
+        "87f9a36af HC split parser facade from shard core",
+        "29111e0c3 HC split message send profile owners",
+        "2d70b8e34 HC split parser C style type surface owner",
+        "1a130de7a HC split parser attribute profile owners",
+        "a91172c62 HC split token owner modules",
+        "ffca53ae0 HC move parser source models onto AST owners",
+        "1d135dbf5 HC split parser attribute and recovery owners"
+      ],
+      "behavior_evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/parser/positive/objc_property_surface.objc3",
+        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+      ],
+      "retired_surface_disposition": "parser old-mode and fallback flags are rejection fixtures"
+    },
+    {
+      "issue": "#8135",
+      "title": "Semantic analysis owner split",
+      "lane": "compiler semantic architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "121c069aa HC extract sema pass helpers",
+        "8b103d250 HC split sema equivalence owners",
+        "7bf833bd8 HC route source hygiene contract through npm",
+        "112256a5a HC split sema pass publication owners",
+        "232997ba4 HC split sema frontend ownership"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
+      ],
+      "retired_surface_disposition": "semantic compatibility shim gate is a rejection fixture"
+    },
+    {
+      "issue": "#8136",
+      "title": "Lowering owner split",
+      "lane": "compiler lowering architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "73ce6b57f HC extract IR runtime call lowering",
+        "f69c6388f HC split lowering dispatch ARC contracts",
+        "5464aa831 HC split backend lowering IR handoff owners",
+        "f42bd035f HC split lower and IR dispatch owners",
+        "668456c12 HC split lower block validator owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+      ],
+      "retired_surface_disposition": "lowering runtime fallback is strict-error/rejection evidence only"
+    },
+    {
+      "issue": "#8137",
+      "title": "IR owner split",
+      "lane": "compiler IR architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "17f74aff3 HC split lower IR emitter owners",
+        "183d5ff4b HC split IR message send validation owner",
+        "aa410fda7 HC split IR runtime metadata emission owner",
+        "bd3905d5c HC split IR and pipeline owner modules"
+      ],
+      "behavior_evidence": [
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "tests/native/ir/function/helper_function_emission.objc3",
+        "tests/native/ir/metadata/module_metadata_name.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+      ],
+      "retired_surface_disposition": "IR runtime call fallback is strict-error evidence when unresolved"
+    },
+    {
+      "issue": "#8138",
+      "title": "Pipeline, IO, artifact, and config owner split",
+      "lane": "compiler support architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "4c5fbe849 HC extract pipeline dispatch classification",
+        "7a5412e51 HC split pipeline owner surfaces",
+        "5fb992332 HC split IO support artifact owners",
+        "fd22db929 HC split artifact IO support owners",
+        "65abde135 HC split artifact publication owners",
+        "feb4cee08 HC split pipeline IO artifact contracts",
+        "d57506a67 HC split config diagnostics contract owners"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "artifact and IO support evidence is internal ownership; it does not create migration or fallback support"
+    },
+    {
+      "issue": "#8139",
+      "title": "Native CMake target families",
+      "lane": "native build topology",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "1877caeb7 HC split remaining root CMake targets",
+        "df28562af HC split frontend and driver CMake targets",
+        "445494349 HC split native config CMake targets",
+        "2e6b613b8 HC split native CLI CMake target",
+        "1e26582d3 HC split native support CMake target",
+        "87f958c8c HC split AST target surfaces"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "target topology is internal ownership evidence and no public fallback lane is exposed"
+    },
+    {
+      "issue": "#8140",
+      "title": "Driver, frontend, and runner owner split",
+      "lane": "frontend and driver architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "c576b6a22 HC split driver and frontend runner owners",
+        "c18135fcc HC split frontend C API runner owners",
+        "d8bbebb2b HC own frontend C API result accessors",
+        "4e6046642 HC split frontend C API and ADR owners",
+        "93ae37eab HC split frontend basic artifact publication",
+        "fb443536f HC split driver and C API runner owners",
+        "232997ba4 HC split sema frontend ownership"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "driver/frontend ownership evidence does not reintroduce helper aliases as public commands"
+    },
+    {
+      "issue": "#8141",
+      "title": "Owned public C API result, string, diagnostic, and artifact contracts",
+      "lane": "public C API",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "a51cac68d HC expand C API ownership coverage",
+        "d8bbebb2b HC own frontend C API result accessors",
+        "c18135fcc HC split frontend C API runner owners",
+        "232997ba4 HC split sema frontend ownership",
+        "fb443536f HC split driver and C API runner owners",
+        "99f6692d5 HC rename edge-case consistency contracts"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "C API rows are internal contract truth; no compatibility result wrapper is documented as supported"
+    },
+    {
+      "issue": "#8142",
+      "title": "Workflow command surface hard cutover",
+      "lane": "workflow control plane",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "b3401be67 HC harden workflow npm bridge surface",
+        "d86f03a25 HC route CI actions through objc3c bridge",
+        "72b62d7ed HC convert app command metadata to action bridge",
+        "d5668d12e HC rename command surface bridge metadata",
+        "5c025aa97 HC route remaining runtime command docs through npm",
+        "3c4d6c973 HC broaden direct workflow command hygiene",
+        "6fef331c2 HC decompose workflow runner dispatch",
+        "a612ccede HC split workflow action catalog owner",
+        "72919dc66 HC remove workflow registry facade",
+        "37e788a6b HC route workflow registry views through owner API",
+        "5ed60a087 HC centralize script command surfaces"
+      ],
+      "behavior_evidence": [
+        "docs/workflows/commands.md",
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "direct helpers, package-script aliases, and registry facades are absent as public command claims"
+    },
+    {
+      "issue": "#8143",
+      "title": "Runtime acceptance ownership split",
+      "lane": "runtime acceptance",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "aeb02602b HC extract runtime acceptance surface helpers",
+        "6d03f1f01 HC split error runtime acceptance cases",
+        "4213ace21 HC split error lowering acceptance cases",
+        "eec3b5cb6 HC split concurrency acceptance domain",
+        "c5f3f933a HC split interop packaging acceptance cases",
+        "1146e503f HC split object model acceptance surface",
+        "eb25dbc34 HC split registration acceptance domain",
+        "3196d7571 HC split storage reflection acceptance domain",
+        "2341a9bc4 HC decompose runtime acceptance package",
+        "93d70f907 HC split runtime acceptance package"
+      ],
+      "behavior_evidence": [
+        "tests/tooling/runtime/README.md",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "runtime acceptance evidence keeps unsupported dispatch as strict error, not fallback success"
+    },
+    {
+      "issue": "#8144",
+      "title": "Behavior-first tests and fixtures",
+      "lane": "tests and fixtures",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "aee256872 HC introduce behavior fixture catalog",
+        "e5b988129 HC catalog behavior fixture cutover boundaries",
+        "99b93ccb2 HC harden behavior fixture boundaries",
+        "e99c7d740 HC reorganize strict fixture catalog",
+        "67aa58ad9 HC align behavior fixture truth wording",
+        "16e517982 HC expand behavior fixture boundaries",
+        "e157ebe20 HC add removed-mode behavior fixtures",
+        "e02bde405 HC index retired behavior fixture surfaces"
+      ],
+      "behavior_evidence": [
+        "tests/native/README.md",
+        "tests/native/retired_surface_matrix.json",
+        "tests/fixtures/canonical/manifest.json",
+        "tests/conformance/hard_cutover_catalog.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json"
+      ],
+      "retired_surface_disposition": "explicitly documented as rejection, strict-error, or absent fixture evidence"
+    },
+    {
+      "issue": "#8145",
+      "title": "Capability truth docs and evidence map",
+      "lane": "documentation",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "cb19d16ed HC update capability truth docs",
+        "6d7c78009 HC align capability truth docs with npm bridge",
+        "49c78c2ae HC align docs command capability truth",
+        "e782c6074 HC align docs capability truth surfaces",
+        "295984cb6 HC align docs with capability truth",
+        "9034bf1f5 HC document capability schema truth",
+        "709148d75 HC tie schema docs to evidence map",
+        "016683b19 HC add support truth contract"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md",
+        "docs/support/evidence_map.json",
+        "docs/support/evidence_map.md"
+      ],
+      "retired_surface_disposition": "capability docs explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims"
+    },
+    {
+      "issue": "#8146",
+      "title": "Frontend type surface before deeper sema/lowering work",
+      "lane": "frontend type surface",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "6e2d0e987 HC split frontend type and dispatch helpers",
+        "f5af084ec HC split AST and lowering owner surfaces",
+        "ffca53ae0 HC move parser source models onto AST owners",
+        "2d70b8e34 HC split parser C style type surface owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/types/assignment_unknown_target_rejected.objc3",
+        "tests/fixtures/canonical/manifest.json"
+      ],
+      "retired_surface_disposition": "type-surface evidence stays canonical and does not add compatibility aliases"
+    },
+    {
+      "issue": "#8147",
+      "title": "Deep sema, lowering, and runtime metadata owner work",
+      "lane": "compiler deep semantics and lowering",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "3d4c6c973 HC extract compiler profile helper modules",
+        "121c069aa HC extract sema pass helpers",
+        "8b103d250 HC split sema equivalence owners",
+        "112256a5a HC split sema pass publication owners",
+        "5464aa831 HC split backend lowering IR handoff owners",
+        "73ce6b57f HC extract IR runtime call lowering",
+        "668456c12 HC split lower block validator owner",
+        "183d5ff4b HC split IR message send validation owner",
+        "aa410fda7 HC split IR runtime metadata emission owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/ownership/strong_id_assignment.objc3",
+        "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+        "tests/native/ir/metadata/actor_executor_metadata_contract.objc3"
+      ],
+      "retired_surface_disposition": "unsupported feature claims remain strict semantic diagnostics"
+    },
+    {
+      "issue": "#8148",
+      "title": "JSON, schemas, and capability evidence infrastructure",
+      "lane": "JSON and schemas",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "01cf17064 HC expand native JSON process helpers",
+        "3e95c4d73 HC share artifact JSON writers",
+        "a94330b26 HC extract manifest JSON writers",
+        "6afa3278f HC strengthen JSON schema infrastructure",
+        "972d97906 HC split JSON artifact registry owners",
+        "a87b2c92e HC add capability evidence schemas",
+        "709148d75 HC tie schema docs to evidence map",
+        "22b8bb1c3 HC normalize schema registry ids"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.schema.json",
+        "docs/support/evidence_map.json",
+        "tests/tooling/test_objc3c_shared_json_schema.py"
+      ],
+      "retired_surface_disposition": "schema rows classify unsupported states; they do not define fallback support"
+    },
+    {
+      "issue": "#8149",
+      "title": "Source hygiene and command-surface guardrails",
+      "lane": "hygiene",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "606775842 HC tighten command hygiene guardrails",
+        "fd675f294 HC cover command hygiene source roots",
+        "058acec90 HC remove source hygiene allowlist surface",
+        "f00e2e871 HC retire source hygiene allowlist fixture",
+        "6d0a19f84 HC harden source hygiene guardrail scanning",
+        "f49c6f38f HC split workflow and hygiene owners"
+      ],
+      "behavior_evidence": [
+        "docs/workflows/commands.md",
+        "docs/workflows/validation.md",
+        "docs/support/capability_matrix.json"
+      ],
+      "retired_surface_disposition": "hygiene evidence treats direct helper commands and allowlist/report-only surfaces as retired"
+    },
+    {
+      "issue": "#8150",
+      "title": "Hard-cutover final closure mechanics",
+      "lane": "program closure",
+      "evidence_state": "evidence-ready-not-remotely-closed",
+      "commit_evidence": [
+        "4c0285b0d HC tighten schemas and hard-cut fixtures",
+        "16e517982 HC expand behavior fixture boundaries",
+        "e5b988129 HC catalog behavior fixture cutover boundaries",
+        "a87b2c92e HC add capability evidence schemas",
+        "709148d75 HC tie schema docs to evidence map",
+        "016683b19 HC add support truth contract"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ],
+      "retired_surface_disposition": "closure evidence is local only until validation, GitHub issue update, push, and final closeout are explicitly allowed"
+    }
+  ]
+}

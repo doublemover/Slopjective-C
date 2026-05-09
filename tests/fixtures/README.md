@@ -13,3 +13,9 @@ Hard-cutover compatibility residues must not be accepted as positives in either
 tree. Removed old-mode flags, compatibility shim toggles, fallback runtime
 dispatch routes, and legacy literal spellings belong in canonical rejection or
 strict-error metadata.
+
+The issue-closeout indexes for `#8132`-`#8150` intentionally reference the
+canonical fixture tree rather than generated artifacts when documenting
+behavior support. Retired migration lanes and compatibility surfaces are either
+listed in `tests/conformance/hard_cutover_retired_surface_absence.json` as
+rejection or strict-error evidence, or marked absent from public support.
