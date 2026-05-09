@@ -68,3 +68,6 @@ void EmitObjc3IRSafetyConcurrencyLoweringCounterNodes(
 
 void EmitObjc3IRAsyncDiagnosticLoweringCounterNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRInteropLoweringMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
