@@ -12,6 +12,7 @@ from .public_bridge_constants import (
     PUBLIC_BRIDGE_PAYLOAD_OWNER_SURFACE,
     PUBLIC_BRIDGE_REGISTRY_OWNER_SURFACE,
 )
+from .public_bridge_integrity import public_bridge_integrity_fields
 from .public_bridge_registry import PACKAGE_BRIDGES
 from .registry_schema_index import capability_truth_schema_ids
 
@@ -31,6 +32,7 @@ def registry_bridge_fields() -> dict[str, object]:
         "public_bridge_contracts": [
             asdict(spec) for spec in PACKAGE_BRIDGES.values()
         ],
+        "public_bridge_integrity": public_bridge_integrity_fields(PACKAGE_BRIDGES),
         "public_bridge_capability_truth": {
             "scope": PUBLIC_BRIDGE_CAPABILITY_TRUTH_SCOPE,
             "machine_readable": True,

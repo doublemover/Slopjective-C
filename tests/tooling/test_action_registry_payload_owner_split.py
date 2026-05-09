@@ -8,6 +8,10 @@ from scripts.objc3c_workflow.action_registry_capability_truth import (
 )
 from scripts.objc3c_workflow.action_registry_payload import build_registry_payload
 from scripts.objc3c_workflow.action_spec import ActionSpec
+from scripts.objc3c_workflow.public_bridge_integrity import (
+    public_bridge_integrity_fields,
+)
+from scripts.objc3c_workflow.public_bridge_registry import PACKAGE_BRIDGES
 from scripts.objc3c_workflow.registry_schema_index import ACTION_PAYLOAD_SCHEMA_REF
 
 
@@ -24,6 +28,14 @@ def test_registry_bridge_fields_keep_single_public_bridge_contract() -> None:
         "payload": "scripts/objc3c_workflow/public_bridge_payloads.py",
         "registry": "scripts/objc3c_workflow/public_bridge_registry.py",
     }
+    assert fields["public_bridge_integrity"] == public_bridge_integrity_fields(
+        PACKAGE_BRIDGES
+    )
+    assert fields["public_bridge_integrity"]["contract_id"] == (
+        "objc3c-workflow-public-bridge-integrity-v1"
+    )
+    assert fields["public_bridge_integrity"]["validation_errors"] == ()
+    assert fields["public_bridge_integrity"]["retired_metadata_allowed"] is False
     assert fields["public_bridge_capability_truth"]["owned_fields"] == [
         "package_bridge_count",
         "package_bridges",
