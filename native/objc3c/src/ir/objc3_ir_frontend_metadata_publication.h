@@ -44,3 +44,6 @@ void EmitObjc3IRErrorHandlingMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
 
 void EmitObjc3IRConcurrencyRuntimeMetadataNodes(std::ostringstream &out);
+
+void EmitObjc3IRTypeSymbolDispatchCounterNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
