@@ -8,6 +8,13 @@ from scripts.source_hygiene.gate_contracts import (
     REQUIRED_RESIDUE_CLASSES,
     RETIRED_ALLOWLIST_REPORT_FIELDS,
 )
+from scripts.source_hygiene.patterns_public_aliases import PUBLIC_ALIAS_PATTERNS
+from scripts.source_hygiene.patterns_public_claims import PUBLIC_CLAIM_PATTERNS
+from scripts.source_hygiene.patterns_public_fallbacks import PUBLIC_FALLBACK_PATTERNS
+from scripts.source_hygiene.patterns_public_legacy import PUBLIC_LEGACY_PATTERNS
+from scripts.source_hygiene.patterns_public_migration import PUBLIC_MIGRATION_PATTERNS
+from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_PATTERNS
+from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
 
@@ -15,6 +22,22 @@ from scripts.source_hygiene.scanner import build_report, write_reports
 def write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def test_public_claim_patterns_are_split_by_owner_modules() -> None:
+    owner_patterns = (
+        *PUBLIC_ALIAS_PATTERNS,
+        *PUBLIC_FALLBACK_PATTERNS,
+        *PUBLIC_PROJECTION_PATTERNS,
+        *PUBLIC_LEGACY_PATTERNS,
+        *PUBLIC_SHIM_PATTERNS,
+        *PUBLIC_MIGRATION_PATTERNS,
+    )
+
+    assert PUBLIC_CLAIM_PATTERNS == owner_patterns
+    assert len({pattern.pattern_id for pattern in PUBLIC_CLAIM_PATTERNS}) == len(
+        PUBLIC_CLAIM_PATTERNS
+    )
 
 
 def test_hard_cutover_gate_fails_on_active_forbidden_pattern(tmp_path: Path) -> None:
@@ -418,6 +441,52 @@ def test_hard_cutover_gate_rejects_projected_retired_behavior_claims(
     assert report["ok"] is False
     assert report["active_findings"][0]["pattern_id"] == "projected-retired-behavior-claim"
     assert report["active_findings"][0]["residue_class"] == "projected-behavior-claim"
+
+
+def test_hard_cutover_gate_rejects_backward_compatible_alias_claims(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Backward-compatible aliases remain available.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "backward-compatible-alias-wording"
+    assert report["active_findings"][0]["residue_class"] == "alias-residue"
+
+
+def test_hard_cutover_gate_rejects_public_compatibility_shim_support_claims(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Compatibility shim support remains accepted.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert {
+        finding["pattern_id"] for finding in report["active_findings"]
+    } >= {"public-compatibility-shim-support-claim", "shim-wording"}
+
+
+def test_hard_cutover_gate_rejects_public_migration_lane_support_claims(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Migration-lane support remains enabled.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "public-migration-lane-support-claim"
+    assert report["active_findings"][0]["residue_class"] == "shim-fallback-language"
 
 
 def test_hard_cutover_gate_rejects_legacy_compatibility_public_text(
