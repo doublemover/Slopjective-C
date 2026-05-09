@@ -10,6 +10,9 @@
     "status",
     "platform_id",
     "package_root",
+    "platform_support_matrix",
+    "supported_platform_ids",
+    "support_tiers",
     "implemented_channels",
     "portable_archive",
     "installer_archive",
@@ -21,6 +24,17 @@
     "status": { "const": "PASS" },
     "platform_id": { "type": "string" },
     "package_root": { "type": "string" },
+    "platform_support_matrix": { "type": "string" },
+    "supported_platform_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "support_tiers": {
+      "type": "array",
+      "items": { "type": "object" },
+      "minItems": 1
+    },
     "implemented_channels": {
       "type": "array",
       "items": { "type": "string" },
