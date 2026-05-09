@@ -61,12 +61,12 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 
 - `faq_id`: `FAQ-C13-06-Q01`
 - Question: When can a claim be published in the extension registry?
-- Answer: Publication follows accepted decision linkage and schema-valid registry payloads. Deferred/held outcomes must include explicit owner/date rationale.
+- Answer: Publication follows accepted decision linkage plus schema IDs owned by the shared registry and support rows in the capability matrix/evidence map. Deferred or held outcomes must include explicit owner/date rationale and do not create fallback, alias, or compatibility-only support.
 - Applicability: `vendor`
-- References: `registries/experimental_extensions/index.schema.json`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-176-extension-registry-format-package`
+- References: `scripts/objc3c_shared/schema_registry.py`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-176-extension-registry-format-package`
 - `last_verified_date`: `2026-02-23`
 - `owner_role`: `C-LEAD`
-- Escalation note: Schema mismatches must be remediated before release publication.
+- Escalation note: Schema-registry or evidence-map mismatches must be remediated before release publication.
 
 ## FAQ-C13-07 Security/Provenance Incident Handling
 
