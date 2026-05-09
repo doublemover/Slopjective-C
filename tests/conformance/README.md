@@ -75,9 +75,10 @@ Machine-readable indexes:
 ## Hard-Cutover Fixture Policy
 
 Conformance metadata is canonical-first. Fixtures must not preserve retired
-old-mode, shim, fallback, or compatibility paths as positive behavior. When a
-fixture documents an unavailable feature configuration, the expected result is a
-strict error with stable diagnostic metadata, not fallback acceptance.
+old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, or
+runtime-dispatch paths as positive behavior. When a fixture documents an
+unavailable feature configuration, the expected result is a strict error with
+stable diagnostic metadata, not fallback acceptance.
 
 Live validation entrypoints:
 

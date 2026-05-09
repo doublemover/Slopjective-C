@@ -37,6 +37,9 @@ RETIRED_POSITIVE_SURFACE_TERMS = (
 RETIRED_SURFACE_CONTRACT_INDEX = (
     ROOT / "tests" / "conformance" / "hard_cutover_retired_surface_fixture_contracts.json"
 )
+POSITIVE_RESIDUE_AUDIT = (
+    ROOT / "tests" / "conformance" / "hard_cutover_positive_residue_audit.json"
+)
 STRICT_REJECTION_NAME_SUFFIXES = (
     "_rejected.objc3",
     "_strict_error.objc3",
@@ -254,7 +257,7 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         "positive fixtures cover canonical behavior only"
     )
     assert canonical_boundary["retired_surface_policy"] == (
-        "old-mode, shim, fallback, and runtime adapter residues must be rejection or strict-error metadata"
+        "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata"
     )
     assert generated_manifest["fixtures"] == generated_entries
     assert generated_boundary["kind"] == "generated-contract-artifacts"
@@ -278,6 +281,78 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert entry["canonical_behavior_source"] is False
         assert not path.is_relative_to(NATIVE_ROOT)
         assert any(path.is_relative_to(root) for root in generated_allowed_roots)
+
+
+def test_positive_residue_audit_links_absent_and_false_positive_surfaces() -> None:
+    audit = _load_json(POSITIVE_RESIDUE_AUDIT)
+    outcome_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
+    )
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+
+    assert audit["result"].startswith("no remaining old-mode")
+    assert audit["validation"] == "not run"
+    assert set(audit["conversion_policy"]) == {
+        "true_retired_positive",
+        "lexical_false_positive",
+        "negative_fixture",
+    }
+
+    for relative_path in audit["confirmed_rejections"]:
+        path = ROOT / relative_path
+        assert path.is_file(), relative_path
+        if relative_path in behavior_by_path:
+            fixture = behavior_by_path[relative_path]
+            assert fixture.fixture_kind in STRICT_KINDS
+        else:
+            assert any(marker in path.stem.lower() for marker in ("negative", "rejected"))
+
+    for relative_path in audit["absent_retired_positive_paths"]:
+        assert not (ROOT / relative_path).exists(), relative_path
+
+    documented_paths = set()
+    for hit in audit["documented_lexical_positive_hits"]:
+        path = ROOT / hit["path"]
+        assert path.is_file(), hit["path"]
+        text = path.read_text(encoding="utf-8")
+        documented_paths.add(hit["path"])
+        assert hit["token"] in text
+        assert hit["classification"]
+        assert "not " in hit["disposition"]
+
+    residue_outcome = next(
+        entry
+        for entry in outcome_index["outcomes"]
+        if entry["outcome"] == "positive_residue_false_positive"
+    )
+    assert set(residue_outcome["evidence"]).issubset(documented_paths)
+
+
+def test_generated_manifest_cannot_reference_native_behavior_or_retired_support() -> None:
+    generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
+    forbidden_support_tokens = (
+        "old-mode",
+        "compatibility",
+        "migration",
+        "fallback",
+        "shim",
+        "runtime_dispatch",
+        "runtime-dispatch",
+    )
+
+    assert generated_manifest["boundary"]["canonical_behavior_source"] is False
+    assert generated_manifest["boundary"]["positive_fixture_policy"] == (
+        "generated artifacts never define positive native behavior"
+    )
+    for entry in generated_manifest["fixtures"]:
+        path = ROOT / entry["path"]
+        serialized = json.dumps(entry, sort_keys=True).lower()
+        assert path.is_file(), entry["path"]
+        assert not path.is_relative_to(NATIVE_ROOT)
+        assert entry["behavior_boundary"] == "generated-provenance-only"
+        assert entry["canonical_behavior_source"] is False
+        for token in forbidden_support_tokens:
+            assert token not in serialized
 
 
 def test_canonical_manifest_is_phase_ordered_and_behavior_first() -> None:
@@ -321,6 +396,16 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
 
     assert matrix["schema_version"] == 1
     assert matrix["source_of_truth"] == "tests/native"
+    for token in (
+        "old-mode",
+        "shim",
+        "fallback",
+        "compatibility",
+        "migration-lane",
+        "unsupported-feature",
+        "runtime-dispatch",
+    ):
+        assert token in matrix["policy"]
     for entry in matrix["entries"]:
         surface = entry["surface"]
         fixture = behavior_by_path[entry["fixture_path"]]

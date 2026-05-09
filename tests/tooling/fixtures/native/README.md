@@ -2,8 +2,9 @@
 
 Native fixtures are behavior-first test inputs for the Objective-C 3.0 hard
 cutover. Positive fixtures prove canonical behavior only. Retired old-mode,
-shim, fallback, and compatibility behavior belongs in negative metadata with
-strict diagnostic expectations.
+shim, fallback, compatibility, migration-lane, unsupported-feature, and
+runtime-dispatch behavior belongs in negative metadata with strict diagnostic
+expectations.
 
 ## Fixture Families
 

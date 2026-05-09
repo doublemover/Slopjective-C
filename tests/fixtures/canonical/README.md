@@ -17,4 +17,5 @@ when it covers a retired surface, the retired tag used by the behavior harness.
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` is the
 fixture-contract index for those retired surfaces: it names the owning behavior
 outcome, diagnostic owner, sidecar file, and non-positive disposition for each
-old-mode, shim, fallback, or runtime-dispatch case.
+old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature,
+or runtime-dispatch case.

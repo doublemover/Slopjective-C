@@ -72,6 +72,72 @@
       "disposition": "not fallback execution support"
     },
     {
+      "path": "tests/conformance/semantic/M01-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M02-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M03-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M04-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M05-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M05-B011.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M06-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M07-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M07-B011.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M08-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/conformance/semantic/M09-B001.json",
+      "token": "fallback",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility fallback support"
+    },
+    {
       "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
       "token": "BridgeProviderShim",
       "classification": "foreign bridge symbol name in interop packaging evidence",
@@ -85,6 +151,12 @@
     },
     {
       "path": "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
+      "token": "SemanticBridgeShim",
+      "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
+      "disposition": "not a compatibility shim feature gate"
+    },
+    {
+      "path": "tests/conformance/semantic/XMOD-8015-01.json",
       "token": "SemanticBridgeShim",
       "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
       "disposition": "not a compatibility shim feature gate"

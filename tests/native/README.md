@@ -16,9 +16,10 @@ phase first, then by behavior family:
 - `e2e`: smoke, feature-matrix, and negative-execution behavior.
 
 Positive fixtures prove canonical Objective-C 3 behavior only. Retired
-old-mode flags, compatibility shims, fallback dispatch routes, and legacy
-literal aliases must live as rejection or strict-error fixtures with stable
-diagnostic metadata. The retired-surface contract index under
+old-mode flags, compatibility shims, migration lanes, fallback dispatch routes,
+unsupported-feature claims, and legacy literal aliases must live as rejection,
+strict-error, or absent-support metadata with stable diagnostic ownership. The
+retired-surface contract index under
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` records
 the fixture family, outcome owner, diagnostic owner, sidecar, and positive
 absence for each retired surface.
