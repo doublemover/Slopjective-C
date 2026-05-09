@@ -44,7 +44,9 @@ objc3c_apply_build_defaults(objc3c_io)
 objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3c_runtime_abi STATIC
+  objc3_advanced_feature_gate_artifact.cpp
   objc3_advanced_feature_gate_document.cpp
+  objc3_conformance_report_publication_artifact.cpp
   objc3_conformance_claim_validation_document.cpp
   objc3_conformance_dashboard_artifact_document.cpp
   objc3_conformance_report_publication_document.cpp
@@ -57,7 +59,9 @@ add_library(objc3c_runtime_abi STATIC
   objc3_process_execution.cpp
   objc3_process_boundary_tokens.cpp
   objc3_process_json_helpers.cpp
+  objc3_release_candidate_matrix_artifact.cpp
   objc3_release_candidate_matrix_document.cpp
+  objc3_release_evidence_operation_artifact.cpp
   objc3_release_evidence_operation_document.cpp
   objc3_retired_claim_sidecars.cpp
   objc3_runtime_artifact_contracts.cpp
