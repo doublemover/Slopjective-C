@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import shutil
+from .environment_tool_lookup import first_available_tool
 
 
-PWSH = shutil.which("pwsh") or "pwsh"
-NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
+PWSH = first_available_tool("pwsh", fallback="pwsh")
+NPX = first_available_tool("npx.cmd", "npx", fallback="npx")
 
 
-__all__ = ["NPX", "PWSH"]
+__all__ = ["NPX", "PWSH", "first_available_tool"]
