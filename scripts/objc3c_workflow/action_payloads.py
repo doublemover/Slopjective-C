@@ -2,45 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
-
-from .action_audience import action_audience
+from .action_payload_fields import build_action_payload
+from .action_registry_payload import build_registry_payload
 from .action_spec import ActionSpec
-from .environment import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
-from .public_bridge import (
-    PACKAGE_BRIDGES,
-    PUBLIC_ENTRYPOINT_KIND,
-    WORKFLOW_BRIDGE_SCRIPT,
-    public_action_invocation,
-)
-from .registry_views import action_count, action_specs, require_action_spec
+from .registry_views import action_specs, require_action_spec
 
 
 def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
-    payload = asdict(spec)
-    payload["mode"] = WORKFLOW_RUNNER_MODE
-    payload["runner_path"] = WORKFLOW_RUNNER_SURFACE
-    payload["category"] = spec.action.split("-", 1)[0]
-    payload["audience"] = action_audience(spec.action)
-    payload["package_bridge"] = WORKFLOW_BRIDGE_SCRIPT
-    payload["public_invocation"] = public_action_invocation(spec.action)
-    payload["public_command"] = public_action_invocation(spec.action)
-    payload["public_entrypoint"] = PUBLIC_ENTRYPOINT_KIND
-    return payload
+    return build_action_payload(spec)
 
 
 def list_actions_payload() -> dict[str, object]:
-    return {
-        "mode": WORKFLOW_RUNNER_MODE,
-        "runner_path": WORKFLOW_RUNNER_SURFACE,
-        "action_count": action_count(),
-        "public_action_count": action_count(),
-        "internal_action_count": 0,
-        "package_bridge_count": len(PACKAGE_BRIDGES),
-        "package_bridges": list(PACKAGE_BRIDGES),
-        "single_package_bridge_only": True,
-        "actions": [enrich_action_payload(spec) for spec in action_specs()],
-    }
+    return build_registry_payload(action_specs())
 
 
 def describe_action_payload(action: str) -> dict[str, object]:
