@@ -1,4 +1,5 @@
 add_library(objc3c_pipeline STATIC
+  dispatch_surface_classification.cpp
   objc3_frontend_pipeline.cpp
   objc3_runtime_import_surface.cpp
   objc3_typed_sema_to_lowering_contract_surface_core.h
