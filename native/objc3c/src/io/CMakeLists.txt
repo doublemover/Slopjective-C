@@ -54,6 +54,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_conformance_report_publication_document.cpp
   objc3_conformance_profile_selection.cpp
   objc3_cross_module_imported_modules_document.cpp
+  objc3_cross_module_runtime_link_plan_artifact.cpp
   objc3_dashboard_status_renderers.cpp
   objc3_metaprogramming_macro_host_cache_artifact.cpp
   objc3_metaprogramming_macro_host_cache_document.cpp
@@ -67,7 +68,6 @@ add_library(objc3c_runtime_abi STATIC
   objc3_release_evidence_operation_document.cpp
   objc3_retired_claim_sidecars.cpp
   objc3_runtime_artifact_contracts.cpp
-  objc3_runtime_artifact_documents.cpp
   objc3_runtime_metadata_discovery_document.cpp
   objc3_runtime_metadata_linker_retention_artifact.cpp
   objc3_runtime_registration_descriptor_artifact.cpp
