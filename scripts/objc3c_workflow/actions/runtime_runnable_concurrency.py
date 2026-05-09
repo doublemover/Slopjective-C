@@ -6,6 +6,7 @@ from ..environment import ROOT
 from .runtime_runnable_groups import (
     RUNTIME_CLOSURE_CLAIM_KIND,
     RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES,
+    RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS,
     RUNTIME_CLOSURE_PUBLICATION_MODE,
     RuntimeRunnableActionGroup,
 )
@@ -65,6 +66,7 @@ RUNNABLE_CONCURRENCY_CONFORMANCE_ACTION = RuntimeRunnableActionGroup(
     claim_kind=RUNTIME_CLOSURE_CLAIM_KIND,
     claim_publication_mode=RUNTIME_CLOSURE_PUBLICATION_MODE,
     forbidden_claim_shapes=RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES,
+    hard_cutover_requirements=RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS,
 )
 RUNNABLE_CONCURRENCY_E2E_ACTION = RuntimeRunnableActionGroup(
     action=VALIDATE_RUNNABLE_CONCURRENCY_ACTION,
@@ -81,6 +83,7 @@ RUNNABLE_CONCURRENCY_E2E_ACTION = RuntimeRunnableActionGroup(
     claim_kind=RUNTIME_CLOSURE_CLAIM_KIND,
     claim_publication_mode=RUNTIME_CLOSURE_PUBLICATION_MODE,
     forbidden_claim_shapes=RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES,
+    hard_cutover_requirements=RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS,
 )
 
 

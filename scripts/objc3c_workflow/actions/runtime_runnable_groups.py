@@ -15,6 +15,81 @@ RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES = (
     "report-only-runtime-closure",
     "compatibility-shim-runtime-closure",
     "wrapper-only-runnable-action",
+    "public-runtime-abi-widening-without-source-owner",
+    "generated-report-only-source-truth",
+)
+RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS = (
+    "no-fallback-runtime-closure-claims",
+    "no-report-only-runtime-closure-publication",
+    "no-generated-report-as-source-authority",
+    "runtime-closure-publication-requires-checked-in-owner-contract",
+)
+RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER = "runtime-closure-owner-contract"
+
+
+@dataclass(frozen=True)
+class RuntimeClosureForbiddenClaim:
+    shape: str
+    owner: str
+    policy_field: str
+    required_value: object
+    failure_mode: str
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "shape": self.shape,
+            "owner": self.owner,
+            "policy_field": self.policy_field,
+            "required_value": self.required_value,
+            "failure_mode": self.failure_mode,
+        }
+
+
+RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS: tuple[
+    RuntimeClosureForbiddenClaim, ...
+] = (
+    RuntimeClosureForbiddenClaim(
+        "fallback-runtime-behavior",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "fallback_runtime_semantics_allowed",
+        False,
+        "fail-closed",
+    ),
+    RuntimeClosureForbiddenClaim(
+        "report-only-runtime-closure",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "report_only_executable_proof_claims_allowed",
+        False,
+        "fail-closed",
+    ),
+    RuntimeClosureForbiddenClaim(
+        "compatibility-shim-runtime-closure",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "compatibility_runtime_semantics_allowed",
+        False,
+        "fail-closed",
+    ),
+    RuntimeClosureForbiddenClaim(
+        "wrapper-only-runnable-action",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "wrapper_only_runnable_actions_allowed",
+        False,
+        "fail-closed",
+    ),
+    RuntimeClosureForbiddenClaim(
+        "public-runtime-abi-widening-without-source-owner",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "public_claims_require_executable_proof",
+        True,
+        "fail-closed",
+    ),
+    RuntimeClosureForbiddenClaim(
+        "generated-report-only-source-truth",
+        RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
+        "generated_reports_are_source",
+        False,
+        "fail-closed",
+    ),
 )
 
 
@@ -32,6 +107,7 @@ class RuntimeRunnableActionGroup:
     claim_kind: str = ""
     claim_publication_mode: str = ""
     forbidden_claim_shapes: tuple[str, ...] = ()
+    hard_cutover_requirements: tuple[str, ...] = ()
 
     def spec(self) -> ActionSpec:
         return ActionSpec(
@@ -77,6 +153,7 @@ def _validate_runtime_closure_contract_metadata(group: RuntimeRunnableActionGrou
         group.claim_kind,
         group.claim_publication_mode,
         *group.forbidden_claim_shapes,
+        *group.hard_cutover_requirements,
     )
     if not any(contract_fields):
         return
@@ -90,6 +167,9 @@ def _validate_runtime_closure_contract_metadata(group: RuntimeRunnableActionGrou
             set(RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES).issubset(
                 group.forbidden_claim_shapes
             ),
+            set(RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS).issubset(
+                group.hard_cutover_requirements
+            ),
         )
     ):
         raise ValueError(
@@ -97,12 +177,21 @@ def _validate_runtime_closure_contract_metadata(group: RuntimeRunnableActionGrou
         )
 
 
+def runtime_closure_forbidden_claim_contracts() -> list[dict[str, object]]:
+    return [contract.payload() for contract in RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS]
+
+
 __all__ = [
     "RUNTIME_CLOSURE_CLAIM_KIND",
+    "RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS",
+    "RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER",
     "RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES",
+    "RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS",
     "RUNTIME_CLOSURE_PUBLICATION_MODE",
     "RUNTIME_RUNNABLE_VALIDATION_TIER",
+    "RuntimeClosureForbiddenClaim",
     "RuntimeRunnableActionGroup",
+    "runtime_closure_forbidden_claim_contracts",
     "runtime_runnable_action_handlers",
     "runtime_runnable_action_specs",
 ]

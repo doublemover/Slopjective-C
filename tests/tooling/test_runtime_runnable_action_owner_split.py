@@ -20,7 +20,9 @@ from scripts.objc3c_workflow.actions import runtime_runnable_e2e
 from scripts.objc3c_workflow.actions.runtime_runnable_groups import (
     RUNTIME_CLOSURE_CLAIM_KIND,
     RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES,
+    RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS,
     RUNTIME_CLOSURE_PUBLICATION_MODE,
+    runtime_closure_forbidden_claim_contracts,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -308,3 +310,34 @@ def test_runtime_closure_runnable_actions_publish_owner_contract_metadata() -> N
         assert set(RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES).issubset(
             group.forbidden_claim_shapes
         )
+        assert set(RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS).issubset(
+            group.hard_cutover_requirements
+        )
+
+
+def test_runtime_closure_forbidden_claim_contracts_are_owner_typed() -> None:
+    contracts = runtime_closure_forbidden_claim_contracts()
+    by_shape = {contract["shape"]: contract for contract in contracts}
+
+    assert set(by_shape) == set(RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES)
+    assert by_shape["fallback-runtime-behavior"]["policy_field"] == (
+        "fallback_runtime_semantics_allowed"
+    )
+    assert by_shape["report-only-runtime-closure"]["policy_field"] == (
+        "report_only_executable_proof_claims_allowed"
+    )
+    assert by_shape["compatibility-shim-runtime-closure"]["policy_field"] == (
+        "compatibility_runtime_semantics_allowed"
+    )
+    assert by_shape["wrapper-only-runnable-action"]["policy_field"] == (
+        "wrapper_only_runnable_actions_allowed"
+    )
+    assert by_shape["public-runtime-abi-widening-without-source-owner"][
+        "policy_field"
+    ] == "public_claims_require_executable_proof"
+    assert by_shape["generated-report-only-source-truth"]["policy_field"] == (
+        "generated_reports_are_source"
+    )
+    for contract in contracts:
+        assert contract["owner"] == "runtime-closure-owner-contract"
+        assert contract["failure_mode"] == "fail-closed"
