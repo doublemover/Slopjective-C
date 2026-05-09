@@ -69,6 +69,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_runtime_artifact_documents.cpp
   objc3_runtime_metadata_discovery_document.cpp
   objc3_runtime_registration_descriptor_document.cpp
+  objc3_runtime_registration_manifest_artifact.cpp
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
