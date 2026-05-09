@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
@@ -24,8 +23,8 @@
 #include "ir/objc3_ir_runtime_dispatch_calls.h"
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
+#include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "parse/objc3_parse_support.h"
-#include "support/objc3_identifier_safe_suffix.h"
 #include "support/objc3_property_storage_profile_helpers.h"
 #include "support/objc3_string_predicates.h"
 
@@ -36,7 +35,11 @@ class Objc3IREmitter {
   Objc3IREmitter(const Objc3Program &program,
                  const Objc3LoweringContract &lowering_contract,
                  const Objc3IRFrontendMetadata &frontend_metadata)
-      : program_(program), frontend_metadata_(frontend_metadata) {
+      : program_(program),
+        frontend_metadata_(frontend_metadata),
+        runtime_metadata_symbols_(
+            BuildObjc3IRRuntimeMetadataSymbols(program.module_name,
+                                               frontend_metadata)) {
     if (!TryBuildObjc3LoweringIRBoundary(lowering_contract, lowering_ir_boundary_, boundary_error_)) {
       return;
     }
@@ -3026,153 +3029,72 @@ class Objc3IREmitter {
   }
 
   std::string RuntimeMetadataLinkerAnchorSuffix() const {
-    std::string seed = program_.module_name;
-    seed += "|";
-    seed += frontend_metadata_.runtime_metadata_class_metaclass_typed_handoff_replay_key;
-    seed += "|";
-    seed += frontend_metadata_.runtime_metadata_protocol_category_typed_handoff_replay_key;
-    seed += "|";
-    seed += frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key;
-    seed += "|";
-    seed +=
-        frontend_metadata_
-            .runtime_metadata_archive_static_link_translation_unit_identity_key;
-    return LowerHex64(StableRuntimeMetadataLinkerAnchorHash(seed));
+    return runtime_metadata_symbols_.linker_anchor_suffix;
   }
 
   std::string RuntimeMetadataLinkerAnchorSymbol() const {
-    return "objc3_runtime_metadata_link_anchor_" +
-           RuntimeMetadataLinkerAnchorSuffix();
+    return runtime_metadata_symbols_.linker_anchor_symbol;
   }
 
   std::string RuntimeMetadataDiscoveryRootSymbol() const {
-    return "objc3_runtime_metadata_discovery_root_" +
-           RuntimeMetadataLinkerAnchorSuffix();
+    return runtime_metadata_symbols_.discovery_root_symbol;
   }
 
   bool ShouldEmitRuntimeBootstrapLowering() const {
-    return ShouldEmitRuntimeMetadataSectionScaffold() &&
-           frontend_metadata_.runtime_bootstrap_lowering_ready &&
-           frontend_metadata_.runtime_bootstrap_lowering_fail_closed &&
-           !frontend_metadata_.runtime_bootstrap_lowering_contract_id.empty() &&
-           !frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_init_stub_symbol_prefix.empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_registration_table_symbol_prefix
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_registration_entrypoint_symbol
-                .empty() &&
-           !frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_registration_table_layout_model
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_lowering_image_local_initialization_model
-                .empty() &&
-           frontend_metadata_
-                   .runtime_bootstrap_lowering_registration_table_abi_version >
-               0 &&
-           frontend_metadata_
-                   .runtime_bootstrap_lowering_registration_table_pointer_field_count >
-               0 &&
-           frontend_metadata_
-               .runtime_bootstrap_lowering_bootstrap_ir_materialization_landed &&
-           frontend_metadata_
-               .runtime_bootstrap_lowering_image_local_initialization_landed &&
-           !frontend_metadata_
-                .runtime_metadata_archive_static_link_translation_unit_identity_key
-                .empty();
+    return Objc3IRRuntimeBootstrapLoweringReady(frontend_metadata_);
   }
 
   bool ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering() const {
-    return ShouldEmitRuntimeBootstrapLowering() &&
-           !frontend_metadata_
-                .runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id
-                .empty() &&
-           !frontend_metadata_
-                .runtime_bootstrap_registration_descriptor_identifier.empty() &&
-           !frontend_metadata_.runtime_bootstrap_image_root_identifier.empty();
-  }
-
-  std::string RuntimeBootstrapSafeSuffix() const {
-    return MakeModuleIdentifierSafeSuffix(
-        frontend_metadata_
-            .runtime_metadata_archive_static_link_translation_unit_identity_key);
+    return Objc3IRRuntimeBootstrapRegistrationDescriptorImageRootLoweringReady(
+        frontend_metadata_);
   }
 
   std::string RuntimeBootstrapModuleNameGlobalSymbol() const {
-    return ".objc3_runtime_module_name_" + RuntimeBootstrapSafeSuffix();
+    return runtime_metadata_symbols_.module_name_global_symbol;
   }
 
   std::string RuntimeBootstrapTranslationUnitIdentityGlobalSymbol() const {
-    return ".objc3_runtime_translation_unit_identity_" +
-           RuntimeBootstrapSafeSuffix();
+    return runtime_metadata_symbols_.translation_unit_identity_global_symbol;
   }
 
   std::string RuntimeBootstrapImageDescriptorSymbol() const {
-    return "__objc3_runtime_image_descriptor_" + RuntimeBootstrapSafeSuffix();
-  }
-
-  std::string RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix() const {
-    return MakeModuleIdentifierSafeSuffix(
-        frontend_metadata_.runtime_bootstrap_registration_descriptor_identifier);
-  }
-
-  std::string RuntimeBootstrapImageRootIdentifierSafeSuffix() const {
-    return MakeModuleIdentifierSafeSuffix(
-        frontend_metadata_.runtime_bootstrap_image_root_identifier);
+    return runtime_metadata_symbols_.image_descriptor_symbol;
   }
 
   std::string RuntimeBootstrapRegistrationDescriptorNameGlobalSymbol() const {
-    return ".objc3_runtime_registration_descriptor_name_" +
-           RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix();
+    return runtime_metadata_symbols_.registration_descriptor_name_global_symbol;
   }
 
   std::string RuntimeBootstrapImageRootNameGlobalSymbol() const {
-    return ".objc3_runtime_image_root_name_" +
-           RuntimeBootstrapImageRootIdentifierSafeSuffix();
+    return runtime_metadata_symbols_.image_root_name_global_symbol;
   }
 
   std::string RuntimeBootstrapRegistrationDescriptorSymbol() const {
-    return std::string(kObjc3RuntimeBootstrapRegistrationDescriptorSymbolPrefix) +
-           RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix();
+    return runtime_metadata_symbols_.registration_descriptor_symbol;
   }
 
   std::string RuntimeBootstrapImageRootSymbol() const {
-    return std::string(kObjc3RuntimeBootstrapImageRootSymbolPrefix) +
-           RuntimeBootstrapImageRootIdentifierSafeSuffix();
+    return runtime_metadata_symbols_.image_root_symbol;
   }
 
   std::string RuntimeBootstrapInitStubSymbol() const {
-    return frontend_metadata_.runtime_bootstrap_lowering_init_stub_symbol_prefix +
-           RuntimeBootstrapSafeSuffix();
+    return runtime_metadata_symbols_.init_stub_symbol;
   }
 
   std::string RuntimeBootstrapRegistrationTableSymbol() const {
-    return frontend_metadata_
-               .runtime_bootstrap_lowering_registration_table_symbol_prefix +
-           RuntimeBootstrapSafeSuffix();
+    return runtime_metadata_symbols_.registration_table_symbol;
   }
 
   std::string RuntimeBootstrapImageLocalInitStateSymbol() const {
-    return frontend_metadata_
-               .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix +
-           RuntimeBootstrapSafeSuffix();
+    return runtime_metadata_symbols_.image_local_init_state_symbol;
   }
 
-  static constexpr const char *RuntimeBootstrapImageDescriptorType() {
-    return "{ ptr, ptr, i64, i64, i64, i64, i64, i64 }";
+  static const char *RuntimeBootstrapImageDescriptorType() {
+    return Objc3IRRuntimeBootstrapImageDescriptorType();
   }
 
-  static constexpr const char *RuntimeBootstrapRegistrationTableType() {
-    return "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }";
+  static const char *RuntimeBootstrapRegistrationTableType() {
+    return Objc3IRRuntimeBootstrapRegistrationTableType();
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
@@ -7448,112 +7370,31 @@ class Objc3IREmitter {
   }
 
   bool ShouldEmitRuntimeMetadataSectionScaffold() const {
-    // emitted metadata inventory freeze anchor: the currently
-    // supported emitted inventory is image-info plus class/protocol/category/
-    // property/ivar descriptor sections retained via llvm.used. Separate
-    // method/selector/string-pool section families remain explicit non-goals
-    // until later work extend the inventory model.
-    return frontend_metadata_.runtime_metadata_section_ready_for_scaffold &&
-           frontend_metadata_.runtime_export_ready_for_runtime_export &&
-           frontend_metadata_.runtime_metadata_section_publication_emitted &&
-           frontend_metadata_.runtime_metadata_section_publication_fail_closed &&
-           frontend_metadata_.runtime_metadata_section_publication_uses_llvm_used &&
-           frontend_metadata_.runtime_metadata_section_publication_image_info_emitted;
+    return Objc3IRRuntimeMetadataSectionScaffoldReady(frontend_metadata_);
   }
 
   static std::string FormatRuntimeMetadataDescriptorOrdinal(std::size_t ordinal) {
-    std::ostringstream formatted;
-    formatted << std::setw(4) << std::setfill('0') << ordinal;
-    return formatted.str();
+    return FormatObjc3IRRuntimeMetadataDescriptorOrdinal(ordinal);
   }
 
   std::string BuildRuntimeMetadataDescriptorSymbol(
       const std::string &descriptor_symbol_prefix, const std::string &kind,
       std::size_t ordinal) const {
-    return "@" + descriptor_symbol_prefix + kind + "_" +
-           FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+    return BuildObjc3IRRuntimeMetadataDescriptorSymbol(
+        descriptor_symbol_prefix, kind, ordinal);
   }
 
   std::string BuildRuntimeMetadataAuxiliarySymbol(
       const std::string &descriptor_symbol_prefix, const std::string &kind,
       const std::string &suffix, std::size_t ordinal) const {
-    return "@" + descriptor_symbol_prefix + kind + "_" + suffix + "_" +
-           FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+    return BuildObjc3IRRuntimeMetadataAuxiliarySymbol(
+        descriptor_symbol_prefix, kind, suffix, ordinal);
   }
 
   bool TryBuildRuntimeMetadataLayoutPolicy(
       Objc3RuntimeMetadataLayoutPolicy &policy, std::string &error) const {
-    Objc3RuntimeMetadataLayoutPolicyInput input;
-    input.abi_contract_id =
-        frontend_metadata_.runtime_metadata_section_abi_contract_id;
-    input.scaffold_contract_id =
-        frontend_metadata_.runtime_metadata_section_publication_contract_id;
-    input.section_boundary_ready =
-        frontend_metadata_.runtime_metadata_section_ready_for_scaffold;
-    input.runtime_export_ready =
-        frontend_metadata_.runtime_export_ready_for_runtime_export;
-    input.scaffold_emitted =
-        frontend_metadata_.runtime_metadata_section_publication_emitted;
-    input.scaffold_fail_closed =
-        frontend_metadata_.runtime_metadata_section_publication_fail_closed;
-    input.uses_llvm_used =
-        frontend_metadata_.runtime_metadata_section_publication_uses_llvm_used;
-    input.image_info_emitted =
-        frontend_metadata_.runtime_metadata_section_publication_image_info_emitted;
-    input.image_info_symbol =
-        frontend_metadata_.runtime_metadata_section_publication_image_info_symbol;
-    input.image_info_section =
-        frontend_metadata_.runtime_metadata_section_logical_image_info_section;
-    input.descriptor_symbol_prefix =
-        frontend_metadata_.runtime_metadata_section_descriptor_symbol_prefix;
-    input.descriptor_linkage =
-        frontend_metadata_.runtime_metadata_section_descriptor_linkage;
-    input.aggregate_linkage =
-        frontend_metadata_.runtime_metadata_section_aggregate_linkage;
-    input.metadata_visibility =
-        frontend_metadata_.runtime_metadata_section_visibility;
-    input.retention_root =
-        frontend_metadata_.runtime_metadata_section_retention_root;
-    input.total_retained_global_count =
-        frontend_metadata_
-            .runtime_metadata_section_publication_total_retained_global_count;
-    input.families = {{
-        {kObjc3RuntimeMetadataLayoutPolicyClassFamily,
-         frontend_metadata_
-             .runtime_metadata_section_logical_class_descriptor_section,
-         frontend_metadata_
-             .runtime_metadata_section_publication_class_aggregate_symbol,
-         frontend_metadata_
-             .runtime_metadata_section_publication_class_descriptor_count},
-        {kObjc3RuntimeMetadataLayoutPolicyProtocolFamily,
-         frontend_metadata_
-             .runtime_metadata_section_logical_protocol_descriptor_section,
-         frontend_metadata_
-             .runtime_metadata_section_publication_protocol_aggregate_symbol,
-         frontend_metadata_
-             .runtime_metadata_section_publication_protocol_descriptor_count},
-        {kObjc3RuntimeMetadataLayoutPolicyCategoryFamily,
-         frontend_metadata_
-             .runtime_metadata_section_logical_category_descriptor_section,
-         frontend_metadata_
-             .runtime_metadata_section_publication_category_aggregate_symbol,
-         frontend_metadata_
-             .runtime_metadata_section_publication_category_descriptor_count},
-        {kObjc3RuntimeMetadataLayoutPolicyPropertyFamily,
-         frontend_metadata_
-             .runtime_metadata_section_logical_property_descriptor_section,
-         frontend_metadata_
-             .runtime_metadata_section_publication_property_aggregate_symbol,
-         frontend_metadata_
-             .runtime_metadata_section_publication_property_descriptor_count},
-        {kObjc3RuntimeMetadataLayoutPolicyIvarFamily,
-         frontend_metadata_.runtime_metadata_section_logical_ivar_descriptor_section,
-         frontend_metadata_
-             .runtime_metadata_section_publication_ivar_aggregate_symbol,
-         frontend_metadata_
-             .runtime_metadata_section_publication_ivar_descriptor_count},
-    }};
-    return ::TryBuildObjc3RuntimeMetadataLayoutPolicy(input, policy, error);
+    return BuildObjc3IRRuntimeMetadataLayoutPolicy(frontend_metadata_, policy,
+                                                  error);
   }
 
   void EmitRuntimeMetadataSectionScaffold(std::ostringstream &out) const {
@@ -13676,6 +13517,7 @@ class Objc3IREmitter {
 
   const Objc3Program &program_;
   Objc3IRFrontendMetadata frontend_metadata_;
+  Objc3IRRuntimeMetadataSymbols runtime_metadata_symbols_;
   Objc3LoweringIRBoundary lowering_ir_boundary_;
   std::string boundary_error_;
   std::unordered_set<std::string> globals_;
