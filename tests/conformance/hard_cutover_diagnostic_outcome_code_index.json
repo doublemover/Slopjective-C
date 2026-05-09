@@ -171,6 +171,7 @@
   "cross_indexes": [
     "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
     "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "tests/conformance/hard_cutover_positive_residue_audit.json",
     "tests/native/retired_surface_matrix.json",
     "docs/issues/hard_cutover_8132_8150_evidence.json"

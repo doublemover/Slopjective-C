@@ -28,6 +28,14 @@ EXPECTED_BOUNDARY_BY_KIND = {
     "strict-error": "canonical-strict-error",
 }
 RETIRED_POSITIVE_SURFACE_TERMS = ("old-mode", "shim", "fallback", "compat")
+RETIRED_SURFACE_CONTRACT_INDEX = (
+    ROOT / "tests" / "conformance" / "hard_cutover_retired_surface_fixture_contracts.json"
+)
+STRICT_REJECTION_NAME_SUFFIXES = (
+    "_rejected.objc3",
+    "_strict_error.objc3",
+    "_contract.objc3",
+)
 HARD_CUTOVER_CONTRACTS = {
     "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3": (
         "rejection",
@@ -316,6 +324,67 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
         "unknown-receiver-runtime-dispatch",
         "negative-execution-runtime-dispatch",
     }
+
+
+def test_retired_surface_contract_index_tracks_fixture_outcomes_and_sidecars() -> None:
+    contract_index = _load_json(RETIRED_SURFACE_CONTRACT_INDEX)
+    outcome_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
+    )
+    diagnostic_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_diagnostic_outcome_code_index.json"
+    )
+    retired_matrix = _load_json(NATIVE_ROOT / "retired_surface_matrix.json")
+
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+    outcomes = {entry["outcome"] for entry in outcome_index["outcomes"]}
+    diagnostic_codes = {entry["code"] for entry in diagnostic_index["codes"]}
+    matrix_paths = {entry["fixture_path"] for entry in retired_matrix["entries"]}
+    indexed_paths: set[str] = set()
+
+    assert contract_index["catalog"] == "objc3-hard-cutover-retired-surface-fixture-contracts"
+    assert contract_index["policy"]["positive_expectation_rule"].endswith(
+        "are never positive expectations"
+    )
+
+    for family in contract_index["surface_families"]:
+        assert family["behavior_outcome"] in outcomes
+        assert family["diagnostic_owner"] in diagnostic_codes
+        assert family["canonical_disposition"] in {
+            "canonical-rejection",
+            "canonical-strict-error",
+        }
+        assert family["retired_tags"]
+
+        for entry in family["fixtures"]:
+            fixture_path = ROOT / entry["path"]
+            sidecar_path = ROOT / entry["sidecar"]
+            metadata = _load_json(sidecar_path)
+            fixture = behavior_by_path[entry["path"]]
+            indexed_paths.add(entry["path"])
+
+            assert entry["positive_expectation"] is False
+            assert fixture_path.is_file(), entry["path"]
+            assert sidecar_path == fixture_path.with_name(f"{fixture_path.stem}.meta.json")
+            assert metadata["fixture"] == fixture_path.name
+            assert fixture.fixture_kind == entry["fixture_kind"]
+            assert metadata["fixture_kind"] == entry["fixture_kind"]
+            assert metadata["boundary"]["behavior_contract"] == family["canonical_disposition"]
+            assert metadata["boundary"]["retired_positive_surface"] is True
+            assert set(family["retired_tags"]).issubset(metadata["retired_surface_tags"])
+            assert metadata["expected"]["stage"] == entry["expected_stage"]
+            assert metadata["expected"]["diagnostic_code"] == family["diagnostic_owner"]
+
+            if entry["strict_rejection_name"]:
+                assert fixture_path.name.endswith(STRICT_REJECTION_NAME_SUFFIXES)
+
+    for absence in contract_index["absent_support_surfaces"]:
+        assert absence["positive_expectation"] is False
+        assert absence["behavior_outcome"] in outcomes
+        assert absence["diagnostic_owner"] in diagnostic_codes
+        assert absence["canonical_disposition"] == "absent-support"
+
+    assert matrix_paths <= indexed_paths
 
 
 def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:

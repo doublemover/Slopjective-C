@@ -18,4 +18,7 @@ The issue-closeout indexes for `#8132`-`#8150` intentionally reference the
 canonical fixture tree rather than generated artifacts when documenting
 behavior support. Retired migration lanes and compatibility surfaces are either
 listed in `tests/conformance/hard_cutover_retired_surface_absence.json` as
-rejection or strict-error evidence, or marked absent from public support.
+rejection or strict-error evidence, cross-checked in
+`tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` against
+their fixture sidecars and diagnostic owners, or marked absent from public
+support.

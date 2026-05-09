@@ -4,7 +4,8 @@
   "source_of_truth": [
     "tests/native/retired_surface_matrix.json",
     "tests/fixtures/canonical/manifest.json",
-    "tests/conformance/hard_cutover_catalog.json"
+    "tests/conformance/hard_cutover_catalog.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json"
   ],
   "policy": {
     "positive_fixtures": "canonical Objective-C 3 behavior only",

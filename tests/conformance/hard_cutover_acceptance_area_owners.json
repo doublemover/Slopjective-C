@@ -201,6 +201,7 @@
         "tests/fixtures/canonical/manifest.json",
         "tests/native/retired_surface_matrix.json",
         "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
         "tests/conformance/hard_cutover_positive_residue_audit.json"
       ],
       "behavior_fixtures": [

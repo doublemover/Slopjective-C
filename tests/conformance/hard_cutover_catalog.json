@@ -17,6 +17,7 @@
     "fixture_family_owner_index": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
     "behavior_outcome_owner_index": "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
     "diagnostic_outcome_code_index": "tests/conformance/hard_cutover_diagnostic_outcome_code_index.json",
+    "retired_surface_fixture_contract_index": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
     "retired_surface_absence_index": "tests/conformance/hard_cutover_retired_surface_absence.json",
     "positive_residue_audit": "tests/conformance/hard_cutover_positive_residue_audit.json",
     "public_command_bridge": "npm run objc3c -- <action>",

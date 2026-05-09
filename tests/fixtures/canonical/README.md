@@ -14,3 +14,7 @@ The manifest mirrors each fixture sidecar instead of replacing it. A canonical
 positive must have no diagnostic code or retired-surface tag. A canonical
 rejection or strict-error fixture must declare the stable diagnostic code and,
 when it covers a retired surface, the retired tag used by the behavior harness.
+`tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` is the
+fixture-contract index for those retired surfaces: it names the owning behavior
+outcome, diagnostic owner, sidecar file, and non-positive disposition for each
+old-mode, shim, fallback, or runtime-dispatch case.

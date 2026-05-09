@@ -18,4 +18,7 @@ phase first, then by behavior family:
 Positive fixtures prove canonical Objective-C 3 behavior only. Retired
 old-mode flags, compatibility shims, fallback dispatch routes, and legacy
 literal aliases must live as rejection or strict-error fixtures with stable
-diagnostic metadata.
+diagnostic metadata. The retired-surface contract index under
+`tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` records
+the fixture family, outcome owner, diagnostic owner, sidecar, and positive
+absence for each retired surface.
