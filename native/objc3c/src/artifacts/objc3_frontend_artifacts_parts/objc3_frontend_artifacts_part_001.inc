@@ -14,6 +14,7 @@
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"
+#include "io/json/json_writer.h"
 #include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
@@ -38,6 +39,7 @@
 namespace {
 
 using objc3::io::EscapeJsonString;
+using objc3::io::json::JsonObjectWriter;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
@@ -292,16 +294,7 @@ const char *ArcModeName(Objc3FrontendArcMode mode) {
 }
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
-  std::ostringstream out;
-  out << "[";
-  for (std::size_t index = 0; index < values.size(); ++index) {
-    if (index != 0) {
-      out << ",";
-    }
-    out << "\"" << EscapeJsonString(values[index]) << "\"";
-  }
-  out << "]";
-  return out.str();
+  return objc3::io::json::RenderJsonStringArray(values);
 }
 
 struct Objc3ErrorHandlingResultAndBridgingArtifactReplaySurfaceSummary {

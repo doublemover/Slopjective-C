@@ -44,92 +44,88 @@
 std::string BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary) {
   std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_surface_contract_id\":\""
-      << EscapeJsonString(summary.source_surface_contract_id)
-      << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(summary.frontend_surface_path)
-      << "\",\"payload_model\":\""
-      << EscapeJsonString(summary.payload_model)
-      << "\",\"artifact_relative_path\":\""
-      << EscapeJsonString(summary.artifact_relative_path)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(summary.authority_model)
-      << "\",\"payload_ownership_model\":\""
-      << EscapeJsonString(summary.payload_ownership_model)
-      << "\",\"module_name\":\"" << EscapeJsonString(summary.module_name)
-      << "\",\"protocol_decl_count\":" << summary.protocol_decl_count
-      << ",\"interface_decl_count\":" << summary.interface_decl_count
-      << ",\"implementation_decl_count\":"
-      << summary.implementation_decl_count
-      << ",\"interface_category_decl_count\":"
-      << summary.interface_category_decl_count
-      << ",\"implementation_category_decl_count\":"
-      << summary.implementation_category_decl_count
-      << ",\"function_decl_count\":" << summary.function_decl_count
-      << ",\"module_import_graph_sites\":" << summary.module_import_graph_sites
-      << ",\"import_edge_candidate_sites\":"
-      << summary.import_edge_candidate_sites
-      << ",\"namespace_segment_sites\":" << summary.namespace_segment_sites
-      << ",\"object_pointer_type_sites\":"
-      << summary.object_pointer_type_sites
-      << ",\"pointer_declarator_sites\":"
-      << summary.pointer_declarator_sites
-      << ",\"normalized_sites\":" << summary.normalized_sites
-      << ",\"contract_violation_sites\":" << summary.contract_violation_sites
-      << ",\"class_record_count\":" << summary.class_record_count
-      << ",\"protocol_record_count\":" << summary.protocol_record_count
-      << ",\"category_record_count\":" << summary.category_record_count
-      << ",\"property_record_count\":" << summary.property_record_count
-      << ",\"method_record_count\":" << summary.method_record_count
-      << ",\"ivar_record_count\":" << summary.ivar_record_count
-      << ",\"runtime_owned_declaration_count\":"
-      << summary.runtime_owned_declaration_count
-      << ",\"superclass_reference_count\":"
-      << summary.superclass_reference_count
-      << ",\"protocol_reference_count\":"
-      << summary.protocol_reference_count
-      << ",\"property_accessor_reference_count\":"
-      << summary.property_accessor_reference_count
-      << ",\"property_ivar_binding_reference_count\":"
-      << summary.property_ivar_binding_reference_count
-      << ",\"method_selector_reference_count\":"
-      << summary.method_selector_reference_count
-      << ",\"metadata_reference_count\":" << summary.metadata_reference_count
-      << ",\"ready\":"
-      << (IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(summary)
-              ? "true"
-              : "false")
-      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
-      << ",\"source_surface_contract_ready\":"
-      << (summary.source_surface_contract_ready ? "true" : "false")
-      << ",\"runtime_metadata_source_records_ready\":"
-      << (summary.runtime_metadata_source_records_ready ? "true" : "false")
-      << ",\"frontend_surface_published\":"
-      << (summary.frontend_surface_published ? "true" : "false")
-      << ",\"import_artifact_template_published\":"
-      << (summary.import_artifact_template_published ? "true" : "false")
-      << ",\"runtime_aware_import_declarations_landed\":"
-      << (summary.runtime_aware_import_declarations_landed ? "true" : "false")
-      << ",\"module_metadata_import_surface_landed\":"
-      << (summary.module_metadata_import_surface_landed ? "true" : "false")
-      << ",\"runtime_owned_declaration_import_landed\":"
-      << (summary.runtime_owned_declaration_import_landed ? "true" : "false")
-      << ",\"runtime_metadata_reference_import_landed\":"
-      << (summary.runtime_metadata_reference_import_landed ? "true" : "false")
-      << ",\"public_frontend_api_module_surface_landed\":"
-      << (summary.public_frontend_api_module_surface_landed ? "true"
-                                                            : "false")
-      << ",\"ready_for_import_artifact_emission\":"
-      << (summary.ready_for_import_artifact_emission ? "true" : "false")
-      << ",\"ready_for_frontend_module_consumption\":"
-      << (summary.ready_for_frontend_module_consumption ? "true" : "false")
-      << ",\"source_surface_replay_key\":\""
-      << EscapeJsonString(summary.source_surface_replay_key)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
+  JsonObjectWriter object(out);
+  object.StringField("contract_id", summary.contract_id);
+  object.StringField("source_surface_contract_id",
+                     summary.source_surface_contract_id);
+  object.StringField("frontend_surface_path", summary.frontend_surface_path);
+  object.StringField("payload_model", summary.payload_model);
+  object.StringField("artifact_relative_path", summary.artifact_relative_path);
+  object.StringField("authority_model", summary.authority_model);
+  object.StringField("payload_ownership_model",
+                     summary.payload_ownership_model);
+  object.StringField("module_name", summary.module_name);
+  object.SizeField("protocol_decl_count", summary.protocol_decl_count);
+  object.SizeField("interface_decl_count", summary.interface_decl_count);
+  object.SizeField("implementation_decl_count",
+                   summary.implementation_decl_count);
+  object.SizeField("interface_category_decl_count",
+                   summary.interface_category_decl_count);
+  object.SizeField("implementation_category_decl_count",
+                   summary.implementation_category_decl_count);
+  object.SizeField("function_decl_count", summary.function_decl_count);
+  object.SizeField("module_import_graph_sites",
+                   summary.module_import_graph_sites);
+  object.SizeField("import_edge_candidate_sites",
+                   summary.import_edge_candidate_sites);
+  object.SizeField("namespace_segment_sites", summary.namespace_segment_sites);
+  object.SizeField("object_pointer_type_sites",
+                   summary.object_pointer_type_sites);
+  object.SizeField("pointer_declarator_sites",
+                   summary.pointer_declarator_sites);
+  object.SizeField("normalized_sites", summary.normalized_sites);
+  object.SizeField("contract_violation_sites",
+                   summary.contract_violation_sites);
+  object.SizeField("class_record_count", summary.class_record_count);
+  object.SizeField("protocol_record_count", summary.protocol_record_count);
+  object.SizeField("category_record_count", summary.category_record_count);
+  object.SizeField("property_record_count", summary.property_record_count);
+  object.SizeField("method_record_count", summary.method_record_count);
+  object.SizeField("ivar_record_count", summary.ivar_record_count);
+  object.SizeField("runtime_owned_declaration_count",
+                   summary.runtime_owned_declaration_count);
+  object.SizeField("superclass_reference_count",
+                   summary.superclass_reference_count);
+  object.SizeField("protocol_reference_count",
+                   summary.protocol_reference_count);
+  object.SizeField("property_accessor_reference_count",
+                   summary.property_accessor_reference_count);
+  object.SizeField("property_ivar_binding_reference_count",
+                   summary.property_ivar_binding_reference_count);
+  object.SizeField("method_selector_reference_count",
+                   summary.method_selector_reference_count);
+  object.SizeField("metadata_reference_count", summary.metadata_reference_count);
+  object.BoolField("ready",
+                   IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+                       summary));
+  object.BoolField("fail_closed", summary.fail_closed);
+  object.BoolField("source_surface_contract_ready",
+                   summary.source_surface_contract_ready);
+  object.BoolField("runtime_metadata_source_records_ready",
+                   summary.runtime_metadata_source_records_ready);
+  object.BoolField("frontend_surface_published",
+                   summary.frontend_surface_published);
+  object.BoolField("import_artifact_template_published",
+                   summary.import_artifact_template_published);
+  object.BoolField("runtime_aware_import_declarations_landed",
+                   summary.runtime_aware_import_declarations_landed);
+  object.BoolField("module_metadata_import_surface_landed",
+                   summary.module_metadata_import_surface_landed);
+  object.BoolField("runtime_owned_declaration_import_landed",
+                   summary.runtime_owned_declaration_import_landed);
+  object.BoolField("runtime_metadata_reference_import_landed",
+                   summary.runtime_metadata_reference_import_landed);
+  object.BoolField("public_frontend_api_module_surface_landed",
+                   summary.public_frontend_api_module_surface_landed);
+  object.BoolField("ready_for_import_artifact_emission",
+                   summary.ready_for_import_artifact_emission);
+  object.BoolField("ready_for_frontend_module_consumption",
+                   summary.ready_for_frontend_module_consumption);
+  object.StringField("source_surface_replay_key",
+                     summary.source_surface_replay_key);
+  object.StringField("replay_key", summary.replay_key);
+  object.StringField("failure_reason", summary.failure_reason);
+  object.End();
   return out.str();
 }
 
@@ -298,88 +294,79 @@ BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
 std::string BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
     const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary &summary) {
   std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_frontend_closure_contract_id\":\""
-      << EscapeJsonString(summary.source_frontend_closure_contract_id)
-      << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(summary.frontend_surface_path)
-      << "\",\"source_artifact_relative_path\":\""
-      << EscapeJsonString(summary.source_artifact_relative_path)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(summary.authority_model)
-      << "\",\"conformance_shape_model\":\""
-      << EscapeJsonString(summary.conformance_shape_model)
-      << "\",\"dispatch_trait_model\":\""
-      << EscapeJsonString(summary.dispatch_trait_model)
-      << "\",\"effect_trait_model\":\""
-      << EscapeJsonString(summary.effect_trait_model)
-      << "\",\"module_name\":\"" << EscapeJsonString(summary.module_name)
-      << "\",\"class_record_count\":" << summary.class_record_count
-      << ",\"protocol_record_count\":" << summary.protocol_record_count
-      << ",\"category_record_count\":" << summary.category_record_count
-      << ",\"property_record_count\":" << summary.property_record_count
-      << ",\"method_record_count\":" << summary.method_record_count
-      << ",\"ivar_record_count\":" << summary.ivar_record_count
-      << ",\"runtime_owned_declaration_count\":"
-      << summary.runtime_owned_declaration_count
-      << ",\"superclass_edge_count\":" << summary.superclass_edge_count
-      << ",\"protocol_conformance_edge_count\":"
-      << summary.protocol_conformance_edge_count
-      << ",\"category_attachment_count\":"
-      << summary.category_attachment_count
-      << ",\"property_accessor_trait_count\":"
-      << summary.property_accessor_trait_count
-      << ",\"property_ivar_binding_trait_count\":"
-      << summary.property_ivar_binding_trait_count
-      << ",\"method_selector_trait_count\":"
-      << summary.method_selector_trait_count
-      << ",\"class_method_trait_count\":"
-      << summary.class_method_trait_count
-      << ",\"instance_method_trait_count\":"
-      << summary.instance_method_trait_count
-      << ",\"implemented_method_count\":"
-      << summary.implemented_method_count
-      << ",\"declaration_only_method_count\":"
-      << summary.declaration_only_method_count
-      << ",\"property_attribute_profile_count\":"
-      << summary.property_attribute_profile_count
-      << ",\"ownership_effect_profile_count\":"
-      << summary.ownership_effect_profile_count
-      << ",\"executable_binding_trait_count\":"
-      << summary.executable_binding_trait_count
-      << ",\"ready\":"
-      << (IsReadyObjc3CrossModuleRuntimeMetadataSemanticPreservationSummary(
-              summary)
-              ? "true"
-              : "false")
-      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
-      << ",\"source_frontend_closure_ready\":"
-      << (summary.source_frontend_closure_ready ? "true" : "false")
-      << ",\"runtime_metadata_source_records_ready\":"
-      << (summary.runtime_metadata_source_records_ready ? "true" : "false")
-      << ",\"semantic_surface_published\":"
-      << (summary.semantic_surface_published ? "true" : "false")
-      << ",\"imported_conformance_shape_landed\":"
-      << (summary.imported_conformance_shape_landed ? "true" : "false")
-      << ",\"imported_dispatch_traits_landed\":"
-      << (summary.imported_dispatch_traits_landed ? "true" : "false")
-      << ",\"imported_effect_traits_landed\":"
-      << (summary.imported_effect_traits_landed ? "true" : "false")
-      << ",\"imported_runtime_metadata_semantics_landed\":"
-      << (summary.imported_runtime_metadata_semantics_landed ? "true"
-                                                            : "false")
-      << ",\"ready_for_imported_metadata_semantic_rules\":"
-      << (summary.ready_for_imported_metadata_semantic_rules ? "true"
-                                                             : "false")
-      << ",\"ready_for_cross_module_dispatch_equivalence\":"
-      << (summary.ready_for_cross_module_dispatch_equivalence ? "true"
-                                                              : "false")
-      << ",\"source_frontend_closure_replay_key\":\""
-      << EscapeJsonString(summary.source_frontend_closure_replay_key)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
+  JsonObjectWriter object(out);
+  object.StringField("contract_id", summary.contract_id);
+  object.StringField("source_frontend_closure_contract_id",
+                     summary.source_frontend_closure_contract_id);
+  object.StringField("frontend_surface_path", summary.frontend_surface_path);
+  object.StringField("source_artifact_relative_path",
+                     summary.source_artifact_relative_path);
+  object.StringField("authority_model", summary.authority_model);
+  object.StringField("conformance_shape_model",
+                     summary.conformance_shape_model);
+  object.StringField("dispatch_trait_model", summary.dispatch_trait_model);
+  object.StringField("effect_trait_model", summary.effect_trait_model);
+  object.StringField("module_name", summary.module_name);
+  object.SizeField("class_record_count", summary.class_record_count);
+  object.SizeField("protocol_record_count", summary.protocol_record_count);
+  object.SizeField("category_record_count", summary.category_record_count);
+  object.SizeField("property_record_count", summary.property_record_count);
+  object.SizeField("method_record_count", summary.method_record_count);
+  object.SizeField("ivar_record_count", summary.ivar_record_count);
+  object.SizeField("runtime_owned_declaration_count",
+                   summary.runtime_owned_declaration_count);
+  object.SizeField("superclass_edge_count", summary.superclass_edge_count);
+  object.SizeField("protocol_conformance_edge_count",
+                   summary.protocol_conformance_edge_count);
+  object.SizeField("category_attachment_count",
+                   summary.category_attachment_count);
+  object.SizeField("property_accessor_trait_count",
+                   summary.property_accessor_trait_count);
+  object.SizeField("property_ivar_binding_trait_count",
+                   summary.property_ivar_binding_trait_count);
+  object.SizeField("method_selector_trait_count",
+                   summary.method_selector_trait_count);
+  object.SizeField("class_method_trait_count", summary.class_method_trait_count);
+  object.SizeField("instance_method_trait_count",
+                   summary.instance_method_trait_count);
+  object.SizeField("implemented_method_count",
+                   summary.implemented_method_count);
+  object.SizeField("declaration_only_method_count",
+                   summary.declaration_only_method_count);
+  object.SizeField("property_attribute_profile_count",
+                   summary.property_attribute_profile_count);
+  object.SizeField("ownership_effect_profile_count",
+                   summary.ownership_effect_profile_count);
+  object.SizeField("executable_binding_trait_count",
+                   summary.executable_binding_trait_count);
+  object.BoolField(
+      "ready",
+      IsReadyObjc3CrossModuleRuntimeMetadataSemanticPreservationSummary(
+          summary));
+  object.BoolField("fail_closed", summary.fail_closed);
+  object.BoolField("source_frontend_closure_ready",
+                   summary.source_frontend_closure_ready);
+  object.BoolField("runtime_metadata_source_records_ready",
+                   summary.runtime_metadata_source_records_ready);
+  object.BoolField("semantic_surface_published",
+                   summary.semantic_surface_published);
+  object.BoolField("imported_conformance_shape_landed",
+                   summary.imported_conformance_shape_landed);
+  object.BoolField("imported_dispatch_traits_landed",
+                   summary.imported_dispatch_traits_landed);
+  object.BoolField("imported_effect_traits_landed",
+                   summary.imported_effect_traits_landed);
+  object.BoolField("imported_runtime_metadata_semantics_landed",
+                   summary.imported_runtime_metadata_semantics_landed);
+  object.BoolField("ready_for_imported_metadata_semantic_rules",
+                   summary.ready_for_imported_metadata_semantic_rules);
+  object.BoolField("ready_for_cross_module_dispatch_equivalence",
+                   summary.ready_for_cross_module_dispatch_equivalence);
+  object.StringField("source_frontend_closure_replay_key",
+                     summary.source_frontend_closure_replay_key);
+  object.StringField("replay_key", summary.replay_key);
+  object.StringField("failure_reason", summary.failure_reason);
+  object.End();
   return out.str();
 }
 
@@ -717,156 +704,146 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
 std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
     const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary) {
   std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_semantic_preservation_contract_id\":\""
-      << EscapeJsonString(summary.source_semantic_preservation_contract_id)
-      << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(summary.frontend_surface_path)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(summary.authority_model)
-      << "\",\"input_model\":\""
-      << EscapeJsonString(summary.input_model)
-      << "\",\"imported_module_names_lexicographic\":"
-      << BuildStringArrayJson(summary.imported_module_names_lexicographic)
-      << ",\"imported_input_path_count\":" << summary.imported_input_path_count
-      << ",\"imported_module_count\":" << summary.imported_module_count
-      << ",\"class_record_count\":" << summary.class_record_count
-      << ",\"protocol_record_count\":" << summary.protocol_record_count
-      << ",\"category_record_count\":" << summary.category_record_count
-      << ",\"property_record_count\":" << summary.property_record_count
-      << ",\"method_record_count\":" << summary.method_record_count
-      << ",\"ivar_record_count\":" << summary.ivar_record_count
-      << ",\"runtime_owned_declaration_count\":"
-      << summary.runtime_owned_declaration_count
-      << ",\"superclass_edge_count\":" << summary.superclass_edge_count
-      << ",\"protocol_conformance_edge_count\":"
-      << summary.protocol_conformance_edge_count
-      << ",\"category_attachment_count\":"
-      << summary.category_attachment_count
-      << ",\"property_accessor_trait_count\":"
-      << summary.property_accessor_trait_count
-      << ",\"property_ivar_binding_trait_count\":"
-      << summary.property_ivar_binding_trait_count
-      << ",\"method_selector_trait_count\":"
-      << summary.method_selector_trait_count
-      << ",\"class_method_trait_count\":"
-      << summary.class_method_trait_count
-      << ",\"instance_method_trait_count\":"
-      << summary.instance_method_trait_count
-      << ",\"implemented_method_count\":"
-      << summary.implemented_method_count
-      << ",\"declaration_only_method_count\":"
-      << summary.declaration_only_method_count
-      << ",\"property_attribute_profile_count\":"
-      << summary.property_attribute_profile_count
-      << ",\"ownership_effect_profile_count\":"
-      << summary.ownership_effect_profile_count
-      << ",\"executable_binding_trait_count\":"
-      << summary.executable_binding_trait_count
-      << ",\"optional_send_site_count\":" << summary.optional_send_site_count
-      << ",\"typed_keypath_literal_site_count\":"
-      << summary.typed_keypath_literal_site_count
-      << ",\"live_optional_lowering_site_count\":"
-      << summary.live_optional_lowering_site_count
-      << ",\"live_typed_keypath_artifact_site_count\":"
-      << summary.live_typed_keypath_artifact_site_count
-      << ",\"imported_type_system_optional_keypath_module_count\":"
-      << summary.imported_type_system_optional_keypath_module_count
-      << ",\"imported_optional_runtime_ready_module_count\":"
-      << summary.imported_optional_runtime_ready_module_count
-      << ",\"imported_typed_keypath_runtime_ready_module_count\":"
-      << summary.imported_typed_keypath_runtime_ready_module_count
-      << ",\"imported_type_system_generic_contract_module_count\":"
-      << summary.imported_type_system_generic_contract_module_count
-      << ",\"imported_generic_interface_count\":"
-      << summary.imported_generic_interface_count
-      << ",\"imported_generic_parameter_count\":"
-      << summary.imported_generic_parameter_count
-      << ",\"imported_generic_variance_annotation_count\":"
-      << summary.imported_generic_variance_annotation_count
-      << ",\"imported_generic_argument_reference_count\":"
-      << summary.imported_generic_argument_reference_count
-      << ",\"imported_protocol_qualified_generic_argument_count\":"
-      << summary.imported_protocol_qualified_generic_argument_count
-      << ",\"imported_type_system_nullability_contract_module_count\":"
-      << summary.imported_type_system_nullability_contract_module_count
-      << ",\"imported_nullability_canonical_type_count\":"
-      << summary.imported_nullability_canonical_type_count
-      << ",\"imported_nullability_object_type_count\":"
-      << summary.imported_nullability_object_type_count
-      << ",\"imported_nullable_entry_count\":"
-      << summary.imported_nullable_entry_count
-      << ",\"imported_nonnull_entry_count\":"
-      << summary.imported_nonnull_entry_count
-      << ",\"imported_implicitly_unwrapped_entry_count\":"
-      << summary.imported_implicitly_unwrapped_entry_count
-      << ",\"imported_null_resettable_entry_count\":"
-      << summary.imported_null_resettable_entry_count
-      << ",\"imported_unspecified_nullability_entry_count\":"
-      << summary.imported_unspecified_nullability_entry_count
-      << ",\"imported_invalid_nullability_entry_count\":"
-      << summary.imported_invalid_nullability_entry_count
-      << ",\"imported_type_system_protocol_contract_module_count\":"
-      << summary.imported_type_system_protocol_contract_module_count
-      << ",\"imported_protocol_decl_count\":"
-      << summary.imported_protocol_decl_count
-      << ",\"imported_protocol_forward_declaration_count\":"
-      << summary.imported_protocol_forward_declaration_count
-      << ",\"imported_protocol_inheritance_edge_count\":"
-      << summary.imported_protocol_inheritance_edge_count
-      << ",\"imported_protocol_required_method_count\":"
-      << summary.imported_protocol_required_method_count
-      << ",\"imported_protocol_optional_method_count\":"
-      << summary.imported_protocol_optional_method_count
-      << ",\"imported_protocol_required_property_count\":"
-      << summary.imported_protocol_required_property_count
-      << ",\"imported_protocol_optional_property_count\":"
-      << summary.imported_protocol_optional_property_count
-      << ",\"imported_class_protocol_adoption_count\":"
-      << summary.imported_class_protocol_adoption_count
-      << ",\"imported_category_protocol_adoption_count\":"
-      << summary.imported_category_protocol_adoption_count
-      << ",\"ready\":"
-      << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
-              ? "true"
-              : "false")
-      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
-      << ",\"source_semantic_preservation_contract_ready\":"
-      << (summary.source_semantic_preservation_contract_ready ? "true"
-                                                              : "false")
-      << ",\"semantic_surface_published\":"
-      << (summary.semantic_surface_published ? "true" : "false")
-      << ",\"imported_runtime_surface_inputs_present\":"
-      << (summary.imported_runtime_surface_inputs_present ? "true" : "false")
-      << ",\"imported_runtime_surface_inputs_loaded\":"
-      << (summary.imported_runtime_surface_inputs_loaded ? "true" : "false")
-      << ",\"imported_conformance_shape_landed\":"
-      << (summary.imported_conformance_shape_landed ? "true" : "false")
-      << ",\"imported_dispatch_traits_landed\":"
-      << (summary.imported_dispatch_traits_landed ? "true" : "false")
-      << ",\"imported_effect_traits_landed\":"
-      << (summary.imported_effect_traits_landed ? "true" : "false")
-      << ",\"imported_runtime_metadata_semantics_landed\":"
-      << (summary.imported_runtime_metadata_semantics_landed ? "true"
-                                                            : "false")
-      << ",\"imported_type_system_type_surface_landed\":"
-      << (summary.imported_type_system_type_surface_landed ? "true" : "false")
-      << ",\"imported_optional_runtime_semantics_landed\":"
-      << (summary.imported_optional_runtime_semantics_landed ? "true"
-                                                             : "false")
-      << ",\"imported_typed_keypath_runtime_semantics_landed\":"
-      << (summary.imported_typed_keypath_runtime_semantics_landed ? "true"
-                                                                  : "false")
-      << ",\"ready_for_imported_metadata_semantic_rules\":"
-      << (summary.ready_for_imported_metadata_semantic_rules ? "true"
-                                                             : "false")
-      << ",\"ready_for_cross_module_dispatch_equivalence\":"
-      << (summary.ready_for_cross_module_dispatch_equivalence ? "true"
-                                                              : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
+  JsonObjectWriter object(out);
+  object.StringField("contract_id", summary.contract_id);
+  object.StringField("source_semantic_preservation_contract_id",
+                     summary.source_semantic_preservation_contract_id);
+  object.StringField("frontend_surface_path", summary.frontend_surface_path);
+  object.StringField("authority_model", summary.authority_model);
+  object.StringField("input_model", summary.input_model);
+  object.StringArrayField("imported_module_names_lexicographic",
+                          summary.imported_module_names_lexicographic);
+  object.SizeField("imported_input_path_count",
+                   summary.imported_input_path_count);
+  object.SizeField("imported_module_count", summary.imported_module_count);
+  object.SizeField("class_record_count", summary.class_record_count);
+  object.SizeField("protocol_record_count", summary.protocol_record_count);
+  object.SizeField("category_record_count", summary.category_record_count);
+  object.SizeField("property_record_count", summary.property_record_count);
+  object.SizeField("method_record_count", summary.method_record_count);
+  object.SizeField("ivar_record_count", summary.ivar_record_count);
+  object.SizeField("runtime_owned_declaration_count",
+                   summary.runtime_owned_declaration_count);
+  object.SizeField("superclass_edge_count", summary.superclass_edge_count);
+  object.SizeField("protocol_conformance_edge_count",
+                   summary.protocol_conformance_edge_count);
+  object.SizeField("category_attachment_count",
+                   summary.category_attachment_count);
+  object.SizeField("property_accessor_trait_count",
+                   summary.property_accessor_trait_count);
+  object.SizeField("property_ivar_binding_trait_count",
+                   summary.property_ivar_binding_trait_count);
+  object.SizeField("method_selector_trait_count",
+                   summary.method_selector_trait_count);
+  object.SizeField("class_method_trait_count", summary.class_method_trait_count);
+  object.SizeField("instance_method_trait_count",
+                   summary.instance_method_trait_count);
+  object.SizeField("implemented_method_count",
+                   summary.implemented_method_count);
+  object.SizeField("declaration_only_method_count",
+                   summary.declaration_only_method_count);
+  object.SizeField("property_attribute_profile_count",
+                   summary.property_attribute_profile_count);
+  object.SizeField("ownership_effect_profile_count",
+                   summary.ownership_effect_profile_count);
+  object.SizeField("executable_binding_trait_count",
+                   summary.executable_binding_trait_count);
+  object.SizeField("optional_send_site_count", summary.optional_send_site_count);
+  object.SizeField("typed_keypath_literal_site_count",
+                   summary.typed_keypath_literal_site_count);
+  object.SizeField("live_optional_lowering_site_count",
+                   summary.live_optional_lowering_site_count);
+  object.SizeField("live_typed_keypath_artifact_site_count",
+                   summary.live_typed_keypath_artifact_site_count);
+  object.SizeField("imported_type_system_optional_keypath_module_count",
+                   summary.imported_type_system_optional_keypath_module_count);
+  object.SizeField("imported_optional_runtime_ready_module_count",
+                   summary.imported_optional_runtime_ready_module_count);
+  object.SizeField("imported_typed_keypath_runtime_ready_module_count",
+                   summary.imported_typed_keypath_runtime_ready_module_count);
+  object.SizeField("imported_type_system_generic_contract_module_count",
+                   summary.imported_type_system_generic_contract_module_count);
+  object.SizeField("imported_generic_interface_count",
+                   summary.imported_generic_interface_count);
+  object.SizeField("imported_generic_parameter_count",
+                   summary.imported_generic_parameter_count);
+  object.SizeField("imported_generic_variance_annotation_count",
+                   summary.imported_generic_variance_annotation_count);
+  object.SizeField("imported_generic_argument_reference_count",
+                   summary.imported_generic_argument_reference_count);
+  object.SizeField("imported_protocol_qualified_generic_argument_count",
+                   summary.imported_protocol_qualified_generic_argument_count);
+  object.SizeField("imported_type_system_nullability_contract_module_count",
+                   summary.imported_type_system_nullability_contract_module_count);
+  object.SizeField("imported_nullability_canonical_type_count",
+                   summary.imported_nullability_canonical_type_count);
+  object.SizeField("imported_nullability_object_type_count",
+                   summary.imported_nullability_object_type_count);
+  object.SizeField("imported_nullable_entry_count",
+                   summary.imported_nullable_entry_count);
+  object.SizeField("imported_nonnull_entry_count",
+                   summary.imported_nonnull_entry_count);
+  object.SizeField("imported_implicitly_unwrapped_entry_count",
+                   summary.imported_implicitly_unwrapped_entry_count);
+  object.SizeField("imported_null_resettable_entry_count",
+                   summary.imported_null_resettable_entry_count);
+  object.SizeField("imported_unspecified_nullability_entry_count",
+                   summary.imported_unspecified_nullability_entry_count);
+  object.SizeField("imported_invalid_nullability_entry_count",
+                   summary.imported_invalid_nullability_entry_count);
+  object.SizeField("imported_type_system_protocol_contract_module_count",
+                   summary.imported_type_system_protocol_contract_module_count);
+  object.SizeField("imported_protocol_decl_count",
+                   summary.imported_protocol_decl_count);
+  object.SizeField("imported_protocol_forward_declaration_count",
+                   summary.imported_protocol_forward_declaration_count);
+  object.SizeField("imported_protocol_inheritance_edge_count",
+                   summary.imported_protocol_inheritance_edge_count);
+  object.SizeField("imported_protocol_required_method_count",
+                   summary.imported_protocol_required_method_count);
+  object.SizeField("imported_protocol_optional_method_count",
+                   summary.imported_protocol_optional_method_count);
+  object.SizeField("imported_protocol_required_property_count",
+                   summary.imported_protocol_required_property_count);
+  object.SizeField("imported_protocol_optional_property_count",
+                   summary.imported_protocol_optional_property_count);
+  object.SizeField("imported_class_protocol_adoption_count",
+                   summary.imported_class_protocol_adoption_count);
+  object.SizeField("imported_category_protocol_adoption_count",
+                   summary.imported_category_protocol_adoption_count);
+  object.BoolField(
+      "ready",
+      IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary));
+  object.BoolField("fail_closed", summary.fail_closed);
+  object.BoolField("source_semantic_preservation_contract_ready",
+                   summary.source_semantic_preservation_contract_ready);
+  object.BoolField("semantic_surface_published",
+                   summary.semantic_surface_published);
+  object.BoolField("imported_runtime_surface_inputs_present",
+                   summary.imported_runtime_surface_inputs_present);
+  object.BoolField("imported_runtime_surface_inputs_loaded",
+                   summary.imported_runtime_surface_inputs_loaded);
+  object.BoolField("imported_conformance_shape_landed",
+                   summary.imported_conformance_shape_landed);
+  object.BoolField("imported_dispatch_traits_landed",
+                   summary.imported_dispatch_traits_landed);
+  object.BoolField("imported_effect_traits_landed",
+                   summary.imported_effect_traits_landed);
+  object.BoolField("imported_runtime_metadata_semantics_landed",
+                   summary.imported_runtime_metadata_semantics_landed);
+  object.BoolField("imported_type_system_type_surface_landed",
+                   summary.imported_type_system_type_surface_landed);
+  object.BoolField("imported_optional_runtime_semantics_landed",
+                   summary.imported_optional_runtime_semantics_landed);
+  object.BoolField("imported_typed_keypath_runtime_semantics_landed",
+                   summary.imported_typed_keypath_runtime_semantics_landed);
+  object.BoolField("ready_for_imported_metadata_semantic_rules",
+                   summary.ready_for_imported_metadata_semantic_rules);
+  object.BoolField("ready_for_cross_module_dispatch_equivalence",
+                   summary.ready_for_cross_module_dispatch_equivalence);
+  object.StringField("replay_key", summary.replay_key);
+  object.StringField("failure_reason", summary.failure_reason);
+  object.End();
   return out.str();
 }
 
@@ -927,48 +904,43 @@ BuildSerializedRuntimeMetadataImportLoweringSummary(
 std::string BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
     const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary) {
   std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_imported_semantic_rules_contract_id\":\""
-      << EscapeJsonString(summary.source_imported_semantic_rules_contract_id)
-      << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(summary.frontend_surface_path)
-      << "\",\"source_artifact_relative_path\":\""
-      << EscapeJsonString(summary.source_artifact_relative_path)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(summary.authority_model)
-      << "\",\"input_model\":\""
-      << EscapeJsonString(summary.input_model)
-      << "\",\"imported_input_path_count\":"
-      << summary.imported_input_path_count
-      << ",\"imported_module_count\":" << summary.imported_module_count
-      << ",\"ready\":"
-      << (IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(summary)
-              ? "true"
-              : "false")
-      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
-      << ",\"source_imported_semantic_rules_ready\":"
-      << (summary.source_imported_semantic_rules_ready ? "true" : "false")
-      << ",\"semantic_surface_published\":"
-      << (summary.semantic_surface_published ? "true" : "false")
-      << ",\"imported_surface_ingest_landed\":"
-      << (summary.imported_surface_ingest_landed ? "true" : "false")
-      << ",\"serialized_metadata_rehydration_landed\":"
-      << (summary.serialized_metadata_rehydration_landed ? "true" : "false")
-      << ",\"incremental_reuse_landed\":"
-      << (summary.incremental_reuse_landed ? "true" : "false")
-      << ",\"imported_metadata_ir_lowering_landed\":"
-      << (summary.imported_metadata_ir_lowering_landed ? "true" : "false")
-      << ",\"public_live_imported_payload_abi_landed\":"
-      << (summary.public_live_imported_payload_abi_landed ? "true" : "false")
-      << ",\"ready_for_serialized_metadata_lowering_impl\":"
-      << (summary.ready_for_serialized_metadata_lowering_impl ? "true"
-                                                              : "false")
-      << ",\"ready_for_incremental_reuse_impl\":"
-      << (summary.ready_for_incremental_reuse_impl ? "true" : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
+  JsonObjectWriter object(out);
+  object.StringField("contract_id", summary.contract_id);
+  object.StringField("source_imported_semantic_rules_contract_id",
+                     summary.source_imported_semantic_rules_contract_id);
+  object.StringField("frontend_surface_path", summary.frontend_surface_path);
+  object.StringField("source_artifact_relative_path",
+                     summary.source_artifact_relative_path);
+  object.StringField("authority_model", summary.authority_model);
+  object.StringField("input_model", summary.input_model);
+  object.SizeField("imported_input_path_count",
+                   summary.imported_input_path_count);
+  object.SizeField("imported_module_count", summary.imported_module_count);
+  object.BoolField(
+      "ready",
+      IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(summary));
+  object.BoolField("fail_closed", summary.fail_closed);
+  object.BoolField("source_imported_semantic_rules_ready",
+                   summary.source_imported_semantic_rules_ready);
+  object.BoolField("semantic_surface_published",
+                   summary.semantic_surface_published);
+  object.BoolField("imported_surface_ingest_landed",
+                   summary.imported_surface_ingest_landed);
+  object.BoolField("serialized_metadata_rehydration_landed",
+                   summary.serialized_metadata_rehydration_landed);
+  object.BoolField("incremental_reuse_landed",
+                   summary.incremental_reuse_landed);
+  object.BoolField("imported_metadata_ir_lowering_landed",
+                   summary.imported_metadata_ir_lowering_landed);
+  object.BoolField("public_live_imported_payload_abi_landed",
+                   summary.public_live_imported_payload_abi_landed);
+  object.BoolField("ready_for_serialized_metadata_lowering_impl",
+                   summary.ready_for_serialized_metadata_lowering_impl);
+  object.BoolField("ready_for_incremental_reuse_impl",
+                   summary.ready_for_incremental_reuse_impl);
+  object.StringField("replay_key", summary.replay_key);
+  object.StringField("failure_reason", summary.failure_reason);
+  object.End();
   return out.str();
 }
 
@@ -1313,49 +1285,43 @@ BuildSerializedRuntimeMetadataArtifactReuseSummary(
 std::string BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary) {
   std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_serialized_import_lowering_contract_id\":\""
-      << EscapeJsonString(summary.source_serialized_import_lowering_contract_id)
-      << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(summary.frontend_surface_path)
-      << "\",\"artifact_relative_path\":\""
-      << EscapeJsonString(summary.artifact_relative_path)
-      << "\",\"payload_member_name\":\""
-      << EscapeJsonString(summary.payload_member_name)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(summary.authority_model)
-      << "\",\"input_model\":\"" << EscapeJsonString(summary.input_model)
-      << "\",\"reused_module_names_lexicographic\":"
-      << BuildStringArrayJson(summary.reused_module_names_lexicographic)
-      << ",\"reused_module_count\":" << summary.reused_module_count
-      << ",\"class_record_count\":" << summary.class_record_count
-      << ",\"protocol_record_count\":" << summary.protocol_record_count
-      << ",\"category_record_count\":" << summary.category_record_count
-      << ",\"property_record_count\":" << summary.property_record_count
-      << ",\"method_record_count\":" << summary.method_record_count
-      << ",\"ivar_record_count\":" << summary.ivar_record_count
-      << ",\"runtime_owned_declaration_count\":"
-      << summary.runtime_owned_declaration_count
-      << ",\"metadata_reference_count\":" << summary.metadata_reference_count
-      << ",\"ready\":"
-      << (IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(summary)
-              ? "true"
-              : "false")
-      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
-      << ",\"source_serialized_import_lowering_ready\":"
-      << (summary.source_serialized_import_lowering_ready ? "true" : "false")
-      << ",\"semantic_surface_published\":"
-      << (summary.semantic_surface_published ? "true" : "false")
-      << ",\"serialized_metadata_rehydration_landed\":"
-      << (summary.serialized_metadata_rehydration_landed ? "true" : "false")
-      << ",\"artifact_reuse_landed\":"
-      << (summary.artifact_reuse_landed ? "true" : "false")
-      << ",\"downstream_module_consumption_ready\":"
-      << (summary.downstream_module_consumption_ready ? "true" : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
+  JsonObjectWriter object(out);
+  object.StringField("contract_id", summary.contract_id);
+  object.StringField("source_serialized_import_lowering_contract_id",
+                     summary.source_serialized_import_lowering_contract_id);
+  object.StringField("frontend_surface_path", summary.frontend_surface_path);
+  object.StringField("artifact_relative_path", summary.artifact_relative_path);
+  object.StringField("payload_member_name", summary.payload_member_name);
+  object.StringField("authority_model", summary.authority_model);
+  object.StringField("input_model", summary.input_model);
+  object.StringArrayField("reused_module_names_lexicographic",
+                          summary.reused_module_names_lexicographic);
+  object.SizeField("reused_module_count", summary.reused_module_count);
+  object.SizeField("class_record_count", summary.class_record_count);
+  object.SizeField("protocol_record_count", summary.protocol_record_count);
+  object.SizeField("category_record_count", summary.category_record_count);
+  object.SizeField("property_record_count", summary.property_record_count);
+  object.SizeField("method_record_count", summary.method_record_count);
+  object.SizeField("ivar_record_count", summary.ivar_record_count);
+  object.SizeField("runtime_owned_declaration_count",
+                   summary.runtime_owned_declaration_count);
+  object.SizeField("metadata_reference_count", summary.metadata_reference_count);
+  object.BoolField(
+      "ready",
+      IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(summary));
+  object.BoolField("fail_closed", summary.fail_closed);
+  object.BoolField("source_serialized_import_lowering_ready",
+                   summary.source_serialized_import_lowering_ready);
+  object.BoolField("semantic_surface_published",
+                   summary.semantic_surface_published);
+  object.BoolField("serialized_metadata_rehydration_landed",
+                   summary.serialized_metadata_rehydration_landed);
+  object.BoolField("artifact_reuse_landed", summary.artifact_reuse_landed);
+  object.BoolField("downstream_module_consumption_ready",
+                   summary.downstream_module_consumption_ready);
+  object.StringField("replay_key", summary.replay_key);
+  object.StringField("failure_reason", summary.failure_reason);
+  object.End();
   return out.str();
 }
 

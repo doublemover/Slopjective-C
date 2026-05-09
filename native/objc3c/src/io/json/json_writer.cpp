@@ -83,9 +83,20 @@ void JsonObjectWriter::NumberField(std::string_view name, double value) {
   out_ << std::setprecision(17) << value;
 }
 
+void JsonObjectWriter::SizeField(std::string_view name, std::size_t value) {
+  BeginField(name);
+  out_ << value;
+}
+
 void JsonObjectWriter::UnsignedField(std::string_view name, std::uint64_t value) {
   BeginField(name);
   out_ << value;
+}
+
+void JsonObjectWriter::StringArrayField(std::string_view name,
+                                        const std::vector<std::string> &values) {
+  BeginField(name);
+  WriteJsonStringArray(out_, values);
 }
 
 void JsonObjectWriter::RawJsonField(std::string_view name, std::string_view value) {
@@ -108,6 +119,24 @@ void WriteJson(std::ostream &out, const JsonValue &value) {
 std::string RenderJson(const JsonValue &value) {
   std::ostringstream out;
   WriteJson(out, value);
+  return out.str();
+}
+
+void WriteJsonStringArray(std::ostream &out,
+                          const std::vector<std::string> &values) {
+  out << '[';
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    if (index > 0) {
+      out << ',';
+    }
+    objc3::io::WriteJsonString(out, values[index]);
+  }
+  out << ']';
+}
+
+std::string RenderJsonStringArray(const std::vector<std::string> &values) {
+  std::ostringstream out;
+  WriteJsonStringArray(out, values);
   return out.str();
 }
 
