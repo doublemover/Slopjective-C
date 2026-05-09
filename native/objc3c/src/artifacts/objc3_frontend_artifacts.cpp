@@ -215,6 +215,8 @@ using objc3::artifacts::frontend::BuildConcurrencyAsyncSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
+    BuildControlFlowControlFlowSafetyLoweringContractJson;
+using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildCrossModuleSemanticContractsDiagnosticsSummaryJson;
@@ -366,10 +368,6 @@ using objc3::artifacts::reports::
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
-inline constexpr const char
-    *kObjc3ControlFlowControlFlowSafetyLoweringSurfacePath =
-        "frontend.pipeline.semantic_surface."
-        "objc_control_flow_control_flow_safety_lowering_contract";
 inline constexpr const char
     *kObjc3ConcurrencyContinuationAbiAsyncLoweringContractId =
         "objc3c.concurrency.continuation.abi.async.lowering.contract.v1";
@@ -2593,70 +2591,6 @@ std::string BuildConcurrencySuspensionCleanupIntegrationJson(
       << ",\"ready_for_ir_object_emission\":"
       << (deterministic ? "true" : "false")
       << "}";
-  return out.str();
-}
-
-std::string BuildControlFlowControlFlowSafetyLoweringContractJson(
-    const Objc3ControlFlowControlFlowSafetyLoweringContract &contract,
-    const Objc3ControlFlowControlFlowSemanticModelSummary &semantic_summary,
-    const std::string &semantic_summary_replay_key,
-    const std::string &replay_key) {
-  std::ostringstream out;
-  const bool source_semantic_model_ready =
-      semantic_summary.deterministic &&
-      semantic_summary.ready_for_lowering_and_runtime;
-  out << "{"
-      << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringContractId)
-      << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringSurfacePath)
-      << "\",\"source_semantic_contract_id\":\""
-      << EscapeJsonString(semantic_summary.contract_id)
-      << "\",\"guard_model\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringGuardModel)
-      << "\",\"match_model\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringMatchModel)
-      << "\",\"defer_model\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringDeferModel)
-      << "\",\"authority_model\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringAuthorityModel)
-      << "\",\"fail_closed_model\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringFailClosedModel)
-      << "\",\"guard_statement_sites\":"
-      << contract.guard_statement_sites
-      << ",\"guard_clause_sites\":" << contract.guard_clause_sites
-      << ",\"match_statement_sites\":" << contract.match_statement_sites
-      << ",\"defer_statement_sites\":" << contract.defer_statement_sites
-      << ",\"live_guard_short_circuit_sites\":"
-      << contract.live_guard_short_circuit_sites
-      << ",\"live_match_dispatch_sites\":"
-      << contract.live_match_dispatch_sites
-      << ",\"live_defer_cleanup_sites\":"
-      << contract.live_defer_cleanup_sites
-      << ",\"fail_closed_guard_short_circuit_sites\":"
-      << contract.fail_closed_guard_short_circuit_sites
-      << ",\"fail_closed_match_dispatch_sites\":"
-      << contract.fail_closed_match_dispatch_sites
-      << ",\"fail_closed_defer_cleanup_sites\":"
-      << contract.fail_closed_defer_cleanup_sites
-      << ",\"deterministic_fail_closed_sites\":"
-      << contract.deterministic_fail_closed_sites
-      << ",\"contract_violation_sites\":"
-      << contract.contract_violation_sites
-      << ",\"deterministic\":"
-      << (contract.deterministic ? "true" : "false")
-      << ",\"fail_closed\":"
-      << (contract.deterministic_fail_closed_sites > 0u ? "true" : "false")
-      << ",\"source_semantic_model_ready\":"
-      << (source_semantic_model_ready ? "true" : "false")
-      << ",\"ready_for_native_guard_lowering\":true"
-      << ",\"ready_for_native_match_lowering\":"
-      << (contract.fail_closed_match_dispatch_sites == 0u ? "true" : "false")
-      << ",\"ready_for_native_defer_lowering\":true"
-      << ",\"semantic_summary_replay_key\":\""
-      << EscapeJsonString(semantic_summary_replay_key)
-      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
-      << "\"}";
   return out.str();
 }
 
