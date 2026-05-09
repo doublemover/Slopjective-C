@@ -35,6 +35,8 @@ add_library(objc3c_support STATIC
   objc3_current_property_runtime_profiles.h
   objc3_property_accessor_profile_builder.cpp
   objc3_property_accessor_profile_builder.h
+  objc3_property_accessor_rebuild_policy.cpp
+  objc3_property_accessor_rebuild_policy.h
   objc3_property_accessor_profiles.h
   objc3_property_ownership_application.h
   objc3_property_ownership_classification.cpp
