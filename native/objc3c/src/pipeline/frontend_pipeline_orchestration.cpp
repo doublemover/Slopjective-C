@@ -6273,6 +6273,218 @@ Objc3FrontendSymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSu
   return summary;
 }
 
+Objc3FrontendSemanticDiagnosticTaxonomyPhaseResult
+BuildObjc3FrontendSemanticDiagnosticTaxonomyPhaseResult(
+    const Objc3FrontendPipelineResult &result,
+    const Objc3FrontendOptions &options) {
+  Objc3FrontendSemanticDiagnosticTaxonomyPhaseResult phase;
+  phase.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold(
+          result.sema_pass_flow_summary,
+          result.sema_parity_surface,
+          result.typed_sema_to_lowering_contract_surface);
+  phase.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureImplementationSurface(
+          result.sema_pass_flow_summary,
+          result.sema_parity_surface,
+          result.typed_sema_to_lowering_contract_surface,
+          phase.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold);
+  phase.tooling_diagnostic_taxonomy_portability_contract_summary =
+      BuildToolingDiagnosticTaxonomyPortabilityContractSummary(
+          result.tooling_migration_canonicalization_source_completion_summary,
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface);
+  phase.tooling_feature_specific_fixit_synthesis_summary =
+      BuildToolingFeatureSpecificFixitSynthesisSummary(
+          phase.tooling_diagnostic_taxonomy_portability_contract_summary);
+  phase.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface,
+          result.sema_parity_surface,
+          result.typed_sema_to_lowering_contract_surface);
+  phase.parse_lowering_readiness_surface =
+      BuildObjc3ParseLoweringReadinessSurface(result, options);
+  phase.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface(
+          phase.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface,
+          phase.parse_lowering_readiness_surface,
+          result.typed_sema_to_lowering_contract_surface);
+  phase
+      .semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface(
+          phase.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface,
+          phase.parse_lowering_readiness_surface);
+  phase.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface,
+          phase.parse_lowering_readiness_surface);
+  phase
+      .semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisRecoveryDeterminismHardeningSurface(
+          phase.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface,
+          phase.parse_lowering_readiness_surface);
+  phase
+      .semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceMatrixImplementationSurface(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface,
+          phase.parse_lowering_readiness_surface);
+  phase.semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceCorpusExpansionSurface(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface,
+          phase.parse_lowering_readiness_surface);
+  phase
+      .semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisPerformanceQualityGuardrailsSurface(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface,
+          phase.parse_lowering_readiness_surface);
+  return phase;
+}
+
+void AdoptObjc3FrontendSemanticDiagnosticTaxonomyPhaseResult(
+    Objc3FrontendPipelineResult &result,
+    Objc3FrontendSemanticDiagnosticTaxonomyPhaseResult phase) {
+  result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =
+      std::move(phase.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold);
+  result.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface);
+  result.tooling_diagnostic_taxonomy_portability_contract_summary =
+      std::move(phase.tooling_diagnostic_taxonomy_portability_contract_summary);
+  result.tooling_feature_specific_fixit_synthesis_summary =
+      std::move(phase.tooling_feature_specific_fixit_synthesis_summary);
+  result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface =
+      std::move(phase.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface);
+  result.parse_lowering_readiness_surface =
+      std::move(phase.parse_lowering_readiness_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface =
+      std::move(phase
+                    .semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface);
+  result
+      .semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface =
+      std::move(phase.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface);
+  result
+      .semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface);
+  result
+      .semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface);
+  result
+      .semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface =
+      std::move(
+          phase
+              .semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface);
+}
+
+void PopulateObjc3FrontendReadinessLoweringPhaseResult(
+    Objc3FrontendPipelineResult &result,
+    const Objc3FrontendOptions &options) {
+  Objc3FrontendReadinessLoweringPhaseResult phase;
+  phase.semantic_stability_spec_delta_closure_scaffold =
+      BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(
+          result.typed_sema_to_lowering_contract_surface,
+          result.parse_lowering_readiness_surface);
+  result.semantic_stability_spec_delta_closure_scaffold =
+      phase.semantic_stability_spec_delta_closure_scaffold;
+  phase.semantic_stability_core_feature_implementation_surface =
+      BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
+          result.typed_sema_to_lowering_contract_surface,
+          result.parse_lowering_readiness_surface,
+          phase.semantic_stability_spec_delta_closure_scaffold);
+  result.semantic_stability_core_feature_implementation_surface =
+      phase.semantic_stability_core_feature_implementation_surface;
+  phase.lowering_runtime_stability_invariant_scaffold =
+      BuildObjc3LoweringRuntimeStabilityInvariantScaffold(
+          result.typed_sema_to_lowering_contract_surface,
+          result.parse_lowering_readiness_surface);
+  result.lowering_runtime_stability_invariant_scaffold =
+      phase.lowering_runtime_stability_invariant_scaffold;
+  phase.lowering_pipeline_pass_graph_scaffold =
+      BuildObjc3LoweringPipelinePassGraphScaffold(result, options);
+  result.lowering_pipeline_pass_graph_scaffold =
+      phase.lowering_pipeline_pass_graph_scaffold;
+  phase.lowering_pipeline_pass_graph_core_feature_surface =
+      BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(result, options);
+  result.lowering_pipeline_pass_graph_core_feature_surface =
+      phase.lowering_pipeline_pass_graph_core_feature_surface;
+  phase.ir_emission_completeness_scaffold =
+      BuildObjc3IREmissionCompletenessScaffold(result);
+  result.ir_emission_completeness_scaffold =
+      phase.ir_emission_completeness_scaffold;
+  phase.lowering_runtime_diagnostics_surfacing_scaffold =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingScaffold(result);
+  result.lowering_runtime_diagnostics_surfacing_scaffold =
+      phase.lowering_runtime_diagnostics_surfacing_scaffold;
+  phase.lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface =
+      phase.lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface;
+  phase.lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface =
+      phase.lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface;
+  phase.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface =
+      phase.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface;
+  phase
+      .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseExpansionAndRobustnessSurface(
+          result);
+  result
+      .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface =
+      phase
+          .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface;
+  phase.lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingDiagnosticsHardeningSurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface =
+      phase.lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface;
+  phase
+      .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurface(
+          result);
+  result
+      .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface =
+      phase
+          .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface;
+  phase
+      .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface(
+          result);
+  result
+      .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface =
+      phase
+          .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface;
+  phase.lowering_runtime_stability_core_feature_implementation_surface =
+      BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
+          result.typed_sema_to_lowering_contract_surface,
+          result.parse_lowering_readiness_surface,
+          phase.lowering_runtime_stability_invariant_scaffold);
+  result.lowering_runtime_stability_core_feature_implementation_surface =
+      phase.lowering_runtime_stability_core_feature_implementation_surface;
+}
+
 }  // namespace
 
 Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
@@ -6621,110 +6833,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           "runtime metadata export blocked: " + runtime_export_failure_reason));
     }
   }
-  result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold(
-          result.sema_pass_flow_summary,
-          result.sema_parity_surface,
-          result.typed_sema_to_lowering_contract_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureImplementationSurface(
-          result.sema_pass_flow_summary,
-          result.sema_parity_surface,
-          result.typed_sema_to_lowering_contract_surface,
-          result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold);
-  result.tooling_diagnostic_taxonomy_portability_contract_summary =
-      BuildToolingDiagnosticTaxonomyPortabilityContractSummary(
-          result.tooling_migration_canonicalization_source_completion_summary,
-          result
-              .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface);
-  result.tooling_feature_specific_fixit_synthesis_summary =
-      BuildToolingFeatureSpecificFixitSynthesisSummary(
-          result.tooling_diagnostic_taxonomy_portability_contract_summary);
-  result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface,
-          result.sema_parity_surface,
-          result.typed_sema_to_lowering_contract_surface);
-  result.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(result, options);
-  result.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface,
-          result.parse_lowering_readiness_surface,
-          result.typed_sema_to_lowering_contract_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisRecoveryDeterminismHardeningSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceMatrixImplementationSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceCorpusExpansionSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface =
-      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisPerformanceQualityGuardrailsSurface(
-          result.semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_stability_spec_delta_closure_scaffold =
-      BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(
-          result.typed_sema_to_lowering_contract_surface,
-          result.parse_lowering_readiness_surface);
-  result.semantic_stability_core_feature_implementation_surface =
-      BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
-          result.typed_sema_to_lowering_contract_surface,
-          result.parse_lowering_readiness_surface,
-          result.semantic_stability_spec_delta_closure_scaffold);
-  result.lowering_runtime_stability_invariant_scaffold =
-      BuildObjc3LoweringRuntimeStabilityInvariantScaffold(
-          result.typed_sema_to_lowering_contract_surface,
-          result.parse_lowering_readiness_surface);
-  result.lowering_pipeline_pass_graph_scaffold =
-      BuildObjc3LoweringPipelinePassGraphScaffold(result, options);
-  result.lowering_pipeline_pass_graph_core_feature_surface =
-      BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(result, options);
-  result.ir_emission_completeness_scaffold =
-      BuildObjc3IREmissionCompletenessScaffold(result);
-  result.lowering_runtime_diagnostics_surfacing_scaffold =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingScaffold(result);
-  result.lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface(
-          result);
-  result.lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface(
-          result);
-  result.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface(
-          result);
-  result
-      .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseExpansionAndRobustnessSurface(
-          result);
-  result.lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingDiagnosticsHardeningSurface(
-          result);
-  result
-      .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurface(
-          result);
-  result
-      .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface =
-      BuildObjc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface(
-          result);
-  result.lowering_runtime_stability_core_feature_implementation_surface =
-      BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
-          result.typed_sema_to_lowering_contract_surface,
-          result.parse_lowering_readiness_surface,
-          result.lowering_runtime_stability_invariant_scaffold);
+  AdoptObjc3FrontendSemanticDiagnosticTaxonomyPhaseResult(
+      result, BuildObjc3FrontendSemanticDiagnosticTaxonomyPhaseResult(result, options));
+  PopulateObjc3FrontendReadinessLoweringPhaseResult(result, options);
   TransportObjc3FrontendPipelineDiagnostics(result);
   return result;
 }
