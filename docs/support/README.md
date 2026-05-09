@@ -41,3 +41,10 @@ The canonical schema registry entries live under `schemas/`:
 - Runtime, object-model, stdlib, or workflow prose must not upgrade an
   `internal` or `reserved` row into public behavior. Link the matrix row and
   evidence instead.
+
+## Validation Owner Modules
+
+`scripts/validate_capability_docs.py` remains the stable public validator
+entrypoint. Its implementation is split under
+`scripts/capability_docs_validator/` so matrix shape, support-claim manifest
+truth, docs/evidence-map references, and CLI behavior have separate owners.
