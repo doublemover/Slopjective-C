@@ -114,6 +114,28 @@
       "expected_diagnostic_code": "O3C002"
     },
     {
+      "path": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG"
+    },
+    {
       "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -144,6 +166,17 @@
       "behavior_family": "errors",
       "fixture_kind": "negative",
       "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "retired_surface_tags": [
+        "runtime-adapter"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
     },
     {
       "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
@@ -281,6 +314,17 @@
         "runtime-dispatch"
       ],
       "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
     },
     {
       "path": "tests/native/ir/module/basic_i32_return_main.objc3",

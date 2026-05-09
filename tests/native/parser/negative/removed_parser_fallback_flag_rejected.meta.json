@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "fixture": "removed_parser_fallback_flag_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "parser",
+  "behavior_family": "negative",
+  "fixture_kind": "rejection",
+  "retired_surface_tags": [
+    "old-mode"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "parse",
+    "diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG",
+    "required_tokens": [
+      "OBJC3-E-REMOVED-FALLBACK-FLAG",
+      "parser fallback feature toggles are removed"
+    ]
+  },
+  "execution": {
+    "native_compile_args": [
+      "-fobjc3-parser-fallback=on",
+      "-fsyntax-only"
+    ]
+  }
+}

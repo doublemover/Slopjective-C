@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "fixture": "removed_compatibility_mode_flag_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "parser",
+  "behavior_family": "negative",
+  "fixture_kind": "rejection",
+  "retired_surface_tags": [
+    "old-mode"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "parse",
+    "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+    "required_tokens": [
+      "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+      "Objective-C 2 compatibility mode is removed"
+    ]
+  },
+  "execution": {
+    "native_compile_args": [
+      "--objc2-compatible",
+      "-fsyntax-only"
+    ]
+  }
+}

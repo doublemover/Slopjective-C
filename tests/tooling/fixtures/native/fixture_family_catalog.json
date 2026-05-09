@@ -5,6 +5,9 @@
     "positive_fixture_rule": "canonical Objective-C 3.0 behavior only",
     "negative_fixture_rule": "retired old-mode, shim, fallback, compatibility, and removed feature-toggle behavior must be represented as strict rejection metadata",
     "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes",
+    "canonical_behavior_root": "tests/native",
+    "canonical_behavior_manifest": "tests/fixtures/canonical/manifest.json",
+    "legacy_positive_residue_policy": "compatibility-looking positives are deleted or converted to tests/native rejection and strict-error fixtures",
     "forbidden_positive_name_tokens": [
       "legacy",
       "old_mode",
@@ -18,6 +21,8 @@
     {
       "family": "parser",
       "paths": [
+        "tests/native/parser/positive",
+        "tests/native/parser/negative",
         "tests/tooling/fixtures/native/parser_split",
         "tests/tooling/fixtures/native/recovery/negative"
       ],
@@ -27,6 +32,7 @@
     {
       "family": "semantic",
       "paths": [
+        "tests/native/sema",
         "tests/tooling/fixtures/native/recovery/positive",
         "tests/tooling/fixtures/native/recovery/negative"
       ],
@@ -36,6 +42,8 @@
     {
       "family": "lowering_ir",
       "paths": [
+        "tests/native/lowering",
+        "tests/native/ir",
         "tests/tooling/fixtures/native/recovery/positive"
       ],
       "metadata": "IR expectation files paired with accepted source fixtures",
@@ -53,6 +61,8 @@
     {
       "family": "runtime_like_e2e",
       "paths": [
+        "tests/native/runtime",
+        "tests/native/e2e",
         "tests/tooling/fixtures/native/execution/positive",
         "tests/tooling/fixtures/native/execution/negative"
       ],

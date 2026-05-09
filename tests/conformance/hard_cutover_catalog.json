@@ -10,6 +10,7 @@
       "extension flag opt-in for deferred v1 features"
     ],
     "required_replacement": "canonical rejection or strict-error metadata with stable diagnostic codes",
+    "native_behavior_manifest": "tests/fixtures/canonical/manifest.json",
     "public_command_bridge": "npm run objc3c -- <action>",
     "direct_helper_paths_are_implementation_anchors_only": true
   },
@@ -34,6 +35,11 @@
       "boundary": "parser",
       "manifest": "tests/conformance/parser/manifest.json",
       "owned_fixture_root": "tests/conformance/parser",
+      "native_behavior_fixtures": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+      ],
       "behavior_focus": "grammar acceptance, grammar rejection, mode spelling, and source span stability",
       "hard_cutover_rule": "parser positives use canonical Objective-C 3.0 spellings; retired mode and feature-toggle spellings are diagnostic fixtures"
     },
@@ -41,6 +47,11 @@
       "boundary": "semantic",
       "manifest": "tests/conformance/semantic/manifest.json",
       "owned_fixture_root": "tests/conformance/semantic",
+      "native_behavior_fixtures": [
+        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
+      ],
       "behavior_focus": "type system, effects, isolation, ownership, and feature gate semantics",
       "hard_cutover_rule": "semantic positives must prove canonical behavior; deferred or disabled features are strict errors instead of compatibility opt-ins"
     },
@@ -48,6 +59,11 @@
       "boundary": "lowering_abi",
       "manifest": "tests/conformance/lowering_abi/manifest.json",
       "owned_fixture_root": "tests/conformance/lowering_abi",
+      "native_behavior_fixtures": [
+        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
+      ],
       "behavior_focus": "runtime-facing lowering contracts, ABI metadata, and optimization-invariant behavior",
       "hard_cutover_rule": "lowering fixtures may assert ABI stability but must not introduce alternate shim ABIs or fallback lowering paths"
     },
@@ -55,6 +71,10 @@
       "boundary": "ir_artifact",
       "manifest": "tests/conformance/lowering_abi/manifest.json",
       "owned_fixture_root": "tests/conformance/lowering_abi",
+      "native_behavior_fixtures": [
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3"
+      ],
       "behavior_focus": "IR, object, manifest, and registration artifact truth gates",
       "hard_cutover_rule": "IR and artifact fixtures must expose canonical manifest contracts and reject downgraded or fallback artifact provenance"
     },
@@ -62,6 +82,11 @@
       "boundary": "runtime_e2e",
       "manifest": "tests/tooling/fixtures/native/fixture_family_catalog.json",
       "owned_fixture_root": "tests/tooling/fixtures/native/execution",
+      "native_behavior_fixtures": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
       "behavior_focus": "runnable positive exit-code fixtures and strict compile/link/run rejection sidecars",
       "hard_cutover_rule": "runtime-like positives are canonical e2e fixtures only; unresolved runtime dispatch, unsupported feature claims, and compatibility-looking names stay negative or get renamed"
     },
