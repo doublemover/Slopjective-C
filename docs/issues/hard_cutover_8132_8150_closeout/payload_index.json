@@ -74,7 +74,8 @@
       "anchor": "#8138",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
-        "ffb2a715d"
+        "ffb2a715d",
+        "25bde4f7f"
       ]
     },
     {
@@ -88,7 +89,8 @@
       "anchor": "#8140",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
-        "c64fe1597"
+        "c64fe1597",
+        "31da18e08"
       ]
     },
     {
@@ -97,7 +99,9 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "c64fe1597",
-        "f0ba25851"
+        "f0ba25851",
+        "31da18e08",
+        "25bde4f7f"
       ]
     },
     {
@@ -121,7 +125,8 @@
       "primary_refresh_commits": [
         "645e9c25f",
         "239871c25",
-        "f35a96292"
+        "f35a96292",
+        "5788dcf91"
       ]
     },
     {
@@ -159,7 +164,8 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "ffb2a715d",
-        "db4fe91cf"
+        "db4fe91cf",
+        "25bde4f7f"
       ]
     },
     {
@@ -175,7 +181,8 @@
       "primary_refresh_commits": [
         "645e9c25f",
         "239871c25",
-        "f35a96292"
+        "f35a96292",
+        "5788dcf91"
       ]
     }
   ]

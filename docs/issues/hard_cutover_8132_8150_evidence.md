@@ -51,6 +51,12 @@ pass:
   `#8141`, and `#8146`.
 - `f35a96292` adds the refreshed closeout payload index for `#8144` and
   `#8150`.
+- `31da18e08` adds frontend C API runner result-owner evidence for `#8140` and
+  `#8141`.
+- `25bde4f7f` adds native contract owner surface evidence for `#8138`,
+  `#8141`, and `#8148`.
+- `5788dcf91` folds those latest local commits into the issue evidence maps for
+  `#8144` and `#8150`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

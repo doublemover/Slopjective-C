@@ -1,4 +1,6 @@
-#include "support/objc3_property_storage_profile_helpers.h"
+#include "support/objc3_property_accessor_profiles.h"
+
+#include "support/objc3_property_profile_tokens.h"
 
 namespace objc3c::support {
 

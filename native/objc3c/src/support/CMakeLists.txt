@@ -9,10 +9,14 @@ add_library(objc3c_support STATIC
   objc3_ir_object_backend_token.cpp
   objc3_ir_object_backend_token.h
   objc3_method_family.h
+  objc3_property_accessor_profiles.h
   objc3_property_accessor_profiles.cpp
+  objc3_property_ownership_profiles.h
   objc3_property_ownership_profiles.cpp
-  objc3_property_storage_profile_helpers.cpp
+  objc3_property_profile_tokens.cpp
+  objc3_property_profile_tokens.h
   objc3_property_storage_profile_helpers.h
+  objc3_property_storage_modifiers.h
   objc3_property_storage_modifiers.cpp
   objc3_receiver_profile_helpers.cpp
   objc3_receiver_profile_helpers.h

@@ -167,6 +167,31 @@
         "#8144",
         "#8150"
       ]
+    },
+    {
+      "ref": "31da18e08",
+      "summary": "HC split frontend C API runner result owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "25bde4f7f",
+      "summary": "HC split native contract owner surfaces",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "5788dcf91",
+      "summary": "HC fold latest commits into issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ]
     }
   ],
   "hard_cutover_disposition": {

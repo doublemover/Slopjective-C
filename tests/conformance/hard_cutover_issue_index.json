@@ -238,6 +238,49 @@
         "docs/issues/hard_cutover_8132_8150_evidence.json",
         "tests/conformance/hard_cutover_issue_index.json"
       ]
+    },
+    {
+      "ref": "31da18e08",
+      "summary": "HC split frontend C API runner result owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_c_string.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result_contract.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result_lifetime.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_stage_report.h"
+      ]
+    },
+    {
+      "ref": "25bde4f7f",
+      "summary": "HC split native contract owner surfaces",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_config_capability_contract.h",
+        "native/objc3c/src/contracts/objc3_frontend_diagnostic_flattening.h",
+        "native/objc3c/src/contracts/objc3_frontend_diagnostic_stage_contract.h",
+        "native/objc3c/src/contracts/objc3_native_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "5788dcf91",
+      "summary": "HC fold latest commits into issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
     }
   ],
   "global_policy": {
