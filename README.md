@@ -53,8 +53,6 @@ What you can compile and run today:
 - global and local `let` bindings,
 - `fn`, `pure fn`, and external function declarations,
 - integer and boolean values,
-- baseline alias surfaces such as `BOOL`, `NSInteger`, and `NSUInteger`,
-- Objective-C-flavored signature aliases such as `id`, `Class`, `SEL`, `Protocol`, and `instancetype`,
 - control flow:
   - `if` / `else`
   - `while`
@@ -97,7 +95,7 @@ Use the shortest path that matches what you are trying to do.
 | pick the right capability-backed example first                  | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                         |
 | migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md)         | then use the broader comparison boundary only where you need it                                                 |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations         | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                      |
-| evaluate adoption, migration, and support claims                | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `python scripts/build_objc3c_adoption_legibility_evidence.py` and inspect the generated evidence summary |
+| evaluate adoption, migration, and support claims                | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
 | inspect performance surfaces                                    | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                       |
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
@@ -118,7 +116,7 @@ Documentation boundary:
 - support truth: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
-If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
+If you are new to the repo, stay out of `tmp/` and archived redirect material until you actually need them.
 
 ## Superclean Boundary
 
@@ -151,7 +149,8 @@ Canonical roots:
 
 Explicit non-goals for cleanup work:
 
-- reintroducing milestone-coded command names or sidecar compatibility files,
+- reintroducing milestone-coded command names or sidecar legacy files,
+- documenting Objective-C alias compatibility unless a capability row links live evidence,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
 - hand-editing generated outputs instead of their canonical inputs.
 
@@ -342,7 +341,7 @@ Common entrypoints by job:
 
 Rules:
 
-- prefer `npm run objc3c -- <action>` over direct Python or PowerShell for workflow actions,
+- prefer `npm run objc3c -- <action>` over invoking implementation helpers for workflow actions,
 - use the same npm bridge for maintainer-only command-surface upkeep: `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
 - treat `native/objc3c/` as the only supported compiler implementation root,
 - treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,

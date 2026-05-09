@@ -20,20 +20,14 @@ Canonical checked-in boundary surfaces:
 - `scripts/materialize_objc3c_project_template.py`
 - `scripts/materialize_objc3c_stdlib_workspace.py`
 
-Replayable boundary inventory:
+Replayable public workflows:
 
-- `python scripts/build_application_architecture_testing_boundary_inventory_summary.py`
-- `python scripts/build_application_architecture_testing_semantic_summary.py`
-- `python scripts/build_application_architecture_template_workspace_summary.py`
-- `python scripts/build_application_architecture_layering_summary.py`
-- `python scripts/build_application_architecture_artifact_contract_summary.py`
-- `python scripts/check_application_architecture_template_harness.py`
-- `python scripts/materialize_objc3c_canonical_application_workspace.py`
-- `python scripts/check_objc3c_application_architecture_integration.py`
+- `npm run objc3c -- materialize-canonical-application-workspace`
 - `npm run objc3c -- validate-application-architecture`
-- `python scripts/check_objc3c_runnable_application_architecture_end_to_end.py`
 - `npm run objc3c -- validate-runnable-application-architecture`
-- `python scripts/check_objc3c_application_architecture_integration.py`
+
+Implementation helpers remain behind the npm bridge and are not public workflow
+commands.
 
 ## Current Boundary
 

@@ -4,8 +4,7 @@ This file is the live comparison boundary for canonicalization-oriented teaching
 
 The canonical policy contract for this surface is
 `tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json`;
-replay it with
-`python scripts/build_adoption_legibility_capability_comparison_summary.py`.
+replay it through `npm run objc3c -- validate-adoption-legibility`.
 When prose and policy disagree, fix the prose or the contract before widening a
 public comparison claim.
 

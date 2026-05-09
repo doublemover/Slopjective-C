@@ -6,7 +6,7 @@ This file defines source ownership for generated `site/index.md`.
 
 - Source directory: `site/src/`
 - Generated output: `site/index.md`
-- Generator: `python scripts/build_site_index.py`
+- Generator action: `npm run objc3c -- build-site`
 
 ## Source Ownership Matrix
 
@@ -20,8 +20,8 @@ This file defines source ownership for generated `site/index.md`.
 
 1. Update `site/src/index.contract.json` only when generator contract changes.
 1. Update the curated site content under `site/src/index.body.md` as needed.
-1. Run `python scripts/build_site_index.py` to regenerate `site/index.md`.
-1. Run `python scripts/build_site_index.py --check` and require pass.
+1. Run `npm run objc3c -- build-site` to regenerate `site/index.md`.
+1. Run `npm run objc3c -- check-site` and require pass.
 
 ## Review Policy
 
@@ -37,16 +37,16 @@ Treat these as the live documentation-generation surfaces:
 - human-facing generated site:
   - `site/src/index.body.md`
   - `site/src/index.contract.json`
-  - `python scripts/build_site_index.py`
+  - `npm run objc3c -- build-site`
   - `site/index.md`
 - human-facing generated native implementation doc:
   - `docs/objc3c-native/src/*.md`
-  - `python scripts/build_objc3c_native_docs.py`
+  - `npm run objc3c -- build-native-docs`
   - `docs/objc3c-native.md`
 - machine-facing generated operator appendix:
   - `package.json`
   - `scripts.objc3c_workflow`
-  - `python scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
 `tmp/reports/` and `tmp/artifacts/` remain generated evidence outputs, not

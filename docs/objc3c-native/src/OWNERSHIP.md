@@ -6,7 +6,7 @@ This file defines source ownership for generated `docs/objc3c-native.md`.
 
 - Source directory: `docs/objc3c-native/src/`
 - Generated output: `docs/objc3c-native.md`
-- Generator: `python scripts/build_objc3c_native_docs.py`
+- Generator action: `npm run objc3c -- build-native-docs`
 
 ## Fragment Ownership Matrix
 
@@ -23,8 +23,8 @@ This file defines source ownership for generated `docs/objc3c-native.md`.
 ## Update Workflow
 
 1. Edit only source fragments in `docs/objc3c-native/src/`.
-1. Run `python scripts/build_objc3c_native_docs.py` to regenerate output.
-1. Run `python scripts/build_objc3c_native_docs.py --check` and require pass.
+1. Run `npm run objc3c -- build-native-docs` to regenerate output.
+1. Run `npm run objc3c -- check-native-docs` and require pass.
 1. Commit fragment edits and generated output together when output changed.
 
 ## Review Policy

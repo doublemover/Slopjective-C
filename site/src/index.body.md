@@ -64,8 +64,7 @@ The current native toolchain can compile and run a real subset of Objective-C 3.
 - modules and global `let` declarations,
 - `fn`, `pure fn`, and external function declarations,
 - scalar/control-flow semantics including `if`, `while`, `do while`, `for`, `switch`, `break`, `continue`, and `return`,
-- integer, boolean, and baseline alias surfaces such as `BOOL`, `NSInteger`, and `NSUInteger`,
-- Objective-C-flavored signature aliases such as `id`, `Class`, `SEL`, `Protocol`, and `instancetype`,
+- integer and boolean values in the canonical runnable subset,
 - bracket message-send syntax lowered through the current runtime dispatch path,
 - native ownership-baseline runtime behavior for retainable object storage,
 - deterministic selector/string pool emission and metadata-bearing object artifacts.

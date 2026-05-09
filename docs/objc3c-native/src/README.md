@@ -85,11 +85,11 @@ These surfaces are generated and must stay tied to their canonical inputs:
 - human-facing generated implementation doc:
   - output: `docs/objc3c-native.md`
   - sources: `docs/objc3c-native/src/*.md`
-  - generator: `python scripts/build_objc3c_native_docs.py`
+  - generator action: `npm run objc3c -- build-native-docs`
 - human-facing generated public site:
   - output: `site/index.md`
   - sources: `site/src/index.body.md`, `site/src/index.contract.json`
-  - generator: `python scripts/build_site_index.py`
+  - generator action: `npm run objc3c -- build-site`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
   - sources: `package.json`, `scripts.objc3c_workflow`, `scripts/build_objc3c_public_command_contract.py`
@@ -125,5 +125,5 @@ Explicit non-goals for this fragment tree:
 
 ## Contract Validation
 
-- Rebuild: `python scripts/build_objc3c_native_docs.py`
-- Drift check: `python scripts/build_objc3c_native_docs.py --check`
+- Rebuild: `npm run objc3c -- build-native-docs`
+- Drift check: `npm run objc3c -- check-native-docs`

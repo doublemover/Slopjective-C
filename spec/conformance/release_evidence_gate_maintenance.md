@@ -26,12 +26,6 @@ artifact payloads.
 ## Local Runbook
 
 ```sh
-python scripts/check_release_evidence.py
-```
-
-Or:
-
-```sh
 npm run objc3c -- check-release-evidence
 ```
 
@@ -53,5 +47,5 @@ When introducing new release-evidence artifacts:
 1. add/adjust schema and sample payload files,
 2. update `REQUIRED_SCHEMA_DATA_PAIRS` in
    `scripts/check_release_evidence.py`,
-3. rerun local gate and ensure CI workflow passes,
+3. rerun `npm run objc3c -- check-release-evidence` and ensure CI workflow passes,
 4. update this maintenance doc and related conformance docs in the same batch.

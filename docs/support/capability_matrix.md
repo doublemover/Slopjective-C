@@ -2,6 +2,8 @@
 
 This is the public support matrix. Product docs should link here for support
 truth instead of carrying local planning or archived cross-reference claims.
+Rows list public replay commands only when they go through `npm run objc3c --`.
+Helper tests can be evidence without becoming direct workflow commands.
 
 | Capability                         | State       | Support claim                                      | Evidence                                                                                                       |
 | ---------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -21,3 +23,8 @@ State meanings:
 - `rejected`: parser or semantic analysis emits a canonical diagnostic.
 - `reserved`: syntax or concept is unavailable and documented as unavailable.
 - `internal`: implementation helper, report shape, or workflow contract that is not public Objective-C 3.0 behavior.
+
+Command rule:
+
+- Capability docs may advertise `npm run objc3c -- <action>` commands only.
+- Implementation-helper invocations, retired aliases, and success-without-evidence dispatch paths are not support claims.

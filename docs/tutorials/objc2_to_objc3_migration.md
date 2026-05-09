@@ -4,8 +4,7 @@ This file is the live guide for mapping familiar ObjC2 habits onto the current c
 
 The checked-in adoption-legibility contract for this guide is
 `tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`;
-replay it with
-`python scripts/build_adoption_legibility_migration_playbook_summary.py`.
+replay it through `npm run objc3c -- validate-adoption-legibility`.
 Keep this guide narrower than that contract, never broader.
 
 Use it together with the checked-in showcase examples. The guide is only authoritative where the repo already compiles or validates the behavior it describes.

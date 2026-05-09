@@ -179,7 +179,6 @@ constructor-root to loader-table edge.
 - authoritative live evidence path:
   - fixture: `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
   - probe: `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
-  - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
   - public workflow command: `npm run objc3c -- validate-runtime-architecture`
 - authoritative runtime fields:
   - `last_rejected_module_name`

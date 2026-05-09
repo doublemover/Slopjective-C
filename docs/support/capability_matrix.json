@@ -23,8 +23,7 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/test_objc3c_parser_extraction.py",
-          "command": "python -m pytest tests/tooling/test_objc3c_parser_extraction.py"
+          "path": "tests/tooling/test_objc3c_parser_extraction.py"
         },
         {
           "kind": "source",
@@ -52,7 +51,7 @@
       "id": "compiler.sema.canonical-diagnostics",
       "title": "Canonical semantic rejection",
       "state": "rejected",
-      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics instead of compatibility switches.",
+      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics; no switch enables retired forms.",
       "evidence": [
         {
           "kind": "diagnostic",
@@ -60,8 +59,7 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py",
-          "command": "python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py"
+          "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py"
         }
       ]
     },
@@ -149,7 +147,7 @@
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
-      "summary": "Shared native and Python helpers own deterministic JSON rendering, strict JSON loading, schema lookup, and report envelopes.",
+      "summary": "The capability matrix schema, evidence map, and shared JSON helpers own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
       "evidence": [
         {
           "kind": "schema",
@@ -157,8 +155,7 @@
         },
         {
           "kind": "test",
-          "path": "tests/tooling/test_objc3c_shared_json_schema.py",
-          "command": "python -m pytest tests/tooling/test_objc3c_shared_json_schema.py"
+          "path": "tests/tooling/test_objc3c_shared_json_schema.py"
         }
       ]
     }
