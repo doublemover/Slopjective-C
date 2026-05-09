@@ -2,77 +2,26 @@
 
 from __future__ import annotations
 
-from scripts.objc3c_workflow.action_spec import ActionHandler
-from scripts.objc3c_workflow.actions import (
-    application_surfaces,
-    external_validation,
-    performance,
-    release_governance,
-    schema_surfaces,
-    stress,
+from scripts.objc3c_workflow.action_handler_sections import merge_action_handler_sections
+from scripts.objc3c_workflow.action_handlers_reporting_conformance_stress import (
+    REPORTING_CONFORMANCE_STRESS_HANDLERS,
 )
+from scripts.objc3c_workflow.action_handlers_reporting_public_performance import (
+    REPORTING_PUBLIC_PERFORMANCE_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_reporting_release_channels import (
+    REPORTING_RELEASE_CHANNEL_HANDLERS,
+)
+from scripts.objc3c_workflow.action_handlers_reporting_security import (
+    REPORTING_SECURITY_HANDLERS,
+)
+from scripts.objc3c_workflow.action_spec import ActionHandler
 
-REPORTING_RELEASE_AND_SECURITY_ACTION_HANDLERS: dict[str, ActionHandler] = {
-    "validate-conformance-corpus": application_surfaces.action_validate_conformance_corpus,
-    "check-conformance-minima": application_surfaces.action_check_conformance_minima,
-    "validate-runnable-conformance-corpus": application_surfaces.action_validate_runnable_conformance_corpus,
-    "check-stress-surface": stress.action_check_stress_surface,
-    "test-fuzz-safety": stress.action_test_fuzz_safety,
-    "test-lowering-runtime-stress": stress.action_test_lowering_runtime_stress,
-    "test-mixed-module-differential": stress.action_test_mixed_module_differential,
-    "test-stress-minimization": stress.action_test_stress_minimization,
-    "test-stress-crash-triage": stress.action_test_stress_crash_triage,
-    "validate-stress": stress.action_validate_stress,
-    "validate-stress-integration": stress.action_validate_stress_integration,
-    "validate-stress-end-to-end": stress.action_validate_stress_end_to_end,
-    "check-external-validation-surface": external_validation.action_check_external_validation_surface,
-    "test-external-validation-replay": external_validation.action_test_external_validation_replay,
-    "publish-external-repro-corpus": external_validation.action_publish_external_repro_corpus,
-    "validate-external-validation": external_validation.action_validate_external_validation,
-    "validate-external-validation-integration": external_validation.action_validate_external_validation_integration,
-    "check-public-conformance-reporting-surface": release_governance.action_check_public_conformance_reporting_surface,
-    "check-public-conformance-schema-surface": schema_surfaces.action_check_public_conformance_schema_surface,
-    "build-public-conformance-scorecard": release_governance.action_build_public_conformance_scorecard,
-    "publish-public-conformance-report": release_governance.action_publish_public_conformance_report,
-    "validate-public-conformance-reporting": release_governance.action_validate_public_conformance_reporting,
-    "validate-public-conformance-reporting-integration": release_governance.action_validate_public_conformance_reporting_integration,
-    "validate-public-conformance-reporting-end-to-end": release_governance.action_validate_public_conformance_reporting_end_to_end,
-    "check-performance-governance-surface": performance.action_check_performance_governance_surface,
-    "check-performance-governance-schema-surface": performance.action_check_performance_governance_schema_surface,
-    "build-performance-dashboard": performance.action_build_performance_dashboard,
-    "publish-performance-report": performance.action_publish_performance_report,
-    "validate-performance-governance": performance.action_validate_performance_governance,
-    "validate-performance-governance-integration": performance.action_validate_performance_governance_integration,
-    "validate-performance-governance-end-to-end": performance.action_validate_performance_governance_end_to_end,
-    "check-release-foundation-surface": release_governance.action_check_release_foundation_surface,
-    "check-release-foundation-schema-surface": schema_surfaces.action_check_release_foundation_schema_surface,
-    "build-release-manifest": release_governance.action_build_release_manifest,
-    "publish-release-provenance": release_governance.action_publish_release_provenance,
-    "validate-release-foundation": release_governance.action_validate_release_foundation,
-    "check-packaging-channels-surface": release_governance.action_check_packaging_channels_surface,
-    "check-packaging-channels-schema-surface": schema_surfaces.action_check_packaging_channels_schema_surface,
-    "build-package-channels": release_governance.action_build_package_channels,
-    "build-platform-support-matrix": release_governance.action_build_platform_support_matrix,
-    "validate-packaging-channels": release_governance.action_validate_packaging_channels,
-    "validate-packaging-channels-end-to-end": release_governance.action_validate_packaging_channels_end_to_end,
-    "validate-platform-hardening": release_governance.action_validate_platform_hardening,
-    "validate-platform-hardening-end-to-end": release_governance.action_validate_platform_hardening_end_to_end,
-    "check-release-operations-surface": release_governance.action_check_release_operations_surface,
-    "check-release-operations-schema-surface": schema_surfaces.action_check_release_operations_schema_surface,
-    "build-update-manifest": release_governance.action_build_update_manifest,
-    "publish-release-operations": release_governance.action_publish_release_operations,
-    "validate-release-operations": release_governance.action_validate_release_operations,
-    "validate-release-operations-end-to-end": release_governance.action_validate_release_operations_end_to_end,
-    "check-distribution-credibility-surface": release_governance.action_check_distribution_credibility_surface,
-    "check-distribution-credibility-schema-surface": schema_surfaces.action_check_distribution_credibility_schema_surface,
-    "build-distribution-credibility-dashboard": release_governance.action_build_distribution_credibility_dashboard,
-    "publish-distribution-credibility": release_governance.action_publish_distribution_credibility,
-    "validate-distribution-credibility": release_governance.action_validate_distribution_credibility,
-    "validate-distribution-credibility-end-to-end": release_governance.action_validate_distribution_credibility_end_to_end,
-    "check-security-hardening-surface": release_governance.action_check_security_hardening_surface,
-    "check-security-hardening-schema-surface": schema_surfaces.action_check_security_hardening_schema_surface,
-    "build-security-posture": release_governance.action_build_security_posture,
-    "publish-security-advisories": release_governance.action_publish_security_advisories,
-    "validate-security-hardening": release_governance.action_validate_security_hardening,
-    "validate-security-hardening-end-to-end": release_governance.action_validate_security_hardening_end_to_end,
-}
+REPORTING_RELEASE_AND_SECURITY_ACTION_HANDLERS: dict[str, ActionHandler] = (
+    merge_action_handler_sections(
+        REPORTING_CONFORMANCE_STRESS_HANDLERS,
+        REPORTING_PUBLIC_PERFORMANCE_HANDLERS,
+        REPORTING_RELEASE_CHANNEL_HANDLERS,
+        REPORTING_SECURITY_HANDLERS,
+    )
+)
