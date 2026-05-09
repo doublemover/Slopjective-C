@@ -1247,7 +1247,7 @@
         "22b8bb1c3 HC normalize schema registry ids"
       ],
       "behavior_evidence": [
-        "docs/support/capability_matrix.schema.json",
+        "schemas/objc3c-capability-matrix-v1.schema.json",
         "docs/support/evidence_map.json",
         "tests/tooling/test_objc3c_shared_json_schema.py"
       ],

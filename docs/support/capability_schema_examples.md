@@ -3,6 +3,9 @@
 These examples show the minimum shapes expected by the canonical capability
 truth schemas. They are illustrative; the checked-in truth remains
 `docs/support/capability_matrix.json` and `docs/support/evidence_map.json`.
+The schema source of truth remains `schemas/objc3c-capability-matrix-v1.schema.json`
+and `schemas/objc3c-capability-evidence-map-v1.schema.json`; examples and
+support-directory files must not duplicate schema fragments.
 
 ## Capability Matrix Entry
 

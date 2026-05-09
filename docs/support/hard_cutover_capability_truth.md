@@ -13,6 +13,9 @@ Authoritative inputs:
 - `schemas/objc3c-capability-matrix-v1.schema.json`
 - `schemas/objc3c-capability-evidence-map-v1.schema.json`
 
+Schema ownership is not mirrored under `docs/support`. Consumers validate the
+matrix and evidence map against the canonical `schemas/` files directly.
+
 Projection rule: markdown files, site pages, and runbooks are projections of
 the JSON matrix and evidence map. They may clarify reader expectations, but they
 must not introduce a public support claim, command surface, or completion state

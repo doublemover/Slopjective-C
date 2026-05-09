@@ -386,7 +386,7 @@ adapters, dashboard renderers, artifact-claim metadata, config tooling
 expectations, runtime artifact builder owners, cross-module runtime link plan
 input/ordering owners, and pipeline result handoff.
 
-Evidence: `docs/support/capability_matrix.schema.json`,
+Evidence: `schemas/objc3c-capability-matrix-v1.schema.json`,
 `docs/support/evidence_map.json`, `tests/tooling/test_objc3c_shared_json_schema.py`,
 commits `01cf17064`, `3e95c4d73`, `a94330b26`, `6afa3278f`, `972d97906`,
 `a87b2c92e`, `709148d75`, `22b8bb1c3`, `ffb2a715d`.

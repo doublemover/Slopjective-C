@@ -62,7 +62,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-validation-acceptance-artifact-index-v1": ROOT
     / "schemas"
     / "objc3c-validation-acceptance-artifact-index-v1.schema.json",
-    "objc3c-capability-matrix-v1": ROOT / "docs" / "support" / "capability_matrix.schema.json",
+    "objc3c-capability-matrix-v1": ROOT
+    / "schemas"
+    / "objc3c-capability-matrix-v1.schema.json",
 }
 
 

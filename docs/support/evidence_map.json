@@ -303,11 +303,6 @@
     },
     {
       "capability_id": "tooling.json.schema-registry",
-      "evidence_kind": "schema",
-      "path": "docs/support/capability_matrix.schema.json"
-    },
-    {
-      "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "doc",
       "path": "docs/support/README.md"
     },

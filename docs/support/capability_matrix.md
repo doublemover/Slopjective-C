@@ -11,7 +11,6 @@ Machine-readable truth is split deliberately:
 - matrix data: `docs/support/capability_matrix.json`
 - matrix schema: `schemas/objc3c-capability-matrix-v1.schema.json`
 - support directory contract: `docs/support/README.md`
-- local schema mirror: `docs/support/capability_matrix.schema.json`
 - evidence rows: `docs/support/evidence_map.json`
 - issue closeout evidence: `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
   and `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
@@ -44,7 +43,7 @@ Command and evidence truth is hard-cut to the current surfaces:
   `native/objc3c/src/runtime/public/`.
 - Shared JSON/schema claims are owned by checked-in schema files and the native
   `objc3c_json` split helpers / artifact JSON modules, not by prose-only
-  summaries.
+  summaries or support-directory schema copies.
 - Runtime and object-model prose is not a support claim unless an implemented
   matrix row links executable evidence for the exact behavior.
 - The hard-cutover matrix rejects shims, fallback paths, migration lanes,

@@ -12,7 +12,6 @@ but they must not widen it beyond these files.
 | `capability_matrix.md` | Human-readable projection of the capability matrix. |
 | `evidence_map.json` | Machine-readable flattened capability-to-evidence rows. |
 | `evidence_map.md` | Human-readable evidence table. |
-| `capability_matrix.schema.json` | Local schema mirror for support-directory consumers. |
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
@@ -30,6 +29,10 @@ The canonical schema registry entries live under `schemas/`:
 - `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - `schemas/README.md`
 
+There is no support-directory schema mirror. Capability matrix consumers load
+`schemas/objc3c-capability-matrix-v1.schema.json` directly so schema ownership
+cannot drift between a local copy and the checked-in registry entry.
+
 `capability_matrix.json` also carries `projection_policy`. That object names
 the authoritative data files, schema sources, and human projections so consumers
 can distinguish source truth from reader-facing summaries.
@@ -46,6 +49,8 @@ validator rejects duplicate, missing, or extra evidence-map keys.
 - Add or change a support claim in `capability_matrix.json` first.
 - Add matching evidence rows in `evidence_map.json`; the row key must match
   the matrix evidence projection exactly.
+- Keep capability schema shape changes in `schemas/`; support-directory JSON
+  files consume those schemas but do not own duplicate schema fragments.
 - Use `owner_modules` for internal implementation boundaries that support a
   claim without becoming public command surface.
 - Update the markdown projections in this directory when the machine-readable

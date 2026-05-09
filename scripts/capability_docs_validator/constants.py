@@ -6,7 +6,7 @@ from objc3c_tooling.paths import ROOT
 
 MATRIX_PATH = ROOT / "docs" / "support" / "capability_matrix.json"
 EVIDENCE_MAP_PATH = ROOT / "docs" / "support" / "evidence_map.json"
-SCHEMA_PATH = ROOT / "docs" / "support" / "capability_matrix.schema.json"
+SCHEMA_PATH = ROOT / "schemas" / "objc3c-capability-matrix-v1.schema.json"
 EVIDENCE_MAP_SCHEMA_PATH = ROOT / "schemas" / "objc3c-capability-evidence-map-v1.schema.json"
 MATRIX_DOC = ROOT / "docs" / "support" / "capability_matrix.md"
 EVIDENCE_DOC = ROOT / "docs" / "support" / "evidence_map.md"

@@ -518,10 +518,6 @@
           "path": "docs/support/evidence_map.json"
         },
         {
-          "kind": "schema",
-          "path": "docs/support/capability_matrix.schema.json"
-        },
-        {
           "kind": "doc",
           "path": "docs/support/README.md"
         },

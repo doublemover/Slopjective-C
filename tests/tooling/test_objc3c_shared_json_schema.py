@@ -122,7 +122,7 @@ def test_report_envelope_rejects_invalid_shape() -> None:
 def test_schema_registry_includes_capability_matrix() -> None:
     assert "objc3c-capability-matrix-v1" in schema_ids()
     assert schema_path("objc3c-capability-matrix-v1").as_posix().endswith(
-        "docs/support/capability_matrix.schema.json"
+        "schemas/objc3c-capability-matrix-v1.schema.json"
     )
     assert load_schema("objc3c-capability-matrix-v1")["type"] == "object"
     validate_registered_schema(

@@ -40,6 +40,10 @@ The human-readable projections are:
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
 
+Schema files under `schemas/` are the only schema source of truth. Support
+directory JSON files consume these schemas directly; they must not carry local
+schema mirrors or copied schema fragments.
+
 ## Hard-Cutover Rules
 
 - Public command evidence must use `npm run objc3c -- <action>`.
