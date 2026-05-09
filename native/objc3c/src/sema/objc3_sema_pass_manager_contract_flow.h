@@ -27,6 +27,8 @@ inline constexpr const char *kObjc3ParserSemaCanonicalRejectionOwner =
     "native.frontend.parser-sema.canonical-rejection";
 inline constexpr const char *kObjc3ParserSemaConformanceEvidenceOwner =
     "native.frontend.parser-sema.conformance-evidence";
+inline constexpr const char *kObjc3ParserSemaHandoffPublicationEvidenceOwner =
+    "native.frontend.parser-sema.handoff-publication-evidence";
 inline constexpr const char *kObjc3ParserSemaContractReadinessOwner =
     "native.frontend.parser-sema.contract-readiness";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
@@ -1077,6 +1079,56 @@ inline bool IsReadyObjc3ParserSemaConformanceEvidenceRecord(
          record.fingerprint_evidence_ready &&
          record.parser_budget_replay_evidence_ready &&
          record.corpus_inventory_ready && record.corpus_cases_passed &&
+         record.deterministic;
+}
+
+struct Objc3ParserSemaHandoffPublicationEvidenceRecord {
+  std::string handoff_publication_evidence_owner =
+      kObjc3ParserSemaHandoffPublicationEvidenceOwner;
+  std::string parser_sema_conformance_evidence_owner =
+      kObjc3ParserSemaConformanceEvidenceOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string parser_sema_contract_handoff_owner =
+      kObjc3ParserSemaContractHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool conformance_matrix_ready = false;
+  bool conformance_corpus_ready = false;
+  bool parser_recovery_replay_ready = false;
+  bool parser_recovery_replay_case_present = false;
+  bool parser_recovery_replay_case_passed = false;
+  std::size_t corpus_required_case_count = 0;
+  std::size_t corpus_passed_case_count = 0;
+  std::size_t corpus_failed_case_count = 0;
+  bool corpus_case_counts_ready = false;
+  bool parser_recovery_replay_contract_satisfied = false;
+  std::string recovery_replay_key;
+  bool recovery_replay_key_deterministic = false;
+  bool recovery_determinism_hardening_satisfied = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3ParserSemaHandoffPublicationEvidenceRecord(
+    const Objc3ParserSemaHandoffPublicationEvidenceRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.handoff_publication_evidence_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_conformance_evidence_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.conformance_matrix_ready && record.conformance_corpus_ready &&
+         record.parser_recovery_replay_ready &&
+         record.parser_recovery_replay_case_present &&
+         record.parser_recovery_replay_case_passed &&
+         record.corpus_case_counts_ready &&
+         record.parser_recovery_replay_contract_satisfied &&
+         record.recovery_replay_key.rfind("sema-pass-recovery:v1:", 0) == 0 &&
+         record.recovery_replay_key_deterministic &&
+         record.recovery_determinism_hardening_satisfied &&
          record.deterministic;
 }
 

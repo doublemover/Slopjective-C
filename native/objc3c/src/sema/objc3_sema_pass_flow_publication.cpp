@@ -6,6 +6,8 @@ void PublishObjc3SemaPassFlowSummary(
     const Objc3SemaParserHandoffPublication &handoff_publication,
     const Objc3SemaPassDiagnosticsRun &diagnostics_run,
     Objc3SemaPassManagerResult &result) {
+  const Objc3ParserSemaHandoffPublicationEvidenceRecord &handoff_evidence =
+      handoff_publication.evidence_record;
   result.sema_pass_flow_summary.diagnostics_after_pass =
       result.diagnostics_after_pass;
   result.sema_pass_flow_summary.diagnostics_emitted_by_pass =
@@ -19,19 +21,19 @@ void PublishObjc3SemaPassFlowSummary(
   result.sema_pass_flow_summary.diagnostics_hardening_satisfied =
       result.diagnostics_hardening_satisfied;
   result.sema_pass_flow_summary.parser_recovery_replay_ready =
-      handoff_publication.parser_recovery_replay_ready;
+      handoff_evidence.parser_recovery_replay_ready;
   result.sema_pass_flow_summary.parser_recovery_replay_case_present =
-      handoff_publication.parser_recovery_replay_case_present;
+      handoff_evidence.parser_recovery_replay_case_present;
   result.sema_pass_flow_summary.parser_recovery_replay_case_passed =
-      handoff_publication.parser_recovery_replay_case_passed;
+      handoff_evidence.parser_recovery_replay_case_passed;
   result.sema_pass_flow_summary.recovery_replay_contract_satisfied =
-      handoff_publication.parser_recovery_replay_contract_satisfied;
+      handoff_evidence.parser_recovery_replay_contract_satisfied;
   result.sema_pass_flow_summary.recovery_replay_key =
-      handoff_publication.recovery_replay_key;
+      handoff_evidence.recovery_replay_key;
   result.sema_pass_flow_summary.recovery_replay_key_deterministic =
-      handoff_publication.recovery_replay_key_deterministic;
+      handoff_evidence.recovery_replay_key_deterministic;
   result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied =
-      handoff_publication.recovery_determinism_hardening_satisfied;
+      handoff_evidence.recovery_determinism_hardening_satisfied;
 
   FinalizeObjc3SemaPassFlowSummary(
       result.sema_pass_flow_summary,

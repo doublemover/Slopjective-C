@@ -1,5 +1,8 @@
   Objc3ParserSemaHandoffOwnerRecord parser_sema_handoff_owner_record;
   bool deterministic_parser_sema_handoff_owner_record = false;
+  Objc3ParserSemaHandoffPublicationEvidenceRecord
+      parser_sema_handoff_publication_evidence_record;
+  bool deterministic_parser_sema_handoff_publication_evidence_record = false;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   bool deterministic_parser_sema_docs_runbook_sync = false;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
