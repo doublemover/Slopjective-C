@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 #include "pipeline/objc3_frontend_types.h"
@@ -19,6 +20,30 @@ struct Objc3ConcurrencyActorMailboxRuntimeImportSummary {
   std::string replay_key;
   std::string actor_lowering_replay_key;
   std::string actor_isolation_lowering_replay_key;
+};
+
+struct Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary {
+  std::string contract_id;
+  std::string source_contract_id;
+  std::string surface_path;
+  std::string import_artifact_member_name;
+  std::string source_model;
+  std::string preservation_model;
+  std::string fail_closed_model;
+  std::string replay_key;
+  std::string lowering_replay_key;
+  std::size_t local_direct_callable_record_count = 0;
+  std::size_t local_final_callable_record_count = 0;
+  std::size_t local_final_container_record_count = 0;
+  std::size_t local_sealed_container_record_count = 0;
+  std::size_t imported_module_count = 0;
+  std::size_t imported_direct_callable_record_count = 0;
+  std::size_t imported_final_callable_record_count = 0;
+  std::size_t imported_final_container_record_count = 0;
+  std::size_t imported_sealed_container_record_count = 0;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_preservation_ready = false;
+  bool deterministic = false;
 };
 
 [[nodiscard]] std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
@@ -55,6 +80,20 @@ BuildConcurrencyActorMailboxRuntimeImportSummary(
 
 [[nodiscard]] std::string BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
     const Objc3ConcurrencyActorMailboxRuntimeImportSummary &summary);
+
+[[nodiscard]] Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
+BuildDispatchDispatchMetadataInterfacePreservationSummary(
+    const Objc3RuntimeMetadataSourceRecordSet
+        &local_runtime_metadata_source_records,
+    const std::string &lowering_replay_key,
+    bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces);
+
+[[nodiscard]] std::string
+BuildDispatchDispatchMetadataInterfacePreservationSummaryJson(
+    const Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
+        &summary);
 
 [[nodiscard]] std::string
 BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey(
