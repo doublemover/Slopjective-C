@@ -500,8 +500,6 @@
 
 }  // namespace
 
-namespace objc3c::parse {
-
 Objc3ParserCoreResult ParseObjc3ProgramCore(const Objc3LexTokenStream &tokens) {
   Objc3Parser parser(tokens);
   Objc3ParserCoreResult result;

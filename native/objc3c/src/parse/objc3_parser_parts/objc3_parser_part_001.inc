@@ -36,6 +36,7 @@
 #include <unordered_set>
 #include <vector>
 
+namespace objc3c::parse {
 namespace {
 
 // source note: Part 12 does not admit new syntax here. Both the
@@ -45,86 +46,8 @@ namespace {
 
 using Token = Objc3LexToken;
 
-using objc3c::parse::support::MakeDiag;
-using objc3c::parse::support::ParseIntegerLiteralValue;
-using objc3c::parse::BuildDispatchAbiMarshallingSymbol;
-using objc3c::parse::BuildAutoreleasePoolScopeSymbol;
-using objc3c::parse::BuildLowercaseProfileToken;
-using objc3c::parse::BuildMessageSendFormSymbol;
-using objc3c::parse::BuildMessageSendSelectorLoweringSymbol;
-using objc3c::parse::BuildMethodFamilySemanticsSymbol;
-using objc3c::parse::BuildCrossModuleConformanceProfile;
-using objc3c::parse::BuildGenericMetadataAbiProfile;
-using objc3c::parse::BuildIncrementalModuleCacheInvalidationProfile;
-using objc3c::parse::BuildLightweightGenericConstraintProfile;
-using objc3c::parse::BuildNormalizedObjcSelector;
-using objc3c::parse::BuildModuleImportGraphProfile;
-using objc3c::parse::BuildNamespaceCollisionShadowingProfile;
-using objc3c::parse::BuildNilReceiverFoldingSymbol;
-using objc3c::parse::BuildOptionalSendSymbol;
-using objc3c::parse::BuildPublicPrivateApiPartitionProfile;
-using objc3c::parse::BuildRuntimeLinkHostLinkSymbol;
-using objc3c::parse::BuildSuperDispatchSymbol;
-using objc3c::parse::BuildThrowsDeclarationProfile;
-using objc3c::parse::BuildNullabilityFlowProfile;
-using objc3c::parse::BuildVarianceBridgeCastProfile;
-using objc3c::parse::ComputeDispatchAbiArgumentPaddingSlots;
-using objc3c::parse::CountMarkerOccurrences;
-using objc3c::parse::CountNamespaceSegments;
-using objc3c::parse::CountTopLevelGenericArgumentSlots;
-using objc3c::parse::AdvanceToken;
-using objc3c::parse::BuildObjc3AssignmentStatement;
-using objc3c::parse::BuildObjc3BinaryExpr;
-using objc3c::parse::BuildObjc3BitwiseNotExpr;
-using objc3c::parse::BuildObjc3BlockEscapeShapeProfile;
-using objc3c::parse::BuildObjc3BlockEscapeShapeSymbol;
-using objc3c::parse::BuildObjc3BlockHelperIntentProfile;
-using objc3c::parse::BuildObjc3BlockLiteralCaptureSet;
-using objc3c::parse::BuildObjc3BlockLiteralMutatedCaptureSet;
-using objc3c::parse::BuildObjc3ConditionalExpr;
-using objc3c::parse::BuildObjc3ExpressionStatement;
-using objc3c::parse::BuildObjc3GlobalLetDeclarationIdentity;
-using objc3c::parse::BuildObjc3InvalidDeclarationIdentifierDiagnostic;
-using objc3c::parse::BuildObjc3LogicalNotExpr;
-using objc3c::parse::BuildObjc3LoopControlStatement;
-using objc3c::parse::BuildObjc3MissingSemicolonDiagnostic;
-using objc3c::parse::BuildObjc3RemovedOptionalTemplateAliasDiagnostic;
-using objc3c::parse::BuildObjc3TryExpression;
-using objc3c::parse::BuildObjc3UnaryLoweringBinaryExpr;
-using objc3c::parse::BuildObjc3UnsupportedTopLevelDiagnostic;
-using objc3c::parse::DescribeParserDiagnosticToken;
-using objc3c::parse::IsObjc3CStyleFunctionDeclarationStart;
-using objc3c::parse::IsObjc3CStyleTypeLeadToken;
-using objc3c::parse::IsObjc3ActorClassDeclarationLead;
-using objc3c::parse::IsObjc3IdentifierAssignmentStatementLead;
-using objc3c::parse::IsObjc3IdentifierColonStatementLead;
-using objc3c::parse::IsObjc3IdentifierUpdateStatementLead;
-using objc3c::parse::IsObjc3PrefixUpdateStatementLead;
-using objc3c::parse::IsObjc3RemovedOptionalTemplateAliasLead;
-using objc3c::parse::IsObjc3TopLevelFunctionQualifierLead;
-using objc3c::parse::IsCrossModuleConformanceProfileNormalized;
-using objc3c::parse::IsGenericMetadataAbiProfileNormalized;
-using objc3c::parse::IsIncrementalModuleCacheInvalidationProfileNormalized;
-using objc3c::parse::IsLightweightGenericConstraintProfileNormalized;
-using objc3c::parse::IsModuleImportGraphProfileNormalized;
-using objc3c::parse::IsNamespaceCollisionShadowingProfileNormalized;
-using objc3c::parse::IsNullabilityFlowProfileNormalized;
-using objc3c::parse::IsPublicPrivateApiPartitionProfileNormalized;
-using objc3c::parse::IsSuperDispatchReceiver;
-using objc3c::parse::IsThrowsDeclarationProfileNormalized;
-using objc3c::parse::IsVarianceBridgeCastProfileNormalized;
-using objc3c::parse::MakeObjc3ParserSemaTokenMetadata;
-using objc3c::parse::MatchTokenKind;
-using objc3c::parse::Objc3CStyleFunctionTypeParseResult;
-using objc3c::parse::Objc3BlockEscapeShapePromotesToHeapCandidate;
-using objc3c::parse::Objc3BlockLiteralSourceUseKind;
-using objc3c::parse::ParseObjc3CStyleFunctionType;
-using objc3c::parse::PeekToken;
-using objc3c::parse::PreviousToken;
-using objc3c::parse::AtTokenKind;
-using objc3c::parse::TryParseVectorTypeSpelling;
-using objc3c::parse::kDispatchAbiMarshallingRuntimeArgSlots;
-using objc3c::parse::kRuntimeLinkHostLinkDispatchSymbol;
+using support::MakeDiag;
+using support::ParseIntegerLiteralValue;
 
 static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, const Token &token) {
   return MakeObjc3ParserSemaTokenMetadata(kind, token);
