@@ -1,7 +1,6 @@
 #include "ir/objc3_ir_emitter.h"
 
 #include <map>
-#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -12,6 +11,7 @@
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_lowering.h"
 #include "ir/objc3_ir_canonical_literal_pools.h"
+#include "ir/objc3_ir_class_receiver_bindings.h"
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_emission_helpers.h"
@@ -30,7 +30,6 @@
 #include "ir/objc3_ir_module_emission_surface.h"
 #include "ir/objc3_ir_property_metadata_comment_emission.h"
 #include "ir/objc3_ir_prototype_declarations.h"
-#include "ir/objc3_ir_receiver_identity_contracts.h"
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
@@ -41,6 +40,7 @@
 #include "ir/objc3_ir_statement_emission.h"
 #include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
+#include "ir/objc3_ir_value_materialization.h"
 #include "parse/objc3_parse_support.h"
 
 class Objc3IREmitter {
@@ -85,7 +85,8 @@ class Objc3IREmitter {
     metaprogramming_derived_method_count_ =
         method_definition_plan.metaprogramming_derived_method_count;
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
-    CollectKnownClassReceiverConstants();
+    class_receiver_constants_ =
+        BuildObjc3IRKnownClassReceiverConstants(program_);
     Objc3IRCanonicalLiteralPools canonical_literal_pools =
         BuildObjc3IRCanonicalLiteralPools(program_, frontend_metadata_);
     selector_pool_globals_ =
@@ -2081,10 +2082,12 @@ class Objc3IREmitter {
             },
             [this](const FunctionContext &callback_ctx,
                    const std::string &name) {
-              return LookupVarPtr(callback_ctx, name);
+              return LookupObjc3IRVarPtr(
+                  callback_ctx, name, ValueMaterializationContext());
             },
             [this](const std::string &name, FunctionContext &callback_ctx) {
-              return EmitIdentifierValue(name, callback_ctx);
+              return EmitObjc3IRIdentifierValue(
+                  name, callback_ctx, ValueMaterializationContext());
             }}};
   }
 
@@ -2100,8 +2103,22 @@ class Objc3IREmitter {
         global_const_values_,
         [this](const FunctionContext &callback_ctx,
                const std::string &name) {
-          return LookupVarPtr(callback_ctx, name);
+          return LookupObjc3IRVarPtr(
+              callback_ctx, name, ValueMaterializationContext());
         }};
+  }
+
+  Objc3IRValueMaterializationContext ValueMaterializationContext() const {
+    return Objc3IRValueMaterializationContext{
+        globals_,
+        typed_keypath_artifacts_,
+        [this](FunctionContext &callback_ctx) {
+          return NewTemp(callback_ctx);
+        },
+        [this](const std::string &reason) {
+          return EmitUnsupportedI32Value(reason);
+        },
+        [this]() { return BlockLoweringContext(); }};
   }
 
   Objc3IRExpressionCallEmissionOptions ExpressionCallEmissionOptions() const {
@@ -2130,10 +2147,12 @@ class Objc3IREmitter {
               InvalidateObjc3IRGlobalProofState(callback_ctx);
             },
             [this](const std::string &name, FunctionContext &callback_ctx) {
-              return EmitIdentifierValue(name, callback_ctx);
+              return EmitObjc3IRIdentifierValue(
+                  name, callback_ctx, ValueMaterializationContext());
             },
             [this](const Expr &callback_expr) {
-              return EmitTypedKeyPathLiteralValue(callback_expr);
+              return EmitObjc3IRTypedKeyPathLiteralValue(
+                  callback_expr, ValueMaterializationContext());
             },
             [this](const std::string &name)
                 -> const LoweredFunctionSignature * {
@@ -2172,95 +2191,6 @@ class Objc3IREmitter {
     PopObjc3IRScope(ctx, emit_cleanup, ScopeCleanupCallbacks());
   }
 
-  std::string LookupVarPtr(const FunctionContext &ctx, const std::string &name) const {
-    for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
-      auto found = it->find(name);
-      if (found != it->end()) {
-        return found->second;
-      }
-    }
-    if (globals_.find(name) != globals_.end()) {
-      return "@" + name;
-    }
-    return "";
-  }
-
-  std::string EmitIdentifierValue(const std::string &name,
-                                  FunctionContext &ctx) const {
-    auto block_it = ctx.block_bindings.find(name);
-    if (block_it != ctx.block_bindings.end()) {
-      return EmitObjc3IRPromotedBlockHandleLoad(
-          block_it->second, ctx, BlockLoweringContext());
-    }
-    const std::string ptr = LookupVarPtr(ctx, name);
-    if (!ptr.empty()) {
-      const std::string tmp = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + tmp + " = load i32, ptr " + ptr + ", align 4");
-      return tmp;
-    }
-    if (globals_.find(name) != globals_.end()) {
-      const std::string tmp = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + tmp + " = load i32, ptr @" + name + ", align 4");
-      return tmp;
-    }
-    const auto immediate_it = ctx.immediate_identifiers.find(name);
-    if (immediate_it != ctx.immediate_identifiers.end()) {
-      return std::to_string(immediate_it->second);
-    }
-    // Match bindings are now materialized by the executable Part 5 lowering
-    // path when a live match arm captures the condition value. Remaining
-    // unresolved identifiers still fail closed here.
-    return EmitUnsupportedI32Value("unresolved identifier '" + name + "' during IR lowering");
-  }
-
-  std::string EmitTypedKeyPathLiteralValue(const Expr &expr) const {
-    const std::string profile =
-        expr.typed_keypath_literal_profile.empty()
-            ? std::string("typed-keypath:root=") + expr.typed_keypath_root_name
-            : expr.typed_keypath_literal_profile;
-    const auto artifact_it = typed_keypath_artifacts_.find(profile);
-    if (artifact_it == typed_keypath_artifacts_.end()) {
-      return EmitUnsupportedI32Value(
-          "typed key-path artifact '" + profile +
-          "' was not registered before IR lowering");
-    }
-    return std::to_string(
-        static_cast<unsigned long long>(artifact_it->second.ordinal + 1u));
-  }
-
-  void CollectKnownClassReceiverConstants() {
-    std::set<std::string> class_names;
-    for (const auto &interface_decl : program_.interfaces) {
-      if (!interface_decl.has_category && !interface_decl.name.empty()) {
-        class_names.insert(interface_decl.name);
-      }
-    }
-    for (const auto &implementation : program_.implementations) {
-      if (!implementation.has_category && !implementation.name.empty()) {
-        class_names.insert(implementation.name);
-      }
-    }
-    std::size_t ordinal = 0;
-    for (const std::string &class_name : class_names) {
-      class_receiver_constants_[class_name] =
-          NextNonZeroReceiverIdentityValue(ordinal++, 0);
-    }
-  }
-
-  int LookupClassReceiverIdentityValue(const std::string &class_name) const {
-    const auto value_it = class_receiver_constants_.find(class_name);
-    if (value_it == class_receiver_constants_.end()) {
-      return 0;
-    }
-    return value_it->second;
-  }
-
-  void SeedKnownClassReceiverBindings(FunctionContext &ctx) const {
-    for (const auto &entry : class_receiver_constants_) {
-      ctx.immediate_identifiers.emplace(entry.first, entry.second);
-    }
-  }
-
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
     if (!unsupported_fail_closed_path_triggered_) {
       unsupported_fail_closed_path_triggered_ = true;
@@ -2290,7 +2220,8 @@ class Objc3IREmitter {
             },
             [this](const FunctionContext &callback_ctx,
                    const std::string &name) {
-              return LookupVarPtr(callback_ctx, name);
+              return LookupObjc3IRVarPtr(
+                  callback_ctx, name, ValueMaterializationContext());
             },
             [this](const Expr *expr, const FunctionContext &callback_ctx,
                    int &value) {
@@ -2367,7 +2298,9 @@ class Objc3IREmitter {
   BuildFunctionDefinitionEmissionCallbacks() const {
     return Objc3IRFunctionDefinitionEmissionCallbacks{
         [this](FunctionContext &ctx) { PushScope(ctx); },
-        [this](FunctionContext &ctx) { SeedKnownClassReceiverBindings(ctx); },
+        [this](FunctionContext &ctx) {
+          SeedObjc3IRKnownClassReceiverBindings(class_receiver_constants_, ctx);
+        },
         [this](const FuncParam &param, std::size_t index,
                const std::string &ptr, FunctionContext &ctx) {
           EmitObjc3IRFunctionLocalTypedParamStore(
@@ -2387,7 +2320,8 @@ class Objc3IREmitter {
           return IsActorImplementation(name);
         },
         [this](const std::string &class_name) {
-          return LookupClassReceiverIdentityValue(class_name);
+          return LookupObjc3IRClassReceiverIdentityValue(
+              class_receiver_constants_, class_name);
         },
         [this](const Objc3IRMethodDefinition &method_def,
                std::ostringstream &out) {

@@ -22,6 +22,7 @@ target_link_libraries(objc3c_ir_core_models PUBLIC
 add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_block_lowering.cpp
   objc3_ir_block_runtime_contracts.cpp
+  objc3_ir_class_receiver_bindings.cpp
   objc3_ir_compile_time_proof_analysis.cpp
   objc3_ir_concurrency_identity.cpp
   objc3_ir_concurrency_runtime_call_emission.cpp
@@ -54,6 +55,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_statement_emission.cpp
   objc3_ir_synthetic_method_emission.cpp
   objc3_ir_synthesized_property_accessors.cpp
+  objc3_ir_value_materialization.cpp
 )
 objc3c_apply_build_defaults(objc3c_ir_runtime_surface)
 objc3c_apply_llvm_direct_config(objc3c_ir_runtime_surface)
