@@ -2,21 +2,25 @@
 
 from __future__ import annotations
 
-import sys
-
-from ..composite_validation import run_composite_validation
-from ..commands import run
-from ..environment import ROOT
 from ..registry_views import actions_matching
-
-STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
-FUZZ_SAFETY_PY = ROOT / "scripts" / "run_objc3c_fuzz_safety.py"
-LOWERING_RUNTIME_STRESS_PY = ROOT / "scripts" / "run_objc3c_lowering_runtime_stress.py"
-MIXED_MODULE_DIFFERENTIAL_PY = ROOT / "scripts" / "run_objc3c_mixed_module_differential.py"
-STRESS_MINIMIZATION_PY = ROOT / "scripts" / "run_objc3c_stress_minimization.py"
-STRESS_CRASH_TRIAGE_PY = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
-STRESS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stress_integration.py"
-STRESS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_stress_end_to_end.py"
+from .stress_catalog import (
+    FUZZ_SAFETY_PY,
+    LOWERING_RUNTIME_STRESS_PY,
+    MIXED_MODULE_DIFFERENTIAL_PY,
+    STRESS_CRASH_TRIAGE_PY,
+    STRESS_END_TO_END_PY,
+    STRESS_INTEGRATION_PY,
+    STRESS_MINIMIZATION_PY,
+    STRESS_SCENARIOS,
+    STRESS_SOURCE_SURFACE_PY,
+    StressScenario,
+)
+from .stress_execution import (
+    run_stress_scenario,
+    run_validate_stress,
+    run_validate_stress_end_to_end,
+    run_validate_stress_integration,
+)
 
 
 def action_names() -> list[str]:
@@ -26,52 +30,60 @@ def action_names() -> list[str]:
 
 
 def action_check_stress_surface(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_SOURCE_SURFACE_PY)])
+    return run_stress_scenario("check-stress-surface")
 
 
 def action_test_fuzz_safety(rest: list[str]) -> int:
-    return run([sys.executable, str(FUZZ_SAFETY_PY), *rest])
+    return run_stress_scenario("test-fuzz-safety", rest)
 
 
 def action_test_lowering_runtime_stress(rest: list[str]) -> int:
-    return run([sys.executable, str(LOWERING_RUNTIME_STRESS_PY), *rest])
+    return run_stress_scenario("test-lowering-runtime-stress", rest)
 
 
 def action_test_mixed_module_differential(rest: list[str]) -> int:
-    return run([sys.executable, str(MIXED_MODULE_DIFFERENTIAL_PY), *rest])
+    return run_stress_scenario("test-mixed-module-differential", rest)
 
 
 def action_test_stress_minimization(rest: list[str]) -> int:
-    return run([sys.executable, str(STRESS_MINIMIZATION_PY), *rest])
+    return run_stress_scenario("test-stress-minimization", rest)
 
 
 def action_test_stress_crash_triage(rest: list[str]) -> int:
-    return run([sys.executable, str(STRESS_CRASH_TRIAGE_PY), *rest])
+    return run_stress_scenario("test-stress-crash-triage", rest)
 
 
 def action_validate_stress(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-stress",
-        [
-            ("check-stress-surface", [sys.executable, str(STRESS_SOURCE_SURFACE_PY)]),
-            ("test-fuzz-safety", [sys.executable, str(FUZZ_SAFETY_PY)]),
-            (
-                "test-lowering-runtime-stress",
-                [sys.executable, str(LOWERING_RUNTIME_STRESS_PY)],
-            ),
-            (
-                "test-mixed-module-differential",
-                [sys.executable, str(MIXED_MODULE_DIFFERENTIAL_PY)],
-            ),
-            ("test-stress-minimization", [sys.executable, str(STRESS_MINIMIZATION_PY)]),
-            ("test-stress-crash-triage", [sys.executable, str(STRESS_CRASH_TRIAGE_PY)]),
-        ],
-    )
+    return run_validate_stress()
 
 
 def action_validate_stress_integration(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_INTEGRATION_PY)])
+    return run_validate_stress_integration()
 
 
 def action_validate_stress_end_to_end(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_END_TO_END_PY)])
+    return run_validate_stress_end_to_end()
+
+
+__all__ = [
+    "FUZZ_SAFETY_PY",
+    "LOWERING_RUNTIME_STRESS_PY",
+    "MIXED_MODULE_DIFFERENTIAL_PY",
+    "STRESS_CRASH_TRIAGE_PY",
+    "STRESS_END_TO_END_PY",
+    "STRESS_INTEGRATION_PY",
+    "STRESS_MINIMIZATION_PY",
+    "STRESS_SCENARIOS",
+    "STRESS_SOURCE_SURFACE_PY",
+    "StressScenario",
+    "action_check_stress_surface",
+    "action_names",
+    "action_test_fuzz_safety",
+    "action_test_lowering_runtime_stress",
+    "action_test_mixed_module_differential",
+    "action_test_stress_crash_triage",
+    "action_test_stress_minimization",
+    "action_validate_stress",
+    "action_validate_stress_end_to_end",
+    "action_validate_stress_integration",
+]
