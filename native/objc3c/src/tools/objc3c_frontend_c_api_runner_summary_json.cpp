@@ -6,6 +6,7 @@
 #include "tools/objc3c_frontend_c_api_runner_bonus_experiences_json.h"
 #include "tools/objc3c_frontend_c_api_runner_observability_json.h"
 #include "tools/objc3c_frontend_c_api_runner_output_contract_json.h"
+#include "tools/objc3c_frontend_c_api_runner_public_result.h"
 #include "tools/objc3c_frontend_c_api_runner_result.h"
 #include "tools/objc3c_frontend_c_api_runner_runtime_inspector_json.h"
 #include "tools/objc3c_frontend_c_api_runner_stage_trace_json.h"
@@ -22,24 +23,14 @@ std::string BuildFrontendCApiRunnerSummaryJson(
     const std::string &last_error,
     const std::string &result_error_message,
     const FrontendCApiRunnerOutputContract &output_contract) {
-  const char *backend_name =
-      options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
-          ? "llvm-direct"
-          : "clang";
-  const std::string summary_path_text = summary_path.generic_string();
-  const std::string runtime_metadata_binary_path_text =
-      FrontendCApiResultArtifactPath(
+  const FrontendCApiRunnerPublicResultView public_result =
+      BuildFrontendCApiRunnerPublicResultView(
+          options,
+          summary_path,
+          status,
           result,
-          OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
-  const std::string diagnostics_path_text =
-      FrontendCApiResultArtifactPath(result,
-                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
-  const std::string manifest_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
-  const std::string ir_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
-  const std::string object_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+          last_error,
+          result_error_message);
 
   std::ostringstream out;
   out << "{\n";
@@ -50,63 +41,55 @@ std::string BuildFrontendCApiRunnerSummaryJson(
       << "\",\n";
   out << "  \"emit_prefix\": \"" << EscapeJsonString(options.emit_prefix)
       << "\",\n";
-  out << "  \"ir_object_backend\": \"" << backend_name << "\",\n";
-  out << "  \"status\": " << static_cast<unsigned>(status) << ",\n";
-  out << "  \"process_exit_code\": " << result.process_exit_code << ",\n";
-  out << "  \"success\": " << (result.success != 0 ? "true" : "false")
+  out << "  \"ir_object_backend\": \"" << public_result.backend_name << "\",\n";
+  out << "  \"status\": " << public_result.status_code << ",\n";
+  out << "  \"process_exit_code\": " << public_result.process_exit_code
+      << ",\n";
+  out << "  \"success\": " << (public_result.success ? "true" : "false")
       << ",\n";
   out << "  \"semantic_skipped\": "
-      << (result.semantic_skipped != 0 ? "true" : "false") << ",\n";
+      << (public_result.semantic_skipped ? "true" : "false") << ",\n";
   out << "  \"paths\": {\n";
-  out << "    \"summary\": \"" << EscapeJsonString(summary_path_text)
+  out << "    \"summary\": \"" << EscapeJsonString(public_result.paths.summary)
       << "\",\n";
-  out << "    \"diagnostics\": \"" << EscapeJsonString(diagnostics_path_text)
+  out << "    \"diagnostics\": \""
+      << EscapeJsonString(public_result.paths.diagnostics) << "\",\n";
+  out << "    \"manifest\": \"" << EscapeJsonString(public_result.paths.manifest)
       << "\",\n";
-  out << "    \"manifest\": \"" << EscapeJsonString(manifest_path_text)
+  out << "    \"ir\": \"" << EscapeJsonString(public_result.paths.ir)
       << "\",\n";
-  out << "    \"ir\": \"" << EscapeJsonString(ir_path_text) << "\",\n";
-  out << "    \"object\": \"" << EscapeJsonString(object_path_text) << "\",\n";
+  out << "    \"object\": \"" << EscapeJsonString(public_result.paths.object)
+      << "\",\n";
   out << "    \"runtime_metadata_binary\": \""
-      << EscapeJsonString(runtime_metadata_binary_path_text) << "\"\n";
+      << EscapeJsonString(public_result.paths.runtime_metadata_binary)
+      << "\"\n";
   out << "  },\n";
-  out << "  \"last_error\": \"" << EscapeJsonString(last_error) << "\",\n";
+  out << "  \"last_error\": \"" << EscapeJsonString(public_result.last_error)
+      << "\",\n";
   out << "  \"result_error_message\": \""
-      << EscapeJsonString(result_error_message) << "\",\n";
+      << EscapeJsonString(public_result.result_error_message) << "\",\n";
   out << "  \"c_api_ownership\": {\n";
   out << "    \"result_owned_error_message\": "
-      << (!result_error_message.empty() ? "true" : "false") << ",\n";
+      << (public_result.c_api_ownership.result_owned_error_message ? "true"
+                                                                   : "false")
+      << ",\n";
   out << "    \"diagnostics_path_borrowed\": "
-      << (objc3c_frontend_c_result_has_artifact(
-              &result,
-              OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS) != 0u
-              ? "true"
-              : "false")
+      << (public_result.c_api_ownership.diagnostics_path_borrowed ? "true"
+                                                                  : "false")
       << ",\n";
   out << "    \"manifest_path_borrowed\": "
-      << (objc3c_frontend_c_result_has_artifact(
-              &result,
-              OBJC3C_FRONTEND_ARTIFACT_MANIFEST) != 0u
-              ? "true"
-              : "false")
+      << (public_result.c_api_ownership.manifest_path_borrowed ? "true"
+                                                               : "false")
       << ",\n";
   out << "    \"ir_path_borrowed\": "
-      << (objc3c_frontend_c_result_has_artifact(
-              &result,
-              OBJC3C_FRONTEND_ARTIFACT_IR) != 0u
-              ? "true"
-              : "false")
+      << (public_result.c_api_ownership.ir_path_borrowed ? "true" : "false")
       << ",\n";
   out << "    \"object_path_borrowed\": "
-      << (objc3c_frontend_c_result_has_artifact(
-              &result,
-              OBJC3C_FRONTEND_ARTIFACT_OBJECT) != 0u
-              ? "true"
-              : "false")
+      << (public_result.c_api_ownership.object_path_borrowed ? "true"
+                                                             : "false")
       << ",\n";
   out << "    \"runtime_metadata_path_borrowed\": "
-      << (objc3c_frontend_c_result_has_artifact(
-              &result,
-              OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA) != 0u
+      << (public_result.c_api_ownership.runtime_metadata_path_borrowed
               ? "true"
               : "false")
       << "\n";
@@ -122,11 +105,11 @@ std::string BuildFrontendCApiRunnerSummaryJson(
   WriteFrontendCApiRunnerObservabilityJson(
       out,
       "  ",
-      summary_path_text,
+      public_result.paths.summary,
       result,
       status,
       result_error_message,
-      runtime_metadata_binary_path_text);
+      public_result.paths.runtime_metadata_binary);
   out << ",\n";
   out << "  \"runtime_inspector\": ";
   WriteFrontendCApiRunnerRuntimeInspectorJson(out, "  ", options, result);
@@ -137,8 +120,8 @@ std::string BuildFrontendCApiRunnerSummaryJson(
       "  ",
       options,
       result,
-      summary_path_text,
-      runtime_metadata_binary_path_text);
+      public_result.paths.summary,
+      public_result.paths.runtime_metadata_binary);
   out << ",\n";
   out << "  \"output_contract\": ";
   WriteFrontendCApiRunnerOutputContractJson(out, "  ", output_contract);

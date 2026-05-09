@@ -16,6 +16,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_output_contract_json.cpp
   objc3c_frontend_c_api_runner_output_paths.cpp
   objc3c_frontend_c_api_runner_playground_repro_json.cpp
+  objc3c_frontend_c_api_runner_public_result.cpp
   objc3c_frontend_c_api_runner_read_command.cpp
   objc3c_frontend_c_api_runner_result_contract.cpp
   objc3c_frontend_c_api_runner_result_lifetime.cpp
