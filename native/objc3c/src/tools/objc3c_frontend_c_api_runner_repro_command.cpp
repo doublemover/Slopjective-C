@@ -1,57 +1,8 @@
-#include "tools/objc3c_frontend_c_api_runner_commands.h"
+#include "tools/objc3c_frontend_c_api_runner_repro_command.h"
 
-#include <cstddef>
 #include <sstream>
 
-#include "ast/objc3_ast.h"
-
-bool FrontendCApiRunnerPathExists(const std::string &path_text) {
-  return !path_text.empty() &&
-         std::filesystem::exists(std::filesystem::path(path_text));
-}
-
-std::string QuoteFrontendCApiRunnerPowerShellArg(const std::string &value) {
-  std::string quoted = "'";
-  for (char c : value) {
-    if (c == '\'') {
-      quoted += "''";
-    } else {
-      quoted += c;
-    }
-  }
-  quoted += "'";
-  return quoted;
-}
-
-std::string BuildFrontendCApiRunnerReadCommand(
-    const std::string &path_text) {
-  if (!FrontendCApiRunnerPathExists(path_text)) {
-    return "";
-  }
-  return "Get-Content -Raw " +
-         QuoteFrontendCApiRunnerPowerShellArg(path_text);
-}
-
-std::string BuildFrontendCApiRunnerObjectInspectionCommand(
-    const std::string &template_command,
-    const std::string &object_path_text) {
-  if (!FrontendCApiRunnerPathExists(object_path_text)) {
-    return "";
-  }
-  const std::string placeholder =
-      kObjc3RuntimeMetadataObjectInspectionObjectRelativePath;
-  std::string command = template_command;
-  const std::size_t placeholder_offset = command.find(placeholder);
-  if (placeholder_offset != std::string::npos) {
-    command.replace(
-        placeholder_offset,
-        placeholder.size(),
-        QuoteFrontendCApiRunnerPowerShellArg(object_path_text));
-    return command;
-  }
-  return command + " " +
-         QuoteFrontendCApiRunnerPowerShellArg(object_path_text);
-}
+#include "tools/objc3c_frontend_c_api_runner_shell_quote.h"
 
 std::string BuildFrontendCApiRunnerReproCommand(
     const FrontendCApiRunnerOptions &options,
