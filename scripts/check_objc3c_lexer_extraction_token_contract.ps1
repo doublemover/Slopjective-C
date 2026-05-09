@@ -84,7 +84,18 @@ function Invoke-LoggedCommand {
 }
 
 function Read-NormalizedText {
-  param([Parameter(Mandatory = $true)][string]$Path)
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter()][System.Collections.Generic.HashSet[string]]$Seen = $null
+  )
+
+  if ($null -eq $Seen) {
+    $Seen = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+  }
+  $fullPath = [System.IO.Path]::GetFullPath($Path)
+  if (-not $Seen.Add($fullPath)) {
+    return ""
+  }
 
   $text = Get-Content -LiteralPath $Path -Raw
   $text = $text -replace "`r`n", "`n"
@@ -92,17 +103,14 @@ function Read-NormalizedText {
   $expanded = [System.Text.StringBuilder]::new()
   foreach ($line in ($text -split "`n")) {
     [void]$expanded.AppendLine($line)
-    $match = [regex]::Match($line, '^\s*#include\s+"([^"]*_parts/[^"]+)"')
+    $match = [regex]::Match($line, '^\s*#include\s+"([^"]+)"')
     if (-not $match.Success) {
       continue
     }
     $includePath = $match.Groups[1].Value
     $includeFullPath = Join-Path $repoRoot ("native/objc3c/src/{0}" -f $includePath)
     if (Test-Path -LiteralPath $includeFullPath -PathType Leaf) {
-      $includeText = Get-Content -LiteralPath $includeFullPath -Raw
-      $includeText = $includeText -replace "`r`n", "`n"
-      $includeText = $includeText -replace "`r", "`n"
-      [void]$expanded.AppendLine($includeText)
+      [void]$expanded.AppendLine((Read-NormalizedText -Path $includeFullPath -Seen $Seen))
     }
   }
   return $expanded.ToString()

@@ -20,13 +20,27 @@ ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_error.h"
 ARTIFACT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_artifact.h"
 STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
-C_API_CPP = SRC_ROOT / "libobjc3c_frontend" / "c_api.cpp"
-ANCHOR_PART_001 = SRC_ROOT / "libobjc3c_frontend" / "frontend_anchor_parts" / "frontend_anchor_part_001.inc"
+RESULT_OWNERSHIP_CPP = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_ownership.cpp"
+FRONTEND_COMPILE_CONTRACT_CPP = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_compile_contract.cpp"
+C_API_SOURCES = [
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_abi.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_compile.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_lifecycle.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_result_artifacts.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_result_error.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_result_lifecycle.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_stage_summary.cpp",
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_string_bridge.cpp",
+]
 C_API_HELPER_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "native" / "frontend_c_api_helper_contract.json"
 
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _squash_ws(text: str) -> str:
+    return re.sub(r"\s+", " ", text)
 
 
 def _find_compiler(candidates: list[str]) -> str | None:
@@ -139,7 +153,11 @@ def test_public_frontend_surface_has_no_lane_or_roadmap_comments() -> None:
 
 
 def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
-    source = _read(C_API_CPP)
+    for source_path in C_API_SOURCES:
+        assert source_path.exists(), source_path
+
+    source = "\n".join(_read(source_path) for source_path in C_API_SOURCES)
+    squashed_source = _squash_ws(source)
 
     assert '#include "libobjc3c_frontend/c_api.h"' in source
     assert "return objc3c_frontend_is_abi_compatible(requested_abi_version);" in source
@@ -151,17 +169,21 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     assert "return objc3c_frontend_compile_file(context, options, result);" in source
     assert "return objc3c_frontend_compile_source(context, options, result);" in source
     assert "return objc3c_frontend_copy_last_error(context, buffer, buffer_size);" in source
-    assert "static_assert(std::is_same_v<objc3c_frontend_c_string_t, objc3c_frontend_string_t>" in source
-    assert "static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t, objc3c_frontend_stage_summary_t>" in source
+    assert "static_assert(std::is_same_v<objc3c_frontend_c_string_t, objc3c_frontend_string_t>" in squashed_source
+    assert "static_assert(std::is_same_v<objc3c_frontend_c_stage_summary_t, objc3c_frontend_stage_summary_t>" in squashed_source
     assert "objc3c_frontend_c_result_destroy(" in source
-    assert "objc3c_frontend_result_destroy(result);" in source
+    assert "ReleaseCompileResultOwnedStrings(result);" in source
+    assert "*result = {};" in source
     assert "objc3c_frontend_c_result_artifact_path(" in source
-    assert "return objc3c_frontend_result_artifact_path(result, artifact_kind);" in source
+    assert "switch (artifact_kind)" in source
+    assert "case OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS:" in source
+    assert "return result->diagnostics_path;" in source
+    assert "return nullptr;" in source
     assert "objc3c_frontend_c_result_artifact_path_view(" in source
     assert "objc3c_frontend_c_result_has_artifact(" in source
     assert "return view.data != nullptr && view.size != 0u ? 1u : 0u;" in source
     assert "objc3c_frontend_c_result_error_message(" in source
-    assert "return objc3c_frontend_result_error_message(result);" in source
+    assert "return result == nullptr ? nullptr : result->error_message;" in source
     assert "objc3c_frontend_c_result_error_message_view(" in source
     assert "objc3c_frontend_c_string_view(" in source
     assert "return objc3c_frontend_string_view(string);" in source
@@ -177,12 +199,27 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
 
 def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helpers() -> None:
     header = _read(C_API_H)
-    source = _read(C_API_CPP)
+    source = "\n".join(_read(source_path) for source_path in C_API_SOURCES)
+    implementation = "\n".join(
+        [
+            source,
+            _read(RESULT_OWNERSHIP_CPP),
+        ]
+    )
     contract = json.loads(_read(C_API_HELPER_CONTRACT))
 
     assert contract["contract_id"] == "objc3c.frontend.c_api.helper.contract.v1"
     assert contract["header_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.h"
-    assert contract["source_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.cpp"
+    assert contract["source_paths"] == [
+        "native/objc3c/src/libobjc3c_frontend/c_api_abi.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_compile.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_result_artifacts.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_result_error.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_result_lifecycle.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_stage_summary.cpp",
+        "native/objc3c/src/libobjc3c_frontend/c_api_string_bridge.cpp",
+    ]
 
     for alias in contract["required_type_aliases"]:
         assert alias in header
@@ -196,18 +233,23 @@ def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helper
         assert phrase in header
 
     for snippet in contract["required_source_fail_closed_snippets"]:
-        assert snippet in source
+        assert snippet in implementation
 
 
-def test_frontend_anchor_releases_immutable_owned_strings() -> None:
-    source = _read(ANCHOR_PART_001)
+def test_frontend_result_ownership_releases_immutable_owned_strings() -> None:
+    ownership = _read(RESULT_OWNERSHIP_CPP)
+    compile_contract = _read(FRONTEND_COMPILE_CONTRACT_CPP)
 
-    assert "string->data = data;" in source
-    assert "std::free(const_cast<char *>(string->data));" in source
-    assert "Copy context strings into result-owned immutable string objects." in source
-    assert "IsMissingBorrowedPath(" in source
-    assert "OptionalBorrowedFilesystemPath(" in source
-    assert "IsNullOrEmpty(" not in source
+    assert "CloneOwnedFrontendString(const std::string &text)" in ownership
+    assert "string->data = data;" in ownership
+    assert "std::free(const_cast<char *>(string->data));" in ownership
+    assert "ReleaseCompileResultOwnedStrings(" in ownership
+    assert "PopulateCompileResultOwnedPayload(" in ownership
+    assert "failed to allocate frontend result-owned string storage." in ownership
+    assert "IsMissingFrontendBorrowedPath(" in compile_contract
+    assert "BorrowedFrontendPathToFilesystemPath(" in compile_contract
+    assert "IsNullOrEmpty(" not in ownership
+    assert "IsNullOrEmpty(" not in compile_contract
 
 
 def test_c_api_header_compiles_from_c_when_compiler_available(tmp_path: Path) -> None:
@@ -268,26 +310,27 @@ def test_c_api_header_compiles_from_c_when_compiler_available(tmp_path: Path) ->
     assert c_object.exists()
 
 
-def test_c_api_cpp_compiles_when_cxx_compiler_available(tmp_path: Path) -> None:
+def test_c_api_split_owner_sources_compile_when_cxx_compiler_available(tmp_path: Path) -> None:
     cxx_compiler = _find_compiler(["c++", "clang++", "g++"])
     if cxx_compiler is None:
         pytest.skip("no C++ compiler available in PATH")
 
-    cxx_object = tmp_path / "c_api_wrapper.o"
-    command = [
-        cxx_compiler,
-        "-std=c++20",
-        "-c",
-        str(C_API_CPP),
-        "-I",
-        str(SRC_ROOT),
-        "-o",
-        str(cxx_object),
-    ]
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
-    if result.returncode != 0:
-        diagnostics = (result.stderr + "\n" + result.stdout).strip()
-        if not diagnostics:
-            pytest.skip("C++ compiler invocation is unavailable in this environment")
-        pytest.fail(diagnostics)
-    assert cxx_object.exists()
+    for source_path in C_API_SOURCES:
+        cxx_object = tmp_path / f"{source_path.stem}.o"
+        command = [
+            cxx_compiler,
+            "-std=c++20",
+            "-c",
+            str(source_path),
+            "-I",
+            str(SRC_ROOT),
+            "-o",
+            str(cxx_object),
+        ]
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            diagnostics = (result.stderr + "\n" + result.stdout).strip()
+            if not diagnostics:
+                pytest.skip("C++ compiler invocation is unavailable in this environment")
+            pytest.fail(diagnostics)
+        assert cxx_object.exists()

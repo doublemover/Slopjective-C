@@ -34,7 +34,7 @@ def _read(path: Path) -> str:
     for line in text.splitlines():
         expanded.append(line)
         stripped = line.strip()
-        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+        if not stripped.startswith('#include "'):
             continue
         include_path = stripped.split('"', 2)[1]
         target = ROOT / "native" / "objc3c" / "src" / include_path

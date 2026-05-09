@@ -2,7 +2,16 @@
   "contract_id": "objc3c.frontend.c_api.helper.contract.v1",
   "surface_kind": "frontend-public-c-api-result-string-stage-helper-contract",
   "header_path": "native/objc3c/src/libobjc3c_frontend/c_api.h",
-  "source_path": "native/objc3c/src/libobjc3c_frontend/c_api.cpp",
+  "source_paths": [
+    "native/objc3c/src/libobjc3c_frontend/c_api_abi.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_compile.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_result_artifacts.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_result_error.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_result_lifecycle.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_stage_summary.cpp",
+    "native/objc3c/src/libobjc3c_frontend/c_api_string_bridge.cpp"
+  ],
   "required_type_aliases": [
     "objc3c_frontend_c_context_t",
     "objc3c_frontend_c_compile_options_t",
@@ -35,7 +44,8 @@
     "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0"
   ],
   "required_source_fail_closed_snippets": [
-    "objc3c_frontend_result_destroy(result);",
+    "ReleaseCompileResultOwnedStrings(result);",
+    "*result = {};",
     "objc3c_frontend_c_string_view(",
     "objc3c_frontend_c_result_artifact_path(result, artifact_kind)",
     "return view.data != nullptr && view.size != 0u ? 1u : 0u;",

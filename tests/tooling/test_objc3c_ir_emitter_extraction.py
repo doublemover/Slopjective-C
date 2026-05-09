@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[2]
 IR_HEADER = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.h"
 IR_SOURCE = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.cpp"
 PIPELINE_ARTIFACTS_CPP = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
-CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
+IR_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "ir" / "CMakeLists.txt"
 
 
 def _read(path: Path) -> str:
@@ -13,7 +13,7 @@ def _read(path: Path) -> str:
     for line in text.splitlines():
         expanded.append(line)
         stripped = line.strip()
-        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+        if not stripped.startswith('#include "'):
             continue
         include_path = stripped.split('"', 2)[1]
         target = ROOT / "native" / "objc3c" / "src" / include_path
@@ -108,8 +108,8 @@ def test_ir_emitter_prologue_pins_canonical_lowering_replay_comment() -> None:
 
 
 def test_cmake_registers_ir_target() -> None:
-    cmake = _read(CMAKE_FILE)
+    cmake = _read(IR_CMAKE_FILE)
     assert "add_library(objc3c_ir STATIC" in cmake
-    assert "src/ir/objc3_ir_emitter.cpp" in cmake
+    assert "objc3_ir_emitter.cpp" in cmake
     assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
     assert "objc3c_lower" in cmake

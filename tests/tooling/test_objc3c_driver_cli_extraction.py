@@ -9,7 +9,8 @@ DRIVER_MAIN_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_driv
 DRIVER_CAPABILITY_ROUTING_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_llvm_capability_routing.cpp"
 DRIVER_OBJC3_PATH_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
-CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
+DRIVER_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "driver" / "CMakeLists.txt"
+SRC_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "CMakeLists.txt"
 
 
 def _read(path: Path) -> str:
@@ -18,7 +19,7 @@ def _read(path: Path) -> str:
     for line in text.splitlines():
         expanded.append(line)
         stripped = line.strip()
-        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+        if not stripped.startswith('#include "'):
             continue
         include_path = stripped.split('"', 2)[1]
         target = ROOT / "native" / "objc3c" / "src" / include_path
@@ -50,27 +51,28 @@ def test_driver_cli_module_exists_and_main_calls_it() -> None:
 
 
 def test_cmake_registers_driver_target() -> None:
-    cmake = _read(CMAKE_FILE)
+    cmake = _read(DRIVER_CMAKE_FILE)
+    src_cmake = _read(SRC_CMAKE_FILE)
     assert "add_library(objc3c_driver STATIC" in cmake
-    assert "src/driver/objc3_cli_options.cpp" in cmake
-    assert "src/driver/objc3_driver_main.cpp" in cmake
-    assert "src/driver/objc3_llvm_capability_routing.cpp" in cmake
-    assert "src/driver/objc3_compilation_driver.cpp" in cmake
+    assert "objc3_cli_options.cpp" in cmake
+    assert "objc3_driver_main.cpp" in cmake
+    assert "objc3_llvm_capability_routing.cpp" in cmake
+    assert "objc3_compilation_driver.cpp" in cmake
     assert "objc3c_driver" in cmake
-    assert "target_link_libraries(objc3c-native PRIVATE" in cmake
-    assert "objc3c_driver" in cmake
+    assert "target_link_libraries(objc3c-native PRIVATE" in src_cmake
+    assert "objc3c_driver" in src_cmake
 
 
 def test_cmake_target_linkage_topology_is_split_by_stage() -> None:
-    cmake = _read(CMAKE_FILE)
+    cmake = _read(SRC_CMAKE_FILE)
 
-    assert "target_link_libraries(objc3c_parse PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_io PUBLIC" in cmake
-    assert "objc3c_runtime_abi" in cmake
-    assert "target_link_libraries(objc3c_pipeline PUBLIC" in cmake
+    assert "add_subdirectory(parse)" in cmake
+    assert "add_subdirectory(sema)" in cmake
+    assert "add_subdirectory(lower)" in cmake
+    assert "add_subdirectory(ir)" in cmake
+    assert "add_subdirectory(io)" in cmake
+    assert "add_subdirectory(runtime)" in cmake
+    assert "add_subdirectory(pipeline)" in cmake
 
 
 def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
