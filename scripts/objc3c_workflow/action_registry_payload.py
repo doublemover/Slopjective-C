@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from .action_payload_fields import build_action_payload
+from .action_payload_builder import build_action_payload
 from .action_spec import ActionSpec
 from .environment import WORKFLOW_RUNNER_MODE, WORKFLOW_RUNNER_SURFACE
 from .public_bridge import PACKAGE_BRIDGES

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .action_payload_fields import build_action_payload
+from .action_payload_builder import build_action_payload
 from .action_registry_payload import build_registry_payload
 from .action_spec import ActionSpec
 from .registry_views import action_specs, require_action_spec

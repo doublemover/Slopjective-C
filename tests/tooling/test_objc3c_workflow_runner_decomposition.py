@@ -10,6 +10,8 @@ from scripts.objc3c_workflow.action_handler_integrity import (
     orphan_action_handlers,
 )
 from scripts.objc3c_workflow.action_handler_groups import ACTION_HANDLER_SECTION_GROUPS
+from scripts.objc3c_workflow.action_payload_builder import build_action_payload as owned_build_action_payload
+from scripts.objc3c_workflow.action_payload_fields import build_action_payload
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
 from scripts.objc3c_workflow.action_catalog_groups import ACTION_CATALOG_SECTION_GROUPS
 from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
@@ -63,6 +65,7 @@ def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:
 def test_action_payloads_keep_single_public_package_bridge() -> None:
     payload = list_actions_payload()
 
+    assert build_action_payload is owned_build_action_payload
     assert payload["schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert payload["package_bridge_count"] == 1
     assert payload["public_action_count"] == payload["action_count"]
