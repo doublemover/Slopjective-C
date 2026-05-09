@@ -1,5 +1,6 @@
 #pragma once
 
+#include "parser/contracts/canonical_literal_handoff.h"
 #include "sema/objc3_parser_sema_handoff_contract.h"
 
 inline Objc3ParserSemaPerformanceQualityGuardrails BuildObjc3ParserSemaPerformanceQualityGuardrails(
@@ -428,6 +429,8 @@ struct Objc3ParserSemaHandoffScaffold {
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
   Objc3SemaCanonicalLiteralRejectionCounts
       canonical_literal_rejection_counts;
+  Objc3ParserCanonicalLiteralRejectionHandoff
+      canonical_literal_rejection_handoff;
   Objc3SemaDiagnosticsBus diagnostics_bus;
   Objc3ParserContractSnapshot parser_contract_snapshot;
   bool parser_contract_compatibility_edge_case_detected = false;
@@ -479,6 +482,10 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
       *input.program,
       input.language_profile,
       scaffold.parser_contract_snapshot_compatibility_normalized);
+  scaffold.canonical_literal_rejection_handoff =
+      BuildObjc3ParserCanonicalLiteralRejectionHandoff(
+          scaffold.parser_contract_snapshot,
+          scaffold.canonical_literal_rejection_counts);
   scaffold.expected_ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(*input.program);
   scaffold.parser_contract_ast_shape_fingerprint_matches =
       scaffold.parser_contract_snapshot.ast_shape_fingerprint == scaffold.expected_ast_shape_fingerprint;
@@ -552,6 +559,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.canonical_literal_rejection_handoff.deterministic &&
                            scaffold.parser_sema_integration_closeout_signoff.deterministic &&
                            scaffold.parser_sema_advanced_diagnostics_shard2.deterministic &&
                            scaffold.parser_sema_advanced_edge_compatibility_shard2.deterministic &&

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "sema/objc3_sema_canonical_literal_contract.h"
 #include "sema/objc3_sema_contract.h"
 
 inline constexpr std::uint32_t kObjc3SemaPassManagerContractVersionMajor = 1;
@@ -20,16 +21,6 @@ enum class Objc3SemaPassId {
 
 enum class Objc3SemaLanguageProfile : std::uint8_t {
   Canonical = 0,
-};
-
-struct Objc3SemaCanonicalLiteralRejectionCounts {
-  std::size_t yes_literal_sites = 0;
-  std::size_t no_literal_sites = 0;
-  std::size_t null_literal_sites = 0;
-
-  std::size_t total_literal_sites() const {
-    return yes_literal_sites + no_literal_sites + null_literal_sites;
-  }
 };
 
 inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder = {
