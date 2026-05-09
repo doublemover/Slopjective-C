@@ -43,6 +43,8 @@ inline constexpr const char *kObjc3SemaTypeBoundarySummaryReadinessOwner =
     "native.frontend.sema.type-boundary-summary-readiness";
 inline constexpr const char *kObjc3SemaModuleTypeAbiSummaryReadinessOwner =
     "native.frontend.sema.module-type-abi-summary-readiness";
+inline constexpr const char *kObjc3SemaModuleBoundarySummaryReadinessOwner =
+    "native.frontend.sema.module-boundary-summary-readiness";
 inline constexpr const char *kObjc3SemaModuleSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.module-semantic-parity-publication-readiness";
 inline constexpr const char *kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner =
@@ -1260,6 +1262,35 @@ inline bool IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
          record.module_import_graph_ready && record.deterministic;
 }
 
+struct Objc3SemaModuleBoundarySummaryReadinessRecord {
+  std::string module_boundary_summary_readiness_owner =
+      kObjc3SemaModuleBoundarySummaryReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool namespace_collision_shadowing_ready = false;
+  bool public_private_api_partition_ready = false;
+  bool incremental_module_cache_invalidation_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
+    const Objc3SemaModuleBoundarySummaryReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.module_boundary_summary_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.namespace_collision_shadowing_ready &&
+         record.public_private_api_partition_ready &&
+         record.incremental_module_cache_invalidation_ready &&
+         record.deterministic;
+}
+
 struct Objc3ParserSemaConformanceMatrix {
   std::size_t parser_top_level_declaration_count = 0;
   std::size_t ast_top_level_declaration_count = 0;
@@ -2203,6 +2234,8 @@ struct Objc3SemaParityContractSurface {
       type_boundary_summary_readiness_record;
   Objc3SemaModuleTypeAbiSummaryReadinessRecord
       module_type_abi_summary_readiness_record;
+  Objc3SemaModuleBoundarySummaryReadinessRecord
+      module_boundary_summary_readiness_record;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
@@ -2666,6 +2699,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_selector_property_type_annotation_readiness_record = false;
   bool deterministic_type_boundary_summary_readiness_record = false;
   bool deterministic_module_type_abi_summary_readiness_record = false;
+  bool deterministic_module_boundary_summary_readiness_record = false;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
   bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   bool deterministic_concurrency_parity_publication_readiness_record = false;
@@ -3224,6 +3258,147 @@ BuildObjc3SemaModuleTypeAbiSummaryReadinessRecord(
       record.strict_no_fallback && record.strict_no_compatibility &&
       record.variance_bridge_cast_ready &&
       record.generic_metadata_abi_ready && record.module_import_graph_ready;
+  return record;
+}
+
+inline Objc3SemaModuleBoundarySummaryReadinessRecord
+BuildObjc3SemaModuleBoundarySummaryReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaModuleBoundarySummaryReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.namespace_collision_shadowing_ready =
+      surface.deterministic_namespace_collision_shadowing_handoff &&
+      surface.namespace_collision_shadowing_summary
+              .namespace_collision_shadowing_sites ==
+          surface.namespace_collision_shadowing_sites_total &&
+      surface.namespace_collision_shadowing_summary.namespace_segment_sites ==
+          surface
+              .namespace_collision_shadowing_namespace_segment_sites_total &&
+      surface.namespace_collision_shadowing_summary
+              .import_edge_candidate_sites ==
+          surface
+              .namespace_collision_shadowing_import_edge_candidate_sites_total &&
+      surface.namespace_collision_shadowing_summary.object_pointer_type_sites ==
+          surface
+              .namespace_collision_shadowing_object_pointer_type_sites_total &&
+      surface.namespace_collision_shadowing_summary.pointer_declarator_sites ==
+          surface
+              .namespace_collision_shadowing_pointer_declarator_sites_total &&
+      surface.namespace_collision_shadowing_summary.normalized_sites ==
+          surface.namespace_collision_shadowing_normalized_sites_total &&
+      surface.namespace_collision_shadowing_summary.contract_violation_sites ==
+          surface
+              .namespace_collision_shadowing_contract_violation_sites_total &&
+      surface.namespace_collision_shadowing_summary.namespace_segment_sites <=
+          surface.namespace_collision_shadowing_summary
+              .namespace_collision_shadowing_sites &&
+      surface.namespace_collision_shadowing_summary
+              .import_edge_candidate_sites <=
+          surface.namespace_collision_shadowing_summary
+              .namespace_collision_shadowing_sites &&
+      surface.namespace_collision_shadowing_summary.normalized_sites <=
+          surface.namespace_collision_shadowing_summary
+              .namespace_collision_shadowing_sites &&
+      surface.namespace_collision_shadowing_summary.contract_violation_sites <=
+          surface.namespace_collision_shadowing_summary
+              .namespace_collision_shadowing_sites &&
+      surface.namespace_collision_shadowing_summary.deterministic;
+  record.public_private_api_partition_ready =
+      surface.deterministic_public_private_api_partition_handoff &&
+      surface.public_private_api_partition_summary
+              .public_private_api_partition_sites ==
+          surface.public_private_api_partition_sites_total &&
+      surface.public_private_api_partition_summary.namespace_segment_sites ==
+          surface.public_private_api_partition_namespace_segment_sites_total &&
+      surface.public_private_api_partition_summary.import_edge_candidate_sites ==
+          surface.public_private_api_partition_import_edge_candidate_sites_total &&
+      surface.public_private_api_partition_summary.object_pointer_type_sites ==
+          surface.public_private_api_partition_object_pointer_type_sites_total &&
+      surface.public_private_api_partition_summary.pointer_declarator_sites ==
+          surface.public_private_api_partition_pointer_declarator_sites_total &&
+      surface.public_private_api_partition_summary.normalized_sites ==
+          surface.public_private_api_partition_normalized_sites_total &&
+      surface.public_private_api_partition_summary.contract_violation_sites ==
+          surface.public_private_api_partition_contract_violation_sites_total &&
+      surface.public_private_api_partition_summary.namespace_segment_sites <=
+          surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      surface.public_private_api_partition_summary.import_edge_candidate_sites <=
+          surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      surface.public_private_api_partition_summary.normalized_sites <=
+          surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      surface.public_private_api_partition_summary.contract_violation_sites <=
+          surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      surface.public_private_api_partition_summary.deterministic;
+  record.incremental_module_cache_invalidation_ready =
+      surface.deterministic_incremental_module_cache_invalidation_handoff &&
+      surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites ==
+          surface.incremental_module_cache_invalidation_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .namespace_segment_sites ==
+          surface
+              .incremental_module_cache_invalidation_namespace_segment_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .import_edge_candidate_sites ==
+          surface
+              .incremental_module_cache_invalidation_import_edge_candidate_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .object_pointer_type_sites ==
+          surface
+              .incremental_module_cache_invalidation_object_pointer_type_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .pointer_declarator_sites ==
+          surface
+              .incremental_module_cache_invalidation_pointer_declarator_sites_total &&
+      surface.incremental_module_cache_invalidation_summary.normalized_sites ==
+          surface.incremental_module_cache_invalidation_normalized_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .cache_invalidation_candidate_sites ==
+          surface
+              .incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .contract_violation_sites ==
+          surface
+              .incremental_module_cache_invalidation_contract_violation_sites_total &&
+      surface.incremental_module_cache_invalidation_summary
+              .namespace_segment_sites <=
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary
+              .import_edge_candidate_sites <=
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary.normalized_sites <=
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary
+              .cache_invalidation_candidate_sites <=
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary
+              .contract_violation_sites <=
+          surface.incremental_module_cache_invalidation_summary
+              .incremental_module_cache_invalidation_sites &&
+      surface.incremental_module_cache_invalidation_summary.deterministic;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.module_boundary_summary_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.namespace_collision_shadowing_ready &&
+      record.public_private_api_partition_ready &&
+      record.incremental_module_cache_invalidation_ready;
   return record;
 }
 
@@ -6297,5 +6472,8 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.type_boundary_summary_readiness_record) &&
          surface.deterministic_module_type_abi_summary_readiness_record &&
          IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
-             surface.module_type_abi_summary_readiness_record);
+             surface.module_type_abi_summary_readiness_record) &&
+         surface.deterministic_module_boundary_summary_readiness_record &&
+         IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
+             surface.module_boundary_summary_readiness_record);
 }

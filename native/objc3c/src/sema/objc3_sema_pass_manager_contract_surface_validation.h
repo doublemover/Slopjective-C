@@ -14,82 +14,9 @@
          surface.deterministic_module_type_abi_summary_readiness_record &&
          IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
              surface.module_type_abi_summary_readiness_record) &&
-         surface.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites ==
-             surface.namespace_collision_shadowing_sites_total &&
-         surface.namespace_collision_shadowing_summary.namespace_segment_sites ==
-             surface.namespace_collision_shadowing_namespace_segment_sites_total &&
-         surface.namespace_collision_shadowing_summary.import_edge_candidate_sites ==
-             surface.namespace_collision_shadowing_import_edge_candidate_sites_total &&
-         surface.namespace_collision_shadowing_summary.object_pointer_type_sites ==
-             surface.namespace_collision_shadowing_object_pointer_type_sites_total &&
-         surface.namespace_collision_shadowing_summary.pointer_declarator_sites ==
-             surface.namespace_collision_shadowing_pointer_declarator_sites_total &&
-         surface.namespace_collision_shadowing_summary.normalized_sites ==
-             surface.namespace_collision_shadowing_normalized_sites_total &&
-         surface.namespace_collision_shadowing_summary.contract_violation_sites ==
-             surface.namespace_collision_shadowing_contract_violation_sites_total &&
-         surface.namespace_collision_shadowing_summary.namespace_segment_sites <=
-             surface.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites &&
-         surface.namespace_collision_shadowing_summary.import_edge_candidate_sites <=
-             surface.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites &&
-         surface.namespace_collision_shadowing_summary.normalized_sites <=
-             surface.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites &&
-         surface.namespace_collision_shadowing_summary.contract_violation_sites <=
-             surface.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites &&
-         surface.namespace_collision_shadowing_summary.deterministic &&
-         surface.deterministic_namespace_collision_shadowing_handoff &&
-         surface.public_private_api_partition_summary.public_private_api_partition_sites ==
-             surface.public_private_api_partition_sites_total &&
-         surface.public_private_api_partition_summary.namespace_segment_sites ==
-             surface.public_private_api_partition_namespace_segment_sites_total &&
-         surface.public_private_api_partition_summary.import_edge_candidate_sites ==
-             surface.public_private_api_partition_import_edge_candidate_sites_total &&
-         surface.public_private_api_partition_summary.object_pointer_type_sites ==
-             surface.public_private_api_partition_object_pointer_type_sites_total &&
-         surface.public_private_api_partition_summary.pointer_declarator_sites ==
-             surface.public_private_api_partition_pointer_declarator_sites_total &&
-         surface.public_private_api_partition_summary.normalized_sites ==
-             surface.public_private_api_partition_normalized_sites_total &&
-         surface.public_private_api_partition_summary.contract_violation_sites ==
-             surface.public_private_api_partition_contract_violation_sites_total &&
-         surface.public_private_api_partition_summary.namespace_segment_sites <=
-             surface.public_private_api_partition_summary.public_private_api_partition_sites &&
-         surface.public_private_api_partition_summary.import_edge_candidate_sites <=
-             surface.public_private_api_partition_summary.public_private_api_partition_sites &&
-         surface.public_private_api_partition_summary.normalized_sites <=
-             surface.public_private_api_partition_summary.public_private_api_partition_sites &&
-         surface.public_private_api_partition_summary.contract_violation_sites <=
-             surface.public_private_api_partition_summary.public_private_api_partition_sites &&
-         surface.public_private_api_partition_summary.deterministic &&
-         surface.deterministic_public_private_api_partition_handoff &&
-         surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites ==
-             surface.incremental_module_cache_invalidation_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.namespace_segment_sites ==
-             surface.incremental_module_cache_invalidation_namespace_segment_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.import_edge_candidate_sites ==
-             surface.incremental_module_cache_invalidation_import_edge_candidate_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.object_pointer_type_sites ==
-             surface.incremental_module_cache_invalidation_object_pointer_type_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.pointer_declarator_sites ==
-             surface.incremental_module_cache_invalidation_pointer_declarator_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.normalized_sites ==
-             surface.incremental_module_cache_invalidation_normalized_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.cache_invalidation_candidate_sites ==
-             surface.incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.contract_violation_sites ==
-             surface.incremental_module_cache_invalidation_contract_violation_sites_total &&
-         surface.incremental_module_cache_invalidation_summary.namespace_segment_sites <=
-             surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
-         surface.incremental_module_cache_invalidation_summary.import_edge_candidate_sites <=
-             surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
-         surface.incremental_module_cache_invalidation_summary.normalized_sites <=
-             surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
-         surface.incremental_module_cache_invalidation_summary.cache_invalidation_candidate_sites <=
-             surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
-         surface.incremental_module_cache_invalidation_summary.contract_violation_sites <=
-             surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
-         surface.incremental_module_cache_invalidation_summary.deterministic &&
-         surface.deterministic_incremental_module_cache_invalidation_handoff &&
+         surface.deterministic_module_boundary_summary_readiness_record &&
+         IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
+             surface.module_boundary_summary_readiness_record) &&
          surface.cross_module_conformance_summary.cross_module_conformance_sites ==
              surface.cross_module_conformance_sites_total &&
          surface.cross_module_conformance_summary.namespace_segment_sites ==
