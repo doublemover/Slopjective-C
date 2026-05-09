@@ -98,6 +98,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_fast_path_seed.h
   dispatch/method_invocation.cpp
   dispatch/method_invocation.h
+  dispatch/method_class_chain_resolution.cpp
+  dispatch/method_class_chain_resolution.h
   dispatch/method_cache.cpp
   dispatch/method_cache.h
   dispatch/method_cache_snapshots.cpp
