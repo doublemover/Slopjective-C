@@ -113,6 +113,18 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _canonical_manifest_entries() -> tuple[dict, list[dict]]:
+    manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
+    entries = load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
+    return manifest, entries
+
+
+def _generated_manifest_entries() -> tuple[dict, list[dict]]:
+    manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
+    entries = load_manifest_fixture_entries(FIXTURE_ROOT / "generated" / "manifest.json")
+    return manifest, entries
+
+
 def test_required_behavior_tree_boundaries_exist() -> None:
     assert tuple(REQUIRED_TREE) == PHASE_ORDER
 
@@ -224,21 +236,12 @@ def test_hard_cutover_catalog_links_live_native_behavior_fixtures() -> None:
             assert fixture_path in behavior_paths
 
 
-def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
-    canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
-    generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
-    canonical_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
-    generated_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "generated" / "manifest.json")
+def test_canonical_fixture_manifest_matches_native_behavior_catalog() -> None:
+    canonical_manifest, canonical_entries = _canonical_manifest_entries()
     canonical_boundary = canonical_manifest["boundary"]
-    generated_boundary = generated_manifest["boundary"]
-
     canonical_by_path = {entry["path"]: entry for entry in canonical_entries}
-    generated_paths = {entry["path"] for entry in generated_entries}
 
     assert canonical_by_path
-    assert generated_paths
-    assert set(canonical_by_path).isdisjoint(generated_paths)
-
     behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
     assert set(behavior_by_path) == set(canonical_by_path)
 
@@ -259,6 +262,23 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
     assert canonical_boundary["retired_surface_policy"] == (
         "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata"
     )
+
+
+def test_canonical_and_generated_fixture_paths_are_disjoint() -> None:
+    _, canonical_entries = _canonical_manifest_entries()
+    _, generated_entries = _generated_manifest_entries()
+    canonical_paths = {entry["path"] for entry in canonical_entries}
+    generated_paths = {entry["path"] for entry in generated_entries}
+
+    assert canonical_paths
+    assert generated_paths
+    assert canonical_paths.isdisjoint(generated_paths)
+
+
+def test_generated_fixture_manifest_is_provenance_only() -> None:
+    generated_manifest, generated_entries = _generated_manifest_entries()
+    generated_boundary = generated_manifest["boundary"]
+
     assert generated_manifest["fixtures"] == generated_entries
     assert generated_boundary["kind"] == "generated-contract-artifacts"
     assert generated_boundary["source_of_truth"] == "generator-output"
@@ -283,12 +303,8 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert any(path.is_relative_to(root) for root in generated_allowed_roots)
 
 
-def test_positive_residue_audit_links_absent_and_false_positive_surfaces() -> None:
+def test_positive_residue_audit_policy_is_hard_cutover_only() -> None:
     audit = _load_json(POSITIVE_RESIDUE_AUDIT)
-    outcome_index = _load_json(
-        ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
-    )
-    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
 
     assert audit["result"].startswith("no remaining old-mode")
     assert audit["validation"] == "not run"
@@ -297,6 +313,11 @@ def test_positive_residue_audit_links_absent_and_false_positive_surfaces() -> No
         "lexical_false_positive",
         "negative_fixture",
     }
+
+
+def test_positive_residue_confirmed_rejections_are_strict() -> None:
+    audit = _load_json(POSITIVE_RESIDUE_AUDIT)
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
 
     for relative_path in audit["confirmed_rejections"]:
         path = ROOT / relative_path
@@ -307,18 +328,32 @@ def test_positive_residue_audit_links_absent_and_false_positive_surfaces() -> No
         else:
             assert any(marker in path.stem.lower() for marker in ("negative", "rejected"))
 
+
+def test_positive_residue_absent_retired_positive_paths_remain_absent() -> None:
+    audit = _load_json(POSITIVE_RESIDUE_AUDIT)
+
     for relative_path in audit["absent_retired_positive_paths"]:
         assert not (ROOT / relative_path).exists(), relative_path
 
-    documented_paths = set()
+
+def test_positive_residue_documents_lexical_false_positive_surfaces() -> None:
+    audit = _load_json(POSITIVE_RESIDUE_AUDIT)
+
     for hit in audit["documented_lexical_positive_hits"]:
         path = ROOT / hit["path"]
         assert path.is_file(), hit["path"]
         text = path.read_text(encoding="utf-8")
-        documented_paths.add(hit["path"])
         assert hit["token"] in text
         assert hit["classification"]
         assert "not " in hit["disposition"]
+
+
+def test_positive_residue_outcome_index_uses_documented_false_positive_paths() -> None:
+    audit = _load_json(POSITIVE_RESIDUE_AUDIT)
+    outcome_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
+    )
+    documented_paths = {hit["path"] for hit in audit["documented_lexical_positive_hits"]}
 
     residue_outcome = next(
         entry
@@ -429,7 +464,7 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
     }
 
 
-def test_retired_surface_contract_index_tracks_fixture_outcomes_and_sidecars() -> None:
+def test_retired_surface_contract_index_registers_outcomes() -> None:
     contract_index = _load_json(RETIRED_SURFACE_CONTRACT_INDEX)
     outcome_index = _load_json(
         ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
@@ -437,13 +472,8 @@ def test_retired_surface_contract_index_tracks_fixture_outcomes_and_sidecars() -
     diagnostic_index = _load_json(
         ROOT / "tests" / "conformance" / "hard_cutover_diagnostic_outcome_code_index.json"
     )
-    retired_matrix = _load_json(NATIVE_ROOT / "retired_surface_matrix.json")
-
-    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
     outcomes = {entry["outcome"] for entry in outcome_index["outcomes"]}
     diagnostic_codes = {entry["code"] for entry in diagnostic_index["codes"]}
-    matrix_paths = {entry["fixture_path"] for entry in retired_matrix["entries"]}
-    indexed_paths: set[str] = set()
 
     assert contract_index["catalog"] == "objc3-hard-cutover-retired-surface-fixture-contracts"
     assert contract_index["policy"]["positive_expectation_rule"].endswith(
@@ -459,12 +489,17 @@ def test_retired_surface_contract_index_tracks_fixture_outcomes_and_sidecars() -
         }
         assert family["retired_tags"]
 
+
+def test_retired_surface_contract_index_fixture_sidecars_are_strict() -> None:
+    contract_index = _load_json(RETIRED_SURFACE_CONTRACT_INDEX)
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+
+    for family in contract_index["surface_families"]:
         for entry in family["fixtures"]:
             fixture_path = ROOT / entry["path"]
             sidecar_path = ROOT / entry["sidecar"]
             metadata = _load_json(sidecar_path)
             fixture = behavior_by_path[entry["path"]]
-            indexed_paths.add(entry["path"])
 
             assert entry["positive_expectation"] is False
             assert fixture_path.is_file(), entry["path"]
@@ -481,11 +516,34 @@ def test_retired_surface_contract_index_tracks_fixture_outcomes_and_sidecars() -
             if entry["strict_rejection_name"]:
                 assert fixture_path.name.endswith(STRICT_REJECTION_NAME_SUFFIXES)
 
+
+def test_retired_surface_contract_index_absent_support_surfaces_are_closed() -> None:
+    contract_index = _load_json(RETIRED_SURFACE_CONTRACT_INDEX)
+    outcome_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_behavior_outcome_owner_index.json"
+    )
+    diagnostic_index = _load_json(
+        ROOT / "tests" / "conformance" / "hard_cutover_diagnostic_outcome_code_index.json"
+    )
+    outcomes = {entry["outcome"] for entry in outcome_index["outcomes"]}
+    diagnostic_codes = {entry["code"] for entry in diagnostic_index["codes"]}
+
     for absence in contract_index["absent_support_surfaces"]:
         assert absence["positive_expectation"] is False
         assert absence["behavior_outcome"] in outcomes
         assert absence["diagnostic_owner"] in diagnostic_codes
         assert absence["canonical_disposition"] == "absent-support"
+
+
+def test_retired_surface_contract_index_covers_retired_matrix_paths() -> None:
+    contract_index = _load_json(RETIRED_SURFACE_CONTRACT_INDEX)
+    retired_matrix = _load_json(NATIVE_ROOT / "retired_surface_matrix.json")
+    matrix_paths = {entry["fixture_path"] for entry in retired_matrix["entries"]}
+    indexed_paths = {
+        entry["path"]
+        for family in contract_index["surface_families"]
+        for entry in family["fixtures"]
+    }
 
     assert matrix_paths <= indexed_paths
 
