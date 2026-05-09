@@ -25,7 +25,14 @@
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
     "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/continuation_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+    "native/objc3c/src/runtime/concurrency/executor.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_snapshot.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
@@ -112,7 +119,17 @@
   "measured_query_sources": [
     {
       "kind": "runtime-source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/concurrency/continuation_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+        "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+        "native/objc3c/src/runtime/concurrency/executor.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_snapshot.cpp",
+        "native/objc3c/src/runtime/concurrency/task_snapshot.cpp"
+      ],
       "patterns": [
         "objc3_runtime_allocate_async_continuation_i32",
         "objc3_runtime_handoff_async_continuation_to_executor_i32",

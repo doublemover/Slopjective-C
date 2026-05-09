@@ -35,7 +35,10 @@ Current corrective focus:
 Representative live proof paths:
 
 - runtime library:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp`
+  - `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
+  - `native/objc3c/src/runtime/memory/arc.cpp`
 - compile and artifact publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`

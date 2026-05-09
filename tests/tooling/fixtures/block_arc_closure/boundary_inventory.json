@@ -16,7 +16,11 @@
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+    "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_block_arc_conformance.py",
     "scripts/check_objc3c_runnable_block_arc_end_to_end.py",
@@ -87,7 +91,8 @@
       "summary": "ARC runtime support, autoreleasepool traffic, and weak/current-property helper behavior are live today, but the supported closure path still depends on private runtime-owned helpers and snapshots rather than a widened public ABI.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp",
         "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
       ],
@@ -141,7 +146,13 @@
     {
       "query_id": "block-arc-runtime-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+        "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp"
+      ],
       "patterns": [
         "objc3_runtime_promote_block_i32",
         "objc3_runtime_invoke_block_i32",

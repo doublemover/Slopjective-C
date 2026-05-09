@@ -12,7 +12,11 @@
     "native-output-truth-tied-to-real-compile-and-linked-probe-paths"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/storage/current_property_binding.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.h",
     "native/objc3c/src/lower/objc3_lowering_contract.h",
@@ -69,7 +73,7 @@
       "summary": "Unresolved sends still terminate with a strict dispatch error after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp"
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
       ],
       "successor_issue_codes": [
         "M316-B001",
@@ -148,7 +152,12 @@
     {
       "query_id": "runtime-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/storage/current_property_binding.cpp",
+        "native/objc3c/src/runtime/storage/current_property_value.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp"
+      ],
       "patterns": [
         "objc3_runtime_dispatch_i32",
         "objc3_runtime_bind_current_property_context_for_testing",
