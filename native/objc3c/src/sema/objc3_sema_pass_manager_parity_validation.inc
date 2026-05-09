@@ -293,6 +293,17 @@
       result.core_semantic_summary_readiness_record;
   result.parity_surface.deterministic_core_semantic_summary_readiness_record =
       result.deterministic_core_semantic_summary_readiness_record;
+  result.selector_property_type_annotation_readiness_record =
+      BuildObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
+          input, result.parity_surface);
+  result.deterministic_selector_property_type_annotation_readiness_record =
+      IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
+          result.selector_property_type_annotation_readiness_record);
+  result.parity_surface.selector_property_type_annotation_readiness_record =
+      result.selector_property_type_annotation_readiness_record;
+  result.parity_surface
+      .deterministic_selector_property_type_annotation_readiness_record =
+      result.deterministic_selector_property_type_annotation_readiness_record;
   result.parity_surface.ready =
       result.parity_surface
           .deterministic_parity_closeout_publication_readiness_record &&
@@ -306,3 +317,8 @@
           .deterministic_core_semantic_summary_readiness_record &&
       IsReadyObjc3SemaCoreSemanticSummaryReadinessRecord(
           result.parity_surface.core_semantic_summary_readiness_record) &&
+      result.parity_surface
+          .deterministic_selector_property_type_annotation_readiness_record &&
+      IsReadyObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
+          result.parity_surface
+              .selector_property_type_annotation_readiness_record) &&
