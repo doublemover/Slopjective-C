@@ -6,6 +6,7 @@
 #include "diag/objc3_diag_utils.h"
 #include "driver/objc3_driver_command_dispatch.h"
 #include "driver/objc3_driver_shell.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "driver/objc3_objc3_path.h"
 
 int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
@@ -17,7 +18,7 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
   std::string shell_error;
   if (!ValidateObjc3DriverShellInputs(cli_options, input_kind, shell_error)) {
     std::cerr << shell_error << "\n";
-    return 2;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kInputUnavailable);
   }
 
   return DispatchObjc3DriverCommand(cli_options, input_kind);

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "driver/objc3_driver_conformance_surface.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "lower/objc3_lowering_contract.h"
 
@@ -52,10 +53,11 @@ int PublishObjc3DriverConformancePublicationSidecar(
           conformance_publication_artifact_json,
           conformance_publication_error)) {
     std::cerr << conformance_publication_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteConformancePublicationArtifact(cli_options.out_dir,
                                       cli_options.emit_prefix,
                                       conformance_publication_artifact_json);
-  return 0;
+  return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
 }

@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_file_io.h"
 #include "io/objc3_process.h"
 
@@ -39,8 +40,10 @@ Objc3DriverObjectBackendResult EmitObjc3DriverObjectBackend(
                                                         scaffold_reason)) {
     std::cerr << "toolchain/runtime readiness contract fail-closed: "
               << scaffold_reason << "\n";
-    result.status_code = 3;
-    result.compile_status = 3;
+    result.status_code = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kNativeToolchainFailure);
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kNativeToolchainFailure);
     return result;
   }
 

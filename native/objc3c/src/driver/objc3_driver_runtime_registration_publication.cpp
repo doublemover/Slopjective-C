@@ -6,6 +6,7 @@
 
 #include "driver/objc3_driver_runtime_registration_descriptor_inputs.h"
 #include "driver/objc3_driver_runtime_registration_manifest_inputs.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 
@@ -26,7 +27,8 @@ PublishObjc3DriverRuntimeRegistrationArtifacts(
           object_backend.object_out,
           result.linker_retention_artifacts,
           linker_retention_error)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << linker_retention_error << "\n";
     return result;
   }
@@ -43,20 +45,23 @@ PublishObjc3DriverRuntimeRegistrationArtifacts(
 
   if (!IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
           artifacts.runtime_translation_unit_registration_manifest_summary)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << "translation-unit registration manifest template not ready\n";
     return result;
   }
   if (!IsReadyObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
           artifacts
               .runtime_registration_descriptor_image_root_source_surface_summary)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << "registration descriptor/image-root source surface not ready\n";
     return result;
   }
   if (!IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(
           artifacts.runtime_registration_descriptor_frontend_closure_summary)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << "registration descriptor frontend closure not ready\n";
     return result;
   }
@@ -74,7 +79,8 @@ PublishObjc3DriverRuntimeRegistrationArtifacts(
           artifacts.runtime_metadata_binary.size(),
           registration_manifest_json,
           registration_manifest_error)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << registration_manifest_error << "\n";
     return result;
   }
@@ -95,7 +101,8 @@ PublishObjc3DriverRuntimeRegistrationArtifacts(
           result.linker_retention_artifacts,
           registration_descriptor_json,
           registration_descriptor_error)) {
-    result.compile_status = 125;
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
     std::cerr << registration_descriptor_error << "\n";
     return result;
   }

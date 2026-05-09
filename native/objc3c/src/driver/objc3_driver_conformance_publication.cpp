@@ -5,6 +5,7 @@
 
 #include "driver/objc3_driver_conformance_publication_sidecar.h"
 #include "driver/objc3_driver_conformance_release_artifact_publication.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "lower/objc3_lowering_contract.h"
 
@@ -14,11 +15,13 @@ int PublishObjc3DriverConformanceArtifacts(
   if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
           artifacts.versioned_conformance_report_lowering_summary)) {
     std::cerr << "versioned conformance-report lowering summary not ready\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   if (artifacts.versioned_conformance_report_artifact_json.empty()) {
     std::cerr << "versioned conformance-report artifact payload missing\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteVersionedConformanceReportArtifact(
       cli_options.out_dir,

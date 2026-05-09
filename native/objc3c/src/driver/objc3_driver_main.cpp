@@ -5,6 +5,7 @@
 
 #include "driver/objc3_cli_options.h"
 #include "driver/objc3_compilation_driver.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "driver/objc3_llvm_capability_routing.h"
 
 int RunObjc3DriverMain(int argc, char **argv) {
@@ -12,11 +13,11 @@ int RunObjc3DriverMain(int argc, char **argv) {
   std::string cli_error;
   if (!ParseObjc3CliOptions(argc, argv, cli_options, cli_error)) {
     std::cerr << cli_error << "\n";
-    return 2;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kInputUnavailable);
   }
   if (!ApplyObjc3LLVMCapabilityRouting(cli_options, cli_error)) {
     std::cerr << cli_error << "\n";
-    return 2;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kInputUnavailable);
   }
 
   return RunObjc3CompilationDriver(cli_options);

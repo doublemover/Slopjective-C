@@ -1,5 +1,6 @@
 #include "driver/objc3_driver_metaprogramming_cache_publication.h"
 
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 
@@ -10,7 +11,7 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
   error_message.clear();
   if (!artifacts
            .metaprogramming_macro_host_process_cache_runtime_integration_ready) {
-    return 0;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   }
 
   std::string artifact_json;
@@ -43,12 +44,13 @@ int PublishObjc3DriverMetaprogrammingCacheArtifact(
           cli_options.input,
           artifact_json,
           error_message)) {
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
 
   WriteMetaprogrammingMacroHostProcessCacheArtifact(
       cli_options.out_dir,
       cli_options.emit_prefix,
       artifact_json);
-  return 0;
+  return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
 }

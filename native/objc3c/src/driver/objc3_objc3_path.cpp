@@ -11,6 +11,7 @@
 #include "driver/objc3_driver_metaprogramming_cache_publication.h"
 #include "driver/objc3_driver_object_backend.h"
 #include "driver/objc3_driver_runtime_registration_publication.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "driver/objc3_driver_toolchain_runtime_gate.h"
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
@@ -25,14 +26,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             cli_options.emit_prefix,
             retired_claim_sidecar_error)) {
       std::cerr << retired_claim_sidecar_error << "\n";
-      return 125;
+      return Objc3DriverStatusValue(
+          Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
 
     std::string conformance_selection_error;
     if (!ValidateObjc3DriverConformanceSelection(
             cli_options, conformance_selection_error)) {
       std::cerr << conformance_selection_error << "\n";
-      return 125;
+      return Objc3DriverStatusValue(
+          Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
 
     const std::string source = ReadText(cli_options.input);
@@ -88,11 +91,13 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             toolchain_runtime_core_feature_reason)) {
       std::cerr << "toolchain/runtime core feature fail-closed: "
                 << toolchain_runtime_core_feature_reason << "\n";
-      return 3;
+      return Objc3DriverStatusValue(
+          Objc3DriverStatusCode::kNativeToolchainFailure);
     }
-    return 0;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   } catch (const std::exception &io_error) {
     std::cerr << "artifact io failure: " << io_error.what() << "\n";
-    return 3;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kNativeToolchainFailure);
   }
 }

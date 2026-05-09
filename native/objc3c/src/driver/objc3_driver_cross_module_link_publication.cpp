@@ -9,6 +9,7 @@
 
 #include "driver/objc3_driver_cross_module_imported_input.h"
 #include "driver/objc3_driver_cross_module_link_plan_inputs.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 #include "pipeline/objc3_runtime_import_surface.h"
@@ -22,7 +23,7 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
         &linker_retention_artifacts,
     const std::filesystem::path &object_out) {
   if (cli_options.imported_runtime_surface_paths.empty()) {
-    return 0;
+    return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   }
 
   std::vector<Objc3ImportedRuntimeModuleSurface> imported_surfaces;
@@ -40,7 +41,8 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
     if (!TryLoadObjc3ImportedRuntimeModuleSurface(
             absolute_import_path, imported_surface, import_surface_error)) {
       std::cerr << import_surface_error << "\n";
-      return 125;
+      return Objc3DriverStatusValue(
+          Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
 
     Objc3ImportedRuntimeModulePackagingPeerArtifacts peer_artifacts;
@@ -48,7 +50,8 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
     if (!TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
             imported_surface, peer_artifacts, peer_artifacts_error)) {
       std::cerr << peer_artifacts_error << "\n";
-      return 125;
+      return Objc3DriverStatusValue(
+          Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
     imported_surfaces.push_back(std::move(imported_surface));
     imported_peer_artifacts.push_back(std::move(peer_artifacts));
@@ -76,7 +79,8 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
           cross_module_linker_response_payload,
           link_plan_error)) {
     std::cerr << link_plan_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
 
   WriteCrossModuleRuntimeLinkPlanArtifact(
@@ -87,5 +91,5 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
       cli_options.out_dir,
       cli_options.emit_prefix,
       cross_module_linker_response_payload);
-  return 0;
+  return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
 }

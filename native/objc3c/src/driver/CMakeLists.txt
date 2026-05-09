@@ -30,6 +30,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_runtime_registration_descriptor_inputs.cpp
   objc3_driver_runtime_registration_manifest_inputs.cpp
   objc3_driver_runtime_registration_publication.cpp
+  objc3_driver_status_codes.cpp
   objc3_driver_toolchain_runtime_gate.cpp
   objc3_driver_main.cpp
   objc3_driver_shell.cpp

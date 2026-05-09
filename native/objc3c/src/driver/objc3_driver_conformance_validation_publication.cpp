@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
@@ -73,7 +74,8 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           validation_artifact_json,
           validation_error)) {
     std::cerr << validation_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteConformanceValidationArtifact(cli_options.out_dir,
                                      cli_options.emit_prefix,
@@ -92,7 +94,8 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           release_evidence_operation_json,
           release_evidence_operation_error)) {
     std::cerr << release_evidence_operation_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteReleaseEvidenceOperationArtifact(cli_options.out_dir,
                                         cli_options.emit_prefix,
@@ -113,7 +116,8 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           dashboard_status_json,
           dashboard_status_error)) {
     std::cerr << dashboard_status_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteDashboardStatusArtifact(cli_options.out_dir,
                                cli_options.emit_prefix,
@@ -134,7 +138,8 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           advanced_feature_gate_artifact_json,
           advanced_feature_gate_error)) {
     std::cerr << advanced_feature_gate_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteAdvancedFeatureGateArtifact(cli_options.out_dir,
                                    cli_options.emit_prefix,
@@ -158,10 +163,11 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           release_candidate_matrix_artifact_json,
           release_candidate_matrix_error)) {
     std::cerr << release_candidate_matrix_error << "\n";
-    return 125;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   WriteReleaseCandidateMatrixArtifact(cli_options.out_dir,
                                       cli_options.emit_prefix,
                                       release_candidate_matrix_artifact_json);
-  return 0;
+  return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
 }

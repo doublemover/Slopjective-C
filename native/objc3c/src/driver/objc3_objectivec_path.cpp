@@ -15,6 +15,7 @@
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
+#include "driver/objc3_driver_status_codes.h"
 #include "driver/objc3_objectivec_symbol_manifest.h"
 
 namespace fs = std::filesystem;
@@ -38,7 +39,8 @@ int RunObjectiveCPath(const Objc3CliOptions &cli_options) {
       clang_disposeTranslationUnit(tu);
     }
     clang_disposeIndex(index);
-    return 1;
+    return Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kDiagnosticsPresent);
   }
 
   WriteManifestArtifact(cli_options.out_dir,
@@ -50,5 +52,8 @@ int RunObjectiveCPath(const Objc3CliOptions &cli_options) {
 
   clang_disposeTranslationUnit(tu);
   clang_disposeIndex(index);
-  return compile_status == 0 ? 0 : 3;
+  return compile_status == 0
+             ? Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess)
+             : Objc3DriverStatusValue(
+                   Objc3DriverStatusCode::kNativeToolchainFailure);
 }
