@@ -103,6 +103,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_fast_path_seed.h
   dispatch/method_invocation.cpp
   dispatch/method_invocation.h
+  dispatch/method_list_resolution.cpp
+  dispatch/method_list_resolution.h
   dispatch/method_class_chain_resolution.cpp
   dispatch/method_class_chain_resolution.h
   dispatch/method_cache.cpp
@@ -110,6 +112,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_cache_snapshots.cpp
   dispatch/method_resolution_tables.cpp
   dispatch/method_resolution_tables.h
+  dispatch/protocol_selector_declarations.cpp
+  dispatch/protocol_selector_declarations.h
   dispatch/runtime_method_return.cpp
   dispatch/runtime_method_return.h
   dispatch/runtime_resolution_records.h
