@@ -46,6 +46,33 @@ OWNER_FACADES = {
         ),
         "handlers": (WORKFLOW_ROOT / "action_handlers_reporting_release.py",),
     },
+    "ecosystem_publication": {
+        "owners": (
+            "ecosystem_publication_adoption",
+            "ecosystem_publication_contracts",
+            "ecosystem_publication_governance",
+            "ecosystem_publication_metadata",
+            "ecosystem_publication_operations",
+            "ecosystem_publication_package",
+            "ecosystem_publication_planning",
+        ),
+        "exports": (
+            "action_build_package_lock",
+            "action_validate_package_authoring",
+            "action_validate_package_mirror",
+            "action_validate_package_ecosystem",
+            "action_validate_runnable_package_ecosystem",
+            "action_validate_long_horizon_operations",
+            "action_publish_long_horizon_operations",
+            "action_validate_adoption_legibility",
+            "action_publish_adoption_legibility",
+            "action_validate_governance_sustainability",
+            "action_publish_governance_sustainability",
+            "action_publish_planning_issues",
+            "action_check_planning_publication_drift",
+        ),
+        "handlers": (WORKFLOW_ROOT / "action_handlers_tooling_developer.py",),
+    },
 }
 
 FORBIDDEN_FACADE_IMPLEMENTATION_IMPORTS = (

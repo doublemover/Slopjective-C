@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from ..commands import run
+from .ecosystem_publication_adoption import (
+    action_publish_adoption_legibility,
+    action_validate_adoption_legibility,
+)
 from .ecosystem_publication_contracts import (
     ADOPTION_LEGIBILITY_INTEGRATION_PY,
     ADOPTION_LEGIBILITY_PUBLICATION_PY,
@@ -20,68 +23,30 @@ from .ecosystem_publication_contracts import (
     RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
     PublicationArtifactContract,
 )
+from .ecosystem_publication_governance import (
+    action_publish_governance_sustainability,
+    action_validate_governance_sustainability,
+)
 from .ecosystem_publication_metadata import (
     ACTION_FEEDS,
     PACKAGE_FEED_METADATA,
     PublicationFeedMetadata,
 )
-
-
-def _run_publication_action(action_name: str, rest: list[str] | None = None) -> int:
-    contract = PUBLICATION_ARTIFACT_CONTRACTS[action_name]
-    return run(contract.command(rest))
-
-
-def action_build_package_lock(_: list[str]) -> int:
-    return _run_publication_action("build-package-lock")
-
-
-def action_validate_package_authoring(_: list[str]) -> int:
-    return _run_publication_action("validate-package-authoring")
-
-
-def action_validate_package_mirror(_: list[str]) -> int:
-    return _run_publication_action("validate-package-mirror")
-
-
-def action_validate_package_ecosystem(_: list[str]) -> int:
-    return _run_publication_action("validate-package-ecosystem")
-
-
-def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
-    return _run_publication_action("validate-runnable-package-ecosystem")
-
-
-def action_validate_long_horizon_operations(_: list[str]) -> int:
-    return _run_publication_action("validate-long-horizon-operations")
-
-
-def action_publish_long_horizon_operations(_: list[str]) -> int:
-    return _run_publication_action("publish-long-horizon-operations")
-
-
-def action_validate_adoption_legibility(_: list[str]) -> int:
-    return _run_publication_action("validate-adoption-legibility")
-
-
-def action_publish_adoption_legibility(_: list[str]) -> int:
-    return _run_publication_action("publish-adoption-legibility")
-
-
-def action_validate_governance_sustainability(_: list[str]) -> int:
-    return _run_publication_action("validate-governance-sustainability")
-
-
-def action_publish_governance_sustainability(_: list[str]) -> int:
-    return _run_publication_action("publish-governance-sustainability")
-
-
-def action_publish_planning_issues(rest: list[str]) -> int:
-    return _run_publication_action("publish-planning-issues", rest)
-
-
-def action_check_planning_publication_drift(rest: list[str]) -> int:
-    return _run_publication_action("check-planning-publication-drift", rest)
+from .ecosystem_publication_operations import (
+    action_publish_long_horizon_operations,
+    action_validate_long_horizon_operations,
+)
+from .ecosystem_publication_package import (
+    action_build_package_lock,
+    action_validate_package_authoring,
+    action_validate_package_ecosystem,
+    action_validate_package_mirror,
+    action_validate_runnable_package_ecosystem,
+)
+from .ecosystem_publication_planning import (
+    action_check_planning_publication_drift,
+    action_publish_planning_issues,
+)
 
 
 __all__ = [
