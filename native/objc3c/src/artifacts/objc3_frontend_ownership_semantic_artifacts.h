@@ -37,6 +37,12 @@ BuildArcDiagnosticsFixitLoweringContract(
 BuildBlockLiteralCaptureLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface);
 
+[[nodiscard]] Objc3BlockSourceModelCompletionContract
+BuildBlockSourceModelCompletionContract(const Objc3Program &program);
+
+[[nodiscard]] Objc3BlockSourceStorageAnnotationContract
+BuildBlockSourceStorageAnnotationContract(const Objc3Program &program);
+
 [[nodiscard]] Objc3BlockAbiInvokeTrampolineLoweringContract
 BuildBlockAbiInvokeTrampolineLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface);
