@@ -22,11 +22,13 @@ remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces. The
-current covered head is `98d10a61c` (`HC split lowering IR handoff ownership`),
-with 186 committed owner/evidence commits after `9676679c2`. `tmp/` reports,
-generated summaries, and remote issue state are not closeout evidence here
-unless the relevant owner surface is checked in and the deferred validation or
-tracker operation actually ran.
+current covered head is `4fddfacb7` (`HC split frontend result API owners`). The
+baseline refresh through `98d10a61c` covered 186 committed owner/evidence
+commits after `9676679c2`, and later docs-only refreshes fold committed owner
+work forward to the current head. `tmp/` reports, generated summaries, and
+remote issue state are not closeout evidence here unless the relevant owner
+surface is checked in and the deferred validation or tracker operation actually
+ran.
 
 The same local refresh document now also folds in the follow-up committed owner
 wave after `f66452822` through `f4bf6228e`. That follow-up covers JSON value
@@ -116,6 +118,15 @@ commits that landed after the first docs commit.
 | `#8138`, `#8142`, `#8149` | `c36b89616` | LLVM developer-tooling owner splits refresh internal tooling workflow evidence under the public command boundary. |
 | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `b4f3a295f` | Runtime image registration table record, shape, and walk owners refresh runtime image registration and public runtime contract evidence. |
 | `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed fallback behavior remains rejection or strict-error evidence. |
+
+## Post-`98d10a61c` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8142`, `#8145`, `#8148`, `#8149`, `#8150` | `cef820749`, `58edb82a8`, `8e79a7ab4`, `bb0815a69`, `5089b6b14`, `cd854e616`, `229f3218e`, `68ff5f47f` | Workflow, command, source-hygiene, schema, release, package, and final-readiness owner splits refresh internal control-plane evidence under the npm bridge. |
+| `#8132`, `#8134`, `#8135`, `#8136`, `#8137`, `#8140`, `#8141`, `#8146`, `#8147` | `0fb488ff8`, `03d0eda67`, `22a814b61`, `aab946e78`, `ae5a996ff`, `abb2eaeeb`, `e25918639` | Parser, sema, lowering, IR, frontend, and fixture owner splits refresh compiler architecture and behavior-boundary evidence without widening public language support. |
+| `#8133`, `#8141`, `#8143`, `#8147` | `16292722b`, `92176025a`, `394471c38`, `d090c3e84`, `4fddfacb7` | Runtime dispatch, public-result, memory, and frontend result API owner splits refresh runtime/API contract evidence; unsupported dispatch remains rejection or strict-error evidence. |
+| `#8138`, `#8145`, `#8148`, `#8150` | `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd` | Artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits remain evidence projections and do not create report-only completion. |
 
 ## #8132
 

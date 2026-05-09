@@ -415,6 +415,78 @@
         },
         {
           "kind": "source",
+          "path": "native/objc3c/src/config/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/support/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/diag/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/diagnostics/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/libobjc3c_frontend/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/driver/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/cli/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/tools/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
           "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
         },
         {

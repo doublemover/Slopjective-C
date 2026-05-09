@@ -21,8 +21,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "98d10a61c",
-    "current_head_summary": "HC split lowering IR handoff ownership"
+    "current_head": "4fddfacb7",
+    "current_head_summary": "HC split frontend result API owners"
   },
   "current_branch_owner_refresh": {
     "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
@@ -108,6 +108,86 @@
         "primary_commits": [
           "9b229ea0c",
           "b0506e2d9"
+        ]
+      }
+    ]
+  },
+  "current_head_docs_only_refresh": {
+    "since_commit": "98d10a61c",
+    "through_commit": "4fddfacb7",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_owner_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8145",
+          "#8148",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "cef820749",
+          "58edb82a8",
+          "8e79a7ab4",
+          "bb0815a69",
+          "5089b6b14",
+          "cd854e616",
+          "229f3218e",
+          "68ff5f47f"
+        ]
+      },
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8135",
+          "#8136",
+          "#8137",
+          "#8140",
+          "#8141",
+          "#8146",
+          "#8147"
+        ],
+        "primary_commits": [
+          "0fb488ff8",
+          "03d0eda67",
+          "22a814b61",
+          "aab946e78",
+          "ae5a996ff",
+          "abb2eaeeb",
+          "e25918639"
+        ]
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8141",
+          "#8143",
+          "#8147"
+        ],
+        "primary_commits": [
+          "16292722b",
+          "92176025a",
+          "394471c38",
+          "d090c3e84",
+          "4fddfacb7"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8145",
+          "#8148",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5ae39dfa8",
+          "b48450e96",
+          "0114f53ef",
+          "b5a547493",
+          "466f8ddcd"
         ]
       }
     ]

@@ -353,3 +353,22 @@ This post-`6efdaf8f9` refresh references `f7d0edb3e`, `0e5af63ab`,
 
 This post-`a20f67559` refresh references `442f1d2e2`, `c18da62ff`,
 `d7779f6ac`, `ff67214ec`, `0be9037f1`, and `9676679c2`.
+
+This post-`98d10a61c` docs-only refresh folds the committed branch head forward
+to `4fddfacb7` without running validation, GitHub commands, push, or remote
+issue edits. It groups the latest owner evidence as follows:
+
+- workflow, command, schema, release, package, source-hygiene, and final
+  readiness owners: `cef820749`, `58edb82a8`, `8e79a7ab4`, `bb0815a69`,
+  `5089b6b14`, `cd854e616`, `229f3218e`, `68ff5f47f`
+- parser, sema, lowering, IR, frontend, and fixture owners: `0fb488ff8`,
+  `03d0eda67`, `22a814b61`, `aab946e78`, `ae5a996ff`, `abb2eaeeb`,
+  `e25918639`
+- runtime dispatch, public-result, memory, and frontend result API owners:
+  `16292722b`, `92176025a`, `394471c38`, `d090c3e84`, `4fddfacb7`
+- artifact, IO, JSON/schema, site, runbook, and capability-truth owners:
+  `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
+
+These remain committed-owner evidence only. They do not introduce direct helper
+commands, compatibility aliases, fallback paths, report-only completion, or
+remote closeout claims.

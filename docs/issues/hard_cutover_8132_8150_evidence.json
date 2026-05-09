@@ -19,8 +19,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "98d10a61c",
-    "current_head_summary": "HC split lowering IR handoff ownership"
+    "current_head": "4fddfacb7",
+    "current_head_summary": "HC split frontend result API owners"
   },
   "current_branch_owner_refresh": {
     "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
@@ -114,6 +114,90 @@
           "b0506e2d9"
         ],
         "owner_boundary": "hygiene docs capability ownership and evidence-owner contracts keep docs support claims tied to committed branch evidence"
+      }
+    ]
+  },
+  "current_head_docs_only_refresh": {
+    "since_commit": "98d10a61c",
+    "through_commit": "4fddfacb7",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_owner_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8145",
+          "#8148",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "cef820749",
+          "58edb82a8",
+          "8e79a7ab4",
+          "bb0815a69",
+          "5089b6b14",
+          "cd854e616",
+          "229f3218e",
+          "68ff5f47f"
+        ],
+        "owner_boundary": "workflow, command, source-hygiene, schema, release, package, and final-readiness owner splits are internal control-plane evidence under the npm bridge"
+      },
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8135",
+          "#8136",
+          "#8137",
+          "#8140",
+          "#8141",
+          "#8146",
+          "#8147"
+        ],
+        "primary_commits": [
+          "0fb488ff8",
+          "03d0eda67",
+          "22a814b61",
+          "aab946e78",
+          "ae5a996ff",
+          "abb2eaeeb",
+          "e25918639"
+        ],
+        "owner_boundary": "parser, sema, lowering, IR, frontend, and fixture owner splits refresh compiler architecture and behavior-boundary evidence without widening public language support"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8141",
+          "#8143",
+          "#8147"
+        ],
+        "primary_commits": [
+          "16292722b",
+          "92176025a",
+          "394471c38",
+          "d090c3e84",
+          "4fddfacb7"
+        ],
+        "owner_boundary": "runtime dispatch, public-result, memory, and frontend result API owner splits are runtime/API contract evidence; unsupported dispatch remains rejection or strict-error evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8145",
+          "#8148",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5ae39dfa8",
+          "b48450e96",
+          "0114f53ef",
+          "b5a547493",
+          "466f8ddcd"
+        ],
+        "owner_boundary": "artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits are evidence projections and do not create report-only completion"
       }
     ]
   },
