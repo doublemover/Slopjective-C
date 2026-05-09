@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.case_factories import CaseFactory
-from objc3c_runtime_acceptance.case_factories import CaseFactoryContext
 from objc3c_runtime_acceptance.case_factories import build_all_case_factories
+from objc3c_runtime_acceptance.case_factory_types import CaseFactory
+from objc3c_runtime_acceptance.case_factory_types import CaseFactoryContext
 
 
 @dataclass(frozen=True)
