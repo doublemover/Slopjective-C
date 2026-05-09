@@ -729,132 +729,6 @@ int objc3_runtime_copy_memory_management_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-int objc3_runtime_copy_arc_debug_state_for_testing(
-    objc3_runtime_arc_debug_state_snapshot *snapshot) {
-  if (snapshot == nullptr) {
-    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
-  }
-
-  snapshot->retain_call_count = g_runtime_arc_debug_retain_call_count;
-  snapshot->release_call_count = g_runtime_arc_debug_release_call_count;
-  snapshot->autorelease_call_count = g_runtime_arc_debug_autorelease_call_count;
-  snapshot->autoreleasepool_push_count =
-      g_runtime_arc_debug_autoreleasepool_push_count;
-  snapshot->autoreleasepool_pop_count =
-      g_runtime_arc_debug_autoreleasepool_pop_count;
-  snapshot->current_property_read_count =
-      g_runtime_arc_debug_current_property_read_count;
-  snapshot->current_property_write_count =
-      g_runtime_arc_debug_current_property_write_count;
-  snapshot->current_property_exchange_count =
-      g_runtime_arc_debug_current_property_exchange_count;
-  snapshot->weak_current_property_load_count =
-      g_runtime_arc_debug_weak_current_property_load_count;
-  snapshot->weak_current_property_store_count =
-      g_runtime_arc_debug_weak_current_property_store_count;
-  snapshot->last_retain_value = g_runtime_arc_debug_last_retain_value;
-  snapshot->last_release_value = g_runtime_arc_debug_last_release_value;
-  snapshot->last_autorelease_value = g_runtime_arc_debug_last_autorelease_value;
-  snapshot->last_property_read_value =
-      g_runtime_arc_debug_last_property_read_value;
-  snapshot->last_property_written_value =
-      g_runtime_arc_debug_last_property_written_value;
-  snapshot->last_property_exchange_previous_value =
-      g_runtime_arc_debug_last_property_exchange_previous_value;
-  snapshot->last_property_exchange_new_value =
-      g_runtime_arc_debug_last_property_exchange_new_value;
-  snapshot->last_weak_loaded_value = g_runtime_arc_debug_last_weak_loaded_value;
-  snapshot->last_weak_stored_value = g_runtime_arc_debug_last_weak_stored_value;
-  snapshot->last_property_receiver = g_runtime_arc_debug_last_property_receiver;
-  snapshot->last_property_name =
-      g_runtime_arc_debug_last_property_name.empty()
-          ? nullptr
-          : g_runtime_arc_debug_last_property_name.c_str();
-  snapshot->last_property_owner_identity =
-      g_runtime_arc_debug_last_property_owner_identity.empty()
-          ? nullptr
-          : g_runtime_arc_debug_last_property_owner_identity.c_str();
-  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-}
-
-int objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing(
-    objc3_runtime_block_arc_runtime_abi_snapshot *snapshot) {
-  if (snapshot == nullptr) {
-    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
-  }
-
-  snapshot->private_runtime_abi_ready = 1;
-  snapshot->public_runtime_header_unchanged = 1;
-  snapshot->deterministic = 1;
-  snapshot->live_runtime_block_handle_count = 0;
-  snapshot->block_promote_call_count = g_runtime_block_promote_call_count;
-  snapshot->block_invoke_call_count = g_runtime_block_invoke_call_count;
-  snapshot->retain_call_count = g_runtime_arc_debug_retain_call_count;
-  snapshot->release_call_count = g_runtime_arc_debug_release_call_count;
-  snapshot->autorelease_call_count = g_runtime_arc_debug_autorelease_call_count;
-  snapshot->autoreleasepool_push_count =
-      g_runtime_arc_debug_autoreleasepool_push_count;
-  snapshot->autoreleasepool_pop_count =
-      g_runtime_arc_debug_autoreleasepool_pop_count;
-  snapshot->current_property_read_count =
-      g_runtime_arc_debug_current_property_read_count;
-  snapshot->current_property_write_count =
-      g_runtime_arc_debug_current_property_write_count;
-  snapshot->current_property_exchange_count =
-      g_runtime_arc_debug_current_property_exchange_count;
-  snapshot->weak_current_property_load_count =
-      g_runtime_arc_debug_weak_current_property_load_count;
-  snapshot->weak_current_property_store_count =
-      g_runtime_arc_debug_weak_current_property_store_count;
-  snapshot->last_promoted_block_handle = g_runtime_last_promoted_block_handle;
-  snapshot->last_promote_has_pointer_capture_storage =
-      g_runtime_last_promote_has_pointer_capture_storage;
-  snapshot->last_invoked_block_handle = g_runtime_last_invoked_block_handle;
-  snapshot->last_block_invoke_result = g_runtime_last_block_invoke_result;
-  snapshot->last_retain_value = g_runtime_arc_debug_last_retain_value;
-  snapshot->last_release_value = g_runtime_arc_debug_last_release_value;
-  snapshot->last_autorelease_value = g_runtime_arc_debug_last_autorelease_value;
-  snapshot->block_promote_symbol = "objc3_runtime_promote_block_i32";
-  snapshot->block_invoke_symbol = "objc3_runtime_invoke_block_i32";
-  snapshot->retain_symbol = "objc3_runtime_retain_i32";
-  snapshot->release_symbol = "objc3_runtime_release_i32";
-  snapshot->autorelease_symbol = "objc3_runtime_autorelease_i32";
-  snapshot->autoreleasepool_push_symbol =
-      "objc3_runtime_push_autoreleasepool_scope";
-  snapshot->autoreleasepool_pop_symbol =
-      "objc3_runtime_pop_autoreleasepool_scope";
-  snapshot->current_property_read_symbol =
-      "objc3_runtime_read_current_property_i32";
-  snapshot->current_property_write_symbol =
-      "objc3_runtime_write_current_property_i32";
-  snapshot->current_property_exchange_symbol =
-      "objc3_runtime_exchange_current_property_i32";
-  snapshot->bind_current_property_context_symbol =
-      "objc3_runtime_bind_current_property_context_for_testing";
-  snapshot->clear_current_property_context_symbol =
-      "objc3_runtime_clear_current_property_context_for_testing";
-  snapshot->weak_current_property_load_symbol =
-      "objc3_runtime_load_weak_current_property_i32";
-  snapshot->weak_current_property_store_symbol =
-      "objc3_runtime_store_weak_current_property_i32";
-  snapshot->arc_debug_state_snapshot_symbol =
-      "objc3_runtime_copy_arc_debug_state_for_testing";
-  snapshot->runtime_abi_boundary_model =
-      "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
-  snapshot->block_runtime_model =
-      "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
-  snapshot->arc_runtime_model =
-      "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints";
-  snapshot->fail_closed_model =
-      "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening";
-
-  RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  snapshot->live_runtime_block_handle_count =
-      static_cast<std::uint64_t>(state.runtime_blocks_by_handle.size());
-  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-}
-
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -945,18 +819,20 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
 // while the ABI remains bootstrap-internal rather than public.
 extern "C" int objc3_runtime_read_current_property_i32(void) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  ++g_runtime_arc_debug_current_property_read_count;
-  RecordArcDebugPropertyContext(frame);
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.current_property_read_count;
+  objc3c::runtime::RecordRuntimeArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
-    g_runtime_arc_debug_last_property_read_value = 0;
+    arc_debug.last_property_read_value = 0;
     return 0;
   }
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
-    g_runtime_arc_debug_last_property_read_value = 0;
+    arc_debug.last_property_read_value = 0;
     return 0;
   }
   int value = 0;
@@ -964,15 +840,17 @@ extern "C" int objc3_runtime_read_current_property_i32(void) {
              state, instance_it->second, *frame->runtime_property_accessor, value)
                          ? value
                          : 0;
-  g_runtime_arc_debug_last_property_read_value = result;
+  arc_debug.last_property_read_value = result;
   return result;
 }
 
 extern "C" void objc3_runtime_write_current_property_i32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  ++g_runtime_arc_debug_current_property_write_count;
-  g_runtime_arc_debug_last_property_written_value = value;
-  RecordArcDebugPropertyContext(frame);
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.current_property_write_count;
+  arc_debug.last_property_written_value = value;
+  objc3c::runtime::RecordRuntimeArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
     return;
@@ -989,19 +867,21 @@ extern "C" void objc3_runtime_write_current_property_i32(int value) {
 
 extern "C" int objc3_runtime_exchange_current_property_i32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  ++g_runtime_arc_debug_current_property_exchange_count;
-  g_runtime_arc_debug_last_property_exchange_new_value = value;
-  RecordArcDebugPropertyContext(frame);
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.current_property_exchange_count;
+  arc_debug.last_property_exchange_new_value = value;
+  objc3c::runtime::RecordRuntimeArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
-    g_runtime_arc_debug_last_property_exchange_previous_value = 0;
+    arc_debug.last_property_exchange_previous_value = 0;
     return 0;
   }
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
-    g_runtime_arc_debug_last_property_exchange_previous_value = 0;
+    arc_debug.last_property_exchange_previous_value = 0;
     return 0;
   }
   int previous_value = 0;
@@ -1010,7 +890,7 @@ extern "C" int objc3_runtime_exchange_current_property_i32(int value) {
              previous_value)
                          ? previous_value
                          : 0;
-  g_runtime_arc_debug_last_property_exchange_previous_value = result;
+  arc_debug.last_property_exchange_previous_value = result;
   return result;
 }
 
@@ -1050,7 +930,7 @@ extern "C" int objc3_runtime_bind_current_property_context_for_testing(
 
   RuntimeDispatchFrame *testing_frame = SetRuntimeTestingDispatchFrame(
       receiver, instance_it->second.base_identity, accessor);
-  RecordArcDebugPropertyContext(testing_frame);
+  objc3c::runtime::RecordRuntimeArcDebugPropertyContext(testing_frame);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

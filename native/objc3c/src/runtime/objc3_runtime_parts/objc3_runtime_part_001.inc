@@ -23,7 +23,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "runtime/blocks/block_runtime_records.h"
 #include "runtime/concurrency/runtime_debug.h"
 #include "runtime/dispatch/dispatch_result_state.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
@@ -55,7 +54,6 @@ using objc3c::runtime::EmittedProtocolRecord;
 using objc3c::runtime::HasTerminalStrictDispatchError;
 using objc3c::runtime::KeyPathSlot;
 using objc3c::runtime::MethodCacheEntry;
-using objc3c::runtime::PromotePointerCaptureCellsIntoRuntimeOwnedStorage;
 using objc3c::runtime::PropertyLookupCacheEntry;
 using objc3c::runtime::PropertyLookupCacheKey;
 using objc3c::runtime::PropertyLookupCacheKeyHash;
@@ -63,8 +61,6 @@ using objc3c::runtime::ProcessRuntimeState;
 using objc3c::runtime::RealizedClassNode;
 using objc3c::runtime::RealizedPropertyAccessor;
 using objc3c::runtime::RegisteredImageMetadata;
-using objc3c::runtime::RuntimeBlockInvokeFn;
-using objc3c::runtime::RuntimeBlockRecord;
 using objc3c::runtime::RuntimeInstanceRecord;
 using objc3c::runtime::RuntimeState;
 using objc3c::runtime::RuntimeDispatchFrame;
@@ -118,35 +114,6 @@ using objc3c::runtime::StoreDispatchResultContractUnlocked;
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 
-thread_local std::uint64_t g_runtime_arc_debug_retain_call_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_release_call_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_autorelease_call_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_autoreleasepool_push_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_autoreleasepool_pop_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_current_property_read_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_current_property_write_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_current_property_exchange_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_load_count = 0;
-thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_store_count = 0;
-thread_local int g_runtime_arc_debug_last_retain_value = 0;
-thread_local int g_runtime_arc_debug_last_release_value = 0;
-thread_local int g_runtime_arc_debug_last_autorelease_value = 0;
-thread_local int g_runtime_arc_debug_last_property_read_value = 0;
-thread_local int g_runtime_arc_debug_last_property_written_value = 0;
-thread_local int g_runtime_arc_debug_last_property_exchange_previous_value = 0;
-thread_local int g_runtime_arc_debug_last_property_exchange_new_value = 0;
-thread_local int g_runtime_arc_debug_last_weak_loaded_value = 0;
-thread_local int g_runtime_arc_debug_last_weak_stored_value = 0;
-thread_local int g_runtime_arc_debug_last_property_receiver = 0;
-thread_local std::string g_runtime_arc_debug_last_property_name;
-thread_local std::string g_runtime_arc_debug_last_property_owner_identity;
-thread_local std::uint64_t g_runtime_block_promote_call_count = 0;
-thread_local std::uint64_t g_runtime_block_invoke_call_count = 0;
-thread_local int g_runtime_last_promoted_block_handle = 0;
-thread_local int g_runtime_last_promote_has_pointer_capture_storage = 0;
-thread_local int g_runtime_last_invoked_block_handle = 0;
-thread_local int g_runtime_last_block_invoke_result = 0;
-
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
@@ -160,61 +127,10 @@ std::size_t AlignTo(std::size_t value, std::size_t alignment) {
 
 void ResetRuntimeAutoreleasepoolStateForTesting() {
   objc3c::runtime::ResetRuntimeAutoreleasepoolStateForTesting();
-  g_runtime_arc_debug_retain_call_count = 0;
-  g_runtime_arc_debug_release_call_count = 0;
-  g_runtime_arc_debug_autorelease_call_count = 0;
-  g_runtime_arc_debug_autoreleasepool_push_count = 0;
-  g_runtime_arc_debug_autoreleasepool_pop_count = 0;
-  g_runtime_arc_debug_current_property_read_count = 0;
-  g_runtime_arc_debug_current_property_write_count = 0;
-  g_runtime_arc_debug_current_property_exchange_count = 0;
-  g_runtime_arc_debug_weak_current_property_load_count = 0;
-  g_runtime_arc_debug_weak_current_property_store_count = 0;
-  g_runtime_arc_debug_last_retain_value = 0;
-  g_runtime_arc_debug_last_release_value = 0;
-  g_runtime_arc_debug_last_autorelease_value = 0;
-  g_runtime_arc_debug_last_property_read_value = 0;
-  g_runtime_arc_debug_last_property_written_value = 0;
-  g_runtime_arc_debug_last_property_exchange_previous_value = 0;
-  g_runtime_arc_debug_last_property_exchange_new_value = 0;
-  g_runtime_arc_debug_last_weak_loaded_value = 0;
-  g_runtime_arc_debug_last_weak_stored_value = 0;
-  g_runtime_arc_debug_last_property_receiver = 0;
-  g_runtime_arc_debug_last_property_name.clear();
-  g_runtime_arc_debug_last_property_owner_identity.clear();
-  g_runtime_block_promote_call_count = 0;
-  g_runtime_block_invoke_call_count = 0;
-  g_runtime_last_promoted_block_handle = 0;
-  g_runtime_last_promote_has_pointer_capture_storage = 0;
-  g_runtime_last_invoked_block_handle = 0;
-  g_runtime_last_block_invoke_result = 0;
+  objc3c::runtime::ResetRuntimeArcDebugStateForTesting();
+  objc3c::runtime::ResetRuntimeBlockDebugStateForTesting();
   objc3c::runtime::ResetRuntimeErrorBridgeStateForTesting();
   objc3c::runtime::ResetRuntimeConcurrencyDebugStateForTesting();
-}
-
-void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
-  g_runtime_arc_debug_last_property_receiver =
-      frame != nullptr ? frame->receiver : 0;
-  g_runtime_arc_debug_last_property_name.clear();
-  g_runtime_arc_debug_last_property_owner_identity.clear();
-  if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
-      frame->runtime_property_accessor->property_descriptor == nullptr) {
-    return;
-  }
-  const EmittedPropertyDescriptor &descriptor =
-      *frame->runtime_property_accessor->property_descriptor;
-  if (descriptor.property_name != nullptr) {
-    g_runtime_arc_debug_last_property_name = descriptor.property_name;
-  }
-  if (descriptor.declaration_owner_identity != nullptr) {
-    g_runtime_arc_debug_last_property_owner_identity =
-        descriptor.declaration_owner_identity;
-  } else if (descriptor.export_owner_identity != nullptr) {
-    g_runtime_arc_debug_last_property_owner_identity =
-        descriptor.export_owner_identity;
-  } else if (descriptor.owner_identity != nullptr) {
-    g_runtime_arc_debug_last_property_owner_identity = descriptor.owner_identity;
-  }
 }
 
 bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value) {

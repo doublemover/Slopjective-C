@@ -15,9 +15,13 @@ set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
 add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp
   blocks/block_capture_storage.h
+  blocks/block_arc_snapshot.cpp
   blocks/block_record.cpp
   blocks/block_record.h
+  blocks/block_runtime_api.cpp
   blocks/block_runtime_records.h
+  blocks/block_runtime_state.cpp
+  blocks/block_runtime_state.h
   classes/category_attachment.cpp
   classes/category_attachment.h
   classes/class_graph.cpp
@@ -63,8 +67,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   images/multi_image_ordering.h
   images/registration.cpp
   images/registration.h
+  images/registration_snapshots.cpp
+  images/registration_snapshots.h
   memory/arc.cpp
   memory/arc.h
+  memory/arc_debug_state.cpp
+  memory/arc_debug_state.h
   memory/autorelease_pool.cpp
   memory/autorelease_pool.h
   metadata/runtime_capability_contracts.h

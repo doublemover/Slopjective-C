@@ -10,21 +10,27 @@
 // native async fixtures execute through allocation, handoff, and resume before
 // returning their final value.
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
-  ++g_runtime_arc_debug_weak_current_property_load_count;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.weak_current_property_load_count;
   const int result = objc3_runtime_read_current_property_i32();
-  g_runtime_arc_debug_last_weak_loaded_value = result;
+  arc_debug.last_weak_loaded_value = result;
   return result;
 }
 
 extern "C" void objc3_runtime_store_weak_current_property_i32(int value) {
-  ++g_runtime_arc_debug_weak_current_property_store_count;
-  g_runtime_arc_debug_last_weak_stored_value = value;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.weak_current_property_store_count;
+  arc_debug.last_weak_stored_value = value;
   objc3_runtime_write_current_property_i32(value);
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {
-  ++g_runtime_arc_debug_retain_call_count;
-  g_runtime_arc_debug_last_retain_value = value;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.retain_call_count;
+  arc_debug.last_retain_value = value;
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   RetainRuntimeValueUnlocked(state, value);
@@ -32,8 +38,10 @@ extern "C" int objc3_runtime_retain_i32(int value) {
 }
 
 extern "C" int objc3_runtime_release_i32(int value) {
-  ++g_runtime_arc_debug_release_call_count;
-  g_runtime_arc_debug_last_release_value = value;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.release_call_count;
+  arc_debug.last_release_value = value;
   RuntimeState &state = ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
   ReleaseRuntimeValueUnlocked(state, value);
@@ -41,111 +49,14 @@ extern "C" int objc3_runtime_release_i32(int value) {
 }
 
 extern "C" int objc3_runtime_autorelease_i32(int value) {
-  ++g_runtime_arc_debug_autorelease_call_count;
-  g_runtime_arc_debug_last_autorelease_value = value;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.autorelease_call_count;
+  arc_debug.last_autorelease_value = value;
   if (objc3c::runtime::RuntimeAutoreleasePoolCanEnqueue(value)) {
     EnqueueAutoreleaseValue(value);
   }
   return value;
-}
-
-extern "C" int objc3_runtime_promote_block_i32(
-    const void *storage, std::uint64_t storage_size_bytes,
-    int has_pointer_capture_storage) {
-  // block-runtime allocation/copy-dispose/invoke anchor: promotion
-  // now admits pointer-capture block storage, preserves helper pointers, and
-  // executes copy-helper setup before publishing the runtime-owned block
-  // handle.
-  // byref-forwarding/heap-promotion/ownership-interop anchor:
-  // pointer-capture promotion also rewrites capture slots onto runtime-owned
-  // heap cells before helper execution so escaping blocks do not retain stack
-  // addresses after the source frame returns.
-  if (storage == nullptr ||
-      !objc3c::runtime::RuntimeBlockStorageSizeIsSupported(
-          static_cast<std::size_t>(storage_size_bytes))) {
-    return 0;
-  }
-  ++g_runtime_block_promote_call_count;
-  g_runtime_last_promote_has_pointer_capture_storage =
-      has_pointer_capture_storage != 0 ? 1 : 0;
-  RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  int block_handle = state.next_runtime_block_handle;
-  while (block_handle <= 0 ||
-         state.runtime_instances_by_receiver.find(block_handle) !=
-             state.runtime_instances_by_receiver.end() ||
-         state.runtime_blocks_by_handle.find(block_handle) !=
-             state.runtime_blocks_by_handle.end()) {
-    ++block_handle;
-  }
-  state.next_runtime_block_handle = block_handle + 1;
-  RuntimeBlockRecord record;
-  record.block_handle = block_handle;
-  record.has_pointer_capture_storage =
-      objc3c::runtime::RuntimeBlockCaptureStorageNeedsCopyDispose(
-          has_pointer_capture_storage);
-  record.storage_size_bytes =
-      static_cast<std::size_t>(std::max<std::uint64_t>(storage_size_bytes, 1u));
-  const std::size_t storage_word_count =
-      (record.storage_size_bytes + sizeof(std::uint64_t) - 1u) /
-      sizeof(std::uint64_t);
-  record.storage_words.assign(storage_word_count, 0u);
-  std::memcpy(record.storage_words.data(), storage, record.storage_size_bytes);
-  std::memcpy(&record.invoke, record.storage_words.data(), sizeof(record.invoke));
-  if (record.has_pointer_capture_storage) {
-    if (record.storage_size_bytes < sizeof(void *) * 3u) {
-      return 0;
-    }
-    std::memcpy(&record.copy_helper,
-                reinterpret_cast<const unsigned char *>(record.storage_words.data()) +
-                    sizeof(void *),
-                sizeof(record.copy_helper));
-    std::memcpy(&record.dispose_helper,
-                reinterpret_cast<const unsigned char *>(record.storage_words.data()) +
-                    sizeof(void *) * 2u,
-                sizeof(record.dispose_helper));
-    if (!PromotePointerCaptureCellsIntoRuntimeOwnedStorage(record)) {
-      return 0;
-    }
-    if (record.copy_helper != nullptr) {
-      record.copy_helper(record.storage_words.data());
-    }
-  }
-  if (record.invoke == nullptr) {
-    return 0;
-  }
-  state.runtime_blocks_by_handle.emplace(block_handle, std::move(record));
-  g_runtime_last_promoted_block_handle = block_handle;
-  return block_handle;
-}
-
-extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
-                                              int a2, int a3) {
-  // block-runtime allocation/copy-dispose/invoke anchor: invoke now
-  // works for any promoted runtime block record with a concrete invoke thunk,
-  // including pointer-capture storage promoted through the private helper
-  // surface.
-  ++g_runtime_block_invoke_call_count;
-  g_runtime_last_invoked_block_handle = block_handle;
-  RuntimeBlockInvokeFn invoke = nullptr;
-  std::vector<std::uint64_t> storage_words;
-  {
-    RuntimeState &state = ProcessRuntimeState();
-    std::lock_guard<std::mutex> lock(state.mutex);
-    const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
-    if (block_it == state.runtime_blocks_by_handle.end() ||
-        block_it->second.invoke == nullptr) {
-      return 0;
-    }
-    invoke = block_it->second.invoke;
-    storage_words = block_it->second.storage_words;
-  }
-  if (invoke == nullptr || storage_words.empty()) {
-    return 0;
-  }
-  const int result = invoke(storage_words.data(), a0, a1, a2, a3);
-  g_runtime_last_block_invoke_result = result;
-  return result;
 }
 
 // runtime-memory-management implementation anchor: autoreleasepool
@@ -165,14 +76,18 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
 // invalidation through this same private pool-frame implementation.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
-  ++g_runtime_arc_debug_autoreleasepool_push_count;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.autoreleasepool_push_count;
 }
 
 // hardening anchor: task-runtime probes now rely on these existing
 // autoreleasepool helpers plus reset-stable snapshot state to prove
 // cancellation/autorelease determinism without widening the public ABI.
 extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
-  ++g_runtime_arc_debug_autoreleasepool_pop_count;
+  objc3c::runtime::RuntimeArcDebugState &arc_debug =
+      objc3c::runtime::RuntimeArcDebugStateForCurrentThread();
+  ++arc_debug.autoreleasepool_pop_count;
   const std::vector<int> values = PopRuntimeAutoreleasePoolFrameValues();
   if (values.empty()) {
     return;
