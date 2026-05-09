@@ -35,6 +35,8 @@
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
   bool deterministic_diagnostics_publication_record = false;
+  Objc3SemaPassFlowRecoveryRecord pass_flow_recovery_record;
+  bool deterministic_pass_flow_recovery_record = false;
   Objc3SemaPassManagerPublicationRecord pass_manager_publication_record;
   bool deterministic_pass_manager_publication_record = false;
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;

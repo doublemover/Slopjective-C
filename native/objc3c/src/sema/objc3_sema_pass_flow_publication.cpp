@@ -56,6 +56,13 @@ void PublishObjc3SemaPassFlowSummary(
       IsReadyObjc3SemaDiagnosticsPublicationRecord(
           result.diagnostics_publication_record);
 
+  result.pass_flow_recovery_record = BuildObjc3SemaPassFlowRecoveryRecord(
+      result.sema_pass_flow_summary,
+      result.diagnostics_publication_record);
+  result.deterministic_pass_flow_recovery_record =
+      IsReadyObjc3SemaPassFlowRecoveryRecord(
+          result.pass_flow_recovery_record);
+
   result.pass_manager_publication_record =
       BuildObjc3SemaPassManagerPublicationRecord(
           handoff_publication.owner_record,

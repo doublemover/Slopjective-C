@@ -98,10 +98,9 @@
       result.parity_surface.diagnostics_bus_publish_consistent &&
       result.parity_surface.diagnostics_canonicalized &&
       result.parity_surface.diagnostics_hardening_satisfied &&
-      result.parity_surface.pass_flow_recovery_replay_contract_satisfied &&
-      !result.parity_surface.pass_flow_recovery_replay_key.empty() &&
-      result.parity_surface.pass_flow_recovery_replay_key_deterministic &&
-      result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied &&
+      result.parity_surface.deterministic_pass_flow_recovery_record &&
+      IsReadyObjc3SemaPassFlowRecoveryRecord(
+          result.parity_surface.pass_flow_recovery_record) &&
       result.parity_surface.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(
           result.parity_surface.pass_manager_publication_record) &&
@@ -251,10 +250,9 @@
       IsReadyObjc3SemaDiagnosticsPublicationRecord(
           result.parity_surface.diagnostics_publication_record);
   const bool closeout_pass_flow_recovery_ready =
-      result.parity_surface.pass_flow_recovery_replay_contract_satisfied &&
-      !result.parity_surface.pass_flow_recovery_replay_key.empty() &&
-      result.parity_surface.pass_flow_recovery_replay_key_deterministic &&
-      result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied;
+      result.parity_surface.deterministic_pass_flow_recovery_record &&
+      IsReadyObjc3SemaPassFlowRecoveryRecord(
+          result.parity_surface.pass_flow_recovery_record);
   const bool closeout_type_metadata_handoff_ready =
       result.parity_surface.deterministic_type_metadata_handoff &&
       result.parity_surface.globals_total ==

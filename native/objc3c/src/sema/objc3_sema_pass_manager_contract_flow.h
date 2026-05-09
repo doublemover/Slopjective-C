@@ -29,6 +29,8 @@ inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
     "native.frontend.sema.diagnostic-stage";
 inline constexpr const char *kObjc3SemaDiagnosticsPublicationOwner =
     "native.frontend.sema.diagnostics-publication";
+inline constexpr const char *kObjc3SemaPassFlowRecoveryOwner =
+    "native.frontend.sema.pass-flow-recovery";
 inline constexpr const char *kObjc3SemaPassManagerPublicationOwner =
     "native.frontend.sema.pass-manager-publication";
 inline constexpr const char *kObjc3SemaTypeMetadataPublicationOwner =
@@ -317,6 +319,102 @@ BuildObjc3SemaDiagnosticsPublicationRecord(
       record.diagnostics_canonicalized &&
       record.diagnostics_hardening_satisfied &&
       record.semantic_diagnostics_ready;
+  return record;
+}
+
+struct Objc3SemaPassFlowRecoveryRecord {
+  std::string pass_flow_recovery_owner = kObjc3SemaPassFlowRecoveryOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string parser_sema_contract_handoff_owner =
+      kObjc3ParserSemaContractHandoffOwner;
+  std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string diagnostics_publication_owner =
+      kObjc3SemaDiagnosticsPublicationOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool recovery_counts_as_success = false;
+  bool parser_recovery_replay_ready = false;
+  bool parser_recovery_replay_case_present = false;
+  bool parser_recovery_replay_case_passed = false;
+  bool recovery_replay_contract_satisfied = false;
+  std::string recovery_replay_key;
+  bool recovery_replay_key_deterministic = false;
+  bool recovery_determinism_hardening_satisfied = false;
+  bool diagnostics_publication_ready = false;
+  bool robustness_guardrails_satisfied = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaPassFlowRecoveryRecord(
+    const Objc3SemaPassFlowRecoveryRecord &record) {
+  return Objc3SemaOwnerIsExplicit(record.pass_flow_recovery_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         !record.recovery_counts_as_success &&
+         record.parser_recovery_replay_ready &&
+         record.parser_recovery_replay_case_present &&
+         record.parser_recovery_replay_case_passed &&
+         record.recovery_replay_contract_satisfied &&
+         record.recovery_replay_key.rfind("sema-pass-recovery:v1:", 0) == 0 &&
+         record.recovery_replay_key_deterministic &&
+         record.recovery_determinism_hardening_satisfied &&
+         record.diagnostics_publication_ready &&
+         record.robustness_guardrails_satisfied && record.deterministic;
+}
+
+inline Objc3SemaPassFlowRecoveryRecord
+BuildObjc3SemaPassFlowRecoveryRecord(
+    const Objc3SemaPassFlowSummary &pass_flow_summary,
+    const Objc3SemaDiagnosticsPublicationRecord &diagnostics_record) {
+  Objc3SemaPassFlowRecoveryRecord record;
+  record.stage_input_owner = pass_flow_summary.stage_input_owner;
+  record.diagnostic_handoff_owner = pass_flow_summary.diagnostic_handoff_owner;
+  record.owner_model = pass_flow_summary.owner_model;
+  record.strict_no_fallback = pass_flow_summary.strict_no_fallback;
+  record.strict_no_compatibility = pass_flow_summary.strict_no_compatibility;
+  record.recovery_counts_as_success =
+      pass_flow_summary.recovery_counts_as_success;
+  record.parser_recovery_replay_ready =
+      pass_flow_summary.parser_recovery_replay_ready;
+  record.parser_recovery_replay_case_present =
+      pass_flow_summary.parser_recovery_replay_case_present;
+  record.parser_recovery_replay_case_passed =
+      pass_flow_summary.parser_recovery_replay_case_passed;
+  record.recovery_replay_contract_satisfied =
+      pass_flow_summary.recovery_replay_contract_satisfied;
+  record.recovery_replay_key = pass_flow_summary.recovery_replay_key;
+  record.recovery_replay_key_deterministic =
+      pass_flow_summary.recovery_replay_key_deterministic;
+  record.recovery_determinism_hardening_satisfied =
+      pass_flow_summary.recovery_determinism_hardening_satisfied;
+  record.diagnostics_publication_ready =
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(diagnostics_record);
+  record.robustness_guardrails_satisfied =
+      pass_flow_summary.robustness_guardrails_satisfied;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(record.pass_flow_recovery_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
+      Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      !record.recovery_counts_as_success &&
+      record.parser_recovery_replay_ready &&
+      record.parser_recovery_replay_case_present &&
+      record.parser_recovery_replay_case_passed &&
+      record.recovery_replay_contract_satisfied &&
+      record.recovery_replay_key.rfind("sema-pass-recovery:v1:", 0) == 0 &&
+      record.recovery_replay_key_deterministic &&
+      record.recovery_determinism_hardening_satisfied &&
+      record.diagnostics_publication_ready &&
+      record.robustness_guardrails_satisfied;
   return record;
 }
 
@@ -1007,6 +1105,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
+  Objc3SemaPassFlowRecoveryRecord pass_flow_recovery_record;
   Objc3SemaPassManagerPublicationRecord pass_manager_publication_record;
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
   Objc3SemaParityValidationRecord parity_validation_record;
@@ -1436,6 +1535,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   bool deterministic_parser_sema_integration_closeout_signoff = false;
   bool deterministic_diagnostics_publication_record = false;
+  bool deterministic_pass_flow_recovery_record = false;
   bool deterministic_pass_manager_publication_record = false;
   bool deterministic_type_metadata_publication_record = false;
   bool deterministic_parity_validation_record = false;
@@ -1572,6 +1672,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
          IsReadyObjc3SemaDiagnosticsPublicationRecord(
              surface.diagnostics_publication_record) &&
+         surface.deterministic_pass_flow_recovery_record &&
+         IsReadyObjc3SemaPassFlowRecoveryRecord(
+             surface.pass_flow_recovery_record) &&
          IsReadyObjc3SemaPassManagerPublicationRecord(
              surface.pass_manager_publication_record) &&
          surface.deterministic_type_metadata_publication_record &&
@@ -1810,10 +1913,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.diagnostics_bus_publish_consistent &&
          surface.diagnostics_canonicalized &&
          surface.diagnostics_hardening_satisfied &&
-         surface.pass_flow_recovery_replay_contract_satisfied &&
-         !surface.pass_flow_recovery_replay_key.empty() &&
-         surface.pass_flow_recovery_replay_key_deterministic &&
-         surface.pass_flow_recovery_determinism_hardening_satisfied &&
+         surface.deterministic_pass_flow_recovery_record &&
+         IsReadyObjc3SemaPassFlowRecoveryRecord(
+             surface.pass_flow_recovery_record) &&
          surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
          surface.deterministic_type_metadata_handoff && surface.deterministic_atomic_memory_order_mapping &&
          surface.deterministic_vector_type_lowering &&

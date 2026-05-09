@@ -634,6 +634,10 @@
       result.deterministic_diagnostics_publication_record &&
       IsReadyObjc3SemaDiagnosticsPublicationRecord(
           result.parity_surface.diagnostics_publication_record);
+  result.parity_surface.deterministic_pass_flow_recovery_record =
+      result.deterministic_pass_flow_recovery_record &&
+      IsReadyObjc3SemaPassFlowRecoveryRecord(
+          result.parity_surface.pass_flow_recovery_record);
   result.parity_surface.deterministic_pass_manager_publication_record =
       result.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(
