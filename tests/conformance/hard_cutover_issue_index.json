@@ -654,7 +654,8 @@
         "#8150"
       ],
       "evidence_paths": [
-        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
         "native/objc3c/src/sema/objc3_sema_contract_core.h",
         "native/objc3c/src/sema/objc3_sema_contract_type_handoff.h"
       ]

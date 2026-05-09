@@ -71,8 +71,10 @@ def test_driver_cli_module_exists_and_main_calls_it() -> None:
 def test_cmake_registers_driver_target() -> None:
     cmake = _read(DRIVER_CMAKE_FILE)
     src_cmake = _read(SRC_CMAKE_FILE)
+    removed_monolith = DRIVER_HEADER.with_name("objc3_cli_" + "options.cpp")
     assert "add_library(objc3c_driver STATIC" in cmake
-    assert "objc3_cli_options.cpp" not in cmake
+    assert not removed_monolith.exists()
+    assert removed_monolith.name not in cmake
     for driver_cli_option_source in DRIVER_CLI_OPTION_SOURCES:
         assert driver_cli_option_source.name in cmake
     assert "objc3_driver_main.cpp" in cmake

@@ -2,7 +2,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PARSER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_contract.h"
-PARSER_SOURCE = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser.cpp"
+PARSER_CORE_PRELUDE = (
+    ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_core_profile_prelude.inc"
+)
+PARSER_CORE_BODY = (
+    ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_core_blocks_and_expressions.inc"
+)
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMA_HEADER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
 SEMA_HANDOFF_SCAFFOLD = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_parser_sema_handoff_scaffold.h"
@@ -60,13 +65,14 @@ def test_parser_contract_exports_parsed_program_aliases() -> None:
     assert "Objc3ParsedProgramAst(" in contract
 
 
-def test_parser_uses_ast_builder_scaffold() -> None:
-    parser = _read(PARSER_SOURCE)
-    assert '#include "parse/objc3_ast_builder.h"' in parser
-    assert "Objc3AstBuilder ast_builder_;" in parser
-    assert "ast_builder_.BeginProgram()" in parser
-    assert "ast_builder_.AddGlobalDecl(program, std::move(*decl));" in parser
-    assert "ast_builder_.AddFunctionDecl(program, std::move(*fn));" in parser
+def test_parser_core_uses_ast_builder_scaffold() -> None:
+    prelude = _read(PARSER_CORE_PRELUDE)
+    parser_core = _read(PARSER_CORE_BODY)
+    assert '#include "parse/objc3_ast_builder.h"' in prelude
+    assert "Objc3AstBuilder ast_builder_;" in parser_core
+    assert "ast_builder_.BeginProgram()" in parser_core
+    assert "ast_builder_.AddGlobalDecl(program, std::move(*decl));" in parser_core
+    assert "ast_builder_.AddFunctionDecl(program, std::move(*fn));" in parser_core
 
 
 def test_sema_header_consumes_parser_contract_outputs() -> None:

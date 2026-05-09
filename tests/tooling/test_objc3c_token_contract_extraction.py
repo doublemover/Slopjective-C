@@ -5,7 +5,12 @@ TOKEN_CONTRACT_HEADER = ROOT / "native" / "objc3c" / "src" / "token" / "objc3_to
 AST_HEADER = ROOT / "native" / "objc3c" / "src" / "ast" / "objc3_ast.h"
 LEXER_HEADER = ROOT / "native" / "objc3c" / "src" / "lex" / "objc3_lexer.h"
 PARSER_HEADER = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser.h"
-PARSER_SOURCE = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser.cpp"
+PARSER_CORE_DECLARATIONS = (
+    ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_core_objc_declarations.inc"
+)
+PARSER_CORE_METHOD_PARAMETERS = (
+    ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_core_method_parameters.inc"
+)
 
 
 def _read(path: Path) -> str:
@@ -47,6 +52,9 @@ def test_ast_uses_sema_token_contract_metadata() -> None:
 
 
 def test_parser_populates_sema_token_contract_metadata() -> None:
-    parser = _read(PARSER_SOURCE)
-    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator" in parser
-    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix" in parser
+    declarations = _read(PARSER_CORE_DECLARATIONS)
+    method_parameters = _read(PARSER_CORE_METHOD_PARAMETERS)
+    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator" in declarations
+    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix" in declarations
+    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator" in method_parameters
+    assert "MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix" in method_parameters
