@@ -179,9 +179,9 @@ struct Objc3IRFrontendMetadata {
   bool arc_mode_enabled = false;
   bool versioned_conformance_report_lowering_ready = false;
   std::string versioned_conformance_report_lowering_replay_key;
-  std::size_t migration_legacy_yes = 0;
-  std::size_t migration_legacy_no = 0;
-  std::size_t migration_legacy_null = 0;
+  std::size_t canonical_literal_yes_rejection_sites = 0;
+  std::size_t canonical_literal_no_rejection_sites = 0;
+  std::size_t canonical_literal_null_rejection_sites = 0;
   std::size_t declared_interfaces = 0;
   std::size_t declared_implementations = 0;
   std::size_t resolved_interface_symbols = 0;
@@ -1234,6 +1234,10 @@ struct Objc3IRFrontendMetadata {
   bool ir_emission_core_feature_advanced_integration_shard1_ready = false;
   std::string ir_emission_core_feature_advanced_integration_shard1_key;
 
-  std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
+  std::size_t canonical_literal_rejection_total() const {
+    return canonical_literal_yes_rejection_sites +
+           canonical_literal_no_rejection_sites +
+           canonical_literal_null_rejection_sites;
+  }
 };
 

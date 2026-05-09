@@ -63,6 +63,8 @@ using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
 using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
 using objc3::artifacts::BuildRunnableFeatureClaimIds;
+using objc3::artifacts::BuildRunnableFeatureClaimInventoryJson;
+using objc3::artifacts::BuildRunnableFeatureClaimInventoryReplayKey;
 using objc3::artifacts::BuildSourceOnlyFeatureClaimIds;
 using objc3::artifacts::BuildUnsupportedFeatureClaimIds;
 using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceJson;
@@ -211,78 +213,6 @@ constexpr char kObjc3RuntimeAwareImportModuleSurfaceNonGoalModel[] =
     "no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering";
 constexpr char kObjc3RuntimeAwareImportModuleSurfaceFailureModel[] =
     "fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims";
-
-std::string BuildRunnableFeatureClaimInventoryReplayKey(
-    const Objc3FrontendOptions &options,
-    const Objc3FrontendPipelineResult &pipeline_result) {
-  std::ostringstream out;
-  out << kObjc3RunnableFeatureClaimInventoryContractId
-      << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
-      << ";language_version=" << static_cast<unsigned>(options.language_version)
-      << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";truth_model=" << kObjc3RunnableFeatureClaimTruthModel
-      << ";declared_globals=" << pipeline_result.program.ast.globals.size()
-      << ";declared_functions=" << pipeline_result.program.ast.functions.size()
-      << ";declared_protocols=" << pipeline_result.program.ast.protocols.size()
-      << ";declared_interfaces=" << pipeline_result.program.ast.interfaces.size()
-      << ";declared_implementations=" << pipeline_result.program.ast.implementations.size()
-      << ";protocol_properties=" << pipeline_result.parser_contract_snapshot.protocol_property_decl_count
-      << ";interface_properties=" << pipeline_result.parser_contract_snapshot.interface_property_decl_count
-      << ";implementation_properties=" << pipeline_result.parser_contract_snapshot.implementation_property_decl_count
-      << ";long_tail_constructs=" << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count;
-  return out.str();
-}
-
-std::string BuildRunnableFeatureClaimInventoryJson(
-    const Objc3FrontendOptions &options,
-    const Objc3FrontendPipelineResult &pipeline_result) {
-  const std::vector<std::string> runnable_claim_ids =
-      BuildRunnableFeatureClaimIds();
-  const std::vector<std::string> source_only_claim_ids =
-      BuildSourceOnlyFeatureClaimIds();
-  const std::vector<std::string> unsupported_claim_ids =
-      BuildUnsupportedFeatureClaimIds();
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << kObjc3RunnableFeatureClaimInventoryContractId
-      << "\",\"effective_language_mode\":\"" << kObjc3RunnableFeatureClaimModeName
-      << "\",\"effective_language_version\":"
-      << static_cast<unsigned>(options.language_version)
-      << ",\"effective_language_profile\":\""
-      << LanguageProfileName(options.language_profile)
-      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
-      << "true"
-      << ",\"strictness_selection_supported\":false"
-      << ",\"strict_concurrency_mode_supported\":false"
-      << ",\"mode_truth_fail_closed\":true"
-      << ",\"truth_model\":\"" << kObjc3RunnableFeatureClaimTruthModel << "\""
-      << ",\"runnable_feature_claim_count\":" << runnable_claim_ids.size()
-      << ",\"source_only_feature_claim_count\":" << source_only_claim_ids.size()
-      << ",\"unsupported_feature_claim_count\":" << unsupported_claim_ids.size()
-      << ",\"declared_protocol_count\":"
-      << pipeline_result.program.ast.protocols.size()
-      << ",\"declared_interface_count\":"
-      << pipeline_result.program.ast.interfaces.size()
-      << ",\"declared_implementation_count\":"
-      << pipeline_result.program.ast.implementations.size()
-      << ",\"declared_function_count\":"
-      << pipeline_result.program.ast.functions.size()
-      << ",\"declared_global_count\":"
-      << pipeline_result.program.ast.globals.size()
-      << ",\"long_tail_construct_count\":"
-      << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count
-      << ",\"runnable_feature_claim_ids\":"
-      << BuildStringArrayJson(runnable_claim_ids)
-      << ",\"source_only_feature_claim_ids\":"
-      << BuildStringArrayJson(source_only_claim_ids)
-      << ",\"unsupported_feature_claim_ids\":"
-      << BuildStringArrayJson(unsupported_claim_ids)
-      << ",\"replay_key\":\""
-      << EscapeJsonString(
-             BuildRunnableFeatureClaimInventoryReplayKey(options, pipeline_result))
-      << "\"}";
-  return out.str();
-}
 
 std::string BuildTypeSystemTypeSourceClosureSummaryJson(
     const Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
@@ -23513,7 +23443,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"tests/tooling/runtime/arc_debug_instrumentation_probe.cpp\"]"
            << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
            << ",\"no-milestone-specific-scaffolding\""
-           << ",\"no-storage-global-fallbacks-or-sidecar-body-proof\"]"
+           << ",\"hard-cut-storage-global-body-proof\"]"
            << ",\"implementation_owned_property_entries\":"
            << executable_accessor_layout_lowering_summary
                   .implementation_owned_property_entries
@@ -24778,11 +24708,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           versioned_conformance_report_lowering);
   ir_frontend_metadata.versioned_conformance_report_lowering_replay_key =
       versioned_conformance_report_lowering.replay_key;
-  ir_frontend_metadata.migration_legacy_yes =
+  ir_frontend_metadata.canonical_literal_yes_rejection_sites =
       pipeline_result.canonical_literal_rejection_counts.yes_literal_sites;
-  ir_frontend_metadata.migration_legacy_no =
+  ir_frontend_metadata.canonical_literal_no_rejection_sites =
       pipeline_result.canonical_literal_rejection_counts.no_literal_sites;
-  ir_frontend_metadata.migration_legacy_null =
+  ir_frontend_metadata.canonical_literal_null_rejection_sites =
       pipeline_result.canonical_literal_rejection_counts.null_literal_sites;
   ir_frontend_metadata.declared_interfaces = interface_implementation_summary.declared_interfaces;
   ir_frontend_metadata.declared_implementations = interface_implementation_summary.declared_implementations;

@@ -16,6 +16,7 @@
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
@@ -235,7 +236,7 @@ class Objc3IREmitter {
     if (!frontend_metadata_.executable_property_ivar_source_model_replay_key.empty()) {
       // property-ivar source-model completion anchor:
       // publish the completed property attribute/accessor ownership/layout
-      // handoff without reopening the legacy descriptor shapes from the earlier runtime step.
+      // handoff without reopening the pre-hard-cut descriptor shapes from the earlier runtime step.
       // property-ivar executable semantics anchor:
       // runtime-meaningful synthesis/accessor/layout semantics now flow
       // through emitted getter/setter bodies plus realized runtime slot
@@ -1212,10 +1213,7 @@ class Objc3IREmitter {
                 : "false")
         << "\n";
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
-    out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
-        << ", language_profile=" << frontend_metadata_.language_profile
-        << ", arc_mode=" << frontend_metadata_.arc_mode
-        << ", migration_legacy_total=" << frontend_metadata_.migration_legacy_total() << "\n";
+    out << BuildObjc3IRFrontendProfileComment(frontend_metadata_) << "\n";
     out << "; frontend_objc_interface_implementation_profile = declared_interfaces="
         << frontend_metadata_.declared_interfaces
         << ", declared_implementations=" << frontend_metadata_.declared_implementations
@@ -1388,7 +1386,7 @@ class Objc3IREmitter {
         << "\n";
     // runtime-backed-object-ownership freeze anchor: the current
     // runnable object slice preserves ownership through property/accessor
-    // metadata profiles plus these legacy ownership lowering summaries. No
+    // metadata profiles plus these source-side ownership lowering summaries. No
     // live ARC runtime retain/release/autorelease execution hooks are emitted
     // here yet.
     // retainable-object semantic-rule freeze anchor: retain/release,
@@ -3281,12 +3279,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_await_lowering_suspension_state_lowering = !{!42}\n";
     out << "!objc3.objc_async_continuation_lowering = !{!43}\n";
     out << "!objc3.objc_error_diagnostics_recovery_lowering = !{!44}\n";
-    out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
-        << EscapeCStringLiteral(frontend_metadata_.language_profile) << "\", i64 "
-        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_yes) << ", i64 "
-        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_no) << ", i64 "
-        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_null) << ", i64 "
-        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_total()) << "}\n";
+    out << BuildObjc3IRFrontendMetadataNode(frontend_metadata_) << "\n";
     out << "!1 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.declared_interfaces) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.declared_implementations) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.resolved_interface_symbols) << ", i64 "
