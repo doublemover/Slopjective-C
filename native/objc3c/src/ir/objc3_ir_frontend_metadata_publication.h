@@ -56,3 +56,6 @@ void EmitObjc3IRBlockLoweringCounterNodes(
 
 void EmitObjc3IRTypeModuleLoweringCounterNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRModuleGovernanceLoweringCounterNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
