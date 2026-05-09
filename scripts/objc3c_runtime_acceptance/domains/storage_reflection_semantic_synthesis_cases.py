@@ -17,9 +17,15 @@ from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
 )
+from .storage_reflection_owner_contracts import storage_reflection_case_summary
+
+
+PROPERTY_SYNTHESIS_STORAGE_BINDING_SEMANTICS_CASE_ID = (
+    "property-synthesis-storage-binding-semantics"
+)
 
 def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> CaseResult:
-    case_dir = run_dir / "property-synthesis-storage-binding-semantics"
+    case_dir = run_dir / PROPERTY_SYNTHESIS_STORAGE_BINDING_SEMANTICS_CASE_ID
     fixture = (
         ROOT
         / "tests"
@@ -145,32 +151,35 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
     )
 
     return CaseResult(
-        case_id="property-synthesis-storage-binding-semantics",
+        case_id=PROPERTY_SYNTHESIS_STORAGE_BINDING_SEMANTICS_CASE_ID,
         probe="compile-manifest-and-diagnostics",
         fixture="tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "property_synthesis_sites": lowering_surface.get("property_synthesis_sites"),
-            "interface_owned_property_synthesis_sites": lowering_surface.get(
-                "interface_owned_property_synthesis_sites"
-            ),
-            "implementation_property_redeclaration_sites": lowering_surface.get(
-                "implementation_property_redeclaration_sites"
-            ),
-            "synthesized_getter_entries": lowering_surface.get(
-                "synthesized_getter_entries"
-            ),
-            "synthesized_setter_entries": lowering_surface.get(
-                "synthesized_setter_entries"
-            ),
-            "current_property_exchange_entries": lowering_surface.get(
-                "current_property_exchange_entries"
-            ),
-            "negative_incompatible_redeclaration_diagnostic_count": incompatible_negative[
-                "diagnostic_count"
-            ],
-        },
+        summary=storage_reflection_case_summary(
+            PROPERTY_SYNTHESIS_STORAGE_BINDING_SEMANTICS_CASE_ID,
+            {
+                "property_synthesis_sites": lowering_surface.get("property_synthesis_sites"),
+                "interface_owned_property_synthesis_sites": lowering_surface.get(
+                    "interface_owned_property_synthesis_sites"
+                ),
+                "implementation_property_redeclaration_sites": lowering_surface.get(
+                    "implementation_property_redeclaration_sites"
+                ),
+                "synthesized_getter_entries": lowering_surface.get(
+                    "synthesized_getter_entries"
+                ),
+                "synthesized_setter_entries": lowering_surface.get(
+                    "synthesized_setter_entries"
+                ),
+                "current_property_exchange_entries": lowering_surface.get(
+                    "current_property_exchange_entries"
+                ),
+                "negative_incompatible_redeclaration_diagnostic_count": incompatible_negative[
+                    "diagnostic_count"
+                ],
+            },
+        ),
     )
 
 

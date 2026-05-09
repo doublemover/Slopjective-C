@@ -15,6 +15,7 @@ from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
 )
+from .storage_reflection_owner_contracts import storage_reflection_surface_owner_payload
 
 def build_runtime_property_ivar_storage_accessor_source_surface(
     results: list[CaseResult],
@@ -41,6 +42,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
     ]
     return {
         "contract_id": RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+        "owner_contract": storage_reflection_surface_owner_payload(),
         "compile_artifact_set": [
             "<emit-prefix>.obj",
             "<emit-prefix>.ll",
@@ -159,6 +161,7 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
         "contract_id": (
             RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID
         ),
+        "owner_contract": storage_reflection_surface_owner_payload(),
         "compile_artifact_set": [
             "<emit-prefix>.obj",
             "<emit-prefix>.ll",

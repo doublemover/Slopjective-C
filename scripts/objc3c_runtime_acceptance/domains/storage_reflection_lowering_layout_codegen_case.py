@@ -19,10 +19,14 @@ from objc3c_runtime_acceptance.domains.storage_reflection_lowering_layout_surfac
 )
 
 from ..paths import ROOT
+from .storage_reflection_owner_contracts import storage_reflection_case_summary
+
+
+SYNTHESIZED_ACCESSOR_CODEGEN_CASE_ID = "synthesized-accessor-codegen"
 
 
 def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
-    case_dir = run_dir / "property-codegen"
+    case_dir = run_dir / SYNTHESIZED_ACCESSOR_CODEGEN_CASE_ID
     artifacts = compile_property_accessor_layout_fixture(case_dir)
 
     ll_text = artifacts.ll_path.read_text(encoding="utf-8")
@@ -36,24 +40,30 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     assert_synthesized_accessor_codegen_surface_banners(ll_text)
 
     return CaseResult(
-        case_id="property-codegen",
+        case_id=SYNTHESIZED_ACCESSOR_CODEGEN_CASE_ID,
         probe="real-compile-llvm-inspection",
         fixture=PROPERTY_ACCESSOR_LAYOUT_FIXTURE_LABEL,
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "llvm_ir": str(artifacts.ll_path.relative_to(ROOT)).replace("\\", "/"),
-            "manifest": str(artifacts.manifest_path.relative_to(ROOT)).replace(
-                "\\", "/"
-            ),
-            "registration_manifest": str(
-                artifacts.registration_manifest_path.relative_to(ROOT)
-            ).replace("\\", "/"),
-            "property_descriptor_count": registration_manifest.get(
-                "property_descriptor_count"
-            ),
-        },
+        summary=storage_reflection_case_summary(
+            SYNTHESIZED_ACCESSOR_CODEGEN_CASE_ID,
+            {
+                "llvm_ir": str(artifacts.ll_path.relative_to(ROOT)).replace("\\", "/"),
+                "manifest": str(artifacts.manifest_path.relative_to(ROOT)).replace(
+                    "\\", "/"
+                ),
+                "registration_manifest": str(
+                    artifacts.registration_manifest_path.relative_to(ROOT)
+                ).replace("\\", "/"),
+                "property_descriptor_count": registration_manifest.get(
+                    "property_descriptor_count"
+                ),
+            },
+        ),
     )
 
 
-__all__ = ["check_synthesized_accessor_codegen_case"]
+__all__ = [
+    "SYNTHESIZED_ACCESSOR_CODEGEN_CASE_ID",
+    "check_synthesized_accessor_codegen_case",
+]

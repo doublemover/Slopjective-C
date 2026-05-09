@@ -8,6 +8,9 @@ from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.storage_reflection_lowering_surface_support import (
     authoritative_case_ids,
 )
+from objc3c_runtime_acceptance.domains.storage_reflection_owner_contracts import (
+    storage_reflection_surface_owner_payload,
+)
 
 from ..runtime_contract_storage_reflection import (
     DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
@@ -21,6 +24,7 @@ def build_dispatch_and_synthesized_accessor_lowering_surface(
 ) -> dict[str, Any]:
     return {
         "contract_id": DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
+        "owner_contract": storage_reflection_surface_owner_payload(),
         "compile_artifact_set": [
             "<emit-prefix>.obj",
             "<emit-prefix>.ll",

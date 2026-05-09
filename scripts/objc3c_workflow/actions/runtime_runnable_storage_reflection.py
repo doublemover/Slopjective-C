@@ -5,6 +5,11 @@ from __future__ import annotations
 from ..environment import ROOT
 from .runtime_runnable_groups import RuntimeRunnableActionGroup
 from .runtime_test_acceptance import run_python_check
+from objc3c_runtime_acceptance.domains.storage_reflection_owner_contracts import (
+    STORAGE_REFLECTION_OWNER_CONTRACT_ID,
+    STORAGE_REFLECTION_STRICT_STATUS_CONTRACT_ID,
+    STRICT_STATUS_OWNER,
+)
 
 RUNNABLE_STORAGE_REFLECTION_ROUTE = "storage-reflection"
 VALIDATE_STORAGE_REFLECTION_CONFORMANCE_ACTION = (
@@ -30,6 +35,18 @@ RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY = (
     ROOT / RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_SCRIPT
 )
 RUNNABLE_STORAGE_REFLECTION_E2E_PY = ROOT / RUNNABLE_STORAGE_REFLECTION_E2E_SCRIPT
+RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_GUARANTEE_OWNER = (
+    "integrated storage/accessor/reflection conformance over the live runtime "
+    "architecture workflow; owner_contract="
+    f"{STORAGE_REFLECTION_OWNER_CONTRACT_ID}; status_owner={STRICT_STATUS_OWNER}; "
+    f"status_contract={STORAGE_REFLECTION_STRICT_STATUS_CONTRACT_ID}"
+)
+RUNNABLE_STORAGE_REFLECTION_E2E_GUARANTEE_OWNER = (
+    "packaged compile, storage/reflection probe execution, smoke, and replay "
+    "from the staged runnable toolchain bundle; owner_contract="
+    f"{STORAGE_REFLECTION_OWNER_CONTRACT_ID}; status_owner={STRICT_STATUS_OWNER}; "
+    f"status_contract={STORAGE_REFLECTION_STRICT_STATUS_CONTRACT_ID}"
+)
 
 
 def action_validate_storage_reflection_conformance(_: list[str]) -> int:
@@ -48,10 +65,7 @@ RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_ACTION = RuntimeRunnableActionGroup(
     ),
     backend=RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_BACKEND,
     handler=action_validate_storage_reflection_conformance,
-    guarantee_owner=(
-        "integrated storage/accessor/reflection conformance over the live runtime "
-        "architecture workflow"
-    ),
+    guarantee_owner=RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_GUARANTEE_OWNER,
 )
 RUNNABLE_STORAGE_REFLECTION_E2E_ACTION = RuntimeRunnableActionGroup(
     action=VALIDATE_RUNNABLE_STORAGE_REFLECTION_ACTION,
@@ -61,20 +75,19 @@ RUNNABLE_STORAGE_REFLECTION_E2E_ACTION = RuntimeRunnableActionGroup(
     ),
     backend=RUNNABLE_STORAGE_REFLECTION_E2E_BACKEND,
     handler=action_validate_runnable_storage_reflection,
-    guarantee_owner=(
-        "packaged compile, storage/reflection probe execution, smoke, and replay "
-        "from the staged runnable toolchain bundle"
-    ),
+    guarantee_owner=RUNNABLE_STORAGE_REFLECTION_E2E_GUARANTEE_OWNER,
 )
 
 
 __all__ = [
     "RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_ACTION",
     "RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_BACKEND",
+    "RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_GUARANTEE_OWNER",
     "RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY",
     "RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_SCRIPT",
     "RUNNABLE_STORAGE_REFLECTION_E2E_ACTION",
     "RUNNABLE_STORAGE_REFLECTION_E2E_BACKEND",
+    "RUNNABLE_STORAGE_REFLECTION_E2E_GUARANTEE_OWNER",
     "RUNNABLE_STORAGE_REFLECTION_E2E_PY",
     "RUNNABLE_STORAGE_REFLECTION_E2E_SCRIPT",
     "RUNNABLE_STORAGE_REFLECTION_ROUTE",

@@ -10,6 +10,14 @@ from objc3c_runtime_acceptance.domains.storage_reflection_lowering_cases import 
     check_property_accessor_layout_lowering_case,
     check_synthesized_accessor_codegen_case,
 )
+from objc3c_runtime_acceptance.domains.storage_reflection_owner_contracts import (
+    assert_storage_reflection_owner_case_ids,
+    storage_reflection_case_owner_payload,
+    storage_reflection_case_summary,
+    storage_reflection_owner_contract_payloads,
+    storage_reflection_strict_status_owner_payload,
+    storage_reflection_surface_owner_payload,
+)
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_cases import (
     check_instance_allocation_layout_runtime_case,
     check_property_execution_case,
@@ -34,6 +42,12 @@ from objc3c_runtime_acceptance.domains.storage_reflection_surfaces import (
 )
 
 _EXPORTED_CASE_NAMES = [
+    "assert_storage_reflection_owner_case_ids",
+    "storage_reflection_case_owner_payload",
+    "storage_reflection_case_summary",
+    "storage_reflection_owner_contract_payloads",
+    "storage_reflection_strict_status_owner_payload",
+    "storage_reflection_surface_owner_payload",
     "build_runtime_property_ivar_storage_accessor_source_surface",
     "build_runtime_property_atomicity_synthesis_reflection_source_surface",
     "build_dispatch_and_synthesized_accessor_lowering_surface",

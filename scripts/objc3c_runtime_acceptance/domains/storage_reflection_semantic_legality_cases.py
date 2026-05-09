@@ -17,9 +17,13 @@ from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
 )
+from .storage_reflection_owner_contracts import storage_reflection_case_summary
+
+
+STORAGE_LEGALITY_SEMANTICS_CASE_ID = "storage-legality-semantics"
 
 def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
-    case_dir = run_dir / "storage-legality-semantics"
+    case_dir = run_dir / STORAGE_LEGALITY_SEMANTICS_CASE_ID
     fixture = (
         ROOT
         / "tests"
@@ -209,49 +213,52 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
     }
 
     return CaseResult(
-        case_id="storage-legality-semantics",
+        case_id=STORAGE_LEGALITY_SEMANTICS_CASE_ID,
         probe="compile-manifest-and-diagnostics",
         fixture="tests/tooling/fixtures/native/runtime_backed_storage_ownership_legality_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
-            "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
-            "runtime_export_property_attribute_invalid_entries": sema_pass_manager_manifest.get(
-                "runtime_export_property_attribute_invalid_entries"
-            ),
-            "runtime_export_property_attribute_contract_violations": sema_pass_manager_manifest.get(
-                "runtime_export_property_attribute_contract_violations"
-            ),
-            "atomic_negative_diagnostic_count": storage_negative_results[
-                "negative-atomic-ownership"
-            ]["diagnostic_count"],
-            "weak_mismatch_diagnostic_count": storage_negative_results[
-                "negative-weak-mismatch"
-            ]["diagnostic_count"],
-            "unowned_mismatch_diagnostic_count": storage_negative_results[
-                "negative-unowned-mismatch"
-            ]["diagnostic_count"],
-            "scalar_ownership_negative_diagnostic_count": storage_negative_results[
-                "negative-scalar-ownership"
-            ]["diagnostic_count"],
-            "duplicate_getter_negative_diagnostic_count": storage_negative_results[
-                "negative-duplicate-getter"
-            ][
-                "diagnostic_count"
-            ],
-            "duplicate_setter_negative_diagnostic_count": storage_negative_results[
-                "negative-duplicate-setter"
-            ][
-                "diagnostic_count"
-            ],
-            "readonly_setter_negative_diagnostic_count": storage_negative_results[
-                "negative-readonly-setter"
-            ][
-                "diagnostic_count"
-            ],
-            "negative_diagnostics_batch": negative_batch,
-        },
+        summary=storage_reflection_case_summary(
+            STORAGE_LEGALITY_SEMANTICS_CASE_ID,
+            {
+                "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+                "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+                "runtime_export_property_attribute_invalid_entries": sema_pass_manager_manifest.get(
+                    "runtime_export_property_attribute_invalid_entries"
+                ),
+                "runtime_export_property_attribute_contract_violations": sema_pass_manager_manifest.get(
+                    "runtime_export_property_attribute_contract_violations"
+                ),
+                "atomic_negative_diagnostic_count": storage_negative_results[
+                    "negative-atomic-ownership"
+                ]["diagnostic_count"],
+                "weak_mismatch_diagnostic_count": storage_negative_results[
+                    "negative-weak-mismatch"
+                ]["diagnostic_count"],
+                "unowned_mismatch_diagnostic_count": storage_negative_results[
+                    "negative-unowned-mismatch"
+                ]["diagnostic_count"],
+                "scalar_ownership_negative_diagnostic_count": storage_negative_results[
+                    "negative-scalar-ownership"
+                ]["diagnostic_count"],
+                "duplicate_getter_negative_diagnostic_count": storage_negative_results[
+                    "negative-duplicate-getter"
+                ][
+                    "diagnostic_count"
+                ],
+                "duplicate_setter_negative_diagnostic_count": storage_negative_results[
+                    "negative-duplicate-setter"
+                ][
+                    "diagnostic_count"
+                ],
+                "readonly_setter_negative_diagnostic_count": storage_negative_results[
+                    "negative-readonly-setter"
+                ][
+                    "diagnostic_count"
+                ],
+                "negative_diagnostics_batch": negative_batch,
+            },
+        ),
     )
 
 

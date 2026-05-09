@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from objc3c_runtime_acceptance.case_factory_types import CaseFactoryContext
 from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
+from objc3c_runtime_acceptance.domains.storage_reflection_owner_contracts import (
+    STORAGE_REFLECTION_DIRECT_FACTORY_CASE_IDS,
+    assert_storage_reflection_direct_factory_case_ids,
+)
 
 
 def build_storage_reflection_case_factories(
@@ -12,7 +16,7 @@ def build_storage_reflection_case_factories(
     domains = context.domains
     clangxx = context.clangxx
     run_dir = context.run_dir
-    return [
+    factories = [
         (
             "storage-ownership-reflection",
             lambda: domains.storage_reflection.check_storage_ownership_reflection_case(
@@ -98,6 +102,13 @@ def build_storage_reflection_case_factories(
             ),
         ),
     ]
+    assert_storage_reflection_direct_factory_case_ids(
+        tuple(case_id for case_id, _ in factories)
+    )
+    assert_storage_reflection_direct_factory_case_ids(
+        STORAGE_REFLECTION_DIRECT_FACTORY_CASE_IDS
+    )
+    return factories
 
 
 __all__ = ["build_storage_reflection_case_factories"]

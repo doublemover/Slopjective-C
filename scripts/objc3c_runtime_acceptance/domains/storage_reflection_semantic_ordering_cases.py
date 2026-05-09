@@ -17,9 +17,13 @@ from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
 )
+from .storage_reflection_owner_contracts import storage_reflection_case_summary
+
+
+PROPERTY_IVAR_ORDERING_SEMANTICS_CASE_ID = "property-ivar-ordering-semantics"
 
 def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
-    case_dir = run_dir / "property-ivar-ordering-semantics"
+    case_dir = run_dir / PROPERTY_IVAR_ORDERING_SEMANTICS_CASE_ID
     fixture = (
         ROOT
         / "tests"
@@ -154,23 +158,26 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
     )
 
     return CaseResult(
-        case_id="property-ivar-ordering-semantics",
+        case_id=PROPERTY_IVAR_ORDERING_SEMANTICS_CASE_ID,
         probe="compile-manifest-source-records",
         fixture="tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
-        summary={
-            "property_record_count": len(property_records),
-            "ivar_record_count": len(ivar_records),
-            "token_destroy_order_index": property_index.get(
-                ("class-interface", "Widget", "token"), {}
-            ).get("executable_ivar_destroy_order_index"),
-            "count_init_order_index": property_index.get(
-                ("class-interface", "Widget", "count"), {}
-            ).get("executable_ivar_init_order_index"),
-            "interface_init_order": interface_init_order,
-            "interface_destroy_order": interface_destroy_order,
-            "implementation_init_order": implementation_init_order,
-            "implementation_destroy_order": implementation_destroy_order,
-        },
+        summary=storage_reflection_case_summary(
+            PROPERTY_IVAR_ORDERING_SEMANTICS_CASE_ID,
+            {
+                "property_record_count": len(property_records),
+                "ivar_record_count": len(ivar_records),
+                "token_destroy_order_index": property_index.get(
+                    ("class-interface", "Widget", "token"), {}
+                ).get("executable_ivar_destroy_order_index"),
+                "count_init_order_index": property_index.get(
+                    ("class-interface", "Widget", "count"), {}
+                ).get("executable_ivar_init_order_index"),
+                "interface_init_order": interface_init_order,
+                "interface_destroy_order": interface_destroy_order,
+                "implementation_init_order": implementation_init_order,
+                "implementation_destroy_order": implementation_destroy_order,
+            },
+        ),
     )
