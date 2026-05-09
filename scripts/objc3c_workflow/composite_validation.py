@@ -5,14 +5,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 from time import perf_counter
 
-from .actions.validation_timing import load_latest_report_payload
 from .composite_progress import (
     print_composite_step_done,
     print_composite_step_start,
 )
-from .composite_reports import write_composite_validation_report
+from .composite_report_finalization import (
+    composite_report_failed,
+    write_and_announce_composite_report,
+)
 from .composite_steps import run_composite_step
-from .environment import ROOT
 
 
 def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]) -> int:
@@ -37,14 +38,11 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
             workflow_started_at=workflow_started_at,
         )
         if step["exit_code"] != 0:
-            report_path = write_composite_validation_report(
+            write_and_announce_composite_report(
                 action, results, status="FAIL"
             )
-            print(f"public-workflow-report: {report_path.relative_to(ROOT).as_posix()}")
             return int(step["exit_code"])
-    report_path = write_composite_validation_report(action, results, status="PASS")
-    print(f"public-workflow-report: {report_path.relative_to(ROOT).as_posix()}")
-    report_payload = load_latest_report_payload(report_path)
-    if isinstance(report_payload, dict) and report_payload.get("status") != "PASS":
+    report_path = write_and_announce_composite_report(action, results, status="PASS")
+    if composite_report_failed(report_path):
         return 1
     return 0
