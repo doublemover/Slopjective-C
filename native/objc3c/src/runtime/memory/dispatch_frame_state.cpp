@@ -1,22 +1,17 @@
 #include "runtime/memory/dispatch_frame_state.h"
 
+#include "runtime/memory/dispatch_frame_store.h"
+
 #include <utility>
 
 namespace objc3c::runtime {
-namespace {
-
-thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
-thread_local RuntimeDispatchFrame g_runtime_testing_dispatch_frame;
-thread_local bool g_runtime_has_testing_dispatch_frame = false;
-
-}  // namespace
 
 RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
-  if (!g_runtime_dispatch_frames.empty()) {
-    return &g_runtime_dispatch_frames.back();
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  if (!state.frames.empty()) {
+    return &state.frames.back();
   }
-  return g_runtime_has_testing_dispatch_frame ? &g_runtime_testing_dispatch_frame
-                                              : nullptr;
+  return state.has_testing_frame ? &state.testing_frame : nullptr;
 }
 
 void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
@@ -25,43 +20,47 @@ void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
   frame.receiver = receiver;
   frame.base_identity = base_identity;
   frame.runtime_property_accessor = accessor;
-  g_runtime_dispatch_frames.push_back(std::move(frame));
+  RuntimeDispatchFrameStateForCurrentThread().frames.push_back(
+      std::move(frame));
 }
 
 std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
-  if (g_runtime_dispatch_frames.empty()) {
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  if (state.frames.empty()) {
     return {};
   }
-  RuntimeDispatchFrame frame = std::move(g_runtime_dispatch_frames.back());
-  g_runtime_dispatch_frames.pop_back();
+  RuntimeDispatchFrame frame = std::move(state.frames.back());
+  state.frames.pop_back();
   return std::move(frame.autorelease_values);
 }
 
 RuntimeDispatchFrame *SetRuntimeTestingDispatchFrame(
     int receiver, std::uint64_t base_identity,
     const RealizedPropertyAccessor *accessor) {
-  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
-  g_runtime_testing_dispatch_frame.receiver = receiver;
-  g_runtime_testing_dispatch_frame.base_identity = base_identity;
-  g_runtime_testing_dispatch_frame.runtime_property_accessor = accessor;
-  g_runtime_has_testing_dispatch_frame = true;
-  return &g_runtime_testing_dispatch_frame;
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  state.testing_frame = RuntimeDispatchFrame{};
+  state.testing_frame.receiver = receiver;
+  state.testing_frame.base_identity = base_identity;
+  state.testing_frame.runtime_property_accessor = accessor;
+  state.has_testing_frame = true;
+  return &state.testing_frame;
 }
 
 void ClearRuntimeTestingDispatchFrame() {
-  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
-  g_runtime_has_testing_dispatch_frame = false;
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  state.testing_frame = RuntimeDispatchFrame{};
+  state.has_testing_frame = false;
 }
 
 void ResetRuntimeDispatchFrameStateForTesting() {
-  g_runtime_dispatch_frames.clear();
+  RuntimeDispatchFrameStateForCurrentThread().frames.clear();
   ClearRuntimeTestingDispatchFrame();
 }
 
 bool EnqueueRuntimeDispatchFrameAutoreleaseValue(int value) {
-  if (g_runtime_dispatch_frames.size() >= 2u) {
-    g_runtime_dispatch_frames[g_runtime_dispatch_frames.size() - 2u]
-        .autorelease_values.push_back(value);
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  if (state.frames.size() >= 2u) {
+    state.frames[state.frames.size() - 2u].autorelease_values.push_back(value);
     return true;
   }
   if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
