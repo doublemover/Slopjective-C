@@ -20,6 +20,7 @@ from scripts.objc3c_workflow.arguments import (
     parse_workflow_args,
 )
 from scripts.objc3c_workflow.command_result_completion import completed_action
+from scripts.objc3c_workflow.path_bootstrap import WORKFLOW_IMPORT_ROOTS
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
 
 
@@ -76,5 +77,6 @@ def test_handler_registry_matches_action_catalog() -> None:
 
 def test_workflow_path_roots_are_owned_by_package_module() -> None:
     assert workflow_import_roots() == (ROOT, SCRIPT_ROOT)
+    assert WORKFLOW_IMPORT_ROOTS == workflow_import_roots()
     assert SCRIPT_ROOT.name == "scripts"
     assert ROOT == SCRIPT_ROOT.parent

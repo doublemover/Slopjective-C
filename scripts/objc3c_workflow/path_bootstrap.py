@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
+
+if __package__:
+    from .paths import ROOT, SCRIPT_ROOT, WORKFLOW_PACKAGE_ROOT, workflow_import_roots
+else:
+    from paths import ROOT, SCRIPT_ROOT, WORKFLOW_PACKAGE_ROOT, workflow_import_roots
 
 
-WORKFLOW_PACKAGE_ROOT = Path(__file__).resolve().parent
-SCRIPT_ROOT = WORKFLOW_PACKAGE_ROOT.parent
-REPOSITORY_ROOT = SCRIPT_ROOT.parent
-WORKFLOW_IMPORT_ROOTS = (REPOSITORY_ROOT, SCRIPT_ROOT)
+REPOSITORY_ROOT = ROOT
+WORKFLOW_IMPORT_ROOTS = workflow_import_roots()
 
 
 def install_workflow_import_roots() -> None:
@@ -17,3 +19,12 @@ def install_workflow_import_roots() -> None:
         import_root_text = str(import_root)
         if import_root_text not in sys.path:
             sys.path.insert(0, import_root_text)
+
+
+__all__ = [
+    "REPOSITORY_ROOT",
+    "SCRIPT_ROOT",
+    "WORKFLOW_IMPORT_ROOTS",
+    "WORKFLOW_PACKAGE_ROOT",
+    "install_workflow_import_roots",
+]
