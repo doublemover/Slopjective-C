@@ -5,6 +5,7 @@
   "history_artifact": "tmp/artifacts/governance-sustainability/anti-regression-history.json",
   "summary_implementation_anchor": "scripts/build_governance_anti_regression_summary.py",
   "summary_schema": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+  "owner_section": "budget.anti_regression_summary",
   "source_summaries": [
     "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
     "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
@@ -19,5 +20,10 @@
     "live_check_script_count",
     "active_waiver_count",
     "failure_count"
-  ]
+  ],
+  "publication_semantics": {
+    "evidence_section": "budget.anti_regression_summary",
+    "history_artifact": "tmp/artifacts/governance-sustainability/anti-regression-history.json",
+    "release_blocker_field": "claim_audit.release_blockers"
+  }
 }

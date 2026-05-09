@@ -3,6 +3,7 @@
   "surface_kind": "governance-sustainability-budget-inventory",
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "summary_implementation_anchor": "scripts/build_governance_budget_inventory_summary.py",
+  "owner_section": "budget",
   "measured_budget_surfaces": [
     {
       "surface_id": "package-bridge-budget",
@@ -83,6 +84,12 @@
       "disposition": "must-remain-absent"
     }
   ],
+  "budget_publication_semantics": {
+    "evidence_section": "budget",
+    "claim_audit_projection": "claim_audit.measured_budget_state",
+    "anti_regression_projection": "budget.anti_regression_summary",
+    "waiver_projection": "budget.waiver_registry"
+  },
   "governance_entry_surfaces": [
     "scripts/ci/check_task_hygiene.py",
     "scripts/ci/run_task_hygiene_gate.py",

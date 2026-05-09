@@ -30,6 +30,22 @@ COMPARISON_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "capabil
 MIGRATION_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "migration-playbook-summary.json"
 ARTIFACT_CONTRACT_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "artifact-contract-summary.json"
 
+CONTRACT_ID = "objc3c.adoption_legibility.evidence.v1"
+SUPPORT_STATE = "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison"
+PACKAGE_BRIDGE = "objc3c"
+PUBLIC_ACTIONS = [
+    "validate-adoption-legibility",
+    "publish-adoption-legibility",
+]
+OWNER_SPLIT = {
+    "boundary_inventory": "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
+    "artifact_contract": "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
+    "capability_comparison": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+    "migration_playbook": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+    "public_claim_policy": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+    "metadata_publication": "scripts/publish_objc3c_adoption_legibility_metadata.py",
+}
+
 STEPS = [
     ("boundary-inventory", python_script_command("scripts/build_adoption_legibility_boundary_inventory_summary.py")),
     ("public-claim-policy", python_script_command("scripts/build_adoption_legibility_public_claim_policy_summary.py")),
@@ -135,10 +151,11 @@ def main() -> int:
     release_blockers = list(failures)
 
     artifact = {
-        "contract_id": "objc3c.adoption_legibility.evidence.v1",
+        "contract_id": CONTRACT_ID,
         "schema_version": 1,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "generated_from": {
+            "owner_split": OWNER_SPLIT,
             "contracts": [
                 repo_rel(BOUNDARY_CONTRACT),
                 repo_rel(PUBLIC_CLAIM_POLICY),
@@ -147,6 +164,31 @@ def main() -> int:
                 repo_rel(ARTIFACT_CONTRACT),
             ],
             "commands": [" ".join(command) for _, command in STEPS],
+        },
+        "public_workflow": {
+            "status": "PASS" if not release_blockers else "FAIL",
+            "public_actions": PUBLIC_ACTIONS,
+            "package_bridge": PACKAGE_BRIDGE,
+            "metadata_publisher": "scripts/publish_objc3c_adoption_legibility_metadata.py",
+            "integration_checker": "scripts/check_objc3c_adoption_legibility_integration.py",
+        },
+        "boundary_inventory": {
+            "status": "PASS" if status_passes(boundary_summary) and not release_blockers else "FAIL",
+            "working_scope": boundary.get("working_scope", []),
+            "non_goals": boundary.get("non_goals", []),
+            "primary_evaluator_surfaces": boundary.get("primary_evaluator_surfaces", []),
+            "substrate_runbooks": boundary.get("substrate_runbooks", []),
+            "machine_owned_output_roots": boundary.get("machine_owned_output_roots", []),
+            "successor_surfaces": boundary.get("successor_surfaces", []),
+        },
+        "artifact_contract": {
+            "status": "PASS" if status_passes(reports.get("artifact_contract", {})) and not release_blockers else "FAIL",
+            "schema": artifact_contract.get("schema"),
+            "artifact_root": artifact_contract.get("artifact_root"),
+            "report_root": artifact_contract.get("report_root"),
+            "generated_artifacts": artifact_contract.get("generated_artifacts", []),
+            "generated_reports": artifact_contract.get("generated_reports", []),
+            "claim_rules": artifact_contract.get("claim_rules", []),
         },
         "evaluator_path": {
             "status": "PASS" if not release_blockers else "FAIL",
@@ -181,9 +223,10 @@ def main() -> int:
             "claim_classes": support_classes,
             "publication_fields": public_claim_policy.get("required_publication_fields", []),
             "forbidden_claims": public_claim_policy.get("forbidden_claims", []),
+            "deferred_behavior_policy": public_claim_policy.get("deferred_behavior_policy", {}),
         },
         "claim_audit": {
-            "support_state": "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison",
+            "support_state": SUPPORT_STATE,
             "earned_claims": [
                 "external evaluator path links README, site, tutorials, showcase, workflow actions, package workflows, and support evidence",
                 "Objective-C 2 migration guidance is same-major scoped and package/support-window aware",
@@ -208,10 +251,11 @@ def main() -> int:
         "entrypoints": artifact["evaluator_path"]["entrypoints"],
         "migration_phases": migration_phases,
         "comparison_axes": comparison_axes,
-        "support_state": artifact["claim_audit"]["support_state"],
+        "support_state": SUPPORT_STATE,
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT),
         "artifact_root": artifact_contract.get("artifact_root"),
         "report_root": artifact_contract.get("report_root"),
+        "public_actions": PUBLIC_ACTIONS,
     }
     PUBLICATION_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(PUBLICATION_PATH, publication)
@@ -220,6 +264,7 @@ def main() -> int:
         "contract_id": "objc3c.adoption_legibility.evidence.summary.v1",
         "status": "PASS" if not release_blockers else "FAIL",
         "runner_path": "scripts/build_objc3c_adoption_legibility_evidence.py",
+        "owner_split": OWNER_SPLIT,
         "artifact_path": repo_rel(ARTIFACT_PATH),
         "publication_path": repo_rel(PUBLICATION_PATH),
         "step_count": len(steps),

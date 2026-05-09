@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.adoption_legibility.public_claim_policy.v1",
   "schema_version": 1,
+  "owner_section": "candidate_claims",
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
@@ -93,6 +94,15 @@
     "deferred_behavior",
     "last_generated_utc"
   ],
+  "publication_guardrails": {
+    "metadata_projection": "evaluator_publication.candidate_claim_classes",
+    "forbidden_claim_projection": "evaluator_publication.forbidden_claims",
+    "release_blocker_field": "claim_audit.release_blockers",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "deferred_behavior_policy": {
     "must_be_named": true,
     "must_link_successor_surface": true,

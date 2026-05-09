@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.adoption_legibility.migration_playbook_semantics.v1",
   "schema_version": 1,
+  "owner_section": "migration_playbook",
   "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
@@ -115,6 +116,14 @@
     "compatibility_report",
     "rollback_target"
   ],
+  "publication_policy": {
+    "metadata_projection": "evaluator_publication.migration_phases",
+    "support_state": "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "fail_closed_conditions": [
     "playbook phase sequence is missing or out of order",
     "phase omits concrete paths or workflow actions",

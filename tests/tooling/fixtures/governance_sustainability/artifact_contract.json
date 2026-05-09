@@ -2,8 +2,17 @@
   "contract_id": "objc3c.governance.sustainability.artifact_contract.v1",
   "schema_version": 1,
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
-  "summary_implementation_anchor": "scripts/build_governance_artifact_contract_summary.py",
+  "summary_script": "scripts/build_governance_artifact_contract_summary.py",
   "evidence_schema": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
+  "owner_sections": [
+    "owner_split",
+    "metadata_publication",
+    "budget",
+    "extension_review",
+    "stewardship",
+    "public_workflow",
+    "claim_audit"
+  ],
   "evidence_artifact": "tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json",
   "publication_artifacts": [
     "tmp/artifacts/governance-sustainability/stewardship-publication.json",
@@ -40,7 +49,7 @@
     "validate-governance-sustainability",
     "publish-governance-sustainability"
   ],
-  "required_generation_implementation_anchors": [
+  "required_generation_scripts": [
     "scripts/build_governance_budget_inventory_summary.py",
     "scripts/build_governance_policy_summary.py",
     "scripts/build_governance_maintainer_review_summary.py",
@@ -60,7 +69,8 @@
     "checked-in contracts are the source of truth",
     "tmp reports and artifacts are replayable outputs only",
     "GitHub milestone numbers must come from the GitHub API at publish time",
-    "public claims must point to generated evidence artifacts and stay narrower than passing evidence"
+    "public claims must point to generated evidence artifacts and stay narrower than passing evidence",
+    "publication keeps validate-governance-sustainability and publish-governance-sustainability as the only public governance action names"
   ],
   "fail_closed_conditions": [
     "missing checked-in source contract",

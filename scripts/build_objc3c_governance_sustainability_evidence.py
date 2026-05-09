@@ -15,6 +15,7 @@ from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "artifact_contract.json"
+WAIVER_REGISTRY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
 INTEGRATION_CHECK = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
 EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "governance-sustainability-evidence.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "evidence-summary.json"
@@ -24,6 +25,22 @@ SELF_GENERATED_REPORTS = {
     "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json",
 }
 
+CONTRACT_ID = "objc3c.governance.sustainability.evidence.v1"
+SUPPORT_STATE = "stable-governance-process"
+PACKAGE_BRIDGE = "objc3c"
+PUBLIC_ACTIONS = [
+    "validate-governance-sustainability",
+    "publish-governance-sustainability",
+]
+OWNER_SPLIT = {
+    "budget_inventory": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "budget_policy": "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
+    "stewardship": "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+    "extension_review": "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "anti_regression": "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json",
+    "metadata_publication": "scripts/publish_objc3c_governance_sustainability_metadata.py",
+}
 
 
 
@@ -53,6 +70,7 @@ def load_optional_summary(relative_path: str) -> dict[str, Any]:
 def main() -> int:
     ensure_integration()
     contract = load_json(ARTIFACT_CONTRACT_PATH)
+    waiver_registry = load_json(WAIVER_REGISTRY_PATH)
     generated_reports = [str(path) for path in contract.get("generated_reports", [])]
     report_payloads = {path: load_optional_summary(path) for path in generated_reports}
 
@@ -81,7 +99,7 @@ def main() -> int:
 
     measured = budget_inventory.get("measured", {}) if isinstance(budget_inventory.get("measured"), dict) else {}
     claim_audit = {
-        "support_state": "stable-governance-process",
+        "support_state": SUPPORT_STATE,
         "release_blockers": failures,
         "demoted_or_out_of_scope_claims": [
             "hosted community infrastructure",
@@ -97,18 +115,27 @@ def main() -> int:
     }
 
     evidence = {
-        "contract_id": "objc3c.governance.sustainability.evidence.v1",
+        "contract_id": CONTRACT_ID,
         "schema_version": 1,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
+        "owner_split": OWNER_SPLIT,
         "source_contracts": contract.get("source_contracts", []),
         "generated_reports": generated_reports,
         "publication_artifacts": contract.get("publication_artifacts", []),
+        "metadata_publication": {
+            "status": "PASS" if not failures else "FAIL",
+            "public_actions": PUBLIC_ACTIONS,
+            "package_bridge": PACKAGE_BRIDGE,
+            "publisher": "scripts/publish_objc3c_governance_sustainability_metadata.py",
+            "publication_artifacts": contract.get("publication_artifacts", []),
+        },
         "budget": {
             "inventory_summary": budget_inventory,
             "enforcement_summary": budget_enforcement,
             "anti_regression_summary": anti_regression,
+            "waiver_registry": waiver_registry,
         },
         "extension_review": {
             "policy_summary": extension_policy,
@@ -121,11 +148,8 @@ def main() -> int:
         },
         "public_workflow": {
             "integration_summary": integration,
-            "public_actions": [
-                "validate-governance-sustainability",
-                "publish-governance-sustainability",
-            ],
-            "package_bridge": "objc3c",
+            "public_actions": PUBLIC_ACTIONS,
+            "package_bridge": PACKAGE_BRIDGE,
         },
         "claim_audit": claim_audit,
         "failures": failures,
@@ -140,6 +164,7 @@ def main() -> int:
         "runner_path": "scripts/build_objc3c_governance_sustainability_evidence.py",
         "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
+        "owner_split": OWNER_SPLIT,
         "source_contract_count": len(evidence["source_contracts"]),
         "generated_report_count": len(generated_reports),
         "publication_artifact_count": len(evidence["publication_artifacts"]),

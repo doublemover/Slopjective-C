@@ -5,6 +5,7 @@
   "contributor_surface": "CONTRIBUTING.md",
   "summary_implementation_anchor": "scripts/build_governance_maintainer_review_summary.py",
   "package_bridge": "objc3c",
+  "owner_section": "stewardship.maintainer_review_summary",
   "required_review_checks": [
     {
       "check_id": "task-hygiene",
@@ -41,6 +42,12 @@
       "workflow_action": "validate-governance-sustainability",
       "command": "npm run objc3c -- validate-governance-sustainability",
       "owner_surface": "scripts/build_governance_maintainer_review_summary.py"
+    },
+    {
+      "check_id": "governance-extension-review",
+      "workflow_action": "validate-governance-sustainability",
+      "command": "npm run objc3c -- validate-governance-sustainability",
+      "owner_surface": "scripts/build_governance_extension_review_policy_summary.py"
     }
   ],
   "regression_statuses": [

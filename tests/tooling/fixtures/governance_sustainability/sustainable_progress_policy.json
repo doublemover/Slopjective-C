@@ -5,6 +5,7 @@
   "budget_inventory": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
   "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
   "summary_implementation_anchor": "scripts/build_governance_policy_summary.py",
+  "owner_section": "stewardship.policy_summary",
   "governed_budget_surfaces": [
     {
       "surface_id": "package-script-budget",
@@ -71,6 +72,11 @@
     "evidence_paths_required": true,
     "max_active_waivers_per_surface": 1
   },
+  "waiver_semantics": {
+    "evidence_section": "budget.waiver_registry",
+    "release_blocker_field": "claim_audit.release_blockers",
+    "active_waiver_budget": "max_active_waivers_per_surface"
+  },
   "claim_statuses": [
     {
       "status": "stable",
@@ -91,7 +97,7 @@
     {
       "status": "blocked",
       "requires": [
-        "fallback-when-any-release-blocking-governance-condition-is-met"
+        "block-when-any-release-blocking-governance-condition-is-met"
       ]
     }
   ],

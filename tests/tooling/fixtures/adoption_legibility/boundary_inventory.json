@@ -3,6 +3,14 @@
   "schema_version": 1,
   "milestone": "M331",
   "runbook": "docs/runbooks/objc3c_adoption_legibility.md",
+  "owner_split": {
+    "boundary_inventory": "primary evaluator surface and substrate inventory",
+    "artifact_contract": "generated adoption evidence and evaluator publication artifact contract",
+    "capability_comparison": "Objective-C 2, Swift, and C++ comparison semantics",
+    "migration_playbook": "same-major migration phases and replay fields",
+    "public_claim_policy": "candidate claim classes and forbidden public wording",
+    "metadata_publication": "evaluator-facing metadata projection"
+  },
   "working_scope": [
     "external evaluator entrypoints across README, site, tutorials, showcase, and public command surfaces",
     "migration guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",
@@ -95,6 +103,14 @@
     "tmp/reports/adoption-legibility/",
     "tmp/artifacts/adoption-legibility/"
   ],
+  "metadata_publication": {
+    "publisher": "scripts/publish_objc3c_adoption_legibility_metadata.py",
+    "publication_artifact": "tmp/artifacts/adoption-legibility/evaluator-publication.json",
+    "public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "successor_surfaces": [
     "M332 governance and ecosystem sustainability closeout"
   ]

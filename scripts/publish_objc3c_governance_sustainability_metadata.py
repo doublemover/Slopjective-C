@@ -25,6 +25,8 @@ EXPECTED_PUBLIC_ACTIONS = [
     "publish-governance-sustainability",
 ]
 PACKAGE_BRIDGE = "objc3c"
+STEWARDSHIP_PUBLICATION_ID = "objc3c.governance.sustainability.stewardship_publication.v1"
+EXTENSION_PUBLICATION_ID = "objc3c.governance.sustainability.extension_review_publication.v1"
 
 
 
@@ -59,22 +61,24 @@ def main() -> int:
     stewardship = evidence.get("stewardship", {}) if isinstance(evidence.get("stewardship"), dict) else {}
     extension_review = evidence.get("extension_review", {}) if isinstance(evidence.get("extension_review"), dict) else {}
     public_workflow = evidence.get("public_workflow", {}) if isinstance(evidence.get("public_workflow"), dict) else {}
+    metadata_publication = evidence.get("metadata_publication", {}) if isinstance(evidence.get("metadata_publication"), dict) else {}
 
     stewardship_publication = {
-        "contract_id": "objc3c.governance.sustainability.stewardship_publication.v1",
+        "contract_id": STEWARDSHIP_PUBLICATION_ID,
         "published_at_utc": published_at,
         "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
         "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
         "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
         "contributor_surface": "CONTRIBUTING.md",
-        "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "package_bridge": PACKAGE_BRIDGE,
+        "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
+        "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "metadata_publication": metadata_publication,
         "stewardship": stewardship,
         "budget": evidence.get("budget", {}),
         "claim_audit": claim_audit,
     }
     extension_publication = {
-        "contract_id": "objc3c.governance.sustainability.extension_review_publication.v1",
+        "contract_id": EXTENSION_PUBLICATION_ID,
         "published_at_utc": published_at,
         "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
         "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
@@ -82,6 +86,7 @@ def main() -> int:
         "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
         "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
         "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "metadata_publication": metadata_publication,
         "extension_review": extension_review,
         "claim_audit": claim_audit,
     }
@@ -97,6 +102,10 @@ def main() -> int:
         "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
         "stewardship_publication": repo_rel(STEWARDSHIP_PUBLICATION),
         "extension_review_publication": repo_rel(EXTENSION_PUBLICATION),
+        "publication_ids": [
+            STEWARDSHIP_PUBLICATION_ID,
+            EXTENSION_PUBLICATION_ID,
+        ],
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": PACKAGE_BRIDGE,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,

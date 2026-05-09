@@ -14,6 +14,23 @@ from objc3c_tooling.subprocesses import python_script_command, run_timed
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "integration" / "governance_sustainability_integration_summary.json"
 
+EXPECTED_PUBLIC_ACTIONS = [
+    "validate-governance-sustainability",
+    "publish-governance-sustainability",
+]
+OWNER_STEP_LABELS = [
+    "budget-inventory",
+    "sustainable-progress-policy",
+    "maintainer-review",
+    "extension-review-policy",
+    "extension-review-workflow",
+    "stewardship-semantics",
+    "schema-surface",
+    "artifact-contract",
+    "budget-enforcement",
+    "anti-regression",
+]
+
 STEPS = [
     (
         "budget-inventory",
@@ -91,17 +108,23 @@ def run_step(label: str, command: list[str], summary_path: str) -> dict[str, Any
 
 def main() -> int:
     step_results = [run_step(label, command, summary_path) for label, command, summary_path in STEPS]
+    step_labels = [str(result["label"]) for result in step_results]
     failures = [
         f"{result['label']} failed with exit {result['exit_code']}"
         for result in step_results
         if not result["ok"]
     ]
+    missing_owner_steps = [label for label in OWNER_STEP_LABELS if label not in step_labels]
+    failures.extend(f"missing owner step {label}" for label in missing_owner_steps)
 
     payload = {
         "contract_id": "objc3c.governance.sustainability.integration.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/check_objc3c_governance_sustainability_integration.py",
+        "public_actions": EXPECTED_PUBLIC_ACTIONS,
+        "package_bridge": "objc3c",
+        "owner_step_labels": OWNER_STEP_LABELS,
         "step_count": len(step_results),
         "steps": step_results,
         "failures": failures,

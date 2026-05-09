@@ -3,6 +3,17 @@
   "schema_version": 1,
   "schema": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
   "runbook": "docs/runbooks/objc3c_adoption_legibility.md",
+  "owner_sections": [
+    "public_workflow",
+    "boundary_inventory",
+    "artifact_contract",
+    "evaluator_path",
+    "migration_playbook",
+    "comparison_matrix",
+    "onboarding",
+    "candidate_claims",
+    "claim_audit"
+  ],
   "source_contracts": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
@@ -36,7 +47,12 @@
     "Evaluator, migration, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims."
   ],
-  "required_generation_implementation_anchors": [
+  "metadata_publication_rules": [
+    "Publication consumes the generated evidence artifact and does not widen public claims.",
+    "Publication exposes boundary inventory, migration phases, comparison axes, onboarding surfaces, and forbidden claim wording together.",
+    "Publication keeps validate-adoption-legibility and publish-adoption-legibility as the only public adoption action names."
+  ],
+  "required_generation_scripts": [
     "scripts/build_adoption_legibility_boundary_inventory_summary.py",
     "scripts/build_adoption_legibility_public_claim_policy_summary.py",
     "scripts/build_adoption_legibility_capability_comparison_summary.py",

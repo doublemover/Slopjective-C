@@ -6,9 +6,13 @@
   "required": [
     "contract_id",
     "schema_version",
+    "generated_at_utc",
     "generated_from",
+    "public_workflow",
+    "boundary_inventory",
+    "artifact_contract",
     "evaluator_path",
-    "adoption_playbook",
+    "migration_playbook",
     "comparison_matrix",
     "onboarding",
     "candidate_claims",
@@ -26,7 +30,7 @@
     },
     "generated_from": {
       "type": "object",
-      "required": ["contracts", "commands"],
+      "required": ["contracts", "commands", "owner_split"],
       "properties": {
         "contracts": {
           "type": "array",
@@ -35,11 +39,95 @@
         },
         "commands": {
           "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
-          },
+          "items": {"type": "string"},
           "minItems": 1
+        },
+        "owner_split": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "public_workflow": {
+      "type": "object",
+      "required": ["status", "public_actions", "package_bridge", "metadata_publisher", "integration_checker"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "public_actions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 2
+        },
+        "package_bridge": {
+          "type": "string",
+          "const": "objc3c"
+        },
+        "metadata_publisher": {"type": "string"},
+        "integration_checker": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "boundary_inventory": {
+      "type": "object",
+      "required": [
+        "status",
+        "working_scope",
+        "non_goals",
+        "primary_evaluator_surfaces",
+        "substrate_runbooks",
+        "machine_owned_output_roots",
+        "successor_surfaces"
+      ],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "working_scope": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "non_goals": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "primary_evaluator_surfaces": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "substrate_runbooks": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "machine_owned_output_roots": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "successor_surfaces": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifact_contract": {
+      "type": "object",
+      "required": ["status", "schema", "artifact_root", "report_root", "generated_artifacts", "generated_reports", "claim_rules"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "schema": {"type": "string"},
+        "artifact_root": {"type": "string"},
+        "report_root": {"type": "string"},
+        "generated_artifacts": {
+          "type": "array",
+          "items": {"type": "object"}
+        },
+        "generated_reports": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "claim_rules": {
+          "type": "array",
+          "items": {"type": "string"}
         }
       },
       "additionalProperties": false
@@ -62,13 +150,19 @@
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1
+        },
+        "tutorial_doc_count": {
+          "type": ["integer", "null"]
+        },
+        "showcase_source_count": {
+          "type": ["integer", "null"]
         }
       },
       "additionalProperties": false
     },
-    "adoption_playbook": {
+    "migration_playbook": {
       "type": "object",
-      "required": ["status", "phases", "interop_axes", "replay_fields"],
+      "required": ["status", "phases", "interop_axes", "replay_fields", "package_bridge", "required_actions"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "phases": {
@@ -85,19 +179,32 @@
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1
+        },
+        "package_bridge": {
+          "type": "string",
+          "const": "objc3c"
+        },
+        "required_actions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
         }
       },
       "additionalProperties": false
     },
     "comparison_matrix": {
       "type": "object",
-      "required": ["status", "axes", "evidence_paths"],
+      "required": ["status", "axes", "adjacent_ecosystems", "evidence_paths"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "axes": {
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1
+        },
+        "adjacent_ecosystems": {
+          "type": "array",
+          "items": {"type": "string"}
         },
         "evidence_paths": {
           "type": "array",
@@ -132,7 +239,7 @@
     },
     "candidate_claims": {
       "type": "object",
-      "required": ["status", "claim_classes", "publication_fields"],
+      "required": ["status", "claim_classes", "publication_fields", "forbidden_claims", "deferred_behavior_policy"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "claim_classes": {
@@ -144,6 +251,13 @@
           "type": "array",
           "items": {"type": "string"},
           "minItems": 1
+        },
+        "forbidden_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "deferred_behavior_policy": {
+          "type": "object"
         }
       },
       "additionalProperties": false
@@ -167,6 +281,15 @@
         }
       },
       "additionalProperties": false
+    },
+    "publication_view": {
+      "type": "object"
+    },
+    "published_at_utc": {
+      "type": "string"
+    },
+    "evaluator_publication": {
+      "type": "object"
     }
   },
   "additionalProperties": false

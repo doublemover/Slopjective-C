@@ -1,57 +1,150 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://objc3c.dev/schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
+  "title": "objc3c Governance Sustainability Evidence",
   "type": "object",
   "required": [
     "contract_id",
+    "schema_version",
     "generated_at_utc",
     "status",
     "artifact_contract",
+    "owner_split",
     "source_contracts",
     "generated_reports",
     "publication_artifacts",
+    "metadata_publication",
+    "budget",
+    "extension_review",
+    "stewardship",
+    "public_workflow",
+    "claim_audit",
     "failures"
   ],
   "properties": {
     "contract_id": {
       "const": "objc3c.governance.sustainability.evidence.v1"
     },
+    "schema_version": {
+      "const": 1
+    },
     "generated_at_utc": {
       "type": "string",
       "format": "date-time"
     },
     "status": {
-      "enum": [
-        "PASS",
-        "FAIL"
-      ]
+      "enum": ["PASS", "FAIL"]
     },
     "artifact_contract": {
       "type": "string"
     },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
     "source_contracts": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"}
     },
     "generated_reports": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"}
     },
     "publication_artifacts": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"}
+    },
+    "metadata_publication": {
+      "type": "object",
+      "required": ["status", "public_actions", "package_bridge", "publisher", "publication_artifacts"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "public_actions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 2
+        },
+        "package_bridge": {
+          "type": "string",
+          "const": "objc3c"
+        },
+        "publisher": {"type": "string"},
+        "publication_artifacts": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "required": ["inventory_summary", "enforcement_summary", "anti_regression_summary", "waiver_registry"],
+      "properties": {
+        "inventory_summary": {"type": "object"},
+        "enforcement_summary": {"type": "object"},
+        "anti_regression_summary": {"type": "object"},
+        "waiver_registry": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "extension_review": {
+      "type": "object",
+      "required": ["policy_summary", "workflow_summary"],
+      "properties": {
+        "policy_summary": {"type": "object"},
+        "workflow_summary": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "stewardship": {
+      "type": "object",
+      "required": ["semantics_summary", "maintainer_review_summary", "policy_summary"],
+      "properties": {
+        "semantics_summary": {"type": "object"},
+        "maintainer_review_summary": {"type": "object"},
+        "policy_summary": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "public_workflow": {
+      "type": "object",
+      "required": ["integration_summary", "public_actions", "package_bridge"],
+      "properties": {
+        "integration_summary": {"type": "object"},
+        "public_actions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 2
+        },
+        "package_bridge": {
+          "type": "string",
+          "const": "objc3c"
+        }
+      },
+      "additionalProperties": false
+    },
+    "claim_audit": {
+      "type": "object",
+      "required": ["support_state", "release_blockers", "demoted_or_out_of_scope_claims", "measured_budget_state"],
+      "properties": {
+        "support_state": {"type": "string"},
+        "release_blockers": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "demoted_or_out_of_scope_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "measured_budget_state": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     },
     "failures": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"}
     }
   },
   "additionalProperties": false

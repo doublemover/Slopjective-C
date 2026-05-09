@@ -4,6 +4,7 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "author_guide": "docs/governance/extension_author_guide_v1.md",
   "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+  "owner_section": "extension_review",
   "review_classes": [
     {
       "review_class": "language-extension",
@@ -100,6 +101,7 @@
     "resolve milestone targeting from the real GitHub milestone returned by the API",
     "use GitHub labels and issue blockers instead of prose-only dependency lists when publishing",
     "publish generated summaries under tmp/reports/governance-sustainability/",
-    "keep checked-in contracts under tests/tooling/fixtures/governance_sustainability/"
+    "keep checked-in contracts under tests/tooling/fixtures/governance_sustainability/",
+    "project extension-review metadata through tmp/artifacts/governance-sustainability/extension-review-publication.json"
   ]
 }

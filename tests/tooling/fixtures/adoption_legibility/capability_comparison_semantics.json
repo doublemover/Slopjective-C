@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.adoption_legibility.capability_comparison_semantics.v1",
   "schema_version": 1,
+  "owner_section": "comparison_matrix",
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
@@ -77,6 +78,14 @@
     "forbidden_claim_shapes",
     "deferred_behavior"
   ],
+  "publication_policy": {
+    "metadata_projection": "evaluator_publication.comparison_axes",
+    "claim_audit_projection": "claim_audit.demoted_or_out_of_scope_claims",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "fail_closed_conditions": [
     "comparison axis has no runnable source example",
     "comparison axis lacks conformance or performance evidence",
