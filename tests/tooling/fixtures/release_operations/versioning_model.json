@@ -7,6 +7,12 @@
   "semantic_versioning_rule": "major=breaking minor=additive patch=repair",
   "supported_major_line": 1,
   "current_minor_line": 0,
+  "version_field_contracts": {
+    "current_version": "current_stable_version",
+    "candidate_version": "current_candidate_version",
+    "preview_version": "current_preview_version",
+    "supported_major_line": "same-major upgrade ceiling"
+  },
   "support_windows": {
     "stable": {
       "status": "supported",

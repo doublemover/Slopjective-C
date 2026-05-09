@@ -9,7 +9,6 @@ from typing import Any
 
 from objc3c_shared.json_io import load_json_object as load_json
 from objc3c_shared.json_io import write_report_json
-from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,17 +21,17 @@ JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 EXPECTED_SCHEMAS = (
     (
         "update_manifest",
-        "objc3c-update-manifest-v1",
+        "schemas/objc3c-update-manifest-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-update-manifest-v1.schema.json",
         "objc3c.release.operations.update-manifest.v1",
         "required_update_manifest_fields",
     ),
     (
-        "compatibility_report",
-        "objc3c-compatibility-report-v1",
-        "https://objc3c.dev/schemas/objc3c-compatibility-report-v1.schema.json",
-        "objc3c.release.operations.compatibility-report.v1",
-        "required_compatibility_report_fields",
+        "upgrade_support_report",
+        "schemas/objc3c-upgrade-support-report-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-upgrade-support-report-v1.schema.json",
+        "objc3c.release.operations.upgrade-support-report.v1",
+        "required_upgrade_support_report_fields",
     ),
 )
 
@@ -92,19 +91,18 @@ def main() -> int:
     schema_refs: dict[str, str] = {}
     for (
         surface_key,
-        schema_id,
+        expected_path,
         expected_schema_url,
         expected_contract_id,
         required_fields_key,
     ) in EXPECTED_SCHEMAS:
-        expected_path = repo_rel(schema_path(schema_id))
         raw_path = surface.get(surface_key)
         if raw_path != expected_path:
-            return fail(f"{surface_key} drifted from registered schema path {expected_path}")
+            return fail(f"{surface_key} drifted from schema path {expected_path}")
         metadata_path = metadata_surface.get(surface_key)
         if metadata_path != expected_path:
-            return fail(f"metadata surface drifted from registered schema path for {surface_key}")
-        payload = load_schema(schema_id)
+            return fail(f"metadata surface drifted from schema path for {surface_key}")
+        payload = load_json(ROOT / expected_path)
         if payload.get("$schema") != JSON_SCHEMA_DRAFT:
             return fail(f"{expected_path} drifted from draft 2020-12")
         if payload.get("$id") != expected_schema_url:
@@ -124,7 +122,7 @@ def main() -> int:
         "metadata_surface": repo_rel(METADATA_SURFACE),
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "update_manifest": schema_refs["update_manifest"],
-        "compatibility_report": schema_refs["compatibility_report"],
+        "upgrade_support_report": schema_refs["upgrade_support_report"],
         "schemas": schema_paths,
         "schema_ids": schema_ids,
     }

@@ -2,20 +2,37 @@
   "contract_id": "objc3c.release.operations.metadata.surface.v1",
   "schema_version": 1,
   "update_manifest": "schemas/objc3c-update-manifest-v1.schema.json",
-  "compatibility_report": "schemas/objc3c-compatibility-report-v1.schema.json",
+  "upgrade_support_report": "schemas/objc3c-upgrade-support-report-v1.schema.json",
+  "publication_artifacts": {
+    "update_manifest": "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+    "upgrade_support_report": "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+    "channel_catalog": "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
+  },
+  "summary_reports": {
+    "source_surface": "tmp/reports/release-operations/source-surface-summary.json",
+    "schema_surface": "tmp/reports/release-operations/schema-surface-summary.json",
+    "update_manifest": "tmp/reports/release-operations/update-manifest-summary.json",
+    "publication": "tmp/reports/release-operations/publication-summary.json",
+    "integration": "tmp/reports/release-operations/integration-summary.json",
+    "end_to_end": "tmp/reports/release-operations/end-to-end-summary.json"
+  },
   "required_update_manifest_fields": [
     "contract_id",
     "generated_at_utc",
     "current_version",
     "default_channel",
     "default_platform_id",
+    "supported_major_line",
+    "package_model",
     "platform_support_matrix",
+    "platform_support_summary",
     "supported_platform_ids",
     "support_tiers",
     "channels",
-    "compatibility_report"
+    "upgrade_paths",
+    "upgrade_support_report"
   ],
-  "required_compatibility_report_fields": [
+  "required_upgrade_support_report_fields": [
     "contract_id",
     "generated_at_utc",
     "current_version",
@@ -26,6 +43,8 @@
     "support_windows",
     "upgrade_paths",
     "warnings",
-    "rollback_guidance"
+    "revert_guidance",
+    "fail_closed_diagnostics",
+    "forbidden_claims"
   ]
 }

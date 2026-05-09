@@ -52,10 +52,16 @@ def main() -> int:
         return fail(f"workflow steps drifted: {step_actions}")
     if workflow_surface.get("validate_action") != "validate-release-operations":
         return fail("workflow surface drifted from validate-release-operations")
+    if workflow_surface.get("workflow_child_actions") != REQUIRED_STEPS:
+        return fail("workflow child action contract drifted")
+    if workflow_surface.get("integration_summary_contract") != "objc3c.release.operations.integration.summary.v1":
+        return fail("integration summary contract drifted")
     if manifest_summary.get("status") != "PASS":
         return fail("update manifest summary did not pass")
     if publication_summary.get("status") != "PASS":
         return fail("release-operations publication summary did not pass")
+    if manifest_summary.get("upgrade_support_report") != publication_summary.get("upgrade_support_report"):
+        return fail("upgrade support report path drifted between manifest and publication")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -64,8 +70,9 @@ def main() -> int:
         "workflow_report": repo_rel(WORKFLOW_REPORT),
         "validated_steps": REQUIRED_STEPS,
         "update_manifest_path": manifest_summary.get("update_manifest_path"),
-        "compatibility_report": publication_summary.get("compatibility_report"),
+        "upgrade_support_report": publication_summary.get("upgrade_support_report"),
         "channel_catalog": publication_summary.get("channel_catalog"),
+        "release_operations_owned_actions": workflow_surface.get("release_operations_owned_actions"),
     }
     write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")

@@ -10,10 +10,14 @@
     "current_version",
     "default_channel",
     "default_platform_id",
+    "supported_major_line",
+    "package_model",
     "platform_support_matrix",
+    "platform_support_summary",
     "supported_platform_ids",
     "support_tiers",
     "channels",
+    "upgrade_paths",
     "upgrade_support_report"
   ],
   "properties": {
@@ -22,7 +26,10 @@
     "current_version": { "type": "string" },
     "default_channel": { "type": "string" },
     "default_platform_id": { "type": "string" },
+    "supported_major_line": { "type": "integer", "minimum": 0 },
+    "package_model": { "type": "string", "minLength": 1 },
     "platform_support_matrix": { "type": "string" },
+    "platform_support_summary": { "type": "string" },
     "supported_platform_ids": {
       "type": "array",
       "items": { "type": "string" },
@@ -39,17 +46,56 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["channel_id", "version", "support_status", "artifacts"],
+        "required": [
+          "channel_id",
+          "version",
+          "support_status",
+          "warning_classes",
+          "upgrade_targets",
+          "artifacts"
+        ],
         "properties": {
           "channel_id": { "type": "string" },
           "version": { "type": "string" },
-          "support_status": { "enum": ["supported", "preview", "deprecated", "blocked"] },
+          "support_status": {
+            "enum": ["supported", "release-drill", "preview", "deprecated", "blocked"]
+          },
+          "warning_classes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "upgrade_targets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
           "artifacts": {
             "type": "object",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": false,
+            "required": [
+              "portable_archive",
+              "installer_archive",
+              "offline_archive",
+              "package_channels_manifest",
+              "release_manifest",
+              "platform_support_matrix"
+            ],
+            "properties": {
+              "portable_archive": { "type": "string" },
+              "installer_archive": { "type": "string" },
+              "offline_archive": { "type": "string" },
+              "package_channels_manifest": { "type": "string" },
+              "release_manifest": { "type": "string" },
+              "platform_support_matrix": { "type": "string" }
+            }
           }
         }
       }
+    },
+    "upgrade_paths": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/upgradePath" },
+      "minItems": 1
     },
     "upgrade_support_report": { "type": "string", "minLength": 1 }
   },
@@ -65,6 +111,26 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "upgradePath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_id",
+        "from",
+        "to",
+        "upgrade_contract",
+        "requires_warning",
+        "rollback_channel"
+      ],
+      "properties": {
+        "path_id": { "type": "string" },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "upgrade_contract": { "type": "string" },
+        "requires_warning": { "type": "boolean" },
+        "rollback_channel": { "type": "string" }
       }
     }
   }

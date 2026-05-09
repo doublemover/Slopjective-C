@@ -42,5 +42,11 @@
     "portable-archive",
     "local-installer",
     "offline-bundle"
+  ],
+  "upgrade_publication_rules": [
+    "same-major upgrade paths only",
+    "warning-required paths must emit generated warnings",
+    "blocked paths must retain explicit revert guidance",
+    "missing package-channel input fails publication"
   ]
 }

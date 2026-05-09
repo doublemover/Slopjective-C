@@ -15,8 +15,6 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from objc3c_shared.json_io import load_json_object
 from objc3c_shared.json_io import write_json_file
-from objc3c_shared.schema_registry import schema_path
-
 SCRIPT_PATH = ROOT / "scripts" / "check_release_operations_schema_surface.py"
 
 
@@ -43,19 +41,17 @@ def test_release_operations_schema_surface_uses_registered_schemas() -> None:
         assert summary["status"] == "PASS"
         assert summary["metadata_surface"] == "tests/tooling/fixtures/release_operations/metadata_surface.json"
         assert summary["schema_surface"] == "tests/tooling/fixtures/release_operations/schema_surface.json"
-        assert summary["update_manifest"] == (
-            schema_path("objc3c-update-manifest-v1").relative_to(ROOT).as_posix()
-        )
-        assert summary["compatibility_report"] == (
-            schema_path("objc3c-compatibility-report-v1").relative_to(ROOT).as_posix()
+        assert summary["update_manifest"] == "schemas/objc3c-update-manifest-v1.schema.json"
+        assert summary["upgrade_support_report"] == (
+            "schemas/objc3c-upgrade-support-report-v1.schema.json"
         )
         assert summary["schemas"] == [
-            schema_path("objc3c-update-manifest-v1").relative_to(ROOT).as_posix(),
-            schema_path("objc3c-compatibility-report-v1").relative_to(ROOT).as_posix(),
+            "schemas/objc3c-update-manifest-v1.schema.json",
+            "schemas/objc3c-upgrade-support-report-v1.schema.json",
         ]
         assert summary["schema_ids"] == [
             "https://objc3c.dev/schemas/objc3c-update-manifest-v1.schema.json",
-            "https://objc3c.dev/schemas/objc3c-compatibility-report-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-upgrade-support-report-v1.schema.json",
         ]
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)
@@ -66,7 +62,7 @@ def test_release_operations_schema_surface_rejects_unregistered_surface_path(
 ) -> None:
     checker = _load_checker()
     surface = load_json_object(checker.SCHEMA_SURFACE)
-    surface["compatibility_report"] = "schemas/unregistered-compatibility-report.schema.json"
+    surface["upgrade_support_report"] = "schemas/unregistered-upgrade-support-report.schema.json"
 
     checker.SCHEMA_SURFACE = tmp_path / "schema_surface.json"
     checker.SUMMARY_PATH = tmp_path / "summary.json"
@@ -82,15 +78,15 @@ def test_release_operations_schema_surface_rejects_broken_registered_draft(
 ) -> None:
     checker = _load_checker()
     checker.SUMMARY_PATH = tmp_path / "summary.json"
-    original_load_schema = checker.load_schema
+    original_load_json = checker.load_json
 
-    def broken_load_schema(schema_id: str) -> dict[str, Any]:
-        payload = deepcopy(original_load_schema(schema_id))
-        if schema_id == "objc3c-update-manifest-v1":
+    def broken_load_json(path: Path) -> dict[str, Any]:
+        payload = deepcopy(original_load_json(path))
+        if path.as_posix().endswith("schemas/objc3c-update-manifest-v1.schema.json"):
             payload["$schema"] = "https://json-schema.org/draft/2019-09/schema"
         return payload
 
-    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+    monkeypatch.setattr(checker, "load_json", broken_load_json)
 
     assert checker.main() == 1
     assert not checker.SUMMARY_PATH.exists()
@@ -102,15 +98,15 @@ def test_release_operations_schema_surface_rejects_broken_registered_schema_id(
 ) -> None:
     checker = _load_checker()
     checker.SUMMARY_PATH = tmp_path / "summary.json"
-    original_load_schema = checker.load_schema
+    original_load_json = checker.load_json
 
-    def broken_load_schema(schema_id: str) -> dict[str, Any]:
-        payload = deepcopy(original_load_schema(schema_id))
-        if schema_id == "objc3c-compatibility-report-v1":
-            payload["$id"] = "https://objc3c.dev/schemas/objc3c-compatibility-report-broken.schema.json"
+    def broken_load_json(path: Path) -> dict[str, Any]:
+        payload = deepcopy(original_load_json(path))
+        if path.as_posix().endswith("schemas/objc3c-upgrade-support-report-v1.schema.json"):
+            payload["$id"] = "https://objc3c.dev/schemas/objc3c-upgrade-support-report-broken.schema.json"
         return payload
 
-    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+    monkeypatch.setattr(checker, "load_json", broken_load_json)
 
     assert checker.main() == 1
     assert not checker.SUMMARY_PATH.exists()
@@ -122,17 +118,17 @@ def test_release_operations_schema_surface_rejects_broken_registered_contract(
 ) -> None:
     checker = _load_checker()
     checker.SUMMARY_PATH = tmp_path / "summary.json"
-    original_load_schema = checker.load_schema
+    original_load_json = checker.load_json
 
-    def broken_load_schema(schema_id: str) -> dict[str, Any]:
-        payload = deepcopy(original_load_schema(schema_id))
-        if schema_id == "objc3c-update-manifest-v1":
+    def broken_load_json(path: Path) -> dict[str, Any]:
+        payload = deepcopy(original_load_json(path))
+        if path.as_posix().endswith("schemas/objc3c-update-manifest-v1.schema.json"):
             payload["properties"]["contract_id"]["const"] = (
                 "objc3c.release.operations.update-manifest.broken.v1"
             )
         return payload
 
-    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+    monkeypatch.setattr(checker, "load_json", broken_load_json)
 
     assert checker.main() == 1
     assert not checker.SUMMARY_PATH.exists()
@@ -144,15 +140,15 @@ def test_release_operations_schema_surface_rejects_metadata_required_field_drift
 ) -> None:
     checker = _load_checker()
     checker.SUMMARY_PATH = tmp_path / "summary.json"
-    original_load_schema = checker.load_schema
+    original_load_json = checker.load_json
 
-    def broken_load_schema(schema_id: str) -> dict[str, Any]:
-        payload = deepcopy(original_load_schema(schema_id))
-        if schema_id == "objc3c-compatibility-report-v1":
+    def broken_load_json(path: Path) -> dict[str, Any]:
+        payload = deepcopy(original_load_json(path))
+        if path.as_posix().endswith("schemas/objc3c-upgrade-support-report-v1.schema.json"):
             payload["required"].remove("platform_support_matrix")
         return payload
 
-    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+    monkeypatch.setattr(checker, "load_json", broken_load_json)
 
     assert checker.main() == 1
     assert not checker.SUMMARY_PATH.exists()

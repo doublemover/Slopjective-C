@@ -19,7 +19,7 @@
     "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
     "tests/tooling/fixtures/release_operations/metadata_surface.json",
     "tests/tooling/fixtures/release_operations/schema_surface.json",
-    "scripts.objc3c_workflow",
+    "scripts/objc3c_workflow",
     "package.json",
     "tests/tooling/fixtures/release_operations/workflow_surface.json"
   ],
@@ -35,6 +35,14 @@
     "validate-release-operations",
     "validate-release-operations-end-to-end",
     "build-native-binaries"
+  ],
+  "release_operations_owned_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
@@ -55,8 +63,16 @@
   "explicit_non_goals": [
     "no hosted updater",
     "no package-manager-specific upgrade flow",
-    "no second payload lineage"
+    "no second payload lineage",
+    "no compatibility shim",
+    "no report-only support claim"
   ],
+  "hard_cutover_policy": {
+    "upstream_artifacts": "required-before-publication",
+    "missing_artifact_behavior": "fail-closed",
+    "diagnostic_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+    "public_action_names": "preserved"
+  },
   "compatibility_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
   "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json",
   "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",

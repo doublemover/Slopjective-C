@@ -9,10 +9,10 @@ from ..composite_validation import run_composite_validation
 from .release_governance_operations_paths import (
     RELEASE_OPERATIONS_END_TO_END_PY,
     RELEASE_OPERATIONS_PUBLICATION_PY,
+    RELEASE_OPERATIONS_SCHEMA_SURFACE_PY,
     RELEASE_OPERATIONS_SOURCE_SURFACE_PY,
     UPDATE_MANIFEST_PY,
 )
-from .schema_surfaces import RELEASE_OPERATIONS_SCHEMA_SURFACE_PY
 
 
 def action_validate_release_operations(_: list[str]) -> int:

@@ -20,11 +20,20 @@ EXPECTED_CONTRACT_IDS = {
     "upgrade_path_surface": "objc3c.release.operations.upgrade.path.surface.v1",
     "compatibility_claim_policy": "objc3c.release.operations.compatibility.claim.policy.v1",
     "update_channel_policy": "objc3c.release.operations.update.channel.policy.v1",
-    "fallback_diagnostics_policy": "objc3c.release.operations.fallback.diagnostics.policy.v1",
+    "fail_closed_diagnostics_policy": "objc3c.release.operations.fail_closed.diagnostics.policy.v1",
     "metadata_surface": "objc3c.release.operations.metadata.surface.v1",
     "schema_surface": "objc3c.release.operations.schema.surface.v1",
     "workflow_surface": "objc3c.release.operations.workflow.surface.v1",
 }
+
+RELEASE_OPERATIONS_ACTIONS = [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+]
 
 
 def fail(message: str) -> int:
@@ -80,12 +89,31 @@ def main() -> int:
                 return fail(f"{list_name} referenced missing path {raw_path}")
             checked_paths.append(raw_path)
 
+    owned_actions = source_surface.get("release_operations_owned_actions")
+    if owned_actions != RELEASE_OPERATIONS_ACTIONS:
+        return fail("release_operations_owned_actions drifted from public action contract")
+    public_actions = source_surface.get("public_actions")
+    if not isinstance(public_actions, list) or not set(RELEASE_OPERATIONS_ACTIONS).issubset(public_actions):
+        return fail("public_actions omitted a release-operations action")
+    workflow_surface = load_json(ROOT / source_surface["workflow_surface"])
+    if workflow_surface.get("release_operations_owned_actions") != RELEASE_OPERATIONS_ACTIONS:
+        return fail("workflow surface release-operations owner split drifted")
+    hard_cutover_policy = source_surface.get("hard_cutover_policy")
+    if not isinstance(hard_cutover_policy, dict):
+        return fail("hard_cutover_policy was missing")
+    if hard_cutover_policy.get("missing_artifact_behavior") != "fail-closed":
+        return fail("release operations missing-artifact behavior must be fail-closed")
+    if hard_cutover_policy.get("public_action_names") != "preserved":
+        return fail("public action name preservation policy drifted")
+
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "source_surface": repo_rel(SOURCE_SURFACE),
         "checked_path_count": len(sorted(set(checked_paths))),
         "checked_paths": sorted(set(checked_paths)),
+        "release_operations_owned_actions": RELEASE_OPERATIONS_ACTIONS,
+        "missing_artifact_behavior": hard_cutover_policy["missing_artifact_behavior"],
     }
     write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")

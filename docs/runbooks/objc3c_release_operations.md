@@ -6,8 +6,8 @@ This runbook defines the checked-in release-operations surface for objc3c:
 
 - semantic versioning claims over the published objc3c release payloads
 - support windows and support-window classes for published channels
-- machine-owned update manifests and support warning payloads
-- rollback, deprecation, and upgrade-path publication derived from checked-in contracts
+- machine-owned update manifests and upgrade-support warning payloads
+- revert, deprecation, and upgrade-path publication derived from checked-in contracts
 - release-operations validation over the existing release-foundation and packaging-channel outputs
 
 This milestone does not add a hosted updater daemon, background auto-update service,
@@ -31,14 +31,14 @@ Support windows are intentionally narrow and channel-scoped:
 
 - `stable`: supported and preferred for normal users
 - `candidate`: supported for release-drill and pre-publish verification
-- `preview`: best-effort for short-lived support-window probes only
+- `preview`: blocked unless generated migration and revert evidence exists
 
 Within one major line:
 
 - `stable` must advertise a support window for the current minor line
 - `candidate` may overlap the current `stable` line for upgrade rehearsal
-- `preview` may carry warnings, but must still publish machine-readable
-  support status and rollback guidance
+- `preview` must carry warnings and must still publish machine-readable
+  support status and revert guidance
 
 Do not claim indefinite support, cross-major forward support, or a hosted
 long-term support program in this milestone.
@@ -70,10 +70,12 @@ Current platform support-tier boundary:
 Support publication for this milestone must emit:
 
 - a machine-owned update manifest with channel, version, and artifact pointers
-- a machine-owned support-window report with support-window, upgrade-path, and
+- a machine-owned upgrade-support report with support-window, upgrade-path, and
   warning details
-- explicit rollback guidance tied to the published installer/offline channels
+- explicit revert guidance tied to the published installer/offline channels
 - ABI/runtime/data-format rejection diagnostics as checked-in policy contracts
+- fail-closed diagnostics when required upstream release, package-channel,
+  platform-support, or same-major revert artifacts are absent
 
 Warnings must be deterministic and derived from checked-in policy classes such
 as:
@@ -101,7 +103,7 @@ These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge an
 machine-owned artifacts under `tmp/reports/release-operations/` and
 `tmp/artifacts/release-operations/`.
 
-The update manifest, support-window report, and channel catalog must also
+The update manifest, upgrade-support report, and channel catalog must also
 publish:
 
 - the machine-owned platform support matrix path
@@ -112,6 +114,13 @@ publish:
 Those fields must stay aligned with
 `tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`.
 
+Release operations do not rebuild upstream owner outputs while publishing. If
+the release manifest, package-channel summary, platform-support matrix, platform
+support summary, package archive pointers, or upgrade-support report contract is
+missing, the release-operations action fails closed with the owning public action
+named in the diagnostic. Public action names stay stable; the hard cutover is in
+the source and artifact contracts, not in a compatibility bridge.
+
 ## Non-Goals
 
 - no hosted update service
@@ -119,3 +128,4 @@ Those fields must stay aligned with
 - no package-manager upgrade semantics
 - no cross-platform support claim beyond the checked-in `windows-x64` channel set
 - no manual support spreadsheet or hand-authored release-operation digest
+- no compatibility shim or report-only support claim

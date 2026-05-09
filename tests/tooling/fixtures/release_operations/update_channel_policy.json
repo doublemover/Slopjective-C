@@ -2,6 +2,8 @@
   "contract_id": "objc3c.release.operations.update.channel.policy.v1",
   "schema_version": 1,
   "default_channel": "stable",
+  "missing_channel_behavior": "fail-closed",
+  "channel_selection_rule": "only channel_id values listed in channel_order may be published",
   "channel_order": [
     "stable",
     "candidate",
@@ -19,7 +21,9 @@
       "permitted_upgrade_targets": [
         "stable",
         "candidate"
-      ]
+      ],
+      "revert_channel": "local-installer",
+      "requires_generated_warning": false
     },
     {
       "channel_id": "candidate",
@@ -33,7 +37,9 @@
         "stable",
         "candidate",
         "preview"
-      ]
+      ],
+      "revert_channel": "local-installer",
+      "requires_generated_warning": true
     },
     {
       "channel_id": "preview",
@@ -47,7 +53,9 @@
       ],
       "permitted_upgrade_targets": [
         "preview"
-      ]
+      ],
+      "revert_channel": "offline-bundle",
+      "requires_generated_warning": true
     }
   ],
   "warning_classes": [

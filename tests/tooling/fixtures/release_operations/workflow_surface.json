@@ -12,9 +12,27 @@
     "validate-release-operations",
     "validate-release-operations-end-to-end"
   ],
+  "release_operations_owned_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
+  ],
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels"
   ],
-  "nightly_action": "test-nightly"
+  "workflow_child_actions": [
+    "validate-packaging-channels",
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations"
+  ],
+  "integration_summary_contract": "objc3c.release.operations.integration.summary.v1",
+  "end_to_end_summary_contract": "objc3c.release.operations.end-to-end.summary.v1",
+  "nightly_action": "test-nightly",
+  "fallback_policy": "fail-closed: upstream artifacts must exist or their owner action must fail before release-operations publication"
 }

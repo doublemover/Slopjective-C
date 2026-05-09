@@ -3,13 +3,8 @@
 
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
@@ -19,22 +14,20 @@ VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations
 UPGRADE_PATH_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_path_surface.json"
 UPDATE_CHANNEL_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "update_channel_policy.json"
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "metadata_surface.json"
-PACKAGE_CHANNELS_BUILD = ROOT / "scripts" / "build_objc3c_package_channels.py"
-PLATFORM_SUPPORT_MATRIX_BUILD = ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
 REPORT_PATH = ROOT / "tmp" / "reports" / "release-operations" / "update-manifest-summary.json"
 MANIFEST_PATH = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 PACKAGE_CHANNELS_SUMMARY = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 RELEASE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
 PLATFORM_SUPPORT_MATRIX = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
 PLATFORM_SUPPORT_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-support-matrix-summary.json"
+UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
 
 
-
-
-def run(command: list[str]) -> None:
-    result = run_completed(command, cwd=ROOT, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
+def require_file(path: Path, owner_action: str) -> None:
+    if not path.is_file():
+        raise RuntimeError(
+            f"required upstream artifact missing: {repo_rel(path)}; run owner action {owner_action}"
+        )
 
 
 def main() -> int:
@@ -44,16 +37,15 @@ def main() -> int:
     update_channel_policy = load_json(UPDATE_CHANNEL_POLICY)
     metadata_surface = load_json(METADATA_SURFACE)
 
-    if not PACKAGE_CHANNELS_SUMMARY.is_file() or not RELEASE_MANIFEST.is_file():
-        run(python_script_command(PACKAGE_CHANNELS_BUILD))
-    if not PLATFORM_SUPPORT_MATRIX.is_file():
-        run(python_script_command(PLATFORM_SUPPORT_MATRIX_BUILD))
+    require_file(PACKAGE_CHANNELS_SUMMARY, "build-package-channels")
+    require_file(RELEASE_MANIFEST, "build-release-manifest")
+    require_file(PLATFORM_SUPPORT_MATRIX, "build-platform-support-matrix")
+    require_file(PLATFORM_SUPPORT_SUMMARY, "build-platform-support-matrix")
 
     package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY)
     release_manifest = load_json(RELEASE_MANIFEST)
     platform_support_matrix = load_json(PLATFORM_SUPPORT_MATRIX)
 
-    compatibility_report_path = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-compatibility-report.json"
     artifacts = {
         "portable_archive": package_channels_summary["portable_archive"],
         "installer_archive": package_channels_summary["installer_archive"],
@@ -63,9 +55,19 @@ def main() -> int:
         "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX),
     }
 
+    channel_order = update_channel_policy["channel_order"]
+    channel_by_id = {
+        entry["channel_id"]: entry
+        for entry in update_channel_policy["channels"]
+    }
+    if sorted(channel_order) != sorted(channel_by_id):
+        raise RuntimeError("update channel policy channel_order drifted from channel definitions")
+    if update_channel_policy["default_channel"] not in channel_by_id:
+        raise RuntimeError("default update channel is not declared in channel policy")
+
     channels = []
-    for channel_id in update_channel_policy["channel_order"]:
-        channel_policy = next(entry for entry in update_channel_policy["channels"] if entry["channel_id"] == channel_id)
+    for channel_id in channel_order:
+        channel_policy = channel_by_id[channel_id]
         version = versioning_model[f"current_{channel_id}_version"]
         channels.append({
             "channel_id": channel_id,
@@ -90,7 +92,7 @@ def main() -> int:
         "support_tiers": platform_support_matrix["tiers"],
         "channels": channels,
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
-        "compatibility_report": repo_rel(compatibility_report_path),
+        "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT),
     }
     for field_name in metadata_surface["required_update_manifest_fields"]:
         if field_name not in payload:
@@ -108,8 +110,16 @@ def main() -> int:
         "default_channel": payload["default_channel"],
         "default_platform_id": payload["default_platform_id"],
         "platform_support_matrix": payload["platform_support_matrix"],
+        "platform_support_summary": payload["platform_support_summary"],
         "package_channels_manifest": package_channels_summary["manifest_path"],
         "release_manifest": repo_rel(RELEASE_MANIFEST),
+        "upgrade_support_report": payload["upgrade_support_report"],
+        "upstream_artifacts": [
+            repo_rel(PACKAGE_CHANNELS_SUMMARY),
+            repo_rel(RELEASE_MANIFEST),
+            repo_rel(PLATFORM_SUPPORT_MATRIX),
+            repo_rel(PLATFORM_SUPPORT_SUMMARY),
+        ],
     }
     write_json_file(REPORT_PATH, summary)
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
