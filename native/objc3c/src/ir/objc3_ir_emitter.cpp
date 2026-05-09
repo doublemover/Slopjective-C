@@ -9,25 +9,20 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
-#include "ir/objc3_ir_block_lowering.h"
 #include "ir/objc3_ir_canonical_literal_pools.h"
 #include "ir/objc3_ir_class_receiver_bindings.h"
-#include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_expression_call_orchestration.h"
+#include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
-#include "ir/objc3_ir_function_orchestration.h"
+#include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_module_body_orchestration.h"
 #include "ir/objc3_ir_module_metadata_publication.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
-#include "ir/objc3_ir_statement_orchestration.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
-#include "ir/objc3_ir_value_materialization.h"
-#include "parse/objc3_parse_support.h"
 
 class Objc3IREmitter {
  public:
@@ -106,20 +101,17 @@ class Objc3IREmitter {
       error = boundary_error_;
       return false;
     }
+    Objc3IREmitterServiceContextState service_state =
+        ServiceContextState();
+    Objc3IREmitterServiceContextCallbacks service_callbacks =
+        ServiceContextCallbacks();
     Objc3IRModuleBodyOrchestrationOptions module_body_options =
-        ModuleBodyOrchestrationOptions();
+        BuildObjc3IREmitterModuleBodyOrchestrationOptions(service_state);
     std::ostringstream body;
     if (!EmitObjc3IRModuleBodyOrchestration(
             module_body_options,
-            Objc3IRModuleBodyOrchestrationCallbacks{
-                [this](const Expr *expr) {
-                  return IsObjc3IRCompileTimeGlobalNilExpr(
-                      expr, CompileTimeProofAnalysisContext());
-                },
-                [this]() { return FunctionOrchestrationOptions(); },
-                [this](const std::string &reason) {
-                  EmitUnsupportedI32Value(reason);
-                }},
+            BuildObjc3IREmitterModuleBodyOrchestrationCallbacks(
+                service_state, service_callbacks),
             body, error)) {
       return false;
     }
@@ -131,10 +123,7 @@ class Objc3IREmitter {
 
     std::ostringstream out;
     EmitObjc3IRModuleMetadataPublication(
-        Objc3IRModuleMetadataPublicationOptions{
-            program_.module_name, frontend_metadata_, lowering_ir_boundary_,
-            synthesized_property_accessor_count_,
-            vector_signature_function_count_},
+        BuildObjc3IREmitterModuleMetadataPublicationOptions(service_state),
         out);
     EmitObjc3IRModuleFrontendMetadataBoundaryPublication(
         module_body_options, out);
@@ -152,171 +141,44 @@ class Objc3IREmitter {
   }
 
  private:
-  std::string NewTemp(FunctionContext &ctx) const { return "%t" + std::to_string(ctx.temp_counter++); }
-
-  std::string NewLabel(FunctionContext &ctx, const std::string &prefix) const {
-    return prefix + std::to_string(ctx.label_counter++);
-  }
-
-  Objc3IRBlockLoweringContext BlockLoweringContext() const {
-    return Objc3IRBlockLoweringContext{
-        Objc3IRBlockLoweringState{
-            &block_function_definitions_,
-            &emitted_block_invoke_symbols_,
-            &emitted_block_copy_helper_symbols_,
-            &emitted_block_dispose_helper_symbols_},
-        BuildObjc3IRStatementOrchestrationScopeCleanupCallbacks(
-            StatementOrchestrationOptions()),
-        Objc3IRBlockLoweringCallbacks{
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this](const Expr *expr, FunctionContext &callback_ctx) {
-              return EmitObjc3IRExpressionCall(
-                  expr, callback_ctx, ExpressionCallEmissionOptions());
-            },
-            [this](const Stmt *stmt, FunctionContext &callback_ctx) {
-              EmitObjc3IRStatementOrchestration(
-                  stmt, callback_ctx, StatementOrchestrationOptions());
-            },
-            [this](const FunctionContext &callback_ctx,
-                   const std::string &name) {
-              return LookupObjc3IRVarPtr(
-                  callback_ctx, name, ValueMaterializationContext());
-            },
-            [this](const std::string &name, FunctionContext &callback_ctx) {
-              return EmitObjc3IRIdentifierValue(
-                  name, callback_ctx, ValueMaterializationContext());
-            }}};
-  }
-
-  Objc3IRCompileTimeProofAnalysisContext CompileTimeProofAnalysisContext()
-      const {
-    return Objc3IRCompileTimeProofAnalysisContext{
-        global_nil_proven_symbols_,
-        global_const_values_,
-        [this](const FunctionContext &callback_ctx,
-               const std::string &name) {
-          return LookupObjc3IRVarPtr(
-              callback_ctx, name, ValueMaterializationContext());
-        }};
-  }
-
-  Objc3IRValueMaterializationContext ValueMaterializationContext() const {
-    return Objc3IRValueMaterializationContext{
-        globals_,
-        typed_keypath_artifacts_,
-        [this](FunctionContext &callback_ctx) {
-          return NewTemp(callback_ctx);
-        },
-        [this](const std::string &reason) {
-          return EmitUnsupportedI32Value(reason);
-        },
-        [this]() { return BlockLoweringContext(); }};
-  }
-
-  Objc3IRStatementOrchestrationOptions StatementOrchestrationOptions() const {
-    return Objc3IRStatementOrchestrationOptions{
-        frontend_metadata_.arc_mode_enabled,
-        Objc3IRStatementOrchestrationServices{
-            [this](const Expr *expr, FunctionContext &callback_ctx) {
-              return EmitObjc3IRExpressionCall(
-                  expr, callback_ctx, ExpressionCallEmissionOptions());
-            },
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return NewLabel(callback_ctx, prefix);
-            },
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this]() { return BlockLoweringContext(); },
-            [this]() { return ValueMaterializationContext(); },
-            [this]() { return CompileTimeProofAnalysisContext(); }}};
-  }
-
-  Objc3IRExpressionCallEmissionOptions ExpressionCallEmissionOptions() const {
-    return Objc3IRExpressionCallEmissionOptions{
-        selector_pool_globals_,
-        class_receiver_constants_,
-        direct_dispatch_symbols_by_key_,
-        lowering_ir_boundary_.runtime_dispatch_arg_slots,
-        lowering_ir_boundary_.runtime_dispatch_symbol,
-        runtime_dispatch_call_state_,
-        defined_functions_,
-        declared_pure_functions_,
-        impure_functions_,
-        Objc3IRExpressionCallEmissionServices{
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return NewLabel(callback_ctx, prefix);
-            },
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this](FunctionContext &callback_ctx) {
-              InvalidateObjc3IRGlobalProofState(callback_ctx);
-            },
-            [this](const std::string &name, FunctionContext &callback_ctx) {
-              return EmitObjc3IRIdentifierValue(
-                  name, callback_ctx, ValueMaterializationContext());
-            },
-            [this](const Expr &callback_expr) {
-              return EmitObjc3IRTypedKeyPathLiteralValue(
-                  callback_expr, ValueMaterializationContext());
-            },
-            [this](const std::string &name)
-                -> const LoweredFunctionSignature * {
-              auto signature_it = function_signatures_.find(name);
-              if (signature_it == function_signatures_.end()) {
-                return nullptr;
-              }
-              return &signature_it->second;
-            },
-            [this]() { return BlockLoweringContext(); },
-            [this]() {
-              return BuildObjc3IRStatementOrchestrationFunctionLocalContext(
-                  StatementOrchestrationOptions());
-            },
-            [this]() { return CompileTimeProofAnalysisContext(); }}};
-  }
-
-  Objc3IRFunctionOrchestrationOptions FunctionOrchestrationOptions() const {
-    return Objc3IRFunctionOrchestrationOptions{
-        program_,
-        frontend_metadata_.arc_mode_enabled,
-        class_receiver_constants_,
-        StatementOrchestrationOptions(),
-        synthetic_method_stats_};
-  }
-
-  Objc3IRModuleBodyOrchestrationOptions ModuleBodyOrchestrationOptions() {
-    return Objc3IRModuleBodyOrchestrationOptions{
+  Objc3IREmitterServiceContextState ServiceContextState() {
+    return Objc3IREmitterServiceContextState{
         program_,
         frontend_metadata_,
         lowering_ir_boundary_,
         runtime_metadata_symbols_,
+        globals_,
         mutable_global_symbols_,
         global_const_values_,
         global_nil_proven_symbols_,
-        metaprogramming_global_artifacts_,
+        defined_functions_,
+        declared_pure_functions_,
         function_definitions_,
         method_definitions_,
-        block_function_definitions_,
-        function_signatures_,
-        defined_functions_,
+        metaprogramming_global_artifacts_,
+        impure_functions_,
         function_arity_,
+        function_signatures_,
+        direct_dispatch_symbols_by_key_,
         selector_pool_globals_,
         runtime_string_pool_globals_,
         typed_keypath_artifacts_,
+        class_receiver_constants_,
         synthesized_property_accessor_count_,
-        runtime_dispatch_call_state_};
+        vector_signature_function_count_,
+        block_function_definitions_,
+        emitted_block_invoke_symbols_,
+        emitted_block_copy_helper_symbols_,
+        emitted_block_dispose_helper_symbols_,
+        runtime_dispatch_call_state_,
+        synthetic_method_stats_};
+  }
+
+  Objc3IREmitterServiceContextCallbacks ServiceContextCallbacks() const {
+    return BuildObjc3IREmitterServiceContextCallbacks(
+        [this](const std::string &reason) {
+          return EmitUnsupportedI32Value(reason);
+        });
   }
 
   std::string EmitUnsupportedI32Value(const std::string &reason) const {

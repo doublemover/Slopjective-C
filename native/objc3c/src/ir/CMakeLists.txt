@@ -91,6 +91,7 @@ target_link_libraries(objc3c_ir_publication_surface PUBLIC
 
 add_library(objc3c_ir STATIC
   objc3_ir_emitter.cpp
+  objc3_ir_emitter_service_contexts.cpp
   objc3_ir_module_body_orchestration.cpp
 )
 objc3c_apply_build_defaults(objc3c_ir)
