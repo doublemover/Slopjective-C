@@ -30,7 +30,7 @@
       "typed-keypath-text-shape",
       "typed-keypath-metadata",
       "reflection-interop",
-      "runtime-composition-adapter"
+      "runtime-composition-token"
     ],
     "objc3.system": [
       "resource-cleanup",
@@ -71,7 +71,7 @@
   },
   "module_roles": {
     "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints that eventually back structured runtime behavior",
-    "objc3.keypath": "typed key-path metadata and helper entrypoints that bridge reflection, interop, and runtime-composition claims",
+    "objc3.keypath": "typed key-path metadata and helper entrypoints for explicit reflection, interop, and runtime-composition tokens",
     "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks reserved for strict-system claims"
   },
   "layering_model": {

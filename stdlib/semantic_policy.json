@@ -72,7 +72,7 @@
     "text_shape_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
     "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
     "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
-    "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and text-shape helpers",
+    "runtime_composition_shape": "must preserve explicit component counts without inventing ownership or allocation semantics",
     "metadata_token": "returns root plus component_count",
     "reflection_interop_token": "returns component_count when reflected_components is negative, otherwise component_count plus reflected_components",
     "runtime_composition_token": "returns component_count when imported_components is negative, otherwise component_count plus imported_components"

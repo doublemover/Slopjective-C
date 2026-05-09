@@ -88,7 +88,7 @@
     ],
     "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
     "comparison_claim_rule": "not-yet-runnable capabilities must be framed as actor-shaped comparison or canonical conversion guidance rather than runnable parity claims",
-    "command_truth_rule": "package.json scripts.objc3c is the authoritative public npm bridge for workflow actions",
+    "command_truth_rule": "package.json scripts.objc3c is the authoritative public npm entrypoint for workflow actions",
     "machine_noise_rule": "tmp artifacts and archived redirect material may not appear as the primary onboarding route"
   },
   "capability_demo_examples": [
@@ -116,7 +116,7 @@
         "objc3.system"
       ],
       "story_capabilities": [
-        "status-bridging",
+        "status-shape",
         "actor-shaped-messaging",
         "runtime-messaging"
       ]
