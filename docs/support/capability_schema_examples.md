@@ -89,5 +89,5 @@ These are not valid support claims:
 - "accepted by parser fallback"
 - "available in compatibility mode"
 - "migration lane accepts old syntax"
-- "run `python scripts/...` as the public command"
+- "run a direct helper script as the public command"
 - "implemented because a roadmap says it is planned"

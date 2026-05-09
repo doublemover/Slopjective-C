@@ -176,6 +176,16 @@
     },
     {
       "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
+      "path": "schemas/README.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
+      "path": "docs/support/capability_schema_examples.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "source",
       "path": "native/objc3c/src/io/json/json_schema.cpp"
     },
