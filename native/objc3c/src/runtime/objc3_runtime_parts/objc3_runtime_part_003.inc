@@ -408,9 +408,3 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
                                false);
 }
 
-int objc3_runtime_copy_dispatch_state_for_testing(
-    objc3_runtime_dispatch_state_snapshot *snapshot) {
-  if (snapshot == nullptr) {
-    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
-  }
-
