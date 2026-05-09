@@ -1,27 +1,4 @@
-              .concurrency_replay_race_guard_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .actor_isolation_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .deterministic_schedule_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .guard_blocked_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .contract_violation_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .deterministic_schedule_sites +
-              result.parity_surface.concurrency_replay_race_guard_summary
-                  .guard_blocked_sites ==
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary.deterministic;
+              .concurrency_replay_race_guard_sites;
   result.unsafe_error_parity_validation_readiness_record =
       BuildObjc3SemaUnsafeErrorParityValidationReadinessRecord(
           input,
