@@ -5,6 +5,7 @@ The live runtime test surface exists to prove the shipped runtime library and em
 Authoritative runtime entrypoints:
 
 - `objc3_runtime_lookup_selector`
+- `objc3_runtime_register_selector`
 - `objc3_runtime_dispatch_i32_checked`
 - `objc3_runtime_dispatch_i32`
 - `objc3_runtime_register_image`
@@ -18,26 +19,40 @@ What the live probes should cover:
 - property metadata reflection over emitted descriptors
 - memory-management and ownership helper behavior where that surface is live
 - runtime-backed storage ownership reflection over emitted property descriptors
+- public ABI result, selector, and registration records exposed through the
+  runtime public headers
 - reset/replay behavior where deterministic runtime state matters
 
 What does not count as proof:
 
 - hand-authored `.ll` files or placeholder object artifacts
 - sidecar-only evidence with no matching executable compile or probe path
+- legacy shim, fallback, compatibility, or migration-lane naming that claims positive runtime support
 
 Current corrective focus:
 
 - keep dispatch proof tied to checked strict-result dispatch and the canonical
   `objc3_runtime_dispatch_i32` lowering entrypoint
+- keep unsupported dispatch proof tied to strict-result status and explicit
+  strict-error probes
 - prove synthesized accessors through emitted objects and runtime probes
-- treat native-output provenance as part of the test surface, not separate ceremony
+- treat storage, reflection, registration, and public ABI owner anchors as part of
+  the runtime fixture metadata, not separate closeout ceremony
 
 Representative live proof paths:
 
 - runtime library:
   - `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`
+  - `native/objc3c/src/runtime/dispatch/dispatch_status.cpp`
   - `native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp`
   - `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
+  - `native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp`
+  - `native/objc3c/src/runtime/storage/property_lookup.cpp`
+  - `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp`
+  - `native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp`
+  - `native/objc3c/src/runtime/reflection/storage_accessor_snapshot.cpp`
   - `native/objc3c/src/runtime/memory/arc.cpp`
 - compile and artifact publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
@@ -51,6 +66,10 @@ Representative live proof paths:
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
   - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp`
+  - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
+  - `tests/tooling/runtime/strict_dispatch_error_status_probe.cpp`
 
 - integrated runtime architecture packet:
   - `npm run objc3c -- proof-runtime-architecture`
@@ -60,6 +79,12 @@ Representative live proof paths:
   - `tmp/reports/runtime/architecture-integration/summary.json`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
+
+Runtime fixtures are canonical owner anchors. Positive probe output may prove
+storage, reflection, registration, object-model, ARC/block, or public ABI
+behavior; strict-dispatch probes prove rejected runtime outcomes. A probe name,
+snapshot field, or README row must not turn legacy shim, fallback,
+compatibility, or migration-lane residue into positive support.
 
 Fast helper-only checks:
 
