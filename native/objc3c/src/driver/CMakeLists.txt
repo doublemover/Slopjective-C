@@ -4,6 +4,12 @@ add_library(objc3c_driver STATIC
   objc3_cli_option_application.cpp
   objc3_cli_option_validation.cpp
   objc3_cli_value_parsers.cpp
+  objc3_driver_cross_module_imported_input_block.cpp
+  objc3_driver_cross_module_imported_input_core.cpp
+  objc3_driver_cross_module_imported_input_error_concurrency.cpp
+  objc3_driver_cross_module_imported_input_interop.cpp
+  objc3_driver_cross_module_imported_input_metaprogramming.cpp
+  objc3_driver_cross_module_imported_input_storage.cpp
   objc3_driver_cross_module_imported_input.cpp
   objc3_driver_cross_module_link_publication.cpp
   objc3_driver_cross_module_link_plan_inputs.cpp
