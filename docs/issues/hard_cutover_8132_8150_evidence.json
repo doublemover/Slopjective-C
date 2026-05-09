@@ -10,6 +10,113 @@
     "push": "not performed",
     "commit_policy": "local commits only with git commit --no-verify"
   },
+  "branch_evidence_policy": {
+    "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
+    "historic_local_commit_fields": "local_commits and local owner refresh fields name committed branch refs in this checkout; they are not report-only or uncommitted evidence",
+    "unsupported_evidence": [
+      "uncommitted worktree edits",
+      "tmp report output without a matching committed owner surface",
+      "remote closure claims without tracker edits",
+      "validation claims without an allowed validation run"
+    ],
+    "current_head": "98d10a61c",
+    "current_head_summary": "HC split lowering IR handoff ownership"
+  },
+  "current_branch_owner_refresh": {
+    "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
+    "since_commit": "9676679c2",
+    "through_commit": "98d10a61c",
+    "commit_count": 186,
+    "count_policy": "counts committed owner/evidence commits after the prior closeout refresh and excludes uncommitted worktree edits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "317ee8c03",
+          "86144a95e",
+          "41190a72e",
+          "86364e9e0",
+          "3cc72a03d",
+          "bb55cda15"
+        ],
+        "owner_boundary": "workflow bridge, npm surface policy, public script metadata hygiene, and integrity schema commits are committed branch evidence for the public command boundary"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8148",
+          "#8150"
+        ],
+        "commits": [
+          "37c34caac",
+          "345cada55",
+          "8ecc143fc",
+          "cca1addfb"
+        ],
+        "owner_boundary": "capability projection policy, evidence-map command policy, workflow schema indexing, and JSON schema contract hardening are committed schema/support truth evidence"
+      },
+      {
+        "issues": [
+          "#8140",
+          "#8141",
+          "#8150"
+        ],
+        "commits": [
+          "3816af62a",
+          "62509976d",
+          "1f3074273"
+        ],
+        "owner_boundary": "frontend C API owner headers, contract hardening, and C API runner ownership are committed public contract evidence without compatibility wrappers"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "commits": [
+          "879b4dbb5",
+          "19acda08d",
+          "16a944613"
+        ],
+        "owner_boundary": "runtime ownership, runtime closure owner evidence, and storage reflection owner contracts are committed runtime acceptance evidence while unsupported dispatch remains strict-error evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "commits": [
+          "7414e3f8c",
+          "c30c7b648",
+          "98d10a61c"
+        ],
+        "owner_boundary": "frontend lowering, compiler dispatch, and lowering/IR handoff ownership refresh compiler pipeline evidence without widening runtime support"
+      },
+      {
+        "issues": [
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "9b229ea0c",
+          "b0506e2d9"
+        ],
+        "owner_boundary": "hygiene docs capability ownership and evidence-owner contracts keep docs support claims tied to committed branch evidence"
+      }
+    ]
+  },
   "canonical_indexes": [
     "tests/conformance/hard_cutover_issue_index.json",
     "tests/conformance/hard_cutover_retired_surface_absence.json",
@@ -764,7 +871,7 @@
           "a16fd3725",
           "c8060c3e3"
         ],
-        "owner_boundary": "fixture contracts, workflow, source hygiene, control-plane, and generated-report boundary evidence remain local evidence until validation and remote closeout are allowed"
+        "owner_boundary": "fixture contracts, workflow, source hygiene, control-plane, and generated-report boundary evidence remain branch-committed evidence; validation and remote closeout stay deferred until allowed"
       }
     ]
   },
@@ -1236,7 +1343,7 @@
     {
       "issue": "#8132",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Compiler architecture decomposition has local evidence across root, frontend, driver, AST, IR, pipeline, ownership, and schema target splits.",
+      "closeout_summary": "Compiler architecture decomposition has committed branch evidence across root, frontend, driver, AST, IR, pipeline, ownership, and schema target splits.",
       "local_commits": [
         "1877caeb7",
         "df28562af",
@@ -1571,8 +1678,8 @@
     },
     {
       "issue": "#8150",
-      "status_for_tracker": "local-evidence-ready-not-remotely-closed",
-      "closeout_summary": "Final closure evidence is indexed locally, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
+      "status_for_tracker": "branch-evidence-ready-remote-deferred",
+      "closeout_summary": "Final closure evidence is indexed from committed hard-cutover branch surfaces, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
       "local_commits": [
         "4c0285b0d",
         "16e517982",

@@ -13,6 +13,8 @@ Machine-readable truth is split deliberately:
 - support directory contract: `docs/support/README.md`
 - local schema mirror: `docs/support/capability_matrix.schema.json`
 - evidence rows: `docs/support/evidence_map.json`
+- issue closeout evidence: `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
+  and `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
 - evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - schema examples: `docs/support/capability_schema_examples.md`
 - projection policy: the `projection_policy` object in
@@ -67,7 +69,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h`; `native/objc3c/src/runtime/images/registration.cpp`; `native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp` |
 | npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_handler_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `scripts/objc3c_workflow/path_bootstrap.py`; `docs/runbooks/objc3c_public_command_surface.md` |
 | Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/README.md`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/json_schema_validation.cpp`; `native/objc3c/src/io/json/json_equivalence.cpp`; `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |
-| Hard-cutover capability truth boundary      | internal    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `docs/support/README.md`; `docs/issues/hard_cutover_8132_8150_evidence.md` |
+| Hard-cutover capability truth boundary      | internal    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `docs/support/README.md`; `docs/issues/hard_cutover_8132_8150_evidence.md`; `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`; `docs/issues/hard_cutover_8132_8150_closeout/payloads.md` |
 
 State meanings:
 

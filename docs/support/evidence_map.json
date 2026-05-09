@@ -383,6 +383,16 @@
       "capability_id": "support.hard-cutover-capability-truth",
       "evidence_kind": "doc",
       "path": "docs/issues/hard_cutover_8132_8150_evidence.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
     }
   ]
 }

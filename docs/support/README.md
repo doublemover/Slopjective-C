@@ -16,6 +16,14 @@ but they must not widen it beyond these files.
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
+Issue closeout payloads are downstream evidence consumers, not new support
+truth. They must point back to committed branch surfaces in the files above:
+
+- `docs/issues/hard_cutover_8132_8150_evidence.md`
+- `docs/issues/hard_cutover_8132_8150_evidence.json`
+- `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
+- `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
+
 The canonical schema registry entries live under `schemas/`:
 
 - `schemas/objc3c-capability-matrix-v1.schema.json`
@@ -49,6 +57,9 @@ can distinguish source truth from reader-facing summaries.
 - Runtime, object-model, stdlib, or workflow prose must not upgrade an
   `internal` or `reserved` row into public behavior. Link the matrix row and
   evidence instead.
+- Closeout payloads may use only committed branch evidence and must keep
+  validation, push, and remote issue actions explicitly deferred unless those
+  operations actually ran.
 
 ## Validation Owner Modules
 

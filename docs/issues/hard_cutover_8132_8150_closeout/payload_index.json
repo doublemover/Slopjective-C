@@ -12,6 +12,106 @@
     "github": "not called",
     "push": "not performed"
   },
+  "branch_evidence_policy": {
+    "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
+    "historic_local_refresh_fields": "local refresh labels identify committed refs in this checkout; they are not report-only or uncommitted evidence",
+    "unsupported_evidence": [
+      "uncommitted worktree edits",
+      "tmp report output without a matching committed owner surface",
+      "remote closure claims without tracker edits",
+      "validation claims without an allowed validation run"
+    ],
+    "current_head": "98d10a61c",
+    "current_head_summary": "HC split lowering IR handoff ownership"
+  },
+  "current_branch_owner_refresh": {
+    "document": "docs/issues/hard_cutover_8132_8150_evidence.md",
+    "since_commit": "9676679c2",
+    "through_commit": "98d10a61c",
+    "commit_count": 186,
+    "count_policy": "counts committed owner/evidence commits after the prior closeout refresh and excludes uncommitted worktree edits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_owner_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "317ee8c03",
+          "41190a72e",
+          "86364e9e0",
+          "3cc72a03d",
+          "bb55cda15"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8148",
+          "#8150"
+        ],
+        "primary_commits": [
+          "37c34caac",
+          "345cada55",
+          "8ecc143fc",
+          "cca1addfb"
+        ]
+      },
+      {
+        "issues": [
+          "#8140",
+          "#8141",
+          "#8150"
+        ],
+        "primary_commits": [
+          "3816af62a",
+          "62509976d",
+          "1f3074273"
+        ]
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "879b4dbb5",
+          "19acda08d",
+          "16a944613"
+        ]
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "7414e3f8c",
+          "c30c7b648",
+          "98d10a61c"
+        ]
+      },
+      {
+        "issues": [
+          "#8145",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "9b229ea0c",
+          "b0506e2d9"
+        ]
+      }
+    ]
+  },
   "retired_surface_policy": "old-mode, shim, fallback, compatibility, and migration-lane support must be rejection, strict-error, or absent evidence",
   "latest_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
@@ -834,7 +934,7 @@
     {
       "issue": "#8150",
       "anchor": "#8150",
-      "status_for_tracker": "local-evidence-ready-not-remotely-closed",
+      "status_for_tracker": "branch-evidence-ready-remote-deferred",
       "primary_refresh_commits": [
         "645e9c25f",
         "239871c25",

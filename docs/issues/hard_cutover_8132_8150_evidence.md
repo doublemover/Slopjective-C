@@ -1,8 +1,11 @@
 # Hard-Cutover Issue Evidence: #8132-#8150
 
-This is a local closeout evidence map for the hard-cutover branch. It is based
-on committed branch work as of 2026-05-09. No validation, GitHub commands, push,
-or remote issue updates were run while writing this artifact.
+This is a branch-committed closeout evidence map for the hard-cutover branch. It
+is based on committed branch work as of 2026-05-09. No validation, GitHub
+commands, push, or remote issue updates were run while writing this artifact.
+Historic `local` refresh labels in this file mean committed refs in this
+checkout; they are not report-only evidence, uncommitted worktree evidence, or a
+claim that remote issue closure happened.
 
 Canonical behavior and no-compatibility indexes:
 
@@ -24,6 +27,16 @@ Canonical behavior and no-compatibility indexes:
 - `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`
 - `docs/issues/hard_cutover_diagnostic_outcome_code_index.md`
 - `docs/issues/hard_cutover_latest_local_commit_refresh.md`
+
+Current branch head covered by the support/evidence closeout map:
+
+- `98d10a61c` (`HC split lowering IR handoff ownership`)
+- prior refreshed commit: `9676679c2`
+- committed owner/evidence commits covered after that point: 186
+- evidence basis: committed branch surfaces only; `tmp/` reports, generated
+  summaries, or remote closure claims are not closeout evidence unless they
+  point back to checked-in owner surfaces and allowed tracker/validation work
+  has actually run
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -163,7 +176,7 @@ Latest local owner refresh after the docs/issues outcome-index pass:
   those same owner buckets.
 - The latest parser actor-isolation sendability, runbook native-owner, rejected
   canonical literal table, and runtime capability artifact commits are folded
-  into the same local-only evidence map.
+  into the same branch-committed evidence map.
 
 Follow-up local owner refresh after `f66452822`:
 
@@ -242,8 +255,8 @@ Post-`89959f6cc` local owner refresh:
   alignment plus driver CLI, parser contract/sema integration, parser
   extraction, and token contract tooling checks for `#8132`, `#8134`, `#8135`,
   `#8140`, `#8141`, `#8144`, and `#8150`.
-- These commits are local evidence anchors only; validation, push, and remote
-  issue edits remain deferred.
+- These commits are committed branch evidence anchors only; validation, push,
+  and remote issue edits remain deferred.
 
 Post-`e760e3450` local owner refresh:
 
@@ -313,7 +326,7 @@ Post-`2fb0664e0` local owner refresh:
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
 | `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, and the post-`2fb0664e0` wave through `6efdaf8f9`. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8150` | branch-evidence-ready-remote-deferred | Closure evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, and the current committed branch owner wave through `98d10a61c`. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

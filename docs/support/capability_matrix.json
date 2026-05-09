@@ -592,7 +592,9 @@
         "docs/support/capability_matrix.json",
         "docs/support/evidence_map.json",
         "docs/support/hard_cutover_capability_truth.md",
-        "docs/issues/hard_cutover_8132_8150_evidence.md"
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
       ],
       "evidence": [
         {
@@ -606,6 +608,14 @@
         {
           "kind": "doc",
           "path": "docs/issues/hard_cutover_8132_8150_evidence.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
         }
       ]
     }

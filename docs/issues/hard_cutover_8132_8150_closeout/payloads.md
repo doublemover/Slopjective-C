@@ -1,8 +1,11 @@
 # Hard-Cutover Tracker Closeout Payloads
 
-These are local, tracker-ready notes for `#8132`-`#8150`. They do not assert
-remote closure. Validation, `gh`, push, and issue edits were intentionally not
-run while preparing them.
+These are branch-committed, tracker-ready notes for `#8132`-`#8150`. They do
+not assert remote closure. Validation, `gh`, push, and issue edits were
+intentionally not run while preparing them. Historic `local` refresh labels in
+this file mean committed refs in this checkout; they are not report-only
+evidence, uncommitted worktree evidence, or a substitute for deferred tracker
+operations.
 
 Post-payload refresh commits are indexed in
 `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`. The refresh
@@ -15,7 +18,15 @@ The latest docs/issues-only refresh is
 `docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in 90 local
 owner commits after `abc203478` through `6d6fa804d`, grouped by issue
 acceptance owner, without changing the no-validation, no-GitHub, no-push,
-local-only status of these payloads.
+remote-deferred status of these payloads.
+
+The current branch evidence policy is stricter than the historic local wording:
+closeout payloads may point only to committed hard-cutover branch surfaces. The
+current covered head is `98d10a61c` (`HC split lowering IR handoff ownership`),
+with 186 committed owner/evidence commits after `9676679c2`. `tmp/` reports,
+generated summaries, and remote issue state are not closeout evidence here
+unless the relevant owner surface is checked in and the deferred validation or
+tracker operation actually ran.
 
 The same local refresh document now also folds in the follow-up committed owner
 wave after `f66452822` through `f4bf6228e`. That follow-up covers JSON value
@@ -45,7 +56,7 @@ commits that landed after the first docs commit.
 | `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime fallback remains removed or strict-error behavior. |
 | `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe`, `9cf3601b5`, `4307f5156` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch fallback stays strict-error evidence. |
 | `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe`, `c8060c3e3`, `531b53843`, `6d6fa804d` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
-| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer local evidence; final closure still waits on validation, push, and remote issue updates. |
+| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; final closure still waits on validation, push, and remote issue updates. |
 
 ## Follow-up Local Owner Refresh
 
@@ -406,14 +417,15 @@ are retired from public claims.
 
 ## #8150
 
-Final closure evidence is local and evidence-ready, including the follow-up
+Final closure evidence is branch-committed and evidence-ready, including the follow-up
 committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
 through `89959f6cc`, plus the post-`89959f6cc` owner wave through `e760e3450`.
 It also includes the post-`e760e3450` owner wave through `0350f4a4a`. Remote
 issue closure, push, and validation remain deferred under the current worker
 constraints. The post-`0350f4a4a` owner wave through `0d2111b18` is also folded
-into these local payloads, along with the post-`0d2111b18` owner wave through
-`2fb0664e0` and the post-`2fb0664e0` owner wave through `6efdaf8f9`.
+into these branch-committed payloads, along with the post-`0d2111b18` owner wave through
+`2fb0664e0`, the post-`2fb0664e0` owner wave through `6efdaf8f9`, and the
+current committed branch owner wave through `98d10a61c`.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

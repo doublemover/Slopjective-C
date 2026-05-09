@@ -18,6 +18,12 @@ the JSON matrix and evidence map. They may clarify reader expectations, but they
 must not introduce a public support claim, command surface, or completion state
 that is absent from the authoritative data.
 
+Issue closeout payloads are support-boundary evidence only when they point back
+to committed branch surfaces listed by the capability matrix, evidence map, or
+hard-cutover issue evidence files. They are not validation reports, remote issue
+edits, or release claims, and they do not close the gap left by deferred
+validation, push, or tracker operations.
+
 ## Support States
 
 | State | Meaning for public docs | What docs must not infer |
