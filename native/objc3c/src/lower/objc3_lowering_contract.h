@@ -20,6 +20,7 @@
 #include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
+#include "lower/contracts/type_system_generic_lowering_contracts.h"
 #include "lower/contracts/unsafe_intrinsic_governance_contracts.h"
 
 #include <cstddef>
@@ -464,16 +465,6 @@ inline constexpr const char *kObjc3WeakUnownedSemanticsLoweringLaneContract =
     "objc3c.weak.unowned.semantics.lowering.v1";
 inline constexpr const char *kObjc3ArcDiagnosticsFixitLoweringLaneContract =
     "objc3c.arc.diagnostics.fixit.lowering.v1";
-inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
-    "objc3c.lightweight.generics.constraint.lowering.v1";
-inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
-    "objc3c.nullability.flow.warning.precision.lowering.v1";
-inline constexpr const char *kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract =
-    "objc3c.protocol.qualified.object.type.lowering.v1";
-inline constexpr const char *kObjc3VarianceBridgeCastLoweringLaneContract =
-    "objc3c.variance.bridge.cast.lowering.v1";
-inline constexpr const char *kObjc3GenericMetadataAbiLoweringLaneContract =
-    "objc3c.generic.metadata.abi.lowering.v1";
 inline constexpr const char *kObjc3ModuleImportGraphLoweringLaneContract =
     "objc3c.module.import.graph.lowering.v1";
 inline constexpr const char *kObjc3NamespaceCollisionShadowingLoweringLaneContract =
@@ -686,62 +677,6 @@ struct Objc3ArcDiagnosticsFixitLoweringContract {
   bool deterministic = true;
 };
 
-struct Objc3LightweightGenericsConstraintLoweringContract {
-  std::size_t generic_constraint_sites = 0;
-  std::size_t generic_suffix_sites = 0;
-  std::size_t object_pointer_type_sites = 0;
-  std::size_t terminated_generic_suffix_sites = 0;
-  std::size_t pointer_declarator_sites = 0;
-  std::size_t normalized_constraint_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3NullabilityFlowWarningPrecisionLoweringContract {
-  std::size_t nullability_flow_sites = 0;
-  std::size_t object_pointer_type_sites = 0;
-  std::size_t nullability_suffix_sites = 0;
-  std::size_t nullable_suffix_sites = 0;
-  std::size_t nonnull_suffix_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3ProtocolQualifiedObjectTypeLoweringContract {
-  std::size_t protocol_qualified_object_type_sites = 0;
-  std::size_t protocol_composition_sites = 0;
-  std::size_t object_pointer_type_sites = 0;
-  std::size_t terminated_protocol_composition_sites = 0;
-  std::size_t pointer_declarator_sites = 0;
-  std::size_t normalized_protocol_composition_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3VarianceBridgeCastLoweringContract {
-  std::size_t variance_bridge_cast_sites = 0;
-  std::size_t protocol_composition_sites = 0;
-  std::size_t ownership_qualifier_sites = 0;
-  std::size_t object_pointer_type_sites = 0;
-  std::size_t pointer_declarator_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-struct Objc3GenericMetadataAbiLoweringContract {
-  std::size_t generic_metadata_abi_sites = 0;
-  std::size_t generic_suffix_sites = 0;
-  std::size_t protocol_composition_sites = 0;
-  std::size_t ownership_qualifier_sites = 0;
-  std::size_t object_pointer_type_sites = 0;
-  std::size_t pointer_declarator_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 struct Objc3ModuleImportGraphLoweringContract {
   std::size_t module_import_graph_sites = 0;
   std::size_t import_edge_candidate_sites = 0;
@@ -896,26 +831,6 @@ bool IsValidObjc3ArcDiagnosticsFixitLoweringContract(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
 std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
-bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
-    const Objc3LightweightGenericsConstraintLoweringContract &contract);
-std::string Objc3LightweightGenericsConstraintLoweringReplayKey(
-    const Objc3LightweightGenericsConstraintLoweringContract &contract);
-bool IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
-    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract);
-std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
-    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract);
-bool IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
-    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract);
-std::string Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
-    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract);
-bool IsValidObjc3VarianceBridgeCastLoweringContract(
-    const Objc3VarianceBridgeCastLoweringContract &contract);
-std::string Objc3VarianceBridgeCastLoweringReplayKey(
-    const Objc3VarianceBridgeCastLoweringContract &contract);
-bool IsValidObjc3GenericMetadataAbiLoweringContract(
-    const Objc3GenericMetadataAbiLoweringContract &contract);
-std::string Objc3GenericMetadataAbiLoweringReplayKey(
-    const Objc3GenericMetadataAbiLoweringContract &contract);
 bool IsValidObjc3ModuleImportGraphLoweringContract(
     const Objc3ModuleImportGraphLoweringContract &contract);
 std::string Objc3ModuleImportGraphLoweringReplayKey(
