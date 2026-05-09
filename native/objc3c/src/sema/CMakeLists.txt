@@ -17,9 +17,19 @@ target_sources(objc3c_sema_model INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/model/semantic_type.h
 )
 
+add_library(objc3c_sema_contract_flow STATIC
+  objc3_sema_pass_manager_contract_flow.cpp
+)
+objc3c_apply_build_defaults(objc3c_sema_contract_flow)
+objc3c_apply_llvm_direct_config(objc3c_sema_contract_flow)
+target_link_libraries(objc3c_sema_contract_flow PUBLIC
+  ${OBJC3C_SEMA_PUBLIC_DEPS}
+)
+
 add_library(objc3c_sema_contracts INTERFACE)
 target_link_libraries(objc3c_sema_contracts INTERFACE
   ${OBJC3C_SEMA_PUBLIC_DEPS}
+  objc3c_sema_contract_flow
 )
 target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_handoff_contract.h
