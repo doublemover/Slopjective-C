@@ -128,6 +128,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_ingest_binary_artifacts.h
   objc3_frontend_runtime_metadata_section_artifacts.cpp
   objc3_frontend_runtime_metadata_section_artifacts.h
+  objc3_frontend_runtime_registration_artifacts.cpp
+  objc3_frontend_runtime_registration_artifacts.h
 )
 objc3c_apply_build_defaults(objc3c_artifacts)
 objc3c_apply_llvm_direct_config(objc3c_artifacts)
