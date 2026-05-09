@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
     "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
   ],
-  "support_boundary": "frontend C API rows that mention fallback, shim, old-mode, compatibility, report-only, generated-artifact-only, missing artifacts, empty artifacts, result/status mismatch, skipped semantic success, null-invalid-input success, ABI version bypass, public-private partition bypass, borrowed-view lifetime misuse, or stage-summary mismatch are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "frontend C API rows that mention fallback, shim, old-mode, compatibility, generated-only, report-only, generated-artifact-only, migration-only, missing artifacts, empty artifacts, result/status mismatch, skipped semantic success, null-invalid-input success, ABI version bypass, public-private partition bypass, borrowed-view lifetime misuse, or stage-summary mismatch are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "owner_contract:no_fallback_or_report_only_claims=true",
@@ -30,13 +30,18 @@
     "*compatibility*",
     "*legacy*",
     "*unsupported*",
+    "*generated-only*",
+    "*generated_only*",
     "*report-only*",
+    "*report_only*",
     "*generated-artifact*",
+    "*migration-only*",
+    "*migration_only*",
     "*semantic-skipped-as-success*",
     "*abi-version-bypass*",
     "*public-private-partition-bypass*",
     "*borrowed-view-lifetime*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "fallback, shim, old-mode, compatibility, report-only, generated-artifact-only, null-invalid-input success, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, artifact mismatch, status mismatch, semantic-skipped success, and stage-summary mismatch remain canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "fallback, shim, old-mode, compatibility, generated-only, report-only, generated-artifact-only, migration-only, null-invalid-input success, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, artifact mismatch, status mismatch, semantic-skipped success, and stage-summary mismatch remain canonical rejection, strict-error, or provenance-only evidence"
 }

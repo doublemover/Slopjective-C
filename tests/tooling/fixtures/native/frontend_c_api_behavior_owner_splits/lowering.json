@@ -17,5 +17,5 @@
     "ownership_expectations:runner-required artifacts are explicit per emitted option and compile status"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime-dispatch fallback lowering, missing required artifacts, emitted-option mismatch, and lowering report-only success are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime-dispatch fallback lowering, shim lowering, old-mode lowering, compatibility lowering, missing required artifacts, emitted-option mismatch, generated-only lowering rows, report-only lowering success, and migration-only lowering claims are strict-error, canonical rejection, or provenance-only evidence"
 }

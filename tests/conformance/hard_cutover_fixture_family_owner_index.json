@@ -715,7 +715,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "frontend_c_api_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/index.json",
@@ -725,9 +726,10 @@
         "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/frontend_c_api_provenance.json"
       ],
-      "retired_disposition": "frontend public C API runner and helper contracts, result lifecycle, string lifecycle, artifact accessors, stage summaries, ABI version gates, public/private partition checks, runner summaries, emitted paths, and generated artifacts are resolved through behavior-first phase indexes before any C API row is cited as support; fallback, shim, old-mode, compatibility, report-only, generated-artifact-only, null-invalid-input success, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, semantic-skipped success, status mismatch, artifact mismatch, and stage-summary mismatch semantics remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "frontend public C API runner and helper contracts, result lifecycle, string lifecycle, artifact accessors, stage summaries, ABI version gates, public/private partition checks, runner summaries, emitted paths, contract rows, header/source snippets, generated-only rows, report-only rows, migration-only rows, and generated artifacts are resolved through behavior-first phase indexes and frontend C API provenance before any C API row is cited as support; fallback, shim, old-mode, compatibility, report-only, generated-only, generated-artifact-only, migration-only, null-invalid-input success, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, semantic-skipped success, status mismatch, artifact mismatch, and stage-summary mismatch semantics remain canonical rejection, strict-error, or provenance-only evidence"
     },
     {
       "family": "stress_fixture_owner_split_indexes",
@@ -1209,6 +1211,7 @@
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/frontend_c_api_provenance.json",
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/sema.json",

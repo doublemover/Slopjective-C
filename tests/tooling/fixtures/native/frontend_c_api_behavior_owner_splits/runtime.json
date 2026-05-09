@@ -21,5 +21,5 @@
     "required_header_ownership_phrases:OBJC3C_FRONTEND_C_API_PUBLIC_PRIVATE_PARTITION_OWNER owns the rule"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime fallback, compatibility wrappers, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, and null-invalid-input success claims are strict-error or canonical rejection evidence"
+  "retired_surface_rule": "runtime fallback, runtime shims, old-mode runtime rows, compatibility wrappers, generated-only rows, report-only lifecycle claims, migration-only runtime claims, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, and null-invalid-input success claims are strict-error, canonical rejection, or provenance-only evidence"
 }

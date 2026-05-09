@@ -17,5 +17,5 @@
     "required_helpers:objc3c_frontend_c_stage_summary_is_well_formed"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser inputs, parser fallback flags, compatibility parser routing, and parser-stage report-only success are canonical rejection or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser inputs, parser fallback flags, parser shims, compatibility parser routing, generated-only rows, report-only parser-stage success, and migration-only parser claims are canonical rejection, strict-error, or provenance-only evidence"
 }

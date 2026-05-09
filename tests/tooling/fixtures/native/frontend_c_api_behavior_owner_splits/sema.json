@@ -19,5 +19,5 @@
     "required_helpers:objc3c_frontend_c_result_error_message_view"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "semantic shim gates, compatibility-positive diagnostics, skipped sema reported as support, and missing or empty result-owned error strings are canonical rejection or strict-error evidence"
+  "retired_surface_rule": "semantic shim gates, semantic fallback gates, old-mode semantic inputs, compatibility-positive diagnostics, generated-only diagnostics, report-only diagnostics, migration-only semantic rows, skipped sema reported as support, and missing or empty result-owned error strings are canonical rejection, strict-error, or provenance-only evidence"
 }
