@@ -13,6 +13,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_sequence.cpp
   frontend_pipeline_stage_runner.cpp
   frontend_runtime_export_enforcement_helpers.cpp
+  frontend_runtime_metadata_boundary_helpers.cpp
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation.cpp
@@ -28,6 +29,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_runner.h
   frontend_phase_publication_helpers.h
   frontend_runtime_export_enforcement_helpers.h
+  frontend_runtime_metadata_boundary_helpers.h
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
