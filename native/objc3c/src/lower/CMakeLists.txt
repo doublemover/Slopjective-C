@@ -1,6 +1,7 @@
 add_library(objc3c_lower STATIC
   contracts/block_lowering_contract_validators.cpp
   contracts/block_arc_lowering_plan.cpp
+  contracts/lowering_arc_runtime_summaries.cpp
   contracts/control_flow_lowering_contracts.cpp
   contracts/cross_module_lowering_contracts.cpp
   contracts/dispatch_surface_contracts.cpp
