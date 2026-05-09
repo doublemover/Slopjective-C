@@ -66,6 +66,12 @@
       "disposition": "not compatibility fallback support"
     },
     {
+      "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
+      "token": "fallback",
+      "classification": "ordinary nil-coalescing value in canonical type semantic model evidence",
+      "disposition": "not fallback execution support"
+    },
+    {
       "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
       "token": "BridgeProviderShim",
       "classification": "foreign bridge symbol name in interop packaging evidence",
