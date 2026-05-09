@@ -206,6 +206,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_layout_rules.h
   storage/property_lookup.cpp
   storage/property_lookup.h
+  storage/property_entry_descriptor_snapshot_fields.cpp
+  storage/property_entry_descriptor_snapshot_fields.h
+  storage/property_entry_layout_snapshot_fields.cpp
+  storage/property_entry_layout_snapshot_fields.h
   storage/property_entry_snapshot_fields.cpp
   storage/property_entry_snapshot_fields.h
   storage/property_registry_snapshot_fields.cpp
