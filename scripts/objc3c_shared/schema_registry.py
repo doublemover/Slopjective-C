@@ -29,6 +29,12 @@ SCHEMA_PATHS: dict[str, Path] = {
     / "schemas"
     / "objc3c-package-install-receipt-v1.schema.json",
     "objc3c-compatibility-report-v1": ROOT / "schemas" / "objc3c-compatibility-report-v1.schema.json",
+    "objc3c-performance-dashboard-summary-v1": ROOT
+    / "schemas"
+    / "objc3c-performance-dashboard-summary-v1.schema.json",
+    "objc3c-performance-public-report-v1": ROOT
+    / "schemas"
+    / "objc3c-performance-public-report-v1.schema.json",
     "objc3c-public-command-contract-v1": ROOT / "schemas" / "objc3c-public-command-contract-v1.schema.json",
     "objc3c-public-conformance-scorecard-v1": ROOT
     / "schemas"

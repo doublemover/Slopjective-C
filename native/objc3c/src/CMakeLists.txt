@@ -18,20 +18,6 @@ target_link_libraries(objc3c_lower_model INTERFACE
   objc3c_build_defaults
 )
 
-add_library(objc3c_runtime_metadata INTERFACE)
-target_link_libraries(objc3c_runtime_metadata INTERFACE
-  objc3c_build_defaults
-)
-
-set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
-set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
-set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/public/objc3_runtime_api.h)
-set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
-set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
-# M251-D001 freeze: reserve the canonical in-tree native runtime library
-# target/header/source-root surface before M251-D002 lands the actual library
-# skeleton and M251-D003 wires the driver/link path to consume it.
-
 # Dependency-direction authority is defined in `ARCHITECTURE.md` and checked
 # by `scripts/check_objc3c_dependency_boundaries.py`. The hard-cutover graph uses
 # concrete stage targets below while module extraction continues.
@@ -75,80 +61,7 @@ add_subdirectory(pipeline)
 
 add_subdirectory(artifacts)
 
-add_library(objc3_runtime STATIC
-  runtime/blocks/block_capture_storage.cpp
-  runtime/blocks/block_capture_storage.h
-  runtime/blocks/block_record.cpp
-  runtime/blocks/block_record.h
-  runtime/classes/category_attachment.cpp
-  runtime/classes/category_attachment.h
-  runtime/classes/class_graph.cpp
-  runtime/classes/class_graph.h
-  runtime/classes/metaclass_graph.cpp
-  runtime/classes/metaclass_graph.h
-  runtime/classes/protocol_conformance.cpp
-  runtime/classes/protocol_conformance.h
-  runtime/concurrency/actor.cpp
-  runtime/concurrency/actor.h
-  runtime/concurrency/executor.cpp
-  runtime/concurrency/executor.h
-  runtime/concurrency/task.cpp
-  runtime/concurrency/task.h
-  runtime/dispatch/builtin_methods.cpp
-  runtime/dispatch/builtin_methods.h
-  runtime/dispatch/dispatch_api.cpp
-  runtime/dispatch/dispatch_api.h
-  runtime/dispatch/dispatch_errors.cpp
-  runtime/dispatch/dispatch_errors.h
-  runtime/dispatch/method_cache.cpp
-  runtime/dispatch/method_cache.h
-  runtime/dispatch/method_lookup.cpp
-  runtime/dispatch/method_lookup.h
-  runtime/errors/catch_filter.cpp
-  runtime/errors/catch_filter.h
-  runtime/errors/runtime_error.cpp
-  runtime/errors/runtime_error.h
-  runtime/images/image_descriptor.cpp
-  runtime/images/image_descriptor.h
-  runtime/images/multi_image_ordering.cpp
-  runtime/images/multi_image_ordering.h
-  runtime/images/registration.cpp
-  runtime/images/registration.h
-  runtime/memory/arc.cpp
-  runtime/memory/arc.h
-  runtime/memory/autorelease_pool.cpp
-  runtime/memory/autorelease_pool.h
-  runtime/objc3_runtime.cpp
-  runtime/public/objc3_runtime_api.h
-  runtime/public/objc3_runtime_result.h
-  runtime/selectors/keypath_table.cpp
-  runtime/selectors/keypath_table.h
-  runtime/selectors/selector_table.cpp
-  runtime/selectors/selector_table.h
-  runtime/state/runtime_reset.cpp
-  runtime/state/runtime_reset.h
-  runtime/state/runtime_state.cpp
-  runtime/state/runtime_state.h
-  runtime/storage/instance_storage.cpp
-  runtime/storage/instance_storage.h
-  runtime/storage/ivar_layout.cpp
-  runtime/storage/ivar_layout.h
-  runtime/storage/property_accessors.cpp
-  runtime/storage/property_accessors.h
-  runtime/storage/weak_slots.cpp
-  runtime/storage/weak_slots.h
-  support/selectors/selector_normalization.cpp
-  support/selectors/selector_normalization.h
-)
-objc3c_apply_build_defaults(objc3_runtime)
-target_link_libraries(objc3_runtime PUBLIC
-  objc3c_runtime_metadata
-)
-set_target_properties(objc3_runtime PROPERTIES
-  OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}
-)
-objc3c_apply_archive_output(objc3_runtime)
-add_library(objc3c::runtime ALIAS objc3_runtime)
+add_subdirectory(runtime)
 
 add_library(objc3c_diagnostics_modes STATIC
   diagnostics/modes/objc3_removed_mode_options.cpp
