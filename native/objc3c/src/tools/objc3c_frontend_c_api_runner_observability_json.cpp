@@ -1,0 +1,113 @@
+#include "tools/objc3c_frontend_c_api_runner_observability_json.h"
+
+#include <sstream>
+
+#include "io/objc3_json.h"
+#include "tools/objc3c_frontend_c_api_runner_commands.h"
+#include "tools/objc3c_frontend_c_api_runner_result.h"
+
+using objc3::io::EscapeJsonString;
+
+void WriteFrontendCApiRunnerObservabilityJson(
+    std::ostream &out,
+    const std::string &indent,
+    const std::string &summary_path_text,
+    const objc3c_frontend_c_compile_result_t &result,
+    objc3c_frontend_c_status_t status,
+    const std::string &result_error_message,
+    const std::string &runtime_metadata_binary_path_text) {
+  const std::string diagnostics_path_text =
+      FrontendCApiResultArtifactPath(result,
+                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+  const std::string manifest_path_text =
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+  const std::string ir_path_text =
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+  const std::string object_path_text =
+      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  const FrontendCApiDiagnosticTotals diagnostic_totals =
+      BuildFrontendCApiDiagnosticTotals(result);
+  const std::string last_attempted_stage =
+      LastAttemptedFrontendCApiStageName(result);
+  const std::string blocking_stage = BlockingFrontendCApiStageName(result);
+  const std::string child_indent = indent + "  ";
+  const std::string grandchild_indent = child_indent + "  ";
+  out << "{\n";
+  out << child_indent << "\"status_name\": \"" << FrontendCApiStatusName(status)
+      << "\",\n";
+  out << child_indent << "\"last_attempted_stage\": \""
+      << EscapeJsonString(last_attempted_stage) << "\",\n";
+  out << child_indent << "\"blocking_stage\": \""
+      << EscapeJsonString(blocking_stage) << "\",\n";
+  out << child_indent << "\"highest_diagnostic_severity\": \""
+      << HighestFrontendCApiDiagnosticSeverity(diagnostic_totals) << "\",\n";
+  out << child_indent << "\"result_error_message_present\": "
+      << (!result_error_message.empty() ? "true" : "false") << ",\n";
+  out << child_indent << "\"diagnostics_total\": " << diagnostic_totals.total
+      << ",\n";
+  out << child_indent << "\"diagnostics_notes\": " << diagnostic_totals.notes
+      << ",\n";
+  out << child_indent << "\"diagnostics_warnings\": "
+      << diagnostic_totals.warnings << ",\n";
+  out << child_indent << "\"diagnostics_errors\": " << diagnostic_totals.errors
+      << ",\n";
+  out << child_indent << "\"diagnostics_fatals\": " << diagnostic_totals.fatals
+      << ",\n";
+  out << child_indent << "\"artifact_presence\": {\n";
+  out << grandchild_indent << "\"summary\": true,\n";
+  out << grandchild_indent << "\"diagnostics\": "
+      << (FrontendCApiRunnerPathExists(diagnostics_path_text) ? "true"
+                                                              : "false")
+      << ",\n";
+  out << grandchild_indent << "\"manifest\": "
+      << (FrontendCApiRunnerPathExists(manifest_path_text) ? "true" : "false")
+      << ",\n";
+  out << grandchild_indent << "\"ir\": "
+      << (FrontendCApiRunnerPathExists(ir_path_text) ? "true" : "false")
+      << ",\n";
+  out << grandchild_indent << "\"object\": "
+      << (FrontendCApiRunnerPathExists(object_path_text) ? "true" : "false")
+      << ",\n";
+  out << grandchild_indent << "\"runtime_metadata_binary\": "
+      << (!runtime_metadata_binary_path_text.empty() ? "true" : "false")
+      << "\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "\"summary\": \""
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"diagnostics\": \""
+      << EscapeJsonString(
+             BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"manifest\": \""
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"ir\": \""
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(ir_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"object\": \""
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(object_path_text))
+      << "\"\n";
+  out << child_indent << "}\n";
+  out << indent << "}";
+}
+
+std::string BuildFrontendCApiRunnerObservabilityJson(
+    const std::filesystem::path &summary_path,
+    const objc3c_frontend_c_compile_result_t &result,
+    objc3c_frontend_c_status_t status,
+    const std::string &result_error_message,
+    const std::string &runtime_metadata_binary_path_text) {
+  std::ostringstream dump;
+  WriteFrontendCApiRunnerObservabilityJson(
+      dump,
+      "",
+      summary_path.generic_string(),
+      result,
+      status,
+      result_error_message,
+      runtime_metadata_binary_path_text);
+  dump << "\n";
+  return dump.str();
+}
