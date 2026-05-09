@@ -984,6 +984,59 @@
       }
     ]
   },
+  "post_89959_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "89959f6cc",
+    "through_commit": "e760e3450",
+    "commit_count": 4,
+    "count_policy": "counts committed owner/evidence commits after the 89959f6cc closeout refresh and excludes docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8143",
+          "#8144",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "7aa3372d1",
+          "806c7d063"
+        ],
+        "owner_boundary": "runtime tooling README and runtime runnable conformance/e2e/test-acceptance action splits are workflow evidence under the npm bridge"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "2befd1155"
+        ],
+        "owner_boundary": "performance action, artifact, metric, orchestration, scenario, and threshold policy owners are internal workflow/artifact evidence under the public command boundary"
+      },
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8135",
+          "#8140",
+          "#8141",
+          "#8144",
+          "#8150"
+        ],
+        "commits": [
+          "e760e3450"
+        ],
+        "owner_boundary": "hard-cutover issue-index alignment plus driver CLI, parser contract/sema integration, parser extraction, and token contract tooling checks are split-owner verification evidence"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",

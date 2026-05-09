@@ -67,6 +67,14 @@ commits that landed after the first docs commit.
 | `#8143`, `#8144`, `#8145`, `#8150` | `2555e1c4f`, `1a3da4057` | Conformance runtime probe metadata and fixture runtime split anchors now refresh behavior evidence. Canonical positives remain separate from retired-surface rejection, strict-error, and absent-support metadata. |
 | `#8138`, `#8142`, `#8149` | `89959f6cc` | Developer tooling playground input, runner, and workspace owners now refresh internal tooling/workflow evidence without adding a public helper command path. |
 
+## Post-`89959f6cc` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8142`, `#8143`, `#8144`, `#8149`, `#8150` | `7aa3372d1`, `806c7d063` | Runtime tooling README and runtime runnable conformance/e2e/test-acceptance action splits now refresh runtime workflow evidence. They do not introduce direct helper command support. |
+| `#8138`, `#8142`, `#8149`, `#8150` | `2befd1155` | Performance action, artifact, metric, orchestration, scenario, and threshold-policy owners now refresh internal workflow/artifact evidence under the existing public command boundary. |
+| `#8132`, `#8134`, `#8135`, `#8140`, `#8141`, `#8144`, `#8150` | `e760e3450` | Hard-cutover issue-index alignment plus driver CLI, parser contract/sema integration, parser extraction, and token contract tooling checks refresh split-owner verification evidence. Validation remains deferred by this worker. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -353,7 +361,8 @@ registries, workflow catalog core/application specs, and native driver public
 workflow command owners, release catalog specs, and public docs command-surface
 alignment, plus tooling catalog specs, public command budget contracts, and
 source-hygiene residue guardrails, plus validation timing report owners, release
-governance owner splits, and playground workflow owners.
+governance owner splits, playground workflow owners, runtime workflow owners,
+and performance workflow owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -366,8 +375,9 @@ are retired from public claims.
 
 Final closure evidence is local and evidence-ready, including the follow-up
 committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
-through `89959f6cc`. Remote issue closure, push, and validation remain deferred
-under the current worker constraints.
+through `89959f6cc`, plus the post-`89959f6cc` owner wave through `e760e3450`.
+Remote issue closure, push, and validation remain deferred under the current
+worker constraints.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

@@ -230,27 +230,42 @@ Post-`f4bf6228e` local owner refresh:
   fallback path, compatibility shim, migration lane, or public compatibility
   mode is introduced.
 
+Post-`89959f6cc` local owner refresh:
+
+- Runtime workflow/test evidence is refreshed by runtime tooling README
+  ownership and runtime runnable conformance, e2e, test-acceptance, and runtime
+  test action splits for `#8142`, `#8143`, `#8144`, `#8149`, and `#8150`.
+- Performance workflow/artifact evidence is refreshed by performance action,
+  artifact, metric, orchestration, scenario, and threshold-policy owners for
+  `#8138`, `#8142`, `#8149`, and `#8150`.
+- Split-owner tooling evidence is refreshed by hard-cutover issue-index
+  alignment plus driver CLI, parser contract/sema integration, parser
+  extraction, and token contract tooling checks for `#8132`, `#8134`, `#8135`,
+  `#8140`, `#8141`, `#8144`, and `#8150`.
+- These commits are local evidence anchors only; validation, push, and remote
+  issue edits remain deferred.
+
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
-| `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, schema, parser owner-path, and tooling expectation split commits. |
+| `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, schema, parser owner-path, tooling expectation, and split-owner tooling-check commits. |
 | `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class-chain resolution, dispatch status, public ABI records, class graph, dispatch state, protocol conformance, registration API, property/storage reflection, and wrapper commits; runtime fallback remains strict-error evidence. |
-| `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, and AST ownership splits are indexed; old-mode and parser fallback flags are rejection fixtures. |
-| `#8135` | evidence-ready | Semantic, diagnostic, and config owner splits are tied to typed-flow, unsupported-feature, and compatibility-shim rejection fixtures. |
+| `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, AST ownership, and parser/token tooling-check splits are indexed; old-mode and parser fallback flags are rejection fixtures. |
+| `#8135` | evidence-ready | Semantic, diagnostic, config, and parser-contract/sema integration owner splits are tied to typed-flow, unsupported-feature, and compatibility-shim rejection fixtures. |
 | `#8136` | evidence-ready | Lowering owner splits and typed sema-to-lowering handoff are tied to strict runtime-dispatch and removed fallback fixtures. |
 | `#8137` | evidence-ready | IR emitter, message-send validation, runtime metadata, typed handoff, artifact-claim metadata, and pipeline result handoff splits are tied to canonical IR fixture evidence. |
-| `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, runtime registration manifest/artifact builder, cross-module runtime link plan/input/ordering, developer tooling/playground, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
+| `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, runtime registration manifest/artifact builder, cross-module runtime link plan/input/ordering, developer tooling/playground, performance workflow/artifact, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
 | `#8139` | evidence-ready | Native target-family splits are indexed as internal topology evidence and refreshed by newer native driver CLI/native-docs source ownership plus diagnostics, config, IO, runtime, artifact, IR, and pipeline owner CMake updates. |
-| `#8140` | evidence-ready | Driver, frontend, C API contract, result accessor, native driver CLI, C API runner source-test, driver CLI split owner tests, and runner expectation splits are indexed without direct helper entrypoints becoming public commands. |
-| `#8141` | evidence-ready | Public C API result/string/diagnostic/artifact/frontend/native-driver/C API runner/runtime ABI contract ownership is indexed as internal contract truth, not a compatibility wrapper. |
-| `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, release/tooling specs, release-governance owners, playground workflow owners, public command budget contracts, validation timing report owners, native driver public-workflow owners, and public docs command-surface alignment replace direct helpers, aliases, and registry facades. |
-| `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup/class-chain/status, dispatch state, protocol conformance, public ABI, registration API/manifest owners, property/storage reflection snapshots, runtime probe metadata, runtime fixture anchors, and strict runtime behavior fixtures. |
-| `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, runtime probe metadata, C API runner source-test, driver CLI split owner tests, source-hygiene cutover residue guardrails, runtime fixture anchors, and issue evidence maps. |
+| `#8140` | evidence-ready | Driver, frontend, C API contract, result accessor, native driver CLI, C API runner source-test, driver CLI split owner tests, split-owner tooling checks, and runner expectation splits are indexed without direct helper entrypoints becoming public commands. |
+| `#8141` | evidence-ready | Public C API result/string/diagnostic/artifact/frontend/native-driver/C API runner/runtime ABI contract ownership and driver CLI split-owner checks are indexed as internal contract truth, not a compatibility wrapper. |
+| `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, release/tooling specs, release-governance owners, playground/runtime/performance workflow owners, public command budget contracts, validation timing report owners, native driver public-workflow owners, and public docs command-surface alignment replace direct helpers, aliases, and registry facades. |
+| `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup/class-chain/status, dispatch state, protocol conformance, public ABI, registration API/manifest owners, property/storage reflection snapshots, runtime probe metadata, runtime fixture anchors, runtime workflow test owners, and strict runtime behavior fixtures. |
+| `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, runtime probe metadata, C API runner source-test, driver CLI split owner tests, split-owner tooling checks, source-hygiene cutover residue guardrails, runtime workflow/fixture anchors, and issue evidence maps. |
 | `#8145` | evidence-ready | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, release-governance credibility/security owners, conformance runtime-probe metadata, and evidence maps explicitly reject shim, fallback, migration-lane, and compatibility-mode support claims. |
 | `#8146` | evidence-ready | Frontend type surfaces are indexed against canonical typed-flow, canonical literal, typed metadata handoff, and tooling split evidence. |
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
-| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, and the post-`f4bf6228e` owner wave through `89959f6cc`. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
+| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, and the post-`89959f6cc` wave through `e760e3450`. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

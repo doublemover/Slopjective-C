@@ -106,6 +106,34 @@ assert validation, push, GitHub issue updates, or remote closure.
 | `#8149` | Source hygiene/control-plane evidence is refreshed by release governance owners, validation timing owner splits, and playground workflow owner splits. |
 | `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Final closure still requires deferred validation, push, GitHub issue updates, and remote closeout. |
 
+## Post-`89959f6cc` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `89959f6cc`
+through `e760e3450`. It excludes docs-only closeout commits and uncommitted
+worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Runtime workflow test owners | `#8142`, `#8143`, `#8144`, `#8149`, `#8150` | `7aa3372d1`, `806c7d063` | Runtime tooling README ownership and runtime runnable conformance/e2e/test-acceptance action splits refresh runtime workflow evidence without widening public command support. |
+| Performance workflow and artifact owners | `#8138`, `#8142`, `#8149`, `#8150` | `2befd1155` | Performance action, artifact, metric, orchestration, scenario, and threshold-policy owners refresh internal workflow/artifact evidence under the same command boundary. |
+| Split-owner tooling checks | `#8132`, `#8134`, `#8135`, `#8140`, `#8141`, `#8144`, `#8150` | `e760e3450` | Hard-cutover issue-index alignment and driver/parser/token/sema tooling checks refresh split-owner verification evidence. These are local evidence anchors only; validation remains deferred by this worker. |
+
+## Post-`89959f6cc` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8132` | Tooling checks refresh compiler split-owner evidence through the hard-cutover issue index and parser/token extraction anchors. |
+| `#8134` | Parser split evidence is refreshed by parser/token tooling checks and issue-index alignment. |
+| `#8135` | Semantic integration evidence is refreshed by parser-contract/sema integration split-owner checks. |
+| `#8138` | Performance artifact/workflow owners refresh internal pipeline/artifact evidence without creating public support. |
+| `#8140` | Driver/frontend evidence is refreshed by driver CLI split-owner tooling checks. |
+| `#8141` | Public C API/driver contract evidence is refreshed by driver CLI split-owner tooling checks. |
+| `#8142` | Workflow evidence is refreshed by runtime workflow actions and performance workflow owners under the npm bridge. |
+| `#8143` | Runtime acceptance evidence is refreshed by runtime workflow test owners and runtime README ownership. |
+| `#8144` | Behavior fixture evidence is refreshed by hard-cutover issue-index alignment and runtime workflow test ownership. |
+| `#8149` | Source hygiene/control-plane evidence is refreshed by runtime/performance workflow split owners. |
+| `#8150` | Local closeout evidence now also includes the committed post-`89959f6cc` owner wave through `e760e3450`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -146,3 +174,6 @@ after `f66452822` through `f4bf6228e`: `328bd8fe9`, `3bfc42ea5`,
 
 This post-`f4bf6228e` refresh references `91cdc9fcb`, `181c1c479`,
 `2555e1c4f`, `d9263af3a`, `1a3da4057`, and `89959f6cc`.
+
+This post-`89959f6cc` refresh references `7aa3372d1`, `2befd1155`,
+`806c7d063`, and `e760e3450`.
