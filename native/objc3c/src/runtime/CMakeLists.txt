@@ -90,6 +90,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/dispatch_family.h
   dispatch/dispatch_api.cpp
   dispatch/dispatch_api.h
+  dispatch/dispatch_state_snapshots.cpp
   dispatch/dispatch_target_resolution.cpp
   dispatch/dispatch_target_resolution.h
   dispatch/method_fast_path_seed.cpp
