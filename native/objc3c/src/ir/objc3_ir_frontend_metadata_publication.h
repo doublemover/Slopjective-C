@@ -62,3 +62,6 @@ void EmitObjc3IRModuleGovernanceLoweringCounterNodes(
 
 void EmitObjc3IRErrorHandlingLoweringCounterNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRSafetyConcurrencyLoweringCounterNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
