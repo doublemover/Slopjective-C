@@ -25,6 +25,7 @@
 #include "parse/objc3_parser_expression_nodes.h"
 #include "parse/objc3_parser_expression_surface.h"
 #include "parse/objc3_parser_inline_asm_intrinsic_profiles.h"
+#include "parse/objc3_parser_interop_profiles.h"
 #include "parse/objc3_parser_ns_error_bridging_profiles.h"
 #include "parse/objc3_parser_profile_helpers.h"
 #include "parse/objc3_parser_recovery.h"

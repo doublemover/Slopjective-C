@@ -10,6 +10,7 @@ add_library(objc3c_parse_profiles STATIC
   objc3_parser_error_diagnostics_recovery_profiles.cpp
   objc3_parser_error_bridge_attribute_profiles.cpp
   objc3_parser_inline_asm_intrinsic_profiles.cpp
+  objc3_parser_interop_profiles.cpp
   objc3_parser_ns_error_bridging_profiles.cpp
   objc3_parser_profile_helpers.cpp
   objc3_parser_result_like_profiles.cpp
