@@ -5,6 +5,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_deterministic_publication.cpp
   objc3_ir_function_signature_model.cpp
   objc3_ir_literal_parsing.cpp
+  objc3_ir_message_send_lowering.cpp
   objc3_ir_message_send_validation.cpp
   objc3_ir_method_definition_plan.cpp
   objc3_ir_module_emission_surface.cpp

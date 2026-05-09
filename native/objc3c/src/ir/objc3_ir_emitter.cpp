@@ -16,6 +16,7 @@
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_module_emission_surface.h"
@@ -11686,14 +11687,19 @@ class Objc3IREmitter {
   }
 
   std::string EmitRuntimeDispatch(const LoweredMessageSend &lowered, FunctionContext &ctx) const {
-    if (!lowered.direct_call_symbol.empty()) {
+    const Objc3IRMessageSendLoweringPlan plan =
+        BuildObjc3IRMessageSendLoweringPlan(
+            lowered.selector, lowered.dispatch_surface_family,
+            lowered.dispatch_symbol, lowered.direct_call_symbol,
+            lowered.receiver_dispatch_facts);
+    if (plan.emits_direct_dispatch) {
       // dispatch-control lowering anchor: concrete self/known-class
       // sends that target effective objc_direct methods now lower as exact LLVM
       // direct calls instead of routing through the runtime dispatch entrypoint.
       const std::string direct_value = NewTemp(ctx);
       ctx.code_lines.push_back(BuildObjc3IRDirectDispatchCall(
           Objc3IRDirectDispatchCallRequest{direct_value,
-                                           lowered.direct_call_symbol,
+                                           plan.direct_call_symbol,
                                            lowered.args,
                                            lowered.explicit_arg_count}));
       runtime_dispatch_call_state_.NoteDirectDispatchCall();
@@ -11701,20 +11707,11 @@ class Objc3IREmitter {
       return direct_value;
     }
 
-    if (RequiresFailClosedObjc3RuntimeDispatchError(
-            lowered.dispatch_surface_family)) {
-      return EmitUnsupportedI32Value(
-          "direct dispatch lowering remains unsupported on the live runtime path");
+    if (plan.fail_closed) {
+      return EmitUnsupportedI32Value(plan.failure_reason);
     }
 
-    const bool uses_canonical_runtime_entrypoint =
-        UsesCanonicalObjc3RuntimeDispatchEntrypoint(
-            lowered.dispatch_surface_family);
-    const Objc3IRReceiverDispatchPolicy receiver_dispatch_policy =
-        BuildObjc3IRReceiverDispatchPolicy(
-            lowered.receiver_dispatch_facts,
-            uses_canonical_runtime_entrypoint);
-    if (receiver_dispatch_policy.elide_to_nil_result) {
+    if (plan.elides_to_nil_result) {
       return "0";
     }
 
@@ -11772,15 +11769,15 @@ class Objc3IREmitter {
       // until later lane-D issues extend them explicitly.
       ctx.code_lines.push_back(BuildObjc3IRRuntimeDispatchCall(
           Objc3IRRuntimeDispatchCallRequest{dispatch_value,
-                                            lowered.dispatch_symbol,
+                                            plan.dispatch_symbol,
                                             lowered.receiver,
                                             selector_ptr,
                                             lowered.args}));
       runtime_dispatch_call_state_.NoteRuntimeDispatchCall(
-          lowered.dispatch_symbol);
+          plan.dispatch_symbol);
     };
 
-    if (receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
+    if (plan.receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
       const std::string dispatch_value = NewTemp(ctx);
       emit_dispatch_call(dispatch_value);
       InvalidateGlobalProofState(ctx);
@@ -11812,9 +11809,8 @@ class Objc3IREmitter {
     if (expr != nullptr && expr->optional_send_enabled) {
       LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
       const Objc3IRReceiverDispatchPolicy receiver_dispatch_policy =
-          BuildObjc3IRReceiverDispatchPolicy(
-              lowered.receiver_dispatch_facts,
-              false);
+          BuildObjc3IROptionalMessageSendReceiverPolicy(
+              lowered.receiver_dispatch_facts);
       if (receiver_dispatch_policy.elide_to_nil_result) {
         return "0";
       }
