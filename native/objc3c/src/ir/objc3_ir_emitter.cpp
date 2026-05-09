@@ -14,30 +14,23 @@
 #include "ir/objc3_ir_canonical_literal_pools.h"
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_concurrency_identity.h"
-#include "ir/objc3_ir_concurrency_runtime_call_emission.h"
-#include "ir/objc3_ir_control_flow_ops.h"
-#include "ir/objc3_ir_direct_call_emission.h"
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emission_prologue.h"
 #include "ir/objc3_ir_emission_readiness_publication.h"
 #include "ir/objc3_ir_entry_point_emission.h"
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_expression_emission.h"
+#include "ir/objc3_ir_expression_call_orchestration.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
 #include "ir/objc3_ir_function_definition_emission.h"
 #include "ir/objc3_ir_function_local_flow.h"
-#include "ir/objc3_ir_message_send_emission.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
-#include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_module_emission_surface.h"
 #include "ir/objc3_ir_property_metadata_comment_emission.h"
 #include "ir/objc3_ir_prototype_declarations.h"
-#include "ir/objc3_ir_receiver_dispatch_policy.h"
 #include "ir/objc3_ir_receiver_identity_contracts.h"
-#include "ir/objc3_ir_runtime_dispatch_calls.h"
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
@@ -2007,30 +2000,6 @@ class Objc3IREmitter {
     return false;
   }
 
-  bool TryEmitConcurrencyTaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
-                                           std::string &result_out) const {
-    Objc3IRConcurrencyRuntimeCallEmissionCallbacks callbacks{
-        [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
-        [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
-        [this](FunctionContext &callback_ctx) {
-          InvalidateObjc3IRGlobalProofState(callback_ctx);
-        }};
-    return TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall(
-        expr, ctx, callbacks, result_out);
-  }
-
-  bool TryEmitConcurrencyActorLoweringCall(const Expr *expr, FunctionContext &ctx,
-                                     std::string &result_out) const {
-    Objc3IRConcurrencyRuntimeCallEmissionCallbacks callbacks{
-        [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
-        [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
-        [this](FunctionContext &callback_ctx) {
-          InvalidateObjc3IRGlobalProofState(callback_ctx);
-        }};
-    return TryEmitObjc3IRConcurrencyActorLoweringCall(
-        expr, ctx, callbacks, result_out);
-  }
-
   bool ShouldEmitRuntimeBootstrapLowering() const {
     return Objc3IRRuntimeBootstrapLoweringReady(frontend_metadata_);
   }
@@ -2104,7 +2073,8 @@ class Objc3IREmitter {
               return EmitUnsupportedI32Value(reason);
             },
             [this](const Expr *expr, FunctionContext &callback_ctx) {
-              return EmitExpr(expr, callback_ctx);
+              return EmitObjc3IRExpressionCall(
+                  expr, callback_ctx, ExpressionCallEmissionOptions());
             },
             [this](const Stmt *stmt, FunctionContext &callback_ctx) {
               EmitStatement(stmt, callback_ctx);
@@ -2132,6 +2102,50 @@ class Objc3IREmitter {
                const std::string &name) {
           return LookupVarPtr(callback_ctx, name);
         }};
+  }
+
+  Objc3IRExpressionCallEmissionOptions ExpressionCallEmissionOptions() const {
+    return Objc3IRExpressionCallEmissionOptions{
+        selector_pool_globals_,
+        class_receiver_constants_,
+        direct_dispatch_symbols_by_key_,
+        lowering_ir_boundary_.runtime_dispatch_arg_slots,
+        lowering_ir_boundary_.runtime_dispatch_symbol,
+        runtime_dispatch_call_state_,
+        defined_functions_,
+        declared_pure_functions_,
+        impure_functions_,
+        Objc3IRExpressionCallEmissionServices{
+            [this](FunctionContext &callback_ctx) {
+              return NewTemp(callback_ctx);
+            },
+            [this](FunctionContext &callback_ctx,
+                   const std::string &prefix) {
+              return NewLabel(callback_ctx, prefix);
+            },
+            [this](const std::string &reason) {
+              return EmitUnsupportedI32Value(reason);
+            },
+            [this](FunctionContext &callback_ctx) {
+              InvalidateObjc3IRGlobalProofState(callback_ctx);
+            },
+            [this](const std::string &name, FunctionContext &callback_ctx) {
+              return EmitIdentifierValue(name, callback_ctx);
+            },
+            [this](const Expr &callback_expr) {
+              return EmitTypedKeyPathLiteralValue(callback_expr);
+            },
+            [this](const std::string &name)
+                -> const LoweredFunctionSignature * {
+              auto signature_it = function_signatures_.find(name);
+              if (signature_it == function_signatures_.end()) {
+                return nullptr;
+              }
+              return &signature_it->second;
+            },
+            [this]() { return BlockLoweringContext(); },
+            [this]() { return FunctionLocalFlowContext(); },
+            [this]() { return CompileTimeProofAnalysisContext(); }}};
   }
 
   void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
@@ -2247,164 +2261,6 @@ class Objc3IREmitter {
     }
   }
 
-  const LoweredFunctionSignature *LookupFunctionSignature(const std::string &name) const {
-    auto signature_it = function_signatures_.find(name);
-    if (signature_it == function_signatures_.end()) {
-      return nullptr;
-    }
-    return &signature_it->second;
-  }
-
-  std::string EmitDirectFunctionCall(const Expr *expr,
-                                     const LoweredFunctionSignature *signature,
-                                     FunctionContext &ctx,
-                                     const std::string &throws_error_slot_ptr,
-                                     bool *bridge_failed_out = nullptr,
-                                     std::string *bridge_error_value_out = nullptr) const {
-    return EmitObjc3IRDirectFunctionCall(
-        expr, signature, ctx,
-        Objc3IRDirectCallEmissionCallbacks{
-            [this, &ctx](const Expr *arg_expr) {
-              return EmitExpr(arg_expr, ctx);
-            },
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](const std::string &value, FunctionContext &callback_ctx) {
-              return CoerceObjc3IRI32ToBoolI1(value, callback_ctx);
-            },
-            [this](const std::string &value, ValueType value_type,
-                   FunctionContext &callback_ctx) {
-              return CoerceObjc3IRValueToI32(value, value_type,
-                                             callback_ctx);
-            },
-            [this](const std::string &function_name) {
-              return Objc3IRFunctionMayHaveGlobalSideEffects(
-                  function_name, defined_functions_, declared_pure_functions_,
-                  impure_functions_);
-            },
-            [this](const Expr *call_expr, FunctionContext &callback_ctx,
-                   std::string &result_out) {
-              return TryEmitConcurrencyActorLoweringCall(
-                  call_expr, callback_ctx, result_out);
-            },
-            [this](const Expr *call_expr, FunctionContext &callback_ctx,
-                   std::string &result_out) {
-              return TryEmitConcurrencyTaskRuntimeLoweringCall(
-                  call_expr, callback_ctx, result_out);
-            },
-            [this](FunctionContext &callback_ctx) {
-              InvalidateObjc3IRGlobalProofState(callback_ctx);
-            },
-            [this](const std::string &name) {
-              return LookupFunctionSignature(name);
-            }},
-        throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
-  }
-
-  std::string EmitMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
-    return EmitObjc3IRMessageSendExpr(
-        expr, ctx,
-        Objc3IRMessageSendEmissionOptions{
-            selector_pool_globals_, class_receiver_constants_,
-            direct_dispatch_symbols_by_key_,
-            lowering_ir_boundary_.runtime_dispatch_arg_slots,
-            lowering_ir_boundary_.runtime_dispatch_symbol,
-            runtime_dispatch_call_state_},
-        Objc3IRMessageSendEmissionCallbacks{
-            [this](const Expr *arg_expr, FunctionContext &callback_ctx) {
-              return EmitExpr(arg_expr, callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return NewLabel(callback_ctx, prefix);
-            },
-            [this](const Expr *receiver_expr,
-                   const FunctionContext &callback_ctx) {
-              return IsObjc3IRCompileTimeNilReceiverExprInContext(
-                  receiver_expr, callback_ctx,
-                  CompileTimeProofAnalysisContext());
-            },
-            [this](const Expr *receiver_expr,
-                   const FunctionContext &callback_ctx) {
-              return IsObjc3IRCompileTimeKnownNonNilExprInContext(
-                  receiver_expr, callback_ctx,
-                  CompileTimeProofAnalysisContext());
-            },
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this](FunctionContext &callback_ctx) {
-              InvalidateObjc3IRGlobalProofState(callback_ctx);
-            }});
-  }
-
-  std::string EmitExpr(const Expr *expr, FunctionContext &ctx) const {
-    return EmitObjc3IRExpr(
-        expr, ctx,
-        Objc3IRExpressionEmissionCallbacks{
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return NewLabel(callback_ctx, prefix);
-            },
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this](const std::string &name, FunctionContext &callback_ctx) {
-              return EmitIdentifierValue(name, callback_ctx);
-            },
-            [this](const Expr &callback_expr) {
-              return EmitTypedKeyPathLiteralValue(callback_expr);
-            },
-            [this](const Expr &callback_expr, FunctionContext &callback_ctx) {
-              return EmitObjc3IRBlockLiteralStorage(
-                  callback_expr, callback_ctx, BlockLoweringContext());
-            },
-            [this](const Expr &callback_expr,
-                   const std::string &storage_ptr,
-                   FunctionContext &callback_ctx) {
-              return EmitObjc3IRPromotedBlockHandle(
-                  callback_expr, storage_ptr, callback_ctx,
-                  BlockLoweringContext());
-            },
-            [this](const BlockBinding &binding, const Expr *call_expr,
-                   FunctionContext &callback_ctx) {
-              return EmitObjc3IRBlockInvokeCall(
-                  binding, call_expr, callback_ctx, BlockLoweringContext());
-            },
-            [this](const std::string &name) {
-              return LookupFunctionSignature(name);
-            },
-            [this](const Expr *call_expr,
-                   const LoweredFunctionSignature *signature,
-                   FunctionContext &callback_ctx,
-                   const std::string &throws_error_slot_ptr,
-                   bool *bridge_failed_out,
-                   std::string *bridge_error_value_out) {
-              return EmitDirectFunctionCall(
-                  call_expr, signature, callback_ctx, throws_error_slot_ptr,
-                  bridge_failed_out, bridge_error_value_out);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return BuildObjc3IRThrowsErrorSlotAlloca(callback_ctx, prefix);
-            },
-            [this](const std::string &error_value,
-                   FunctionContext &callback_ctx) {
-              EmitObjc3IRPropagateThrownError(
-                  error_value, callback_ctx, FunctionLocalFlowContext());
-            },
-            [this](const Expr *message_expr, FunctionContext &callback_ctx) {
-              return EmitMessageSendExpr(message_expr, callback_ctx);
-            }});
-  }
-
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
     if (!unsupported_fail_closed_path_triggered_) {
       unsupported_fail_closed_path_triggered_ = true;
@@ -2418,7 +2274,8 @@ class Objc3IREmitter {
         stmt, ctx,
         Objc3IRStatementEmissionCallbacks{
             [this](const Expr *expr, FunctionContext &callback_ctx) {
-              return EmitExpr(expr, callback_ctx);
+              return EmitObjc3IRExpressionCall(
+                  expr, callback_ctx, ExpressionCallEmissionOptions());
             },
             [this](const Expr &expr, FunctionContext &callback_ctx) {
               return EmitObjc3IRBlockLiteralStorage(

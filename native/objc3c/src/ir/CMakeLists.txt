@@ -28,6 +28,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_control_flow_ops.cpp
   objc3_ir_direct_call_emission.cpp
   objc3_ir_entry_point_emission.cpp
+  objc3_ir_expression_call_orchestration.cpp
   objc3_ir_expression_emission.cpp
   objc3_ir_function_effect_analysis.cpp
   objc3_ir_function_definition_emission.cpp
