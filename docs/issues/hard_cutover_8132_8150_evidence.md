@@ -21,6 +21,8 @@ Canonical behavior and no-compatibility indexes:
 - `docs/issues/hard_cutover_fixture_family_owner_index.md`
 - `tests/conformance/hard_cutover_behavior_outcome_owner_index.json`
 - `docs/issues/hard_cutover_behavior_outcome_owner_index.md`
+- `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`
+- `docs/issues/hard_cutover_diagnostic_outcome_code_index.md`
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -50,6 +52,10 @@ The behavior outcome owner index in
 `tests/conformance/hard_cutover_behavior_outcome_owner_index.json` groups the
 same evidence by expected result, separating canonical support from rejection,
 strict-error, generated-provenance, residue-audit, and closeout-only outcomes.
+The diagnostic outcome code index in
+`tests/conformance/hard_cutover_diagnostic_outcome_code_index.json` ties
+retired or unsupported behavior outcomes to the stable diagnostic or strict
+error codes that own their rejection evidence.
 
 Additional local commits folded into this evidence map after the first index
 pass:

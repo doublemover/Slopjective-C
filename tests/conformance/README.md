@@ -59,6 +59,9 @@ Machine-readable indexes:
 - `tests/conformance/hard_cutover_behavior_outcome_owner_index.json` (behavior
   outcome ownership index separating canonical support, rejection, strict-error,
   generated provenance, residue-audit, and closeout-only evidence)
+- `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`
+  (diagnostic/strict-error code owner index for retired and unsupported
+  behavior outcomes)
 - `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
   old-mode, shim, fallback, compatibility, and migration-lane surfaces mapped
   to rejection, strict-error, or absent support)
