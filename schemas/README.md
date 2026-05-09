@@ -49,6 +49,19 @@ tables or examples.
 | `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated truth, fixtures, and archive references without support-claim inflation. |
 | `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated reports, and active rejection findings. |
 
+## Workflow Registry Schemas
+
+The workflow registry schemas live beside the workflow implementation under
+`scripts/objc3c_workflow/schemas/`, but their `$id` values still use the
+canonical `https://objc3c.dev/schemas/<file-name>` namespace. They are schema
+truth for the npm bridge and registry payloads, not local-host aliases.
+
+| Schema | Owns |
+| ------ | ---- |
+| `action-registry-v1.schema.json` | Public workflow action registry payloads and capability-truth fields exposed by `npm run objc3c -- --list-json`. |
+| `schema-index-v1.schema.json` | Machine-readable workflow schema index, registry owner surfaces, and capability truth schema IDs. |
+| `workflow-report-v1.schema.json` | Public workflow report shape emitted under `tmp/reports/objc3c-public-workflow/`. |
+
 The canonical data files are:
 
 - `docs/support/capability_matrix.json`
@@ -77,6 +90,8 @@ mirrors or copied schema fragments.
   explicitly owned evidence-section identifiers. Active prose, support rows,
   and capability claims use upgrade, adoption, support, replay, and revert
   terminology.
+- Workflow registry schemas must use canonical `objc3c.dev` schema IDs; local
+  host or product-host aliases are not schema truth.
 - Internal rows may identify implementation owners, schema owners, workflow
   owners, or report owners without claiming public Objective-C 3.0 language
   behavior.

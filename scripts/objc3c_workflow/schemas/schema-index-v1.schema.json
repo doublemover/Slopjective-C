@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.local/schemas/workflow-schema-index-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/schema-index-v1.schema.json",
   "title": "objc3c workflow schema index",
   "type": "object",
   "required": [

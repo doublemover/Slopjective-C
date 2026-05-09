@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.local/schemas/workflow-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/workflow-report-v1.schema.json",
   "title": "objc3c workflow report",
   "type": "object",
   "required": ["action", "status", "generated_at_utc", "steps"],
