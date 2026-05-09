@@ -52,6 +52,7 @@ add_library(objc3c_parse STATIC
   objc3_diagnostic_source_precision_scaffold.cpp
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
+  objc3_parser_attribute_profiles.cpp
   objc3_parser_attributes.cpp
   objc3_parser_assignment_statement_nodes.cpp
   objc3_parser_block_literal_source.cpp
