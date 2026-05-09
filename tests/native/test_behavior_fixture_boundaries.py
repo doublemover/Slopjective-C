@@ -37,6 +37,18 @@ HARD_CUTOVER_CONTRACTS = {
         "rejection",
         "O3C002",
     ),
+    "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3": (
+        "rejection",
+        "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+    ),
+    "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3": (
+        "rejection",
+        "OBJC3-E-REMOVED-FALLBACK-FLAG",
+    ),
+    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3": (
+        "negative",
+        "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+    ),
     "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3": (
         "negative",
         "O3S221",
@@ -48,6 +60,10 @@ HARD_CUTOVER_CONTRACTS = {
     "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3": (
         "strict-error",
         "link.unresolved_symbol",
+    ),
+    "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3": (
+        "strict-error",
+        "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
     ),
     "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3": (
         "strict-error",
@@ -161,6 +177,24 @@ def test_hard_cutover_contract_fixtures_are_canonicalized() -> None:
         assert boundary["behavior_contract"] == EXPECTED_BOUNDARY_BY_KIND[fixture_kind]
 
 
+def test_hard_cutover_catalog_links_live_native_behavior_fixtures() -> None:
+    hard_cutover_catalog = _load_json(ROOT / "tests" / "conformance" / "hard_cutover_catalog.json")
+    behavior_paths = set(load_behavior_fixture_catalog().by_relative_source())
+    canonical_manifest_path = FIXTURE_ROOT / "canonical" / "manifest.json"
+
+    assert hard_cutover_catalog["policy"]["native_behavior_manifest"] == (
+        canonical_manifest_path.relative_to(ROOT).as_posix()
+    )
+
+    for boundary in hard_cutover_catalog["boundaries"]:
+        manifest_path = ROOT / boundary["manifest"]
+        owned_root = ROOT / boundary["owned_fixture_root"]
+        assert manifest_path.exists(), boundary["manifest"]
+        assert owned_root.exists(), boundary["owned_fixture_root"]
+        for fixture_path in boundary.get("native_behavior_fixtures", []):
+            assert fixture_path in behavior_paths
+
+
 def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
     generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
@@ -220,6 +254,19 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert any(path.is_relative_to(root) for root in generated_allowed_roots)
 
 
+def test_canonical_manifest_is_phase_ordered_and_behavior_first() -> None:
+    entries = load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
+    phase_index = {phase: index for index, phase in enumerate(PHASE_ORDER)}
+    indexed_phases = [phase_index[entry["owner_phase"]] for entry in entries]
+
+    assert indexed_phases == sorted(indexed_phases)
+    for entry in entries:
+        path = ROOT / entry["path"]
+        relative_parts = path.relative_to(NATIVE_ROOT).parts
+        assert relative_parts[0] == entry["owner_phase"]
+        assert relative_parts[1] == entry["behavior_family"]
+
+
 def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixtures() -> None:
     canonical_by_path = {
         entry["path"]: entry
@@ -239,6 +286,36 @@ def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixt
         assert fixture.fixture_kind in STRICT_KINDS
         assert entry["expected_diagnostic_code"]
         assert entry["expected_diagnostic_code"] == fixture.expected_diagnostic_code
+
+
+def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
+    matrix = _load_json(NATIVE_ROOT / "retired_surface_matrix.json")
+    behavior_by_path = load_behavior_fixture_catalog().by_relative_source()
+    seen_surfaces: set[str] = set()
+
+    assert matrix["schema_version"] == 1
+    assert matrix["source_of_truth"] == "tests/native"
+    for entry in matrix["entries"]:
+        surface = entry["surface"]
+        fixture = behavior_by_path[entry["fixture_path"]]
+        seen_surfaces.add(surface)
+
+        assert fixture.fixture_kind in STRICT_KINDS
+        assert entry["retired_tag"] in fixture.retired_surface_tags
+        assert entry["retired_tag"] in RETIRED_SURFACE_TAGS
+        assert fixture.expected_stage == entry["expected_stage"]
+        assert fixture.expected_diagnostic_code == entry["diagnostic_code"]
+
+    assert seen_surfaces == {
+        "legacy-literal-aliases",
+        "removed-compatibility-mode-flag",
+        "removed-parser-fallback-flag",
+        "removed-compatibility-shim-gate",
+        "removed-runtime-dispatch-fallback-flag",
+        "non-nil-runtime-dispatch-linkage",
+        "unknown-receiver-runtime-dispatch",
+        "negative-execution-runtime-dispatch",
+    }
 
 
 def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:
@@ -271,10 +348,32 @@ def test_legacy_migration_pair_no_longer_lives_as_tooling_root_residue() -> None
         assert not path.exists(), f"retired old-mode fixture must live in tests/native: {path.relative_to(ROOT)}"
 
 
+def test_tooling_positive_fixture_names_do_not_claim_retired_surfaces() -> None:
+    positive_roots = (
+        ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive",
+        ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "positive",
+    )
+    retired_name_tokens = ("legacy", "old_mode", "old-mode", "shim", "compat", "compatibility")
+
+    for root in positive_roots:
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            normalized_name = path.name.lower()
+            for token in retired_name_tokens:
+                assert token not in normalized_name, (
+                    f"retired positive fixture name must be moved to rejection coverage: "
+                    f"{path.relative_to(ROOT)}"
+                )
+
+
 def test_legacy_literal_aliases_are_rejection_coverage_not_positive_recovery() -> None:
     recovery_positive = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "positive"
+    execution_positive = ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive"
 
     assert not (recovery_positive / "objc_literal_aliases_globals.objc3").exists()
+    assert not (execution_positive / "objc_literal_aliases_globals.objc3").exists()
+    assert not (execution_positive / "objc_literal_aliases_globals.exitcode.txt").exists()
     assert (recovery_positive / "canonical_literal_globals.objc3").is_file()
 
     rejection_fixtures = (
