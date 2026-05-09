@@ -1,4 +1,7 @@
 add_library(objc3c_sema STATIC
+  model/frontend_concurrency_symbol_graph_summaries.h
+  model/frontend_linkage_summaries.h
+  model/frontend_type_source_closure.h
   objc3_parser_sema_handoff_contract.h
   objc3_parser_sema_handoff_scaffold.h
   objc3_sema_canonical_literal_contract.h
