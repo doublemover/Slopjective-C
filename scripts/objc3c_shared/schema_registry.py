@@ -20,6 +20,12 @@ SCHEMA_PATHS: dict[str, Path] = {
     / "schemas"
     / "objc3-runtime-2025Q4.manifest.schema.json",
     "objc3-abi-2025Q4": ROOT / "schemas" / "objc3-abi-2025Q4.schema.json",
+    "objc3c-application-architecture-evidence-summary-v1": ROOT
+    / "schemas"
+    / "objc3c-application-architecture-evidence-summary-v1.schema.json",
+    "objc3c-artifact-authenticity-v1": ROOT
+    / "schemas"
+    / "objc3c-artifact-authenticity-v1.schema.json",
     "objc3c-governance-anti-regression-summary-v1": ROOT
     / "schemas"
     / "objc3c-governance-anti-regression-summary-v1.schema.json",
@@ -54,6 +60,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-compiler-throughput-summary-v1": ROOT
     / "schemas"
     / "objc3c-compiler-throughput-summary-v1.schema.json",
+    "objc3c-developer-tooling-editor-surface-v1": ROOT
+    / "schemas"
+    / "objc3c-developer-tooling-editor-surface-v1.schema.json",
     "objc3c-performance-telemetry-v1": ROOT
     / "schemas"
     / "objc3c-performance-telemetry-v1.schema.json",

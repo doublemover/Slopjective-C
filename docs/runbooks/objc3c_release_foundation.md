@@ -46,6 +46,15 @@ The trusted release boundary is repo-relative and machine-generated:
 No claim may depend on hand-edited release notes, spreadsheet-only digests, or
 manual checksum tables.
 
+Artifact authenticity envelope ownership:
+
+- `schemas/objc3c-artifact-authenticity-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
+
+The authenticity schema classifies generated truth, synthetic fixtures, and
+archive references; it does not create a support claim without capability
+matrix and evidence-map backing.
+
 ## Reproducibility Boundary
 
 Reproducibility for this milestone means:

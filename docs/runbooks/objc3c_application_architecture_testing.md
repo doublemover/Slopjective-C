@@ -70,6 +70,15 @@ The live meaning is:
 - machine-owned evidence for this milestone publishes under one shared report
   root and one shared schema/contract pair
 
+Schema and registry ownership:
+
+- `schemas/objc3c-application-architecture-evidence-summary-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
+
+The application architecture schema is a registry-backed owner surface; this
+runbook must not duplicate its JSON shape or treat generated architecture
+summaries as support claims.
+
 The integration path is intentionally narrow:
 
 - template harnesses and canonical application workspaces run live on every invocation

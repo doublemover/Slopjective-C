@@ -580,6 +580,18 @@
         },
         {
           "kind": "schema",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-artifact-authenticity-v1.schema.json"
+        },
+        {
+          "kind": "schema",
           "path": "docs/support/evidence_map.json"
         },
         {

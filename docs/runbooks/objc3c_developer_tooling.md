@@ -308,7 +308,13 @@ paths are implementation details, not direct public commands.
 Checked-in contracts for the current slice:
 
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
+- `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 - `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
+
+The editor tooling schema is a registry-backed owner surface. This runbook must
+not copy its JSON shape or promote generated editor tooling reports into public
+support claims outside the capability matrix and evidence map.
 
 The npm entrypoints route to the same action family:
 
