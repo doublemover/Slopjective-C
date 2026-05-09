@@ -24,8 +24,14 @@ bool BuildFrontendCApiRunnerOutputContractCoreSurfaces(
         "scaffold", scaffold_reason, error);
   }
 
-  const std::filesystem::path diagnostics_output_path =
-      BuildFrontendCApiRunnerDiagnosticsOutputPath(options, result);
+  std::filesystem::path diagnostics_output_path;
+  if (!ResolveFrontendCApiRunnerDiagnosticsOutputPath(
+          options,
+          result,
+          diagnostics_output_path,
+          error)) {
+    return false;
+  }
   surfaces.core_feature = BuildObjc3CliReportingOutputContractCoreFeatureSurface(
       surfaces.scaffold,
       summary_path,

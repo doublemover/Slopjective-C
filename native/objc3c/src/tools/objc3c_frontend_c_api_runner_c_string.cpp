@@ -2,27 +2,49 @@
 
 #include <cstddef>
 
-std::string OptionalFrontendCApiString(
+FrontendCApiRunnerStringSnapshot SnapshotOptionalFrontendCApiString(
     const objc3c_frontend_c_string_t *value) {
+  FrontendCApiRunnerStringSnapshot snapshot;
+  if (value == nullptr) {
+    return snapshot;
+  }
+  snapshot.present = true;
   const objc3c_frontend_c_string_view_t view =
       objc3c_frontend_c_string_view(value);
   if (view.data == nullptr || view.size == 0) {
-    return "";
+    return snapshot;
   }
-  return std::string(view.data, view.size);
+  snapshot.text = std::string(view.data, view.size);
+  return snapshot;
+}
+
+std::string OptionalFrontendCApiString(
+    const objc3c_frontend_c_string_t *value) {
+  return SnapshotOptionalFrontendCApiString(value).text;
+}
+
+FrontendCApiRunnerStringSnapshot FrontendCApiResultArtifactPathSnapshot(
+    const objc3c_frontend_c_compile_result_t &result,
+    objc3c_frontend_c_artifact_kind_t artifact_kind) {
+  return SnapshotOptionalFrontendCApiString(
+      objc3c_frontend_c_result_artifact_path(&result, artifact_kind));
 }
 
 std::string FrontendCApiResultArtifactPath(
     const objc3c_frontend_c_compile_result_t &result,
     objc3c_frontend_c_artifact_kind_t artifact_kind) {
-  return OptionalFrontendCApiString(
-      objc3c_frontend_c_result_artifact_path(&result, artifact_kind));
+  return FrontendCApiResultArtifactPathSnapshot(result, artifact_kind).text;
+}
+
+FrontendCApiRunnerStringSnapshot FrontendCApiResultErrorMessageSnapshot(
+    const objc3c_frontend_c_compile_result_t &result) {
+  return SnapshotOptionalFrontendCApiString(
+      objc3c_frontend_c_result_error_message(&result));
 }
 
 std::string FrontendCApiResultErrorMessage(
     const objc3c_frontend_c_compile_result_t &result) {
-  return OptionalFrontendCApiString(
-      objc3c_frontend_c_result_error_message(&result));
+  return FrontendCApiResultErrorMessageSnapshot(result).text;
 }
 
 std::string ReadFrontendCApiLastError(

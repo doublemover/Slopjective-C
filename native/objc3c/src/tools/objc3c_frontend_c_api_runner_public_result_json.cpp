@@ -1,10 +1,95 @@
 #include "tools/objc3c_frontend_c_api_runner_public_result_json.h"
 
 #include <ostream>
+#include <sstream>
 
+#include "io/json/json_writer.h"
 #include "io/objc3_json.h"
 
 using objc3::io::EscapeJsonString;
+using objc3::io::json::JsonArrayWriter;
+using objc3::io::json::JsonObjectWriter;
+
+namespace {
+
+std::string RenderFrontendCApiRunnerPathsJson(
+    const FrontendCApiRunnerArtifactPathView &paths) {
+  std::ostringstream out;
+  JsonObjectWriter object(out);
+  object.StringField("summary", paths.summary);
+  object.StringField("diagnostics", paths.diagnostics);
+  object.StringField("manifest", paths.manifest);
+  object.StringField("ir", paths.ir);
+  object.StringField("object", paths.object);
+  object.StringField("runtime_metadata_binary", paths.runtime_metadata_binary);
+  object.End();
+  return out.str();
+}
+
+std::string RenderFrontendCApiRunnerStringOwnershipJson(
+    const FrontendCApiRunnerCStringOwnershipContract &contract) {
+  std::ostringstream out;
+  JsonObjectWriter object(out);
+  object.BoolField("present", contract.present);
+  object.StringField("storage_owner", contract.storage_owner);
+  object.StringField("accessor_view", contract.accessor_view);
+  object.StringField("release_function", contract.release_function);
+  object.StringField("null_contract", contract.null_contract);
+  object.End();
+  return out.str();
+}
+
+std::string RenderFrontendCApiRunnerArtifactOwnershipJson(
+    const FrontendCApiRunnerCArtifactOwnershipContract &contract) {
+  std::ostringstream out;
+  JsonObjectWriter object(out);
+  object.StringField("name", contract.name);
+  object.BoolField("required_by_runner", contract.required_by_runner);
+  object.BoolField("produced", contract.produced);
+  object.StringField("storage_owner", contract.storage_owner);
+  object.StringField("accessor_view", contract.accessor_view);
+  object.StringField("release_function", contract.release_function);
+  object.StringField("null_contract", contract.null_contract);
+  object.End();
+  return out.str();
+}
+
+std::string RenderFrontendCApiRunnerArtifactOwnershipArrayJson(
+    const FrontendCApiRunnerCOwnershipView &ownership) {
+  std::ostringstream out;
+  JsonArrayWriter array(out);
+  for (const FrontendCApiRunnerCArtifactOwnershipContract &artifact :
+       ownership.artifacts) {
+    array.RawJsonValue(RenderFrontendCApiRunnerArtifactOwnershipJson(artifact));
+  }
+  array.End();
+  return out.str();
+}
+
+std::string RenderFrontendCApiRunnerCOwnershipJson(
+    const FrontendCApiRunnerCOwnershipView &ownership) {
+  std::ostringstream out;
+  JsonObjectWriter object(out);
+  object.StringField("result_storage_owner", ownership.result_storage_owner);
+  object.StringField("result_release_function",
+                     ownership.result_release_function);
+  object.StringField("result_release_timing", ownership.result_release_timing);
+  object.StringField("context_lifetime", ownership.context_lifetime);
+  object.StringField("compile_options_lifetime",
+                     ownership.compile_options_lifetime);
+  object.StringField("standalone_string_release_function",
+                     ownership.standalone_string_release_function);
+  object.RawJsonField(
+      "error_message",
+      RenderFrontendCApiRunnerStringOwnershipJson(ownership.error_message));
+  object.RawJsonField(
+      "artifacts",
+      RenderFrontendCApiRunnerArtifactOwnershipArrayJson(ownership));
+  object.End();
+  return out.str();
+}
+
+}  // namespace
 
 void WriteFrontendCApiRunnerPublicResultSummaryFields(
     std::ostream &out,
@@ -25,49 +110,13 @@ void WriteFrontendCApiRunnerPublicResultSummaryFields(
       << ",\n";
   out << "  \"semantic_skipped\": "
       << (public_result.semantic_skipped ? "true" : "false") << ",\n";
-  out << "  \"paths\": {\n";
-  out << "    \"summary\": \"" << EscapeJsonString(public_result.paths.summary)
-      << "\",\n";
-  out << "    \"diagnostics\": \""
-      << EscapeJsonString(public_result.paths.diagnostics) << "\",\n";
-  out << "    \"manifest\": \"" << EscapeJsonString(public_result.paths.manifest)
-      << "\",\n";
-  out << "    \"ir\": \"" << EscapeJsonString(public_result.paths.ir)
-      << "\",\n";
-  out << "    \"object\": \"" << EscapeJsonString(public_result.paths.object)
-      << "\",\n";
-  out << "    \"runtime_metadata_binary\": \""
-      << EscapeJsonString(public_result.paths.runtime_metadata_binary)
-      << "\"\n";
-  out << "  },\n";
+  out << "  \"paths\": " << RenderFrontendCApiRunnerPathsJson(public_result.paths)
+      << ",\n";
   out << "  \"last_error\": \"" << EscapeJsonString(public_result.last_error)
       << "\",\n";
   out << "  \"result_error_message\": \""
       << EscapeJsonString(public_result.result_error_message) << "\",\n";
-  out << "  \"c_api_ownership\": {\n";
-  out << "    \"result_owned_error_message\": "
-      << (public_result.c_api_ownership.result_owned_error_message ? "true"
-                                                                   : "false")
+  out << "  \"c_api_ownership\": "
+      << RenderFrontendCApiRunnerCOwnershipJson(public_result.c_api_ownership)
       << ",\n";
-  out << "    \"diagnostics_path_borrowed\": "
-      << (public_result.c_api_ownership.diagnostics_path_borrowed ? "true"
-                                                                  : "false")
-      << ",\n";
-  out << "    \"manifest_path_borrowed\": "
-      << (public_result.c_api_ownership.manifest_path_borrowed ? "true"
-                                                               : "false")
-      << ",\n";
-  out << "    \"ir_path_borrowed\": "
-      << (public_result.c_api_ownership.ir_path_borrowed ? "true" : "false")
-      << ",\n";
-  out << "    \"object_path_borrowed\": "
-      << (public_result.c_api_ownership.object_path_borrowed ? "true"
-                                                             : "false")
-      << ",\n";
-  out << "    \"runtime_metadata_path_borrowed\": "
-      << (public_result.c_api_ownership.runtime_metadata_path_borrowed
-              ? "true"
-              : "false")
-      << "\n";
-  out << "  },\n";
 }

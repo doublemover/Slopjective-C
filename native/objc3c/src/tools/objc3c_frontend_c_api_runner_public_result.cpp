@@ -19,6 +19,8 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
   view.last_error = last_error;
   view.result_error_message = result_error_message;
   view.c_api_ownership = BuildFrontendCApiRunnerCOwnershipView(
+      options,
+      status,
       result,
       result_error_message);
   return view;

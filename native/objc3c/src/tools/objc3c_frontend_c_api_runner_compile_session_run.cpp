@@ -24,6 +24,7 @@ bool RunFrontendCApiRunnerCompileSession(
 
   std::string accessor_contract_error;
   if (!ValidateFrontendCApiResultAccessors(
+          options,
           session.status,
           session.result,
           session.last_error,

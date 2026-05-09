@@ -33,12 +33,20 @@
     "output_contract"
   ],
   "required_ownership_fields": [
-    "result_owned_error_message",
-    "diagnostics_path_borrowed",
-    "manifest_path_borrowed",
-    "ir_path_borrowed",
-    "object_path_borrowed",
-    "runtime_metadata_path_borrowed"
+    "result_storage_owner",
+    "result_release_function",
+    "result_release_timing",
+    "context_lifetime",
+    "compile_options_lifetime",
+    "standalone_string_release_function",
+    "error_message",
+    "artifacts",
+    "required_by_runner",
+    "produced",
+    "storage_owner",
+    "accessor_view",
+    "release_function",
+    "null_contract"
   ],
   "required_path_fields": [
     "summary",
@@ -72,13 +80,21 @@
     "successful compile published a result-owned error message",
     "successful compile published a context last_error",
     "failing compile published no result-owned error message",
+    "result-owned error message is present but empty",
+    "result-owned error_message snapshot differs from accessor text",
     "context last_error and result-owned error_message differ",
+    "artifact path is present but empty",
+    "artifact path presence disagrees with result_has_artifact",
+    "required result-owned",
+    "artifact path is missing",
+    "diagnostics output path contract fail-closed",
     "frontend C API accessor contract fail-closed"
   ],
   "ownership_expectations": [
     "compile result storage is caller-owned and destroyed through objc3c_frontend_c_result_destroy",
     "result-owned error strings are reported separately from context last_error and must match on failures",
-    "artifact path access is mediated by objc3c_frontend_c_result_has_artifact and borrowed path strings",
+    "artifact path access is mediated by objc3c_frontend_c_result_has_artifact and borrowed views of result-owned path strings",
+    "runner-required artifacts are explicit per emitted option and compile status",
     "all five stage summaries are checked through objc3c_frontend_c_stage_summary_is_well_formed before summary publication"
   ]
 }

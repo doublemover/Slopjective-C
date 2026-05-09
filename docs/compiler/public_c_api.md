@@ -58,6 +58,22 @@ The frontend result contract is:
 - artifact accessors return `NULL` for undefined artifact kinds or missing
   outputs.
 
+The frontend C API runner treats those ownership rules as executable
+publication gates rather than presentation hints:
+
+- runner compile sessions keep caller-owned result storage on the stack and
+  release result-owned payload strings only through
+  `objc3c_frontend_c_result_destroy()` in the session guard,
+- runner option strings and paths are borrowed only for the compile call; the
+  runner snapshots result-owned strings before destroying the context/result,
+- result-owned error strings must be absent on successful compiles and present
+  with non-empty text on failures,
+- result-owned artifact paths are never synthesized by the runner; required
+  diagnostics, manifest, IR, and object paths must be returned by the C API
+  according to compile status and requested output options,
+- output summaries publish the release/free contract for the result, standalone
+  strings, error message, and each artifact path explicitly.
+
 Do not infer language support from the existence of a C entrypoint. Public docs
 must route claims through `docs/support/capability_matrix.md` and
 `docs/support/evidence_map.md`.

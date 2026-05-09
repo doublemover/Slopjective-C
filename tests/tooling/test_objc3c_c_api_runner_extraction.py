@@ -69,18 +69,22 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
     assert "compile_options_.ir_object_backend = runner_options_.ir_object_backend;" in source
     assert "FrontendCApiExitCodeFromStatus" in source
     assert '\\"result_error_message\\": \\"' in source
-    assert '\\"c_api_ownership\\": {' in source
-    assert '\\"result_owned_error_message\\": ' in source
-    assert '\\"diagnostics_path_borrowed\\": ' in source
-    assert '\\"manifest_path_borrowed\\": ' in source
-    assert '\\"ir_path_borrowed\\": ' in source
-    assert '\\"object_path_borrowed\\": ' in source
-    assert '\\"runtime_metadata_path_borrowed\\": ' in source
-    assert "FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS)" in source
-    assert "FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST)" in source
-    assert "FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR)" in source
-    assert "FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT)" in source
-    assert "FrontendCApiResultArtifactPath(" in source
+    assert '\\"c_api_ownership\\": ' in source
+    assert '"result_storage_owner"' in source
+    assert '"result_release_function"' in source
+    assert '"result_release_timing"' in source
+    assert '"context_lifetime"' in source
+    assert '"compile_options_lifetime"' in source
+    assert '"standalone_string_release_function"' in source
+    assert '"error_message"' in source
+    assert '"artifacts"' in source
+    assert '"required_by_runner"' in source
+    assert '"borrowed-until-result-destroy"' in source
+    assert "FrontendCApiResultArtifactPathSnapshot(" in source
+    assert "OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS" in source
+    assert "OBJC3C_FRONTEND_ARTIFACT_MANIFEST" in source
+    assert "OBJC3C_FRONTEND_ARTIFACT_IR" in source
+    assert "OBJC3C_FRONTEND_ARTIFACT_OBJECT" in source
     assert "OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA" in source
 
 
@@ -118,7 +122,11 @@ def test_c_api_runner_fails_closed_on_stage_and_result_accessor_drift() -> None:
     assert '"successful compile published a result-owned error message"' in source
     assert '"successful compile published a context last_error"' in source
     assert '"failing compile published no result-owned error message"' in source
+    assert '"result-owned error message is present but empty"' in source
+    assert '"result-owned error_message snapshot differs from accessor text"' in source
     assert '"context last_error and result-owned error_message differ"' in source
+    assert '"required result-owned "' in source
+    assert '"diagnostics output path contract fail-closed: result-owned "' in source
     assert "const bool stage_report_output_contract_ready =" in source
     assert "FrontendCApiStageReportShapeReady(result);" in source
     assert "stage_report_output_contract_ready);" in source
@@ -137,9 +145,9 @@ def test_c_api_runner_contract_fixture_tracks_summary_ownership_fields() -> None
     for field in contract["required_summary_fields"]:
         assert f'\\"{field}\\"' in source or f'"{field}"' in source
     for field in contract["required_ownership_fields"]:
-        assert f'\\"{field}\\"' in source
+        assert f'\\"{field}\\"' in source or f'"{field}"' in source
     for field in contract["required_path_fields"]:
-        assert f'\\"{field}\\"' in source
+        assert f'\\"{field}\\"' in source or f'"{field}"' in source
     for stage in contract["required_stage_fields"]:
         assert f'WriteFrontendCApiRunnerStageSummaryJson(out, "{stage}", result.{stage}' in source
     for field in contract["required_stage_summary_fields"]:
