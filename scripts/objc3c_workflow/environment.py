@@ -5,7 +5,7 @@ from __future__ import annotations
 import shutil
 
 from .paths import ROOT, SCRIPT_ROOT
-from .public_bridge import (
+from .public_bridge_constants import (
     WORKFLOW_MODULE,
     WORKFLOW_PUBLIC_COMMAND_PREFIX,
     WORKFLOW_RUNNER_MODE,

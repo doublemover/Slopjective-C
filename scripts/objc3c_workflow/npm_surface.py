@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .public_bridge import describe_package_bridge_payload
+from .public_bridge_payloads import describe_package_bridge_payload
 
 
 def describe_package_script_payload(script_name: str) -> dict[str, object]:
