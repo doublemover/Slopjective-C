@@ -28,7 +28,8 @@
         "native/objc3c/src/parse/objc3_parser_core_profile_prelude.inc",
         "native/objc3c/src/ast/objc3_ast_scope_surface.cpp",
         "native/objc3c/src/ast/objc3_ast_signature_surface.cpp",
-        "native/objc3c/src/token/objc3_token_legacy_literals.cpp"
+        "native/objc3c/src/token/objc3_token_rejected_canonical_literal_table.cpp",
+        "native/objc3c/src/token/objc3_token_rejected_canonical_literals.cpp"
       ],
       "behavior_fixtures": [
         "tests/native/parser/positive/canonical_module_main.objc3",

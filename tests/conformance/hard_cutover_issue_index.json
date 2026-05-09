@@ -61,8 +61,8 @@
         "#8134"
       ],
       "evidence_paths": [
-        "native/objc3c/src/parse/objc3_parser_parts/objc3_parser_part_001.inc",
-        "native/objc3c/src/parse/objc3_parser_parts/objc3_parser_part_011.inc"
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_core.h"
       ]
     },
     {

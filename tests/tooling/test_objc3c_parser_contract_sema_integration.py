@@ -9,27 +9,35 @@ SEMA_HANDOFF_SCAFFOLD = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_par
 PASS_MANAGER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager_contract.h"
 SEMA_PASS_MANAGER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.cpp"
 PIPELINE_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
-PIPELINE_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
+PIPELINE_ORCHESTRATION_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_orchestration.cpp"
+PIPELINE_STAGE_RUNNER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_stage_runner.cpp"
+PIPELINE_SEMA_STAGE_RUNNER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_sema_stage_runner.cpp"
 ARTIFACTS_HEADER = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.h"
 ARTIFACTS_SOURCE = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
 DIAG_ARTIFACTS_HEADER = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_diagnostics_artifacts.h"
 DRIVER_OBJC3_PATH = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
-CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
+PARSE_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "parse" / "CMakeLists.txt"
+SEMA_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "sema" / "CMakeLists.txt"
 BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
 
 
-def _read(path: Path) -> str:
+def _read(path: Path, seen: set[Path] | None = None) -> str:
+    if seen is None:
+        seen = set()
+    if path in seen:
+        return ""
+    seen.add(path)
     text = path.read_text(encoding="utf-8")
     expanded: list[str] = []
     for line in text.splitlines():
         expanded.append(line)
         stripped = line.strip()
-        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+        if not stripped.startswith('#include "'):
             continue
         include_path = stripped.split('"', 2)[1]
         target = ROOT / "native" / "objc3c" / "src" / include_path
         if target.exists():
-            expanded.append(target.read_text(encoding="utf-8"))
+            expanded.append(_read(target, seen))
     return "\n".join(expanded)
 
 
@@ -295,30 +303,32 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
 
 
 def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:
-    cmake = _read(CMAKE_FILE)
+    parse_cmake = _read(PARSE_CMAKE_FILE)
+    sema_cmake = _read(SEMA_CMAKE_FILE)
     build_script = _read(BUILD_SCRIPT)
-    assert "src/parse/objc3_ast_builder.cpp" in cmake
-    assert "target_link_libraries(objc3c_parse PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
-    assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
-    assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
-    assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
-    assert "objc3c_sema_type_system" in cmake
+    assert "objc3_ast_builder.cpp" in parse_cmake
+    assert "target_link_libraries(objc3c_parse PUBLIC" in parse_cmake
+    assert "target_link_libraries(objc3c_sema PUBLIC" in sema_cmake
+    assert "add_library(objc3c_sema_type_system INTERFACE)" in sema_cmake
+    assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in sema_cmake
+    assert "objc3c_sema_type_system" in sema_cmake
 
     _assert_in_order(
-        cmake,
+        parse_cmake,
         [
             "add_library(objc3c_parse STATIC",
+            "objc3_ast_builder.cpp",
             "target_link_libraries(objc3c_parse PUBLIC",
+        ],
+    )
+
+    _assert_in_order(
+        sema_cmake,
+        [
             "add_library(objc3c_sema STATIC",
             "target_link_libraries(objc3c_sema PUBLIC",
             "add_library(objc3c_sema_type_system INTERFACE)",
             "target_link_libraries(objc3c_sema_type_system INTERFACE",
-            "add_library(objc3c_lower STATIC",
-            "target_link_libraries(objc3c_lower PUBLIC",
-            "add_library(objc3c_ir STATIC",
-            "target_link_libraries(objc3c_ir PUBLIC",
         ],
     )
 
@@ -327,7 +337,9 @@ def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:
 
 def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> None:
     pipeline_types = _read(PIPELINE_TYPES)
-    pipeline_source = _read(PIPELINE_SOURCE)
+    pipeline_orchestration = _read(PIPELINE_ORCHESTRATION_SOURCE)
+    pipeline_stage_runner = _read(PIPELINE_STAGE_RUNNER)
+    sema_stage_runner = _read(PIPELINE_SEMA_STAGE_RUNNER)
     artifacts_header = _read(ARTIFACTS_HEADER)
     artifacts_source = _read(ARTIFACTS_SOURCE)
     diag_header = _read(DIAG_ARTIFACTS_HEADER)
@@ -336,13 +348,14 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "Objc3FrontendDiagnosticsBus stage_diagnostics;" in pipeline_types
     assert "std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};" in pipeline_types
     assert "Objc3SemaParityContractSurface sema_parity_surface;" in pipeline_types
-    assert "result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;" in pipeline_source
-    assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_source
-    assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in pipeline_source
-    assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline_source
-    assert "sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;" in pipeline_source
-    assert "sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;" in pipeline_source
-    assert "TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program);" in pipeline_source
+    assert "result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;" in pipeline_orchestration
+    assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_orchestration
+    assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in sema_stage_runner
+    assert "sema_input.canonical_literal_rejection_counts.yes_literal_sites =" in sema_stage_runner
+    assert "sema_input.canonical_literal_rejection_counts.no_literal_sites =" in sema_stage_runner
+    assert "sema_input.canonical_literal_rejection_counts.null_literal_sites =" in sema_stage_runner
+    assert "result.canonical_literal_rejection_counts.yes_literal_sites;" in sema_stage_runner
+    assert "TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics," in pipeline_stage_runner
 
     assert "Objc3FrontendDiagnosticsBus stage_diagnostics;" in artifacts_header
     assert "std::vector<std::string> post_pipeline_diagnostics;" in artifacts_header

@@ -4,23 +4,28 @@ ROOT = Path(__file__).resolve().parents[2]
 PASS_MANAGER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager_contract.h"
 PASS_MANAGER_HEADER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.h"
 PASS_MANAGER_SOURCE = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.cpp"
-PIPELINE_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
-CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
+PIPELINE_SEMA_STAGE_RUNNER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_sema_stage_runner.cpp"
+SEMA_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "sema" / "CMakeLists.txt"
 BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
 
 
-def _read(path: Path) -> str:
+def _read(path: Path, seen: set[Path] | None = None) -> str:
+    if seen is None:
+        seen = set()
+    if path in seen:
+        return ""
+    seen.add(path)
     text = path.read_text(encoding="utf-8")
     expanded: list[str] = []
     for line in text.splitlines():
         expanded.append(line)
         stripped = line.strip()
-        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+        if not stripped.startswith('#include "'):
             continue
         include_path = stripped.split('"', 2)[1]
         target = ROOT / "native" / "objc3c" / "src" / include_path
         if target.exists():
-            expanded.append(target.read_text(encoding="utf-8"))
+            expanded.append(_read(target, seen))
     return "\n".join(expanded)
 
 
@@ -39,7 +44,7 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "enum class Objc3SemaPassId {" in contract
     assert "enum class Objc3SemaLanguageProfile : std::uint8_t {" in contract
     assert "Legacy = 1" not in contract
-    assert "struct Objc3SemaMigrationHints {" in contract
+    assert "struct Objc3SemaCanonicalLiteralRejectionCounts {" in contract
     assert "BuildIntegrationSurface" in contract
     assert "ValidateBodies" in contract
     assert "ValidatePureContract" in contract
@@ -49,7 +54,7 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "PublishBatch(const std::vector<std::string> &batch) const" in contract
     assert "std::size_t Count() const" in contract
     assert "Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;" in contract
-    assert "Objc3SemaMigrationHints migration_hints;" in contract
+    assert "Objc3SemaCanonicalLiteralRejectionCounts canonical_literal_rejection_counts;" in contract
     assert "std::vector<std::string> diagnostics;" in contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
@@ -126,11 +131,15 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     )
 
 def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:
-    pipeline = _read(PIPELINE_SOURCE)
+    pipeline = _read(PIPELINE_SEMA_STAGE_RUNNER)
     assert '#include "sema/objc3_sema_pass_manager.h"' in pipeline
     assert "Objc3SemaPassManagerInput sema_input;" in pipeline
     assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in pipeline
-    assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline
+    assert (
+        "sema_input.canonical_literal_rejection_counts.yes_literal_sites ="
+        in pipeline
+    )
+    assert "result.canonical_literal_rejection_counts.yes_literal_sites;" in pipeline
     assert "sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;" in pipeline
     assert "RunObjc3SemaPassManager(sema_input)" in pipeline
     assert "BuildSemanticIntegrationSurface(result.program, result.stage_diagnostics.semantic);" not in pipeline
@@ -139,27 +148,23 @@ def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:
 
 
 def test_build_surfaces_register_pass_manager_source() -> None:
-    cmake = _read(CMAKE_FILE)
+    cmake = _read(SEMA_CMAKE_FILE)
     build_script = _read(BUILD_SCRIPT)
-    assert "src/sema/objc3_sema_pass_manager.cpp" in cmake
+    assert "objc3_sema_pass_manager.cpp" in cmake
     assert "objc3c_diag" in cmake
     assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
     assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
-    assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
-    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
     assert "objc3c_sema_type_system" in cmake
 
     _assert_in_order(
         cmake,
         [
             "add_library(objc3c_sema STATIC",
+            "objc3_sema_pass_manager_contract_flow.h",
+            "objc3_sema_pass_manager.cpp",
             "target_link_libraries(objc3c_sema PUBLIC",
             "add_library(objc3c_sema_type_system INTERFACE)",
             "target_link_libraries(objc3c_sema_type_system INTERFACE",
-            "add_library(objc3c_lower STATIC",
-            "target_link_libraries(objc3c_lower PUBLIC",
-            "add_library(objc3c_ir STATIC",
-            "target_link_libraries(objc3c_ir PUBLIC",
         ],
     )
 

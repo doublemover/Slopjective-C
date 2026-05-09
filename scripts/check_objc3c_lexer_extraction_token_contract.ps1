@@ -22,9 +22,9 @@ $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
 $lexerHeaderPath = Join-Path $repoRoot "native/objc3c/src/lex/objc3_lexer.h"
 $lexerSourcePath = Join-Path $repoRoot "native/objc3c/src/lex/objc3_lexer.cpp"
 $tokenContractHeaderPath = Join-Path $repoRoot "native/objc3c/src/token/objc3_token_contract.h"
-$tokenCompatHeaderPath = Join-Path $repoRoot "native/objc3c/src/token/objc3_token.h"
-$pipelineSourcePath = Join-Path $repoRoot "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
-$cmakePath = Join-Path $repoRoot "native/objc3c/CMakeLists.txt"
+$tokenHeaderPath = Join-Path $repoRoot "native/objc3c/src/token/objc3_token.h"
+$pipelineStageRunnerPath = Join-Path $repoRoot "native/objc3c/src/pipeline/frontend_pipeline_stage_runner.cpp"
+$lexCmakePath = Join-Path $repoRoot "native/objc3c/src/lex/CMakeLists.txt"
 
 $positiveFixturePath = Join-Path $repoRoot "tests/tooling/fixtures/native/lexer_split/positive_token_contract_smoke.objc3"
 $negativeFixtures = @(
@@ -193,9 +193,9 @@ try {
   Assert-FileExists -Path $lexerHeaderPath -Id "source.lexer_header.exists" -Description "lexer header"
   Assert-FileExists -Path $lexerSourcePath -Id "source.lexer_source.exists" -Description "lexer source"
   Assert-FileExists -Path $tokenContractHeaderPath -Id "source.token_contract_header.exists" -Description "token contract header"
-  Assert-FileExists -Path $tokenCompatHeaderPath -Id "source.token_compat_header.exists" -Description "token compatibility header"
-  Assert-FileExists -Path $pipelineSourcePath -Id "source.pipeline_source.exists" -Description "pipeline source"
-  Assert-FileExists -Path $cmakePath -Id "source.cmake.exists" -Description "native CMake file"
+  Assert-FileExists -Path $tokenHeaderPath -Id "source.token_header.exists" -Description "token header"
+  Assert-FileExists -Path $pipelineStageRunnerPath -Id "source.pipeline_stage_runner.exists" -Description "pipeline stage runner source"
+  Assert-FileExists -Path $lexCmakePath -Id "source.lex_cmake.exists" -Description "lexer CMake file"
   Assert-FileExists -Path $positiveFixturePath -Id "fixture.positive.exists" -Description "positive lexer contract fixture"
   foreach ($negativeFixture in $negativeFixtures) {
     Assert-FileExists `
@@ -207,9 +207,9 @@ try {
   $lexerHeaderText = Read-NormalizedText -Path $lexerHeaderPath
   $lexerSourceText = Read-NormalizedText -Path $lexerSourcePath
   $tokenContractHeaderText = Read-NormalizedText -Path $tokenContractHeaderPath
-  $tokenCompatHeaderText = Read-NormalizedText -Path $tokenCompatHeaderPath
-  $pipelineSourceText = Read-NormalizedText -Path $pipelineSourcePath
-  $cmakeText = Read-NormalizedText -Path $cmakePath
+  $tokenHeaderText = Read-NormalizedText -Path $tokenHeaderPath
+  $pipelineStageRunnerText = Read-NormalizedText -Path $pipelineStageRunnerPath
+  $lexCmakeText = Read-NormalizedText -Path $lexCmakePath
 
   $lexerHeaderRunSignatureValid = [regex]::IsMatch(
     $lexerHeaderText,
@@ -237,7 +237,7 @@ try {
     -Evidence @{ missing = $missingTokenKinds }
 
   Assert-Contract `
-    -Condition (-not (Assert-TokensPresent -Text $tokenCompatHeaderText -RequiredTokens @("using TokenKind = Objc3LexTokenKind;", "using Token = Objc3LexToken;"))) `
+    -Condition (-not (Assert-TokensPresent -Text $tokenHeaderText -RequiredTokens @("using TokenKind = Objc3LexTokenKind;", "using Token = Objc3LexToken;"))) `
     -Id "contract.token_contract_header.canonical_names" `
     -FailureMessage "token contract header still publishes retired short token names" `
     -PassMessage "token contract header publishes only explicit Objc3LexToken names"
@@ -249,9 +249,9 @@ try {
     -PassMessage "lexer source contains lexical and canonical rejection diagnostic contract codes"
 
   $removedAliasPatterns = @(
-    '(?s)ident\s*==\s*"YES".+?migration_hints_\.legacy_yes_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"',
-    '(?s)ident\s*==\s*"NO".+?migration_hints_\.legacy_no_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"',
-    '(?s)ident\s*==\s*"NULL".+?migration_hints_\.legacy_null_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"'
+    '(?s)Objc3RejectedCanonicalLiteralKind::Yes:.+?\+\+canonical_literal_rejection_counts_\.yes_literal_sites;',
+    '(?s)Objc3RejectedCanonicalLiteralKind::No:.+?\+\+canonical_literal_rejection_counts_\.no_literal_sites;',
+    '(?s)Objc3RejectedCanonicalLiteralKind::Null:.+?\+\+canonical_literal_rejection_counts_\.null_literal_sites;'
   )
   $missingRemovedAliasPatterns = New-Object 'System.Collections.Generic.List[string]'
   foreach ($pattern in $removedAliasPatterns) {
@@ -263,14 +263,21 @@ try {
     -Condition ($missingRemovedAliasPatterns.Count -eq 0) `
     -Id "contract.lexer_removed_literal_aliases" `
     -FailureMessage "lexer source missing one or more removed literal alias rejection contracts (YES/NO/NULL)" `
-    -PassMessage "lexer source rejects YES/NO/NULL with canonical diagnostics" `
+    -PassMessage "lexer source records canonical literal rejection counts for YES/NO/NULL" `
     -Evidence @{ missing_patterns = $missingRemovedAliasPatterns }
 
+  Assert-Contract `
+    -Condition (Assert-TokensPresent -Text $lexerSourceText -RequiredTokens @("ClassifyObjc3RejectedCanonicalLiteral(ident)", "Objc3RejectedCanonicalLiteralReplacementSpelling(rejected_literal)", "O3C002")) `
+    -Id "contract.lexer_removed_literal_aliases.diagnostic_table" `
+    -FailureMessage "lexer source missing rejected canonical literal classifier or diagnostic spelling table use" `
+    -PassMessage "lexer source rejects removed literal aliases through canonical classifier and diagnostic table"
+
   $pipelineUsesLexer = (
-    $pipelineSourceText.IndexOf('#include "lex/objc3_lexer.h"', [System.StringComparison]::Ordinal) -ge 0 -and
-    [regex]::IsMatch($pipelineSourceText, '(?m)^\s*Objc3Lexer\s+lexer\s*\(\s*source(?:\s*,\s*[^)]+)?\s*\)\s*;') -and
-    $pipelineSourceText.IndexOf("lexer.Run(result.stage_diagnostics.lexer)", [System.StringComparison]::Ordinal) -ge 0 -and
-    [regex]::IsMatch($pipelineSourceText, '(?m)^\s*std::vector<\s*(?:Objc3LexToken|Token)\s*>\s+tokens\s*=\s*lexer\.Run\(')
+    $pipelineStageRunnerText.IndexOf('#include "lex/objc3_lexer.h"', [System.StringComparison]::Ordinal) -ge 0 -and
+    [regex]::IsMatch($pipelineStageRunnerText, '(?m)^\s*Objc3Lexer\s+lexer\s*\(\s*source(?:\s*,\s*[^)]+)?\s*\)\s*;') -and
+    $pipelineStageRunnerText.IndexOf("lexer.Run(result.stage_diagnostics.lexer)", [System.StringComparison]::Ordinal) -ge 0 -and
+    $pipelineStageRunnerText.IndexOf("lexer.CanonicalLiteralRejectionCounts()", [System.StringComparison]::Ordinal) -ge 0 -and
+    [regex]::IsMatch($pipelineStageRunnerText, '(?m)^\s*std::vector<\s*(?:Objc3LexToken|Token)\s*>\s+tokens\s*=\s*lexer\.Run\(')
   )
   Assert-Contract `
     -Condition $pipelineUsesLexer `
@@ -279,15 +286,15 @@ try {
     -PassMessage "pipeline consumes extracted lexer module surface"
 
   Assert-Contract `
-    -Condition ($pipelineSourceText.IndexOf("class Objc3Lexer {", [System.StringComparison]::Ordinal) -lt 0) `
+    -Condition ($pipelineStageRunnerText.IndexOf("class Objc3Lexer {", [System.StringComparison]::Ordinal) -lt 0) `
     -Id "contract.pipeline.no_inline_lexer" `
     -FailureMessage "pipeline source contains inline lexer class definition" `
     -PassMessage "pipeline source does not inline lexer implementation"
 
   Assert-Contract `
-    -Condition (Assert-TokensPresent -Text $cmakeText -RequiredTokens @("add_library(objc3c_lex STATIC", "src/lex/objc3_lexer.cpp")) `
+    -Condition (Assert-TokensPresent -Text $lexCmakeText -RequiredTokens @("add_library(objc3c_lex STATIC", "objc3_lexer.cpp")) `
     -Id "contract.cmake.lexer_target_registered" `
-    -FailureMessage "CMake missing objc3c_lex target registration for src/lex/objc3_lexer.cpp" `
+    -FailureMessage "lexer CMake missing objc3c_lex target registration for objc3_lexer.cpp" `
     -PassMessage "CMake registers objc3c_lex target with extracted lexer source"
 
   if (-not $nativeExeExplicit -and !(Test-Path -LiteralPath $nativeExePath -PathType Leaf)) {
