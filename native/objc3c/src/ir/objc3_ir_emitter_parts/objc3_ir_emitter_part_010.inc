@@ -156,18 +156,12 @@
       // sends that target effective objc_direct methods now lower as exact LLVM
       // direct calls instead of routing through the runtime dispatch entrypoint.
       const std::string direct_value = NewTemp(ctx);
-      std::ostringstream call;
-      call << "  " << direct_value << " = call i32 "
-           << lowered.direct_call_symbol << "(";
-      for (std::size_t i = 0; i < lowered.explicit_arg_count; ++i) {
-        if (i != 0) {
-          call << ", ";
-        }
-        call << "i32 " << lowered.args[i];
-      }
-      call << ")";
-      ctx.code_lines.push_back(call.str());
-      ++direct_dispatch_call_sites_emitted_;
+      ctx.code_lines.push_back(BuildObjc3DirectDispatchCallIR(
+          Objc3DirectDispatchCallRequest{direct_value,
+                                         lowered.direct_call_symbol,
+                                         lowered.args,
+                                         lowered.explicit_arg_count}));
+      runtime_call_lowering_state_.NoteDirectDispatchCall();
       InvalidateGlobalProofState(ctx);
       return direct_value;
     }
@@ -194,7 +188,7 @@
     const std::string selector_ptr = NewTemp(ctx);
     ctx.code_lines.push_back("  " + selector_ptr + " = getelementptr inbounds [" + std::to_string(selector_len) +
                              " x i8], ptr " + selector_it->second + ", i32 0, i32 0");
-    ++selector_pool_gep_sites_emitted_;
+    runtime_call_lowering_state_.NoteSelectorPoolGep();
 
     const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
       // dispatch-surface classification anchor: instance/class/super/dynamic
@@ -239,17 +233,14 @@
       // symbols. Those runtime-owned details stay behind the frozen
       // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 surface
       // until later lane-D issues extend them explicitly.
-      std::ostringstream call;
-      call << "  " << dispatch_value << " = call i32 @" << lowered.dispatch_symbol << "(i32 "
-           << lowered.receiver << ", ptr " << selector_ptr;
-      for (const std::string &arg : lowered.args) {
-        call << ", i32 " << arg;
-      }
-      call << ")";
-      runtime_dispatch_call_emitted_ = true;
-      ++runtime_dispatch_call_sites_emitted_;
-      runtime_dispatch_symbols_used_.insert(lowered.dispatch_symbol);
-      ctx.code_lines.push_back(call.str());
+      ctx.code_lines.push_back(BuildObjc3RuntimeDispatchCallIR(
+          Objc3RuntimeDispatchCallRequest{dispatch_value,
+                                          lowered.dispatch_symbol,
+                                          lowered.receiver,
+                                          selector_ptr,
+                                          lowered.args}));
+      runtime_call_lowering_state_.NoteRuntimeDispatchCall(
+          lowered.dispatch_symbol);
     };
 
     if (uses_canonical_runtime_entrypoint ||

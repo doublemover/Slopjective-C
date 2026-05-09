@@ -1,6 +1,7 @@
 add_library(objc3c_ir STATIC
   objc3_ir_emission_helpers.cpp
   objc3_ir_emitter.cpp
+  objc3_runtime_call_lowering.cpp
 )
 objc3c_apply_build_defaults(objc3c_ir)
 objc3c_apply_llvm_direct_config(objc3c_ir)

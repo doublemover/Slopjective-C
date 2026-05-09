@@ -15,6 +15,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_runtime_call_lowering.h"
 #include "parse/objc3_parse_support.h"
 #include "support/objc3_identifier_safe_suffix.h"
 #include "support/objc3_property_storage_profile_helpers.h"
@@ -305,10 +306,7 @@ class Objc3IREmitter {
   }
 
   bool Emit(std::string &ir, std::string &error) {
-    runtime_dispatch_call_emitted_ = false;
-    direct_dispatch_call_sites_emitted_ = 0;
-    runtime_dispatch_call_sites_emitted_ = 0;
-    selector_pool_gep_sites_emitted_ = 0;
+    runtime_call_lowering_state_.Reset();
     synthesized_getter_definition_count_ = 0;
     synthesized_setter_definition_count_ = 0;
     current_property_read_helper_call_count_ = 0;
@@ -319,7 +317,6 @@ class Objc3IREmitter {
     retain_helper_call_count_ = 0;
     release_helper_call_count_ = 0;
     autorelease_helper_call_count_ = 0;
-    runtime_dispatch_symbols_used_.clear();
     unsupported_fail_closed_path_triggered_ = false;
     unsupported_fail_closed_path_reason_.clear();
     block_function_definitions_.clear();

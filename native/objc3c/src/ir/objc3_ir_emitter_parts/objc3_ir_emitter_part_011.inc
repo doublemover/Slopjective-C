@@ -232,21 +232,8 @@
   }
 
   void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
-    if (runtime_dispatch_symbols_used_.empty()) {
-      return;
-    }
-    for (const std::string &symbol : runtime_dispatch_symbols_used_) {
-      if (symbol.empty()) {
-        continue;
-      }
-      out << "declare i32 @" << symbol << "(i32, ptr";
-      for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots;
-           ++i) {
-        out << ", i32";
-      }
-      out << ")\n";
-    }
-    out << "\n";
+    EmitObjc3RuntimeDispatchDeclarations(lowering_ir_boundary_,
+                                         runtime_call_lowering_state_, out);
   }
 
   void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {
@@ -631,11 +618,7 @@
   mutable std::unordered_set<std::string> emitted_block_invoke_symbols_;
   mutable std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
   mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
-  mutable std::set<std::string> runtime_dispatch_symbols_used_;
-  mutable bool runtime_dispatch_call_emitted_ = false;
-  mutable std::size_t direct_dispatch_call_sites_emitted_ = 0;
-  mutable std::size_t runtime_dispatch_call_sites_emitted_ = 0;
-  mutable std::size_t selector_pool_gep_sites_emitted_ = 0;
+  mutable Objc3RuntimeCallLoweringState runtime_call_lowering_state_;
   mutable std::size_t synthesized_getter_definition_count_ = 0;
   mutable std::size_t synthesized_setter_definition_count_ = 0;
   mutable std::size_t current_property_read_helper_call_count_ = 0;

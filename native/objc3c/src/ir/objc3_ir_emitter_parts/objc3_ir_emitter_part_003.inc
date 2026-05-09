@@ -143,7 +143,7 @@
     //   out << ", i32";
     // }
     // out << ")\n\n";
-    if (runtime_dispatch_call_emitted_) {
+    if (runtime_call_lowering_state_.runtime_dispatch_call_emitted) {
       out << "; runtime_dispatch_call_decl = "
           << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_)
           << "\n\n";
@@ -169,15 +169,21 @@
           << ";autorelease_calls=" << autorelease_helper_call_count_
           << "\n";
     }
-    if (runtime_dispatch_call_emitted_ || direct_dispatch_call_sites_emitted_ > 0) {
+    if (runtime_call_lowering_state_.runtime_dispatch_call_emitted ||
+        runtime_call_lowering_state_.direct_dispatch_call_sites_emitted > 0) {
       out << "; method_dispatch_and_selector_thunk_lowering_surface = "
           << "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
           << ";runtime_dispatch_symbol=" << lowering_ir_boundary_.runtime_dispatch_symbol
           << ";runtime_dispatch_call_emitted="
-          << (runtime_dispatch_call_emitted_ ? "true" : "false")
-          << ";runtime_dispatch_call_sites=" << runtime_dispatch_call_sites_emitted_
-          << ";direct_dispatch_call_sites=" << direct_dispatch_call_sites_emitted_
-          << ";selector_pool_gep_sites=" << selector_pool_gep_sites_emitted_
+          << (runtime_call_lowering_state_.runtime_dispatch_call_emitted
+                  ? "true"
+                  : "false")
+          << ";runtime_dispatch_call_sites="
+          << runtime_call_lowering_state_.runtime_dispatch_call_sites_emitted
+          << ";direct_dispatch_call_sites="
+          << runtime_call_lowering_state_.direct_dispatch_call_sites_emitted
+          << ";selector_pool_gep_sites="
+          << runtime_call_lowering_state_.selector_pool_gep_sites_emitted
           << ";selector_pool_count=" << selector_pool_globals_.size()
           << ";direct_dispatch_candidate_sites="
           << frontend_metadata_
