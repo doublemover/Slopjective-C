@@ -20,7 +20,6 @@ ACTION_PAYLOAD_CAPABILITY_TRUTH_OWNER_SURFACE = (
 ACTION_PAYLOAD_FIELD_OWNER_SURFACE = (
     "scripts/objc3c_workflow/action_payload_field_owners.py"
 )
-PUBLIC_COMMAND_ALIAS_CONTRACT_ID = "objc3c-workflow-public-command-alias-v1"
 
 
 @dataclass(frozen=True)
@@ -107,20 +106,6 @@ def action_payload_field_owner_map() -> dict[str, str]:
     }
 
 
-def public_command_alias_contract_payload() -> dict[str, object]:
-    from .action_payload_category import RETIRED_PUBLIC_COMMAND_ALIASES
-
-    return {
-        "contract_id": PUBLIC_COMMAND_ALIAS_CONTRACT_ID,
-        "owner_surface": ACTION_PAYLOAD_PUBLIC_FIELDS_OWNER_SURFACE,
-        "public_command_aliases": [],
-        "retired_public_command_aliases": list(RETIRED_PUBLIC_COMMAND_ALIASES),
-        "public_command_aliases_allowed": False,
-        "retired_public_command_aliases_allowed": False,
-        "public_contract": True,
-    }
-
-
 def action_payload_owner_contracts() -> dict[str, object]:
     from .action_audience_rules import action_audience_contract_payload
     from .action_catalog_groups import action_catalog_section_owner_contracts
@@ -132,7 +117,6 @@ def action_payload_owner_contracts() -> dict[str, object]:
         "catalog_section_groups": action_catalog_section_owner_contracts(),
         "category": action_category_contract_payload(),
         "audience": action_audience_contract_payload(),
-        "public_command_aliases": public_command_alias_contract_payload(),
     }
 
 
@@ -154,11 +138,9 @@ __all__ = [
     "ACTION_PAYLOAD_FIELD_OWNER_SURFACE",
     "ACTION_PAYLOAD_PUBLIC_FIELDS_OWNER_SURFACE",
     "ACTION_PAYLOAD_SCHEMA_FIELDS_OWNER_SURFACE",
-    "PUBLIC_COMMAND_ALIAS_CONTRACT_ID",
     "ActionPayloadFieldOwner",
     "action_payload_field_owner_entries",
     "action_payload_field_owner_map",
     "action_payload_owner_fields",
     "action_payload_owner_contracts",
-    "public_command_alias_contract_payload",
 ]

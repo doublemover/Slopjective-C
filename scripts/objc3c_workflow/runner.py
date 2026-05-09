@@ -6,10 +6,13 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 
-if __package__:
-    from .path_bootstrap import install_workflow_import_roots
-else:
-    from path_bootstrap import install_workflow_import_roots
+if not __package__:
+    raise SystemExit(
+        "error: scripts/objc3c_workflow/runner.py is not a public command surface; "
+        "use `npm run objc3c -- <action>`."
+    )
+
+from .path_bootstrap import install_workflow_import_roots
 
 install_workflow_import_roots()
 

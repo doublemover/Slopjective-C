@@ -36,7 +36,7 @@ Command and evidence truth is hard-cut to the current surfaces:
   tiers, pass-through behavior, backend descriptions, and guarantee owners.
   `registry_views.py`, `action_handler_integrity.py`, `request_dispatch.py`,
   and `path_bootstrap.py` own read-only registry access, action-handler integrity,
-  parsed-request dispatch, and direct-entrypoint import roots.
+  parsed-request dispatch, and module-bridge import roots.
   There is no supported workflow-registry facade or retired public-script alias
   table.
 - Runtime dispatch claims are owned by the strict runtime C API, dispatch

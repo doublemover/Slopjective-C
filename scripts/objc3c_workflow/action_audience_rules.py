@@ -13,12 +13,9 @@ from .action_audience_prefixes import (
     OPERATOR_EXACT_ACTIONS,
     OPERATOR_PREFIXES,
 )
-from .action_payload_category import RETIRED_PUBLIC_COMMAND_ALIASES
 
 
 def action_audience(action: str) -> str:
-    if action in RETIRED_PUBLIC_COMMAND_ALIASES:
-        raise ValueError(f"retired public workflow action alias: {action}")
     if action in OPERATOR_EXACT_ACTIONS:
         return AUDIENCE_OPERATOR
     if action.startswith(OPERATOR_PREFIXES):
@@ -35,7 +32,6 @@ def action_audience_contract_payload() -> dict[str, object]:
         "operator_exact_actions": list(OPERATOR_EXACT_ACTIONS),
         "operator_prefixes": list(OPERATOR_PREFIXES),
         "maintainer_prefixes": list(MAINTAINER_PREFIXES),
-        "retired_public_command_aliases": list(RETIRED_PUBLIC_COMMAND_ALIASES),
         "hidden_internal_public_split_allowed": False,
         "unknown_audience_fallback_allowed": False,
         "public_command_aliases_allowed": False,

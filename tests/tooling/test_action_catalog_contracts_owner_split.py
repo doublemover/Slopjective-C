@@ -19,7 +19,6 @@ from scripts.objc3c_workflow.action_payload_category import (
 from scripts.objc3c_workflow.action_payload_field_owners import (
     action_payload_owner_contracts,
     action_payload_owner_fields,
-    public_command_alias_contract_payload,
 )
 from scripts.objc3c_workflow.action_registry_payload import build_registry_payload
 from scripts.objc3c_workflow.action_spec import ActionSpec
@@ -56,14 +55,11 @@ def test_action_catalog_merge_accepts_owned_section_groups() -> None:
     }
 
 
-def test_action_category_contract_rejects_stale_aliases() -> None:
+def test_action_category_contract_has_no_alias_metadata() -> None:
     payload = action_category_contract_payload()
 
     assert action_category("lint") == "lint"
     assert action_category("check-public-command-budget") == "check"
-    assert payload["category_aliases"] == {}
-    assert payload["retired_public_command_aliases"] == ["lint-default"]
-    assert payload["stale_category_aliases_allowed"] is False
     assert payload["unknown_category_fallback_allowed"] is False
     assert payload["public_command_aliases_allowed"] is False
     try:
@@ -72,12 +68,6 @@ def test_action_category_contract_rejects_stale_aliases() -> None:
         assert str(exc) == "unknown workflow action category: ci"
     else:
         raise AssertionError("unknown action categories should fail closed")
-    try:
-        action_category("lint-default")
-    except ValueError as exc:
-        assert str(exc) == "retired public workflow action alias: lint-default"
-    else:
-        raise AssertionError("retired public command aliases should fail closed")
 
 
 def test_action_audience_contract_has_no_default_public_split() -> None:
@@ -86,7 +76,6 @@ def test_action_audience_contract_has_no_default_public_split() -> None:
     assert action_audience("build-native-full") == "operator"
     assert action_audience("build-site") == "maintainer"
     assert action_audience("lint") == "maintainer"
-    assert payload["retired_public_command_aliases"] == ["lint-default"]
     assert payload["hidden_internal_public_split_allowed"] is False
     assert payload["unknown_audience_fallback_allowed"] is False
     assert payload["public_command_aliases_allowed"] is False
@@ -98,30 +87,18 @@ def test_action_audience_contract_has_no_default_public_split() -> None:
         )
     else:
         raise AssertionError("unknown action audiences should fail closed")
-    try:
-        action_audience("lint-default")
-    except ValueError as exc:
-        assert str(exc) == "retired public workflow action alias: lint-default"
-    else:
-        raise AssertionError("retired public command aliases should fail closed")
 
 
 def test_action_payload_publishes_durable_owner_contract_bundle() -> None:
     fields = action_payload_owner_fields("check-public-command-budget")
     contracts = action_payload_owner_contracts()
-    alias_contract = public_command_alias_contract_payload()
 
     assert fields["payload_field_owner_map"]["payload_contracts"] == (
         "scripts/objc3c_workflow/action_payload_field_owners.py"
     )
     assert fields["payload_contracts"] == contracts
-    assert contracts["category"]["stale_category_aliases_allowed"] is False
     assert contracts["audience"]["unknown_audience_fallback_allowed"] is False
-    assert contracts["public_command_aliases"] == alias_contract
-    assert alias_contract["public_command_aliases"] == []
-    assert alias_contract["retired_public_command_aliases"] == ["lint-default"]
-    assert alias_contract["public_command_aliases_allowed"] is False
-    assert alias_contract["retired_public_command_aliases_allowed"] is False
+    assert "public_command_aliases" not in contracts
 
 
 def test_registry_payload_has_no_internal_public_or_alias_drift() -> None:
@@ -143,6 +120,4 @@ def test_registry_payload_has_no_internal_public_or_alias_drift() -> None:
     assert action["public_command"] == (
         "npm run objc3c -- check-public-command-budget"
     )
-    assert action["payload_contracts"]["public_command_aliases"][
-        "public_command_aliases_allowed"
-    ] is False
+    assert "public_command_aliases" not in action["payload_contracts"]

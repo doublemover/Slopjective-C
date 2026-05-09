@@ -13,7 +13,6 @@ from .public_bridge_constants import (
     PUBLIC_BRIDGE_INVOCATION_OWNER_SURFACE,
     PUBLIC_BRIDGE_PAYLOAD_OWNER_SURFACE,
     PUBLIC_BRIDGE_REGISTRY_OWNER_SURFACE,
-    PUBLIC_BRIDGE_RETIRED_METADATA_FIELDS,
     PUBLIC_ENTRYPOINT_KIND,
     WORKFLOW_BRIDGE_SCRIPT,
     WORKFLOW_PUBLIC_ACTION_TOKEN,
@@ -73,7 +72,11 @@ def _validate_bridge_spec(key: str, spec: PackageBridgeSpec) -> list[str]:
     if not spec.pass_through_args:
         errors.append("public bridge must pass through action arguments")
 
-    retired_fields = sorted(set(fields) & set(PUBLIC_BRIDGE_RETIRED_METADATA_FIELDS))
+    retired_fields = sorted(
+        field
+        for field in fields
+        if field.endswith("_scripts") or field in {"alternate_scripts", "old_scripts"}
+    )
     if retired_fields:
         errors.append(
             "retired package metadata fields present: " + ", ".join(retired_fields)

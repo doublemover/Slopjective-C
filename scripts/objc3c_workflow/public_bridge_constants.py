@@ -32,12 +32,6 @@ PUBLIC_BRIDGE_INTEGRITY_OWNER_SURFACE = (
     "scripts/objc3c_workflow/public_bridge_integrity.py"
 )
 PUBLIC_BRIDGE_INTEGRITY_CONTRACT_ID = "objc3c-workflow-public-bridge-integrity-v1"
-PUBLIC_BRIDGE_RETIRED_METADATA_FIELDS = (
-    "public" "_scripts",
-    "alternate_scripts",
-    "script_alternates",
-    "old_scripts",
-)
 
 
 __all__ = [
@@ -51,7 +45,6 @@ __all__ = [
     "PUBLIC_BRIDGE_INVOCATION_OWNER_SURFACE",
     "PUBLIC_BRIDGE_PAYLOAD_OWNER_SURFACE",
     "PUBLIC_BRIDGE_REGISTRY_OWNER_SURFACE",
-    "PUBLIC_BRIDGE_RETIRED_METADATA_FIELDS",
     "WORKFLOW_BRIDGE_SCRIPT",
     "WORKFLOW_MODULE",
     "WORKFLOW_PUBLIC_ACTION_TOKEN",

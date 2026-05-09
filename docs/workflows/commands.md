@@ -15,14 +15,15 @@ The public command model is:
   `scripts/objc3c_workflow/action_handler_integrity.py`,
   `scripts/objc3c_workflow/request_dispatch.py`, and
   `scripts/objc3c_workflow/path_bootstrap.py` own the internal read-only
-  registry, action-handler integrity, request-dispatch, and direct-entrypoint
-  bootstrap surfaces.
+  registry, action-handler integrity, request-dispatch, and module-bridge
+  import-root surfaces.
 - `docs/runbooks/objc3c_public_command_surface.md` is the operator-facing
   appendix for the package bridge.
 
-User-facing workflow docs advertise the npm bridge only. Retired command
-names, public-script metadata tables, helper invocations, native build commands,
-and implementation-only script names are not public command surface.
+User-facing workflow docs advertise the npm bridge only. Retired command names,
+public-script metadata tables, direct runner.py invocation, helper invocations,
+native build commands, and implementation-only script names are not public
+command surface.
 
 Capability docs may cite command evidence only when the command matches the
 matrix schema pattern, `npm run objc3c -- <action>`. Direct helper invocations,

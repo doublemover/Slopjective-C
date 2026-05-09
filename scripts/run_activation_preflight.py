@@ -7,19 +7,28 @@ import argparse
 import json
 import sys
 import textwrap
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from scripts.activation_preflight.command_runner import (
+    DEFAULT_COMMAND_TIMEOUT_SECONDS,
+    run_command,
+)
+from scripts.activation_preflight.command_specs import (
+    activation_check_specs,
+    open_blockers_refresh_spec,
+    snapshot_refresh_spec,
+    spec_lint_spec,
+)
+from scripts.activation_preflight.contracts import CommandResult, CommandSpec
 from objc3c_tooling.json_io import write_text_file
 from objc3c_tooling.paths import display_path, resolve_repo_path
-from objc3c_tooling.subprocesses import python_script_command, run_timed
+from objc3c_tooling.subprocesses import python_script_command
 from objc3c_tooling.public_workflow_output import normalize_newlines
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
 DEFAULT_OPEN_BLOCKERS_ROOT = ROOT
 DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "activation_preflight"
-DEFAULT_COMMAND_TIMEOUT_SECONDS = 600
 
 ACTIVATION_CHECK_SCRIPT_PATH = ROOT / "scripts" / "check_activation_triggers.py"
 SPEC_LINT_SCRIPT_PATH = ROOT / "scripts" / "spec_lint.py"
@@ -40,26 +49,6 @@ DEFAULT_ACTIONABLE_STATUSES: tuple[str, ...] = ("open", "open-blocked", "blocked
 EXIT_GATE_CLOSED = 0
 EXIT_GATE_OPEN = 1
 EXIT_RUNNER_ERROR = 2
-
-
-@dataclass(frozen=True)
-class CommandSpec:
-    name: str
-    script_path: Path
-    actual_args: tuple[str, ...]
-    display_args: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class CommandResult:
-    spec: CommandSpec
-    exit_code: int
-    stdout: str
-    stderr: str
-
-
-
-
 
 
 def default_open_blockers_output_path(output_dir: Path) -> Path:
@@ -201,18 +190,6 @@ def validate_markdown_freshness_row(
             f"{label!r}: fresh={cells[5]!r} expected={expected_cells[5]!r}."
         )
     return None
-
-
-def run_command(spec: CommandSpec) -> CommandResult:
-    command = python_script_command(spec.script_path, *spec.actual_args)
-    execution = run_timed(command, cwd=ROOT, timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS)
-    exit_code = EXIT_RUNNER_ERROR if execution.timeout_seconds is not None else int(execution.returncode)
-    return CommandResult(
-        spec=spec,
-        exit_code=exit_code,
-        stdout=normalize_newlines(execution.stdout),
-        stderr=normalize_newlines(execution.stderr),
-    )
 
 
 def parse_activation_payload(
@@ -1313,27 +1290,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     if args.refresh_snapshots:
-        capture_actual_args: list[str] = [
-            "--issues-output",
-            str(issues_path),
-            "--milestones-output",
-            str(milestones_path),
-        ]
-        capture_display_args: list[str] = [
-            "--issues-output",
-            display_path(issues_path),
-            "--milestones-output",
-            display_path(milestones_path),
-        ]
-        if args.snapshot_generated_at_utc is not None:
-            capture_actual_args.extend(["--generated-at-utc", args.snapshot_generated_at_utc])
-            capture_display_args.extend(["--generated-at-utc", args.snapshot_generated_at_utc])
-
-        capture_spec = CommandSpec(
-            name="capture_activation_snapshots",
+        capture_spec = snapshot_refresh_spec(
             script_path=CAPTURE_SNAPSHOTS_SCRIPT_PATH,
-            actual_args=tuple(capture_actual_args),
-            display_args=tuple(capture_display_args),
+            issues_path=issues_path,
+            milestones_path=milestones_path,
+            generated_at_utc=args.snapshot_generated_at_utc,
         )
         snapshot_refresh_result = run_command(capture_spec)
         if snapshot_refresh_result.exit_code != 0:
@@ -1347,34 +1308,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             open_blockers_path = default_open_blockers_output_path(output_dir)
 
         assert open_blockers_refresh_root is not None
-        extract_actual_args: list[str] = [
-            "--root",
-            str(open_blockers_refresh_root),
-            "--format",
-            "snapshot-json",
-        ]
-        extract_display_args: list[str] = [
-            "--root",
-            display_path(open_blockers_refresh_root),
-            "--format",
-            "snapshot-json",
-        ]
-        if args.open_blockers_generated_at_utc is not None:
-            extract_actual_args.extend(
-                ["--generated-at-utc", args.open_blockers_generated_at_utc]
-            )
-            extract_display_args.extend(
-                ["--generated-at-utc", args.open_blockers_generated_at_utc]
-            )
-        if args.open_blockers_source is not None:
-            extract_actual_args.extend(["--source", args.open_blockers_source])
-            extract_display_args.extend(["--source", args.open_blockers_source])
-
-        extract_spec = CommandSpec(
-            name="extract_open_blockers_snapshot_json",
+        extract_spec = open_blockers_refresh_spec(
             script_path=EXTRACT_OPEN_BLOCKERS_SCRIPT_PATH,
-            actual_args=tuple(extract_actual_args),
-            display_args=tuple(extract_display_args),
+            root=open_blockers_refresh_root,
+            generated_at_utc=args.open_blockers_generated_at_utc,
+            source=args.open_blockers_source,
         )
         open_blockers_refresh_result = run_command(extract_spec)
         if open_blockers_refresh_result.exit_code != 0:
@@ -1391,80 +1329,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"{display_path(open_blockers_path)}: {exc}."
                 )
 
-    activation_actual_args = [
-        "--issues-json",
-        str(issues_path),
-        "--milestones-json",
-        str(milestones_path),
-        "--catalog-json",
-        str(catalog_path),
-    ]
-    activation_display_args = [
-        "--issues-json",
-        display_path(issues_path),
-        "--milestones-json",
-        display_path(milestones_path),
-        "--catalog-json",
-        display_path(catalog_path),
-    ]
-    if open_blockers_path is not None:
-        activation_actual_args.extend(["--open-blockers-json", str(open_blockers_path)])
-        activation_display_args.extend(["--open-blockers-json", display_path(open_blockers_path)])
-
-    if args.actionable_statuses:
-        for status in args.actionable_statuses:
-            activation_actual_args.extend(["--actionable-status", status])
-            activation_display_args.extend(["--actionable-status", status])
-
-    if args.issues_max_age_seconds is not None:
-        activation_actual_args.extend(["--issues-max-age-seconds", str(args.issues_max_age_seconds)])
-        activation_display_args.extend(["--issues-max-age-seconds", str(args.issues_max_age_seconds)])
-    if args.milestones_max_age_seconds is not None:
-        activation_actual_args.extend(
-            ["--milestones-max-age-seconds", str(args.milestones_max_age_seconds)]
-        )
-        activation_display_args.extend(
-            ["--milestones-max-age-seconds", str(args.milestones_max_age_seconds)]
-        )
-
-    if t4_overlay_path is not None:
-        activation_actual_args.extend(["--t4-governance-overlay-json", str(t4_overlay_path)])
-        activation_display_args.extend(
-            ["--t4-governance-overlay-json", display_path(t4_overlay_path)]
-        )
-    elif args.t4_new_scope_publish:
-        activation_actual_args.append("--t4-new-scope-publish")
-        activation_display_args.append("--t4-new-scope-publish")
-
-    activation_json_spec = CommandSpec(
-        name="check_activation_triggers_json",
+    activation_json_spec, activation_markdown_spec = activation_check_specs(
         script_path=ACTIVATION_CHECK_SCRIPT_PATH,
-        actual_args=tuple([*activation_actual_args, "--format", "json"]),
-        display_args=tuple([*activation_display_args, "--format", "json"]),
+        issues_path=issues_path,
+        milestones_path=milestones_path,
+        catalog_path=catalog_path,
+        open_blockers_path=open_blockers_path,
+        actionable_statuses=args.actionable_statuses,
+        issues_max_age_seconds=args.issues_max_age_seconds,
+        milestones_max_age_seconds=args.milestones_max_age_seconds,
+        t4_overlay_path=t4_overlay_path,
+        t4_new_scope_publish=bool(args.t4_new_scope_publish),
     )
-    activation_markdown_spec = CommandSpec(
-        name="check_activation_triggers_markdown",
-        script_path=ACTIVATION_CHECK_SCRIPT_PATH,
-        actual_args=tuple([*activation_actual_args, "--format", "markdown"]),
-        display_args=tuple([*activation_display_args, "--format", "markdown"]),
-    )
-
-    spec_lint_actual_args: list[str] = []
-    spec_lint_display_args: list[str] = []
-    for glob in args.spec_globs:
-        spec_lint_actual_args.extend(["--glob", glob])
-        spec_lint_display_args.extend(["--glob", glob])
-
-    spec_lint_spec = CommandSpec(
-        name="spec_lint",
+    spec_lint_command_spec = spec_lint_spec(
         script_path=SPEC_LINT_SCRIPT_PATH,
-        actual_args=tuple(spec_lint_actual_args),
-        display_args=tuple(spec_lint_display_args),
+        spec_globs=args.spec_globs,
     )
 
     activation_json_result = run_command(activation_json_spec)
     activation_markdown_result = run_command(activation_markdown_spec)
-    spec_lint_result = run_command(spec_lint_spec)
+    spec_lint_result = run_command(spec_lint_command_spec)
 
     activation_payload, activation_error = parse_activation_payload(
         activation_json_result,
