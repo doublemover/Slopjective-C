@@ -17,12 +17,18 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.h
   blocks/block_arc_snapshot.cpp
   blocks/block_invocation.cpp
+  blocks/block_invocation_plan.cpp
+  blocks/block_invocation_plan.h
   blocks/block_invocation.h
+  blocks/block_handle_allocation.cpp
+  blocks/block_handle_allocation.h
   blocks/block_lifetime.cpp
   blocks/block_lifetime.h
   blocks/block_pointer_capture_storage.cpp
   blocks/block_pointer_capture_storage.h
   blocks/block_promotion.cpp
+  blocks/block_promotion_plan.cpp
+  blocks/block_promotion_plan.h
   blocks/block_promotion.h
   blocks/block_record.cpp
   blocks/block_record.h
@@ -46,12 +52,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/receiver_identity.h
   concurrency/actor.cpp
   concurrency/actor.h
+  concurrency/actor_guard_operations.cpp
+  concurrency/actor_guard_operations.h
   concurrency/actor_isolation.cpp
   concurrency/actor_isolation_operations.cpp
   concurrency/actor_isolation_operations.h
   concurrency/actor_mailbox.cpp
-  concurrency/actor_mailbox_state.cpp
-  concurrency/actor_mailbox_state.h
+  concurrency/actor_mailbox_operations.cpp
+  concurrency/actor_mailbox_operations.h
   concurrency/actor_snapshot.cpp
   concurrency/actor_snapshot_fields.cpp
   concurrency/actor_snapshot_fields.h
@@ -60,6 +68,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor_state_store.h
   concurrency/continuation_operations.cpp
   concurrency/continuation_operations.h
+  concurrency/continuation_resume_operations.cpp
+  concurrency/continuation_resume_operations.h
   concurrency/continuation_snapshot_fields.cpp
   concurrency/continuation_snapshot_fields.h
   concurrency/continuation_state.cpp
@@ -73,6 +83,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/task.cpp
   concurrency/task.h
   concurrency/task_cancellation.cpp
+  concurrency/task_cancellation_state.cpp
+  concurrency/task_cancellation_state.h
+  concurrency/task_group_operations.cpp
+  concurrency/task_group_operations.h
   concurrency/task_group_state.cpp
   concurrency/task_lifecycle.cpp
   concurrency/task_runtime_operations.cpp
@@ -123,12 +137,16 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/typed_dispatch_result.h
   errors/catch_filter.cpp
   errors/catch_filter.h
+  errors/error_bridge_catch_operations.cpp
+  errors/error_bridge_catch_operations.h
   errors/error_bridge_kind.cpp
   errors/error_bridge_kind.h
   errors/error_bridge.cpp
   errors/error_bridge.h
   errors/error_bridge_operations.cpp
   errors/error_bridge_operations.h
+  errors/error_bridge_snapshot.cpp
+  errors/error_bridge_snapshot.h
   errors/error_bridge_state.cpp
   errors/error_bridge_state.h
   images/image_descriptor.cpp
