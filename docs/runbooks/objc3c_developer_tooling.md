@@ -244,6 +244,21 @@ The public developer-tooling surface must publish one canonical capability map
 with capability status, publication status, and evidence roots instead of
 duplicating per-editor interpretations.
 
+## Hosted LLVM Capability Truth Payloads
+
+Hosted LLVM and capability-routed parity claims are owned by typed workflow
+contracts, not by local executable discovery text.
+
+- local `check-llvm-capabilities` probe output is diagnostic-only, even when it
+  finds clang and llc on the current machine
+- hosted execution support requires a hosted LLVM summary with canonical mode,
+  `ok=true`, clang availability, llc availability, and llc `--filetype=obj`
+  support
+- capability-routed source parity is publishable only when the same hosted
+  object-emission truth is available
+- fail-closed payload fields must include source kind, local-diagnostic status,
+  hosted execution support, hosted source parity support, and failure reasons
+
 ## Debugger, Source-Map, And Stepping Semantics
 
 Debugger and stepping behavior must stay tied to emitted artifacts and truthful
