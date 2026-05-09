@@ -9,6 +9,8 @@
     "contract_id",
     "generated_at_utc",
     "status",
+    "source_surface_summary_path",
+    "schema_surface_summary_path",
     "dashboard_summary_path",
     "report_markdown_path",
     "badge_path",

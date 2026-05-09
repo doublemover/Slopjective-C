@@ -18,18 +18,20 @@ SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "performance_governan
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "performance-governance" / "schema-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.performance.governance.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
-EXPECTED_SCHEMAS = {
-    "dashboard_summary_schema": (
+EXPECTED_SCHEMAS = (
+    (
+        "dashboard_summary_schema",
         "objc3c-performance-dashboard-summary-v1",
         "https://schemas.slopjective.local/objc3c-performance-dashboard-summary-v1.schema.json",
         "objc3c.performance.governance.dashboard.summary.v1",
     ),
-    "public_report_schema": (
+    (
+        "public_report_schema",
         "objc3c-performance-public-report-v1",
         "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
         "objc3c.performance.governance.public.summary.v1",
     ),
-}
+)
 
 
 
@@ -63,11 +65,12 @@ def main() -> int:
     checked_paths: list[str] = []
     schema_ids: list[str] = []
     schema_refs: dict[str, str] = {}
-    for surface_key, (
+    for (
+        surface_key,
         registry_id,
         expected_schema_url,
         expected_contract_id,
-    ) in EXPECTED_SCHEMAS.items():
+    ) in EXPECTED_SCHEMAS:
         expected_path = repo_rel(schema_path(registry_id))
         if surface.get(surface_key) != expected_path:
             return fail(f"{surface_key} drifted from registered schema path {expected_path}")
