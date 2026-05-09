@@ -327,6 +327,19 @@ static bool PopulateResultPaths(objc3c_frontend_context_t *context,
       error);
 }
 
+static objc3c_frontend_status_t ReturnWithOwnedResultPayload(
+    objc3c_frontend_context_t *context,
+    objc3c_frontend_compile_result_t *result) {
+  std::string result_ownership_error;
+  if (!PopulateResultPaths(context, result, result_ownership_error)) {
+    result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+    result->process_exit_code = 2;
+    result->success = 0;
+    objc3c_frontend_set_error(context, result_ownership_error.c_str());
+  }
+  return result->status;
+}
+
 static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context,
                                               objc3c_frontend_compile_result_t *result,
                                               const std::string &message) {
@@ -402,7 +415,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     result->process_exit_code = 2;
     result->success = 0;
     objc3c_frontend_set_error(context, lowering_error.c_str());
-    return result->status;
+    return ReturnWithOwnedResultPayload(context, result);
   }
   frontend_options.lowering = normalized_lowering;
 
@@ -425,7 +438,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       result->process_exit_code = 125;
       result->success = 0;
       objc3c_frontend_set_error(context, deprecated_claim_sidecar_error.c_str());
-      return result->status;
+      return ReturnWithOwnedResultPayload(context, result);
     }
   }
 
@@ -434,8 +447,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     std::string io_error;
     if (!WriteTextFile(diagnostics_out, BuildDiagnosticsJson(product.artifact_bundle.diagnostics), io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
       objc3c_frontend_set_error(context, io_error.c_str());
-      return result->status;
+      return ReturnWithOwnedResultPayload(context, result);
     }
     context->diagnostics_path = diagnostics_out.generic_string();
   }

@@ -168,16 +168,9 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
   return true;
 }
 
-std::string OptionalPath(const char *value) {
-  if (value == nullptr || value[0] == '\0') {
-    return "";
-  }
-  return value;
-}
-
-std::string OptionalPath(const objc3c_frontend_string_t *value) {
-  const objc3c_frontend_string_view_t view =
-      objc3c_frontend_string_view(value);
+std::string OptionalString(const objc3c_frontend_c_string_t *value) {
+  const objc3c_frontend_c_string_view_t view =
+      objc3c_frontend_c_string_view(value);
   if (view.data == nullptr || view.size == 0) {
     return "";
   }
@@ -186,18 +179,77 @@ std::string OptionalPath(const objc3c_frontend_string_t *value) {
 
 std::string ResultArtifactPath(
     const objc3c_frontend_c_compile_result_t &result,
-    objc3c_frontend_artifact_kind_t artifact_kind) {
-  return OptionalPath(objc3c_frontend_result_artifact_path(&result,
-                                                          artifact_kind));
+    objc3c_frontend_c_artifact_kind_t artifact_kind) {
+  return OptionalString(objc3c_frontend_c_result_artifact_path(&result,
+                                                              artifact_kind));
+}
+
+std::string ResultErrorMessage(
+    const objc3c_frontend_c_compile_result_t &result) {
+  return OptionalString(objc3c_frontend_c_result_error_message(&result));
 }
 
 struct CompileResultGuard {
   objc3c_frontend_c_compile_result_t *result = nullptr;
 
   ~CompileResultGuard() {
-    objc3c_frontend_result_destroy(result);
+    objc3c_frontend_c_result_destroy(result);
   }
 };
+
+bool StageSummaryShapeReady(
+    const objc3c_frontend_c_stage_summary_t &summary,
+    objc3c_frontend_c_stage_id_t expected_stage) {
+  return objc3c_frontend_c_stage_summary_is_well_formed(&summary,
+                                                        expected_stage) != 0u;
+}
+
+bool StageReportShapeReady(
+    const objc3c_frontend_c_compile_result_t &result) {
+  return StageSummaryShapeReady(result.lex, OBJC3C_FRONTEND_STAGE_LEX) &&
+         StageSummaryShapeReady(result.parse, OBJC3C_FRONTEND_STAGE_PARSE) &&
+         StageSummaryShapeReady(result.sema, OBJC3C_FRONTEND_STAGE_SEMA) &&
+         StageSummaryShapeReady(result.lower, OBJC3C_FRONTEND_STAGE_LOWER) &&
+         StageSummaryShapeReady(result.emit, OBJC3C_FRONTEND_STAGE_EMIT);
+}
+
+bool ValidateResultAccessors(
+    objc3c_frontend_c_status_t status,
+    const objc3c_frontend_c_compile_result_t &result,
+    const std::string &last_error,
+    const std::string &result_error_message,
+    std::string &reason) {
+  if (result.status != status) {
+    reason = "compile status does not match result.status";
+    return false;
+  }
+  if (status == OBJC3C_FRONTEND_STATUS_OK && result.success == 0u) {
+    reason = "successful compile did not set result.success";
+    return false;
+  }
+  if (status != OBJC3C_FRONTEND_STATUS_OK && result.success != 0u) {
+    reason = "failing compile left result.success set";
+    return false;
+  }
+  if (status == OBJC3C_FRONTEND_STATUS_OK && !result_error_message.empty()) {
+    reason = "successful compile published a result-owned error message";
+    return false;
+  }
+  if (status == OBJC3C_FRONTEND_STATUS_OK && !last_error.empty()) {
+    reason = "successful compile published a context last_error";
+    return false;
+  }
+  if (status != OBJC3C_FRONTEND_STATUS_OK && result_error_message.empty()) {
+    reason = "failing compile published no result-owned error message";
+    return false;
+  }
+  if (!last_error.empty() && !result_error_message.empty() &&
+      last_error != result_error_message) {
+    reason = "context last_error and result-owned error_message differ";
+    return false;
+  }
+  return true;
+}
 
 struct DiagnosticTotals {
   std::uint64_t total = 0;
@@ -402,6 +454,7 @@ void WriteObservabilityJson(
     const std::string &summary_path_text,
     const objc3c_frontend_c_compile_result_t &result,
     objc3c_frontend_c_status_t status,
+    const std::string &result_error_message,
     const std::string &runtime_metadata_binary_path_text) {
   const std::string diagnostics_path_text =
       ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
@@ -424,6 +477,8 @@ void WriteObservabilityJson(
       << EscapeJsonString(blocking_stage) << "\",\n";
   out << child_indent << "\"highest_diagnostic_severity\": \""
       << HighestDiagnosticSeverity(diagnostic_totals) << "\",\n";
+  out << child_indent << "\"result_error_message_present\": "
+      << (!result_error_message.empty() ? "true" : "false") << ",\n";
   out << child_indent << "\"diagnostics_total\": " << diagnostic_totals.total
       << ",\n";
   out << child_indent << "\"diagnostics_notes\": " << diagnostic_totals.notes
@@ -783,6 +838,7 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error,
+                             const std::string &result_error_message,
                              const Objc3CliReportingOutputContractConformanceMatrixImplementationSurface
                                  &output_contract_recovery_determinism_surface,
                              const Objc3CliReportingOutputContractConformanceCorpusExpansionSurface
@@ -820,6 +876,42 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << "    \"runtime_metadata_binary\": \"" << EscapeJsonString(runtime_metadata_binary_path_text) << "\"\n";
   out << "  },\n";
   out << "  \"last_error\": \"" << EscapeJsonString(last_error) << "\",\n";
+  out << "  \"result_error_message\": \""
+      << EscapeJsonString(result_error_message) << "\",\n";
+  out << "  \"c_api_ownership\": {\n";
+  out << "    \"result_owned_error_message\": "
+      << (!result_error_message.empty() ? "true" : "false") << ",\n";
+  out << "    \"diagnostics_path_borrowed\": "
+      << (objc3c_frontend_c_result_has_artifact(
+              &result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS) != 0u
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"manifest_path_borrowed\": "
+      << (objc3c_frontend_c_result_has_artifact(
+              &result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST) != 0u
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"ir_path_borrowed\": "
+      << (objc3c_frontend_c_result_has_artifact(
+              &result, OBJC3C_FRONTEND_ARTIFACT_IR) != 0u
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"object_path_borrowed\": "
+      << (objc3c_frontend_c_result_has_artifact(
+              &result, OBJC3C_FRONTEND_ARTIFACT_OBJECT) != 0u
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"runtime_metadata_path_borrowed\": "
+      << (objc3c_frontend_c_result_has_artifact(
+              &result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA) != 0u
+              ? "true"
+              : "false")
+      << "\n";
+  out << "  },\n";
   out << "  \"stages\": {\n";
   WriteStageSummaryJson(out, "lex", result.lex, true);
   WriteStageSummaryJson(out, "parse", result.parse, true);
@@ -834,6 +926,7 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       summary_path_text,
       result,
       status,
+      result_error_message,
       runtime_metadata_binary_path_text);
   out << ",\n";
   out << "  \"runtime_inspector\": ";
@@ -1138,18 +1231,23 @@ int main(int argc, char **argv) {
   const CompileResultGuard result_guard{&result};
   const objc3c_frontend_c_status_t status = objc3c_frontend_c_compile_file(context, &compile_options, &result);
   const std::string last_error = ReadLastError(context);
+  const std::string result_error_message = ResultErrorMessage(result);
+  std::string accessor_contract_error;
+  if (!ValidateResultAccessors(
+          status, result, last_error, result_error_message,
+          accessor_contract_error)) {
+    std::cerr << "frontend C API accessor contract fail-closed: "
+              << accessor_contract_error << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
   const int exit_code = ExitCodeFromStatus(status, result);
 
   const fs::path summary_path =
       options.summary_out.empty() ? (options.out_dir / (options.emit_prefix + ".c_api_summary.json")) : options.summary_out;
   const std::string runtime_metadata_binary_path_text =
       ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
-  const bool stage_report_output_contract_ready =
-      result.lex.stage == OBJC3C_FRONTEND_STAGE_LEX &&
-      result.parse.stage == OBJC3C_FRONTEND_STAGE_PARSE &&
-      result.sema.stage == OBJC3C_FRONTEND_STAGE_SEMA &&
-      result.lower.stage == OBJC3C_FRONTEND_STAGE_LOWER &&
-      result.emit.stage == OBJC3C_FRONTEND_STAGE_EMIT;
+  const bool stage_report_output_contract_ready = StageReportShapeReady(result);
   const Objc3CliReportingOutputContractScaffold cli_reporting_output_contract_scaffold =
       BuildObjc3CliReportingOutputContractScaffold(
           options.out_dir,
@@ -1296,6 +1394,7 @@ int main(int argc, char **argv) {
       status,
       result,
       last_error,
+      result_error_message,
       cli_reporting_output_contract_conformance_matrix_surface,
       cli_reporting_output_contract_conformance_corpus_surface);
   std::string summary_error;
@@ -1327,6 +1426,7 @@ int main(int argc, char **argv) {
           summary_path.generic_string(),
           result,
           status,
+          result_error_message,
           runtime_metadata_binary_path_text);
       dump << "\n";
       emit_dump_json(dump.str());
