@@ -21,8 +21,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "248820d9a",
-    "current_head_summary": "HC move metaprogramming artifact emission builders",
+    "current_head": "5086bf939",
+    "current_head_summary": "HC move accessor metadata lowering summaries",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -196,7 +196,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "248820d9a",
+    "through_commit": "5086bf939",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -536,6 +536,68 @@
         ],
         "primary_commits": [
           "248820d9a"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ca7ec4cb2"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "f996dd674"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8141",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5672756b4"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "881539432"
+        ]
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5086bf939"
         ]
       },
       {
@@ -1360,7 +1422,8 @@
         "a8a4f9f34",
         "ced378fe3",
         "7ef7fd02a",
-        "d463f1bb6"
+        "d463f1bb6",
+        "f996dd674"
       ]
     },
     {
@@ -1456,7 +1519,12 @@
         "d463f1bb6",
         "f9d7c7467",
         "64702b40d",
-        "248820d9a"
+        "248820d9a",
+        "ca7ec4cb2",
+        "f996dd674",
+        "5672756b4",
+        "881539432",
+        "5086bf939"
       ]
     }
   ]

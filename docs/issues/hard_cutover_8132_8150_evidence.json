@@ -19,8 +19,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "248820d9a",
-    "current_head_summary": "HC move metaprogramming artifact emission builders",
+    "current_head": "5086bf939",
+    "current_head_summary": "HC move accessor metadata lowering summaries",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -205,7 +205,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "248820d9a",
+    "through_commit": "5086bf939",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -575,6 +575,73 @@
           "248820d9a"
         ],
         "owner_boundary": "metaprogramming artifact emission ownership is committed local semantic and artifact evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ca7ec4cb2"
+        ],
+        "owner_boundary": "lowering diagnostics surfacing ownership is committed local lowering, pipeline, and diagnostic evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "f996dd674"
+        ],
+        "owner_boundary": "metaprogramming/interop closure behavior owner splits are committed local fixture and behavior evidence only"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8141",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5672756b4"
+        ],
+        "owner_boundary": "interop preservation artifact ownership is committed local semantic, artifact, and API evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "881539432"
+        ],
+        "owner_boundary": "diagnostics hardening readiness module ownership is committed local lowering, pipeline, and diagnostic evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "5086bf939"
+        ],
+        "owner_boundary": "accessor metadata lowering summary ownership is committed local artifact, lowering, and typed metadata evidence"
       },
       {
         "issues": [
@@ -2122,7 +2189,8 @@
         "016683b19",
         "ced378fe3",
         "7ef7fd02a",
-        "d463f1bb6"
+        "d463f1bb6",
+        "f996dd674"
       ],
       "index_evidence": [
         "docs/support/capability_matrix.json",
@@ -2237,7 +2305,12 @@
         "d463f1bb6",
         "f9d7c7467",
         "64702b40d",
-        "248820d9a"
+        "248820d9a",
+        "ca7ec4cb2",
+        "f996dd674",
+        "5672756b4",
+        "881539432",
+        "5086bf939"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

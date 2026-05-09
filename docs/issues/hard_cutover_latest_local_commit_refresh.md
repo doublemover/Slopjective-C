@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `248820d9a`. It does not assert validation, remote issue
+refreshes through source commit `5086bf939`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -57,7 +57,7 @@ push operations were run while preparing this artifact.
 | `#8147` | Deep sema/lowering/runtime metadata evidence is refreshed by property/method/type support helpers, lower handoff, IR publication, runtime snapshots/storage, blocks, concurrency, and memory owners. |
 | `#8148` | JSON/schema and config evidence is refreshed by contract ids/descriptions, feature-state summaries, diagnostic lookup/config helpers, pipeline result classification, workflow payload schemas, and deterministic publication helpers. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by source-hygiene pattern modules, generated-report boundary split, GitHub control-plane cleanup, and workflow catalog wording. |
-| `#8150` | Local closeout evidence is refreshed by the 90-owner-commit wave and this docs/issues-only index. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
+| `#8150` | Local closeout evidence is refreshed by the 90-owner-commit wave and this docs/issues-only index. Validation, push, GitHub issue edits, and remote closeout remain deferred. |
 
 ## Follow-up Issue Ownership After `f66452822`
 
@@ -81,13 +81,13 @@ push operations were run while preparing this artifact.
 | `#8147` | Deep sema/lowering/runtime metadata evidence is refreshed by typed handoff contracts, IR metadata publication, runtime metadata/class graph snapshots, and pipeline result handoff. |
 | `#8148` | JSON/schema evidence is refreshed by JSON value/container writers, schema validation owners, telemetry/schema contract guidance, conformance claim validation input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/inputs/ordering, artifact adapters, dashboard renderers, artifact claim metadata, config tooling expectations, and pipeline result handoff. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by workflow handler registry and catalog owner splits, workflow release/tooling specs, validation timing report owners, native driver CLI owner splits, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, plus telemetry command evidence constraints. |
-| `#8150` | Local closeout evidence now includes the follow-up committed owner wave through `f4bf6228e`. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
+| `#8150` | Local closeout evidence now includes the follow-up committed owner wave through `f4bf6228e`. Validation, push, GitHub issue edits, and remote closeout remain deferred. |
 
 ## Post-`f4bf6228e` Owner Refresh
 
 This local-only refresh also folds in committed owner work after `f4bf6228e`
 through `89959f6cc`. It does not include uncommitted worktree edits and does not
-assert validation, push, GitHub issue updates, or remote closure.
+assert validation, push, GitHub issue edits, or remote closure.
 
 | Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
 | --- | --- | --- | --- |
@@ -105,7 +105,7 @@ assert validation, push, GitHub issue updates, or remote closure.
 | `#8144` | Behavior fixture evidence is refreshed by hard-cutover conformance index alignment, runtime probe metadata, fixture anchors, and boundary inventories. |
 | `#8145` | Capability truth evidence is refreshed by release-governance credibility/security owners and conformance runtime probe metadata; retired support wording remains negative-evidence only. |
 | `#8149` | Source hygiene/control-plane evidence is refreshed by release governance owners, validation timing owner splits, and playground workflow owner splits. |
-| `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Validation, push, GitHub issue updates, and remote closeout remain deferred. |
+| `#8150` | Local closeout evidence now also includes the committed post-`f4bf6228e` owner wave through `89959f6cc`. Validation, push, GitHub issue edits, and remote closeout remain deferred. |
 
 ## Post-`89959f6cc` Owner Refresh
 
@@ -371,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `248820d9a` without running validation, GitHub commands, push, or remote
+to source commit `5086bf939` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -405,6 +405,11 @@ issue edits. It groups the latest owner evidence as follows:
 - IR message-send emission owners: `f9d7c7467`
 - IR emission feature surface owners: `64702b40d`
 - metaprogramming artifact emission owners: `248820d9a`
+- lowering diagnostics surfacing owners: `ca7ec4cb2`
+- metaprogramming/interop closure behavior owners: `f996dd674`
+- interop preservation artifact owners: `5672756b4`
+- diagnostics hardening readiness owners: `881539432`
+- accessor metadata lowering summary owners: `5086bf939`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
