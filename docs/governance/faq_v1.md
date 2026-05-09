@@ -61,7 +61,7 @@ Each FAQ entry includes: `faq_id`, applicability, authoritative references, owne
 
 - `faq_id`: `FAQ-C13-06-Q01`
 - Question: When can a claim be published in the extension registry?
-- Answer: Publication follows accepted decision linkage plus schema IDs owned by the shared registry and support rows in the capability matrix/evidence map. Deferred or held outcomes must include explicit owner/date rationale and do not create fallback, alias, or compatibility-only support.
+- Answer: Publication follows accepted decision linkage plus schema IDs owned by the shared registry and support rows in the capability matrix/evidence map. Deferred or held outcomes must include explicit owner/date rationale and do not create alternate acceptance, alias-adapter, or old-surface-only support.
 - Applicability: `vendor`
 - References: `scripts/objc3c_shared/schema_registry.py`; `docs/support/capability_matrix.md`; `docs/support/evidence_map.md`
 - `last_verified_date`: `2026-02-23`

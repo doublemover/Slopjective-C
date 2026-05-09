@@ -55,7 +55,7 @@ This policy governs:
 | `F-06`    | Cross-module and package interop        | Import and export behavior across dependency boundaries.        |
 | `F-07`    | Security and isolation conformance      | Sandbox policy, unsafe-surface rejection, and security posture. |
 | `F-08`    | Reproducibility and determinism replay  | Stable outputs across repeated runs.                            |
-| `F-09`    | Deprecation and retirement replay       | Rejection, tombstone, and replay evidence with no fallback lane. |
+| `F-09`    | Deprecation and retirement replay       | Rejection, tombstone, and replay evidence with no alternate support lane. |
 | `F-10`    | Claim-to-test traceability              | Mapping between claim scope and required test IDs.              |
 
 ## 4. Lifecycle Obligation Matrix

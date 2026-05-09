@@ -16,8 +16,9 @@ Current prose/spec/planning docs must preserve these boundaries:
   reports are implementation evidence only;
 - compiler/frontend, runtime/API, workflow/control-plane, behavior fixture, and
   JSON/schema owners remain split;
-- retired old modes, shims, aliases, fallback paths, and migration lanes are
-  rejection, strict-error, or absent-support evidence, not accepted behavior.
+- retired old modes, retired adapters, alias adapters, alternate acceptance
+  paths, and retired-source lanes are rejection, strict-error, or absent-support
+  evidence, not accepted behavior.
 
 Historical phase inventory follows. It is not a replacement for the current
 hard-cutover evidence files under `docs/issues/` or for the support/evidence

@@ -60,7 +60,7 @@ canonicalize to the Objective-C 3.0 pragma form:
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
 These inputs are not emitted as Objective-C 3.0 interface spellings and do not
-create a compatibility mode.
+create a retired mode label.
 
 ### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
 

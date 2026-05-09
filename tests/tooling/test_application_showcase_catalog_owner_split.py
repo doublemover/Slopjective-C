@@ -226,7 +226,7 @@ def test_site_index_contract_records_public_command_model() -> None:
         "forbidden_public_command_semantics": [
             "package-script aliases",
             "direct helper script commands",
-            "fallback command lanes",
-            "migration-lane support claims",
+            "alternate command support lanes",
+            "retired-source support claims",
         ],
     }

@@ -19,7 +19,7 @@ This document is aligned to:
 | `LS-1`   | `experimental` | Early validation with controlled blast radius.               | Off in conforming mode.                                | Vendor or private canonical IDs only.                |
 | `LS-2`   | `provisional`  | Cross-vendor convergence with frozen core semantics.         | Off by default unless explicit board waiver.           | Vendor canonical ID required.                        |
 | `LS-3`   | `stable`       | Normative portable behavior eligible for conformance claims. | May be enabled by default according to profile policy. | Public `objc3.meta.*` canonical ID required.         |
-| `LS-4`   | `deprecated`   | Published surface pending retirement; no fallback path implied. | Release policy decides whether it remains enableable before removal. | Existing published ID retained with no reassignment. |
+| `LS-4`   | `deprecated`   | Published surface pending retirement; no alternate acceptance path implied. | Release policy decides whether it remains enableable before removal. | Existing published ID retained with no reassignment. |
 | `LS-5`   | `retired`      | Tombstone state for removed active support.                  | Not enableable.                                        | Tombstone-only record; ID never reused.              |
 
 ## 2. Lifecycle Invariants
@@ -50,7 +50,7 @@ This document is aligned to:
 | Disallowed path | Reason                                                         |
 | --------------- | -------------------------------------------------------------- |
 | `LS-1 -> LS-3`  | Skips required cross-vendor convergence stage.                 |
-| `LS-3 -> LS-1`  | Violates release predictability and would create an unsupported fallback lane. |
+| `LS-3 -> LS-1`  | Violates release predictability and would create an unsupported alternate acceptance lane. |
 | `LS-5 -> any`   | `retired` is terminal; restoration requires a new identity.    |
 | `LS-4 -> LS-2`  | Reversal path, if approved, returns directly to `LS-3` only.   |
 

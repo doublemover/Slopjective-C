@@ -685,8 +685,8 @@ The advanced runnable tranche now has one explicit frontend inventory packet:
 Current truthful scope:
 
 - migration-named packet IDs in this section are diagnostic/canonicalization
-  inventories; they do not create a migration lane that accepts retired source
-  forms
+  inventories; they do not create a retired-source lane that accepts retired
+  source forms
 - the packet aggregates the already-landed Part 6 through Part 11 source
   closure/completion packets
 - legacy migration-hint counters for `yes` / `no` / `null` are included when
