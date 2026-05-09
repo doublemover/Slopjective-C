@@ -76,6 +76,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/selector_table.h
   state/runtime_reset.cpp
   state/runtime_reset.h
+  state/runtime_state_clear.cpp
+  state/runtime_state_clear.h
   state/runtime_state.cpp
   state/runtime_state.h
   state/runtime_state_records.h
