@@ -480,51 +480,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   // itself remains lowering-owned.
   const auto apply_arc_property_interaction_metadata =
       [](Objc3SemanticPropertyTypeMetadata &property_metadata) {
-        const auto profile_contains =
-            [&property_metadata](std::string_view needle) {
-              return property_metadata.property_attribute_profile.find(
-                         std::string(needle)) != std::string::npos;
-            };
-        const auto rebuild_accessor_profile =
-            [&property_metadata]() {
-              std::ostringstream out;
-              out << "getter=" << property_metadata.effective_getter_selector
-                  << ";setter_available="
-                  << (property_metadata.effective_setter_available ? 1 : 0)
-                  << ";setter=";
-              if (property_metadata.effective_setter_available) {
-                out << property_metadata.effective_setter_selector;
-              } else {
-                out << "<none>";
-              }
-              out << ";ownership_lifetime="
-                  << property_metadata.ownership_lifetime_profile
-                  << ";runtime_hook="
-                  << property_metadata.ownership_runtime_hook_profile;
-              property_metadata.accessor_ownership_profile = out.str();
-            };
-
-        if (property_metadata.ownership_lifetime_profile.empty()) {
-          if (profile_contains("weak=1")) {
-            property_metadata.ownership_lifetime_profile = "weak";
-            property_metadata.ownership_runtime_hook_profile =
-                "objc-weak-side-table";
-            property_metadata.ownership_is_weak_reference = true;
-          } else if (profile_contains("strong=1") ||
-                     profile_contains("copy=1")) {
-            property_metadata.ownership_lifetime_profile = "strong-owned";
-            property_metadata.ownership_runtime_hook_profile.clear();
-          }
+        const objc3c::support::Objc3PropertyOwnershipProfileKind
+            ownership_profile_kind =
+                objc3c::support::ApplyPropertyOwnershipProfileFallback(
+                    property_metadata, false);
+        if (ownership_profile_kind ==
+            objc3c::support::Objc3PropertyOwnershipProfileKind::kWeak) {
+          property_metadata.ownership_is_weak_reference = true;
         }
-        if ((!property_metadata.ownership_lifetime_profile.empty() ||
-             !property_metadata.ownership_runtime_hook_profile.empty()) &&
-            (property_metadata.accessor_ownership_profile.empty() ||
-             (property_metadata.accessor_ownership_profile.find(
-                  "ownership_lifetime=") != std::string::npos &&
-              property_metadata.accessor_ownership_profile.find(
-                  "ownership_lifetime=;") != std::string::npos))) {
-          rebuild_accessor_profile();
-        }
+        objc3c::support::RebuildPropertyAccessorOwnershipProfileIfNeeded(
+            property_metadata);
       };
   for (const std::string &name : interface_names) {
     const auto interface_it = surface.interfaces.find(name);

@@ -830,16 +830,13 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
 
 template <typename CallableDeclT>
 static bool HasInteropObjcRuntimeTypeSurface(const CallableDeclT &decl) {
-  if (decl.return_id_spelling || decl.return_class_spelling ||
-      decl.return_sel_spelling || decl.return_instancetype_spelling ||
-      decl.return_object_pointer_type_spelling) {
+  if (objc3c::support::HasObjCRuntimeReturnTypeSurface(decl)) {
     return true;
   }
   return std::any_of(decl.params.begin(), decl.params.end(),
                      [](const FuncParam &param) {
-                       return param.id_spelling || param.class_spelling ||
-                              param.sel_spelling || param.instancetype_spelling ||
-                              param.object_pointer_type_spelling;
+                       return objc3c::support::HasObjCRuntimeParamTypeSurface(
+                           param);
                      });
 }
 

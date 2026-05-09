@@ -17,6 +17,8 @@
 #include "ir/objc3_ir_emission_helpers.h"
 #include "parse/objc3_parse_support.h"
 #include "support/objc3_identifier_safe_suffix.h"
+#include "support/objc3_property_storage_profile_helpers.h"
+#include "support/objc3_string_predicates.h"
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 

@@ -411,11 +411,6 @@
 
   void EmitSyntheticMethod(const MethodDefinition &method_def,
                            std::ostringstream &out) const {
-    const auto profile_contains = [](const std::string &profile,
-                                     const char *needle) {
-      return !profile.empty() && needle != nullptr &&
-             profile.find(needle) != std::string::npos;
-    };
     if (method_def.synthetic_method_kind ==
         SyntheticMethodKind::MetaprogrammingDerivedEquality) {
       out << "define i32 @" << method_def.symbol << "(i32 %arg0) {\n";
@@ -447,12 +442,12 @@
       return;
     }
     const bool uses_weak_runtime_hooks =
-        method_def.synthesized_ownership_runtime_hook_profile ==
-        "objc-weak-side-table";
+        objc3c::support::UsesWeakCurrentPropertyRuntimeHelper(
+            method_def.synthesized_ownership_runtime_hook_profile);
     const bool uses_strong_runtime_hooks =
-        method_def.synthesized_ownership_lifetime_profile == "strong-owned" ||
-        profile_contains(method_def.synthesized_accessor_ownership_profile,
-                         "ownership_lifetime=strong-owned");
+        objc3c::support::UsesStrongOwnedCurrentPropertyExchange(
+            method_def.synthesized_ownership_lifetime_profile,
+            method_def.synthesized_accessor_ownership_profile);
     const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
     if (method_def.synthetic_method_kind ==
         SyntheticMethodKind::PropertyGetter) {

@@ -1,7 +1,6 @@
 #include "pipeline/objc3_frontend_pipeline.h"
 
 #include <algorithm>
-#include <cctype>
 #include <sstream>
 #include <tuple>
 #include <type_traits>
@@ -43,6 +42,9 @@
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 #include "sema/objc3_sema_pass_manager.h"
+#include "support/objc3_concurrency_symbol_profiles.h"
+#include "support/objc3_property_storage_profile_helpers.h"
+#include "support/objc3_type_profile_helpers.h"
 
 using objc3c::parse::support::MakeDiag;
 
@@ -635,19 +637,6 @@ std::string BuildExecutablePropertyOwnerKey(const std::string &owner_name,
   return owner_name + "|" + property_name;
 }
 
-bool UsesWeakCurrentPropertyRuntimeHelper(
-    const std::string &ownership_runtime_hook_profile) {
-  return ownership_runtime_hook_profile == "objc-weak-side-table";
-}
-
-bool UsesStrongOwnedCurrentPropertyExchange(
-    const std::string &ownership_lifetime_profile,
-    const std::string &accessor_ownership_profile) {
-  return ownership_lifetime_profile == "strong-owned" ||
-         accessor_ownership_profile.find("ownership_lifetime=strong-owned") !=
-             std::string::npos;
-}
-
 bool ShouldSynthesizeExecutablePropertyAccessors(
     const std::string &owner_kind, const std::string &owner_name,
     const std::string &property_name,
@@ -673,7 +662,8 @@ std::string BuildGetterStorageRuntimeHelperSymbol(
   if (!synthesizes_executable_accessors) {
     return {};
   }
-  return UsesWeakCurrentPropertyRuntimeHelper(ownership_runtime_hook_profile)
+  return objc3c::support::UsesWeakCurrentPropertyRuntimeHelper(
+             ownership_runtime_hook_profile)
              ? kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
              : kObjc3RuntimeReadCurrentPropertyI32Symbol;
 }
@@ -686,11 +676,12 @@ std::string BuildSetterStorageRuntimeHelperSymbol(
   if (!synthesizes_executable_accessors || !effective_setter_available) {
     return {};
   }
-  if (UsesWeakCurrentPropertyRuntimeHelper(ownership_runtime_hook_profile)) {
+  if (objc3c::support::UsesWeakCurrentPropertyRuntimeHelper(
+          ownership_runtime_hook_profile)) {
     return kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
   }
-  return UsesStrongOwnedCurrentPropertyExchange(ownership_lifetime_profile,
-                                                accessor_ownership_profile)
+  return objc3c::support::UsesStrongOwnedCurrentPropertyExchange(
+             ownership_lifetime_profile, accessor_ownership_profile)
              ? kObjc3RuntimeExchangeCurrentPropertyI32Symbol
              : kObjc3RuntimeWriteCurrentPropertyI32Symbol;
 }
@@ -718,50 +709,10 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
 
   const auto apply_arc_property_interaction_metadata =
       [](Objc3RuntimeMetadataPropertySourceRecord &property_record) {
-        const auto profile_contains =
-            [&property_record](std::string_view needle) {
-              return property_record.property_attribute_profile.find(
-                         std::string(needle)) != std::string::npos;
-            };
-        const auto rebuild_accessor_profile = [&property_record]() {
-          std::ostringstream out;
-          out << "getter=" << property_record.effective_getter_selector
-              << ";setter_available="
-              << (property_record.effective_setter_available ? 1 : 0)
-              << ";setter=";
-          if (property_record.effective_setter_available) {
-            out << property_record.effective_setter_selector;
-          } else {
-            out << "<none>";
-          }
-          out << ";ownership_lifetime="
-              << property_record.ownership_lifetime_profile
-              << ";runtime_hook="
-              << property_record.ownership_runtime_hook_profile;
-          property_record.accessor_ownership_profile = out.str();
-        };
-
-        if (property_record.ownership_lifetime_profile.empty()) {
-          if (profile_contains("weak=1")) {
-            property_record.ownership_lifetime_profile = "weak";
-            property_record.ownership_runtime_hook_profile =
-                "objc-weak-side-table";
-          } else if (profile_contains("strong=1") ||
-                     profile_contains("copy=1")) {
-            property_record.ownership_lifetime_profile = "strong-owned";
-            property_record.ownership_runtime_hook_profile.clear();
-          }
-        }
-
-        if ((!property_record.ownership_lifetime_profile.empty() ||
-             !property_record.ownership_runtime_hook_profile.empty()) &&
-            (property_record.accessor_ownership_profile.empty() ||
-             (property_record.accessor_ownership_profile.find(
-                  "ownership_lifetime=") != std::string::npos &&
-              property_record.accessor_ownership_profile.find(
-                  "ownership_lifetime=;") != std::string::npos))) {
-          rebuild_accessor_profile();
-        }
+        objc3c::support::ApplyPropertyOwnershipProfileFallback(
+            property_record, false);
+        objc3c::support::RebuildPropertyAccessorOwnershipProfileIfNeeded(
+            property_record);
       };
 
   const auto append_property_records =
@@ -1151,44 +1102,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
 
   const auto apply_arc_property_interaction_metadata =
       [](Objc3ExecutableMetadataPropertyGraphNode &node) {
-        const auto profile_contains = [&node](std::string_view needle) {
-          return node.property_attribute_profile.find(std::string(needle)) !=
-                 std::string::npos;
-        };
-        const auto rebuild_accessor_profile = [&node]() {
-          std::ostringstream out;
-          out << "getter=" << node.effective_getter_selector
-              << ";setter_available="
-              << (node.effective_setter_available ? 1 : 0) << ";setter=";
-          if (node.effective_setter_available) {
-            out << node.effective_setter_selector;
-          } else {
-            out << "<none>";
-          }
-          out << ";ownership_lifetime=" << node.ownership_lifetime_profile
-              << ";runtime_hook=" << node.ownership_runtime_hook_profile;
-          node.accessor_ownership_profile = out.str();
-        };
-
-        if (node.ownership_lifetime_profile.empty()) {
-          if (profile_contains("weak=1")) {
-            node.ownership_lifetime_profile = "weak";
-            node.ownership_runtime_hook_profile = "objc-weak-side-table";
-          } else if (profile_contains("strong=1") ||
-                     profile_contains("copy=1")) {
-            node.ownership_lifetime_profile = "strong-owned";
-            node.ownership_runtime_hook_profile.clear();
-          }
-        }
-        if ((!node.ownership_lifetime_profile.empty() ||
-             !node.ownership_runtime_hook_profile.empty()) &&
-            (node.accessor_ownership_profile.empty() ||
-             (node.accessor_ownership_profile.find("ownership_lifetime=") !=
-                  std::string::npos &&
-              node.accessor_ownership_profile.find("ownership_lifetime=;") !=
-                  std::string::npos))) {
-          rebuild_accessor_profile();
-        }
+        objc3c::support::ApplyPropertyOwnershipProfileFallback(node, false);
+        objc3c::support::RebuildPropertyAccessorOwnershipProfileIfNeeded(node);
       };
 
   const auto add_property_nodes =

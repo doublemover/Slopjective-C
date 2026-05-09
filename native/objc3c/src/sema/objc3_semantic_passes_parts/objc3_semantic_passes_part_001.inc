@@ -5,11 +5,15 @@
 #include "pipeline/objc3_frontend_types.h"
 
 #include "diag/objc3_diag_utils.h"
+#include "support/objc3_concurrency_symbol_profiles.h"
 #include "support/objc3_method_family.h"
+#include "support/objc3_property_storage_profile_helpers.h"
+#include "support/objc3_receiver_profile_helpers.h"
+#include "support/objc3_string_predicates.h"
+#include "support/objc3_type_profile_helpers.h"
 #include "support/objc3_value_type_names.h"
 
 #include <algorithm>
-#include <cctype>
 #include <limits>
 #include <map>
 #include <optional>
@@ -17,6 +21,8 @@
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
+
+using objc3c::support::IsObjCReferenceAliasValueType;
 
 static std::string JoinStringVector(const std::vector<std::string> &items,
                                     const std::string &separator) {
@@ -30,7 +36,6 @@ static std::string JoinStringVector(const std::vector<std::string> &items,
   return out.str();
 }
 
-static bool IsObjCReferenceAliasValueType(ValueType type);
 struct Objc3ProtocolSemanticDefinition;
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
@@ -354,20 +359,6 @@ static bool IsScalarSemanticType(const SemanticTypeInfo &info) {
 
 static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
   return !info.is_vector && (info.type == ValueType::Bool || info.type == ValueType::I32);
-}
-
-static bool IsObjCReferenceAliasValueType(ValueType type) {
-  switch (type) {
-    case ValueType::ObjCId:
-    case ValueType::ObjCClass:
-    case ValueType::ObjCSel:
-    case ValueType::ObjCProtocol:
-    case ValueType::ObjCInstancetype:
-    case ValueType::ObjCObjectPtr:
-      return true;
-    default:
-      return false;
-  }
 }
 
 static bool IsScalarI32CompatibleType(const SemanticTypeInfo &info) {

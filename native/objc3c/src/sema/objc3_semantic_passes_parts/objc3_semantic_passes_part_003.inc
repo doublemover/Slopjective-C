@@ -1309,11 +1309,7 @@ static std::string NormalizeMetaprogrammingRawPropertyBehaviorToken(std::string 
 
 static std::string BuildMetaprogrammingLowercaseDeriveToken(std::string token) {
   token = NormalizeMetaprogrammingRawDeriveToken(std::move(token));
-  std::transform(token.begin(), token.end(), token.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
-  return token;
+  return objc3c::support::LowercaseAscii(token);
 }
 
 static std::string NormalizeMetaprogrammingSupportedDeriveName(
@@ -1333,11 +1329,7 @@ static std::string NormalizeMetaprogrammingSupportedDeriveName(
 
 static std::string BuildMetaprogrammingLowercasePropertyBehaviorToken(std::string token) {
   token = NormalizeMetaprogrammingRawPropertyBehaviorToken(std::move(token));
-  std::transform(token.begin(), token.end(), token.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
-  return token;
+  return objc3c::support::LowercaseAscii(token);
 }
 
 static std::string NormalizeMetaprogrammingSupportedPropertyBehaviorName(
@@ -1355,11 +1347,7 @@ static std::string NormalizeMetaprogrammingSupportedPropertyBehaviorName(
 
 static std::string BuildMetaprogrammingLowercaseMacroToken(std::string token) {
   token = NormalizeMetaprogrammingRawMacroToken(std::move(token));
-  std::transform(token.begin(), token.end(), token.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
-  return token;
+  return objc3c::support::LowercaseAscii(token);
 }
 
 static bool IsSupportedMetaprogrammingMacroPackageName(const std::string &package_name) {

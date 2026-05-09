@@ -832,19 +832,11 @@ static const FunctionDecl *FindFunctionDeclByName(const Objc3Program &program,
   return nullptr;
 }
 
-static std::string BuildErrorHandlingBridgeLowercaseToken(std::string token) {
-  std::transform(token.begin(), token.end(), token.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
-  return token;
-}
-
 static bool IsNSErrorTypeSpellingForErrorHandling(const FuncParam &param) {
   if (!param.object_pointer_type_spelling) {
     return false;
   }
-  return BuildErrorHandlingBridgeLowercaseToken(param.object_pointer_type_name) ==
+  return objc3c::support::LowercaseAscii(param.object_pointer_type_name) ==
          "nserror";
 }
 
@@ -852,7 +844,7 @@ static bool IsNSErrorOutParameterSiteForErrorHandling(const FuncParam &param) {
   if (!IsNSErrorTypeSpellingForErrorHandling(param)) {
     return false;
   }
-  const std::string lowered_name = BuildErrorHandlingBridgeLowercaseToken(param.name);
+  const std::string lowered_name = objc3c::support::LowercaseAscii(param.name);
   return param.has_pointer_declarator ||
          lowered_name.find("error") != std::string::npos;
 }
@@ -870,7 +862,7 @@ static bool CallableHasNSErrorOutParameterForErrorHandling(const CallableDecl &d
 template <typename CallableDecl>
 static bool CallableReturnsNSErrorObjectForErrorHandling(const CallableDecl &decl) {
   return decl.return_object_pointer_type_spelling &&
-         BuildErrorHandlingBridgeLowercaseToken(decl.return_object_pointer_type_name) ==
+         objc3c::support::LowercaseAscii(decl.return_object_pointer_type_name) ==
              "nserror";
 }
 
@@ -910,7 +902,8 @@ static bool CallableHasSemanticallyValidNSErrorStatusBridge(
   if (decl.objc_status_code_declared) {
     if (!CallableHasNSErrorOutParameterForErrorHandling(decl) ||
         !CallableReturnsSupportedStatusCodeForErrorHandling(decl) ||
-        BuildErrorHandlingBridgeLowercaseToken(decl.objc_status_code_error_type_spelling) !=
+        objc3c::support::LowercaseAscii(
+            decl.objc_status_code_error_type_spelling) !=
             "nserror") {
       return false;
     }
@@ -1362,7 +1355,8 @@ BuildMetaprogrammingDeriveExpansionInventorySummary(
 
     ++summary.supported_derive_request_sites;
     const std::string lowered =
-        BuildMetaprogrammingLowercaseDeriveToken(interface_decl.objc_derive_name);
+        objc3c::support::LowercaseAscii(
+            NormalizeMetaprogrammingRawDeriveToken(interface_decl.objc_derive_name));
     if (lowered == "equatable") {
       ++summary.equatable_alias_sites;
     }

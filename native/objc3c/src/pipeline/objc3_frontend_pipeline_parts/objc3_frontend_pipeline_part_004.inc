@@ -245,16 +245,14 @@ void AccumulateObjectPointerNullabilityGenericsTypeAnnotation(
 
   if (has_pointer_declarator) {
     ++summary.pointer_declarator_entries;
-    summary.deterministic_object_pointer_nullability_generics_handoff =
-        summary.deterministic_object_pointer_nullability_generics_handoff && pointer_declarator_depth > 0;
-  } else {
-    summary.deterministic_object_pointer_nullability_generics_handoff =
-        summary.deterministic_object_pointer_nullability_generics_handoff && pointer_declarator_depth == 0;
   }
 
   summary.deterministic_object_pointer_nullability_generics_handoff =
       summary.deterministic_object_pointer_nullability_generics_handoff &&
-      (!object_pointer_type_spelling || !object_pointer_type_name.empty()) &&
+      objc3c::support::IsPointerDeclaratorDepthConsistent(
+          has_pointer_declarator, pointer_declarator_depth) &&
+      objc3c::support::IsObjectPointerTypeNameConsistent(
+          object_pointer_type_spelling, object_pointer_type_name) &&
       pointer_declarator_tokens.size() == static_cast<std::size_t>(pointer_declarator_depth);
 
   for (const auto &token : pointer_declarator_tokens) {
@@ -740,83 +738,6 @@ std::string BuildToolingFeatureSpecificFixitSynthesisReplayKey(
   return out.str();
 }
 
-std::string BuildConcurrencyLowercaseProfileToken(std::string token) {
-  std::transform(token.begin(), token.end(), token.begin(),
-                 [](unsigned char value) {
-                   return static_cast<char>(std::tolower(value));
-                 });
-  return token;
-}
-
-bool IsConcurrencyTaskCreationSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_spawn") != std::string::npos ||
-         lowered.find("spawn_task") != std::string::npos ||
-         lowered.find("detached_task") != std::string::npos ||
-         lowered.find("task_detach") != std::string::npos;
-}
-
-bool IsConcurrencyTaskGroupScopeSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("with_task_group") != std::string::npos ||
-         lowered.find("task_group_scope") != std::string::npos;
-}
-
-bool IsConcurrencyTaskGroupAddTaskSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_add_task") != std::string::npos ||
-         lowered.find("group_add_task") != std::string::npos;
-}
-
-bool IsConcurrencyTaskGroupWaitNextSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_wait_next") != std::string::npos ||
-         lowered.find("group_wait_next") != std::string::npos ||
-         lowered.find("wait_next") != std::string::npos;
-}
-
-bool IsConcurrencyTaskGroupCancelAllSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_cancel_all") != std::string::npos ||
-         lowered.find("group_cancel_all") != std::string::npos ||
-         lowered.find("cancel_all") != std::string::npos;
-}
-
-bool IsConcurrencyCancellationCheckSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("cancelled") != std::string::npos ||
-         lowered.find("is_cancelled") != std::string::npos ||
-         lowered.find("cancellation") != std::string::npos;
-}
-
-bool IsConcurrencyCancellationHandlerSymbol(const std::string &symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("on_cancel") != std::string::npos ||
-         lowered.find("cancel_handler") != std::string::npos ||
-         lowered.find("with_cancellation_handler") != std::string::npos;
-}
-
 void CollectConcurrencyAsyncSourceClosureExprSites(
     const Expr *expr, Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary) {
   if (expr == nullptr) {
@@ -924,25 +845,25 @@ void CollectConcurrencyTaskGroupCancellationExprSites(
     return;
   }
   const auto collect_symbol = [&summary](const std::string &symbol) {
-    if (IsConcurrencyTaskCreationSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyTaskCreationSymbol(symbol)) {
       ++summary.task_creation_sites;
     }
-    if (IsConcurrencyTaskGroupScopeSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyTaskGroupScopeSymbol(symbol)) {
       ++summary.task_group_scope_sites;
     }
-    if (IsConcurrencyTaskGroupAddTaskSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyTaskGroupAddTaskSymbol(symbol)) {
       ++summary.task_group_add_task_sites;
     }
-    if (IsConcurrencyTaskGroupWaitNextSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyTaskGroupWaitNextSymbol(symbol)) {
       ++summary.task_group_wait_next_sites;
     }
-    if (IsConcurrencyTaskGroupCancelAllSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyTaskGroupCancelAllSymbol(symbol)) {
       ++summary.task_group_cancel_all_sites;
     }
-    if (IsConcurrencyCancellationCheckSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyCancellationCheckSymbol(symbol)) {
       ++summary.cancellation_check_sites;
     }
-    if (IsConcurrencyCancellationHandlerSymbol(symbol)) {
+    if (objc3c::support::IsConcurrencyCancellationHandlerSymbol(symbol)) {
       ++summary.cancellation_handler_sites;
     }
   };

@@ -1,33 +1,12 @@
            info.type == ValueType::ObjCObjectPtr;
   };
-  const auto property_profile_contains =
-      [](const std::string &profile, std::string_view needle) {
-        return profile.find(std::string(needle)) != std::string::npos;
-      };
   const bool property_has_arc_runtime_owned_attribute =
-      property_has_attribute_named("strong") ||
-      property_has_attribute_named("retain") ||
-      property_has_attribute_named("copy") ||
-      property_has_attribute_named("weak") ||
-      property_profile_contains(property.property_attribute_profile, "strong=1") ||
-      property_profile_contains(property.property_attribute_profile, "retain=1") ||
-      property_profile_contains(property.property_attribute_profile, "copy=1") ||
-      property_profile_contains(property.property_attribute_profile, "weak=1");
-  const auto build_accessor_ownership_profile =
-      [](const Objc3PropertyInfo &info) {
-        std::ostringstream out;
-        out << "getter=" << info.effective_getter_selector
-            << ";setter_available=" << (info.effective_setter_available ? 1 : 0)
-            << ";setter=";
-        if (info.effective_setter_available) {
-          out << info.effective_setter_selector;
-        } else {
-          out << "<none>";
-        }
-        out << ";ownership_lifetime=" << info.ownership_lifetime_profile
-            << ";runtime_hook=" << info.ownership_runtime_hook_profile;
-        return out.str();
-      };
+      objc3c::support::HasArcRuntimeOwnedPropertyAttribute(
+          property_has_attribute_named("strong"),
+          property_has_attribute_named("retain"),
+          property_has_attribute_named("copy"),
+          property_has_attribute_named("weak"),
+          property.property_attribute_profile);
 
   Objc3PropertyInfo info;
   info.type = property.type;
@@ -157,23 +136,18 @@
     // runnable-arc-closeout anchor: this canonical property ARC
     // packet remains a closeout-matrix row synchronized with the private
     // runtime-probe-backed property evidence.
-    if (info.is_weak || property_has_attribute_named("weak") ||
-        property_profile_contains(info.property_attribute_profile, "weak=1")) {
-      info.ownership_lifetime_profile = "weak";
-      info.ownership_runtime_hook_profile = "objc-weak-side-table";
+    const objc3c::support::Objc3PropertyOwnershipProfileKind
+        ownership_profile_kind =
+            objc3c::support::ApplyPropertyOwnershipProfileFallback(
+                info,
+                info.is_weak || property_has_attribute_named("weak"),
+                info.is_strong || property_has_attribute_named("strong"),
+                info.is_retain || property_has_attribute_named("retain"),
+                info.is_copy || property_has_attribute_named("copy"),
+                true);
+    if (ownership_profile_kind ==
+        objc3c::support::Objc3PropertyOwnershipProfileKind::kWeak) {
       info.ownership_is_weak_reference = true;
-    } else if (info.is_strong || info.is_retain || info.is_copy ||
-               property_has_attribute_named("strong") ||
-               property_has_attribute_named("retain") ||
-               property_has_attribute_named("copy") ||
-               property_profile_contains(info.property_attribute_profile,
-                                         "strong=1") ||
-               property_profile_contains(info.property_attribute_profile,
-                                         "retain=1") ||
-               property_profile_contains(info.property_attribute_profile,
-                                         "copy=1")) {
-      info.ownership_lifetime_profile = "strong-owned";
-      info.ownership_runtime_hook_profile.clear();
     }
   }
   if (arc_mode_enabled &&
@@ -186,7 +160,7 @@
     // ownership packets now stay aligned with ARC-inferred or attribute-owned
     // property lifetime profiles instead of remaining blank for the same
     // executable storage model.
-    info.accessor_ownership_profile = build_accessor_ownership_profile(info);
+    objc3c::support::RebuildPropertyAccessorOwnershipProfile(info);
   }
 
   std::unordered_map<std::string, std::size_t> attribute_name_counts;
@@ -278,11 +252,9 @@
             "' in " + owner_kind + " '" + owner_name + "'");
   }
   const std::size_t ownership_modifiers =
-      (info.is_copy ? 1u : 0u) +
-      ((info.is_strong || info.is_retain) ? 1u : 0u) +
-      (info.is_weak ? 1u : 0u) +
-      (info.is_unowned ? 1u : 0u) +
-      ((info.is_assign || info.is_unsafe_unretained) ? 1u : 0u);
+      objc3c::support::CountRuntimeBackedPropertyOwnershipModifierSlots(
+          info.is_copy, info.is_strong, info.is_retain, info.is_weak,
+          info.is_unowned, info.is_assign, info.is_unsafe_unretained);
   if (ownership_modifiers > 1u) {
     info.has_ownership_conflict = true;
     emit_property_contract_violation(
@@ -302,32 +274,27 @@
             "' in " + owner_kind + " '" + owner_name + "'");
   }
   const bool supports_runtime_managed_ownership =
-      !info.is_vector &&
-      (info.id_spelling || info.class_spelling || info.instancetype_spelling ||
-       info.object_pointer_type_spelling);
+      objc3c::support::SupportsRuntimeManagedPropertyOwnership(
+          info.is_vector, info.id_spelling, info.class_spelling,
+          info.instancetype_spelling, info.object_pointer_type_spelling);
   const bool has_runtime_managed_ownership_modifier =
-      info.is_copy || info.is_strong || info.is_retain || info.is_weak ||
-      info.is_unowned || info.is_unsafe_unretained;
+      objc3c::support::HasRuntimeManagedPropertyOwnershipModifier(
+          info.is_copy, info.is_strong, info.is_retain, info.is_weak,
+          info.is_unowned, info.is_unsafe_unretained);
   const bool has_explicit_runtime_backed_storage_modifier =
-      has_runtime_managed_ownership_modifier || info.is_assign;
+      objc3c::support::HasExplicitRuntimeBackedPropertyStorageModifier(
+          info.is_copy, info.is_strong, info.is_retain, info.is_weak,
+          info.is_unowned, info.is_assign, info.is_unsafe_unretained);
   // accessor/ownership legality anchor: lane-B remains the
   // fail-closed source of truth for unsupported scalar ownership modifiers and
   // atomic ownership-aware property combinations until runtime storage
   // semantics land.
   if (has_runtime_managed_ownership_modifier &&
       !supports_runtime_managed_ownership) {
-    std::string ownership_modifier = "copy";
-    if (info.is_retain) {
-      ownership_modifier = "retain";
-    } else if (info.is_strong) {
-      ownership_modifier = "strong";
-    } else if (info.is_weak) {
-      ownership_modifier = "weak";
-    } else if (info.is_unowned) {
-      ownership_modifier = "unowned";
-    } else if (info.is_unsafe_unretained) {
-      ownership_modifier = "unsafe_unretained";
-    }
+    std::string ownership_modifier =
+        objc3c::support::BuildRuntimeBackedPropertyStorageModifier(
+            info.is_copy, info.is_strong, info.is_retain, info.is_weak,
+            info.is_unowned, info.is_assign, info.is_unsafe_unretained);
     emit_property_contract_violation(
         property.line,
         property.column,
@@ -345,34 +312,13 @@
   // relax property ownership conflicts, atomic ownership-aware storage, or
   // broader inference. Those forms remain deterministic semantic failures
   // until later ARC lifetime implementation issues land.
-  const auto active_runtime_backed_storage_modifier = [&]() -> std::string {
-    if (info.is_copy) {
-      return "copy";
-    }
-    if (info.is_retain) {
-      return "retain";
-    }
-    if (info.is_strong) {
-      return "strong";
-    }
-    if (info.is_weak) {
-      return "weak";
-    }
-    if (info.is_unowned) {
-      return "unowned";
-    }
-    if (info.is_unsafe_unretained) {
-      return "unsafe_unretained";
-    }
-    if (info.is_assign) {
-      return "assign";
-    }
-    return {};
-  };
   if (supports_runtime_managed_ownership && info.has_ownership_qualifier &&
       !info.has_invalid_ownership_qualifier && ownership_modifiers <= 1u &&
       has_explicit_runtime_backed_storage_modifier) {
-    const std::string explicit_modifier = active_runtime_backed_storage_modifier();
+    const std::string explicit_modifier =
+        objc3c::support::BuildRuntimeBackedPropertyStorageModifier(
+            info.is_copy, info.is_strong, info.is_retain, info.is_weak,
+            info.is_unowned, info.is_assign, info.is_unsafe_unretained);
     const auto emit_ownership_qualifier_storage_mismatch =
         [&](const std::string &expected_storage_model) {
           emit_property_contract_violation(

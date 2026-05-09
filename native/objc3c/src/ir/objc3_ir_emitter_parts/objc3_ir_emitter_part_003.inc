@@ -351,14 +351,6 @@
            method.return_object_pointer_type_spelling;
   }
 
-  static std::string LowercaseAscii(std::string text) {
-    std::transform(text.begin(), text.end(), text.begin(),
-                   [](unsigned char ch) {
-                     return static_cast<char>(std::tolower(ch));
-                   });
-    return text;
-  }
-
   static int StablePositiveAsyncTag(const std::string &text) {
     std::uint32_t hash = 2166136261u;
     for (unsigned char ch : text) {
@@ -420,7 +412,7 @@
       return false;
     }
 
-    const std::string lowered = LowercaseAscii(expr->ident);
+    const std::string lowered = objc3c::support::LowercaseAscii(expr->ident);
     const auto emit_unary_runtime_call = [&](const char *symbol) {
       const std::string out = NewTemp(ctx);
       ctx.code_lines.push_back("  " + out + " = call i32 @" +
@@ -494,7 +486,7 @@
       return false;
     }
 
-    const std::string lowered = LowercaseAscii(expr->ident);
+    const std::string lowered = objc3c::support::LowercaseAscii(expr->ident);
     if (lowered == "actor_enter_isolation_thunk") {
       const std::string out = NewTemp(ctx);
       ctx.code_lines.push_back("  " + out + " = call i32 @" +
@@ -604,11 +596,12 @@
     if (!param.object_pointer_type_spelling) {
       return false;
     }
-    const std::string lowered_type = LowercaseAscii(param.object_pointer_type_name);
+    const std::string lowered_type =
+        objc3c::support::LowercaseAscii(param.object_pointer_type_name);
     if (lowered_type != "nserror") {
       return false;
     }
-    const std::string lowered_name = LowercaseAscii(param.name);
+    const std::string lowered_name = objc3c::support::LowercaseAscii(param.name);
     return param.has_pointer_declarator ||
            lowered_name.find("error") != std::string::npos;
   }

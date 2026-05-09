@@ -368,7 +368,8 @@ static void AccumulateErrorHandlingErrorBridgeLegalityForCallable(
   const bool marker_conflict = has_nserror && has_status_code;
   const bool valid_error_type =
       !has_status_code ||
-      BuildErrorHandlingBridgeLowercaseToken(decl.objc_status_code_error_type_spelling) ==
+      objc3c::support::LowercaseAscii(
+          decl.objc_status_code_error_type_spelling) ==
           "nserror";
   const FunctionDecl *mapping =
       has_status_code

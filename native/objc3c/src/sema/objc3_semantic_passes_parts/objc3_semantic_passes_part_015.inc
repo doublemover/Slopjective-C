@@ -1019,18 +1019,19 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
       (!metadata.selector.empty() && !metadata.selector_lowering_symbol.empty() &&
        metadata.selector == metadata.selector_lowering_symbol);
   metadata.receiver_is_nil_literal = expr.receiver != nullptr && expr.receiver->kind == Expr::Kind::NilLiteral;
+  const objc3c::support::Objc3NilReceiverProfile nil_receiver_profile =
+      objc3c::support::BuildNilReceiverProfile(
+          metadata.receiver_is_nil_literal,
+          expr.nil_receiver_semantics_is_normalized,
+          expr.nil_receiver_semantics_enabled, expr.nil_receiver_foldable,
+          expr.nil_receiver_requires_runtime_dispatch);
   metadata.nil_receiver_semantics_enabled =
-      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_semantics_enabled : metadata.receiver_is_nil_literal;
-  metadata.nil_receiver_foldable =
-      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_foldable : metadata.nil_receiver_semantics_enabled;
+      nil_receiver_profile.semantics_enabled;
+  metadata.nil_receiver_foldable = nil_receiver_profile.foldable;
   metadata.nil_receiver_requires_runtime_dispatch =
-      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_requires_runtime_dispatch
-                                                : !metadata.nil_receiver_foldable;
+      nil_receiver_profile.requires_runtime_dispatch;
   metadata.nil_receiver_semantics_is_normalized =
-      expr.nil_receiver_semantics_is_normalized ||
-      (metadata.nil_receiver_semantics_enabled == metadata.receiver_is_nil_literal &&
-       metadata.nil_receiver_semantics_enabled == metadata.nil_receiver_foldable &&
-       metadata.nil_receiver_requires_runtime_dispatch == !metadata.nil_receiver_foldable);
+      nil_receiver_profile.normalized;
   metadata.runtime_link_host_link_required =
       expr.runtime_link_host_link_is_normalized ? expr.runtime_link_host_link_required
                                                 : metadata.nil_receiver_requires_runtime_dispatch;
@@ -1055,32 +1056,29 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
        !metadata.runtime_dispatch_bridge_symbol.empty());
   metadata.receiver_is_super_identifier =
       expr.receiver != nullptr && expr.receiver->kind == Expr::Kind::Identifier && expr.receiver->ident == "super";
-  metadata.super_dispatch_enabled =
-      expr.super_dispatch_semantics_is_normalized ? expr.super_dispatch_enabled : metadata.receiver_is_super_identifier;
+  const objc3c::support::Objc3SuperDispatchProfile super_dispatch_profile =
+      objc3c::support::BuildSuperDispatchProfile(
+          metadata.receiver_is_super_identifier,
+          expr.super_dispatch_semantics_is_normalized,
+          expr.super_dispatch_enabled,
+          expr.super_dispatch_requires_class_context);
+  metadata.super_dispatch_enabled = super_dispatch_profile.enabled;
   metadata.super_dispatch_requires_class_context =
-      expr.super_dispatch_semantics_is_normalized ? expr.super_dispatch_requires_class_context
-                                                  : metadata.super_dispatch_enabled;
+      super_dispatch_profile.requires_class_context;
   metadata.super_dispatch_semantics_is_normalized =
-      expr.super_dispatch_semantics_is_normalized ||
-      (metadata.super_dispatch_enabled == metadata.receiver_is_super_identifier &&
-       metadata.super_dispatch_requires_class_context == metadata.super_dispatch_enabled);
-  metadata.method_family_name = expr.method_family_semantics_is_normalized && !expr.method_family_name.empty()
-                                    ? expr.method_family_name
-                                    : objc3c::support::ClassifyMethodFamilyFromSelector(metadata.selector);
+      super_dispatch_profile.normalized;
+  const objc3c::support::Objc3MethodFamilyProfile method_family_profile =
+      objc3c::support::BuildMethodFamilyProfile(
+          metadata.selector, expr.method_family_semantics_is_normalized,
+          expr.method_family_name, expr.method_family_returns_retained_result,
+          expr.method_family_returns_related_result);
+  metadata.method_family_name = method_family_profile.name;
   metadata.method_family_returns_retained_result =
-      expr.method_family_semantics_is_normalized
-          ? expr.method_family_returns_retained_result
-          : (metadata.method_family_name == "init" || metadata.method_family_name == "copy" ||
-             metadata.method_family_name == "mutableCopy" || metadata.method_family_name == "new");
+      method_family_profile.returns_retained_result;
   metadata.method_family_returns_related_result =
-      expr.method_family_semantics_is_normalized ? expr.method_family_returns_related_result
-                                                 : metadata.method_family_name == "init";
+      method_family_profile.returns_related_result;
   metadata.method_family_semantics_is_normalized =
-      expr.method_family_semantics_is_normalized ||
-      ((metadata.method_family_name == "init" || metadata.method_family_name == "copy" ||
-        metadata.method_family_name == "mutableCopy" || metadata.method_family_name == "new" ||
-        metadata.method_family_name == "none") &&
-       (!metadata.method_family_returns_related_result || metadata.method_family_name == "init"));
+      method_family_profile.normalized;
   return metadata;
 }
 

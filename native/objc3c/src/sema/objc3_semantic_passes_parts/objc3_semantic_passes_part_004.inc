@@ -399,96 +399,76 @@ static SemanticTypeInfo ScopeLookupType(const std::vector<SemanticScope> &scopes
 }
 
 static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling ||
-         param.instancetype_spelling || param.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCParamTypeSuffix(param);
 }
 
 static bool SupportsNullabilityParamTypeSuffix(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling ||
-         param.instancetype_spelling || param.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCParamTypeSuffix(param);
 }
 
 static bool SupportsOwnershipQualifierParamTypeSuffix(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling || param.instancetype_spelling ||
-         param.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCParamTypeSuffix(param);
 }
 
 static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
-  if (param.id_spelling || param.class_spelling || param.instancetype_spelling) {
-    return true;
-  }
-  return param.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCParamPointerDeclarator(param);
 }
 
 static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling ||
-         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(fn);
 }
 
 static bool SupportsGenericReturnTypeSuffix(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling ||
-         method.return_instancetype_spelling ||
-         method.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(method);
 }
 
 static bool SupportsNullabilityReturnTypeSuffix(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling ||
-         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(fn);
 }
 
 static bool SupportsNullabilityReturnTypeSuffix(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling ||
-         method.return_instancetype_spelling ||
-         method.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(method);
 }
 
 static bool SupportsOwnershipQualifierReturnTypeSuffix(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling ||
-         fn.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(fn);
 }
 
 static bool SupportsOwnershipQualifierReturnTypeSuffix(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling ||
-         method.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnTypeSuffix(method);
 }
 
 static bool SupportsPointerReturnTypeDeclarator(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling ||
-         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnPointerDeclarator(fn);
 }
 
 static bool SupportsPointerReturnTypeDeclarator(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling ||
-         method.return_instancetype_spelling ||
-         method.return_object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCReturnPointerDeclarator(method);
 }
 
 static bool SupportsGenericPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling ||
-         property.instancetype_spelling || property.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCPropertyTypeSuffix(property);
 }
 
 static bool SupportsNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling ||
-         property.instancetype_spelling || property.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCPropertyTypeSuffix(property);
 }
 
 static bool SupportsOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling || property.instancetype_spelling ||
-         property.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCPropertyTypeSuffix(property);
 }
 
 static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling ||
-         property.instancetype_spelling || property.object_pointer_type_spelling;
+  return objc3c::support::SupportsObjCPropertyPointerDeclarator(property);
 }
 
 static bool IsObjCReferenceAnnotationSite(bool id_spelling,
                                           bool class_spelling,
                                           bool instancetype_spelling,
                                           bool object_pointer_type_spelling) {
-  return id_spelling || class_spelling || instancetype_spelling ||
-         object_pointer_type_spelling;
+  return objc3c::support::IsObjCReferenceAnnotationSite(
+      id_spelling, class_spelling, instancetype_spelling,
+      object_pointer_type_spelling);
 }
 
 static bool HasInvalidGenericParamTypeSuffix(const FuncParam &param) {
