@@ -10,6 +10,7 @@ Machine-readable truth is split deliberately:
 
 - matrix data: `docs/support/capability_matrix.json`
 - matrix schema: `schemas/objc3c-capability-matrix-v1.schema.json`
+- support directory contract: `docs/support/README.md`
 - local schema mirror: `docs/support/capability_matrix.schema.json`
 - evidence rows: `docs/support/evidence_map.json`
 - evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
@@ -48,7 +49,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; compiler/runtime/pipeline/artifacts/IO owner modules under `native/objc3c/src/` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h` |
 | npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `docs/runbooks/objc3c_public_command_surface.md` |
-| Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/evidence_map.json`; `schemas/README.md`; `docs/support/capability_schema_examples.md`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
+| Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/README.md`; `docs/support/evidence_map.json`; `schemas/README.md`; `docs/support/capability_schema_examples.md`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
 
 State meanings:
 

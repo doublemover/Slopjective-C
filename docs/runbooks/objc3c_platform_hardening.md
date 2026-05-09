@@ -174,7 +174,7 @@ best-effort language.
 - widening support later must happen by expanding checked-in contracts,
   generated matrix artifacts, and public workflow validation
 
-## Unsupported-Host And Fallback Policy
+## Unsupported-Host Fail-Closed Policy
 
 Unsupported-host behavior must be deterministic and machine-describable.
 

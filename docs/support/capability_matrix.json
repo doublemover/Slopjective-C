@@ -270,6 +270,10 @@
         },
         {
           "kind": "doc",
+          "path": "docs/support/README.md"
+        },
+        {
+          "kind": "doc",
           "path": "schemas/README.md"
         },
         {

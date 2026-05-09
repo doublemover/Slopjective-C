@@ -177,6 +177,11 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "doc",
+      "path": "docs/support/README.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
       "path": "schemas/README.md"
     },
     {
