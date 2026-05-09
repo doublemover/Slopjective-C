@@ -10,10 +10,13 @@
 std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary() {
   std::ostringstream out;
   // metadata section emission freeze anchor: lane-C begins from the
-  // current real-section scaffold state rather than from manifest-only
-  // summaries. The boundary is explicit that payload bytes are still
-  // placeholders until later implementation issues replace them.
+  // current real-section owner contract rather than from manifest-only
+  // summaries. The boundary is explicit that zero payload bytes are
+  // lowering-owned object-file records, not emitter-local placeholders.
   out << "contract=" << kObjc3RuntimeMetadataSectionEmissionContractId
+      << ";owner_contract="
+      << kObjc3RuntimeMetadataSectionEmissionOwnerContractId
+      << ";owner_model=" << kObjc3RuntimeMetadataSectionEmissionOwnerModel
       << ";payload_model=" << kObjc3RuntimeMetadataSectionEmissionPayloadModel
       << ";inventory_model=" << kObjc3RuntimeMetadataSectionEmissionInventoryModel
       << ";image_info_payload_model="

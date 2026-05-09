@@ -70,12 +70,18 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelElf =
 inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelMachO =
     "llvm.used-appending-global+mach-o-data-segment-sections";
 // metadata section emission freeze anchor: native object files now
-// carry real metadata sections, but the payload bytes remain scaffold-only
-// placeholder shapes until the later lane-C implementation issues land.
+// carry real metadata sections through an explicit owner/publication contract.
+// Zero payload bytes are a recorded lowering-owned object-file decision, not a
+// placeholder shape owned by the emitter.
 inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionContractId =
     "objc3c.runtime.metadata.section.emission.freeze.v1";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionEmissionOwnerContractId =
+        "objc3c.runtime.metadata.section.emission.owner.record.v1";
 inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionPayloadModel =
-    "scaffold-placeholder-payloads-until-next-runtime-phase";
+    "lowering-owned-zero-payload-section-records";
+inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionOwnerModel =
+    "native.lower.runtime-metadata-publishes-section-records-native.ir-consumes-object-payloads";
 inline constexpr const char
     *kObjc3RuntimeMetadataSectionEmissionInventoryModel =
         "image-info-plus-class-protocol-category-property-ivar-sections";

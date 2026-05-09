@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lower/model/lowered_owner_contracts.h"
+
 #include <cstddef>
 #include <string>
 
@@ -115,3 +117,40 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
+
+inline Objc3LoweringOwnerContractRecord
+Objc3TypedSemaToLoweringOwnerContractRecord(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  const bool producer_ready =
+      surface.semantic_integration_surface_built &&
+      surface.semantic_type_metadata_handoff_deterministic &&
+      surface.semantic_handoff_consistent &&
+      surface.semantic_handoff_deterministic;
+  const bool consumer_ready =
+      surface.lowering_boundary_ready && surface.ready_for_lowering &&
+      surface.runtime_dispatch_contract_consistent;
+  const bool replay_key_deterministic =
+      surface.typed_handoff_key_deterministic &&
+      !surface.typed_handoff_key.empty() &&
+      !surface.lowering_boundary_replay_key.empty();
+  const bool artifact_publication_ready =
+      surface.executable_metadata_lowering_handoff_ready &&
+      surface.executable_metadata_lowering_handoff_deterministic &&
+      surface.executable_metadata_typed_lowering_handoff_ready &&
+      surface.executable_metadata_typed_lowering_handoff_deterministic &&
+      !surface.executable_metadata_typed_lowering_handoff_key.empty();
+  const bool fail_closed =
+      surface.typed_cross_lane_integration_consistent &&
+      surface.typed_cross_lane_integration_ready &&
+      surface.typed_integration_closeout_signoff_consistent &&
+      surface.typed_integration_closeout_signoff_ready &&
+      surface.failure_reason.empty();
+
+  return BuildObjc3LoweringOwnerContractRecord(
+      kObjc3LoweringOwnerTypedSemaHandoffContractId,
+      kObjc3LoweringOwnerTypedSemaHandoff, surface.typed_handoff_key,
+      surface.lowering_boundary_replay_key,
+      surface.executable_metadata_typed_lowering_handoff_key, producer_ready,
+      consumer_ready, replay_key_deterministic, artifact_publication_ready,
+      fail_closed, surface.failure_reason);
+}
