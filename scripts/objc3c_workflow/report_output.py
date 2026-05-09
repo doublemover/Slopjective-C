@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import sys
-
+from .report_policy import report_stdout, report_success_exit_code
 from .report_rendering import render_report_json
 
 
 def emit_json(payload: object) -> int:
-    sys.stdout.write(render_report_json(payload))
-    return 0
+    report_stdout().write(render_report_json(payload))
+    return report_success_exit_code()
 
 
 __all__ = ["emit_json"]
