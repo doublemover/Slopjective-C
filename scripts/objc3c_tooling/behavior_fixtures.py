@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 from objc3c_tooling.json_io import load_json_object
 from objc3c_tooling.paths import ROOT, repo_rel
@@ -10,6 +10,7 @@ from objc3c_tooling.paths import ROOT, repo_rel
 NATIVE_ROOT = ROOT / "tests" / "native"
 FIXTURE_ROOT = ROOT / "tests" / "fixtures"
 
+PHASE_ORDER: tuple[str, ...] = ("parser", "sema", "lowering", "ir", "runtime", "e2e")
 REQUIRED_TREE: dict[str, tuple[str, ...]] = {
     "parser": ("positive", "negative", "snapshots"),
     "sema": (
@@ -36,7 +37,9 @@ REQUIRED_TREE: dict[str, tuple[str, ...]] = {
 }
 
 STRICT_KINDS = {"negative", "strict-error", "rejection"}
+FIXTURE_KINDS = {"positive", *STRICT_KINDS}
 EXPECTED_STAGES = {"parse", "compile", "link", "run"}
+RETIRED_SURFACE_TAGS = frozenset({"old-mode", "runtime-adapter", "runtime-dispatch"})
 
 
 @dataclass(frozen=True)
@@ -87,6 +90,21 @@ class BehaviorFixture:
         return [str(token) for token in raw_tokens if str(token)]
 
     @property
+    def retired_surface_tags(self) -> tuple[str, ...]:
+        raw_tags = self.metadata.get("retired_surface_tags", [])
+        if not isinstance(raw_tags, list):
+            raise RuntimeError(f"retired_surface_tags must be a list in {self.relative_metadata}")
+        return tuple(str(tag) for tag in raw_tags)
+
+    @property
+    def is_strict(self) -> bool:
+        return self.fixture_kind in STRICT_KINDS
+
+    @property
+    def phase_family(self) -> tuple[str, str]:
+        return (self.owner_phase, self.behavior_family)
+
+    @property
     def relative_source(self) -> str:
         return repo_rel(self.source_path)
 
@@ -111,8 +129,60 @@ class BehaviorFixture:
         return [str(arg) for arg in raw_args]
 
     @property
+    def requires_live_runtime_dispatch(self) -> bool:
+        return bool(self.execution.get("requires_live_runtime_dispatch", False))
+
+    @property
     def runtime_dispatch_symbol(self) -> str:
         return str(self.execution.get("runtime_dispatch_symbol", "objc3_runtime_dispatch_i32"))
+
+    def canonical_manifest_entry(self) -> dict[str, Any]:
+        entry: dict[str, Any] = {
+            "path": self.relative_source,
+            "origin": str(self.metadata["origin"]),
+            "owner_phase": self.owner_phase,
+            "behavior_family": self.behavior_family,
+            "fixture_kind": self.fixture_kind,
+        }
+        if self.retired_surface_tags:
+            entry["retired_surface_tags"] = list(self.retired_surface_tags)
+        entry["expected_diagnostic_code"] = self.expected_diagnostic_code
+        return entry
+
+
+@dataclass(frozen=True)
+class BehaviorFixtureCatalog:
+    fixtures: tuple[BehaviorFixture, ...]
+
+    def __iter__(self) -> Iterator[BehaviorFixture]:
+        return iter(self.fixtures)
+
+    @property
+    def covered_phases(self) -> set[str]:
+        return {fixture.owner_phase for fixture in self.fixtures}
+
+    def by_relative_source(self) -> dict[str, BehaviorFixture]:
+        return {fixture.relative_source: fixture for fixture in self.fixtures}
+
+    def phase(self, owner_phase: str) -> tuple[BehaviorFixture, ...]:
+        return tuple(fixture for fixture in self.fixtures if fixture.owner_phase == owner_phase)
+
+    def family(self, owner_phase: str, behavior_family: str) -> tuple[BehaviorFixture, ...]:
+        return tuple(
+            fixture
+            for fixture in self.fixtures
+            if fixture.owner_phase == owner_phase and fixture.behavior_family == behavior_family
+        )
+
+    def retired_surface_fixtures(self) -> tuple[BehaviorFixture, ...]:
+        return tuple(fixture for fixture in self.fixtures if fixture.retired_surface_tags)
+
+    def compiler_driver_fixtures(self) -> tuple[BehaviorFixture, ...]:
+        return tuple(
+            fixture
+            for fixture in self.fixtures
+            if fixture.expected_stage in {"parse", "compile"} and not fixture.requires_live_runtime_dispatch
+        )
 
 
 def fixture_path_for_metadata(meta_path: Path) -> Path:
@@ -157,11 +227,41 @@ def validate_behavior_fixture(fixture: BehaviorFixture) -> None:
     expected_stage = fixture.expected_stage
     if expected_stage not in EXPECTED_STAGES:
         raise RuntimeError(f"unknown expected stage '{expected_stage}' in {fixture.relative_metadata}")
-    if fixture.fixture_kind in STRICT_KINDS:
+    if fixture.fixture_kind not in FIXTURE_KINDS:
+        raise RuntimeError(f"unknown fixture_kind '{fixture.fixture_kind}' in {fixture.relative_metadata}")
+    if fixture.is_strict:
         if not fixture.expected_diagnostic_code:
             raise RuntimeError(f"strict fixture must declare diagnostic code: {fixture.relative_metadata}")
         if not fixture.required_tokens:
             raise RuntimeError(f"strict fixture must declare diagnostic tokens: {fixture.relative_metadata}")
+    else:
+        if fixture.expected_diagnostic_code:
+            raise RuntimeError(f"positive fixture must not declare diagnostic code: {fixture.relative_metadata}")
+        if fixture.required_tokens:
+            raise RuntimeError(f"positive fixture must not declare diagnostic tokens: {fixture.relative_metadata}")
+
+    retired_tags = set(fixture.retired_surface_tags)
+    if len(retired_tags) != len(fixture.retired_surface_tags):
+        raise RuntimeError(f"retired_surface_tags must not contain duplicates in {fixture.relative_metadata}")
+    unknown_tags = retired_tags - RETIRED_SURFACE_TAGS
+    if unknown_tags:
+        raise RuntimeError(
+            f"unknown retired_surface_tags {sorted(unknown_tags)!r} in {fixture.relative_metadata}"
+        )
+    if retired_tags and not fixture.is_strict:
+        raise RuntimeError(f"retired surfaces must be strict fixtures: {fixture.relative_metadata}")
+
+    execution = fixture.execution
+    requires_live_runtime_dispatch = execution.get("requires_live_runtime_dispatch")
+    if requires_live_runtime_dispatch is not None and not isinstance(requires_live_runtime_dispatch, bool):
+        raise RuntimeError(
+            f"requires_live_runtime_dispatch must be a boolean in {fixture.relative_metadata}"
+        )
+    expected_exit_code = execution.get("expected_exit_code")
+    if expected_exit_code is not None and (
+        not isinstance(expected_exit_code, int) or isinstance(expected_exit_code, bool)
+    ):
+        raise RuntimeError(f"expected_exit_code must be an integer in {fixture.relative_metadata}")
 
 
 def load_behavior_fixtures(*, native_root: Path = NATIVE_ROOT) -> list[BehaviorFixture]:
@@ -181,17 +281,29 @@ def load_behavior_fixtures(*, native_root: Path = NATIVE_ROOT) -> list[BehaviorF
     return fixtures
 
 
-def load_manifest_fixture_paths(manifest_path: Path) -> set[str]:
+def load_behavior_fixture_catalog(*, native_root: Path = NATIVE_ROOT) -> BehaviorFixtureCatalog:
+    return BehaviorFixtureCatalog(tuple(load_behavior_fixtures(native_root=native_root)))
+
+
+def load_manifest_fixture_entries(manifest_path: Path) -> list[dict[str, Any]]:
     manifest = load_json_object(manifest_path)
     raw_fixtures = manifest.get("fixtures", [])
     if not isinstance(raw_fixtures, list):
         raise RuntimeError(f"fixtures must be a list in {repo_rel(manifest_path)}")
-    paths: set[str] = set()
+    entries: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
     for entry in raw_fixtures:
         if not isinstance(entry, dict):
             raise RuntimeError(f"manifest fixture entries must be objects in {repo_rel(manifest_path)}")
         path = entry.get("path")
         if not isinstance(path, str) or not path:
             raise RuntimeError(f"manifest fixture entry missing path in {repo_rel(manifest_path)}")
-        paths.add(path)
-    return paths
+        if path in seen_paths:
+            raise RuntimeError(f"manifest fixture entry duplicates path {path!r} in {repo_rel(manifest_path)}")
+        seen_paths.add(path)
+        entries.append(entry)
+    return entries
+
+
+def load_manifest_fixture_paths(manifest_path: Path) -> set[str]:
+    return {entry["path"] for entry in load_manifest_fixture_entries(manifest_path)}

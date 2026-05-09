@@ -6,8 +6,7 @@
   "behavior_family": "errors",
   "fixture_kind": "strict-error",
   "retired_surface_tags": [
-    "runtime-dispatch",
-    "fallback"
+    "runtime-dispatch"
   ],
   "expected": {
     "stage": "link",
