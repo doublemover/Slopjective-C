@@ -3,7 +3,8 @@ add_library(objc3c_diag STATIC
   objc3_diag_category_frontend.cpp
   objc3_diag_category_names.cpp
   objc3_diag_category_subsystem.cpp
-  objc3_diag_code.cpp
+  objc3_diag_code_membership.cpp
+  objc3_diag_code_parse.cpp
   objc3_diag_coordinate.cpp
   objc3_diag_format.cpp
   objc3_diag_record_factory.cpp
