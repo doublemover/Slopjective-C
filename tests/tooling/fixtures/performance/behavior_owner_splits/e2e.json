@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "e2e",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+  "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+  "support_boundary": "e2e ownership covers benchmark workflow shape, same-machine comparisons, public commands, raw samples, and comparative baseline publication only after phase owners assign behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "public_commands:build_native",
+    "public_commands:compile_objc3c",
+    "public_commands:package_runnable_toolchain",
+    "allowed_claim_classes:same-machine-raw-sample-measurement",
+    "allowed_claim_classes:toolchain-comparison",
+    "comparative_baselines:objc2_reference",
+    "comparative_baselines:swift_reference",
+    "comparative_baselines:cpp_reference",
+    "report_root:tmp/reports/performance"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "comparative baselines, public-command wrappers, and report publication are e2e provenance only; they do not create compatibility, old-mode, fallback, or cross-machine support"
+}

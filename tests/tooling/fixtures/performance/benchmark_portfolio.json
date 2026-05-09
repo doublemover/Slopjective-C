@@ -3,6 +3,13 @@
   "schema_version": 1,
   "portfolio_kind": "live-benchmark-and-comparative-baseline-surface",
   "benchmark_root": "tests/tooling/fixtures/performance",
+  "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
+  "portfolio_boundary": {
+    "primary_axis": "behavior owner before benchmark workload or comparative baseline",
+    "support_authority": "benchmark workloads and comparative baselines are timing/provenance rows; canonical support is owned by behavior owner splits",
+    "comparative_baseline_rule": "Objective-C 2, Swift, and C++ reference baselines are comparison provenance only and cannot create Objective-C 3 behavior support",
+    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, old-mode, shim, and cross-machine universal claims map to canonical_rejection"
+  },
   "artifact_root": "tmp/artifacts/performance",
   "report_root": "tmp/reports/performance",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
@@ -31,6 +38,15 @@
       "source": "showcase/auroraBoard/main.objc3",
       "workspace_manifest": "showcase/auroraBoard/workspace.json",
       "expected_exit_code": 33,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "showcase workload timing only; categories, reflection, and synthesized behavior support must be cited through canonical phase owners",
       "story_capabilities": [
         "categories",
         "reflection",
@@ -46,6 +62,15 @@
       "source": "showcase/signalMesh/main.objc3",
       "workspace_manifest": "showcase/signalMesh/workspace.json",
       "expected_exit_code": 13,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "showcase workload timing only; status bridging, actor, and runtime messaging support must be cited through canonical phase owners",
       "story_capabilities": [
         "status-bridging",
         "actors",
@@ -61,6 +86,16 @@
       "source": "showcase/patchKit/main.objc3",
       "workspace_manifest": "showcase/patchKit/workspace.json",
       "expected_exit_code": 7,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "showcase workload timing only; derives, macros, property behaviors, and interop are support only through behavior owners, while compatibility-like interop claims route to canonical rejection",
       "story_capabilities": [
         "derives",
         "macros",
@@ -77,7 +112,12 @@
         "comparative-compile-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
-      "compiler_hint": "clang"
+      "compiler_hint": "clang",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Objective-C 2 reference baseline is comparative provenance only and cannot define Objective-C 3 old-mode or compatibility support"
     },
     {
       "baseline_id": "swift_reference",
@@ -87,7 +127,12 @@
         "comparative-runtime-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
-      "compiler_hint": "swiftc"
+      "compiler_hint": "swiftc",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Swift reference baseline is comparative provenance only and cannot define Objective-C 3 behavior support or interop compatibility"
     },
     {
       "baseline_id": "cpp_reference",
@@ -97,7 +142,12 @@
         "comparative-runtime-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
-      "compiler_hint": "clang++"
+      "compiler_hint": "clang++",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "C++ reference baseline is comparative provenance only and cannot define Objective-C 3 behavior support or compatibility support"
     }
   ],
   "exact_live_paths_for_downstream_work": [

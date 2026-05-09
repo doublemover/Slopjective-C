@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "parser",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+  "support_boundary": "parser ownership covers source-form provenance for Objective-C 3 showcase workloads only after canonical parser fixtures claim syntax support; benchmark timing does not create parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "workloads:auroraBoard",
+    "workloads:signalMesh",
+    "workloads:patchKit",
+    "source:showcase/auroraBoard/main.objc3",
+    "source:showcase/signalMesh/main.objc3",
+    "source:showcase/patchKit/main.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "legacy syntax, old-mode Objective-C 2 baseline inputs, parser fallback flags, and compatibility parser lanes remain parser rejection or comparative-provenance evidence"
+}

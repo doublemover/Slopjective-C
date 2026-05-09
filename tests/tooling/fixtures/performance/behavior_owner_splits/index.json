@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split-index",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before benchmark workload, comparative baseline, raw sample packet, report root, or claim class",
+    "positive_rule": "performance rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
+    "provenance_rule": "raw samples, report roots, artifact roots, package staging, machine profiles, tool versions, and comparative baselines are provenance-only and never define Objective-C 3 behavior support",
+    "retired_surface_rule": "compatibility, fallback, shim, old-mode, unsupported, wrapper-only, local-only, report-only, cross-machine universal, screenshot-derived, and hand-normalized claims are canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json"
+    }
+  ]
+}

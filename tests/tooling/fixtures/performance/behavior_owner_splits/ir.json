@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "ir",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "support_boundary": "IR ownership covers artifact, package, telemetry, and compile-output provenance; generated reports and package staging never define IR support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "artifact_root:tmp/artifacts/performance",
+    "package_stage_root:tmp/pkg/objc3c-native-runnable-toolchain",
+    "telemetry_schema:schemas/objc3c-performance-telemetry-v1.schema.json",
+    "compile_latency:output_root",
+    "runtime_wall_clock:output_root"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated artifacts, package staging, telemetry packets, and normalized report values cannot convert fallback or compatibility outputs into canonical IR support"
+}

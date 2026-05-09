@@ -2,6 +2,13 @@
   "contract_id": "objc3c.performance.measurement.policy.v1",
   "schema_version": 1,
   "policy_kind": "fair-measurement-and-claimability",
+  "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
+  "measurement_boundary": {
+    "primary_axis": "behavior owner before performance claim class",
+    "support_authority": "performance policy rows define measurement claimability only; canonical behavior support must be cited through behavior owner splits",
+    "artifact_rule": "raw sample packets, machine profiles, report entries, and normalized values are provenance artifacts and never define parser, sema, lowering, IR, runtime, or e2e support",
+    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, local-only, report-only, screenshot-derived, and hand-normalized claims are canonical rejection or provenance-only evidence"
+  },
   "sample_policy": {
     "warmup_runs": 1,
     "measured_runs": 5,

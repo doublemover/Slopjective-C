@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "lowering",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "support_boundary": "lowering ownership covers compile-latency provenance and emitted-code workload shape; timing rows and output roots cannot create lowering support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "benchmark_classes:compile-latency",
+    "compile_latency:measured_workloads",
+    "compile_latency:output_root",
+    "public_actions:compile_objc3c",
+    "public_commands:compile_objc3c"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "fallback lowering paths, wrapper-only compile actions, and compatibility-lowering performance claims remain canonical rejection or provenance-only evidence"
+}

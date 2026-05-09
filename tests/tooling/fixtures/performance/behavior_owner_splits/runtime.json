@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "runtime",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "support_boundary": "runtime ownership covers runtime-wall-clock provenance for Objective-C 3 workloads only after canonical runtime fixtures own the behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "benchmark_classes:runtime-wall-clock",
+    "runtime_wall_clock:measured_workloads",
+    "story_capabilities:runtime-messaging",
+    "story_capabilities:reflection",
+    "story_capabilities:synthesized-behaviors",
+    "public_actions:package_runnable_toolchain",
+    "expected_exit_code:33",
+    "expected_exit_code:13",
+    "expected_exit_code:7"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "missing runtime support, fallback runtime execution, compatibility runtime lanes, and wrapper-only package actions are availability-limited, strict-error, canonical rejection, or provenance-only evidence"
+}

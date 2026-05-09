@@ -2,6 +2,12 @@
   "contract_id": "objc3c.performance.comparative.baseline.manifest.v1",
   "schema_version": 1,
   "manifest_kind": "comparative-baseline-corpus-and-toolchain-shape",
+  "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
+  "baseline_boundary_policy": {
+    "primary_axis": "behavior owner before comparative baseline language",
+    "support_authority": "comparative baselines are toolchain and timing provenance only",
+    "retired_surface_rule": "Objective-C 2, Swift, and C++ comparison rows cannot become old-mode, compatibility, shim, fallback, or alternate Objective-C 3 support"
+  },
   "baseline_entries": [
     {
       "baseline_id": "objc2_reference",
@@ -21,7 +27,12 @@
         ]
       },
       "runtime_invocation": null,
-      "supports_runtime_baseline": false
+      "supports_runtime_baseline": false,
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Objective-C 2 compile baseline is comparison provenance only; no old-mode Objective-C 3 support is implied"
     },
     {
       "baseline_id": "swift_reference",
@@ -45,7 +56,12 @@
         "tool": "{output_exe}",
         "args": []
       },
-      "supports_runtime_baseline": true
+      "supports_runtime_baseline": true,
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Swift compile/runtime baseline is comparison provenance only; no Objective-C 3 compatibility or interop support is implied"
     },
     {
       "baseline_id": "cpp_reference",
@@ -69,7 +85,12 @@
         "tool": "{output_exe}",
         "args": []
       },
-      "supports_runtime_baseline": true
+      "supports_runtime_baseline": true,
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "C++ compile/runtime baseline is comparison provenance only; no Objective-C 3 compatibility or interop support is implied"
     }
   ],
   "exact_live_paths_for_downstream_work": [

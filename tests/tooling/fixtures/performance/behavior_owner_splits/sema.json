@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "sema",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "support_boundary": "semantic ownership covers capability provenance for categories, reflection, status bridging, actors, derives, macros, property behaviors, and interop only when canonical sema owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "story_capabilities:categories",
+    "story_capabilities:reflection",
+    "story_capabilities:status-bridging",
+    "story_capabilities:actors",
+    "story_capabilities:derives",
+    "story_capabilities:macros",
+    "story_capabilities:property-behaviors",
+    "story_capabilities:interop"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported feature claims, compatibility shim gates, and semantic-only benchmark stories are diagnostics or canonical rejection evidence until canonical sema fixtures own support"
+}
