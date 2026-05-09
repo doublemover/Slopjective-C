@@ -15,6 +15,15 @@ canonical support truth.
 | `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows, public-command evidence policy, and no-command ownership boundaries used by docs and release evidence maps. |
 
+## Conformance Evidence Schemas
+
+| Schema | Owns |
+| ------ | ---- |
+| `objc3-conformance-dashboard-status-v1.schema.json` | Dashboard-ready conformance status snapshots used by public reporting and release gates. |
+| `objc3-conformance-evidence-bundle-v1.schema.json` | Aggregated conformance manifests, profile claims, test evidence, and known-deviation records for release evidence. |
+| `objc3-runtime-2025Q4.manifest.schema.json` | Runtime artifact manifests for the `NR-OBJC-RUNTIME` normative reference. |
+| `objc3-abi-2025Q4.schema.json` | ABI artifact manifests for the `NR-ABI-PLATFORM` normative reference. |
+
 ## Release And Adoption Schemas
 
 | Schema | Owns |

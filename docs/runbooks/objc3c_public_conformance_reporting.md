@@ -24,6 +24,10 @@ Use these checked-in surfaces directly:
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
   - `npm run objc3c -- check-release-evidence`
 
+These schema anchors are owned by `scripts/objc3c_shared/schema_registry.py`;
+runbook prose and public reports cite the registry-backed files instead of
+copying schema fragments.
+
 Machine-owned public-reporting outputs must stay under:
 
 - `tmp/reports/public-conformance/`
@@ -106,9 +110,10 @@ Checked-in schema anchors:
 - dashboard status schema: `schemas/objc3-conformance-dashboard-status-v1.schema.json`
 - public scorecard schema: `schemas/objc3c-public-conformance-scorecard-v1.schema.json`
 - public summary schema: `schemas/objc3c-public-conformance-summary-v1.schema.json`
+- release-evidence bundle schema: `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
 
 The public report may widen fields later, but it must stay schema-shaped and
-traceable to checked-in contracts.
+traceable to registry-backed checked-in contracts.
 
 ## Explicit Non-Goals
 
@@ -138,6 +143,7 @@ Later public-conformance reporting work must stay on these paths:
 - checked-in schema surfaces:
   - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
+  - `scripts/objc3c_shared/schema_registry.py`
 
 Later work may widen scoring, schema, publication, and workflow coverage, but
 it must stay on this boundary.

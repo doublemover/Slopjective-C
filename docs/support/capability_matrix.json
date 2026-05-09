@@ -516,6 +516,22 @@
         },
         {
           "kind": "schema",
+          "path": "schemas/objc3-conformance-dashboard-status-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-conformance-evidence-bundle-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-runtime-2025Q4.manifest.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-abi-2025Q4.schema.json"
+        },
+        {
+          "kind": "schema",
           "path": "docs/support/evidence_map.json"
         },
         {

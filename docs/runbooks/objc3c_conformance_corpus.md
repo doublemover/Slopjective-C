@@ -185,6 +185,7 @@ Packaging and release evidence already resolves through:
 
 - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
 - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
+- `scripts/objc3c_shared/schema_registry.py`
 - `npm run objc3c -- check-release-evidence`
 
 Remaining corpus gaps are expected to terminate in:

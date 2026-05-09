@@ -13,6 +13,13 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3-conformance-dashboard-status-v1": ROOT
     / "schemas"
     / "objc3-conformance-dashboard-status-v1.schema.json",
+    "objc3-conformance-evidence-bundle-v1": ROOT
+    / "schemas"
+    / "objc3-conformance-evidence-bundle-v1.schema.json",
+    "objc3-runtime-2025Q4-manifest": ROOT
+    / "schemas"
+    / "objc3-runtime-2025Q4.manifest.schema.json",
+    "objc3-abi-2025Q4": ROOT / "schemas" / "objc3-abi-2025Q4.schema.json",
     "objc3c-governance-anti-regression-summary-v1": ROOT
     / "schemas"
     / "objc3c-governance-anti-regression-summary-v1.schema.json",

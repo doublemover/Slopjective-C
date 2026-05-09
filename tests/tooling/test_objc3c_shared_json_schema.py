@@ -140,6 +140,23 @@ def test_schema_registry_includes_capability_truth_schemas() -> None:
         assert summary[schema_id] == expected_path
 
 
+def test_schema_registry_includes_conformance_evidence_schemas() -> None:
+    conformance_evidence_schemas = {
+        "objc3-conformance-dashboard-status-v1": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        "objc3-conformance-evidence-bundle-v1": "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
+        "objc3-runtime-2025Q4-manifest": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+        "objc3-abi-2025Q4": "schemas/objc3-abi-2025Q4.schema.json",
+    }
+    summary = schema_registry_summary()
+
+    for schema_id, expected_path in conformance_evidence_schemas.items():
+        schema = load_schema(schema_id)
+        assert schema_id in schema_ids()
+        assert schema_path(schema_id).as_posix().endswith(expected_path)
+        assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+        assert summary[schema_id] == expected_path
+
+
 def test_capability_docs_validate_against_schema_and_evidence() -> None:
     validator = _load_validator()
 

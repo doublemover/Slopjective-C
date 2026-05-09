@@ -2,6 +2,9 @@
 
 This document defines the required fields and validation flow for the runtime artifact manifest used by `v0.11-A01`.
 
+Schema file: `schemas/objc3-runtime-2025Q4.manifest.schema.json`.
+Registry owner: `scripts/objc3c_shared/schema_registry.py`.
+
 ## Required fields
 
 A valid manifest must include these top-level fields:

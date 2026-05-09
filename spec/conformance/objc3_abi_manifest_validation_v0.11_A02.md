@@ -1,6 +1,10 @@
 # Objective-C 3 ABI Manifest Validation Guidance (v0.11-A02)
 
-Scope: issue #116. This guidance applies to manifests with `manifest_schema = "objc3-abi-2025Q4"` validated by `schemas/objc3-abi-2025Q4.schema.json`.
+Scope: issue #116. This guidance applies to manifests with
+`manifest_schema = "objc3-abi-2025Q4"` validated by the registry-owned schema
+`schemas/objc3-abi-2025Q4.schema.json`.
+
+Registry owner: `scripts/objc3c_shared/schema_registry.py`.
 
 ## Field-level constraints
 
@@ -42,8 +46,6 @@ Scope: issue #116. This guidance applies to manifests with `manifest_schema = "o
 
 Run from repository root:
 
-```bash
-npx --yes ajv-cli validate --spec=draft2020 \
-  -s schemas/objc3-abi-2025Q4.schema.json \
-  -d reports/conformance/manifests/objc3-abi-2025Q4.example.json
+```powershell
+npm run objc3c -- check-release-evidence
 ```
