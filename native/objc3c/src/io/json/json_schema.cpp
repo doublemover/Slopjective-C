@@ -1,5 +1,9 @@
 #include "io/json/json_schema.h"
 
+#include "io/json/json_equivalence.h"
+#include "io/json/json_pointer.h"
+#include "io/json/json_schema_type.h"
+
 #include <cstddef>
 #include <regex>
 #include <sstream>
@@ -8,176 +12,9 @@
 namespace objc3::io::json {
 namespace {
 
-std::string TypeName(const JsonValue &value) {
-  switch (value.kind()) {
-    case JsonValue::Kind::kNull:
-      return "null";
-    case JsonValue::Kind::kBool:
-      return "boolean";
-    case JsonValue::Kind::kNumber:
-      return "number";
-    case JsonValue::Kind::kString:
-      return "string";
-    case JsonValue::Kind::kArray:
-      return "array";
-    case JsonValue::Kind::kObject:
-      return "object";
-  }
-  return "unknown";
-}
-
-bool JsonEquals(const JsonValue &left, const JsonValue &right) {
-  if (left.kind() != right.kind()) {
-    return false;
-  }
-  switch (left.kind()) {
-    case JsonValue::Kind::kNull:
-      return true;
-    case JsonValue::Kind::kBool:
-      return left.AsBool() == right.AsBool();
-    case JsonValue::Kind::kNumber:
-      return left.AsNumber() == right.AsNumber();
-    case JsonValue::Kind::kString:
-      return left.AsString() == right.AsString();
-    case JsonValue::Kind::kArray: {
-      const JsonValue::Array &left_array = left.AsArray();
-      const JsonValue::Array &right_array = right.AsArray();
-      if (left_array.size() != right_array.size()) {
-        return false;
-      }
-      for (std::size_t i = 0; i < left_array.size(); ++i) {
-        if (!JsonEquals(left_array[i], right_array[i])) {
-          return false;
-        }
-      }
-      return true;
-    }
-    case JsonValue::Kind::kObject: {
-      const JsonValue::Object &left_object = left.AsObject();
-      const JsonValue::Object &right_object = right.AsObject();
-      if (left_object.size() != right_object.size()) {
-        return false;
-      }
-      for (const auto &[key, left_value] : left_object) {
-        const JsonValue *right_value = right.Find(key);
-        if (right_value == nullptr || !JsonEquals(left_value, *right_value)) {
-          return false;
-        }
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
-bool MatchesTypeName(const JsonValue &payload, const std::string &type) {
-  if (type == "null") {
-    return payload.IsNull();
-  }
-  if (type == "boolean") {
-    return payload.IsBool();
-  }
-  if (type == "number" || type == "integer") {
-    return payload.IsNumber();
-  }
-  if (type == "string") {
-    return payload.IsString();
-  }
-  if (type == "array") {
-    return payload.IsArray();
-  }
-  if (type == "object") {
-    return payload.IsObject();
-  }
-  return false;
-}
-
 void AddError(JsonSchemaResult &result, std::string message) {
   result.errors.push_back(std::move(message));
   result.ok = false;
-}
-
-std::string DecodeJsonPointerToken(std::string_view token) {
-  std::string decoded;
-  decoded.reserve(token.size());
-  for (std::size_t i = 0; i < token.size(); ++i) {
-    if (token[i] == '~' && i + 1 < token.size()) {
-      const char escaped = token[++i];
-      if (escaped == '0') {
-        decoded.push_back('~');
-        continue;
-      }
-      if (escaped == '1') {
-        decoded.push_back('/');
-        continue;
-      }
-      decoded.push_back('~');
-      decoded.push_back(escaped);
-      continue;
-    }
-    decoded.push_back(token[i]);
-  }
-  return decoded;
-}
-
-std::string DescribeExpectedType(const JsonValue &schema_type) {
-  if (schema_type.IsString()) {
-    return schema_type.AsString();
-  }
-  if (!schema_type.IsArray()) {
-    return "any";
-  }
-  std::ostringstream out;
-  bool first = true;
-  for (const JsonValue &entry : schema_type.AsArray()) {
-    if (!entry.IsString()) {
-      continue;
-    }
-    if (!first) {
-      out << "|";
-    }
-    first = false;
-    out << entry.AsString();
-  }
-  return first ? "any" : out.str();
-}
-
-const JsonValue *ResolveLocalRef(const JsonValue &schema_root,
-                                 std::string_view ref) {
-  if (ref.empty() || ref[0] != '#') {
-    return nullptr;
-  }
-  const JsonValue *cursor = &schema_root;
-  std::size_t offset = 1;
-  while (offset < ref.size()) {
-    if (ref[offset] != '/') {
-      return nullptr;
-    }
-    const std::size_t next = ref.find('/', offset + 1);
-    const std::size_t token_end = next == std::string_view::npos ? ref.size() : next;
-    const std::string token = DecodeJsonPointerToken(ref.substr(offset + 1, token_end - offset - 1));
-    cursor = cursor->Find(token);
-    if (cursor == nullptr) {
-      return nullptr;
-    }
-    offset = token_end;
-  }
-  return cursor;
-}
-
-bool MatchesType(const JsonValue &schema_type, const JsonValue &payload) {
-  if (schema_type.IsString()) {
-    return MatchesTypeName(payload, schema_type.AsString());
-  }
-  if (!schema_type.IsArray()) {
-    return true;
-  }
-  for (const JsonValue &entry : schema_type.AsArray()) {
-    if (entry.IsString() && MatchesTypeName(payload, entry.AsString())) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void ValidateAt(const JsonValue &schema_root, const JsonValue &schema,
@@ -198,7 +35,7 @@ void ValidateAt(const JsonValue &schema_root, const JsonValue &schema,
     return;
   }
   if (const auto ref = schema.GetString("$ref")) {
-    const JsonValue *resolved = ResolveLocalRef(schema_root, *ref);
+    const JsonValue *resolved = ResolveLocalJsonPointerRef(schema_root, *ref);
     if (resolved == nullptr) {
       AddError(result, path + " unresolved schema reference " + *ref);
       return;
@@ -226,9 +63,11 @@ void ValidateAt(const JsonValue &schema_root, const JsonValue &schema,
     }
   }
   if (const JsonValue *schema_type = schema.Find("type"); schema_type != nullptr) {
-    if (!MatchesType(*schema_type, payload)) {
+    if (!JsonSchemaMatchesType(*schema_type, payload)) {
       std::ostringstream out;
-      out << path << " expected " << DescribeExpectedType(*schema_type) << " but found " << TypeName(payload);
+      out << path << " expected "
+          << DescribeExpectedJsonSchemaType(*schema_type) << " but found "
+          << JsonSchemaValueTypeName(payload);
       AddError(result, out.str());
       return;
     }
