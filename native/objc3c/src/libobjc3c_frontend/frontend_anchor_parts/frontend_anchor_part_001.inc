@@ -24,6 +24,7 @@
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_plan.h"
+#include "libobjc3c_frontend/objc3c_frontend_basic_artifacts.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
 #include "libobjc3c_frontend/objc3c_frontend_context_state.h"
 #include "libobjc3c_frontend/objc3c_frontend_diagnostics.h"
@@ -81,163 +82,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
 
-  if (has_out_dir) {
-    const std::filesystem::path diagnostics_out =
-        objc3c::frontend::BuildFrontendDiagnosticsOutputPath(artifact_plan);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            diagnostics_out,
-            objc3c::frontend::BuildFrontendDiagnosticsJson(
-                product.artifact_bundle.diagnostics),
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-      return objc3c::frontend::ReturnWithFrontendContextResultPayload(context, result);
-    }
-    objc3c::frontend::SetFrontendContextDiagnosticsPath(
-        context, diagnostics_out.generic_string());
-  }
-
-  if (!product.artifact_bundle.diagnostics.empty()) {
-    result->status = OBJC3C_FRONTEND_STATUS_DIAGNOSTICS;
-    result->process_exit_code = 1;
-    result->success = 0;
-  } else {
-    result->status = OBJC3C_FRONTEND_STATUS_OK;
-    result->process_exit_code = 0;
-    result->success = 1;
-  }
-
-  if (options->emit_manifest != 0 && has_out_dir && !product.artifact_bundle.manifest_json.empty()) {
-    const std::filesystem::path manifest_out =
-        objc3c::frontend::BuildFrontendManifestOutputPath(artifact_plan);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            manifest_out, product.artifact_bundle.manifest_json, io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    } else {
-      objc3c::frontend::SetFrontendContextManifestPath(
-          context, manifest_out.generic_string());
-    }
-  }
-
-  if (has_out_dir && !product.artifact_bundle.runtime_metadata_binary.empty()) {
-    const std::filesystem::path runtime_metadata_out =
-        BuildRuntimeMetadataBinaryArtifactPath(out_dir, emit_prefix);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendBinaryFile(
-            runtime_metadata_out,
-            product.artifact_bundle.runtime_metadata_binary,
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    } else {
-      objc3c::frontend::SetFrontendContextRuntimeMetadataPath(
-          context, runtime_metadata_out.generic_string());
-    }
-  }
-
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.error_handling_result_bridge_artifact_replay_json.empty()) {
-
-    const std::filesystem::path replay_out =
-        BuildErrorHandlingResultBridgeArtifactReplayPath(out_dir, emit_prefix);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            replay_out,
-            product.artifact_bundle.error_handling_result_bridge_artifact_replay_json,
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    }
-  }
-
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir) {
-    const bool has_runtime_import_artifact =
-        !product.artifact_bundle.runtime_aware_import_module_artifact_json
-             .empty();
-    if (has_runtime_import_artifact &&
-        !IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-            product.artifact_bundle
-                .runtime_aware_import_module_frontend_closure_summary)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(
-          context,
-          "runtime-aware import/module frontend closure not ready");
-    } else {
-
-      const std::filesystem::path runtime_import_surface_out =
-          BuildRuntimeAwareImportModuleArtifactPath(out_dir, emit_prefix);
-      std::string io_error;
-      if (has_runtime_import_artifact &&
-          !objc3c::frontend::WriteFrontendTextFile(
-              runtime_import_surface_out,
-              product.artifact_bundle
-                  .runtime_aware_import_module_artifact_json,
-              io_error)) {
-        result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-        result->process_exit_code = 2;
-        result->success = 0;
-        objc3c_frontend_set_error(context, io_error.c_str());
-      }
-    }
-  }
-
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.interop_bridge_header_artifact_text.empty()) {
-    const std::filesystem::path header_out =
-        BuildInteropBridgeHeaderArtifactPath(out_dir, emit_prefix);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            header_out,
-            product.artifact_bundle.interop_bridge_header_artifact_text,
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    }
-  }
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.interop_bridge_module_artifact_text.empty()) {
-    const std::filesystem::path module_out =
-        BuildInteropBridgeModuleArtifactPath(out_dir, emit_prefix);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            module_out,
-            product.artifact_bundle.interop_bridge_module_artifact_text,
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    }
-  }
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.interop_bridge_artifact_json.empty()) {
-    const std::filesystem::path bridge_out =
-        BuildInteropBridgeArtifactPath(out_dir, emit_prefix);
-    std::string io_error;
-    if (!objc3c::frontend::WriteFrontendTextFile(
-            bridge_out,
-            product.artifact_bundle.interop_bridge_artifact_json,
-            io_error)) {
-      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
-      result->process_exit_code = 2;
-      result->success = 0;
-      objc3c_frontend_set_error(context, io_error.c_str());
-    }
+  if (!objc3c::frontend::PublishFrontendBasicArtifacts(
+          context, result, product, artifact_plan, options->emit_manifest != 0)) {
+    return objc3c::frontend::ReturnWithFrontendContextResultPayload(context,
+                                                                    result);
   }
 
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir) {

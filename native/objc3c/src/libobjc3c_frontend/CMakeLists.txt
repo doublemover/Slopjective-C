@@ -8,6 +8,7 @@ add_library(objc3c_frontend STATIC
   frontend_anchor.cpp
   objc3c_frontend_abi_surface.cpp
   objc3c_frontend_artifact_plan.cpp
+  objc3c_frontend_basic_artifacts.cpp
   objc3c_frontend_compile_contract.cpp
   objc3c_frontend_context_state.cpp
   objc3c_frontend_diagnostics.cpp
