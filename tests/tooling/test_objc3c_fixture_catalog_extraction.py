@@ -125,6 +125,29 @@ def test_positive_execution_runtime_dispatch_sidecars_are_canonical_live_dispatc
     assert live_dispatch_sidecars
 
 
+def test_runtime_dispatch_symbols_are_only_live_dispatch_contracts() -> None:
+    catalog = _read_json(NATIVE_CATALOG)
+    assert (
+        catalog["policy"]["runtime_dispatch_symbol_rule"]
+        == "runtime_dispatch_symbol is only present when execution.requires_live_runtime_dispatch is true"
+    )
+
+    offenders = []
+    for sidecar_path in (
+        *POSITIVE_EXECUTION.glob("*.meta.json"),
+        *NEGATIVE_EXECUTION.glob("*.meta.json"),
+    ):
+        sidecar = _read_json(sidecar_path)
+        execution = sidecar.get("execution", {})
+        has_dispatch_symbol = "runtime_dispatch_symbol" in execution
+        if has_dispatch_symbol:
+            assert execution["runtime_dispatch_symbol"] == "objc3_runtime_dispatch_i32"
+        if has_dispatch_symbol and not execution.get("requires_live_runtime_dispatch", False):
+            offenders.append(sidecar_path.relative_to(ROOT).as_posix())
+
+    assert offenders == []
+
+
 def test_negative_execution_runtime_dispatch_sidecars_are_strict_failures() -> None:
     runtime_dispatch_sidecars = sorted(NEGATIVE_EXECUTION.glob("*runtime_dispatch*.meta.json"))
     assert runtime_dispatch_sidecars

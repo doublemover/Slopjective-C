@@ -18,7 +18,7 @@ Optional meta sidecar schema:
 - `fixture`: must match `<name>.objc3`.
 - `execution.native_compile_args`: optional string array appended to native compiler arguments.
 - `execution.requires_live_runtime_dispatch` (optional): defaults to `false`; set to `true` for fixtures that must keep a live runtime-dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`.
+- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
 
 ## Live-runtime dispatch note
 
@@ -28,7 +28,7 @@ For `message_send_nil_receiver_short_circuit.objc3`:
 
 - Mutable receiver value can evaluate to nil at runtime and short-circuits through the emitted nil-dispatch branch.
 - Fixture returns `0 + 5`, so `message_send_nil_receiver_short_circuit.exitcode.txt` is `5`.
-- Live runtime dispatch linkage is still required for this fixture because lowering retains the non-nil dispatch branch.
+- No live runtime dispatch linkage is required because explicit nil reassignment enables compile-time elision.
 
 For `message_send_direct_nil_receiver_elision.objc3`:
 

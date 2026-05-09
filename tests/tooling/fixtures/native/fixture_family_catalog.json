@@ -8,6 +8,7 @@
     "canonical_behavior_root": "tests/native",
     "canonical_behavior_manifest": "tests/fixtures/canonical/manifest.json",
     "legacy_positive_residue_policy": "compatibility-looking positives are deleted or converted to tests/native rejection and strict-error fixtures",
+    "runtime_dispatch_symbol_rule": "runtime_dispatch_symbol is only present when execution.requires_live_runtime_dispatch is true",
     "forbidden_positive_name_tokens": [
       "legacy",
       "old_mode",

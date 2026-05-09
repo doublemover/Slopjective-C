@@ -9,7 +9,6 @@
     ]
   },
   "execution": {
-    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
     "requires_live_runtime_dispatch": false
   }
 }
