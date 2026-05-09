@@ -5,6 +5,12 @@ _Final draft v0.12 - 2026-02-23_
 Status: published kickoff artifact for issue `#191` (`v0.11-FW-D14`) scoped
 to Lane D shard `planning-issue-191`.
 
+Current hard-cutover overlay: this bootstrap remains an archival planning
+artifact. Current public workflow prose must use `npm run objc3c -- <action>`,
+must keep helper paths and generated reports out of the public command surface,
+and must not reinterpret old carryover/defer language as compatibility,
+fallback, shim, alias, or migration-lane support.
+
 ## 1. Cycle Header and Baseline
 
 | Metadata field              | Value                                        |

@@ -8,7 +8,7 @@ objc3c.
 
 Use it when changing:
 
-- README, site, tutorial, showcase, or conversion-guide entry points
+- README, site, tutorial, showcase, or canonicalization-guide entry points
 - canonical conversion guidance from Objective-C 2, Swift, C++, and
   package-based projects
 - capability-comparison wording against the support matrix and conformance data
@@ -21,7 +21,7 @@ Canonical checked-in boundary surfaces:
 - `tests/tooling/fixtures/adoption_legibility/boundary_inventory.json`
 - `README.md`
 - `docs/tutorials/getting_started.md`
-- conversion guide at `docs/tutorials/objc2_to_objc3_migration.md`
+- canonicalization guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `showcase/README.md`
 - `site/index.md`
@@ -53,6 +53,8 @@ available implementation surface. Any claim that describes production fit,
 conversion safety, ecosystem maturity, performance, conformance, or support must
 name its evidence class and must stay inside the support class published by the
 release, package, conformance, performance, and long-horizon runbooks.
+Conversion wording is evidence and onboarding prose only; it does not create a
+migration lane, compatibility mode, shim, or fallback source surface.
 
 Adoption copy may say that objc3c has a runnable evaluator path only when it
 points to checked-in README, site, tutorial, showcase, public-command,
@@ -96,6 +98,8 @@ Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
+The fixture keeps its historical migration name, but the public contract is
+canonical conversion over checked-in runnable examples and support evidence.
 Conversion guidance has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
 check support and rollback evidence. Interop guidance is part of that path; it

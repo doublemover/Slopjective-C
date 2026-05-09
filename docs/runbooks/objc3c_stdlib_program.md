@@ -21,7 +21,7 @@ Live stdlib-program work must stay on these paths:
 - `docs/tutorials/getting_started.md`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
-- conversion guide at `docs/tutorials/objc2_to_objc3_migration.md`
+- canonicalization guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
