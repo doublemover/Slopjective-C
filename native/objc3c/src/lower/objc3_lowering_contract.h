@@ -14,6 +14,7 @@
 #include "lower/contracts/lowering_concurrency_contracts.h"
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
+#include "lower/contracts/manifest_truth_gate_contracts.h"
 #include "lower/contracts/metaprogramming_lowering_contracts.h"
 #include "lower/contracts/optional_control_flow_lowering_contracts.h"
 #include "lower/contracts/ownership_runtime_lowering_contracts.h"
@@ -151,23 +152,6 @@ inline constexpr const char
         "tooling-release-evidence-packaging-remains-bounded-to-emitted-report-payloads-checklist-refs-and-stable-conformance-bucket-manifests";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
-// manifest/object/IR truth gate anchor: this binds the compiler sidecar
-// manifest, emitted LLVM IR, native object, runtime registration artifacts,
-// and release-claim sidecars into one deterministic evidence boundary.
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateContractId =
-    "objc3c.manifest.object.ir.truth.gate.v1";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateEvidenceModel =
-    "manifest-ir-object-registration-and-conformance-sidecars-form-one-regenerated-truth-set";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateManifestModel =
-    "module.manifest.json-publishes-the-semantic-lowering-runtime-metadata-and-replay-key-source-of-truth";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateIrModel =
-    "module.ll-republishes-the-same-contract-boundaries-and-runtime-registration-roots-as-reviewable-ir-evidence";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateObjectModel =
-    "module.obj-materializes-the-same-objc3-runtime-sections-symbols-and-registration-roots-observed-in-ir";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateClaimModel =
-    "versioned-conformance-and-runtime-capability-sidecars-are-bound-to-the-same-replay-key-and-remain-narrower-than-evidence";
-inline constexpr const char *kObjc3ManifestObjectIrTruthGateFailureModel =
-    "missing-artifact-hash-drift-object-section-drift-or-unsupported-negative-emission-fails-closed";
 inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
     "objc3c.method.lookup.override.conflict.v1";
 inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
@@ -410,7 +394,6 @@ bool RequiresFailClosedObjc3RuntimeDispatchError(
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family);
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary);
-std::string Objc3ManifestObjectIrTruthGateSummary();
 std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
 std::string Objc3ToolingCorpusShardingReleaseEvidencePackagingLoweringSummary();
