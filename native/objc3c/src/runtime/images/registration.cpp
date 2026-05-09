@@ -1,7 +1,7 @@
 #include "runtime/images/registration.h"
 
 #include "runtime/classes/class_graph.h"
-#include "runtime/dispatch/method_cache.h"
+#include "runtime/dispatch/method_fast_path_seed.h"
 #include "runtime/images/image_descriptor.h"
 #include "runtime/images/registration_snapshots.h"
 #include "runtime/images/registration_state_publish.h"

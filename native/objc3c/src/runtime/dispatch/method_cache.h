@@ -20,7 +20,6 @@ struct MethodCacheKeyHash {
   std::size_t operator()(const MethodCacheKey &key) const;
 };
 
-void SeedDispatchIntentFastPathCacheUnlocked(RuntimeState &state);
 SlowPathResolution ResolveMethodSlowPathUnlocked(
     RuntimeState &state,
     std::uint64_t base_identity,
