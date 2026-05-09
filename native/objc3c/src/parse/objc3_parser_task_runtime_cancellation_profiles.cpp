@@ -1,11 +1,20 @@
-static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
+#include "parse/objc3_parser_task_runtime_cancellation_profiles.h"
+
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <sstream>
+#include <vector>
+
+#include "parse/objc3_parser_profile_helpers.h"
+
+namespace objc3c::parse {
+namespace {
+
+bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  // source-closure anchor: task/executor source ownership remains a
-  // deterministic parser-side symbol-profile contract instead of dedicated
-  // contextual keywords. Later runtime lanes may widen runnable semantics, but
-  // they must continue to preserve this identifier-driven source boundary.
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("task_runtime") != std::string::npos ||
          lowered.find("task_group") != std::string::npos ||
@@ -18,7 +27,7 @@ static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
          lowered.find("executor") != std::string::npos;
 }
 
-static bool IsCancellationCheckSymbol(const std::string &symbol) {
+bool IsCancellationCheckSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
@@ -28,7 +37,7 @@ static bool IsCancellationCheckSymbol(const std::string &symbol) {
          lowered.find("cancellation") != std::string::npos;
 }
 
-static bool IsCancellationHandlerSymbol(const std::string &symbol) {
+bool IsCancellationHandlerSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
@@ -38,7 +47,7 @@ static bool IsCancellationHandlerSymbol(const std::string &symbol) {
          lowered.find("on_cancel") != std::string::npos;
 }
 
-static bool IsSuspensionPointSymbol(const std::string &symbol) {
+bool IsSuspensionPointSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
@@ -56,7 +65,7 @@ struct Objc3TaskRuntimeCancellationSiteCounts {
   std::size_t suspension_point_sites = 0;
 };
 
-static void CollectTaskRuntimeCancellationSitesFromSymbol(
+void CollectTaskRuntimeCancellationSitesFromSymbol(
     const std::string &symbol,
     Objc3TaskRuntimeCancellationSiteCounts &counts) {
   if (IsTaskRuntimeHookSymbol(symbol)) {
@@ -73,7 +82,7 @@ static void CollectTaskRuntimeCancellationSitesFromSymbol(
   }
 }
 
-static void CollectTaskRuntimeCancellationExprSites(
+void CollectTaskRuntimeCancellationExprSites(
     const Expr *expr,
     Objc3TaskRuntimeCancellationSiteCounts &counts) {
   if (expr == nullptr) {
@@ -112,13 +121,13 @@ static void CollectTaskRuntimeCancellationExprSites(
   }
 }
 
-static void CollectTaskRuntimeCancellationForClauseSites(
+void CollectTaskRuntimeCancellationForClauseSites(
     const ForClause &clause,
     Objc3TaskRuntimeCancellationSiteCounts &counts) {
   CollectTaskRuntimeCancellationExprSites(clause.value.get(), counts);
 }
 
-static void CollectTaskRuntimeCancellationStmtSites(
+void CollectTaskRuntimeCancellationStmtSites(
     const Stmt *stmt,
     Objc3TaskRuntimeCancellationSiteCounts &counts) {
   if (stmt == nullptr) {
@@ -127,24 +136,28 @@ static void CollectTaskRuntimeCancellationStmtSites(
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->let_stmt->value.get(), counts);
+      CollectTaskRuntimeCancellationExprSites(stmt->let_stmt->value.get(),
+                                              counts);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->assign_stmt->value.get(), counts);
+      CollectTaskRuntimeCancellationExprSites(stmt->assign_stmt->value.get(),
+                                              counts);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->return_stmt->value.get(), counts);
+      CollectTaskRuntimeCancellationExprSites(stmt->return_stmt->value.get(),
+                                              counts);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt == nullptr) {
       return;
     }
-    CollectTaskRuntimeCancellationExprSites(stmt->if_stmt->condition.get(), counts);
+    CollectTaskRuntimeCancellationExprSites(stmt->if_stmt->condition.get(),
+                                            counts);
     for (const auto &then_stmt : stmt->if_stmt->then_body) {
       CollectTaskRuntimeCancellationStmtSites(then_stmt.get(), counts);
     }
@@ -160,15 +173,15 @@ static void CollectTaskRuntimeCancellationStmtSites(
       CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
     }
     CollectTaskRuntimeCancellationExprSites(
-        stmt->do_while_stmt->condition.get(),
-        counts);
+        stmt->do_while_stmt->condition.get(), counts);
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt == nullptr) {
       return;
     }
     CollectTaskRuntimeCancellationForClauseSites(stmt->for_stmt->init, counts);
-    CollectTaskRuntimeCancellationExprSites(stmt->for_stmt->condition.get(), counts);
+    CollectTaskRuntimeCancellationExprSites(stmt->for_stmt->condition.get(),
+                                            counts);
     CollectTaskRuntimeCancellationForClauseSites(stmt->for_stmt->step, counts);
     for (const auto &body_stmt : stmt->for_stmt->body) {
       CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
@@ -178,7 +191,8 @@ static void CollectTaskRuntimeCancellationStmtSites(
     if (stmt->switch_stmt == nullptr) {
       return;
     }
-    CollectTaskRuntimeCancellationExprSites(stmt->switch_stmt->condition.get(), counts);
+    CollectTaskRuntimeCancellationExprSites(stmt->switch_stmt->condition.get(),
+                                            counts);
     for (const auto &switch_case : stmt->switch_stmt->cases) {
       for (const auto &case_stmt : switch_case.body) {
         CollectTaskRuntimeCancellationStmtSites(case_stmt.get(), counts);
@@ -189,7 +203,8 @@ static void CollectTaskRuntimeCancellationStmtSites(
     if (stmt->while_stmt == nullptr) {
       return;
     }
-    CollectTaskRuntimeCancellationExprSites(stmt->while_stmt->condition.get(), counts);
+    CollectTaskRuntimeCancellationExprSites(stmt->while_stmt->condition.get(),
+                                            counts);
     for (const auto &body_stmt : stmt->while_stmt->body) {
       CollectTaskRuntimeCancellationStmtSites(body_stmt.get(), counts);
     }
@@ -205,7 +220,8 @@ static void CollectTaskRuntimeCancellationStmtSites(
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectTaskRuntimeCancellationExprSites(stmt->expr_stmt->value.get(), counts);
+      CollectTaskRuntimeCancellationExprSites(stmt->expr_stmt->value.get(),
+                                              counts);
     }
     return;
   case Stmt::Kind::Break:
@@ -215,7 +231,7 @@ static void CollectTaskRuntimeCancellationStmtSites(
   }
 }
 
-static Objc3TaskRuntimeCancellationSiteCounts CountTaskRuntimeCancellationSitesInBody(
+Objc3TaskRuntimeCancellationSiteCounts CountTaskRuntimeCancellationSitesInBody(
     const std::vector<std::unique_ptr<Stmt>> &body) {
   Objc3TaskRuntimeCancellationSiteCounts counts;
   for (const auto &stmt : body) {
@@ -224,20 +240,69 @@ static Objc3TaskRuntimeCancellationSiteCounts CountTaskRuntimeCancellationSitesI
   return counts;
 }
 
-struct Objc3TaskRuntimeCancellationProfile {
-  std::size_t task_runtime_interop_sites = 0;
-  std::size_t runtime_hook_sites = 0;
-  std::size_t cancellation_check_sites = 0;
-  std::size_t cancellation_handler_sites = 0;
-  std::size_t suspension_point_sites = 0;
-  std::size_t cancellation_propagation_sites = 0;
-  std::size_t normalized_sites = 0;
-  std::size_t gate_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic_task_runtime_cancellation_handoff = false;
-};
+Objc3TaskRuntimeCancellationProfile
+BuildTaskRuntimeCancellationProfileFromCounts(
+    std::size_t runtime_hook_sites,
+    std::size_t cancellation_check_sites,
+    std::size_t cancellation_handler_sites,
+    std::size_t suspension_point_sites) {
+  Objc3TaskRuntimeCancellationProfile profile;
+  profile.runtime_hook_sites = runtime_hook_sites;
+  profile.cancellation_check_sites = cancellation_check_sites;
+  profile.cancellation_handler_sites = cancellation_handler_sites;
+  profile.suspension_point_sites = suspension_point_sites;
+  profile.cancellation_propagation_sites =
+      std::min(profile.cancellation_handler_sites,
+               profile.cancellation_check_sites);
+  profile.task_runtime_interop_sites = profile.runtime_hook_sites;
+  if (profile.task_runtime_interop_sites >
+      std::numeric_limits<std::size_t>::max() -
+          profile.cancellation_check_sites) {
+    profile.task_runtime_interop_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.task_runtime_interop_sites += profile.cancellation_check_sites;
+  }
+  if (profile.task_runtime_interop_sites >
+      std::numeric_limits<std::size_t>::max() - profile.suspension_point_sites) {
+    profile.task_runtime_interop_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.task_runtime_interop_sites += profile.suspension_point_sites;
+  }
+  profile.gate_blocked_sites = profile.cancellation_propagation_sites;
+  if (profile.gate_blocked_sites > profile.task_runtime_interop_sites) {
+    profile.gate_blocked_sites = profile.task_runtime_interop_sites;
+    profile.contract_violation_sites += 1u;
+  }
+  profile.normalized_sites =
+      profile.task_runtime_interop_sites - profile.gate_blocked_sites;
+  if (profile.runtime_hook_sites > profile.task_runtime_interop_sites ||
+      profile.cancellation_check_sites > profile.task_runtime_interop_sites ||
+      profile.cancellation_handler_sites > profile.task_runtime_interop_sites ||
+      profile.suspension_point_sites > profile.task_runtime_interop_sites ||
+      profile.cancellation_propagation_sites >
+          profile.cancellation_check_sites ||
+      profile.normalized_sites > profile.task_runtime_interop_sites ||
+      profile.gate_blocked_sites > profile.task_runtime_interop_sites ||
+      profile.contract_violation_sites > profile.task_runtime_interop_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.normalized_sites + profile.gate_blocked_sites !=
+      profile.task_runtime_interop_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.contract_violation_sites > profile.task_runtime_interop_sites) {
+    profile.contract_violation_sites = profile.task_runtime_interop_sites;
+  }
+  profile.deterministic_task_runtime_cancellation_handoff =
+      profile.contract_violation_sites == 0u;
+  return profile;
+}
 
-static std::string BuildTaskRuntimeCancellationProfile(
+}  // namespace
+
+std::string BuildTaskRuntimeCancellationProfile(
     std::size_t task_runtime_interop_sites,
     std::size_t runtime_hook_sites,
     std::size_t cancellation_check_sites,
@@ -264,3 +329,55 @@ static std::string BuildTaskRuntimeCancellationProfile(
   return out.str();
 }
 
+bool IsTaskRuntimeCancellationProfileNormalized(
+    std::size_t task_runtime_interop_sites,
+    std::size_t runtime_hook_sites,
+    std::size_t cancellation_check_sites,
+    std::size_t cancellation_handler_sites,
+    std::size_t suspension_point_sites,
+    std::size_t cancellation_propagation_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites) {
+  if (runtime_hook_sites > task_runtime_interop_sites ||
+      cancellation_check_sites > task_runtime_interop_sites ||
+      cancellation_handler_sites > task_runtime_interop_sites ||
+      suspension_point_sites > task_runtime_interop_sites ||
+      cancellation_propagation_sites > cancellation_check_sites ||
+      normalized_sites > task_runtime_interop_sites ||
+      gate_blocked_sites > task_runtime_interop_sites ||
+      contract_violation_sites > task_runtime_interop_sites) {
+    return false;
+  }
+  if (normalized_sites + gate_blocked_sites != task_runtime_interop_sites) {
+    return false;
+  }
+  return contract_violation_sites == 0u;
+}
+
+Objc3TaskRuntimeCancellationProfile
+BuildTaskRuntimeCancellationProfileFromFunction(const FunctionDecl &fn) {
+  const Objc3TaskRuntimeCancellationSiteCounts counts =
+      CountTaskRuntimeCancellationSitesInBody(fn.body);
+  return BuildTaskRuntimeCancellationProfileFromCounts(
+      counts.runtime_hook_sites,
+      counts.cancellation_check_sites,
+      counts.cancellation_handler_sites,
+      counts.suspension_point_sites);
+}
+
+Objc3TaskRuntimeCancellationProfile
+BuildTaskRuntimeCancellationProfileFromOpaqueBody(
+    const Objc3MethodDecl &method) {
+  Objc3TaskRuntimeCancellationSiteCounts counts;
+  if (method.has_body) {
+    CollectTaskRuntimeCancellationSitesFromSymbol(method.selector, counts);
+  }
+  return BuildTaskRuntimeCancellationProfileFromCounts(
+      counts.runtime_hook_sites,
+      counts.cancellation_check_sites,
+      counts.cancellation_handler_sites,
+      counts.suspension_point_sites);
+}
+
+}  // namespace objc3c::parse

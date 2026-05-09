@@ -15,6 +15,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_assignment_statement_nodes.cpp
   objc3_parser_borrowed_attribute_profiles.cpp
   objc3_parser_block_literal_source.cpp
+  objc3_parser_concurrency_replay_race_guard_profiles.cpp
   objc3_parser_core.cpp
   objc3_parser_cstyle_type_classifier.cpp
   objc3_parser_cstyle_type_parser.cpp
@@ -37,6 +38,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_result_like_profiles.cpp
   objc3_parser_statement_profiles.cpp
   objc3_parser_statement_surface.cpp
+  objc3_parser_task_runtime_cancellation_profiles.cpp
   objc3_parser_token_metadata.cpp
   objc3_parser_unsafe_pointer_profiles.cpp
   objc3_parser_unwind_cleanup_profiles.cpp
