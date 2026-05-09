@@ -7,7 +7,7 @@ from .action_dispatch import (
     execute_registered_action,
     list_actions_payload,
 )
-from .argument_requests import (
+from .argument_request_model import (
     DescribeActionRequest,
     ExecuteActionRequest,
     ListActionsRequest,

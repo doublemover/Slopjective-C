@@ -70,9 +70,13 @@ from scripts.objc3c_workflow.action_catalog_runtime_runnable_e2e import (
 )
 from scripts.objc3c_workflow.action_catalog_runtime_validation import RUNTIME_VALIDATION_ACTION_SPECS
 from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
+from scripts.objc3c_workflow.argument_request_model import (
+    DescribeActionRequest as ModelDescribeActionRequest,
+)
 from scripts.objc3c_workflow.argument_requests import (
     DescribeActionRequest as OwnedDescribeActionRequest,
 )
+from scripts.objc3c_workflow.argument_usage_error import WorkflowUsageError as OwnedWorkflowUsageError
 from scripts.objc3c_workflow.arguments import (
     DescribeActionRequest,
     DescribePackageScriptRequest,
@@ -97,6 +101,10 @@ from scripts.objc3c_workflow.registry_lookup import catalog_action_spec as owned
 from scripts.objc3c_workflow.registry_store import catalog_action_spec
 from scripts.objc3c_workflow.report_output import emit_json as owned_emit_json
 from scripts.objc3c_workflow.reports import emit_json, write_json_report
+from scripts.objc3c_workflow.request_handler_dispatch import (
+    dispatch_parsed_workflow_request as owned_dispatch_parsed_workflow_request,
+)
+from scripts.objc3c_workflow.request_handlers import dispatch_parsed_workflow_request
 
 
 def test_workflow_argument_parser_models_public_requests() -> None:
@@ -109,6 +117,9 @@ def test_workflow_argument_parser_models_public_requests() -> None:
     )
     assert parse_workflow_args is parse_workflow_args_impl
     assert DescribeActionRequest is OwnedDescribeActionRequest
+    assert DescribeActionRequest is ModelDescribeActionRequest
+    assert WorkflowUsageError is OwnedWorkflowUsageError
+    assert dispatch_parsed_workflow_request is owned_dispatch_parsed_workflow_request
 
 
 def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .argument_requests import WorkflowUsageError
+from .argument_usage_error import WorkflowUsageError
 from .request_error_output import emit_request_error
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .argument_requests import DescribePackageScriptRequest
+from .argument_request_model import DescribePackageScriptRequest
 from .npm_surface import describe_package_script_payload
 from .public_bridge import PACKAGE_BRIDGES
 from .reports import emit_json
