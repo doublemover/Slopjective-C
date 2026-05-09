@@ -1,5 +1,5 @@
 #pragma once
 
-#include "sema/objc3_sema_pass_manager_contract_parts/objc3_sema_pass_manager_contract_part_001.inc"
-#include "sema/objc3_sema_pass_manager_contract_parts/objc3_sema_pass_manager_contract_part_002.inc"
-#include "sema/objc3_sema_pass_manager_contract_parts/objc3_sema_pass_manager_contract_part_003.inc"
+#include "sema/objc3_sema_pass_manager_contract_flow.h"
+#include "sema/objc3_sema_pass_manager_contract_surface_validation.h"
+#include "sema/objc3_sema_pass_manager_contract_results.h"
