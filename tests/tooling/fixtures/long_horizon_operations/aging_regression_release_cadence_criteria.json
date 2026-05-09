@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence_criteria.v1",
   "schema_version": 1,
+  "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/performance_governance/budget_model.json",
     "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json",
@@ -49,17 +50,17 @@
     "Migration and rollback evidence must be regenerated for every release-cadence class that changes package or application behavior.",
     "Any stale package or application evidence demotes cadence claims to release-drill only."
   ],
-  "required_public_scripts": [
-    "test:objc3c:performance-governance",
-    "test:objc3c:performance-governance:integration",
-    "test:objc3c:performance-governance:e2e",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:stress:integration",
-    "test:objc3c:external-validation:integration",
-    "test:objc3c:public-conformance:integration"
+  "required_actions": [
+    "validate-performance-governance",
+    "validate-performance-governance-integration",
+    "validate-performance-governance-end-to-end",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-stress-integration",
+    "validate-external-validation-integration",
+    "validate-public-conformance-reporting-integration"
   ],
   "release_blocking_conditions": [
     "freshness budget breach",

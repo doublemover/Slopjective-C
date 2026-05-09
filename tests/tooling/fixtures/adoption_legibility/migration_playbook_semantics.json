@@ -1,6 +1,7 @@
 {
   "contract_id": "objc3c.adoption_legibility.migration_playbook_semantics.v1",
   "schema_version": 1,
+  "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
@@ -19,9 +20,9 @@
         "docs/tutorials/getting_started.md",
         "docs/runbooks/objc3c_public_command_surface.md"
       ],
-      "required_public_scripts": [
-        "build:docs:commands",
-        "check:docs:surface"
+      "required_actions": [
+        "build-public-command-surface",
+        "check-documentation-surface"
       ]
     },
     {
@@ -34,10 +35,10 @@
         "showcase/patchKit/main.objc3",
         "showcase/portfolio.json"
       ],
-      "required_public_scripts": [
-        "compile:objc3c",
-        "check:showcase:surface",
-        "test:showcase"
+      "required_actions": [
+        "compile-objc3c",
+        "check-showcase-surface",
+        "validate-showcase"
       ]
     },
     {
@@ -50,10 +51,10 @@
         "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
         "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
       ],
-      "required_public_scripts": [
-        "build:objc3c:package-lock",
-        "test:objc3c:package-ecosystem",
-        "test:objc3c:application-architecture"
+      "required_actions": [
+        "build-package-lock",
+        "validate-package-ecosystem",
+        "validate-application-architecture"
       ]
     },
     {
@@ -65,10 +66,10 @@
         "docs/runbooks/objc3c_long_horizon_operations.md",
         "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
       ],
-      "required_public_scripts": [
-        "test:objc3c:release-operations",
-        "publish:objc3c:release-operations",
-        "test:objc3c:long-horizon-operations"
+      "required_actions": [
+        "validate-release-operations",
+        "publish-release-operations",
+        "validate-long-horizon-operations"
       ]
     }
   ],
@@ -116,7 +117,7 @@
   ],
   "fail_closed_conditions": [
     "playbook phase sequence is missing or out of order",
-    "phase omits concrete paths or public scripts",
+    "phase omits concrete paths or workflow actions",
     "interop guidance axis omits a runnable showcase anchor",
     "same-major support or rollback evidence is not named",
     "migration replay fields drift from long-horizon support semantics"

@@ -16,12 +16,13 @@
     "scripts/run_objc3c_stdlib_workspace_smoke.py",
     "scripts/check_developer_tooling_workspace_integration.py"
   ],
-  "required_public_scripts": [
-    "build:objc3c:template",
-    "build:objc3c:stdlib",
-    "test:showcase",
-    "test:showcase:e2e",
-    "test:objc3c:runnable-developer-tooling"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "materialize-project-template",
+    "materialize-stdlib-workspace",
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "validate-runnable-developer-tooling"
   ],
   "direct_successor_milestones": [
     "M329",

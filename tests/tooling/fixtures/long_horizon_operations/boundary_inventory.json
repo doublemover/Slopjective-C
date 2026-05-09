@@ -46,17 +46,18 @@
     "scripts/check_objc3c_performance_governance_integration.py",
     "scripts/check_objc3c_distribution_credibility_integration.py"
   ],
-  "required_existing_public_scripts": [
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:performance-governance",
-    "test:objc3c:distribution-credibility"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-performance-governance",
+    "validate-distribution-credibility"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/long-horizon-operations/",

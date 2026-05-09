@@ -3,7 +3,8 @@
   "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
   "workflow_runner": "scripts.objc3c_workflow",
-  "public_actions": [
+  "package_bridge": "objc3c",
+  "required_actions": [
     "validate-showcase",
     "validate-runnable-showcase",
     "validate-stdlib-program",
@@ -12,16 +13,6 @@
     "validate-runnable-developer-tooling",
     "materialize-project-template",
     "materialize-playground-workspace"
-  ],
-  "public_scripts": [
-    "test:showcase",
-    "test:showcase:e2e",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling",
-    "build:objc3c:template",
-    "build:objc3c:playground"
   ],
   "checked_in_fixture_roots": [
     "tests/tooling/fixtures",

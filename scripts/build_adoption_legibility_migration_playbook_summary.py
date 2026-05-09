@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_workflow.registry import action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,9 +28,12 @@ def main() -> int:
     semantics = load_json(SEMANTICS_PATH)
     package = load_json(PACKAGE_JSON)
     long_horizon = load_json(LONG_HORIZON_MIGRATION)
-    scripts = package.get("scripts", {})
-    if not isinstance(scripts, dict):
+    package_scripts = package.get("scripts", {})
+    if not isinstance(package_scripts, dict):
         raise RuntimeError("package.json scripts field drifted from an object")
+    package_bridge = str(semantics["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    registered_actions = set(action_names())
 
     failures: list[str] = []
     dependencies = [str(path) for path in semantics.get("depends_on", [])]
@@ -41,7 +45,7 @@ def main() -> int:
     phase_sequences = [int(phase.get("sequence", -1)) for phase in phases if isinstance(phase, dict)]
     expect(phase_sequences == sorted(phase_sequences) == list(range(1, len(phase_sequences) + 1)), "playbook phase sequence drifted", failures)
     missing_paths: list[str] = []
-    missing_public_scripts: list[str] = []
+    missing_actions: list[str] = []
     phase_ids: list[str] = []
     for phase in phases if isinstance(phases, list) else []:
         if not isinstance(phase, dict):
@@ -50,11 +54,11 @@ def main() -> int:
         phase_id = str(phase.get("phase_id"))
         phase_ids.append(phase_id)
         required_paths = [str(path) for path in phase.get("required_paths", [])]
-        required_scripts = [str(name) for name in phase.get("required_public_scripts", [])]
+        required_actions = [str(name) for name in phase.get("required_actions", [])]
         expect(len(required_paths) >= 3, f"{phase_id} must name concrete paths", failures)
-        expect(len(required_scripts) >= 2, f"{phase_id} must name public scripts", failures)
+        expect(len(required_actions) >= 2, f"{phase_id} must name workflow actions", failures)
         missing_paths.extend(path for path in required_paths if not (ROOT / path).is_file())
-        missing_public_scripts.extend(name for name in required_scripts if name not in scripts)
+        missing_actions.extend(name for name in required_actions if name not in registered_actions)
 
     axes = semantics.get("interop_guidance_axes", [])
     expect(isinstance(axes, list) and len(axes) >= 3, "interop guidance must cover ObjC2, Swift-facing, and C++-facing axes", failures)
@@ -74,8 +78,10 @@ def main() -> int:
     expect(required_replay_fields == long_horizon_fields, "migration replay fields drift from long-horizon support semantics", failures)
     if missing_paths:
         failures.append("playbook phases reference missing paths")
-    if missing_public_scripts:
-        failures.append("playbook phases reference missing public scripts")
+    if not package_bridge_exists:
+        failures.append("migration playbook package bridge is missing")
+    if missing_actions:
+        failures.append("playbook phases reference missing workflow actions")
 
     payload = {
         "contract_id": "objc3c.adoption_legibility.migration_playbook.summary.v1",
@@ -87,7 +93,10 @@ def main() -> int:
         "interop_axis_count": len(axes) if isinstance(axes, list) else 0,
         "required_migration_replay_fields": required_replay_fields,
         "missing_paths": sorted(set(missing_paths)),
-        "missing_public_scripts": sorted(set(missing_public_scripts)),
+        "package_bridge": package_bridge,
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
+        "missing_actions": sorted(set(missing_actions)),
         "fail_closed_conditions": semantics.get("fail_closed_conditions", []),
         "failures": failures,
     }
