@@ -23,8 +23,9 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-source head is `64702b40d` (`HC extract IR emission feature surface module`).
-Prior covered source heads were `f9d7c7467` (`refactor(ir): extract message send emission`),
+source head is `248820d9a` (`HC move metaprogramming artifact emission builders`).
+Prior covered source heads were `64702b40d` (`HC extract IR emission feature surface module`),
+`f9d7c7467` (`refactor(ir): extract message send emission`),
 `d463f1bb6` (`HC split performance behavior owners`),
 `dd3f50c2e` (`HC move property synthesis object model builder`),
 `10abd536d` (`HC move interop lowering contract builders`),
@@ -195,6 +196,7 @@ commits that landed after the first docs commit.
 | `#8138`, `#8144`, `#8145`, `#8149`, `#8150` | `d463f1bb6` | Performance behavior owner splits refresh local workflow/tooling behavior evidence without asserting validation. |
 | `#8137`, `#8147`, `#8150` | `f9d7c7467` | IR message-send emission ownership refreshes local IR/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `64702b40d` | IR emission feature surface ownership refreshes local pipeline/IR feature evidence. |
+| `#8135`, `#8138`, `#8146`, `#8147`, `#8150` | `248820d9a` | Metaprogramming artifact emission ownership refreshes local semantic/artifact evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -502,14 +504,14 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`64702b40d`.
+`248820d9a`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `64702b40d`.
+`98d10a61c`, and the latest local implementation slices through `248820d9a`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 
@@ -520,6 +522,6 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `16e517982`, `e5b988129`, `a87b2c92e`, `709148d75`, `016683b19`,
 `645e9c25f`.
 
-Retired-surface state: local issue evidence indexes are current through the
-committed head named above; validation, GitHub issue action, and push state
-remain outside this local-only payload.
+Remaining closure gates: this payload is current only as local source
+architecture evidence through the committed head named above. Validation, push,
+GitHub issue action, and remote closeout remain outside this local-only payload.
