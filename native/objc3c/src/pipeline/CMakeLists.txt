@@ -11,6 +11,7 @@ add_library(objc3c_pipeline STATIC
   frontend_metadata_handoff_helpers.cpp
   frontend_metadata_handoff_ordering.cpp
   frontend_metaprogramming_source_completion_helpers.cpp
+  frontend_ownership_source_completion_helpers.cpp
   frontend_phase_publication_helpers.cpp
   frontend_pipeline_pragma_contracts.cpp
   frontend_pipeline_sema_stage_runner.cpp
