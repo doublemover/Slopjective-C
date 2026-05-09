@@ -8,7 +8,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def load_storage_lowering_compile_artifacts(

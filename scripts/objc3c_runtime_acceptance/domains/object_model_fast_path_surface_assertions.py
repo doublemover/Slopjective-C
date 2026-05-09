@@ -6,7 +6,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.assertions import expect
 
-from ..core import RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID
+from ..runtime_contracts import RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID
 
 
 def assert_dispatch_fast_path_compile_surfaces(

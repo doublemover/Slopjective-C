@@ -6,14 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..assertions import expect
 from ..case_result import CaseResult
 from ..commands import run
-from ..core import (
-    NATIVE_EXE,
+from ..native_build import NATIVE_EXE, ROOT, compile_fixture_with_args
+from ..runtime_contracts import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
-    ROOT,
-    compile_fixture_with_args,
-    expect,
 )
 
 

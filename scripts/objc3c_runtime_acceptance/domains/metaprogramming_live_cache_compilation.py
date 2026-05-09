@@ -19,7 +19,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_helpers import
     remove_metaprogramming_cache_entry_from_artifact,
 )
 
-from ..core import ROOT
+from ..native_build import ROOT
 from ..progress import repo_display_path
 
 HOST_CACHE_PROBE_PATH = "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"

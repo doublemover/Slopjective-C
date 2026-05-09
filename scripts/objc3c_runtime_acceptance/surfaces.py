@@ -6,24 +6,24 @@ from pathlib import Path
 from typing import Any
 
 from .case_result import CaseResult
+from . import runtime_contracts
 
 
 def __getattr__(name: str):
-    from . import core as _core
-
-    if name.startswith("build_") or name.endswith("_SURFACE_CONTRACT_ID"):
-        return getattr(_core, name)
+    if name.endswith("_SURFACE_CONTRACT_ID"):
+        return getattr(runtime_contracts, name)
     raise AttributeError(name)
 
 
 def exported_surface_names() -> list[str]:
-    from . import core as _core
-
-    return sorted(
-        name
-        for name in dir(_core)
-        if name.startswith("build_") or name.endswith("_SURFACE_CONTRACT_ID")
-    )
+    local_builders = [
+        "build_acceptance_suite_surface",
+        "build_claim_boundary",
+    ]
+    contract_ids = [
+        name for name in dir(runtime_contracts) if name.endswith("_SURFACE_CONTRACT_ID")
+    ]
+    return sorted([*local_builders, *contract_ids])
 
 
 def build_claim_boundary(public_runtime_abi_boundary: list[str]) -> dict[str, Any]:

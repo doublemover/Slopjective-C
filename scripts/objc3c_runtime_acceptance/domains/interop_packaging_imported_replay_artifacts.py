@@ -9,7 +9,7 @@ from time import perf_counter
 from typing import Any
 
 from ..native_build import ROOT, compile_fixture_with_args
-from ..core import (
+from ..runtime_contracts import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
 )

@@ -8,6 +8,9 @@ from objc3c_runtime_acceptance.domains.block_arc_automation_cases import (
 from objc3c_runtime_acceptance.domains.block_arc_capture_cases import (
     check_escaping_block_capture_legality_case,
 )
+from objc3c_runtime_acceptance.domains.block_arc_cross_module_artifact_cases import (
+    check_cross_module_block_ownership_artifact_preservation_case,
+)
 from objc3c_runtime_acceptance.domains.block_arc_property_cases import (
     check_arc_property_helper_case,
 )
@@ -32,6 +35,7 @@ _EXPORTED_CASE_NAMES = [
     "check_block_arc_runtime_abi_case",
     "check_block_helper_runtime_execution_case",
     "check_arc_property_helper_case",
+    "check_cross_module_block_ownership_artifact_preservation_case",
 ]
 
 

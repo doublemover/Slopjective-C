@@ -13,8 +13,8 @@ from objc3c_runtime_acceptance.native_build import (
     compile_fixture_outputs,
 )
 
-from ..core import ROOT
-from ..core import RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+from ..native_build import ROOT
+from ..runtime_contracts import RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
 
 
 def check_async_task_actor_normalization_completion_case(run_dir: Path) -> CaseResult:

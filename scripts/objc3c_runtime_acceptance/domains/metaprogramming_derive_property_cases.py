@@ -13,7 +13,7 @@ from objc3c_runtime_acceptance.native_build import (
     run_fixture_compile,
 )
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_metaprogramming_derive_property_behavior_semantics_case(

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..assertions import expect
 from ..case_result import CaseResult
-from ..core import (
+from ..runtime_contracts import (
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
 )

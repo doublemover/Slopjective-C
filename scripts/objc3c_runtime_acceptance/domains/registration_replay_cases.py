@@ -8,16 +8,15 @@ from time import perf_counter
 
 from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
+from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_with_args
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import (
+from ..runtime_contracts import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
     MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE,
-    ROOT,
 )
 
 _EXPORTED_CASE_NAMES = ["check_multi_image_registration_reset_replay_case"]

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
-from ..core import (
+from ..runtime_contracts import (
     PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY,
     PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
     PUBLIC_RUNTIME_ABI_BOUNDARY,

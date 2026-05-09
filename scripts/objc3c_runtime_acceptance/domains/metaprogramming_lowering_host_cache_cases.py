@@ -16,7 +16,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_lowering_host_cache_asser
 )
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_metaprogramming_lowering_host_cache_surface_case(

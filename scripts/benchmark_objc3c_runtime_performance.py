@@ -61,7 +61,7 @@ def load_runtime_acceptance_module():
     scripts_root = str(ROOT / "scripts")
     if scripts_root not in sys.path:
         sys.path.insert(0, scripts_root)
-    return importlib.import_module("objc3c_runtime_acceptance.core")
+    return importlib.import_module("objc3c_runtime_acceptance.case_exports")
 
 
 def summarize_durations(durations: list[float]) -> dict[str, float]:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import (
+from ..runtime_contracts import (
     STORAGE_REFLECTION_PRESERVATION_CONSUMER_FIXTURE,
     STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE,
 )

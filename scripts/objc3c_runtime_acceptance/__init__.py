@@ -1,5 +1,5 @@
 """Importable runtime acceptance package."""
 
-from .core import main
+from .acceptance import main
 
 __all__ = ["main"]

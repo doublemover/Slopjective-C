@@ -10,7 +10,7 @@ from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_metaprogramming_semantics_case(run_dir: Path) -> CaseResult:

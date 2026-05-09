@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ..core import expect
+from ..assertions import expect
 from .release_claims_deprecated_sidecars import deprecated_claim_sidecars_absent
 
 

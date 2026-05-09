@@ -16,7 +16,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_cross_module_assertions i
 )
 from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_cross_module_metaprogramming_artifact_preservation_case(

@@ -21,7 +21,7 @@ from objc3c_runtime_acceptance.native_build import (
     compile_negative_diagnostic_batch,
 )
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_metaprogramming_macro_safety_cache_diagnostics_case(

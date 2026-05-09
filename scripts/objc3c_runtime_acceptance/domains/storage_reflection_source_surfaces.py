@@ -6,7 +6,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 
-from ..core import (
+from ..runtime_contracts import (
     DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
     EXECUTABLE_IVAR_LAYOUT_EMISSION_SURFACE_CONTRACT_ID,
     EXECUTABLE_PROPERTY_ACCESSOR_LAYOUT_LOWERING_SURFACE_CONTRACT_ID,

@@ -7,7 +7,7 @@ from time import perf_counter
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 
-from ..core import STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE
+from ..runtime_contracts import STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE
 from .storage_reflection_cross_module_artifacts import (
     capture_cross_module_storage_reflection_artifacts,
 )

@@ -9,7 +9,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -> bool:

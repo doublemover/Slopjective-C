@@ -13,8 +13,8 @@ from objc3c_runtime_acceptance.native_build import (
     compile_fixture_outputs,
 )
 
-from ..core import ROOT
-from ..core import RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID
+from ..native_build import ROOT
+from ..runtime_contracts import RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID
 
 
 def check_unified_concurrency_runtime_architecture_case(run_dir: Path) -> CaseResult:

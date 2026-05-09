@@ -15,7 +15,7 @@ from objc3c_runtime_acceptance.native_build import (
     compile_negative_diagnostic_batch,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
 )

@@ -18,7 +18,7 @@ from objc3c_runtime_acceptance.domains.storage_reflection_lowering_layout_surfac
     assert_synthesized_accessor_codegen_manifest,
 )
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:

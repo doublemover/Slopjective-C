@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.block_arc_surface_support import (
     authoritative_case_ids,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
     BLOCK_ARC_RUNTIME_ABI_PROBE,
     BLOCK_ARC_RUNTIME_ARC_MODEL,

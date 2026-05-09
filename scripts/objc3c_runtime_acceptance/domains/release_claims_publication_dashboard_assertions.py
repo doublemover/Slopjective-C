@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ..core import expect
+from ..assertions import expect
 
 
 def expect_dashboard_schema_surface(

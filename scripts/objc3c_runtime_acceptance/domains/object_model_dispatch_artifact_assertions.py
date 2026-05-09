@@ -6,7 +6,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.assertions import expect
 
-from ..core import RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
+from ..runtime_contracts import RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
 
 
 def assert_canonical_dispatch_compile_artifacts(

@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.concurrency_surface_support import (
     authoritative_case_ids,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID,
     RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID,

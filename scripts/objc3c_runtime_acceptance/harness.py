@@ -16,9 +16,7 @@ from .progress import (
     repo_display_path,
     round_seconds,
 )
-from .core import (
-    CaseResult,
-)
+from .case_result import CaseResult
 
 __all__ = [
     "ACCEPTANCE_ARTIFACT_REGISTRY",

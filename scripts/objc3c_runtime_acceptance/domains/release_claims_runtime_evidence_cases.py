@@ -5,21 +5,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from ..assertions import expect
 from ..case_result import CaseResult
 from ..commands import run
+from ..native_build import NATIVE_EXE, ROOT, compile_fixture_with_args
 from ..probes import compile_probe, parse_key_value_output, run_probe
 from .release_claims_runtime_evidence_assertions import (
     expect_final_release_implementation_surface,
     expect_final_release_probe_payload,
     expect_final_release_validate_artifacts,
 )
-from ..core import (
-    NATIVE_EXE,
+from ..runtime_contracts import (
     RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
-    ROOT,
-    compile_fixture_with_args,
-    expect,
 )
 
 

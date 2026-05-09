@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..case_result import CaseResult
-from ..core import RELEASE_CLAIMABLE_SURFACE_FIXTURE
+from ..runtime_contracts import RELEASE_CLAIMABLE_SURFACE_FIXTURE
 from .release_claims_claimable_artifacts import compile_claimable_surface
 from .release_claims_claimable_assertions import (
     EXPECTED_OPTIONAL_GAP_IDS,

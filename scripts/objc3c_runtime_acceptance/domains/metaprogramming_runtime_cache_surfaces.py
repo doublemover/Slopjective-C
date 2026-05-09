@@ -10,7 +10,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_lowering_surfaces import 
     RUNTIME_METAPROGRAMMING_LOWERING_HOST_CACHE_SURFACE_CONTRACT_ID,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_PUBLIC_HEADER_PATH,

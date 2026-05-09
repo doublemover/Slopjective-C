@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -9,11 +11,123 @@ from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.native_build import (
     ACCEPTANCE_ARTIFACT_REGISTRY,
+    DEFAULT_COMPILE_BACKEND,
     DIRECT_COMPILE_BACKEND,
     ROOT,
+    WRAPPER_COMPILE_BACKEND,
     run_fixture_compile,
 )
 from objc3c_runtime_acceptance.progress import repo_display_path
+
+
+def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "synthesized_accessor_property_lowering_positive.objc3"
+    )
+    case_dir = run_dir / "compile-backend-parity"
+    direct_dir = case_dir / "direct"
+    wrapper_dir = case_dir / "wrapper"
+    parity_cache_root = case_dir / "metaprogramming-cache-root"
+    parity_args = [
+        "--objc3-metaprogramming-cache-root",
+        repo_display_path(parity_cache_root),
+    ]
+    direct_result, direct_backend = run_fixture_compile(
+        fixture,
+        direct_dir,
+        backend=DIRECT_COMPILE_BACKEND,
+        extra_args=parity_args,
+    )
+    if direct_result.returncode != 0:
+        raise RuntimeError(
+            "direct compile backend failed during parity check:\nSTDOUT:\n"
+            + direct_result.stdout
+            + "\nSTDERR:\n"
+            + direct_result.stderr
+        )
+    shutil.rmtree(parity_cache_root, ignore_errors=True)
+    wrapper_result, wrapper_backend = run_fixture_compile(
+        fixture,
+        wrapper_dir,
+        backend=WRAPPER_COMPILE_BACKEND,
+        extra_args=parity_args,
+    )
+    if wrapper_result.returncode != 0:
+        raise RuntimeError(
+            "wrapper compile backend failed during parity check:\nSTDOUT:\n"
+            + wrapper_result.stdout
+            + "\nSTDERR:\n"
+            + wrapper_result.stderr
+        )
+
+    direct_provenance = json.loads(
+        (direct_dir / "module.compile-provenance.json").read_text(encoding="utf-8")
+    )
+    wrapper_provenance = json.loads(
+        (wrapper_dir / "module.compile-provenance.json").read_text(encoding="utf-8")
+    )
+    direct_truthfulness = direct_provenance.get("compile_output_truthfulness", {})
+    wrapper_truthfulness = wrapper_provenance.get("compile_output_truthfulness", {})
+    compared_truthfulness_fields = [
+        "runtime_dispatch_symbol",
+        "runtime_dispatch_declaration_count",
+        "runtime_dispatch_call_count",
+        "property_descriptor_count_expected",
+        "property_descriptor_definition_count",
+        "property_descriptor_section_present",
+        "ivar_descriptor_count_expected",
+        "ivar_descriptor_definition_count",
+        "ivar_descriptor_section_present",
+        "property_synthesis_sites_expected",
+        "synthesized_accessor_definition_count",
+        "current_property_helper_call_count",
+        "property_descriptor_counts_match",
+        "ivar_descriptor_counts_match",
+        "synthesized_property_surface_matches",
+        "truthful",
+    ]
+    for field in compared_truthfulness_fields:
+        if direct_truthfulness.get(field) != wrapper_truthfulness.get(field):
+            raise RuntimeError(
+                "direct compile backend truthfulness drifted from wrapper for "
+                f"{field}: direct={direct_truthfulness.get(field)!r} "
+                f"wrapper={wrapper_truthfulness.get(field)!r}"
+            )
+    if (
+        direct_provenance.get("artifact_set_digest_sha256")
+        != wrapper_provenance.get("artifact_set_digest_sha256")
+    ):
+        raise RuntimeError(
+            "direct compile backend artifact digest drifted from wrapper output"
+        )
+    if direct_provenance.get("compile_backend") != DIRECT_COMPILE_BACKEND:
+        raise RuntimeError("direct compile backend did not stamp direct provenance")
+
+    return CaseResult(
+        case_id="compile-backend-parity",
+        probe="direct-native-compile-plus-wrapper-contract-parity",
+        fixture=repo_display_path(fixture),
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "direct_backend": direct_backend,
+            "wrapper_backend": wrapper_backend,
+            "default_backend": DEFAULT_COMPILE_BACKEND,
+            "artifact_set_digest_sha256": direct_provenance.get(
+                "artifact_set_digest_sha256"
+            ),
+            "truthfulness_fields_compared": compared_truthfulness_fields,
+            "provenance_contract_id": direct_provenance.get("contract_id"),
+            "compile_output_truthfulness_contract_id": direct_truthfulness.get(
+                "contract_id"
+            ),
+        },
+    )
 
 
 def check_artifact_registry_key_isolation_case(run_dir: Path) -> CaseResult:
@@ -133,3 +247,9 @@ def check_artifact_registry_key_isolation_case(run_dir: Path) -> CaseResult:
             ),
         },
     )
+
+
+__all__ = [
+    "check_artifact_registry_key_isolation_case",
+    "check_compile_backend_parity_case",
+]

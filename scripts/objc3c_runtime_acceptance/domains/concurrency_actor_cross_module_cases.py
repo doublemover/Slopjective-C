@@ -11,12 +11,11 @@ from objc3c_runtime_acceptance.domains.concurrency_actor_link_plan_assertions im
     expect_actor_cross_module_link_plan,
     expect_provider_actor_import_surface,
 )
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
+from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_with_args
 
-from ..core import (
+from ..runtime_contracts import (
     CONCURRENCY_ACTOR_PRESERVATION_CONSUMER_FIXTURE,
     CONCURRENCY_ACTOR_PRESERVATION_PROVIDER_FIXTURE,
-    ROOT,
 )
 
 

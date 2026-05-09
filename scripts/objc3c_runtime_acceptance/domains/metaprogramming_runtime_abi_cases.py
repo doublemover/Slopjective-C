@@ -17,7 +17,7 @@ from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 def check_metaprogramming_runtime_abi_cache_surface_case(

@@ -11,7 +11,7 @@ from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 PROPERTY_EXECUTION_CASE_ID = "property-execution"
 PROPERTY_EXECUTION_PROBE = "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"

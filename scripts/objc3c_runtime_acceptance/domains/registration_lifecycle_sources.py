@@ -8,15 +8,14 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture
+from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture
 from objc3c_runtime_acceptance.probes import compile_probe_with_args
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import (
+from ..runtime_contracts import (
     INSTALLATION_LIFECYCLE_FIXTURE,
     INSTALLATION_LIFECYCLE_PROBE,
-    ROOT,
 )
 
 

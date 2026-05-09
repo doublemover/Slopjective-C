@@ -10,7 +10,7 @@ from objc3c_runtime_acceptance.domains.storage_reflection_runtime_ownership_sour
     StorageOwnershipReflectionArtifacts,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,

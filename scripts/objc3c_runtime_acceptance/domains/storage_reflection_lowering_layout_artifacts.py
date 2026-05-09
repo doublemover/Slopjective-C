@@ -7,7 +7,7 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 PROPERTY_ACCESSOR_LAYOUT_FIXTURE_LABEL = (
     "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"

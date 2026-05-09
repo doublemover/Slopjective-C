@@ -10,12 +10,12 @@ from typing import Any
 from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.native_build import (
     NegativeDiagnosticExpectation,
+    ROOT,
     compile_fixture_outputs,
     compile_negative_diagnostic_batch,
 )
 
-from ..core import (
-    ROOT,
+from ..runtime_contracts import (
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
 )

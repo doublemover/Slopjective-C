@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from objc3c_runtime_acceptance.assertions import expect
 
-from ..core import (
+from ..runtime_contracts import (
     RUNTIME_CROSS_MODULE_STORAGE_REFLECTION_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
 )

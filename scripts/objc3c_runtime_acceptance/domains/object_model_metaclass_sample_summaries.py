@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import ROOT
+from ..native_build import ROOT
 from objc3c_runtime_acceptance.domains.object_model_metaclass_sample_artifacts import (
     CanonicalSampleCompileArtifacts,
     MetaclassGraphCompileArtifacts,

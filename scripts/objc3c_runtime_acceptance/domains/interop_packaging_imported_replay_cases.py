@@ -8,7 +8,7 @@ from time import perf_counter
 from ..case_result import CaseResult
 from ..native_build import ROOT
 from ..probes import compile_probe, parse_json_output, run_probe
-from ..core import (
+from ..runtime_contracts import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROBE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,

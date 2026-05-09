@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..core import RUNTIME_ERROR_PROPAGATION_CLEANUP_SEMANTICS_SURFACE_CONTRACT_ID
+from ..runtime_contracts import RUNTIME_ERROR_PROPAGATION_CLEANUP_SEMANTICS_SURFACE_CONTRACT_ID
 
 
 def build_runtime_error_propagation_cleanup_semantics_surface(

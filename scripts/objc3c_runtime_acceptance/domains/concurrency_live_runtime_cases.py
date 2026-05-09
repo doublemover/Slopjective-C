@@ -11,19 +11,19 @@ from objc3c_runtime_acceptance.domains.concurrency_runtime_probe_assertions impo
     EXPECTED_LIVE_RUNTIME_PAYLOADS,
     expect_probe_payload_fields,
 )
+from objc3c_runtime_acceptance.native_build import ROOT
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import (
+from ..runtime_contracts import (
     LIVE_ACTOR_RUNTIME_FIXTURE,
     LIVE_ACTOR_RUNTIME_PROBE,
     LIVE_CONTINUATION_RUNTIME_FIXTURE,
     LIVE_CONTINUATION_RUNTIME_PROBE,
     LIVE_TASK_RUNTIME_FIXTURE,
     LIVE_TASK_RUNTIME_PROBE,
-    ROOT,
     RUNTIME_UNIFIED_CONCURRENCY_RUNTIME_ABI_SURFACE_CONTRACT_ID,
 )
 

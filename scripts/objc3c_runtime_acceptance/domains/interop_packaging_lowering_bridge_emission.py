@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ..assertions import expect
 from ..case_result import CaseResult
-from ..core import (
+from ..runtime_contracts import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )

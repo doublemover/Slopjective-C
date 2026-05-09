@@ -8,10 +8,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
+from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_with_args
 
-from ..core import (
-    ROOT,
+from ..runtime_contracts import (
     STORAGE_REFLECTION_PRESERVATION_CONSUMER_FIXTURE,
     STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE,
 )

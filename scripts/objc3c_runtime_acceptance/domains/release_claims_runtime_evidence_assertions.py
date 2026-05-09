@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import (
+from ..assertions import expect
+from ..runtime_contracts import (
     PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
     RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
-    expect,
 )
 
 

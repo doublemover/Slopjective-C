@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
-from ..core import (
+from ..runtime_contracts import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
     RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,

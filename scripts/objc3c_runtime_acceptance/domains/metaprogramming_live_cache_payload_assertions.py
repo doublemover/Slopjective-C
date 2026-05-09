@@ -10,7 +10,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_compilation im
     LiveMetaprogrammingCacheCompile,
 )
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 _MATERIALIZED_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_ready": True,

@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.object_model_surface_query_support import
     authoritative_case_ids,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,

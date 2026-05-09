@@ -5,19 +5,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from ..assertions import expect
 from ..case_result import CaseResult
+from ..native_build import ROOT, compile_fixture_with_args
 from ..probes import compile_probe, parse_key_value_output, run_probe
-from ..core import (
+from ..runtime_contracts import (
     PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY,
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
-    ROOT,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_PUBLIC_HEADER_PATH,
     RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
-    compile_fixture_with_args,
-    expect,
 )
 
 

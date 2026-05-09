@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ..assertions import expect
 from ..case_result import CaseResult
-from ..core import INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE
+from ..runtime_contracts import INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE
 from ..native_build import ROOT, compile_fixture_with_args
 
 

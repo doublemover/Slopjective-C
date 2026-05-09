@@ -12,7 +12,7 @@ from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..core import ROOT
+from ..native_build import ROOT
 
 
 @dataclass(frozen=True)

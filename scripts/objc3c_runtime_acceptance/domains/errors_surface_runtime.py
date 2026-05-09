@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..core import (
+from ..runtime_contracts import (
     PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY,
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
