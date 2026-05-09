@@ -17,6 +17,7 @@
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
+#include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
 #include "artifacts/objc3_frontend_artifact_debug_projection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
@@ -9253,79 +9254,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ownership_borrowed_retainable_abi_completion_replay_key,
       ownership_system_extension_source_closure_summary,
       ownership_retainable_c_family_source_completion_summary);
-  ir_frontend_metadata.lowering_task_runtime_interop_cancellation_replay_key =
-      concurrency_task_runtime_interop_cancellation_lowering_replay_key;
-  ir_frontend_metadata.task_runtime_interop_cancellation_lowering_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .task_runtime_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_runtime_interop_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .task_runtime_interop_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_cancellation_probe_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .cancellation_probe_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_cancellation_handler_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .cancellation_handler_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_runtime_resume_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .runtime_resume_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_runtime_cancel_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .runtime_cancel_sites;
-  ir_frontend_metadata.task_runtime_interop_cancellation_lowering_normalized_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .normalized_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_guard_blocked_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .guard_blocked_sites;
-  ir_frontend_metadata
-      .task_runtime_interop_cancellation_lowering_contract_violation_sites =
-      concurrency_task_runtime_interop_cancellation_lowering_contract
-          .contract_violation_sites;
-  ir_frontend_metadata
-      .deterministic_task_runtime_interop_cancellation_lowering_handoff =
-      concurrency_task_runtime_interop_cancellation_lowering_contract.deterministic;
-  ir_frontend_metadata.lowering_concurrency_replay_race_guard_replay_key =
-      concurrency_concurrency_replay_race_guard_lowering_replay_key;
-  // implementation anchor: the runnable actor pipeline now carries
-  // the strict-concurrency replay/race-guard lowering packet beside the actor
-  // lowering contract so helper-backed actor runtime rewrites can prove both
-  // artifact families together.
-  ir_frontend_metadata.concurrency_replay_race_guard_lowering_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract
-          .concurrency_replay_sites;
-  ir_frontend_metadata
-      .concurrency_replay_race_guard_lowering_replay_proof_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract
-          .replay_proof_sites;
-  ir_frontend_metadata.concurrency_replay_race_guard_lowering_race_guard_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract.race_guard_sites;
-  ir_frontend_metadata.concurrency_replay_race_guard_lowering_task_handoff_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract.task_handoff_sites;
-  ir_frontend_metadata
-      .concurrency_replay_race_guard_lowering_actor_isolation_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract
-          .actor_isolation_sites;
-  ir_frontend_metadata
-      .concurrency_replay_race_guard_lowering_deterministic_schedule_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract
-          .deterministic_schedule_sites;
-  ir_frontend_metadata
-      .concurrency_replay_race_guard_lowering_guard_blocked_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract.guard_blocked_sites;
-  ir_frontend_metadata
-      .concurrency_replay_race_guard_lowering_contract_violation_sites =
-      concurrency_concurrency_replay_race_guard_lowering_contract
-          .contract_violation_sites;
-  ir_frontend_metadata.deterministic_concurrency_replay_race_guard_lowering_handoff =
-      concurrency_concurrency_replay_race_guard_lowering_contract.deterministic;
+  objc3::artifacts::frontend::ApplyObjc3FrontendConcurrencyRuntimeMetadata(
+      ir_frontend_metadata,
+      concurrency_task_runtime_interop_cancellation_lowering_replay_key,
+      concurrency_task_runtime_interop_cancellation_lowering_contract,
+      concurrency_concurrency_replay_race_guard_lowering_replay_key,
+      concurrency_concurrency_replay_race_guard_lowering_contract);
   ir_frontend_metadata.lowering_ownership_qualifier_replay_key =
       ownership_qualifier_lowering_replay_key;
   ir_frontend_metadata.ownership_qualifier_lowering_ownership_qualifier_sites =
