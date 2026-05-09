@@ -17,7 +17,7 @@
       "direct python or PowerShell helper invocations",
       "direct CMake or native helper invocations",
       "retired package-script aliases",
-      "retired public_scripts alias metadata",
+      "retired public command alias metadata",
       "workflow registry facade claims",
       "success-without-evidence capability claims",
       "runtime-behavior claims not represented by implemented matrix rows"
@@ -44,27 +44,27 @@
     "Rejected and reserved rows are diagnostic or documentation truth, not alternate acceptance paths.",
     "Internal rows can name source, schema, workflow, or report owners without widening language support.",
     "Publicly replayable commands must use npm run objc3c -- <action>.",
-    "Docs, spec, and site content must not advertise shims, fallbacks, migration lanes, or compatibility modes as supported surfaces; rows that change support state must use canonical feature names with evidence instead of reviving those labels.",
+    "Docs, spec, and site content must not advertise retired adapters, alternate acceptance paths, retired-source lanes, or retired mode labels as supported surfaces; rows that change support state must use canonical feature names with evidence instead of reviving those labels.",
     "Runtime and object-model prose must not claim full behavior from parser, metadata, owner-module, report, or internal API evidence alone."
   ],
   "retired_surface_terms": [
     {
-      "term": "shim",
+      "term": "retired adapter",
       "canonical_handling": "Reject as a support claim; replace with an implemented capability row or a diagnostic rejection row.",
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },
     {
-      "term": "fallback",
+      "term": "alternate acceptance path",
       "canonical_handling": "Reject as an acceptance path; use the canonical parser, semantic, lowering, runtime, or tooling behavior name.",
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },
     {
-      "term": "migration lane",
+      "term": "retired-source lane",
       "canonical_handling": "Reject as a supported mode; use adoption, upgrade, or reserved-state evidence without widening accepted syntax.",
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },
     {
-      "term": "compatibility mode",
+      "term": "retired mode label",
       "canonical_handling": "Reject as a mode label; use strict capability states and evidence-backed support claims.",
       "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
     },

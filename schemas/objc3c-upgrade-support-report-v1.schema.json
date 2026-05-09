@@ -112,7 +112,7 @@
         "to",
         "upgrade_contract",
         "requires_warning",
-        "rollback_channel"
+        "revert_channel"
       ],
       "properties": {
         "path_id": { "type": "string" },
@@ -120,7 +120,7 @@
         "to": { "type": "string" },
         "upgrade_contract": { "type": "string" },
         "requires_warning": { "type": "boolean" },
-        "rollback_channel": { "type": "string" }
+        "revert_channel": { "type": "string" }
       }
     },
     "reportWarning": {

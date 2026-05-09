@@ -1,7 +1,7 @@
 {
   "contract_id": "objc3c.release.operations.upgrade.path.surface.v1",
   "schema_version": 1,
-  "migration_guides": [
+  "upgrade_guides": [
     "docs/tutorials/getting_started.md",
     "docs/tutorials/build_run_verify.md",
     "docs/tutorials/guided_walkthrough.md",
@@ -19,7 +19,7 @@
       "to": "1.0.x",
       "upgrade_contract": "in-place",
       "requires_warning": false,
-      "rollback_channel": "local-installer"
+      "revert_channel": "local-installer"
     },
     {
       "path_id": "stable-to-candidate-minor",
@@ -27,15 +27,15 @@
       "to": "1.1.0-rc.x",
       "upgrade_contract": "qualified-with-generated-warning",
       "requires_warning": true,
-      "rollback_channel": "local-installer"
+      "revert_channel": "local-installer"
     },
     {
       "path_id": "stable-to-preview-minor",
       "from": "1.0.x",
       "to": "1.2.0-preview.x",
-      "upgrade_contract": "blocked-until-generated-migration-evidence",
+      "upgrade_contract": "blocked-until-generated-conversion-replay-evidence",
       "requires_warning": true,
-      "rollback_channel": "offline-bundle"
+      "revert_channel": "offline-bundle"
     }
   ],
   "required_channel_inputs": [

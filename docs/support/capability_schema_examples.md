@@ -67,7 +67,7 @@ Rules shown by this entry:
 
 Rules shown by this entry:
 
-- Reserved is an unavailable state, not a fallback mode.
+- Reserved is an unavailable state, not an alternate acceptance mode.
 - A reserved row can point to docs or diagnostics instead of runnable tests.
 - A row that moves this capability out of `reserved` must carry evidence before
   docs can claim public support.
@@ -76,7 +76,7 @@ Rules shown by this entry:
 
 ```json
 {
-  "term": "shim",
+  "term": "retired adapter",
   "canonical_handling": "Reject as a support claim; replace with an implemented capability row or a diagnostic rejection row.",
   "allowed_context": "Negative examples only."
 }
@@ -162,10 +162,10 @@ Rules shown by this policy:
 
 These are not valid support claims:
 
-- "supported through a shim"
-- "accepted by parser fallback"
-- "available in compatibility mode"
-- "migration lane accepts old syntax"
+- "supported through a retired adapter"
+- "accepted by an alternate parser path"
+- "available through a retired mode label"
+- "retired-source lane accepts old syntax"
 - "run a direct helper script as the public command"
 - "implemented because a roadmap says it is planned"
 - "complete because a generated report says so without a matching implemented row"

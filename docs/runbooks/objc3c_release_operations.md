@@ -119,7 +119,7 @@ the release manifest, package-channel summary, platform-support matrix, platform
 support summary, package archive pointers, or upgrade-support report contract is
 missing, the release-operations action fails closed with the owning public action
 named in the diagnostic. Public action names stay stable; the hard cutover is in
-the source and artifact contracts, not in a compatibility bridge.
+the source and artifact contracts, not in a retired command bridge.
 
 ## Non-Goals
 
@@ -128,4 +128,4 @@ the source and artifact contracts, not in a compatibility bridge.
 - no package-manager upgrade semantics
 - no cross-platform support claim beyond the checked-in `windows-x64` channel set
 - no manual support spreadsheet or hand-authored release-operation digest
-- no compatibility shim or report-only support claim
+- no retired adapter or report-only support claim

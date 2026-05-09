@@ -39,7 +39,7 @@
       ]
     },
     "preview": {
-      "status": "blocked-until-generated-migration-evidence",
+      "status": "blocked-until-generated-conversion-replay-evidence",
       "supported_minor_lines": [
         "1.2"
       ],

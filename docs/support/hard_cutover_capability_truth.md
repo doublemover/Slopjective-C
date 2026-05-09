@@ -32,7 +32,7 @@ validation, push, or tracker operations.
 | State | Meaning for public docs | What docs must not infer |
 | --- | --- | --- |
 | `implemented` | The named behavior has an evidence-backed support claim. | Broader language/runtime support outside the row. |
-| `rejected` | The source form or behavior is a diagnostic/strict-error case. | Alternate acceptance by flag, shim, fallback, or old source spelling. |
+| `rejected` | The source form or behavior is a diagnostic/strict-error case. | Alternate acceptance by flag, retired adapter, alternate path, or old source spelling. |
 | `reserved` | The syntax, feature family, or runtime closure remains unavailable. | A roadmap promise, preview mode, or partial runtime claim. |
 | `internal` | The row names implementation, schema, report, workflow, or owner boundaries. | Public Objective-C 3.0 language behavior. |
 
@@ -44,7 +44,7 @@ validation, push, or tracker operations.
 | Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers | `internal` | Treat as owner/evidence surfaces, not language features. |
 | Full object-model runtime realization | `reserved` until a matrix row changes | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
 | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure | `reserved` unless separately implemented | Describe as unavailable or reserved spec surface, not runnable support. |
-| Old modes, compatibility modes, aliases, fallback paths, shims, migration lanes, direct helper commands, and report-only completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
+| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and report-only completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
 
 ## Documentation Rule
 
@@ -60,9 +60,9 @@ surfaces:
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 They classify retired-surface residue and generated-report inventory; they do
-not define compatibility support or create report-only claims.
+not define alternate old-surface support or create report-only claims.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They
-must not round that into full runtime behavior, compatibility support, or an
+must not round that into full runtime behavior, alternate old-surface support, or an
 unsupported completion claim.

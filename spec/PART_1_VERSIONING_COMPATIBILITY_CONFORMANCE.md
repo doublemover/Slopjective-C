@@ -283,9 +283,8 @@ reported as capability-backed behavior.
 Objective-C 3.0 source is canonical-only in this specification. Retired forms
 are rejected or reserved according to the capability matrix.
 
-Compatibility shims, fallback language paths, migration lanes, old modes, and
-success-without-evidence wording are not alternate Objective-C 3.0 support
-states.
+Retired adapters, alternate language paths, retired-source lanes, old modes, and
+success-without-evidence wording are not alternate Objective-C 3.0 support states.
 
 ### 1.7.2 Contained default changes {#part-1-7-2}
 

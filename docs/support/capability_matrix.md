@@ -47,11 +47,11 @@ Command and evidence truth is hard-cut to the current surfaces:
   modules, not by prose-only summaries or support-directory schema copies.
 - Runtime and object-model prose is not a support claim unless an implemented
   matrix row links executable evidence for the exact behavior.
-- The hard-cutover matrix rejects shims, fallback paths, migration lanes,
-  direct helper commands, and compatibility-mode labels as public support
-  surfaces. Report-only completion is also not support evidence. Rows that
-  change support state must use canonical feature names with evidence, not
-  revive those labels.
+- The hard-cutover matrix rejects retired adapters, alternate acceptance paths,
+  retired-source lanes, direct helper commands, and retired mode labels as
+  public support surfaces. Report-only completion is also not support evidence.
+  Rows that change support state must use canonical feature names with evidence,
+  not revive those labels.
 
 | Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
 | ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +88,7 @@ Command rule:
 - Direct `python`, `pwsh`, CMake, or native helper invocations may appear as
   evidence owners, but public docs must not present them as user-facing command
   surface.
-- Compatibility shims, fallback paths, migration lanes, old modes, and
+- Retired adapters, alternate acceptance paths, retired-source lanes, old modes, and
   prose-only capability claims are not alternate support states and must not be
   renamed into supported paths.
 - Runtime completion, full object-model behavior, or advanced language closure
