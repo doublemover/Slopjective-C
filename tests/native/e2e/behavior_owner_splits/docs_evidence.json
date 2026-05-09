@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-e2e-behavior-family-owner-split",
+  "owner_boundary": "docs_evidence",
+  "source_family": "tests/native/e2e",
+  "support_boundary": "docs/evidence ownership covers fixture family index rows, phase owner references, module-roundtrip and examples manifest rows, package-stage pointers, generated report pointers, exit-code sidecars, and metadata field names as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json:family=e2e_behavior",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json:phase=e2e",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json:phase=e2e",
+    "tests/conformance/module_roundtrip/manifest.json:provider/consumer roundtrip execution",
+    "tests/conformance/examples/manifest.json:reader-facing examples",
+    "tests/conformance/corpus_surface.json:artifact_surface.package_stage_root",
+    "tests/conformance/corpus_surface.json:workflow_surface.runnable_surface_check_action",
+    "tests/conformance/corpus_surface.json:claim_policy.release-claimable",
+    "reports/claimability/*",
+    "meta fields:expected.required_tokens",
+    "meta fields:execution.expected_exit_code",
+    "meta fields:execution.runtime_dispatch_symbol",
+    "meta fields:execution.requires_live_runtime_dispatch",
+    "smoke/*.exitcode.txt"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "docs rows, index rows, module-roundtrip manifests, examples manifests, package-stage pointers, generated reports, exit-code sidecars, and claimability pointers are provenance unless they point to hand-authored e2e fixture metadata"
+}

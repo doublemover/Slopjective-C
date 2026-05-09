@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-e2e-behavior-family-owner-split-index",
+  "source_family": "tests/native/e2e",
+  "source_contracts": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+  ],
+  "split_policy": {
+    "primary_axis": "e2e fixture role before fixture path convenience, exit-code sidecar, conformance manifest row, package-stage pointer, generated report pointer, or retired-surface tag",
+    "positive_rule": "e2e positives are hand-authored tests/native/e2e fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
+    "strict_error_rule": "negative execution, legacy literal rejection, and runtime dispatch misses are rejection or strict-error evidence; they are not positive runnable support",
+    "docs_evidence_rule": "owner index rows, phase contracts, module-roundtrip manifests, example manifests, package-stage pointers, report pointers, and metadata field names are provenance unless tied to an e2e fixture sidecar",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only e2e rows are rejection or provenance-only evidence",
+    "omitted_phase_rule": "this family has no parser, sema, lowering, IR, or runtime behavior contracts"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "e2e",
+      "path": "tests/native/e2e/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_boundary": "docs_evidence",
+      "path": "tests/native/e2e/behavior_owner_splits/docs_evidence.json"
+    },
+    {
+      "owner_boundary": "rejection_provenance",
+      "path": "tests/native/e2e/behavior_owner_splits/rejection_provenance.json"
+    }
+  ],
+  "omitted_boundaries": [
+    "parser",
+    "sema",
+    "lowering",
+    "ir",
+    "runtime"
+  ]
+}

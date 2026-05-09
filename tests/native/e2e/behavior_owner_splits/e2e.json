@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-e2e-behavior-family-owner-split",
+  "owner_boundary": "e2e",
+  "source_family": "tests/native/e2e",
+  "support_boundary": "e2e ownership covers canonical runnable smoke and feature-matrix positives under tests/native/e2e only after lower phase owners own their behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "smoke/basic_i32_return_main.objc3",
+    "smoke/basic_i32_return_main.meta.json:fixture_kind=positive",
+    "smoke/basic_i32_return_main.exitcode.txt",
+    "feature_matrix/typed_i32_bool_flow.objc3",
+    "feature_matrix/typed_i32_bool_flow.meta.json:fixture_kind=positive",
+    "feature_matrix/typed_i32_bool_flow.meta.json:execution.expected_exit_code=1",
+    "feature_matrix/nil_keyword_message_send_elision.objc3",
+    "feature_matrix/nil_keyword_message_send_elision.meta.json:fixture_kind=positive",
+    "feature_matrix/nil_keyword_message_send_elision.meta.json:execution.expected_exit_code=6",
+    "feature_matrix/nil_keyword_message_send_elision.meta.json:execution.requires_live_runtime_dispatch=false"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "positive e2e truth is limited to hand-authored canonical smoke and feature-matrix fixtures with retired_positive_surface=false; negative execution, runtime dispatch strict errors, generated artifacts, reports, migration rows, old-mode rows, shim rows, and fallback rows are not positive e2e support"
+}

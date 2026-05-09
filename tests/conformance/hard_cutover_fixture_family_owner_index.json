@@ -509,7 +509,36 @@
         "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
-      "retired_disposition": "legacy literals and runtime dispatch misses stay negative or strict-error execution evidence"
+      "retired_disposition": "e2e behavior rows are resolved through e2e-family owner splits before any runnable fixture is cited; canonical e2e positives remain hand-authored smoke and feature-matrix fixtures, legacy literals and runtime dispatch misses remain rejection or strict-error execution evidence, and old-mode, shim, fallback, generated-only, report-only, or migration-only e2e claims remain rejection or provenance-only rather than positive behavior truth"
+    },
+    {
+      "family": "e2e_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/e2e/behavior_owner_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "e2e",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime"
+      ],
+      "index_evidence": [
+        "tests/native/e2e/behavior_owner_splits/index.json",
+        "tests/native/e2e/behavior_owner_splits/e2e.json",
+        "tests/native/e2e/behavior_owner_splits/docs_evidence.json",
+        "tests/native/e2e/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "e2e fixture positives, negative execution fixtures, runtime dispatch strict-error execution, module-roundtrip/example pointers, and e2e-family index rows are split into e2e behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only e2e claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "generated_boundary",
@@ -1126,6 +1155,10 @@
     "tests/native/runtime/behavior_owner_splits/runtime.json",
     "tests/native/runtime/behavior_owner_splits/docs_evidence.json",
     "tests/native/runtime/behavior_owner_splits/rejection_provenance.json",
+    "tests/native/e2e/behavior_owner_splits/index.json",
+    "tests/native/e2e/behavior_owner_splits/e2e.json",
+    "tests/native/e2e/behavior_owner_splits/docs_evidence.json",
+    "tests/native/e2e/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
