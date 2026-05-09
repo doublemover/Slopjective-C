@@ -976,8 +976,8 @@
       result.parser_sema_release_candidate_replay_dry_run;
   result.parity_surface.parser_sema_advanced_core_shard1 =
       result.parser_sema_advanced_core_shard1;
-  result.parity_surface.parser_sema_advanced_edge_compatibility_shard1 =
-      result.parser_sema_advanced_edge_compatibility_shard1;
+  result.parity_surface.parser_sema_advanced_contract_rejection_shard1 =
+      result.parser_sema_advanced_contract_rejection_shard1;
   result.parity_surface.parser_sema_advanced_diagnostics_shard1 =
       result.parser_sema_advanced_diagnostics_shard1;
   result.parity_surface.parser_sema_advanced_conformance_shard1 =
@@ -988,8 +988,8 @@
       result.parser_sema_advanced_performance_shard1;
   result.parity_surface.parser_sema_advanced_core_shard2 =
       result.parser_sema_advanced_core_shard2;
-  result.parity_surface.parser_sema_advanced_edge_compatibility_shard2 =
-      result.parser_sema_advanced_edge_compatibility_shard2;
+  result.parity_surface.parser_sema_advanced_contract_rejection_shard2 =
+      result.parser_sema_advanced_contract_rejection_shard2;
   result.parity_surface.parser_sema_advanced_diagnostics_shard2 =
       result.parser_sema_advanced_diagnostics_shard2;
   result.parity_surface.parser_sema_integration_closeout_signoff =

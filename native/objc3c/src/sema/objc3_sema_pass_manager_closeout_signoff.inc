@@ -1,7 +1,7 @@
       result.parity_surface.parser_sema_advanced_diagnostics_shard2
           .failed_sync_count == 0u &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .advanced_edge_compatibility_shard2_ready &&
+          .advanced_contract_rejection_shard2_ready &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard2
           .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard2

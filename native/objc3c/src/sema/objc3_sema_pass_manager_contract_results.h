@@ -1,11 +1,13 @@
+  Objc3ParserSemaHandoffOwnerRecord parser_sema_handoff_owner_record;
+  bool deterministic_parser_sema_handoff_owner_record = false;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   bool deterministic_parser_sema_docs_runbook_sync = false;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
   bool deterministic_parser_sema_release_candidate_replay_dry_run = false;
   Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
   bool deterministic_parser_sema_advanced_core_shard1 = false;
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard1 parser_sema_advanced_edge_compatibility_shard1;
-  bool deterministic_parser_sema_advanced_edge_compatibility_shard1 = false;
+  Objc3ParserSemaAdvancedContractRejectionShard1 parser_sema_advanced_contract_rejection_shard1;
+  bool deterministic_parser_sema_advanced_contract_rejection_shard1 = false;
   Objc3ParserSemaAdvancedDiagnosticsShard1 parser_sema_advanced_diagnostics_shard1;
   bool deterministic_parser_sema_advanced_diagnostics_shard1 = false;
   Objc3ParserSemaAdvancedConformanceShard1 parser_sema_advanced_conformance_shard1;
@@ -16,8 +18,8 @@
   bool deterministic_parser_sema_advanced_performance_shard1 = false;
   Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
   bool deterministic_parser_sema_advanced_core_shard2 = false;
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard2 parser_sema_advanced_edge_compatibility_shard2;
-  bool deterministic_parser_sema_advanced_edge_compatibility_shard2 = false;
+  Objc3ParserSemaAdvancedContractRejectionShard2 parser_sema_advanced_contract_rejection_shard2;
+  bool deterministic_parser_sema_advanced_contract_rejection_shard2 = false;
   Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;

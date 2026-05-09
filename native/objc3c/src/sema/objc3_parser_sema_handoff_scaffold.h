@@ -163,10 +163,10 @@ inline Objc3ParserSemaAdvancedCoreShard1 BuildObjc3ParserSemaAdvancedCoreShard1(
   return sync;
 }
 
-inline Objc3ParserSemaAdvancedEdgeCompatibilityShard1
-BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard1(
+inline Objc3ParserSemaAdvancedContractRejectionShard1
+BuildObjc3ParserSemaAdvancedContractRejectionShard1(
     const Objc3ParserSemaAdvancedCoreShard1 &core_shard1_sync) {
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard1 sync;
+  Objc3ParserSemaAdvancedContractRejectionShard1 sync;
   sync.advanced_core_shard1_ready = core_shard1_sync.deterministic;
   sync.pass_manager_contract_surface_sync =
       core_shard1_sync.required_sync_count == 3u &&
@@ -193,20 +193,20 @@ BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard1(
 
 inline Objc3ParserSemaAdvancedDiagnosticsShard1
 BuildObjc3ParserSemaAdvancedDiagnosticsShard1(
-    const Objc3ParserSemaAdvancedEdgeCompatibilityShard1 &edge_compatibility_shard1_sync) {
+    const Objc3ParserSemaAdvancedContractRejectionShard1 &contract_rejection_shard1_sync) {
   Objc3ParserSemaAdvancedDiagnosticsShard1 sync;
-  sync.advanced_edge_compatibility_shard1_ready = edge_compatibility_shard1_sync.deterministic;
+  sync.advanced_contract_rejection_shard1_ready = contract_rejection_shard1_sync.deterministic;
   sync.pass_manager_contract_surface_sync =
-      edge_compatibility_shard1_sync.required_sync_count == 3u &&
-      edge_compatibility_shard1_sync.passed_sync_count ==
-          edge_compatibility_shard1_sync.required_sync_count &&
-      edge_compatibility_shard1_sync.failed_sync_count == 0u;
+      contract_rejection_shard1_sync.required_sync_count == 3u &&
+      contract_rejection_shard1_sync.passed_sync_count ==
+          contract_rejection_shard1_sync.required_sync_count &&
+      contract_rejection_shard1_sync.failed_sync_count == 0u;
   sync.shard_surface_sync =
-      sync.advanced_edge_compatibility_shard1_ready &&
+      sync.advanced_contract_rejection_shard1_ready &&
       sync.pass_manager_contract_surface_sync;
   sync.required_sync_count = 3u;
   sync.passed_sync_count =
-      static_cast<std::size_t>(sync.advanced_edge_compatibility_shard1_ready) +
+      static_cast<std::size_t>(sync.advanced_contract_rejection_shard1_ready) +
       static_cast<std::size_t>(sync.pass_manager_contract_surface_sync) +
       static_cast<std::size_t>(sync.shard_surface_sync);
   sync.failed_sync_count =
@@ -336,10 +336,10 @@ BuildObjc3ParserSemaAdvancedCoreShard2(
   return sync;
 }
 
-inline Objc3ParserSemaAdvancedEdgeCompatibilityShard2
-BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard2(
+inline Objc3ParserSemaAdvancedContractRejectionShard2
+BuildObjc3ParserSemaAdvancedContractRejectionShard2(
     const Objc3ParserSemaAdvancedCoreShard2 &core_shard2_sync) {
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard2 sync;
+  Objc3ParserSemaAdvancedContractRejectionShard2 sync;
   sync.advanced_core_shard2_ready = core_shard2_sync.deterministic;
   sync.pass_manager_contract_surface_sync =
       core_shard2_sync.required_sync_count == 3u &&
@@ -367,20 +367,20 @@ BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard2(
 
 inline Objc3ParserSemaAdvancedDiagnosticsShard2
 BuildObjc3ParserSemaAdvancedDiagnosticsShard2(
-    const Objc3ParserSemaAdvancedEdgeCompatibilityShard2 &edge_compatibility_shard2_sync) {
+    const Objc3ParserSemaAdvancedContractRejectionShard2 &contract_rejection_shard2_sync) {
   Objc3ParserSemaAdvancedDiagnosticsShard2 sync;
-  sync.advanced_edge_compatibility_shard2_ready = edge_compatibility_shard2_sync.deterministic;
+  sync.advanced_contract_rejection_shard2_ready = contract_rejection_shard2_sync.deterministic;
   sync.pass_manager_contract_surface_sync =
-      edge_compatibility_shard2_sync.required_sync_count == 3u &&
-      edge_compatibility_shard2_sync.passed_sync_count ==
-          edge_compatibility_shard2_sync.required_sync_count &&
-      edge_compatibility_shard2_sync.failed_sync_count == 0u;
+      contract_rejection_shard2_sync.required_sync_count == 3u &&
+      contract_rejection_shard2_sync.passed_sync_count ==
+          contract_rejection_shard2_sync.required_sync_count &&
+      contract_rejection_shard2_sync.failed_sync_count == 0u;
   sync.shard_surface_sync =
-      sync.advanced_edge_compatibility_shard2_ready &&
+      sync.advanced_contract_rejection_shard2_ready &&
       sync.pass_manager_contract_surface_sync;
   sync.required_sync_count = 3u;
   sync.passed_sync_count =
-      static_cast<std::size_t>(sync.advanced_edge_compatibility_shard2_ready) +
+      static_cast<std::size_t>(sync.advanced_contract_rejection_shard2_ready) +
       static_cast<std::size_t>(sync.pass_manager_contract_surface_sync) +
       static_cast<std::size_t>(sync.shard_surface_sync);
   sync.failed_sync_count =
@@ -425,6 +425,7 @@ BuildObjc3ParserSemaIntegrationCloseoutSignoff(
 
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
+  Objc3ParserSemaHandoffOwnerRecord owner_record;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
   Objc3SemaCanonicalLiteralRejectionCounts
@@ -433,8 +434,9 @@ struct Objc3ParserSemaHandoffScaffold {
       canonical_literal_rejection_handoff;
   Objc3SemaDiagnosticsBus diagnostics_bus;
   Objc3ParserContractSnapshot parser_contract_snapshot;
-  bool parser_contract_compatibility_edge_case_detected = false;
-  bool parser_contract_snapshot_compatibility_normalized = false;
+  bool parser_contract_snapshot_normalization_candidate_detected = false;
+  bool parser_contract_snapshot_normalization_applied = false;
+  bool parser_contract_snapshot_normalization_rejected = false;
   std::uint64_t expected_ast_shape_fingerprint = 0;
   bool parser_contract_ast_shape_fingerprint_matches = false;
   std::uint64_t expected_ast_top_level_layout_fingerprint = 0;
@@ -449,13 +451,13 @@ struct Objc3ParserSemaHandoffScaffold {
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
   Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard1 parser_sema_advanced_edge_compatibility_shard1;
+  Objc3ParserSemaAdvancedContractRejectionShard1 parser_sema_advanced_contract_rejection_shard1;
   Objc3ParserSemaAdvancedDiagnosticsShard1 parser_sema_advanced_diagnostics_shard1;
   Objc3ParserSemaAdvancedConformanceShard1 parser_sema_advanced_conformance_shard1;
   Objc3ParserSemaAdvancedIntegrationShard1 parser_sema_advanced_integration_shard1;
   Objc3ParserSemaAdvancedPerformanceShard1 parser_sema_advanced_performance_shard1;
   Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
-  Objc3ParserSemaAdvancedEdgeCompatibilityShard2 parser_sema_advanced_edge_compatibility_shard2;
+  Objc3ParserSemaAdvancedContractRejectionShard2 parser_sema_advanced_contract_rejection_shard2;
   Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   bool parser_contract_snapshot_matches_program = false;
@@ -465,6 +467,7 @@ struct Objc3ParserSemaHandoffScaffold {
 inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const Objc3SemaPassManagerInput &input) {
   Objc3ParserSemaHandoffScaffold scaffold;
   scaffold.program = input.program;
+  scaffold.owner_record = BuildObjc3ParserSemaHandoffOwnerRecord(input);
   scaffold.validation_options = input.validation_options;
   scaffold.language_profile = input.language_profile;
   scaffold.canonical_literal_rejection_counts =
@@ -475,13 +478,17 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   }
 
   const Objc3ParserContractSnapshot resolved_snapshot = ResolveObjc3ParserContractSnapshotForSemaHandoff(input);
-  scaffold.parser_contract_compatibility_edge_case_detected =
-      false;
-  scaffold.parser_contract_snapshot = NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
+  scaffold.parser_contract_snapshot_normalization_candidate_detected =
+      IsObjc3ParserContractSnapshotNormalizationCandidate(
+          resolved_snapshot, *input.program);
+  scaffold.parser_contract_snapshot_normalization_rejected =
+      IsObjc3ParserContractSnapshotNormalizationRejectedForSemaHandoff(
+          resolved_snapshot, *input.program, input.language_profile);
+  scaffold.parser_contract_snapshot = NormalizeObjc3ParserContractSnapshotForSemaHandoff(
       resolved_snapshot,
       *input.program,
       input.language_profile,
-      scaffold.parser_contract_snapshot_compatibility_normalized);
+      scaffold.parser_contract_snapshot_normalization_applied);
   scaffold.canonical_literal_rejection_handoff =
       BuildObjc3ParserCanonicalLiteralRejectionHandoff(
           scaffold.parser_contract_snapshot,
@@ -525,12 +532,12 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.parser_sema_advanced_core_shard1 =
       BuildObjc3ParserSemaAdvancedCoreShard1(
           scaffold.parser_sema_release_candidate_replay_dry_run);
-  scaffold.parser_sema_advanced_edge_compatibility_shard1 =
-      BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard1(
+  scaffold.parser_sema_advanced_contract_rejection_shard1 =
+      BuildObjc3ParserSemaAdvancedContractRejectionShard1(
           scaffold.parser_sema_advanced_core_shard1);
   scaffold.parser_sema_advanced_diagnostics_shard1 =
       BuildObjc3ParserSemaAdvancedDiagnosticsShard1(
-          scaffold.parser_sema_advanced_edge_compatibility_shard1);
+          scaffold.parser_sema_advanced_contract_rejection_shard1);
   scaffold.parser_sema_advanced_conformance_shard1 =
       BuildObjc3ParserSemaAdvancedConformanceShard1(
           scaffold.parser_sema_advanced_diagnostics_shard1);
@@ -543,12 +550,12 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.parser_sema_advanced_core_shard2 =
       BuildObjc3ParserSemaAdvancedCoreShard2(
           scaffold.parser_sema_advanced_performance_shard1);
-  scaffold.parser_sema_advanced_edge_compatibility_shard2 =
-      BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard2(
+  scaffold.parser_sema_advanced_contract_rejection_shard2 =
+      BuildObjc3ParserSemaAdvancedContractRejectionShard2(
           scaffold.parser_sema_advanced_core_shard2);
   scaffold.parser_sema_advanced_diagnostics_shard2 =
       BuildObjc3ParserSemaAdvancedDiagnosticsShard2(
-          scaffold.parser_sema_advanced_edge_compatibility_shard2);
+          scaffold.parser_sema_advanced_contract_rejection_shard2);
   scaffold.parser_sema_integration_closeout_signoff =
       BuildObjc3ParserSemaIntegrationCloseoutSignoff(
           scaffold.parser_sema_advanced_diagnostics_shard2);
@@ -559,16 +566,18 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           !scaffold.parser_contract_snapshot_normalization_rejected &&
+                           IsReadyObjc3ParserSemaHandoffOwnerRecord(scaffold.owner_record) &&
                            scaffold.canonical_literal_rejection_handoff.deterministic &&
                            scaffold.parser_sema_integration_closeout_signoff.deterministic &&
                            scaffold.parser_sema_advanced_diagnostics_shard2.deterministic &&
-                           scaffold.parser_sema_advanced_edge_compatibility_shard2.deterministic &&
+                           scaffold.parser_sema_advanced_contract_rejection_shard2.deterministic &&
                            scaffold.parser_sema_advanced_core_shard2.deterministic &&
                            scaffold.parser_sema_advanced_performance_shard1.deterministic &&
                            scaffold.parser_sema_advanced_integration_shard1.deterministic &&
                            scaffold.parser_sema_advanced_conformance_shard1.deterministic &&
                            scaffold.parser_sema_advanced_diagnostics_shard1.deterministic &&
-                           scaffold.parser_sema_advanced_edge_compatibility_shard1.deterministic &&
+                           scaffold.parser_sema_advanced_contract_rejection_shard1.deterministic &&
                            scaffold.parser_sema_advanced_core_shard1.deterministic &&
                            scaffold.parser_sema_release_candidate_replay_dry_run.deterministic &&
                            scaffold.parser_sema_docs_runbook_sync.deterministic &&

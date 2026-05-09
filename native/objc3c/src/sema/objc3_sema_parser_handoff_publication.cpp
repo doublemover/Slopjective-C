@@ -7,6 +7,16 @@ Objc3SemaParserHandoffPublication PublishObjc3ParserSemaHandoff(
     Objc3SemaPassManagerResult &result) {
   Objc3SemaParserHandoffPublication publication;
 
+  publication.owner_record = handoff.owner_record;
+  publication.owner_record_deterministic =
+      IsReadyObjc3ParserSemaHandoffOwnerRecord(handoff.owner_record);
+  result.parser_sema_handoff_owner_record = handoff.owner_record;
+  result.deterministic_parser_sema_handoff_owner_record =
+      publication.owner_record_deterministic;
+  if (!result.deterministic_parser_sema_handoff_owner_record) {
+    return publication;
+  }
+
   result.parser_contract_snapshot = handoff.parser_contract_snapshot;
   result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;
   result.deterministic_parser_sema_conformance_matrix =
@@ -61,11 +71,11 @@ Objc3SemaParserHandoffPublication PublishObjc3ParserSemaHandoff(
     return publication;
   }
 
-  result.parser_sema_advanced_edge_compatibility_shard1 =
-      handoff.parser_sema_advanced_edge_compatibility_shard1;
-  result.deterministic_parser_sema_advanced_edge_compatibility_shard1 =
-      handoff.parser_sema_advanced_edge_compatibility_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_edge_compatibility_shard1) {
+  result.parser_sema_advanced_contract_rejection_shard1 =
+      handoff.parser_sema_advanced_contract_rejection_shard1;
+  result.deterministic_parser_sema_advanced_contract_rejection_shard1 =
+      handoff.parser_sema_advanced_contract_rejection_shard1.deterministic;
+  if (!result.deterministic_parser_sema_advanced_contract_rejection_shard1) {
     return publication;
   }
 
@@ -109,11 +119,11 @@ Objc3SemaParserHandoffPublication PublishObjc3ParserSemaHandoff(
     return publication;
   }
 
-  result.parser_sema_advanced_edge_compatibility_shard2 =
-      handoff.parser_sema_advanced_edge_compatibility_shard2;
-  result.deterministic_parser_sema_advanced_edge_compatibility_shard2 =
-      handoff.parser_sema_advanced_edge_compatibility_shard2.deterministic;
-  if (!result.deterministic_parser_sema_advanced_edge_compatibility_shard2) {
+  result.parser_sema_advanced_contract_rejection_shard2 =
+      handoff.parser_sema_advanced_contract_rejection_shard2;
+  result.deterministic_parser_sema_advanced_contract_rejection_shard2 =
+      handoff.parser_sema_advanced_contract_rejection_shard2.deterministic;
+  if (!result.deterministic_parser_sema_advanced_contract_rejection_shard2) {
     return publication;
   }
 

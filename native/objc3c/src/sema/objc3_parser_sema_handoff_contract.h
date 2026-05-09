@@ -69,7 +69,7 @@ inline std::size_t BuildObjc3ParserContractTopLevelCountFromProgram(
          ast.implementations.size() + ast.functions.size();
 }
 
-inline bool IsObjc3ParserContractTopLevelDeclBucketCompatibilityEdgeCaseSnapshot(
+inline bool IsObjc3ParserContractTopLevelDeclBucketNormalizationCandidateSnapshot(
     const Objc3ParserContractSnapshot &snapshot) {
   return snapshot.global_decl_count == 0u && snapshot.protocol_decl_count == 0u &&
          snapshot.interface_decl_count == 0u &&
@@ -79,7 +79,7 @@ inline bool IsObjc3ParserContractTopLevelDeclBucketCompatibilityEdgeCaseSnapshot
 
 inline bool IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program) {
-  return IsObjc3ParserContractTopLevelDeclBucketCompatibilityEdgeCaseSnapshot(
+  return IsObjc3ParserContractTopLevelDeclBucketNormalizationCandidateSnapshot(
              snapshot) &&
          BuildObjc3ParserContractTopLevelCountFromProgram(program) != 0u;
 }
@@ -280,7 +280,7 @@ inline std::size_t BuildObjc3ParserFunctionPureCountFromProgram(
       [](const FunctionDecl &function_decl) { return function_decl.is_pure; }));
 }
 
-inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
+inline bool IsObjc3ParserContractSnapshotNormalizationCandidate(
     const Objc3ParserContractSnapshot &snapshot,
     const Objc3ParsedProgram &program) {
   const std::size_t protocol_property_count =
@@ -395,14 +395,14 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
 }
 
 inline Objc3ParserContractSnapshot
-NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
+NormalizeObjc3ParserContractSnapshotForSemaHandoff(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program,
-    const Objc3SemaLanguageProfile language_profile, bool &normalized) {
-  normalized = false;
+    const Objc3SemaLanguageProfile language_profile, bool &normalization_applied) {
+  normalization_applied = false;
   if (language_profile == Objc3SemaLanguageProfile::Canonical) {
     return snapshot;
   }
-  if (!IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(snapshot, program)) {
+  if (!IsObjc3ParserContractSnapshotNormalizationCandidate(snapshot, program)) {
     return snapshot;
   }
 
@@ -416,7 +416,7 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     normalized_snapshot.interface_decl_count = ast.interfaces.size();
     normalized_snapshot.implementation_decl_count = ast.implementations.size();
     normalized_snapshot.function_decl_count = ast.functions.size();
-    normalized = true;
+    normalization_applied = true;
   }
   const std::size_t top_level_count =
       BuildObjc3ParserContractTopLevelCountFromDeclBuckets(normalized_snapshot);
@@ -455,49 +455,49 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   if (normalized_snapshot.top_level_declaration_count == 0u &&
       top_level_count != 0u) {
     normalized_snapshot.top_level_declaration_count = top_level_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_property_decl_count == 0u &&
       protocol_property_count != 0u) {
     normalized_snapshot.protocol_property_decl_count = protocol_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_property_decl_count > protocol_property_count) {
     normalized_snapshot.protocol_property_decl_count = protocol_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_method_decl_count == 0u &&
       protocol_method_count != 0u) {
     normalized_snapshot.protocol_method_decl_count = protocol_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_method_decl_count > protocol_method_count) {
     normalized_snapshot.protocol_method_decl_count = protocol_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_class_method_decl_count == 0u &&
       protocol_class_method_count != 0u) {
     normalized_snapshot.protocol_class_method_decl_count =
         protocol_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_class_method_decl_count >
       protocol_class_method_count) {
     normalized_snapshot.protocol_class_method_decl_count =
         protocol_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_instance_method_decl_count == 0u &&
       protocol_instance_method_count != 0u) {
     normalized_snapshot.protocol_instance_method_decl_count =
         protocol_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.protocol_instance_method_decl_count >
       protocol_instance_method_count) {
     normalized_snapshot.protocol_instance_method_decl_count =
         protocol_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (!AreObjc3ParserMethodDeclBucketsConsistent(
           normalized_snapshot.protocol_class_method_decl_count,
@@ -507,49 +507,49 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
         protocol_class_method_count;
     normalized_snapshot.protocol_instance_method_decl_count =
         protocol_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_property_decl_count == 0u &&
       interface_property_count != 0u) {
     normalized_snapshot.interface_property_decl_count = interface_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_property_decl_count > interface_property_count) {
     normalized_snapshot.interface_property_decl_count = interface_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_method_decl_count == 0u &&
       interface_method_count != 0u) {
     normalized_snapshot.interface_method_decl_count = interface_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_method_decl_count > interface_method_count) {
     normalized_snapshot.interface_method_decl_count = interface_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_class_method_decl_count == 0u &&
       interface_class_method_count != 0u) {
     normalized_snapshot.interface_class_method_decl_count =
         interface_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_class_method_decl_count >
       interface_class_method_count) {
     normalized_snapshot.interface_class_method_decl_count =
         interface_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_instance_method_decl_count == 0u &&
       interface_instance_method_count != 0u) {
     normalized_snapshot.interface_instance_method_decl_count =
         interface_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_instance_method_decl_count >
       interface_instance_method_count) {
     normalized_snapshot.interface_instance_method_decl_count =
         interface_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (!AreObjc3ParserMethodDeclBucketsConsistent(
           normalized_snapshot.interface_class_method_decl_count,
@@ -559,51 +559,51 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
         interface_class_method_count;
     normalized_snapshot.interface_instance_method_decl_count =
         interface_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_property_decl_count == 0u &&
       implementation_property_count != 0u) {
     normalized_snapshot.implementation_property_decl_count = implementation_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_property_decl_count >
       implementation_property_count) {
     normalized_snapshot.implementation_property_decl_count = implementation_property_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_method_decl_count == 0u &&
       implementation_method_count != 0u) {
     normalized_snapshot.implementation_method_decl_count = implementation_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_method_decl_count >
       implementation_method_count) {
     normalized_snapshot.implementation_method_decl_count = implementation_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_class_method_decl_count == 0u &&
       implementation_class_method_count != 0u) {
     normalized_snapshot.implementation_class_method_decl_count =
         implementation_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_class_method_decl_count >
       implementation_class_method_count) {
     normalized_snapshot.implementation_class_method_decl_count =
         implementation_class_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_instance_method_decl_count == 0u &&
       implementation_instance_method_count != 0u) {
     normalized_snapshot.implementation_instance_method_decl_count =
         implementation_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_instance_method_decl_count >
       implementation_instance_method_count) {
     normalized_snapshot.implementation_instance_method_decl_count =
         implementation_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (!AreObjc3ParserMethodDeclBucketsConsistent(
           normalized_snapshot.implementation_class_method_decl_count,
@@ -613,39 +613,47 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
         implementation_class_method_count;
     normalized_snapshot.implementation_instance_method_decl_count =
         implementation_instance_method_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.interface_category_decl_count == 0u &&
       interface_category_count != 0u) {
     normalized_snapshot.interface_category_decl_count = interface_category_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.implementation_category_decl_count == 0u &&
       implementation_category_count != 0u) {
     normalized_snapshot.implementation_category_decl_count = implementation_category_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.function_prototype_count == 0u &&
       function_prototype_count != 0u) {
     normalized_snapshot.function_prototype_count = function_prototype_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.function_pure_count == 0u &&
       function_pure_count != 0u) {
     normalized_snapshot.function_pure_count = function_pure_count;
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.ast_shape_fingerprint == 0u) {
     normalized_snapshot.ast_shape_fingerprint =
         BuildObjc3ParsedProgramAstShapeFingerprint(program);
-    normalized = true;
+    normalization_applied = true;
   }
   if (normalized_snapshot.ast_top_level_layout_fingerprint == 0u) {
     normalized_snapshot.ast_top_level_layout_fingerprint =
         BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
-    normalized = true;
+    normalization_applied = true;
   }
   return normalized_snapshot;
+}
+
+inline bool IsObjc3ParserContractSnapshotNormalizationRejectedForSemaHandoff(
+    const Objc3ParserContractSnapshot &snapshot,
+    const Objc3ParsedProgram &program,
+    const Objc3SemaLanguageProfile language_profile) {
+  return language_profile == Objc3SemaLanguageProfile::Canonical &&
+         IsObjc3ParserContractSnapshotNormalizationCandidate(snapshot, program);
 }
 
 inline constexpr std::size_t kObjc3ParserSemaConformanceMatrixBuilderMaxLines = 190u;

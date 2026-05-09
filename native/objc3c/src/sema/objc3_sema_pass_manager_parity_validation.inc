@@ -1174,13 +1174,13 @@
       result.parity_surface.deterministic_parser_sema_docs_runbook_sync &&
       result.parity_surface.deterministic_parser_sema_release_candidate_replay_dry_run &&
       result.parity_surface.deterministic_parser_sema_advanced_core_shard1 &&
-      result.parity_surface.deterministic_parser_sema_advanced_edge_compatibility_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_conformance_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_integration_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_performance_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_core_shard2 &&
-      result.parity_surface.deterministic_parser_sema_advanced_edge_compatibility_shard2 &&
+      result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
       result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
       result.parity_surface.deterministic_parser_sema_integration_closeout_signoff &&
       IsReadyObjc3SemaPassFlowSummary(result.parity_surface.sema_pass_flow_summary) &&
@@ -1196,7 +1196,7 @@
           .deterministic &&
       result.parity_surface.parser_sema_advanced_core_shard1
           .deterministic &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .deterministic &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
           .deterministic &&
@@ -1208,7 +1208,7 @@
           .deterministic &&
       result.parity_surface.parser_sema_advanced_core_shard2
           .deterministic &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .deterministic &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard2
           .deterministic &&
@@ -1294,19 +1294,19 @@
           .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_advanced_core_shard1
           .shard_surface_sync &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .required_sync_count == 3u &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .passed_sync_count ==
-          result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+          result.parity_surface.parser_sema_advanced_contract_rejection_shard1
               .required_sync_count &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .failed_sync_count == 0u &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .advanced_core_shard1_ready &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .pass_manager_contract_surface_sync &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .shard_surface_sync &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
           .required_sync_count == 3u &&
@@ -1317,7 +1317,7 @@
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
           .failed_sync_count == 0u &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
-          .advanced_edge_compatibility_shard1_ready &&
+          .advanced_contract_rejection_shard1_ready &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
           .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard1
@@ -1378,19 +1378,19 @@
           .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_advanced_core_shard2
           .shard_surface_sync &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .required_sync_count == 3u &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .passed_sync_count ==
-          result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+          result.parity_surface.parser_sema_advanced_contract_rejection_shard2
               .required_sync_count &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .failed_sync_count == 0u &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .advanced_core_shard2_ready &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .pass_manager_contract_surface_sync &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .shard_surface_sync &&
       result.parity_surface.parser_sema_advanced_diagnostics_shard2
           .required_sync_count == 3u &&

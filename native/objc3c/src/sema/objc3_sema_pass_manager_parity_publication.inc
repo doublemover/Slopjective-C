@@ -652,9 +652,9 @@
   result.parity_surface.deterministic_parser_sema_advanced_core_shard1 =
       result.deterministic_parser_sema_advanced_core_shard1 &&
       result.parity_surface.parser_sema_advanced_core_shard1.deterministic;
-  result.parity_surface.deterministic_parser_sema_advanced_edge_compatibility_shard1 =
-      result.deterministic_parser_sema_advanced_edge_compatibility_shard1 &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard1
+  result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard1 =
+      result.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
           .deterministic;
   result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard1 =
       result.deterministic_parser_sema_advanced_diagnostics_shard1 &&
@@ -676,9 +676,9 @@
       result.deterministic_parser_sema_advanced_core_shard2 &&
       result.parity_surface.parser_sema_advanced_core_shard2
           .deterministic;
-  result.parity_surface.deterministic_parser_sema_advanced_edge_compatibility_shard2 =
-      result.deterministic_parser_sema_advanced_edge_compatibility_shard2 &&
-      result.parity_surface.parser_sema_advanced_edge_compatibility_shard2
+  result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard2 =
+      result.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
           .deterministic;
   result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 =
       result.deterministic_parser_sema_advanced_diagnostics_shard2 &&

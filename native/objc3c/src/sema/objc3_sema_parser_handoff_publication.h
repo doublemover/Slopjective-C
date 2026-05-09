@@ -7,6 +7,8 @@
 #include "sema/objc3_sema_pass_manager_contract.h"
 
 struct Objc3SemaParserHandoffPublication {
+  Objc3ParserSemaHandoffOwnerRecord owner_record;
+  bool owner_record_deterministic = false;
   bool ready = false;
   bool parser_recovery_replay_ready = false;
   bool parser_recovery_replay_case_present = false;
