@@ -3,6 +3,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_c_string.cpp
   objc3_ir_function_signature_model.cpp
   objc3_ir_literal_parsing.cpp
+  objc3_ir_message_send_validation.cpp
   objc3_ir_method_definition_plan.cpp
   objc3_ir_module_emission_surface.cpp
   objc3_ir_receiver_dispatch_policy.cpp
