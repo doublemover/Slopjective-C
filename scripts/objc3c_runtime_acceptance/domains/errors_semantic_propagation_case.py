@@ -7,6 +7,11 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.domains.errors_semantic_propagation_contract import (
+    ERROR_PROPAGATION_CLEANUP_SEMANTIC_CONTRACT,
+    expected_error_propagation_cleanup_counts,
+    expected_error_propagation_cleanup_fields,
+)
 from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
 from objc3c_runtime_acceptance.paths import ROOT
 
@@ -33,36 +38,16 @@ def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
         isinstance(surface, dict),
         "expected error semantic model fixture to publish objc_error_handling_error_semantic_model",
     )
-    expected_fields = {
-        "contract_id": "objc3c.error_handling.error.semantic.model.v1",
-        "frontend_dependency_contract_id": "objc3c.error_handling.error.source.closure.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_error_semantic_model",
-        "throws_declaration_semantics_landed": True,
-        "result_carrier_profile_semantics_landed": True,
-        "ns_error_bridging_profile_semantics_landed": True,
-        "bridge_marker_semantics_landed": True,
-        "parser_fail_closed_boundary_required": True,
-        "parser_fail_closed_boundary_preserved": True,
-        "propagation_runtime_deferred": True,
-        "status_to_error_runtime_deferred": True,
-        "native_error_abi_deferred": True,
-        "placeholder_throws_summary_carried": True,
-        "deterministic": True,
-        "ready_for_lowering_and_runtime": False,
-    }
-    for field_name, expected_value in expected_fields.items():
+    for field_name, expected_value in expected_error_propagation_cleanup_fields().items():
         expect(
             surface.get(field_name) == expected_value,
             f"expected error semantic model to preserve {field_name}",
         )
-    expect(
-        surface.get("throws_declaration_sites") == 1
-        and surface.get("result_like_sites") == 7
-        and surface.get("ns_error_bridging_sites") == 3
-        and surface.get("placeholder_throws_propagation_sites") == 0
-        and surface.get("placeholder_unwind_cleanup_sites") == 0,
-        "expected error semantic model to preserve propagation and cleanup counts",
-    )
+    for field_name, expected_count in expected_error_propagation_cleanup_counts().items():
+        expect(
+            surface.get(field_name) == expected_count,
+            f"expected error semantic model to preserve {field_name}",
+        )
 
     return CaseResult(
         case_id="error-propagation-cleanup-semantics",
@@ -71,6 +56,9 @@ def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
+            "owner_contract_id": (
+                ERROR_PROPAGATION_CLEANUP_SEMANTIC_CONTRACT.owner_contract_id
+            ),
             "throws_declaration_sites": surface.get("throws_declaration_sites"),
             "result_like_sites": surface.get("result_like_sites"),
             "ns_error_bridging_sites": surface.get("ns_error_bridging_sites"),
