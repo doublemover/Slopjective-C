@@ -18,7 +18,6 @@ def write_reports(report: dict[str, Any], json_path: Path, text_path: Path) -> N
         f"schema_version: {report['schema_version']}",
         f"ok: {str(report['ok']).lower()}",
         f"active_findings: {report['stats']['active_finding_count']}",
-        f"allowed_findings: {report['stats']['allowed_finding_count']}",
         f"tracked_generated_reports: {report['stats']['tracked_generated_report_count']}",
     ]
     for finding in report["active_findings"][:100]:

@@ -9,7 +9,6 @@
     "scan_roots",
     "forbidden_patterns",
     "findings",
-    "allowed_findings",
     "active_findings",
     "tracked_generated_reports",
     "stats",
@@ -37,12 +36,6 @@
         "type": "string"
       }
     },
-    "allowlist_path": {
-      "type": "string"
-    },
-    "allowlist_active": {
-      "type": "boolean"
-    },
     "forbidden_patterns": {
       "type": "array",
       "items": {
@@ -51,9 +44,6 @@
       }
     },
     "findings": {
-      "$ref": "#/$defs/findings"
-    },
-    "allowed_findings": {
       "$ref": "#/$defs/findings"
     },
     "active_findings": {
@@ -69,16 +59,11 @@
       "type": "object",
       "required": [
         "finding_count",
-        "allowed_finding_count",
         "active_finding_count",
         "tracked_generated_report_count"
       ],
       "properties": {
         "finding_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "allowed_finding_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -127,4 +112,3 @@
     }
   }
 }
-

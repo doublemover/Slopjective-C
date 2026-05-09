@@ -8,7 +8,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Maintainer command count: `0`
 - Package bridge: `npm run objc3c -- <action>`
 - Package bridge owner: `package.json`
-- Action registry owner: `scripts/objc3c_workflow/registry.py`
+- Action catalog owner: `scripts/objc3c_workflow/action_catalog.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
 
@@ -29,11 +29,11 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Treat this file as a generated machine-facing appendix for exact command mapping, not as the reader-facing project introduction.
 - Maintainer commands are intentionally narrower wrappers for repo hygiene, markdown upkeep, release-evidence checks, and dependency/capability audits.
 - Canonical user-facing commands use `npm run objc3c -- <action>` and route through the single `package.json` bridge.
-- Action names, validation tiers, pass-through behavior, backend descriptions, and guarantee owners are registry-owned.
+- Action names, validation tiers, pass-through behavior, backend descriptions, and guarantee owners are action-catalog-owned.
 - Canonical checked-in doc outputs are `site/index.md`, `docs/objc3c-native.md`, and `docs/runbooks/objc3c_public_command_surface.md`; edit their source roots instead of the generated files.
 - `native/objc3c/`, `scripts/`, and `tests/` are the live implementation roots; `tmp/` and `artifacts/` are output roots, not naming roots.
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.
 - Those integrated summaries record the exact child-suite report paths emitted by smoke, replay, runtime-acceptance, and other live validation scripts.
 - `compile-objc3c` and the fixture-backed suite actions accept pass-through arguments through the npm bridge.
-- No additional package-script compatibility names remain supported.
-- The repository does not publish a retired public-script alias surface.
+- No additional package-script names remain supported.
+- The repository does not publish a retired public-script metadata surface.

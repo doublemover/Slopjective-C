@@ -9,11 +9,11 @@ contracts.
 Workflow files, local docs, and site source must agree on these facts:
 
 - the package bridge is `npm run objc3c -- <action>`,
-- action truth comes from `scripts/objc3c_workflow/registry.py`,
-- generated command-surface docs are derived from the bridge and registry,
+- action truth comes from `scripts/objc3c_workflow/action_catalog.py`,
+- generated command-surface docs are derived from the bridge and action catalog,
 - capability truth comes from `docs/support/capability_matrix.*` plus
   `docs/support/evidence_map.md`,
 - shared JSON/schema ownership comes from checked-in schemas and the native
   `objc3c_json` / artifact JSON modules.
 
-CI docs must not mention retired package-script aliases as supported entrypoints.
+CI docs must not mention retired package-script names as supported entrypoints.

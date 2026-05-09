@@ -8,12 +8,11 @@ The public command model is:
 - `package.json` exposes one script: `objc3c`.
 - `npm run objc3c -- <action>` invokes the `scripts.objc3c_workflow`
   module.
-- `scripts/objc3c_workflow/registry.py` owns action names, tiers, pass-through
+- `scripts/objc3c_workflow/action_catalog.py` owns action names, tiers, pass-through
   behavior, backend descriptions, and guarantee-owner text.
 - `docs/runbooks/objc3c_public_command_surface.md` is the operator-facing
   appendix for the package bridge.
 
 User-facing workflow docs advertise the npm bridge only. Retired package-script
-aliases, retired public-script metadata tables, direct helper invocations,
-native build commands, and implementation-only script names are not public
-command surface.
+names, public-script metadata tables, helper invocations, native build commands,
+and implementation-only script names are not public command surface.
