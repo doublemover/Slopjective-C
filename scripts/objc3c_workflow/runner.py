@@ -4,19 +4,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import NoReturn
 
-DIRECT_RUNNER_ERROR = (
-    "error: scripts/objc3c_workflow/runner.py is not a public command surface; "
-    "use `npm run objc3c -- <action>`."
-)
+from scripts.objc3c_workflow.entrypoint_rejection import reject_direct_runner
 
 
-def reject_direct_runner() -> NoReturn:
-    raise SystemExit(DIRECT_RUNNER_ERROR)
-
-
-def main(_argv: Sequence[str]) -> NoReturn:
+def main(_argv: Sequence[str]) -> None:
     return reject_direct_runner()
 
 
