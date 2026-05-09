@@ -4,12 +4,17 @@ add_library(objc3c_diag STATIC
   objc3_diag_code.cpp
   objc3_diag_coordinate.cpp
   objc3_diag_format.cpp
-  objc3_diag_record.cpp
+  objc3_diag_record_factory.cpp
+  objc3_diag_record_validation.cpp
   objc3_diag_render.cpp
+  objc3_diag_render_invalid.cpp
+  objc3_diag_render_unchecked.cpp
   objc3_diag_route.cpp
   objc3_diag_severity.cpp
-  objc3_diag_sink.cpp
-  objc3_diag_sort.cpp
+  objc3_diag_sink_emit_helpers.cpp
+  objc3_diag_sink_methods.cpp
+  objc3_diag_sort_key.cpp
+  objc3_diag_sort_normalize.cpp
   objc3_diag_catalog.cpp
   objc3_diag_catalog_artifact_tooling_data.cpp
   objc3_diag_catalog_family.cpp
@@ -21,7 +26,8 @@ add_library(objc3c_diag STATIC
   objc3_diag_parse_rendered.cpp
   objc3_diag_parse_segments.cpp
   objc3_diag_subsystem.cpp
-  objc3_diag_text.cpp
+  objc3_diag_text_case.cpp
+  objc3_diag_text_prefix.cpp
 )
 objc3c_apply_build_defaults(objc3c_diag)
 objc3c_apply_llvm_direct_config(objc3c_diag)
