@@ -21,8 +21,10 @@
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
+#include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
@@ -116,10 +118,6 @@ using objc3::artifacts::frontend::
     BuildErrorHandlingErrorSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
     BuildErrorHandlingTryDoCatchSemanticSummaryJson;
-using objc3::artifacts::frontend::BuildNSErrorBridgingLoweringContract;
-using objc3::artifacts::frontend::BuildResultLikeLoweringContract;
-using objc3::artifacts::frontend::BuildThrowsPropagationLoweringContract;
-using objc3::artifacts::frontend::BuildUnwindCleanupLoweringContract;
 using objc3::artifacts::frontend::BuildEffectsOwnershipSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildInteropCppInteropInteractionSummaryJson;
 using objc3::artifacts::frontend::
@@ -279,13 +277,6 @@ using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSafetyLoweringContractJson;
 using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSourceClosureSummaryJson;
-using objc3::artifacts::frontend::BuildCrossModuleConformanceLoweringContract;
-using objc3::artifacts::frontend::
-    BuildIncrementalModuleCacheInvalidationLoweringContract;
-using objc3::artifacts::frontend::
-    BuildNamespaceCollisionShadowingLoweringContract;
-using objc3::artifacts::frontend::
-    BuildPublicPrivateApiPartitionLoweringContract;
 using objc3::artifacts::frontend::
     BuildCrossModuleSemanticContractsDiagnosticsSummaryJson;
 using objc3::artifacts::frontend::
@@ -1452,115 +1443,64 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3CrossModuleBuildRuntimeOrchestrationSummary
       &cross_module_build_runtime_orchestration =
           runtime_import_plan.cross_module_build_runtime_orchestration;
+  const Objc3FrontendArtifactModuleLoweringPlan module_lowering_plan =
+      BuildObjc3FrontendArtifactModuleLoweringPlan(pipeline_result);
+  for (const auto &failure : module_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
+  }
   const Objc3NamespaceCollisionShadowingLoweringContract
-      namespace_collision_shadowing_lowering_contract =
-          BuildNamespaceCollisionShadowingLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3NamespaceCollisionShadowingLoweringContract(
-          namespace_collision_shadowing_lowering_contract)) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid namespace collision "
-                 "shadowing lowering contract");
-  }
-  const std::string namespace_collision_shadowing_lowering_replay_key =
-      Objc3NamespaceCollisionShadowingLoweringReplayKey(
-          namespace_collision_shadowing_lowering_contract);
+      &namespace_collision_shadowing_lowering_contract =
+          module_lowering_plan.namespace_collision_shadowing_lowering_contract;
+  const std::string &namespace_collision_shadowing_lowering_replay_key =
+      module_lowering_plan.namespace_collision_shadowing_lowering_replay_key;
   const Objc3PublicPrivateApiPartitionLoweringContract
-      public_private_api_partition_lowering_contract =
-          BuildPublicPrivateApiPartitionLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3PublicPrivateApiPartitionLoweringContract(
-          public_private_api_partition_lowering_contract)) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid public-private API "
-                 "partition lowering contract");
-  }
-  const std::string public_private_api_partition_lowering_replay_key =
-      Objc3PublicPrivateApiPartitionLoweringReplayKey(
-          public_private_api_partition_lowering_contract);
+      &public_private_api_partition_lowering_contract =
+          module_lowering_plan.public_private_api_partition_lowering_contract;
+  const std::string &public_private_api_partition_lowering_replay_key =
+      module_lowering_plan.public_private_api_partition_lowering_replay_key;
   const Objc3IncrementalModuleCacheInvalidationLoweringContract
-      incremental_module_cache_invalidation_lowering_contract =
-          BuildIncrementalModuleCacheInvalidationLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
-          incremental_module_cache_invalidation_lowering_contract)) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid incremental module cache "
-            "invalidation lowering contract");
-  }
-  const std::string incremental_module_cache_invalidation_lowering_replay_key =
-      Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
-          incremental_module_cache_invalidation_lowering_contract);
+      &incremental_module_cache_invalidation_lowering_contract =
+          module_lowering_plan
+              .incremental_module_cache_invalidation_lowering_contract;
+  const std::string
+      &incremental_module_cache_invalidation_lowering_replay_key =
+          module_lowering_plan
+              .incremental_module_cache_invalidation_lowering_replay_key;
   const Objc3CrossModuleConformanceLoweringContract
-      cross_module_conformance_lowering_contract =
-          BuildCrossModuleConformanceLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3CrossModuleConformanceLoweringContract(
-          cross_module_conformance_lowering_contract)) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid cross-module conformance "
-                 "lowering contract");
+      &cross_module_conformance_lowering_contract =
+          module_lowering_plan.cross_module_conformance_lowering_contract;
+  const std::string &cross_module_conformance_lowering_replay_key =
+      module_lowering_plan.cross_module_conformance_lowering_replay_key;
+  const Objc3FrontendArtifactErrorLoweringPlan error_lowering_plan =
+      BuildObjc3FrontendArtifactErrorLoweringPlan(pipeline_result);
+  for (const auto &failure : error_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string cross_module_conformance_lowering_replay_key =
-      Objc3CrossModuleConformanceLoweringReplayKey(
-          cross_module_conformance_lowering_contract);
   const Objc3ThrowsPropagationLoweringContract
-      throws_propagation_lowering_contract =
-          BuildThrowsPropagationLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3ThrowsPropagationLoweringContract(
-          throws_propagation_lowering_contract)) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid throws propagation "
-                 "lowering contract");
-  }
-  const std::string throws_propagation_lowering_replay_key =
-      Objc3ThrowsPropagationLoweringReplayKey(
-          throws_propagation_lowering_contract);
-  const Objc3ResultLikeLoweringContract result_like_lowering_contract =
-      BuildResultLikeLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3ResultLikeLoweringContract(
-          result_like_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid result-like lowering contract");
-  }
-  const std::string result_like_lowering_replay_key =
-      Objc3ResultLikeLoweringReplayKey(result_like_lowering_contract);
+      &throws_propagation_lowering_contract =
+          error_lowering_plan.throws_propagation_lowering_contract;
+  const std::string &throws_propagation_lowering_replay_key =
+      error_lowering_plan.throws_propagation_lowering_replay_key;
+  const Objc3ResultLikeLoweringContract &result_like_lowering_contract =
+      error_lowering_plan.result_like_lowering_contract;
+  const std::string &result_like_lowering_replay_key =
+      error_lowering_plan.result_like_lowering_replay_key;
   const Objc3NSErrorBridgingLoweringContract
-      ns_error_bridging_lowering_contract =
-          BuildNSErrorBridgingLoweringContract(
-              pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3NSErrorBridgingLoweringContract(
-          ns_error_bridging_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid NSError bridging lowering contract");
-  }
-  const std::string ns_error_bridging_lowering_replay_key =
-      Objc3NSErrorBridgingLoweringReplayKey(
-          ns_error_bridging_lowering_contract);
-  const Objc3UnwindCleanupLoweringContract unwind_cleanup_lowering_contract =
-      BuildUnwindCleanupLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3UnwindCleanupLoweringContract(
-          unwind_cleanup_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid unwind cleanup lowering contract");
-  }
-  const std::string unwind_cleanup_lowering_replay_key =
-      Objc3UnwindCleanupLoweringReplayKey(unwind_cleanup_lowering_contract);
+      &ns_error_bridging_lowering_contract =
+          error_lowering_plan.ns_error_bridging_lowering_contract;
+  const std::string &ns_error_bridging_lowering_replay_key =
+      error_lowering_plan.ns_error_bridging_lowering_replay_key;
+  const Objc3UnwindCleanupLoweringContract &unwind_cleanup_lowering_contract =
+      error_lowering_plan.unwind_cleanup_lowering_contract;
+  const std::string &unwind_cleanup_lowering_replay_key =
+      error_lowering_plan.unwind_cleanup_lowering_replay_key;
   const bool deterministic_error_handling_throws_abi_propagation_lowering =
-      result_like_lowering_contract.deterministic &&
-      throws_propagation_lowering_contract.deterministic &&
-      ns_error_bridging_lowering_contract.deterministic &&
-      unwind_cleanup_lowering_contract.deterministic;
-  // replay continuity anchor: \",\"next_issue\":\"objc3c.errors.throws.propagationlowering.v1\"
-  const std::string error_handling_throws_abi_propagation_lowering_replay_key =
-      Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() +
-      ";throws_replay_key=" + throws_propagation_lowering_replay_key +
-      ";result_like_replay_key=" + result_like_lowering_replay_key +
-      ";ns_error_replay_key=" + ns_error_bridging_lowering_replay_key +
-      ";unwind_replay_key=" + unwind_cleanup_lowering_replay_key +
-      ";deterministic=" +
-      (deterministic_error_handling_throws_abi_propagation_lowering ? "true" : "false") +
-      ";ready_for_runtime_execution=true" +
-      ";follow_on_surface=objc3c.errors.throws.propagationlowering.v1";
+      error_lowering_plan
+          .deterministic_error_handling_throws_abi_propagation_lowering;
+  const std::string
+      &error_handling_throws_abi_propagation_lowering_replay_key =
+          error_lowering_plan
+              .error_handling_throws_abi_propagation_lowering_replay_key;
   const auto error_handling_result_and_bridging_artifact_replay_summary =
       BuildErrorHandlingResultAndBridgingArtifactReplayEvidence(
           error_handling_throws_abi_propagation_lowering_replay_key,
