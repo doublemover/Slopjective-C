@@ -37,6 +37,7 @@ target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_publication_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_results.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_surface_validation.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_semantic_constant_evaluator.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_semantic_body_validation.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_semantic_integration_surface.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_semantic_type_helpers.h
@@ -107,6 +108,7 @@ target_link_libraries(objc3c_sema_static_scalar_analysis PUBLIC
 
 add_library(objc3c_semantic_passes_core STATIC
   objc3_pure_contract.cpp
+  objc3_semantic_constant_evaluator.cpp
   objc3_semantic_passes.cpp
 )
 objc3c_apply_build_defaults(objc3c_semantic_passes_core)
