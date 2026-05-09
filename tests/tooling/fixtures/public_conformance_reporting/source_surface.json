@@ -7,9 +7,18 @@
   "package_bridge": "objc3c",
   "source_check_action": "check-public-conformance-reporting-surface",
   "source_check_command": "npm run objc3c -- check-public-conformance-reporting-surface",
+  "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
   "source_check_implementation_anchor": "scripts/check_public_conformance_reporting_source_surface.py",
   "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
   "schema_surface": "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
+  "owner_split": {
+    "source_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "schema_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "workflow_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "stability_policy_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py"
+  },
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",
@@ -29,9 +38,9 @@
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",
-        "npm run objc3c -- validate-conformance-corpus",
-        "npm run objc3c -- validate-conformance-corpus",
-        "npm run objc3c -- validate-conformance-corpus"
+        "scripts/check_conformance_corpus_surface.py",
+        "scripts/generate_conformance_corpus_index.py",
+        "scripts/check_objc3c_conformance_corpus_integration.py"
       ]
     },
     {
@@ -44,10 +53,10 @@
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
         "tests/tooling/fixtures/external_validation/artifact_surface.json",
-        "npm run objc3c -- check-external-validation-surface",
-        "npm run objc3c -- test-external-validation-replay",
-        "npm run objc3c -- publish-external-repro-corpus",
-        "npm run objc3c -- validate-external-validation-integration"
+        "scripts/check_external_validation_source_surface.py",
+        "scripts/run_objc3c_external_validation_replay.py",
+        "scripts/publish_objc3c_external_repro_corpus.py",
+        "scripts/check_objc3c_external_validation_integration.py"
       ]
     },
     {
@@ -56,8 +65,8 @@
       "source_paths": [
         "schemas/objc3-conformance-dashboard-status-v1.schema.json",
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
-        "npm run objc3c -- check-release-evidence",
-        "npm run objc3c -- validate-conformance-corpus",
+        "scripts/check_release_evidence.py",
+        "scripts/check_conformance_corpus_surface.py",
         "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
         "schemas/objc3c-public-conformance-summary-v1.schema.json"
       ]

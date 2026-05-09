@@ -2,6 +2,8 @@
   "contract_id": "objc3c.public_conformance_reporting.workflow.surface.v1",
   "schema_version": 1,
   "package_bridge": "objc3c",
+  "owner_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+  "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py",
   "actions": [
     "check-public-conformance-reporting-surface",
     "check-public-conformance-schema-surface",
@@ -21,5 +23,16 @@
     "tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json",
     "tmp/artifacts/public-conformance/badge/public-conformance-badge.json",
     "tmp/artifacts/public-conformance/report/public-conformance-report.md"
-  ]
+  ],
+  "child_report_contracts": {
+    "tmp/reports/public-conformance/source-surface-summary.json": "objc3c.public_conformance_reporting.source.surface.summary.v1",
+    "tmp/reports/public-conformance/schema-surface-summary.json": "objc3c.public_conformance_reporting.schema.surface.summary.v1",
+    "tmp/reports/public-conformance/scorecard-summary.json": "objc3c.public_conformance_reporting.scorecard.summary.v1",
+    "tmp/reports/public-conformance/public-summary.json": "objc3c.public_conformance_reporting.summary.v1"
+  },
+  "capability_truth_language": {
+    "claim-ready": "all required upstream evidence owners passed and no hard blocks remain",
+    "provisional": "public summary is publishable with explicit caution and deductions",
+    "blocked": "public summary is not claim-ready and must state the blocking evidence"
+  }
 }

@@ -4,8 +4,29 @@
   "package_bridge": "objc3c",
   "schema_check_action": "check-public-conformance-schema-surface",
   "schema_check_command": "npm run objc3c -- check-public-conformance-schema-surface",
+  "schema_check_script": "scripts/check_public_conformance_schema_surface.py",
   "schema_check_implementation_anchor": "scripts/check_public_conformance_schema_surface.py",
   "dashboard_status_schema": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "public_scorecard_schema": "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
-  "public_summary_schema": "schemas/objc3c-public-conformance-summary-v1.schema.json"
+  "public_summary_schema": "schemas/objc3c-public-conformance-summary-v1.schema.json",
+  "schema_contracts": [
+    {
+      "surface_key": "dashboard_status_schema",
+      "registry_id": "objc3-conformance-dashboard-status-v1",
+      "identity_property": "schema_id",
+      "identity_value": "objc3-conformance-dashboard-status/v1"
+    },
+    {
+      "surface_key": "public_scorecard_schema",
+      "registry_id": "objc3c-public-conformance-scorecard-v1",
+      "identity_property": "contract_id",
+      "identity_value": "objc3c.public_conformance_reporting.scorecard.summary.v1"
+    },
+    {
+      "surface_key": "public_summary_schema",
+      "registry_id": "objc3c-public-conformance-summary-v1",
+      "identity_property": "contract_id",
+      "identity_value": "objc3c.public_conformance_reporting.summary.v1"
+    }
+  ]
 }

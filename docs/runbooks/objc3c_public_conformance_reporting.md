@@ -29,6 +29,15 @@ Machine-owned public-reporting outputs must stay under:
 - `tmp/reports/public-conformance/`
 - `tmp/artifacts/public-conformance/`
 
+Owner-split source modules:
+
+- contract and path models:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py`
+- typed data models:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_models.py`
+- action payload fragments:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py`
+
 ## Architecture
 
 Public reporting stays on one path:
@@ -57,6 +66,15 @@ following:
 
 Public reporting must fail closed when upstream evidence is missing, stale,
 quarantined, or not traceable to a checked-in validation family.
+
+Capability language is strict:
+
+- `claim-ready` means all required upstream evidence owners report `PASS`, no
+  schema anchors are missing, and no hard blocks remain.
+- `provisional` means the report is publishable with explicit caution and
+  deductions.
+- `blocked` means the public artifact must state the blocking evidence and
+  cannot imply conformance readiness.
 
 ## Credibility And Stability Policy
 
@@ -127,6 +145,10 @@ it must stay on this boundary.
 ## Current Checked-In Source Surface
 
 - contract root: `tests/tooling/fixtures/public_conformance_reporting/`
+- workflow surface:
+  `tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json`
+- action payload fragments:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py`
 - source check: `npm run objc3c -- check-public-conformance-reporting-surface`
 - source summary: `tmp/reports/public-conformance/source-surface-summary.json`
 - schema check: `npm run objc3c -- check-public-conformance-schema-surface`
@@ -139,5 +161,6 @@ it must stay on this boundary.
 - published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
 - published Markdown report: `tmp/artifacts/public-conformance/report/public-conformance-report.md`
 
-Helper implementations are owned by the action catalog.
-They are not a separate public reporting command surface.
+Helper implementations are owned by the release-governance public-conformance
+action modules and exposed through the action catalog facade. They are not a
+separate public reporting command surface.

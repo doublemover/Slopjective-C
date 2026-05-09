@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://objc3c.dev/schemas/objc3c-public-conformance-scorecard-v1.schema.json",
+  "$id": "https://schemas.slopjective.local/objc3c-public-conformance-scorecard-v1.schema.json",
   "title": "ObjC 3 Public Conformance Scorecard (v1)",
   "description": "Machine-readable public conformance scorecard derived from live corpus and external-validation reports.",
   "x-objc3c-artifact-contract": {
