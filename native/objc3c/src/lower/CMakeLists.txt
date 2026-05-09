@@ -33,7 +33,9 @@ add_library(objc3c_lower STATIC
   contracts/typed_sema_lowering_boundary_counts.cpp
   contracts/typed_sema_lowering_boundary_replay.cpp
   contracts/type_system_lowering_contracts.cpp
+  core/lowering_atomic_ops.cpp
   core/lowering_primitive_ops.cpp
+  core/lowering_simd_vector_ops.cpp
   metadata/lowering_metadata_helpers.cpp
   metadata/runtime_metadata_layout_policy.cpp
 )

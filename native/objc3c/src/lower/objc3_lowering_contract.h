@@ -1,6 +1,8 @@
 #pragma once
 
+#include "lower/core/lowering_atomic_ops.h"
 #include "lower/core/lowering_primitive_ops.h"
+#include "lower/core/lowering_simd_vector_ops.h"
 #include "lower/contracts/arc_boundary_lowering_contracts.h"
 #include "lower/contracts/block_arc_lowering_plan.h"
 #include "lower/contracts/block_runtime_lowering_contracts.h"
