@@ -1,6 +1,7 @@
 #include "runtime/images/registration_table_shape.h"
 
 #include "runtime/images/image_descriptor.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 
 namespace objc3c::runtime {
 
@@ -8,8 +9,11 @@ bool RuntimeRegistrationTableShapeIsSupported(
     const objc3_runtime_registration_table *registration_table,
     const objc3_runtime_image_descriptor *image) {
   return registration_table != nullptr &&
-         registration_table->abi_version == 2 &&
-         registration_table->pointer_field_count == 12 &&
+         registration_table->abi_version ==
+             kObjc3RuntimeRegistrationTableAbiVersion &&
+         registration_table->pointer_field_count ==
+             kObjc3RuntimeRegistrationTablePointerFieldCount &&
+         RuntimeOwnerSplitContractIsReady() &&
          registration_table->image_descriptor != nullptr &&
          RuntimeImageDescriptorsMatch(registration_table->image_descriptor,
                                       image) &&

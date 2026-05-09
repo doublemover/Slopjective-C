@@ -1,5 +1,6 @@
 #pragma once
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <cstdint>
@@ -33,6 +34,15 @@ struct KeyPathSlot {
 };
 
 struct RegisteredImageMetadata {
+  const char *owner_split_contract_id =
+      kObjc3RuntimeOwnerSplitContractId;
+  const char *metadata_model_owner = kObjc3RuntimeMetadataModelOwner;
+  const char *registration_table_owner = kObjc3RuntimeRegistrationTableOwner;
+  const char *manifest_descriptor_artifact_owner =
+      kObjc3RuntimeManifestDescriptorArtifactOwner;
+  const char *bootstrap_replay_owner = kObjc3RuntimeBootstrapReplayOwner;
+  const char *fail_closed_ownership_model =
+      kObjc3RuntimeFailClosedOwnershipModel;
   std::string module_name;
   std::string translation_unit_identity_key;
   std::uint64_t registration_order_ordinal = 0;
@@ -57,6 +67,8 @@ struct RegisteredImageMetadata {
   std::uint64_t keypath_descriptor_count = 0;
   bool linker_anchor_matches_discovery_root = false;
   bool used_staged_registration_table = false;
+  bool ownership_explicit = true;
+  bool fallback_path_allowed = false;
 };
 
 }  // namespace objc3c::runtime

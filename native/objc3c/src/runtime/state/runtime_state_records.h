@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/dispatch/method_cache.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
@@ -22,6 +23,22 @@ namespace objc3c::runtime {
 
 struct RuntimeState {
   std::mutex mutex;
+  std::string owner_split_contract_id = kObjc3RuntimeOwnerSplitContractId;
+  std::string metadata_model_owner = kObjc3RuntimeMetadataModelOwner;
+  std::string registration_table_owner = kObjc3RuntimeRegistrationTableOwner;
+  std::string manifest_descriptor_artifact_owner =
+      kObjc3RuntimeManifestDescriptorArtifactOwner;
+  std::string bootstrap_replay_owner = kObjc3RuntimeBootstrapReplayOwner;
+  std::string dispatch_frame_state_owner =
+      kObjc3RuntimeDispatchFrameStateOwner;
+  std::string public_registration_api_owner =
+      kObjc3RuntimePublicRegistrationApiOwner;
+  std::string public_dispatch_diagnostics_owner =
+      kObjc3RuntimePublicDispatchDiagnosticsOwner;
+  std::string fail_closed_ownership_model =
+      kObjc3RuntimeFailClosedOwnershipModel;
+  bool runtime_owner_split_explicit = true;
+  bool fallback_path_allowed = false;
   std::uint64_t registered_image_count = 0;
   std::uint64_t registered_descriptor_total = 0;
   std::uint64_t next_expected_registration_order_ordinal = 1;

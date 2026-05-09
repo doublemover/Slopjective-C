@@ -30,6 +30,16 @@ typedef struct objc3_runtime_registration_state_snapshot {
   const char *last_rejected_module_name;
   const char *last_rejected_translation_unit_identity_key;
   uint64_t last_rejected_registration_order_ordinal;
+  const char *owner_split_contract_id;
+  const char *metadata_model_owner;
+  const char *registration_table_owner;
+  const char *manifest_descriptor_artifact_owner;
+  const char *bootstrap_replay_owner;
+  const char *public_registration_api_owner;
+  const char *public_dispatch_diagnostics_owner;
+  const char *fail_closed_ownership_model;
+  int runtime_owner_split_explicit;
+  int fallback_path_allowed;
 } objc3_runtime_registration_state_snapshot;
 
 #ifdef __cplusplus

@@ -16,12 +16,14 @@ RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
 
 void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
                               const RealizedPropertyAccessor *accessor) {
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
   RuntimeDispatchFrame frame;
   frame.receiver = receiver;
   frame.base_identity = base_identity;
   frame.runtime_property_accessor = accessor;
-  RuntimeDispatchFrameStateForCurrentThread().frames.push_back(
-      std::move(frame));
+  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.frames.push_back(std::move(frame));
 }
 
 std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
@@ -39,6 +41,8 @@ RuntimeDispatchFrame *SetRuntimeTestingDispatchFrame(
     const RealizedPropertyAccessor *accessor) {
   RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
   state.testing_frame = RuntimeDispatchFrame{};
+  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   state.testing_frame.receiver = receiver;
   state.testing_frame.base_identity = base_identity;
   state.testing_frame.runtime_property_accessor = accessor;
@@ -53,7 +57,10 @@ void ClearRuntimeTestingDispatchFrame() {
 }
 
 void ResetRuntimeDispatchFrameStateForTesting() {
-  RuntimeDispatchFrameStateForCurrentThread().frames.clear();
+  RuntimeDispatchFrameState &state = RuntimeDispatchFrameStateForCurrentThread();
+  state.frames.clear();
+  state.ownership_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   ClearRuntimeTestingDispatchFrame();
 }
 

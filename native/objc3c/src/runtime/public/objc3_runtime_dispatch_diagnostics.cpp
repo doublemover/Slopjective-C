@@ -1,5 +1,7 @@
 #include "runtime/public/objc3_runtime_dispatch_diagnostics.h"
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
+
 namespace objc3c::runtime {
 
 namespace {
@@ -43,6 +45,14 @@ const RuntimeDispatchDiagnosticRecord &RuntimeDispatchDiagnosticForStatus(
 bool RuntimeDispatchStatusCarriesValue(
     objc3_runtime_dispatch_status_code status_code) {
   return status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK;
+}
+
+const char *RuntimeDispatchDiagnosticOwnerModel() {
+  return kObjc3RuntimePublicDispatchDiagnosticsOwner;
+}
+
+const char *RuntimeDispatchFailClosedOwnershipModel() {
+  return kObjc3RuntimeFailClosedOwnershipModel;
 }
 
 }  // namespace objc3c::runtime

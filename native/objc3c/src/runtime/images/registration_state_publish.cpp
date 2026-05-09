@@ -1,5 +1,6 @@
 #include "runtime/images/registration_state_publish.h"
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/state/runtime_state_records.h"
 
@@ -10,6 +11,8 @@ namespace objc3c::runtime {
 void MarkRejectedRegistrationUnlocked(
     RuntimeState &state, const objc3_runtime_image_descriptor *image,
     int status) {
+  state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   state.last_registration_status = status;
   state.last_rejected_module_name =
       image != nullptr && image->module_name != nullptr ? image->module_name : "";
@@ -29,6 +32,15 @@ void ClearRejectedRegistrationUnlocked(RuntimeState &state) {
 
 void ApplyImageWalkRecordUnlocked(RuntimeState &state,
                                   const RegisteredImageMetadata &record) {
+  state.owner_split_contract_id = record.owner_split_contract_id;
+  state.metadata_model_owner = record.metadata_model_owner;
+  state.registration_table_owner = record.registration_table_owner;
+  state.manifest_descriptor_artifact_owner =
+      record.manifest_descriptor_artifact_owner;
+  state.bootstrap_replay_owner = record.bootstrap_replay_owner;
+  state.fail_closed_ownership_model = record.fail_closed_ownership_model;
+  state.runtime_owner_split_explicit = record.ownership_explicit;
+  state.fallback_path_allowed = record.fallback_path_allowed;
   state.walked_image_count = static_cast<std::uint64_t>(
       state.registered_image_metadata_by_identity_key.size());
   state.last_discovery_root_entry_count = record.discovery_root_entry_count;

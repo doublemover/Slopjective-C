@@ -6,6 +6,7 @@
 #include "runtime/images/registration_snapshots.h"
 #include "runtime/images/registration_state_publish.h"
 #include "runtime/images/registration_table_walk.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/state/runtime_state_clear.h"
 #include "runtime/state/runtime_state_records.h"
@@ -23,6 +24,8 @@ int RegisterImageUnlocked(
   // successful staged-table consumption is the only path allowed to publish
   // bootstrap-visible image-walk state.
   (void)RuntimeImageDescriptorOwnershipModel();
+  state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   if (!RuntimeImageDescriptorHasRequiredIdentity(image)) {
     MarkRejectedRegistrationUnlocked(
         state, image, OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR);

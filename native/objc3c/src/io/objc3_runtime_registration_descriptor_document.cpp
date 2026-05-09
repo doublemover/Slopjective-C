@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "io/objc3_process_internal.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 
 std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
     const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
@@ -13,6 +14,30 @@ std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
   std::ostringstream out;
   JsonObjectWriter descriptor(out);
   descriptor.StringField("contract_id", inputs.contract_id);
+  descriptor.StringField("owner_split_contract_id",
+                         objc3c::runtime::kObjc3RuntimeOwnerSplitContractId);
+  descriptor.StringField("metadata_model_owner",
+                         objc3c::runtime::kObjc3RuntimeMetadataModelOwner);
+  descriptor.StringField("registration_table_owner",
+                         objc3c::runtime::kObjc3RuntimeRegistrationTableOwner);
+  descriptor.StringField(
+      "manifest_descriptor_artifact_owner",
+      objc3c::runtime::kObjc3RuntimeManifestDescriptorArtifactOwner);
+  descriptor.StringField("bootstrap_replay_owner",
+                         objc3c::runtime::kObjc3RuntimeBootstrapReplayOwner);
+  descriptor.StringField(
+      "dispatch_frame_state_owner",
+      objc3c::runtime::kObjc3RuntimeDispatchFrameStateOwner);
+  descriptor.StringField(
+      "public_registration_api_owner",
+      objc3c::runtime::kObjc3RuntimePublicRegistrationApiOwner);
+  descriptor.StringField(
+      "public_dispatch_diagnostics_owner",
+      objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner);
+  descriptor.StringField(
+      "fail_closed_ownership_model",
+      objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel);
+  descriptor.BoolField("fallback_path_allowed", false);
   descriptor.StringField("registration_manifest_contract_id",
                          inputs.registration_manifest_contract_id);
   descriptor.StringField("source_surface_contract_id",
@@ -98,4 +123,3 @@ std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
   descriptor.BoolField("ready_for_loader_table_lowering", true);
   return FinishJsonObject(descriptor, out);
 }
-

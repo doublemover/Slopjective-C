@@ -1,7 +1,11 @@
 #pragma once
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
+
 struct Objc3RuntimeBootstrapApiSummary {
   std::string contract_id = kObjc3RuntimeBootstrapApiContractId;
+  std::string owner_split_contract_id =
+      objc3c::runtime::kObjc3RuntimeOwnerSplitContractId;
   std::string support_library_core_feature_contract_id =
       kObjc3RuntimeSupportLibraryCoreFeatureContractId;
   std::string support_library_link_wiring_contract_id =
@@ -38,6 +42,12 @@ struct Objc3RuntimeBootstrapApiSummary {
       kObjc3RuntimeBootstrapApiImageWalkLifecycleModel;
   std::string deterministic_reset_lifecycle_model =
       kObjc3RuntimeBootstrapApiDeterministicResetLifecycleModel;
+  std::string public_registration_api_owner =
+      objc3c::runtime::kObjc3RuntimePublicRegistrationApiOwner;
+  std::string public_dispatch_diagnostics_owner =
+      objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner;
+  std::string fail_closed_ownership_model =
+      objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel;
   bool fail_closed = false;
   bool support_library_core_feature_contract_ready = false;
   bool support_library_link_wiring_contract_ready = false;
@@ -49,6 +59,8 @@ struct Objc3RuntimeBootstrapApiSummary {
   bool image_walk_not_yet_landed = false;
   bool deterministic_reset_expansion_not_yet_landed = false;
   bool ready_for_registrar_implementation = false;
+  bool public_metadata_ownership_explicit = true;
+  bool fallback_path_allowed = false;
   std::string support_library_core_feature_replay_key;
   std::string support_library_link_wiring_replay_key;
   std::string replay_key;
@@ -58,6 +70,7 @@ struct Objc3RuntimeBootstrapApiSummary {
 inline bool IsReadyObjc3RuntimeBootstrapApiSummary(
     const Objc3RuntimeBootstrapApiSummary &summary) {
   return !summary.contract_id.empty() &&
+         !summary.owner_split_contract_id.empty() &&
          !summary.support_library_core_feature_contract_id.empty() &&
          !summary.support_library_link_wiring_contract_id.empty() &&
          !summary.bootstrap_surface_path.empty() &&
@@ -78,6 +91,9 @@ inline bool IsReadyObjc3RuntimeBootstrapApiSummary(
          !summary.startup_invocation_model.empty() &&
          !summary.image_walk_lifecycle_model.empty() &&
          !summary.deterministic_reset_lifecycle_model.empty() &&
+         !summary.public_registration_api_owner.empty() &&
+         !summary.public_dispatch_diagnostics_owner.empty() &&
+         !summary.fail_closed_ownership_model.empty() &&
          summary.fail_closed &&
          summary.support_library_core_feature_contract_ready &&
          summary.support_library_link_wiring_contract_ready &&
@@ -89,6 +105,9 @@ inline bool IsReadyObjc3RuntimeBootstrapApiSummary(
          summary.image_walk_not_yet_landed &&
          summary.deterministic_reset_expansion_not_yet_landed &&
          summary.ready_for_registrar_implementation &&
+         summary.public_metadata_ownership_explicit &&
+         !summary.fallback_path_allowed &&
+         objc3c::runtime::RuntimeOwnerSplitContractIsReady() &&
          !summary.support_library_core_feature_replay_key.empty() &&
          !summary.support_library_link_wiring_replay_key.empty() &&
          !summary.replay_key.empty() && summary.failure_reason.empty();

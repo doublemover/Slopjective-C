@@ -1,5 +1,7 @@
 #include "io/objc3_runtime_artifact_contracts.h"
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
+
 namespace objc3c::io {
 
 bool ValidateRuntimeTranslationUnitRegistrationManifestArtifactInputs(
@@ -82,7 +84,8 @@ bool ValidateRuntimeTranslationUnitRegistrationManifestArtifactInputs(
       inputs.bootstrap_registration_table_pointer_field_count == 0 ||
       inputs.translation_unit_registration_order_ordinal == 0 ||
       inputs.object_artifact_relative_path.empty() ||
-      inputs.backend_artifact_relative_path.empty()) {
+      inputs.backend_artifact_relative_path.empty() ||
+      !objc3c::runtime::RuntimeOwnerSplitContractIsReady()) {
     error = "translation-unit registration manifest inputs are incomplete";
     return false;
   }
@@ -144,6 +147,7 @@ bool ValidateRuntimeRegistrationDescriptorArtifactInputs(
       inputs.translation_unit_registration_order_ordinal == 0 ||
       inputs.object_artifact_relative_path.empty() ||
       inputs.backend_artifact_relative_path.empty() ||
+      !objc3c::runtime::RuntimeOwnerSplitContractIsReady() ||
       linker_retention_artifacts.translation_unit_identity_key.empty() ||
       linker_retention_artifacts.object_format.empty() ||
       linker_retention_artifacts.linker_anchor_symbol.empty() ||

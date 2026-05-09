@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
+
 struct Objc3RuntimeMetadataClassSourceRecord {
   std::string record_kind;
   std::string name;
@@ -119,6 +121,12 @@ inline constexpr const char *kObjc3RuntimeExportEnforcementContractId =
     "objc3c.runtime.export.enforcement.v1";
 
 struct Objc3RuntimeMetadataSourceRecordSet {
+  std::string owner_split_contract_id =
+      objc3c::runtime::kObjc3RuntimeOwnerSplitContractId;
+  std::string metadata_model_owner =
+      objc3c::runtime::kObjc3RuntimeMetadataModelOwner;
+  std::string fail_closed_ownership_model =
+      objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel;
   std::vector<Objc3RuntimeMetadataClassSourceRecord> classes_lexicographic;
   std::vector<Objc3RuntimeMetadataProtocolSourceRecord> protocols_lexicographic;
   std::vector<Objc3RuntimeMetadataCategorySourceRecord> categories_lexicographic;
@@ -126,11 +134,18 @@ struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataMethodSourceRecord> methods_lexicographic;
   std::vector<Objc3RuntimeMetadataIvarSourceRecord> ivars_lexicographic;
   bool deterministic = false;
+  bool metadata_model_owner_explicit = true;
+  bool fallback_path_allowed = false;
 };
 
 inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
     const Objc3RuntimeMetadataSourceRecordSet &records) {
-  return records.deterministic;
+  return records.deterministic && !records.owner_split_contract_id.empty() &&
+         !records.metadata_model_owner.empty() &&
+         !records.fail_closed_ownership_model.empty() &&
+         records.metadata_model_owner_explicit &&
+         !records.fallback_path_allowed &&
+         objc3c::runtime::RuntimeOwnerSplitContractIsReady();
 }
 
 struct Objc3RuntimeSupportLibraryLinkWiringSummary;

@@ -1,5 +1,6 @@
 #include "runtime/state/runtime_bootstrap_replay.h"
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/state/runtime_live_state_reset.h"
 #include "runtime/state/runtime_state_records.h"
@@ -33,6 +34,9 @@ int ReplayRegisteredImagesForTestingUnlocked(
     RuntimeState &state,
     RuntimeImageRegistrationReplayCallback register_image) {
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  state.bootstrap_replay_owner = kObjc3RuntimeBootstrapReplayOwner;
+  state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();
   state.last_replayed_translation_unit_identity_key.clear();

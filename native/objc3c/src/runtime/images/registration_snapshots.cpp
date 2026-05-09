@@ -89,6 +89,25 @@ int CopyRuntimeRegistrationStateForTesting(
       BorrowRuntimeCString(state.last_rejected_translation_unit_identity_key);
   snapshot->last_rejected_registration_order_ordinal =
       state.last_rejected_registration_order_ordinal;
+  snapshot->owner_split_contract_id =
+      BorrowRuntimeCString(state.owner_split_contract_id);
+  snapshot->metadata_model_owner =
+      BorrowRuntimeCString(state.metadata_model_owner);
+  snapshot->registration_table_owner =
+      BorrowRuntimeCString(state.registration_table_owner);
+  snapshot->manifest_descriptor_artifact_owner =
+      BorrowRuntimeCString(state.manifest_descriptor_artifact_owner);
+  snapshot->bootstrap_replay_owner =
+      BorrowRuntimeCString(state.bootstrap_replay_owner);
+  snapshot->public_registration_api_owner =
+      BorrowRuntimeCString(state.public_registration_api_owner);
+  snapshot->public_dispatch_diagnostics_owner =
+      BorrowRuntimeCString(state.public_dispatch_diagnostics_owner);
+  snapshot->fail_closed_ownership_model =
+      BorrowRuntimeCString(state.fail_closed_ownership_model);
+  snapshot->runtime_owner_split_explicit =
+      state.runtime_owner_split_explicit ? 1 : 0;
+  snapshot->fallback_path_allowed = state.fallback_path_allowed ? 1 : 0;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

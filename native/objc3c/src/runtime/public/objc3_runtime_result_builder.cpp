@@ -13,6 +13,9 @@ objc3_runtime_dispatch_i32_result BuildRuntimeDispatchI32Result(
   result.value = RuntimeDispatchStatusCarriesValue(status_code) ? value : 0;
   result.diagnostic_code = diagnostic.code;
   result.diagnostic_message = diagnostic.message;
+  result.diagnostic_owner_model = RuntimeDispatchDiagnosticOwnerModel();
+  result.fail_closed_ownership_model = RuntimeDispatchFailClosedOwnershipModel();
+  result.fallback_path_allowed = 0;
   return result;
 }
 

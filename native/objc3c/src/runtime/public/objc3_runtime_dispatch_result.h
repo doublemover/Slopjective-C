@@ -19,6 +19,9 @@ typedef struct objc3_runtime_dispatch_i32_result {
    */
   const char *diagnostic_code;
   const char *diagnostic_message;
+  const char *diagnostic_owner_model;
+  const char *fail_closed_ownership_model;
+  int fallback_path_allowed;
 } objc3_runtime_dispatch_i32_result;
 
 #ifdef __cplusplus

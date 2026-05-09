@@ -1,6 +1,7 @@
 #include "io/objc3_runtime_registration_manifest_document.h"
 
 #include "io/objc3_process_internal.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 
 std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
     const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
@@ -67,6 +68,41 @@ std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
   out << "{\n"
       << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
       << "\",\n"
+      << "  \"owner_split_contract_id\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimeOwnerSplitContractId)
+      << "\",\n"
+      << "  \"metadata_model_owner\": \""
+      << EscapeJsonString(objc3c::runtime::kObjc3RuntimeMetadataModelOwner)
+      << "\",\n"
+      << "  \"registration_table_owner\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimeRegistrationTableOwner)
+      << "\",\n"
+      << "  \"manifest_descriptor_artifact_owner\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimeManifestDescriptorArtifactOwner)
+      << "\",\n"
+      << "  \"bootstrap_replay_owner\": \""
+      << EscapeJsonString(objc3c::runtime::kObjc3RuntimeBootstrapReplayOwner)
+      << "\",\n"
+      << "  \"dispatch_frame_state_owner\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimeDispatchFrameStateOwner)
+      << "\",\n"
+      << "  \"public_registration_api_owner\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimePublicRegistrationApiOwner)
+      << "\",\n"
+      << "  \"public_dispatch_diagnostics_owner\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimePublicDispatchDiagnosticsOwner)
+      << "\",\n"
+      << "  \"fail_closed_ownership_model\": \""
+      << EscapeJsonString(
+             objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel)
+      << "\",\n"
+      << "  \"fallback_path_allowed\": false,\n"
       << "  \"launch_integration_contract_id\": \""
       << EscapeJsonString(inputs.launch_integration_contract_id) << "\",\n"
       << "  \"translation_unit_registration_contract_id\": \""

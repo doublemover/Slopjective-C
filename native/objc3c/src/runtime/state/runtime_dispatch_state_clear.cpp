@@ -1,10 +1,14 @@
 #include "runtime/state/runtime_dispatch_state_clear.h"
 
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/state/runtime_state_records.h"
 
 namespace objc3c::runtime {
 
 void ClearMethodCacheStateUnlocked(RuntimeState &state) {
+  state.dispatch_frame_state_owner = kObjc3RuntimeDispatchFrameStateOwner;
+  state.public_dispatch_diagnostics_owner =
+      kObjc3RuntimePublicDispatchDiagnosticsOwner;
   state.method_cache.clear();
   state.method_cache_hit_count = 0;
   state.method_cache_miss_count = 0;

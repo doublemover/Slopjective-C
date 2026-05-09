@@ -1,6 +1,7 @@
 #include "runtime/state/runtime_live_state_reset.h"
 
 #include "runtime/images/registration_snapshots.h"
+#include "runtime/metadata/runtime_ownership_contracts.h"
 #include "runtime/state/runtime_state_clear.h"
 #include "runtime/state/runtime_state_records.h"
 
@@ -17,6 +18,20 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_rejected_module_name.clear();
   state.last_rejected_translation_unit_identity_key.clear();
   state.last_rejected_registration_order_ordinal = 0;
+  state.owner_split_contract_id = kObjc3RuntimeOwnerSplitContractId;
+  state.metadata_model_owner = kObjc3RuntimeMetadataModelOwner;
+  state.registration_table_owner = kObjc3RuntimeRegistrationTableOwner;
+  state.manifest_descriptor_artifact_owner =
+      kObjc3RuntimeManifestDescriptorArtifactOwner;
+  state.bootstrap_replay_owner = kObjc3RuntimeBootstrapReplayOwner;
+  state.dispatch_frame_state_owner = kObjc3RuntimeDispatchFrameStateOwner;
+  state.public_registration_api_owner =
+      kObjc3RuntimePublicRegistrationApiOwner;
+  state.public_dispatch_diagnostics_owner =
+      kObjc3RuntimePublicDispatchDiagnosticsOwner;
+  state.fail_closed_ownership_model = kObjc3RuntimeFailClosedOwnershipModel;
+  state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
+  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
   state.registration_order_by_identity_key.clear();
   state.registered_image_metadata_by_identity_key.clear();
   state.selector_index_by_name.clear();
