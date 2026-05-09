@@ -30,10 +30,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor.h
   concurrency/executor.cpp
   concurrency/executor.h
+  concurrency/runtime_debug.cpp
+  concurrency/runtime_debug.h
   concurrency/task.cpp
   concurrency/task.h
   dispatch/builtin_methods.cpp
   dispatch/builtin_methods.h
+  dispatch/dispatch_result_state.cpp
+  dispatch/dispatch_result_state.h
   dispatch/dispatch_family.cpp
   dispatch/dispatch_family.h
   dispatch/dispatch_api.cpp
@@ -51,6 +55,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/typed_dispatch_result.h
   errors/catch_filter.cpp
   errors/catch_filter.h
+  errors/error_bridge.cpp
+  errors/error_bridge.h
   images/image_descriptor.cpp
   images/image_descriptor.h
   images/multi_image_ordering.cpp
@@ -63,6 +69,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/autorelease_pool.h
   metadata/runtime_capability_contracts.h
   metadata/runtime_emitted_records.h
+  metadata/runtime_snapshot_helpers.cpp
   metadata/runtime_registration_records.h
   metadata/runtime_realized_records.h
   objc3_runtime.cpp

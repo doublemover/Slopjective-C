@@ -15,7 +15,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
-#include <deque>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -25,8 +24,10 @@
 #include <vector>
 
 #include "runtime/blocks/block_runtime_records.h"
+#include "runtime/concurrency/runtime_debug.h"
+#include "runtime/dispatch/dispatch_result_state.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
-#include "runtime/metadata/runtime_capability_contracts.h"
+#include "runtime/errors/error_bridge.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
@@ -90,7 +91,6 @@ using objc3c::runtime::DispatchFamily;
 using objc3c::runtime::IsRuntimeReceiverBaseIdentity;
 using objc3c::runtime::RuntimeBuiltinKind;
 using objc3c::runtime::RuntimeMethodReturnKind;
-using objc3c::runtime::RuntimeMethodReturnKindName;
 using objc3c::runtime::RuntimeMethodShapeStatus;
 using objc3c::runtime::RuntimeReceiverIdentityBase;
 using objc3c::runtime::RuntimeReceiverIdentityStride;
@@ -112,19 +112,9 @@ using objc3c::runtime::BorrowRuntimeCString;
 using objc3c::runtime::ClearMethodCacheStateUnlocked;
 using objc3c::runtime::ClearRealizedClassGraphUnlocked;
 using objc3c::runtime::ClearRuntimeInstanceStateUnlocked;
-using objc3c::runtime::kObjc3AdvancedFeatureDashboardSchemaPath;
-using objc3c::runtime::kObjc3AdvancedFeatureDashboardStatusPublicationContractId;
-using objc3c::runtime::kObjc3AdvancedFeatureEvidenceGateScriptPath;
-using objc3c::runtime::kObjc3AdvancedFeatureEvidenceRunbookPath;
-using objc3c::runtime::kObjc3AdvancedFeatureOpsContractId;
-using objc3c::runtime::kObjc3AdvancedFeatureReleaseEvidenceContractId;
-using objc3c::runtime::kObjc3AdvancedFeatureReleaseEvidenceOperationContractId;
-using objc3c::runtime::kObjc3AdvancedFeatureReportingContractId;
-using objc3c::runtime::kObjc3ConformanceClaimFailureModel;
-using objc3c::runtime::kObjc3ConformanceClaimOperationsContractId;
-using objc3c::runtime::kObjc3ConformanceClaimSelectionModel;
-using objc3c::runtime::kObjc3ConformancePublicationContractId;
-using objc3c::runtime::MetaprogrammingHostCacheRootForTesting;
+using objc3c::runtime::RecordPostResolutionStrictDispatchFailure;
+using objc3c::runtime::RecordTypedDispatchSuccess;
+using objc3c::runtime::StoreDispatchResultContractUnlocked;
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
 
@@ -156,79 +146,6 @@ thread_local int g_runtime_last_promoted_block_handle = 0;
 thread_local int g_runtime_last_promote_has_pointer_capture_storage = 0;
 thread_local int g_runtime_last_invoked_block_handle = 0;
 thread_local int g_runtime_last_block_invoke_result = 0;
-thread_local std::uint64_t g_runtime_error_bridge_store_call_count = 0;
-thread_local std::uint64_t g_runtime_error_bridge_load_call_count = 0;
-thread_local std::uint64_t g_runtime_error_bridge_status_bridge_call_count = 0;
-thread_local std::uint64_t g_runtime_error_bridge_nserror_bridge_call_count = 0;
-thread_local std::uint64_t g_runtime_error_bridge_catch_match_call_count = 0;
-thread_local int g_runtime_error_bridge_last_stored_error_value = 0;
-thread_local int g_runtime_error_bridge_last_loaded_error_value = 0;
-thread_local int g_runtime_error_bridge_last_status_bridge_status_value = 0;
-thread_local int g_runtime_error_bridge_last_status_bridge_error_value = 0;
-thread_local int g_runtime_error_bridge_last_nserror_bridge_error_value = 0;
-thread_local int g_runtime_error_bridge_last_catch_match_error_value = 0;
-thread_local int g_runtime_error_bridge_last_catch_match_kind = 0;
-thread_local int g_runtime_error_bridge_last_catch_match_is_catch_all = 0;
-thread_local int g_runtime_error_bridge_last_catch_match_result = 0;
-thread_local std::string g_runtime_error_bridge_last_catch_kind_name;
-thread_local std::uint64_t g_runtime_async_continuation_allocation_call_count = 0;
-thread_local std::uint64_t g_runtime_async_continuation_handoff_call_count = 0;
-thread_local std::uint64_t g_runtime_async_continuation_resume_call_count = 0;
-thread_local int g_runtime_async_continuation_next_handle = 1;
-thread_local int g_runtime_async_continuation_last_allocated_handle = 0;
-thread_local int g_runtime_async_continuation_last_allocated_resume_entry_tag = 0;
-thread_local int g_runtime_async_continuation_last_allocated_executor_tag = 0;
-thread_local int g_runtime_async_continuation_last_handoff_handle = 0;
-thread_local int g_runtime_async_continuation_last_handoff_executor_tag = 0;
-thread_local int g_runtime_async_continuation_last_resume_handle = 0;
-thread_local int g_runtime_async_continuation_last_resume_result_value = 0;
-thread_local int g_runtime_async_continuation_last_resume_return_value = 0;
-thread_local std::unordered_set<int> g_runtime_async_live_continuation_handles;
-thread_local std::uint64_t g_runtime_task_spawn_call_count = 0;
-thread_local std::uint64_t g_runtime_task_scope_call_count = 0;
-thread_local std::uint64_t g_runtime_task_add_task_call_count = 0;
-thread_local std::uint64_t g_runtime_task_wait_next_call_count = 0;
-thread_local std::uint64_t g_runtime_task_cancel_all_call_count = 0;
-thread_local std::uint64_t g_runtime_task_cancellation_poll_call_count = 0;
-thread_local std::uint64_t g_runtime_task_on_cancel_call_count = 0;
-thread_local std::uint64_t g_runtime_task_executor_hop_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_isolation_thunk_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_nonisolated_entry_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_hop_to_executor_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_replay_proof_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_race_guard_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_bind_executor_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_mailbox_enqueue_call_count = 0;
-thread_local std::uint64_t g_runtime_actor_mailbox_drain_call_count = 0;
-thread_local int g_runtime_task_last_spawn_kind = 0;
-thread_local int g_runtime_task_last_spawn_executor_tag = 0;
-thread_local int g_runtime_task_last_scope_executor_tag = 0;
-thread_local int g_runtime_task_last_add_task_executor_tag = 0;
-thread_local int g_runtime_task_last_wait_next_executor_tag = 0;
-thread_local int g_runtime_task_last_cancel_all_executor_tag = 0;
-thread_local int g_runtime_task_last_cancellation_poll_executor_tag = 0;
-thread_local int g_runtime_task_last_on_cancel_executor_tag = 0;
-thread_local int g_runtime_task_last_executor_hop_executor_tag = 0;
-thread_local int g_runtime_task_last_executor_hop_value = 0;
-thread_local int g_runtime_task_last_wait_next_result = 0;
-thread_local int g_runtime_task_last_cancel_all_result = 0;
-thread_local int g_runtime_task_last_cancellation_poll_result = 0;
-thread_local int g_runtime_actor_last_isolation_executor_tag = 0;
-thread_local int g_runtime_actor_last_nonisolated_value = 0;
-thread_local int g_runtime_actor_last_nonisolated_executor_tag = 0;
-thread_local int g_runtime_actor_last_hop_value = 0;
-thread_local int g_runtime_actor_last_hop_executor_tag = 0;
-thread_local int g_runtime_actor_last_hop_result = 0;
-thread_local int g_runtime_actor_last_replay_proof_executor_tag = 0;
-thread_local int g_runtime_actor_last_race_guard_executor_tag = 0;
-thread_local int g_runtime_actor_last_bound_actor_handle = 0;
-thread_local int g_runtime_actor_last_bound_executor_tag = 0;
-thread_local int g_runtime_actor_last_mailbox_actor_handle = 0;
-thread_local int g_runtime_actor_last_mailbox_enqueued_value = 0;
-thread_local int g_runtime_actor_last_mailbox_executor_tag = 0;
-thread_local int g_runtime_actor_last_mailbox_depth = 0;
-thread_local int g_runtime_actor_last_mailbox_drained_value = 0;
-thread_local std::unordered_map<int, std::deque<int>> g_runtime_actor_mailboxes;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -271,79 +188,8 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_last_promote_has_pointer_capture_storage = 0;
   g_runtime_last_invoked_block_handle = 0;
   g_runtime_last_block_invoke_result = 0;
-  g_runtime_error_bridge_store_call_count = 0;
-  g_runtime_error_bridge_load_call_count = 0;
-  g_runtime_error_bridge_status_bridge_call_count = 0;
-  g_runtime_error_bridge_nserror_bridge_call_count = 0;
-  g_runtime_error_bridge_catch_match_call_count = 0;
-  g_runtime_error_bridge_last_stored_error_value = 0;
-  g_runtime_error_bridge_last_loaded_error_value = 0;
-  g_runtime_error_bridge_last_status_bridge_status_value = 0;
-  g_runtime_error_bridge_last_status_bridge_error_value = 0;
-  g_runtime_error_bridge_last_nserror_bridge_error_value = 0;
-  g_runtime_error_bridge_last_catch_match_error_value = 0;
-  g_runtime_error_bridge_last_catch_match_kind = 0;
-  g_runtime_error_bridge_last_catch_match_is_catch_all = 0;
-  g_runtime_error_bridge_last_catch_match_result = 0;
-  g_runtime_error_bridge_last_catch_kind_name.clear();
-  g_runtime_async_continuation_allocation_call_count = 0;
-  g_runtime_async_continuation_handoff_call_count = 0;
-  g_runtime_async_continuation_resume_call_count = 0;
-  g_runtime_async_continuation_next_handle = 1;
-  g_runtime_async_continuation_last_allocated_handle = 0;
-  g_runtime_async_continuation_last_allocated_resume_entry_tag = 0;
-  g_runtime_async_continuation_last_allocated_executor_tag = 0;
-  g_runtime_async_continuation_last_handoff_handle = 0;
-  g_runtime_async_continuation_last_handoff_executor_tag = 0;
-  g_runtime_async_continuation_last_resume_handle = 0;
-  g_runtime_async_continuation_last_resume_result_value = 0;
-  g_runtime_async_continuation_last_resume_return_value = 0;
-  g_runtime_async_live_continuation_handles.clear();
-  g_runtime_task_spawn_call_count = 0;
-  g_runtime_task_scope_call_count = 0;
-  g_runtime_task_add_task_call_count = 0;
-  g_runtime_task_wait_next_call_count = 0;
-  g_runtime_task_cancel_all_call_count = 0;
-  g_runtime_task_cancellation_poll_call_count = 0;
-  g_runtime_task_on_cancel_call_count = 0;
-  g_runtime_task_executor_hop_call_count = 0;
-  g_runtime_actor_isolation_thunk_call_count = 0;
-  g_runtime_actor_nonisolated_entry_call_count = 0;
-  g_runtime_actor_hop_to_executor_call_count = 0;
-  g_runtime_actor_replay_proof_call_count = 0;
-  g_runtime_actor_race_guard_call_count = 0;
-  g_runtime_actor_bind_executor_call_count = 0;
-  g_runtime_actor_mailbox_enqueue_call_count = 0;
-  g_runtime_actor_mailbox_drain_call_count = 0;
-  g_runtime_task_last_spawn_kind = 0;
-  g_runtime_task_last_spawn_executor_tag = 0;
-  g_runtime_task_last_scope_executor_tag = 0;
-  g_runtime_task_last_add_task_executor_tag = 0;
-  g_runtime_task_last_wait_next_executor_tag = 0;
-  g_runtime_task_last_cancel_all_executor_tag = 0;
-  g_runtime_task_last_cancellation_poll_executor_tag = 0;
-  g_runtime_task_last_on_cancel_executor_tag = 0;
-  g_runtime_task_last_executor_hop_executor_tag = 0;
-  g_runtime_task_last_executor_hop_value = 0;
-  g_runtime_task_last_wait_next_result = 0;
-  g_runtime_task_last_cancel_all_result = 0;
-  g_runtime_task_last_cancellation_poll_result = 0;
-  g_runtime_actor_last_isolation_executor_tag = 0;
-  g_runtime_actor_last_nonisolated_value = 0;
-  g_runtime_actor_last_nonisolated_executor_tag = 0;
-  g_runtime_actor_last_hop_value = 0;
-  g_runtime_actor_last_hop_executor_tag = 0;
-  g_runtime_actor_last_hop_result = 0;
-  g_runtime_actor_last_replay_proof_executor_tag = 0;
-  g_runtime_actor_last_race_guard_executor_tag = 0;
-  g_runtime_actor_last_bound_actor_handle = 0;
-  g_runtime_actor_last_bound_executor_tag = 0;
-  g_runtime_actor_last_mailbox_actor_handle = 0;
-  g_runtime_actor_last_mailbox_enqueued_value = 0;
-  g_runtime_actor_last_mailbox_executor_tag = 0;
-  g_runtime_actor_last_mailbox_depth = 0;
-  g_runtime_actor_last_mailbox_drained_value = 0;
-  g_runtime_actor_mailboxes.clear();
+  objc3c::runtime::ResetRuntimeErrorBridgeStateForTesting();
+  objc3c::runtime::ResetRuntimeConcurrencyDebugStateForTesting();
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -368,17 +214,6 @@ void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
         descriptor.export_owner_identity;
   } else if (descriptor.owner_identity != nullptr) {
     g_runtime_arc_debug_last_property_owner_identity = descriptor.owner_identity;
-  }
-}
-
-const char *RuntimeErrorCatchKindName(int catch_kind) {
-  switch (catch_kind) {
-  case 1:
-    return "nserror";
-  case 2:
-    return "id<error>";
-  default:
-    return "unknown";
   }
 }
 
