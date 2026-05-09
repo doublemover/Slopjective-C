@@ -8,6 +8,17 @@ from scripts.source_hygiene.gate_contracts import (
     REQUIRED_RESIDUE_CLASSES,
     RETIRED_ALLOWLIST_REPORT_FIELDS,
 )
+from scripts.source_hygiene.patterns_cutover import HARD_CUTOVER_RESIDUE_PATTERNS
+from scripts.source_hygiene.patterns_implementation_fallbacks import (
+    IMPLEMENTATION_FALLBACK_PATTERNS,
+)
+from scripts.source_hygiene.patterns_implementation_legacy import (
+    IMPLEMENTATION_LEGACY_PATTERNS,
+)
+from scripts.source_hygiene.patterns_implementation_migration import (
+    IMPLEMENTATION_MIGRATION_PATTERNS,
+)
+from scripts.source_hygiene.patterns_implementation_shims import IMPLEMENTATION_SHIM_PATTERNS
 from scripts.source_hygiene.patterns_public_aliases import PUBLIC_ALIAS_PATTERNS
 from scripts.source_hygiene.patterns_public_claims import PUBLIC_CLAIM_PATTERNS
 from scripts.source_hygiene.patterns_public_fallbacks import PUBLIC_FALLBACK_PATTERNS
@@ -37,6 +48,20 @@ def test_public_claim_patterns_are_split_by_owner_modules() -> None:
     assert PUBLIC_CLAIM_PATTERNS == owner_patterns
     assert len({pattern.pattern_id for pattern in PUBLIC_CLAIM_PATTERNS}) == len(
         PUBLIC_CLAIM_PATTERNS
+    )
+
+
+def test_implementation_residue_patterns_are_split_by_owner_modules() -> None:
+    owner_patterns = (
+        *IMPLEMENTATION_SHIM_PATTERNS,
+        *IMPLEMENTATION_FALLBACK_PATTERNS,
+        *IMPLEMENTATION_MIGRATION_PATTERNS,
+        *IMPLEMENTATION_LEGACY_PATTERNS,
+    )
+
+    assert HARD_CUTOVER_RESIDUE_PATTERNS == owner_patterns
+    assert len({pattern.pattern_id for pattern in HARD_CUTOVER_RESIDUE_PATTERNS}) == len(
+        HARD_CUTOVER_RESIDUE_PATTERNS
     )
 
 
@@ -240,6 +265,62 @@ def test_hard_cutover_gate_rejects_plain_compatibility_mode_wording(tmp_path: Pa
 
     assert report["ok"] is False
     assert report["active_findings"][0]["pattern_id"] == "public-compatibility-mode"
+
+
+def test_hard_cutover_gate_rejects_implementation_compatibility_bridge(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "int compatibility_bridge = 1;\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "compatibility-wrapper-or-bridge-surface"
+
+
+def test_hard_cutover_gate_rejects_implementation_fallback_handler(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "int fallback_handler = 1;\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "fallback-implementation-surface"
+
+
+def test_hard_cutover_gate_rejects_implementation_migration_lane(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "int migration_lane = 1;\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "migration-implementation-surface"
+
+
+def test_hard_cutover_gate_rejects_implementation_legacy_support(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "int legacy_support = 1;\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "legacy-compatibility-support-surface"
 
 
 def test_hard_cutover_gate_rejects_retired_public_workflow_runner_path(tmp_path: Path) -> None:
