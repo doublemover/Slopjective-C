@@ -25,33 +25,34 @@ SCHEMA_SURFACE = (
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "public-conformance" / "schema-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
-EXPECTED_SCHEMAS = {
-    "dashboard_status_schema": (
+EXPECTED_SCHEMAS = (
+    (
+        "dashboard_status_schema",
         "objc3-conformance-dashboard-status-v1",
         "https://schemas.slopjective.local/objc3-conformance-dashboard-status-v1.schema.json",
         "schema_id",
         "objc3-conformance-dashboard-status/v1",
     ),
-    "public_scorecard_schema": (
+    (
+        "public_scorecard_schema",
         "objc3c-public-conformance-scorecard-v1",
         "https://schemas.slopjective.local/objc3c-public-conformance-scorecard-v1.schema.json",
         "contract_id",
         "objc3c.public_conformance_reporting.scorecard.summary.v1",
     ),
-    "public_summary_schema": (
+    (
+        "public_summary_schema",
         "objc3c-public-conformance-summary-v1",
         "https://schemas.slopjective.local/objc3c-public-conformance-summary-v1.schema.json",
         "contract_id",
         "objc3c.public_conformance_reporting.summary.v1",
     ),
-}
-
+)
 
 
 def fail(message: str) -> int:
     print(f"public-conformance-schema-surface: FAIL\n- {message}", file=sys.stderr)
     return 1
-
 
 
 def property_const(schema_payload: dict[str, Any], property_name: str) -> Any:
@@ -78,12 +79,14 @@ def main() -> int:
 
     checked_paths: list[str] = []
     schema_ids: list[str] = []
-    for surface_key, (
+    schema_refs: dict[str, str] = {}
+    for (
+        surface_key,
         registry_id,
         expected_schema_url,
         identity_property,
         expected_identity,
-    ) in EXPECTED_SCHEMAS.items():
+    ) in EXPECTED_SCHEMAS:
         expected_path = repo_rel(schema_path(registry_id))
         if surface.get(surface_key) != expected_path:
             return fail(f"{surface_key} drifted from registered schema path {expected_path}")
@@ -98,11 +101,15 @@ def main() -> int:
 
         checked_paths.append(expected_path)
         schema_ids.append(expected_schema_url)
+        schema_refs[surface_key] = expected_path
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
+        "dashboard_status_schema": schema_refs["dashboard_status_schema"],
+        "public_scorecard_schema": schema_refs["public_scorecard_schema"],
+        "public_summary_schema": schema_refs["public_summary_schema"],
         "schemas": checked_paths,
         "schema_ids": schema_ids,
     }

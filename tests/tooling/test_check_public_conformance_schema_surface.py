@@ -41,6 +41,15 @@ def test_public_conformance_schema_surface_uses_registered_schemas() -> None:
         assert summary["contract_id"] == "objc3c.public_conformance_reporting.schema.surface.summary.v1"
         assert summary["status"] == "PASS"
         assert summary["schema_surface"] == "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json"
+        assert summary["dashboard_status_schema"] == (
+            schema_path("objc3-conformance-dashboard-status-v1").relative_to(ROOT).as_posix()
+        )
+        assert summary["public_scorecard_schema"] == (
+            schema_path("objc3c-public-conformance-scorecard-v1").relative_to(ROOT).as_posix()
+        )
+        assert summary["public_summary_schema"] == (
+            schema_path("objc3c-public-conformance-summary-v1").relative_to(ROOT).as_posix()
+        )
         assert summary["schemas"] == [
             schema_path("objc3-conformance-dashboard-status-v1").relative_to(ROOT).as_posix(),
             schema_path("objc3c-public-conformance-scorecard-v1").relative_to(ROOT).as_posix(),
@@ -70,7 +79,47 @@ def test_public_conformance_schema_surface_rejects_unregistered_surface_path(tmp
     assert not checker.SUMMARY_PATH.exists()
 
 
-def test_public_conformance_schema_surface_rejects_broken_registered_schema_payload(
+def test_public_conformance_schema_surface_rejects_broken_registered_draft(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    original_load_schema = checker.load_schema
+
+    def broken_load_schema(schema_id: str) -> dict[str, Any]:
+        payload = deepcopy(original_load_schema(schema_id))
+        if schema_id == "objc3-conformance-dashboard-status-v1":
+            payload["$schema"] = "https://json-schema.org/draft/2019-09/schema"
+        return payload
+
+    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_schema_surface_rejects_broken_registered_schema_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    original_load_schema = checker.load_schema
+
+    def broken_load_schema(schema_id: str) -> dict[str, Any]:
+        payload = deepcopy(original_load_schema(schema_id))
+        if schema_id == "objc3c-public-conformance-summary-v1":
+            payload["$id"] = "https://schemas.slopjective.local/objc3c-public-conformance-summary-broken.schema.json"
+        return payload
+
+    monkeypatch.setattr(checker, "load_schema", broken_load_schema)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_public_conformance_schema_surface_rejects_broken_registered_identity(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
