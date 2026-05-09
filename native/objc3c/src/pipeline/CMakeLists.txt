@@ -2,6 +2,7 @@ add_library(objc3c_pipeline STATIC
   dispatch_surface_classification.cpp
   frontend_executable_metadata_handoff.cpp
   frontend_executable_metadata_handoff_replay.cpp
+  frontend_executable_metadata_semantic_surface_helpers.cpp
   frontend_pipeline_orchestration.cpp
   frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
@@ -30,6 +31,7 @@ add_library(objc3c_pipeline STATIC
   frontend_phase_publication_helpers.h
   frontend_runtime_export_enforcement_helpers.h
   frontend_runtime_metadata_boundary_helpers.h
+  frontend_executable_metadata_semantic_surface_helpers.h
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
