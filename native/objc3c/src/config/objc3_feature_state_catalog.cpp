@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "contracts/objc3_config_capability_contract.h"
+
 namespace objc3c::config {
 
 namespace {
@@ -68,6 +70,10 @@ const LanguageFeatureState *FindCanonicalFeatureState(
     }
   }
   return nullptr;
+}
+
+const char *CanonicalFeatureStateCatalogContractId() {
+  return objc3c::contracts::kObjc3CanonicalFeatureStateCatalogContractId;
 }
 
 }  // namespace objc3c::config

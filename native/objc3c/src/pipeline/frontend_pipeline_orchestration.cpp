@@ -17,6 +17,7 @@
 #include "pipeline/frontend_executable_metadata_handoff.h"
 #include "pipeline/frontend_metadata_handoff_helpers.h"
 #include "pipeline/frontend_pipeline_sema_stage_runner.h"
+#include "pipeline/frontend_pipeline_stage_sequence.h"
 #include "pipeline/frontend_pipeline_stage_runner.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h"
@@ -6270,8 +6271,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   Objc3FrontendPipelineResult result;
 
   std::vector<Objc3LexToken> tokens =
-      RunObjc3FrontendLexStage(source, options, result);
-  RunObjc3FrontendParseStageIfLexClean(tokens, result);
+      RunObjc3FrontendLexParseStageSequence(source, options, result);
   result.selector_normalization_summary =
       BuildSelectorNormalizationSummary(Objc3ParsedProgramAst(result.program));
   result.property_attribute_summary =

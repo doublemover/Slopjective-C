@@ -26,5 +26,6 @@ bool FeatureStateIsRejected(FeatureState state);
 std::span<const LanguageFeatureState> CanonicalFeatureStates();
 const LanguageFeatureState *FindCanonicalFeatureState(
     std::string_view feature);
+const char *CanonicalFeatureStateCatalogContractId();
 
 }  // namespace objc3c::config

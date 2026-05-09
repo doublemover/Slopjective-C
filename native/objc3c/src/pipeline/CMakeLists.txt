@@ -4,6 +4,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_orchestration.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_pipeline_sema_stage_runner.cpp
+  frontend_pipeline_stage_sequence.cpp
   frontend_pipeline_stage_runner.cpp
   runtime_import_preservation.cpp
   frontend_pipeline_phase_io.h

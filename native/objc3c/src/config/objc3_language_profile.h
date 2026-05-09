@@ -7,6 +7,7 @@
 #include "config/objc3_feature_state_catalog.h"
 #include "config/objc3_language_version.h"
 #include "config/objc3_removed_command_options.h"
+#include "contracts/objc3_config_capability_contract.h"
 
 namespace objc3c::config {
 
@@ -18,7 +19,8 @@ struct LanguageProfileContract {
   LanguageProfileId id = LanguageProfileId::kCanonical;
   const char *name = kCanonicalLanguageProfileName;
   std::uint8_t language_version = kCanonicalLanguageVersion;
-  const char *contract_id = "objc3c.config.language_profile.canonical.v1";
+  const char *contract_id =
+      objc3c::contracts::kObjc3CanonicalLanguageProfileContractId;
 };
 
 const LanguageProfileContract &CanonicalLanguageProfile();
