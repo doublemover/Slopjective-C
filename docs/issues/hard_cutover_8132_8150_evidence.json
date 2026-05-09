@@ -499,6 +499,71 @@
         "#8138",
         "#8148"
       ]
+    },
+    {
+      "ref": "d9077c97f",
+      "summary": "HC fold publication and support evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ]
+    },
+    {
+      "ref": "730f316fd",
+      "summary": "HC split diagnostic catalog data owner",
+      "issues": [
+        "#8135",
+        "#8145"
+      ]
+    },
+    {
+      "ref": "40ffba0e8",
+      "summary": "HC collapse frontend compile anchor shards",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "8f9a7fc93",
+      "summary": "HC name parser core owner shards",
+      "issues": [
+        "#8132",
+        "#8134"
+      ]
+    },
+    {
+      "ref": "ce6e66578",
+      "summary": "HC split frontend C API runner invocation owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "4204602fc",
+      "summary": "HC split runtime metadata contract id owners",
+      "issues": [
+        "#8138",
+        "#8147",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "589f12fd0",
+      "summary": "HC name sema contract feature surfaces",
+      "issues": [
+        "#8135",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "f7ff17441",
+      "summary": "HC split artifact schema registry requirements",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
     }
   ],
   "hard_cutover_disposition": {

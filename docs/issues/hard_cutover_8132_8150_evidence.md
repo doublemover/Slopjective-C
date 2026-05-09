@@ -111,6 +111,11 @@ pass:
   frontend runner dump/CLI options, runtime state publication, config feature
   table contracts, parser core profile naming, and conformance publication
   ownership evidence.
+- `730f316fd`, `40ffba0e8`, `8f9a7fc93`, `ce6e66578`, `4204602fc`,
+  `589f12fd0`, and `f7ff17441` extend diagnostic catalog data, frontend compile
+  anchors, parser core owner shards, frontend runner invocation, runtime
+  metadata contract IDs, sema feature-surface contracts, and artifact schema
+  registry requirement evidence.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

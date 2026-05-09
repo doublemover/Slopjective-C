@@ -763,6 +763,111 @@
         "native/objc3c/src/artifacts/objc3_frontend_conformance_publication.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_conformance_publication.h"
       ]
+    },
+    {
+      "ref": "d9077c97f",
+      "summary": "HC fold publication and support evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_acceptance_area_owners.json"
+      ]
+    },
+    {
+      "ref": "730f316fd",
+      "summary": "HC split diagnostic catalog data owner",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_data.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_data.h",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp"
+      ]
+    },
+    {
+      "ref": "40ffba0e8",
+      "summary": "HC collapse frontend compile anchor shards",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp",
+        "native/objc3c/src/libobjc3c_frontend/frontend_compile_entrypoints.cpp"
+      ]
+    },
+    {
+      "ref": "8f9a7fc93",
+      "summary": "HC name parser core owner shards",
+      "issues": [
+        "#8132",
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_core_blocks_and_expressions.inc",
+        "native/objc3c/src/parse/objc3_parser_core_concurrency_profiles.inc",
+        "native/objc3c/src/parse/objc3_parser_core_profile_prelude.inc"
+      ]
+    },
+    {
+      "ref": "ce6e66578",
+      "summary": "HC split frontend C API runner invocation owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_options.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_context.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_invocation.h"
+      ]
+    },
+    {
+      "ref": "4204602fc",
+      "summary": "HC split runtime metadata contract id owners",
+      "issues": [
+        "#8138",
+        "#8147",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_runtime_metadata_contract_ids.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_core_contract_ids.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_emission_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "589f12fd0",
+      "summary": "HC name sema contract feature surfaces",
+      "issues": [
+        "#8135",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/sema/objc3_sema_contract.h",
+        "native/objc3c/src/sema/objc3_sema_contract_feature_surfaces.h"
+      ]
+    },
+    {
+      "ref": "f7ff17441",
+      "summary": "HC split artifact schema registry requirements",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_requirements.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_registry_summary.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
+      ]
     }
   ],
   "global_policy": {
