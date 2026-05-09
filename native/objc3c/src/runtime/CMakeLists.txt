@@ -50,6 +50,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor_state.cpp
   concurrency/actor_state.h
   concurrency/actor_state_store.h
+  concurrency/continuation_operations.cpp
+  concurrency/continuation_operations.h
   concurrency/continuation_snapshot_fields.cpp
   concurrency/continuation_snapshot_fields.h
   concurrency/continuation_state.cpp

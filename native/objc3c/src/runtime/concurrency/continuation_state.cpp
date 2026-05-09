@@ -1,5 +1,6 @@
 #include "runtime/concurrency/continuation_state.h"
 
+#include "runtime/concurrency/continuation_operations.h"
 #include "runtime/concurrency/continuation_snapshot_fields.h"
 #include "runtime/concurrency/continuation_state_store.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
@@ -8,45 +9,24 @@ extern "C" int objc3_runtime_allocate_async_continuation_i32(
     int resume_entry_tag, int executor_tag) {
   objc3c::runtime::RuntimeContinuationState &state =
       objc3c::runtime::RuntimeContinuationStateForCurrentThread();
-  ++state.allocation_call_count;
-  const int handle = state.next_handle++;
-  state.last_allocated_handle = handle;
-  state.last_allocated_resume_entry_tag = resume_entry_tag;
-  state.last_allocated_executor_tag = executor_tag;
-  state.live_handles.insert(handle);
-  return handle;
+  return objc3c::runtime::AllocateRuntimeAsyncContinuation(
+      state, resume_entry_tag, executor_tag);
 }
 
 extern "C" int objc3_runtime_handoff_async_continuation_to_executor_i32(
     int continuation_handle, int executor_tag) {
   objc3c::runtime::RuntimeContinuationState &state =
       objc3c::runtime::RuntimeContinuationStateForCurrentThread();
-  ++state.handoff_call_count;
-  state.last_handoff_handle = continuation_handle;
-  state.last_handoff_executor_tag = executor_tag;
-  if (continuation_handle == 0 ||
-      state.live_handles.find(continuation_handle) ==
-          state.live_handles.end()) {
-    return 0;
-  }
-  return continuation_handle;
+  return objc3c::runtime::HandoffRuntimeAsyncContinuationToExecutor(
+      state, continuation_handle, executor_tag);
 }
 
 extern "C" int objc3_runtime_resume_async_continuation_i32(
     int continuation_handle, int result_value) {
   objc3c::runtime::RuntimeContinuationState &state =
       objc3c::runtime::RuntimeContinuationStateForCurrentThread();
-  ++state.resume_call_count;
-  state.last_resume_handle = continuation_handle;
-  state.last_resume_result_value = result_value;
-  const auto found = state.live_handles.find(continuation_handle);
-  if (continuation_handle == 0 || found == state.live_handles.end()) {
-    state.last_resume_return_value = 0;
-    return 0;
-  }
-  state.live_handles.erase(found);
-  state.last_resume_return_value = result_value;
-  return result_value;
+  return objc3c::runtime::ResumeRuntimeAsyncContinuation(
+      state, continuation_handle, result_value);
 }
 
 extern "C" int objc3_runtime_copy_async_continuation_state_for_testing(
