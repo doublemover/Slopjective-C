@@ -20,6 +20,23 @@ ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_error.h"
 ARTIFACT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_artifact.h"
 STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
+C_API_TYPES_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_types.h"
+C_API_VERSION_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_version.h"
+C_API_LIFECYCLE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_lifecycle.h"
+C_API_COMPILE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_compile.h"
+C_API_RESULT_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_result.h"
+C_API_STRING_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_string.h"
+C_API_STAGE_SUMMARY_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_stage_summary.h"
+C_API_HEADER_PATHS = [
+    C_API_H,
+    C_API_TYPES_H,
+    C_API_VERSION_H,
+    C_API_LIFECYCLE_H,
+    C_API_COMPILE_H,
+    C_API_RESULT_H,
+    C_API_STRING_H,
+    C_API_STAGE_SUMMARY_H,
+]
 RESULT_OWNERSHIP_CPP = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_ownership.cpp"
 FRONTEND_COMPILE_CONTRACT_CPP = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_compile_contract.cpp"
 C_API_SOURCES = [
@@ -39,6 +56,10 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _c_api_surface_text() -> str:
+    return "\n".join(_read(path) for path in C_API_HEADER_PATHS)
+
+
 def _squash_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text)
 
@@ -53,12 +74,20 @@ def _find_compiler(candidates: list[str]) -> str | None:
 
 def test_c_api_header_exposes_wrapper_surface() -> None:
     header = _read(C_API_H)
+    c_api_surface = _c_api_surface_text()
     frontend_header = _read(FRONTEND_H)
     options_header = _read(OPTIONS_H)
     result_header = _read(RESULT_H)
     string_header = _read(STRING_H)
 
-    assert "#include \"objc3c_frontend.h\"" in header
+    assert "#include \"c_api_types.h\"" in header
+    assert "#include \"c_api_version.h\"" in header
+    assert "#include \"c_api_lifecycle.h\"" in header
+    assert "#include \"c_api_compile.h\"" in header
+    assert "#include \"c_api_result.h\"" in header
+    assert "#include \"c_api_string.h\"" in header
+    assert "#include \"c_api_stage_summary.h\"" in header
+    assert "#include \"objc3c_frontend.h\"" in c_api_surface
     assert "#include \"objc3c_frontend_options.h\"" in frontend_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in options_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in options_header
@@ -78,35 +107,35 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "uint8_t reserved1;" in options_header
     assert "uint8_t reserved2;" in options_header
     assert "Borrowed option values are caller-owned storage for the duration of the call." in options_header
-    assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
-    assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
-    assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header
-    assert "typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;" in header
-    assert "typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;" in header
-    assert "typedef objc3c_frontend_artifact_kind_t objc3c_frontend_c_artifact_kind_t;" in header
-    assert "typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;" in header
-    assert "typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;" in header
-    assert "typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;" in header
+    assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION" in c_api_surface
+    assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in c_api_surface
+    assert "typedef objc3c_frontend_compile_options_t\n    objc3c_frontend_c_compile_options_t;" in c_api_surface
+    assert "typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;" in c_api_surface
+    assert "typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;" in c_api_surface
+    assert "typedef objc3c_frontend_artifact_kind_t objc3c_frontend_c_artifact_kind_t;" in c_api_surface
+    assert "typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;" in c_api_surface
+    assert "typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;" in c_api_surface
+    assert "typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;" in c_api_surface
 
-    assert "uint32_t objc3c_frontend_c_api_abi_version(void);" in header
-    assert "uint8_t objc3c_frontend_c_is_abi_compatible(" in header
-    assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(" in header
-    assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(" in header
-    assert "size_t objc3c_frontend_c_copy_last_error(" in header
-    assert "void objc3c_frontend_c_result_destroy(" in header
-    assert "objc3c_frontend_c_result_artifact_path(" in header
-    assert "objc3c_frontend_c_result_artifact_path_view(" in header
-    assert "objc3c_frontend_c_result_has_artifact(" in header
-    assert "objc3c_frontend_c_result_error_message(" in header
-    assert "objc3c_frontend_c_result_error_message_view(" in header
-    assert "objc3c_frontend_c_string_view(" in header
-    assert "void objc3c_frontend_c_string_release(" in header
-    assert "objc3c_frontend_c_stage_summary_is_well_formed(" in header
-    assert "objc3c_frontend_c_stage_summary_has_diagnostics(" in header
-    assert "objc3c_frontend_c_stage_summary_has_errors(" in header
-    assert "compile_result storage is caller-owned" in header
-    assert "result payload strings are released only by objc3c_frontend_c_result_destroy()" in header
-    assert "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0" in header
+    assert "uint32_t objc3c_frontend_c_api_abi_version(void);" in c_api_surface
+    assert "uint8_t objc3c_frontend_c_is_abi_compatible(" in c_api_surface
+    assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(" in c_api_surface
+    assert "objc3c_frontend_c_status_t\nobjc3c_frontend_c_compile_source(" in c_api_surface
+    assert "size_t objc3c_frontend_c_copy_last_error(" in c_api_surface
+    assert "void objc3c_frontend_c_result_destroy(" in c_api_surface
+    assert "objc3c_frontend_c_result_artifact_path(" in c_api_surface
+    assert "objc3c_frontend_c_result_artifact_path_view(" in c_api_surface
+    assert "objc3c_frontend_c_result_has_artifact(" in c_api_surface
+    assert "objc3c_frontend_c_result_error_message(" in c_api_surface
+    assert "objc3c_frontend_c_result_error_message_view(" in c_api_surface
+    assert "objc3c_frontend_c_string_view(" in c_api_surface
+    assert "void objc3c_frontend_c_string_release(" in c_api_surface
+    assert "objc3c_frontend_c_stage_summary_is_well_formed(" in c_api_surface
+    assert "objc3c_frontend_c_stage_summary_has_diagnostics(" in c_api_surface
+    assert "objc3c_frontend_c_stage_summary_has_errors(" in c_api_surface
+    assert "compile_result storage is caller-owned" in c_api_surface
+    assert "result payload strings are released only by objc3c_frontend_c_result_destroy()" in c_api_surface
+    assert "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0" in c_api_surface
     assert "objc3c_frontend_string_t *diagnostics_path;" in result_header
     assert "const char *diagnostics_path;" not in result_header
     assert "callers must not release them directly." in result_header
@@ -138,6 +167,7 @@ def test_frontend_public_headers_are_domain_owned() -> None:
         STRING_H,
         ARTIFACT_H,
         ERROR_H,
+        *C_API_HEADER_PATHS,
     ]:
         assert header.exists(), header
 
@@ -198,7 +228,7 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
 
 
 def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helpers() -> None:
-    header = _read(C_API_H)
+    c_api_surface = _c_api_surface_text()
     source = "\n".join(_read(source_path) for source_path in C_API_SOURCES)
     implementation = "\n".join(
         [
@@ -210,6 +240,16 @@ def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helper
 
     assert contract["contract_id"] == "objc3c.frontend.c_api.helper.contract.v1"
     assert contract["header_path"] == "native/objc3c/src/libobjc3c_frontend/c_api.h"
+    assert contract["header_paths"] == [
+        "native/objc3c/src/libobjc3c_frontend/c_api.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_types.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_version.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_compile.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_result.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_string.h",
+        "native/objc3c/src/libobjc3c_frontend/c_api_stage_summary.h",
+    ]
     assert contract["source_paths"] == [
         "native/objc3c/src/libobjc3c_frontend/c_api_abi.cpp",
         "native/objc3c/src/libobjc3c_frontend/c_api_compile.cpp",
@@ -222,15 +262,15 @@ def test_c_api_helper_contract_fixture_tracks_result_error_artifact_stage_helper
     ]
 
     for alias in contract["required_type_aliases"]:
-        assert alias in header
+        assert alias in c_api_surface
         assert f"std::is_same_v<{alias}," in source
 
     for helper in contract["required_helpers"]:
-        assert f"{helper}(" in header
+        assert f"{helper}(" in c_api_surface
         assert f"{helper}(" in source
 
     for phrase in contract["required_header_ownership_phrases"]:
-        assert phrase in header
+        assert phrase in c_api_surface
 
     for snippet in contract["required_source_fail_closed_snippets"]:
         assert snippet in implementation

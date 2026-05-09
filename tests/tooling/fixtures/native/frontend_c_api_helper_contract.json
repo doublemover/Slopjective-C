@@ -2,6 +2,16 @@
   "contract_id": "objc3c.frontend.c_api.helper.contract.v1",
   "surface_kind": "frontend-public-c-api-result-string-stage-helper-contract",
   "header_path": "native/objc3c/src/libobjc3c_frontend/c_api.h",
+  "header_paths": [
+    "native/objc3c/src/libobjc3c_frontend/c_api.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_types.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_version.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_lifecycle.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_compile.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_result.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_string.h",
+    "native/objc3c/src/libobjc3c_frontend/c_api_stage_summary.h"
+  ],
   "source_paths": [
     "native/objc3c/src/libobjc3c_frontend/c_api_abi.cpp",
     "native/objc3c/src/libobjc3c_frontend/c_api_compile.cpp",

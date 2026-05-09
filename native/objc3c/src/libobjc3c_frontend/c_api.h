@@ -1,16 +1,13 @@
 #ifndef OBJC3C_LIBOBJC3C_FRONTEND_C_API_H_
 #define OBJC3C_LIBOBJC3C_FRONTEND_C_API_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "objc3c_frontend.h"
-
-#define OBJC3C_FRONTEND_C_API_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "c_api_compile.h"
+#include "c_api_lifecycle.h"
+#include "c_api_result.h"
+#include "c_api_stage_summary.h"
+#include "c_api_string.h"
+#include "c_api_types.h"
+#include "c_api_version.h"
 
 /*
  * C ABI contract for non-C++ embedding environments. This header exposes
@@ -27,93 +24,15 @@ extern "C" {
  * - borrowed option strings/paths must remain valid for the duration of the
  *   call.
  * - compile entrypoints require non-NULL context/options/result pointers.
+ *
+ * Header ownership:
+ * - c_api_types.h owns C-only type aliases over the stable frontend ABI.
+ * - c_api_version.h owns ABI/version probes.
+ * - c_api_lifecycle.h owns context lifecycle entrypoints.
+ * - c_api_compile.h owns compile/error entrypoints.
+ * - c_api_result.h owns result-owned payload accessors.
+ * - c_api_string.h owns standalone string lifetime helpers.
+ * - c_api_stage_summary.h owns stage summary predicates.
  */
-typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
-typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;
-typedef objc3c_frontend_status_t objc3c_frontend_c_status_t;
-typedef objc3c_frontend_diagnostic_severity_t objc3c_frontend_c_diagnostic_severity_t;
-typedef objc3c_frontend_ir_object_backend_t objc3c_frontend_c_ir_object_backend_t;
-typedef objc3c_frontend_artifact_kind_t objc3c_frontend_c_artifact_kind_t;
-typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;
-typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;
-typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;
-typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;
-typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;
-typedef objc3c_frontend_version_t objc3c_frontend_c_version_t;
-
-OBJC3C_FRONTEND_API uint32_t objc3c_frontend_c_api_abi_version(void);
-
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_is_abi_compatible(
-    uint32_t requested_abi_version);
-OBJC3C_FRONTEND_API uint32_t objc3c_frontend_c_abi_version(void);
-OBJC3C_FRONTEND_API objc3c_frontend_c_version_t objc3c_frontend_c_version(void);
-/* Returns static read-only version storage; callers must not release it. */
-OBJC3C_FRONTEND_API const char *objc3c_frontend_c_version_string(void);
-
-OBJC3C_FRONTEND_API objc3c_frontend_c_context_t *objc3c_frontend_c_context_create(void);
-OBJC3C_FRONTEND_API void objc3c_frontend_c_context_destroy(objc3c_frontend_c_context_t *context);
-
-OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(
-    objc3c_frontend_c_context_t *context,
-    const objc3c_frontend_c_compile_options_t *options,
-    objc3c_frontend_c_compile_result_t *result);
-
-OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(
-    objc3c_frontend_c_context_t *context,
-    const objc3c_frontend_c_compile_options_t *options,
-    objc3c_frontend_c_compile_result_t *result);
-
-/*
- * Ownership/accessor surface for C-only embedders.
- * - result_destroy releases only result-owned payload strings, then zeros the
- *   result. Passing NULL is a no-op because there is no owner to release.
- * - result_* accessors return borrowed pointers/views valid until
- *   result_destroy.
- * - string_release is for standalone owned strings only; do not pass
- *   result-owned strings returned by result_error_message/result_artifact_path.
- * - NULL results, absent payloads, and undefined artifact kinds never
- *   manufacture fallback values: pointer accessors return NULL, views return
- *   {NULL, 0}, and boolean predicates return 0.
- */
-OBJC3C_FRONTEND_API void objc3c_frontend_c_result_destroy(
-    objc3c_frontend_c_compile_result_t *result);
-OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
-objc3c_frontend_c_result_artifact_path(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t
-objc3c_frontend_c_result_artifact_path_view(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_result_has_artifact(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
-objc3c_frontend_c_result_error_message(
-    const objc3c_frontend_c_compile_result_t *result);
-OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t
-objc3c_frontend_c_result_error_message_view(
-    const objc3c_frontend_c_compile_result_t *result);
-OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t objc3c_frontend_c_string_view(
-    const objc3c_frontend_c_string_t *string);
-OBJC3C_FRONTEND_API void objc3c_frontend_c_string_release(
-    objc3c_frontend_c_string_t *string);
-
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_stage_summary_is_well_formed(
-    const objc3c_frontend_c_stage_summary_t *summary,
-    objc3c_frontend_c_stage_id_t expected_stage);
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_stage_summary_has_diagnostics(
-    const objc3c_frontend_c_stage_summary_t *summary);
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_stage_summary_has_errors(
-    const objc3c_frontend_c_stage_summary_t *summary);
-
-OBJC3C_FRONTEND_API size_t objc3c_frontend_c_copy_last_error(
-    const objc3c_frontend_c_context_t *context,
-    char *buffer,
-    size_t buffer_size);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
 
 #endif  // OBJC3C_LIBOBJC3C_FRONTEND_C_API_H_
