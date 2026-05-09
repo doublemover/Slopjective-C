@@ -61,6 +61,9 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
           .object_pointer_typecheck_sites;
   ir_frontend_metadata.id_class_sel_object_pointer_typecheck_sites_total =
       id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites;
+  ir_frontend_metadata
+      .deterministic_id_class_sel_object_pointer_typecheck_handoff =
+      id_class_sel_object_pointer_typecheck_contract.deterministic;
 
   ir_frontend_metadata.lowering_dispatch_surface_classification_replay_key =
       dispatch_surface_classification_replay_key;
@@ -84,6 +87,9 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
       dispatch_surface_classification_contract.direct_entrypoint_family;
   ir_frontend_metadata.dispatch_surface_classification_dynamic_entrypoint_family =
       dispatch_surface_classification_contract.dynamic_entrypoint_family;
+  ir_frontend_metadata
+      .deterministic_dispatch_surface_classification_handoff =
+      dispatch_surface_classification_contract.deterministic;
 
   ir_frontend_metadata.lowering_message_send_selector_lowering_replay_key =
       message_send_selector_lowering_replay_key;
@@ -106,6 +112,8 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
   ir_frontend_metadata
       .message_send_selector_lowering_selector_literal_characters =
       message_send_selector_lowering_contract.selector_literal_characters;
+  ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =
+      message_send_selector_lowering_contract.deterministic;
 
   ir_frontend_metadata.lowering_dispatch_abi_marshalling_replay_key =
       dispatch_abi_marshalling_replay_key;
@@ -128,6 +136,8 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
       dispatch_abi_marshalling_contract.total_marshaled_slots;
   ir_frontend_metadata.dispatch_abi_marshalling_runtime_dispatch_arg_slots =
       dispatch_abi_marshalling_contract.runtime_dispatch_arg_slots;
+  ir_frontend_metadata.deterministic_dispatch_abi_marshalling_handoff =
+      dispatch_abi_marshalling_contract.deterministic;
 
   ir_frontend_metadata.lowering_nil_receiver_semantics_foldability_replay_key =
       nil_receiver_semantics_foldability_replay_key;
@@ -150,6 +160,8 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
   ir_frontend_metadata
       .nil_receiver_semantics_foldability_contract_violation_sites =
       nil_receiver_semantics_foldability_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_nil_receiver_semantics_foldability_handoff =
+      nil_receiver_semantics_foldability_contract.deterministic;
 
   ir_frontend_metadata.lowering_super_dispatch_method_family_replay_key =
       super_dispatch_method_family_replay_key;
@@ -184,6 +196,8 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
           .method_family_returns_related_result_sites;
   ir_frontend_metadata.super_dispatch_method_family_contract_violation_sites =
       super_dispatch_method_family_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_super_dispatch_method_family_handoff =
+      super_dispatch_method_family_contract.deterministic;
 
   ir_frontend_metadata.lowering_runtime_link_host_link_replay_key =
       runtime_link_host_link_replay_key;
@@ -206,6 +220,8 @@ void ApplyObjc3FrontendObjectDispatchMetadata(
   ir_frontend_metadata
       .runtime_link_host_link_default_runtime_dispatch_symbol_binding =
       runtime_link_host_link_contract.default_runtime_dispatch_symbol_binding;
+  ir_frontend_metadata.deterministic_runtime_link_host_link_handoff =
+      runtime_link_host_link_contract.deterministic;
 }
 
 }  // namespace objc3::artifacts::frontend

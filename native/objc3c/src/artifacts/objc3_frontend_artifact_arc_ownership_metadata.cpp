@@ -29,6 +29,8 @@ void ApplyObjc3FrontendArcOwnershipMetadata(
   ir_frontend_metadata
       .ownership_qualifier_lowering_object_pointer_type_annotation_sites =
       ownership_qualifier_lowering_contract.object_pointer_type_annotation_sites;
+  ir_frontend_metadata.deterministic_ownership_qualifier_lowering_handoff =
+      ownership_qualifier_lowering_contract.deterministic;
 
   ir_frontend_metadata.lowering_retain_release_operation_replay_key =
       retain_release_operation_lowering_replay_key;
@@ -46,6 +48,8 @@ void ApplyObjc3FrontendArcOwnershipMetadata(
   ir_frontend_metadata
       .retain_release_operation_lowering_contract_violation_sites =
       retain_release_operation_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_retain_release_operation_lowering_handoff =
+      retain_release_operation_lowering_contract.deterministic;
 
   ir_frontend_metadata.lowering_autoreleasepool_scope_replay_key =
       autoreleasepool_scope_lowering_replay_key;
@@ -64,6 +68,8 @@ void ApplyObjc3FrontendArcOwnershipMetadata(
   ir_frontend_metadata
       .autoreleasepool_scope_lowering_contract_violation_sites =
       autoreleasepool_scope_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_autoreleasepool_scope_lowering_handoff =
+      autoreleasepool_scope_lowering_contract.deterministic;
 
   ir_frontend_metadata.lowering_weak_unowned_semantics_replay_key =
       weak_unowned_semantics_lowering_replay_key;

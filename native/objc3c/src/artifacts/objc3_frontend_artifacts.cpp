@@ -9396,34 +9396,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeSupportLibraryMetadata(
       ir_frontend_metadata, runtime_support_library,
       runtime_support_library_core_feature, runtime_support_library_link_wiring);
-  ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
-      id_class_sel_object_pointer_typecheck_contract.deterministic;
-  ir_frontend_metadata.deterministic_dispatch_surface_classification_handoff =
-      dispatch_surface_classification_contract.deterministic;
-  ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =
-      message_send_selector_lowering_contract.deterministic;
-  ir_frontend_metadata.deterministic_dispatch_abi_marshalling_handoff =
-      dispatch_abi_marshalling_contract.deterministic;
-  ir_frontend_metadata.deterministic_nil_receiver_semantics_foldability_handoff =
-      nil_receiver_semantics_foldability_contract.deterministic;
-  ir_frontend_metadata.deterministic_super_dispatch_method_family_handoff =
-      super_dispatch_method_family_contract.deterministic;
-  ir_frontend_metadata.deterministic_runtime_link_host_link_handoff =
-      runtime_link_host_link_contract.deterministic;
-  ir_frontend_metadata.deterministic_ownership_qualifier_lowering_handoff =
-      ownership_qualifier_lowering_contract.deterministic;
-  ir_frontend_metadata.deterministic_retain_release_operation_lowering_handoff =
-      retain_release_operation_lowering_contract.deterministic;
-  ir_frontend_metadata.deterministic_autoreleasepool_scope_lowering_handoff =
-      autoreleasepool_scope_lowering_contract.deterministic;
-  ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
-      object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
-  ir_frontend_metadata.deterministic_symbol_graph_handoff =
-      symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff;
-  ir_frontend_metadata.deterministic_scope_resolution_handoff =
-      symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
-  ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
-      symbol_graph_scope_resolution_summary.deterministic_handoff_key;
   objc3::artifacts::frontend::ApplyObjc3FrontendPipelineReadinessMetadata(
       ir_frontend_metadata,
       ownership_aware_lowering_behavior_scaffold,

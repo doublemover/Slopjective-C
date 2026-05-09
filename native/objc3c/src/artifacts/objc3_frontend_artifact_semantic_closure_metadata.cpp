@@ -34,6 +34,10 @@ void ApplyObjc3FrontendSemanticClosureMetadata(
   ir_frontend_metadata.unterminated_generic_suffix_entries =
       object_pointer_nullability_generics_summary
           .unterminated_generic_suffix_entries;
+  ir_frontend_metadata
+      .deterministic_object_pointer_nullability_generics_handoff =
+      object_pointer_nullability_generics_summary
+          .deterministic_object_pointer_nullability_generics_handoff;
 
   ir_frontend_metadata.global_symbol_nodes =
       symbol_graph_scope_resolution_summary.global_symbol_nodes;
@@ -72,6 +76,12 @@ void ApplyObjc3FrontendSemanticClosureMetadata(
       symbol_graph_scope_resolution_summary.method_resolution_hits;
   ir_frontend_metadata.method_resolution_misses =
       symbol_graph_scope_resolution_summary.method_resolution_misses;
+  ir_frontend_metadata.deterministic_symbol_graph_handoff =
+      symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff;
+  ir_frontend_metadata.deterministic_scope_resolution_handoff =
+      symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
+  ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
+      symbol_graph_scope_resolution_summary.deterministic_handoff_key;
 
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       deterministic_interface_implementation_handoff &&
