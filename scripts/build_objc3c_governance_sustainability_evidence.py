@@ -97,7 +97,7 @@ BLOCKER_METADATA = {
     },
     "extension_review": {
         "owner": "extension_review_owner",
-        "blocked_when": "new work proposal lacks review class, evidence surfaces, owner, rollback path, or publication plan",
+        "blocked_when": "new work proposal lacks review class, evidence surfaces, owner, revert path, or publication plan",
         "release_blocker_field": "claim_audit.release_blockers",
     },
     "sustainable_progress_policy": {

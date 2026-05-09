@@ -20,7 +20,7 @@ those rows instead of inventing local status vocabulary.
 | Runtime metadata emission  | internal     | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.        |
 | Runtime dispatch result    | internal     | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                           |
 | Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until implemented matrix rows say otherwise. |
-| Retired/alternate surfaces | not a support state | Old modes, aliases, shims, fallbacks, migration lanes, direct helper commands, and report-only completion are negative evidence only.         |
+| Retired/alternate surfaces | not a support state | Old modes, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and report-only completion are negative evidence only. |
 
 ## How to Read This Draft {#toc-how-to-read-this-draft}
 
@@ -64,8 +64,8 @@ This page follows a strict public-doc model:
 - current implementation truth before historical narrative,
 - matrix states instead of local support adjectives,
 - command examples through `npm run objc3c -- <action>`,
-- no package-script alias, direct helper-command, fallback-lane, or
-  migration-lane support semantics,
+- no retired package-script name, direct helper-command publication, alternate
+  command-lane support, or retired-source support semantics,
 - and tutorial routing through checked-in learning paths and showcase sources instead of archived planning material.
 
 ## What Is Implemented and Runnable {#intro}

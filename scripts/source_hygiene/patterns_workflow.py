@@ -64,6 +64,16 @@ WORKFLOW_PATTERNS: tuple[ForbiddenPattern, ...] = (
         residue_class="alias-residue",
     ),
     ForbiddenPattern(
+        "retired-command-lane-support-wording",
+        "Public command surfaces must not publish retired command-lane or retired-source support wording.",
+        r"\bfallback[-_\s]+command[-_\s]+lanes?\b"
+        r"|\bfallback[-_\s]+lanes?\b"
+        r"|\bmigration[-_\s]+lane[^\n]{0,80}\bsupport(?:\s+claims?|\s+semantics)?\b"
+        r"|\bretired[-_\s]+package[-_\s]+script[-_\s]+aliases\b",
+        include_paths=PUBLIC_SURFACE_PATHS,
+        residue_class="old-public-command-surface",
+    ),
+    ForbiddenPattern(
         "retired-workflow-action-registry-facade",
         "Workflow actions must use the canonical action catalog, not the retired registry.py facade.",
         r"scripts[\\/]+objc3c_workflow[\\/]+registry\.py\b"

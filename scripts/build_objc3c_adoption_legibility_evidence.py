@@ -84,7 +84,7 @@ BLOCKER_METADATA = {
     },
     "adoption_replay": {
         "owner": "adoption_replay_owner",
-        "blocked_when": "same-major adoption replay lacks replay fields, package bridge, rollback target, or public workflow action",
+        "blocked_when": "same-major adoption replay lacks replay fields, package bridge, revert target, or public workflow action",
         "release_blocker_field": "claim_audit.release_blockers",
     },
     "metadata_publication": {

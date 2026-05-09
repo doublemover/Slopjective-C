@@ -71,7 +71,7 @@ def main() -> int:
         "owner_contracts": owner_contracts,
         "blocker_metadata": claim_audit.get("blocker_metadata", {}),
         "support_window_summary": evidence.get("support_window", {}),
-        "rollback_channels": evidence.get("rollback", {}).get("channels", []) if isinstance(evidence.get("rollback"), dict) else [],
+        "revert_channels": evidence.get("revert_readiness", {}).get("channels", []) if isinstance(evidence.get("revert_readiness"), dict) else [],
         "demoted_or_out_of_scope_claims": claim_audit.get("demoted_or_out_of_scope_claims", []),
     }
 
@@ -88,7 +88,7 @@ def main() -> int:
         "support_state": claim_audit.get("support_state"),
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": PACKAGE_BRIDGE,
-        "rollback_channel_count": len(publication["operator_publication"]["rollback_channels"]),
+        "revert_channel_count": len(publication["operator_publication"]["revert_channels"]),
         "owner_contract_count": len(owner_contracts),
         "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,

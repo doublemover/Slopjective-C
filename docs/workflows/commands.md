@@ -26,5 +26,5 @@ and implementation-only script names are not public command surface.
 
 Capability docs may cite command evidence only when the command matches the
 matrix schema pattern, `npm run objc3c -- <action>`. Direct helper invocations,
-shim paths, fallback modes, and migration-lane wording remain implementation
-history, not command support.
+adapter paths, alternate command modes, and retired-source lane wording remain
+implementation history, not command support.

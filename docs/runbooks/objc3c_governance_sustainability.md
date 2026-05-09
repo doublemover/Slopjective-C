@@ -57,7 +57,7 @@ Extension, RFC, and support-impact review policy:
 
 Extension review is allowed to advance only when the proposal names its
 language surface, review class, support-impact classification, evidence
-dependencies, package/release impact, adoption impact, and rollback or
+dependencies, package/release impact, adoption impact, and revert or
 demotion path. Support-impacting changes must consume release operations,
 long-horizon support, package ecosystem, adoption-legibility, and security
 hardening evidence instead of standing on prose-only review.

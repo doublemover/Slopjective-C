@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate long-horizon migration, rollback, soak, and aging evidence."""
+"""Generate long-horizon conversion replay, revert, soak, and aging evidence."""
 
 from __future__ import annotations
 

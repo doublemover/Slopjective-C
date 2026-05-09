@@ -166,10 +166,10 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
         missing_surfaces = sorted(required_surfaces - proposal_surfaces)
         if missing_surfaces:
             failures.append("evidence_surfaces missing required review surfaces: " + ", ".join(missing_surfaces))
-    if not str(proposal.get("compatibility_classification", "")).strip():
-        failures.append("compatibility_classification is required")
-    if not str(proposal.get("rollback_or_demote_path", "")).strip():
-        failures.append("rollback_or_demote_path is required")
+    if not str(proposal.get("support_boundary_classification", "")).strip():
+        failures.append("support_boundary_classification is required")
+    if not str(proposal.get("revert_or_demote_path", "")).strip():
+        failures.append("revert_or_demote_path is required")
 
     execution_order = proposal.get("execution_order")
     if execution_order is not None:
@@ -212,8 +212,8 @@ def render_issue_body(proposal: dict[str, Any]) -> str:
     lines += ["", "## Extension review"]
     lines += [
         f"- Review class: `{proposal['review_class']}`",
-        f"- Compatibility classification: `{proposal['compatibility_classification']}`",
-        f"- Rollback or demotion path: {proposal['rollback_or_demote_path']}",
+        f"- Support-boundary classification: `{proposal['support_boundary_classification']}`",
+        f"- Revert or demotion path: {proposal['revert_or_demote_path']}",
     ]
     lines += ["- Evidence surfaces:"] + [f"  - `{item}`" for item in proposal["evidence_surfaces"]]
     if proposal.get("waiver_id"):

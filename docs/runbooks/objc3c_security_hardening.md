@@ -18,7 +18,9 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/security_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/release_foundation/provenance_policy.json`
-- `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+- release operations upgrade-claim policy:
+  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+  (historical filename; live contract fields are upgrade/support-scoped)
 - `tests/tooling/fixtures/distribution_credibility/operator_release_policy.json`
 - `tests/tooling/fixtures/external_validation/trust_policy.json`
 
@@ -49,7 +51,7 @@ The current checked-in security posture is intentionally narrow.
 - release trust is machine-derived from:
   - the release manifest
   - the SBOM and attestation publication
-  - package-channel install and rollback evidence
+  - package-channel install and revert evidence
   - update-manifest and support-window publication
   - the release-evidence index
 - macro/package/provenance trust is bounded by:
@@ -129,7 +131,7 @@ Installer and update trust currently terminates in:
 Those surfaces prove:
 
 - shipped payload lineage
-- package-channel install and rollback coherence
+- package-channel install and revert coherence
 - update-manifest and support-window publication coherence
 - machine-owned evidence linkage back to the shipped package family
 
@@ -143,7 +145,7 @@ Current installer/update/release-key hardening semantics:
 
 - release-manifest, SBOM, and attestation publication are the canonical checked-in
   trust anchors for shipped payload lineage
-- package channels, install receipts, rollback proofs, update manifests,
+- package channels, install receipts, revert proofs, update manifests,
   support-window reports, and distribution trust reports must all resolve to the
   same runnable package family
 - release-key handling is bounded to the local publication environment that
@@ -193,7 +195,7 @@ Security response states:
   - examples: stale trust-report inputs, candidate-only warnings, or incomplete
     but non-blocking publication refresh
 - `blocked`:
-  - install failure, rollback failure, trust drift, evidence gaps, unresolved
+  - install failure, revert failure, trust drift, evidence gaps, unresolved
     disclosure risk, or other blocking security regressions are active
 
 Current disclosure model:
@@ -208,7 +210,7 @@ Current disclosure model:
 Current incident classes:
 
 - `supply-chain-integrity`
-- `rollback-or-install-regression`
+- `revert-or-install-regression`
 - `metadata-or-provenance-drift`
 - `runtime-hardening-regression`
 - `disclosure-or-license-uncertainty`

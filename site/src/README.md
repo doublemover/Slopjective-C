@@ -48,7 +48,7 @@ Non-goals for the public site:
 - machine-facing packet inventories,
 - unexplained abbreviations or internal shorthand,
 - treating the site as a mirror of the archived `spec/` corpus.
-- advertising retired package-script aliases or implementation helper commands as
+- advertising retired package-script names or implementation helper commands as
   public workflows.
 
 ## Manual Edit Policy

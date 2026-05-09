@@ -20,7 +20,7 @@
     "remote_key_custody_claim_allowed": false,
     "automatic_key_rotation_claim_allowed": false,
     "hosted_revocation_claim_allowed": false,
-    "fallback_update_trust_allowed": false,
+    "alternate_update_trust_allowed": false,
     "trust_bypass_for_unsigned_payload_allowed": false
   },
   "required_artifacts": [
@@ -48,7 +48,7 @@
     "no automatic key-rotation claim",
     "no hosted revocation claim",
     "no signed-installer trust claim",
-    "no fallback update trust claim",
+    "no alternate update trust claim",
     "no trust bypass for unsigned payloads"
   ]
 }

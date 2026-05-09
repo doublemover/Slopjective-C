@@ -17,8 +17,8 @@ Current review policy:
 - replay with `npm run objc3c -- validate-governance-sustainability`
 - route support-impacting changes through release operations,
   long-horizon support, package ecosystem, adoption-legibility, and security
-  hardening evidence without compatibility aliases or fallback lanes
-- block proposal publication when required evidence, owners, rollback path, or
+  hardening evidence without retired aliases or alternate support lanes
+- block proposal publication when required evidence, owners, revert path, or
   deferred-behavior demotion is missing
 
 The underlying governance helpers are implementation anchors owned by the

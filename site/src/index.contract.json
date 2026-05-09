@@ -14,10 +14,10 @@
     "canonical_template": "npm run objc3c -- <action>",
     "authoritative_script": "package.json#scripts.objc3c",
     "forbidden_public_command_semantics": [
-      "package-script aliases",
-      "direct helper script commands",
-      "fallback command lanes",
-      "migration-lane support claims"
+      "retired package-script names",
+      "direct helper script commands as public entrypoints",
+      "alternate command support lanes",
+      "retired-source support claims"
     ]
   },
   "front_matter": [

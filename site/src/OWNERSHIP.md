@@ -30,7 +30,7 @@ This file defines source ownership for generated `site/index.md`.
 - Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
 - Command examples must use the public npm action surface,
-  `npm run objc3c -- <action>`, and must not introduce package-script alias
+  `npm run objc3c -- <action>`, and must not introduce retired package-script
   names.
 - Capability status changes must cite `docs/support/capability_matrix.*` and
   `docs/support/evidence_map.md`.

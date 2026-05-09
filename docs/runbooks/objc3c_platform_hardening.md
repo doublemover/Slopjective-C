@@ -17,7 +17,9 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
-- `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+- release operations upgrade-claim policy:
+  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+  (historical filename; live contract fields are upgrade/support-scoped)
 
 Replayable public workflow actions:
 
@@ -99,7 +101,7 @@ Toolchain claims must also stay narrow:
 - `clang++`, `python`, and `pwsh` presence are part of the live support surface
 - unsupported hosts and unsupported toolchain shapes must fail closed with
   explicit diagnostics
-- packaged install behavior, archive behavior, and update/rollback publication
+- packaged install behavior, archive behavior, and update/revert publication
   must all agree on the same support boundary
 
 ## Platform Support Tier Policy
@@ -136,7 +138,7 @@ story.
 
 - the canonical payload remains the runnable toolchain package
 - package channels are transport views over that payload
-- install receipts, bootstrap scripts, rollback, and update metadata must all
+- install receipts, bootstrap scripts, revert guidance, and update metadata must all
   resolve back to the same packaged payload family
 - archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
@@ -148,7 +150,7 @@ the evidence.
 
 - the current live claim boundary is the checked-in `windows-x64` package and
   install surface produced from the local runnable toolchain bundle
-- packaged archive reuse, installer replay, rollback, and update publication
+- packaged archive reuse, installer replay, revert guidance, and update publication
   are only claimable for the same checked-in host family
 - toolchain presence by itself does not imply archive or install support
 - a new LLVM or Clang major line is not automatically supported just because the
@@ -190,7 +192,7 @@ Allowed fail-closed behavior:
 
 - capability inspection and docs-only policy checks may still run on an
   unsupported host when they do not widen support claims
-- public package, install, rollback, and support-tier publication must fail
+- public package, install, revert, and support-tier publication must fail
   closed instead of silently degrading into unsupported behavior
 
 No unsupported host may be described as:

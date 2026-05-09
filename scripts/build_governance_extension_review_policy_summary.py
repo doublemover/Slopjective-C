@@ -47,7 +47,7 @@ def main() -> int:
     expect(isinstance(review_classes, list) and len(review_classes) >= 4, "review class set is too narrow", failures)
     required_review_classes = {
         "language-extension",
-        "compatibility-impacting-change",
+        "support-boundary-impacting-change",
         "package-ecosystem-change",
         "security-or-release-governance-change",
     }
@@ -69,7 +69,7 @@ def main() -> int:
     template_required = set(template.get("required_issue_fields", []))
     policy_required = set(policy.get("proposal_required_fields", []))
     expect(policy_required.issubset(template_required), "policy requires fields not present in proposal template", failures)
-    expect(any("rollback" in item for item in policy.get("fail_closed_conditions", [])), "rollback fail-closed condition missing", failures)
+    expect(any("revert" in item for item in policy.get("fail_closed_conditions", [])), "revert fail-closed condition missing", failures)
     expect(any("GitHub" in item for item in policy.get("publication_rules", [])), "GitHub publication rule missing", failures)
     expect(not missing_evidence_surfaces, f"missing evidence surfaces: {sorted(set(missing_evidence_surfaces))}", failures)
 

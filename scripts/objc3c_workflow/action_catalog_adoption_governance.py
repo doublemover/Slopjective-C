@@ -5,7 +5,7 @@ from __future__ import annotations
 from .action_spec import ActionSpec
 
 LONG_HORIZON_ACTION_SPECS: dict[str, ActionSpec] = {
-    "validate-long-horizon-operations": ActionSpec("validate-long-horizon-operations", "validate upgrade, rollback, soak, aging, and support-window evidence over the live package and application workflows", "python:scripts/check_objc3c_long_horizon_operations_integration.py", validation_tier="full", guarantee_owner="long-horizon support claims stay backed by generated upgrade, rollback, soak, aging, package, application, performance, and conformance evidence"),
+    "validate-long-horizon-operations": ActionSpec("validate-long-horizon-operations", "validate upgrade, revert, soak, aging, and support-window evidence over the live package and application workflows", "python:scripts/check_objc3c_long_horizon_operations_integration.py", validation_tier="full", guarantee_owner="long-horizon support claims stay backed by generated upgrade, revert, soak, aging, package, application, performance, and conformance evidence"),
     "publish-long-horizon-operations": ActionSpec("publish-long-horizon-operations", "publish support-window and long-horizon operator metadata from generated evidence", "python:scripts/publish_objc3c_long_horizon_operations_metadata.py", validation_tier="release", guarantee_owner="operator-facing support-window metadata stays generated from long-horizon evidence and blocks when claim audit reports release blockers"),
 }
 
