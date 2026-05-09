@@ -18,7 +18,9 @@ add_library(objc3c_support STATIC
   objc3_identifier_safe_suffix_characters.cpp
   objc3_identifier_safe_suffix_characters.h
   objc3_identifier_safe_suffix.h
-  objc3_ir_object_backend_token.cpp
+  objc3_ir_object_backend_kind.h
+  objc3_ir_object_backend_parser.cpp
+  objc3_ir_object_backend_parser.h
   objc3_ir_object_backend_token.h
   objc3_method_family.h
   objc3_method_family_profile_builder.cpp

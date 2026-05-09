@@ -1,15 +1,4 @@
 #pragma once
 
-#include <string_view>
-
-namespace objc3c::support {
-
-enum class IrObjectBackendToken {
-  Clang,
-  LLVMDirect,
-};
-
-bool ParseIrObjectBackendToken(std::string_view value,
-                               IrObjectBackendToken &backend);
-
-}  // namespace objc3c::support
+#include "support/objc3_ir_object_backend_kind.h"
+#include "support/objc3_ir_object_backend_parser.h"
