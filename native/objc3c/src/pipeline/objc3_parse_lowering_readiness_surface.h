@@ -12,26 +12,13 @@
 #include "pipeline/parse_lowering_artifact_keys.h"
 #include "pipeline/parse_lowering_diagnostic_keys.h"
 #include "pipeline/objc3_frontend_types.h"
-#include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 #include "pipeline/readiness/objc3_long_tail_grammar_readiness_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_conformance_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_parser_behavior_readiness.h"
+#include "pipeline/readiness/objc3_typed_sema_lowering_readiness.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.h"
 #include "support/objc3_string_predicates.h"
-
-inline bool HasObjc3TypedSemaToLoweringCoreFeatureSurface(
-    const Objc3TypedSemaToLoweringContractSurface &surface) {
-  return surface.typed_core_feature_case_count > 0 ||
-         surface.typed_core_feature_expansion_case_count > 0 ||
-         surface.typed_core_feature_edge_case_compatibility_ready ||
-         !surface.typed_handoff_key.empty() ||
-         !surface.typed_core_feature_key.empty() ||
-         !surface.typed_core_feature_expansion_key.empty() ||
-         !surface.typed_core_feature_edge_case_compatibility_key.empty() ||
-         surface.ready_for_lowering ||
-         !surface.failure_reason.empty();
-}
 
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -241,247 +228,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.long_tail_grammar_recovery_determinism_key +=
       ";toolchain_runtime_ga_operations_recovery_determinism_key=" +
       toolchain_runtime_ga_operations_recovery_determinism_key;
-  const Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface =
-      HasObjc3TypedSemaToLoweringCoreFeatureSurface(
-          pipeline_result.typed_sema_to_lowering_contract_surface)
-          ? pipeline_result.typed_sema_to_lowering_contract_surface
-          : BuildObjc3TypedSemaToLoweringContractSurface(pipeline_result, options);
-  surface.semantic_integration_surface_built =
-      typed_sema_to_lowering_contract_surface.semantic_integration_surface_built;
-  surface.semantic_diagnostics_deterministic =
-      pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
-  surface.semantic_type_metadata_deterministic =
-      typed_sema_to_lowering_contract_surface.semantic_type_metadata_handoff_deterministic;
-  surface.executable_metadata_lowering_handoff_ready =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_lowering_handoff_ready;
-  surface.executable_metadata_lowering_handoff_deterministic =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_lowering_handoff_deterministic;
-  surface.executable_metadata_typed_lowering_handoff_ready =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_typed_lowering_handoff_ready;
-  surface.executable_metadata_typed_lowering_handoff_deterministic =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_typed_lowering_handoff_deterministic;
-  surface.protocol_category_deterministic =
-      typed_sema_to_lowering_contract_surface.protocol_category_handoff_deterministic;
-  surface.class_protocol_category_linking_deterministic =
-      typed_sema_to_lowering_contract_surface.class_protocol_category_linking_handoff_deterministic;
-  surface.selector_normalization_deterministic =
-      typed_sema_to_lowering_contract_surface.selector_normalization_handoff_deterministic;
-  surface.property_attribute_deterministic =
-      typed_sema_to_lowering_contract_surface.property_attribute_handoff_deterministic;
-  surface.symbol_graph_deterministic =
-      typed_sema_to_lowering_contract_surface.symbol_graph_handoff_deterministic;
-  surface.scope_resolution_deterministic =
-      typed_sema_to_lowering_contract_surface.scope_resolution_handoff_deterministic;
-  surface.object_pointer_type_handoff_deterministic =
-      typed_sema_to_lowering_contract_surface.object_pointer_type_handoff_deterministic;
-  surface.typed_handoff_key_deterministic =
-      typed_sema_to_lowering_contract_surface.typed_handoff_key_deterministic;
-  surface.typed_sema_core_feature_consistent =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_consistent;
-  surface.typed_sema_core_feature_expansion_consistent =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_consistent;
-  surface.typed_sema_core_feature_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_case_count;
-  surface.typed_sema_core_feature_passed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_passed_case_count;
-  surface.typed_sema_core_feature_failed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_failed_case_count;
-  surface.typed_sema_core_feature_expansion_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_case_count;
-  surface.typed_sema_core_feature_expansion_passed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_passed_case_count;
-  surface.typed_sema_core_feature_expansion_failed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_failed_case_count;
-  surface.typed_sema_core_feature_key =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_key;
-  surface.executable_metadata_lowering_handoff_key =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_lowering_handoff_key;
-  surface.executable_metadata_typed_lowering_handoff_key =
-      typed_sema_to_lowering_contract_surface
-          .executable_metadata_typed_lowering_handoff_key;
-  surface.typed_sema_core_feature_expansion_key =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_key;
-  surface.typed_sema_edge_case_compatibility_consistent =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_compatibility_ready;
-  surface.typed_sema_edge_case_compatibility_key =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_compatibility_key;
-  surface.typed_sema_edge_case_compatibility_ready =
-      surface.typed_sema_edge_case_compatibility_consistent &&
-      !surface.typed_sema_edge_case_compatibility_key.empty();
-  surface.typed_sema_edge_case_expansion_consistent =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_expansion_consistent;
-  surface.typed_sema_edge_case_robustness_key =
-      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_robustness_key;
-  surface.typed_sema_edge_case_robustness_ready =
-      surface.typed_sema_edge_case_compatibility_ready &&
-      surface.typed_sema_edge_case_expansion_consistent &&
-      !surface.typed_sema_edge_case_robustness_key.empty();
-  surface.typed_sema_diagnostics_hardening_consistent =
-      typed_sema_to_lowering_contract_surface.typed_diagnostics_hardening_consistent;
-  surface.typed_sema_diagnostics_hardening_key =
-      typed_sema_to_lowering_contract_surface.typed_diagnostics_hardening_key;
-  surface.typed_sema_diagnostics_hardening_ready =
-      surface.typed_sema_diagnostics_hardening_consistent &&
-      surface.typed_sema_edge_case_robustness_ready &&
-      !surface.typed_sema_diagnostics_hardening_key.empty();
-  surface.typed_sema_recovery_determinism_consistent =
-      typed_sema_to_lowering_contract_surface.typed_recovery_determinism_consistent;
-  surface.typed_sema_recovery_determinism_key =
-      typed_sema_to_lowering_contract_surface.typed_recovery_determinism_key;
-  surface.typed_sema_recovery_determinism_ready =
-      surface.typed_sema_recovery_determinism_consistent &&
-      surface.typed_sema_diagnostics_hardening_ready &&
-      !surface.typed_sema_recovery_determinism_key.empty();
-  surface.typed_sema_conformance_matrix_consistent =
-      typed_sema_to_lowering_contract_surface.typed_conformance_matrix_consistent;
-  surface.typed_sema_conformance_matrix_key =
-      typed_sema_to_lowering_contract_surface.typed_conformance_matrix_key;
-  surface.typed_sema_conformance_matrix_ready =
-      surface.typed_sema_conformance_matrix_consistent &&
-      surface.typed_sema_recovery_determinism_ready &&
-      !surface.typed_sema_conformance_matrix_key.empty();
-  surface.typed_sema_conformance_corpus_consistent =
-      typed_sema_to_lowering_contract_surface.typed_conformance_corpus_consistent;
-  surface.typed_sema_conformance_corpus_key =
-      typed_sema_to_lowering_contract_surface.typed_conformance_corpus_key;
-  surface.typed_sema_conformance_corpus_ready =
-      surface.typed_sema_conformance_corpus_consistent &&
-      surface.typed_sema_conformance_matrix_ready &&
-      !surface.typed_sema_conformance_corpus_key.empty();
-  surface.typed_sema_performance_quality_guardrails_consistent =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_consistent;
-  surface.typed_sema_performance_quality_guardrails_ready =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_ready;
-  surface.typed_sema_performance_quality_guardrails_case_count =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_case_count;
-  surface.typed_sema_performance_quality_guardrails_passed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_passed_case_count;
-  surface.typed_sema_performance_quality_guardrails_failed_case_count =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_failed_case_count;
-  surface.typed_sema_performance_quality_guardrails_key =
-      typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_key;
-  surface.typed_sema_cross_lane_integration_consistent =
-      typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_consistent;
-  surface.typed_sema_cross_lane_integration_ready =
-      typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_ready;
-  surface.typed_sema_cross_lane_integration_key =
-      typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_key;
-  surface.typed_sema_docs_runbook_sync_consistent =
-      typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_consistent;
-  surface.typed_sema_docs_runbook_sync_ready =
-      typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_ready;
-  surface.typed_sema_docs_runbook_sync_key =
-      typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_key;
-  surface.typed_sema_release_candidate_replay_dry_run_consistent =
-      typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_consistent;
-  surface.typed_sema_release_candidate_replay_dry_run_ready =
-      typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_ready;
-  surface.typed_sema_release_candidate_replay_dry_run_key =
-      typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_key;
-  surface.typed_sema_advanced_core_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_consistent;
-  surface.typed_sema_advanced_core_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_ready;
-  surface.typed_sema_advanced_core_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_key;
-  surface.typed_sema_advanced_edge_compatibility_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_consistent;
-  surface.typed_sema_advanced_edge_compatibility_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_ready;
-  surface.typed_sema_advanced_edge_compatibility_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_key;
-  surface.typed_sema_advanced_diagnostics_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_consistent;
-  surface.typed_sema_advanced_diagnostics_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_ready;
-  surface.typed_sema_advanced_diagnostics_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_key;
-  surface.typed_sema_advanced_conformance_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_consistent;
-  surface.typed_sema_advanced_conformance_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_ready;
-  surface.typed_sema_advanced_conformance_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_key;
-  surface.typed_sema_advanced_integration_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_consistent;
-  surface.typed_sema_advanced_integration_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_ready;
-  surface.typed_sema_advanced_integration_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_key;
-  surface.typed_sema_advanced_performance_shard1_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_consistent;
-  surface.typed_sema_advanced_performance_shard1_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_ready;
-  surface.typed_sema_advanced_performance_shard1_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_key;
-  surface.typed_sema_advanced_core_shard2_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_consistent;
-  surface.typed_sema_advanced_core_shard2_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_ready;
-  surface.typed_sema_advanced_core_shard2_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_key;
-  surface.typed_sema_advanced_edge_compatibility_shard2_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_consistent;
-  surface.typed_sema_advanced_edge_compatibility_shard2_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_ready;
-  surface.typed_sema_advanced_edge_compatibility_shard2_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_key;
-  surface.typed_sema_advanced_diagnostics_shard2_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_consistent;
-  surface.typed_sema_advanced_diagnostics_shard2_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_ready;
-  surface.typed_sema_advanced_diagnostics_shard2_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_key;
-  surface.typed_sema_advanced_conformance_shard2_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_consistent;
-  surface.typed_sema_advanced_conformance_shard2_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_ready;
-  surface.typed_sema_advanced_conformance_shard2_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_key;
-  surface.typed_sema_advanced_integration_shard2_consistent =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_consistent;
-  surface.typed_sema_advanced_integration_shard2_ready =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_ready;
-  surface.typed_sema_advanced_integration_shard2_key =
-      typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_key;
-  surface.typed_sema_integration_closeout_signoff_consistent =
-      typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_consistent;
-  surface.typed_sema_integration_closeout_signoff_ready =
-      typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_ready;
-  surface.typed_sema_integration_closeout_signoff_key =
-      typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_key;
-  Objc3LoweringIRBoundary lowering_boundary;
-  std::string lowering_error;
-  const bool lowering_boundary_from_options_ready =
-      TryBuildObjc3LoweringIRBoundary(options.lowering, lowering_boundary, lowering_error);
-  const std::string lowering_boundary_replay_key_from_options =
-      lowering_boundary_from_options_ready ? Objc3LoweringIRBoundaryReplayKey(lowering_boundary)
-                                           : std::string();
-  const bool lowering_boundary_replay_key_matches_typed_surface =
-      !lowering_boundary_from_options_ready ||
-      lowering_boundary_replay_key_from_options ==
-          typed_sema_to_lowering_contract_surface.lowering_boundary_replay_key;
-  surface.lowering_boundary_ready =
-      typed_sema_to_lowering_contract_surface.lowering_boundary_ready &&
-      lowering_boundary_from_options_ready &&
-      lowering_boundary_replay_key_matches_typed_surface;
-  surface.lowering_boundary_replay_key =
-      typed_sema_to_lowering_contract_surface.lowering_boundary_replay_key;
-  if (surface.lowering_boundary_replay_key.empty() && lowering_boundary_from_options_ready) {
-    surface.lowering_boundary_replay_key = lowering_boundary_replay_key_from_options;
-  }
-  if (!typed_sema_to_lowering_contract_surface.failure_reason.empty()) {
-    surface.failure_reason = typed_sema_to_lowering_contract_surface.failure_reason;
-  } else if (!lowering_boundary_from_options_ready && !lowering_error.empty()) {
-    surface.failure_reason = lowering_error;
-  } else if (!lowering_boundary_replay_key_matches_typed_surface) {
-    surface.failure_reason = "typed sema/lowering boundary replay key does not match lowering contract";
-  }
+  const Objc3TypedSemaLoweringReadinessRecord typed_sema_lowering_readiness =
+      BuildObjc3TypedSemaLoweringReadiness(surface, pipeline_result, options);
 
   const bool diagnostics_clear =
       surface.lexer_diagnostic_count == 0 &&
@@ -516,290 +264,56 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.long_tail_grammar_diagnostics_hardening_ready &&
       surface.long_tail_grammar_recovery_determinism_ready &&
       parse_recovery_determinism_hardening_ready;
-  const bool typed_core_feature_expansion_case_accounting_consistent =
-      surface.typed_sema_core_feature_expansion_case_count ==
-          kObjc3TypedSemaToLoweringCoreFeatureExpansionCaseCount &&
-      surface.typed_sema_core_feature_expansion_case_count > 0 &&
-      surface.typed_sema_core_feature_expansion_case_count >=
-          surface.typed_sema_core_feature_expansion_passed_case_count &&
-      surface.typed_sema_core_feature_expansion_failed_case_count ==
-          (surface.typed_sema_core_feature_expansion_case_count -
-           surface.typed_sema_core_feature_expansion_passed_case_count);
-  const bool typed_core_feature_expansion_ready =
-      typed_core_feature_expansion_case_accounting_consistent &&
-      surface.typed_sema_core_feature_expansion_consistent &&
-      !surface.typed_sema_core_feature_expansion_key.empty();
   const bool typed_edge_case_compatibility_alignment =
-      surface.compatibility_handoff_consistent ==
-          typed_sema_to_lowering_contract_surface.compatibility_handoff_consistent &&
-      surface.language_version_pragma_coordinate_order_consistent ==
-          typed_sema_to_lowering_contract_surface.language_version_pragma_coordinate_order_consistent &&
-      surface.parse_artifact_replay_key_deterministic ==
-          typed_sema_to_lowering_contract_surface.parse_artifact_replay_key_deterministic &&
-      surface.parse_artifact_edge_case_robustness_consistent ==
-          typed_sema_to_lowering_contract_surface.parse_artifact_edge_case_robustness_consistent &&
-      surface.compatibility_handoff_key ==
-          typed_sema_to_lowering_contract_surface.compatibility_handoff_key &&
-      surface.parse_artifact_edge_robustness_key ==
-          typed_sema_to_lowering_contract_surface.parse_artifact_edge_robustness_key;
+      typed_sema_lowering_readiness.typed_edge_case_compatibility_alignment;
   const bool typed_edge_case_robustness_alignment =
-      surface.typed_sema_edge_case_expansion_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_expansion_consistent &&
-      surface.typed_sema_edge_case_robustness_ready ==
-          typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_robustness_ready &&
-      surface.typed_sema_edge_case_robustness_key ==
-          typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_robustness_key;
+      typed_sema_lowering_readiness.typed_edge_case_robustness_alignment;
   const bool typed_diagnostics_hardening_alignment =
-      surface.typed_sema_diagnostics_hardening_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_diagnostics_hardening_consistent &&
-      surface.typed_sema_diagnostics_hardening_ready ==
-          typed_sema_to_lowering_contract_surface.typed_diagnostics_hardening_ready &&
-      surface.typed_sema_diagnostics_hardening_key ==
-          typed_sema_to_lowering_contract_surface.typed_diagnostics_hardening_key;
+      typed_sema_lowering_readiness.typed_diagnostics_hardening_alignment;
   const bool typed_recovery_determinism_alignment =
-      surface.typed_sema_recovery_determinism_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_recovery_determinism_consistent &&
-      surface.typed_sema_recovery_determinism_ready ==
-          typed_sema_to_lowering_contract_surface.typed_recovery_determinism_ready &&
-      surface.typed_sema_recovery_determinism_key ==
-          typed_sema_to_lowering_contract_surface.typed_recovery_determinism_key;
+      typed_sema_lowering_readiness.typed_recovery_determinism_alignment;
   const bool typed_conformance_matrix_alignment =
-      surface.typed_sema_conformance_matrix_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_matrix_consistent &&
-      surface.typed_sema_conformance_matrix_ready ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_matrix_ready &&
-      surface.typed_sema_conformance_matrix_key ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_matrix_key;
+      typed_sema_lowering_readiness.typed_conformance_matrix_alignment;
   const bool typed_conformance_corpus_alignment =
-      surface.typed_sema_conformance_corpus_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_corpus_consistent &&
-      surface.typed_sema_conformance_corpus_ready ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_corpus_ready &&
-      surface.typed_sema_conformance_corpus_key ==
-          typed_sema_to_lowering_contract_surface.typed_conformance_corpus_key;
+      typed_sema_lowering_readiness.typed_conformance_corpus_alignment;
   const bool typed_performance_quality_guardrails_alignment =
-      surface.typed_sema_performance_quality_guardrails_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_consistent &&
-      surface.typed_sema_performance_quality_guardrails_ready ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_ready &&
-      surface.typed_sema_performance_quality_guardrails_case_count ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_case_count &&
-      surface.typed_sema_performance_quality_guardrails_passed_case_count ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_passed_case_count &&
-      surface.typed_sema_performance_quality_guardrails_failed_case_count ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_failed_case_count &&
-      surface.typed_sema_performance_quality_guardrails_key ==
-          typed_sema_to_lowering_contract_surface.typed_performance_quality_guardrails_key;
+      typed_sema_lowering_readiness.typed_performance_quality_guardrails_alignment;
   const bool typed_cross_lane_integration_alignment =
-      surface.typed_sema_cross_lane_integration_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_consistent &&
-      surface.typed_sema_cross_lane_integration_ready ==
-          typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_ready &&
-      surface.typed_sema_cross_lane_integration_key ==
-          typed_sema_to_lowering_contract_surface.typed_cross_lane_integration_key;
+      typed_sema_lowering_readiness.typed_cross_lane_integration_alignment;
   const bool typed_docs_runbook_sync_alignment =
-      surface.typed_sema_docs_runbook_sync_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_consistent &&
-      surface.typed_sema_docs_runbook_sync_ready ==
-          typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_ready &&
-      surface.typed_sema_docs_runbook_sync_key ==
-          typed_sema_to_lowering_contract_surface.typed_docs_runbook_sync_key;
+      typed_sema_lowering_readiness.typed_docs_runbook_sync_alignment;
   const bool typed_release_candidate_replay_dry_run_alignment =
-      surface.typed_sema_release_candidate_replay_dry_run_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_consistent &&
-      surface.typed_sema_release_candidate_replay_dry_run_ready ==
-          typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_ready &&
-      surface.typed_sema_release_candidate_replay_dry_run_key ==
-          typed_sema_to_lowering_contract_surface.typed_release_candidate_replay_dry_run_key;
+      typed_sema_lowering_readiness.typed_release_candidate_replay_dry_run_alignment;
   const bool typed_advanced_core_shard1_alignment =
-      surface.typed_sema_advanced_core_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_consistent &&
-      surface.typed_sema_advanced_core_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_ready &&
-      surface.typed_sema_advanced_core_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_core_shard1_alignment;
   const bool typed_advanced_edge_compatibility_shard1_alignment =
-      surface.typed_sema_advanced_edge_compatibility_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_consistent &&
-      surface.typed_sema_advanced_edge_compatibility_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_ready &&
-      surface.typed_sema_advanced_edge_compatibility_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_edge_compatibility_shard1_alignment;
   const bool typed_advanced_diagnostics_shard1_alignment =
-      surface.typed_sema_advanced_diagnostics_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_consistent &&
-      surface.typed_sema_advanced_diagnostics_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_ready &&
-      surface.typed_sema_advanced_diagnostics_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_diagnostics_shard1_alignment;
   const bool typed_advanced_conformance_shard1_alignment =
-      surface.typed_sema_advanced_conformance_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_consistent &&
-      surface.typed_sema_advanced_conformance_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_ready &&
-      surface.typed_sema_advanced_conformance_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_conformance_shard1_alignment;
   const bool typed_advanced_integration_shard1_alignment =
-      surface.typed_sema_advanced_integration_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_consistent &&
-      surface.typed_sema_advanced_integration_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_ready &&
-      surface.typed_sema_advanced_integration_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_integration_shard1_alignment;
   const bool typed_advanced_performance_shard1_alignment =
-      surface.typed_sema_advanced_performance_shard1_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_consistent &&
-      surface.typed_sema_advanced_performance_shard1_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_ready &&
-      surface.typed_sema_advanced_performance_shard1_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_performance_shard1_key;
+      typed_sema_lowering_readiness.typed_advanced_performance_shard1_alignment;
   const bool typed_advanced_core_shard2_alignment =
-      surface.typed_sema_advanced_core_shard2_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_consistent &&
-      surface.typed_sema_advanced_core_shard2_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_ready &&
-      surface.typed_sema_advanced_core_shard2_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_core_shard2_key;
+      typed_sema_lowering_readiness.typed_advanced_core_shard2_alignment;
   const bool typed_advanced_edge_compatibility_shard2_alignment =
-      surface.typed_sema_advanced_edge_compatibility_shard2_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_consistent &&
-      surface.typed_sema_advanced_edge_compatibility_shard2_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_ready &&
-      surface.typed_sema_advanced_edge_compatibility_shard2_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_edge_compatibility_shard2_key;
+      typed_sema_lowering_readiness.typed_advanced_edge_compatibility_shard2_alignment;
   const bool typed_advanced_diagnostics_shard2_alignment =
-      surface.typed_sema_advanced_diagnostics_shard2_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_consistent &&
-      surface.typed_sema_advanced_diagnostics_shard2_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_ready &&
-      surface.typed_sema_advanced_diagnostics_shard2_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard2_key;
+      typed_sema_lowering_readiness.typed_advanced_diagnostics_shard2_alignment;
   const bool typed_advanced_conformance_shard2_alignment =
-      surface.typed_sema_advanced_conformance_shard2_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_consistent &&
-      surface.typed_sema_advanced_conformance_shard2_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_ready &&
-      surface.typed_sema_advanced_conformance_shard2_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard2_key;
+      typed_sema_lowering_readiness.typed_advanced_conformance_shard2_alignment;
   const bool typed_advanced_integration_shard2_alignment =
-      surface.typed_sema_advanced_integration_shard2_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_consistent &&
-      surface.typed_sema_advanced_integration_shard2_ready ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_ready &&
-      surface.typed_sema_advanced_integration_shard2_key ==
-          typed_sema_to_lowering_contract_surface.typed_advanced_integration_shard2_key;
+      typed_sema_lowering_readiness.typed_advanced_integration_shard2_alignment;
   const bool typed_integration_closeout_signoff_alignment =
-      surface.typed_sema_integration_closeout_signoff_consistent ==
-          typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_consistent &&
-      surface.typed_sema_integration_closeout_signoff_ready ==
-          typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_ready &&
-      surface.typed_sema_integration_closeout_signoff_key ==
-          typed_sema_to_lowering_contract_surface.typed_integration_closeout_signoff_key;
+      typed_sema_lowering_readiness.typed_integration_closeout_signoff_alignment;
   const bool typed_core_feature_ready =
-      surface.typed_handoff_key_deterministic &&
-      surface.typed_sema_core_feature_consistent &&
-      typed_core_feature_expansion_ready &&
-      surface.typed_sema_edge_case_compatibility_ready &&
-      surface.typed_sema_edge_case_expansion_consistent &&
-      surface.typed_sema_edge_case_robustness_ready &&
-      surface.typed_sema_diagnostics_hardening_consistent &&
-      surface.typed_sema_diagnostics_hardening_ready &&
-      surface.typed_sema_recovery_determinism_consistent &&
-      surface.typed_sema_recovery_determinism_ready &&
-      surface.typed_sema_conformance_matrix_consistent &&
-      surface.typed_sema_conformance_matrix_ready &&
-      surface.typed_sema_conformance_corpus_consistent &&
-      surface.typed_sema_conformance_corpus_ready &&
-      surface.typed_sema_performance_quality_guardrails_consistent &&
-      surface.typed_sema_performance_quality_guardrails_ready &&
-      surface.typed_sema_cross_lane_integration_consistent &&
-      surface.typed_sema_cross_lane_integration_ready &&
-      surface.typed_sema_docs_runbook_sync_consistent &&
-      surface.typed_sema_docs_runbook_sync_ready &&
-      surface.typed_sema_release_candidate_replay_dry_run_consistent &&
-      surface.typed_sema_release_candidate_replay_dry_run_ready &&
-      surface.typed_sema_advanced_core_shard1_consistent &&
-      surface.typed_sema_advanced_core_shard1_ready &&
-      surface.typed_sema_advanced_edge_compatibility_shard1_consistent &&
-      surface.typed_sema_advanced_edge_compatibility_shard1_ready &&
-      surface.typed_sema_advanced_diagnostics_shard1_consistent &&
-      surface.typed_sema_advanced_diagnostics_shard1_ready &&
-      surface.typed_sema_advanced_conformance_shard1_consistent &&
-      surface.typed_sema_advanced_conformance_shard1_ready &&
-      surface.typed_sema_advanced_integration_shard1_consistent &&
-      surface.typed_sema_advanced_integration_shard1_ready &&
-      surface.typed_sema_advanced_performance_shard1_consistent &&
-      surface.typed_sema_advanced_performance_shard1_ready &&
-      surface.typed_sema_advanced_core_shard2_consistent &&
-      surface.typed_sema_advanced_core_shard2_ready &&
-      surface.typed_sema_advanced_edge_compatibility_shard2_consistent &&
-      surface.typed_sema_advanced_edge_compatibility_shard2_ready &&
-      surface.typed_sema_advanced_diagnostics_shard2_consistent &&
-      surface.typed_sema_advanced_diagnostics_shard2_ready &&
-      surface.typed_sema_advanced_conformance_shard2_consistent &&
-      surface.typed_sema_advanced_conformance_shard2_ready &&
-      surface.typed_sema_advanced_integration_shard2_consistent &&
-      surface.typed_sema_advanced_integration_shard2_ready &&
-      surface.typed_sema_integration_closeout_signoff_consistent &&
-      surface.typed_sema_integration_closeout_signoff_ready &&
-      typed_edge_case_compatibility_alignment &&
-      typed_edge_case_robustness_alignment &&
-      !surface.typed_sema_edge_case_compatibility_key.empty() &&
-      !surface.typed_sema_edge_case_robustness_key.empty() &&
-      typed_diagnostics_hardening_alignment &&
-      !surface.typed_sema_diagnostics_hardening_key.empty() &&
-      typed_recovery_determinism_alignment &&
-      !surface.typed_sema_recovery_determinism_key.empty() &&
-      typed_conformance_matrix_alignment &&
-      !surface.typed_sema_conformance_matrix_key.empty() &&
-      typed_conformance_corpus_alignment &&
-      !surface.typed_sema_conformance_corpus_key.empty() &&
-      typed_performance_quality_guardrails_alignment &&
-      !surface.typed_sema_performance_quality_guardrails_key.empty() &&
-      typed_cross_lane_integration_alignment &&
-      !surface.typed_sema_cross_lane_integration_key.empty() &&
-      typed_docs_runbook_sync_alignment &&
-      !surface.typed_sema_docs_runbook_sync_key.empty() &&
-      typed_release_candidate_replay_dry_run_alignment &&
-      !surface.typed_sema_release_candidate_replay_dry_run_key.empty() &&
-      typed_advanced_core_shard1_alignment &&
-      !surface.typed_sema_advanced_core_shard1_key.empty() &&
-      typed_advanced_edge_compatibility_shard1_alignment &&
-      !surface.typed_sema_advanced_edge_compatibility_shard1_key.empty() &&
-      typed_advanced_diagnostics_shard1_alignment &&
-      !surface.typed_sema_advanced_diagnostics_shard1_key.empty() &&
-      typed_advanced_conformance_shard1_alignment &&
-      !surface.typed_sema_advanced_conformance_shard1_key.empty() &&
-      typed_advanced_integration_shard1_alignment &&
-      !surface.typed_sema_advanced_integration_shard1_key.empty() &&
-      typed_advanced_performance_shard1_alignment &&
-      !surface.typed_sema_advanced_performance_shard1_key.empty() &&
-      typed_advanced_core_shard2_alignment &&
-      !surface.typed_sema_advanced_core_shard2_key.empty() &&
-      typed_advanced_edge_compatibility_shard2_alignment &&
-      !surface.typed_sema_advanced_edge_compatibility_shard2_key.empty() &&
-      typed_advanced_diagnostics_shard2_alignment &&
-      !surface.typed_sema_advanced_diagnostics_shard2_key.empty() &&
-      typed_advanced_conformance_shard2_alignment &&
-      !surface.typed_sema_advanced_conformance_shard2_key.empty() &&
-      typed_advanced_integration_shard2_alignment &&
-      !surface.typed_sema_advanced_integration_shard2_key.empty() &&
-      typed_integration_closeout_signoff_alignment &&
-      !surface.typed_sema_integration_closeout_signoff_key.empty() &&
-      !surface.typed_sema_core_feature_key.empty();
+      typed_sema_lowering_readiness.typed_core_feature_ready;
   const bool sema_handoff_ready =
-      typed_sema_to_lowering_contract_surface.ready_for_lowering &&
-      typed_core_feature_ready;
+      typed_sema_lowering_readiness.sema_handoff_ready;
   const bool semantic_handoff_deterministic =
-      surface.semantic_diagnostics_deterministic &&
-      surface.semantic_type_metadata_deterministic &&
-      surface.protocol_category_deterministic &&
-      surface.class_protocol_category_linking_deterministic &&
-      surface.selector_normalization_deterministic &&
-      surface.property_attribute_deterministic &&
-      surface.symbol_graph_deterministic &&
-      surface.scope_resolution_deterministic &&
-      surface.object_pointer_type_handoff_deterministic;
+      typed_sema_lowering_readiness.semantic_handoff_deterministic;
   surface.parse_lowering_conformance_matrix_consistent =
       surface.parse_lowering_conformance_matrix_case_count ==
           kObjc3ParseLoweringConformanceMatrixCaseCount &&
