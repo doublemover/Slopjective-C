@@ -6,49 +6,22 @@
 
 namespace objc3c::support {
 
-inline bool IsObjCReferenceAliasValueType(ValueType type) {
-  switch (type) {
-    case ValueType::ObjCId:
-    case ValueType::ObjCClass:
-    case ValueType::ObjCSel:
-    case ValueType::ObjCProtocol:
-    case ValueType::ObjCInstancetype:
-    case ValueType::ObjCObjectPtr:
-      return true;
-    default:
-      return false;
-  }
-}
-
-inline bool IsObjCReferenceAnnotationSite(bool id_spelling,
-                                          bool class_spelling,
-                                          bool instancetype_spelling,
-                                          bool object_pointer_type_spelling) {
-  return id_spelling || class_spelling || instancetype_spelling ||
-         object_pointer_type_spelling;
-}
-
-inline bool IsObjCRuntimeTypeSurface(bool id_spelling,
-                                     bool class_spelling,
-                                     bool sel_spelling,
-                                     bool instancetype_spelling,
-                                     bool object_pointer_type_spelling) {
-  return id_spelling || class_spelling || sel_spelling ||
-         instancetype_spelling || object_pointer_type_spelling;
-}
-
-inline bool IsObjectPointerTypeNameConsistent(
+bool IsObjCReferenceAliasValueType(ValueType type);
+bool IsObjCReferenceAnnotationSite(bool id_spelling,
+                                   bool class_spelling,
+                                   bool instancetype_spelling,
+                                   bool object_pointer_type_spelling);
+bool IsObjCRuntimeTypeSurface(bool id_spelling,
+                              bool class_spelling,
+                              bool sel_spelling,
+                              bool instancetype_spelling,
+                              bool object_pointer_type_spelling);
+bool IsObjectPointerTypeNameConsistent(
     bool object_pointer_type_spelling,
-    std::string_view object_pointer_type_name) {
-  return !object_pointer_type_spelling || !object_pointer_type_name.empty();
-}
-
-inline bool IsPointerDeclaratorDepthConsistent(
+    std::string_view object_pointer_type_name);
+bool IsPointerDeclaratorDepthConsistent(
     bool has_pointer_declarator,
-    unsigned pointer_declarator_depth) {
-  return has_pointer_declarator ? pointer_declarator_depth > 0u
-                                : pointer_declarator_depth == 0u;
-}
+    unsigned pointer_declarator_depth);
 
 template <typename ParamLike>
 inline bool SupportsObjCParamTypeSuffix(const ParamLike &param) {

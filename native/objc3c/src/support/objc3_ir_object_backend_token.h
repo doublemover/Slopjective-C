@@ -9,16 +9,7 @@ enum class IrObjectBackendToken {
   LLVMDirect,
 };
 
-inline bool ParseIrObjectBackendToken(std::string_view value, IrObjectBackendToken &backend) {
-  if (value == "clang") {
-    backend = IrObjectBackendToken::Clang;
-    return true;
-  }
-  if (value == "llvm-direct") {
-    backend = IrObjectBackendToken::LLVMDirect;
-    return true;
-  }
-  return false;
-}
+bool ParseIrObjectBackendToken(std::string_view value,
+                               IrObjectBackendToken &backend);
 
 }  // namespace objc3c::support
