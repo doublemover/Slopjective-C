@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+from scripts.source_hygiene.gate_contracts import (
+    HARD_CUTOVER_GATE_ID,
+    REQUIRED_RESIDUE_CLASSES,
+    RETIRED_ALLOWLIST_REPORT_FIELDS,
+)
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
 
@@ -325,6 +331,32 @@ def test_hard_cutover_default_roots_cover_public_command_truth_surfaces() -> Non
     assert "tests" in DEFAULT_SCAN_ROOTS
 
 
+def test_hard_cutover_policy_data_covers_closure_residue_classes(tmp_path: Path) -> None:
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+    residue_classes = {
+        pattern["residue_class"] for pattern in report["forbidden_patterns"]
+    }
+
+    assert set(REQUIRED_RESIDUE_CLASSES) <= residue_classes
+    assert {
+        pattern["gate_contract"] for pattern in report["forbidden_patterns"]
+    } == {HARD_CUTOVER_GATE_ID}
+
+
+def test_hard_cutover_report_declares_allowlist_free_contract(tmp_path: Path) -> None:
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["gate_contract"]["gate_id"] == HARD_CUTOVER_GATE_ID
+    assert report["gate_contract"]["closure_issues"] == ["8149", "8150"]
+    assert (
+        report["gate_contract"]["retired_allowlist_report_fields"]
+        == list(RETIRED_ALLOWLIST_REPORT_FIELDS)
+    )
+    for retired_key in RETIRED_ALLOWLIST_REPORT_FIELDS:
+        assert retired_key not in report
+        assert retired_key not in report["stats"]
+
+
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/pipeline/options.h",
@@ -371,6 +403,36 @@ def test_hard_cutover_gate_rejects_deterministic_arithmetic_wording(tmp_path: Pa
 
     assert report["ok"] is False
     assert report["active_findings"][0]["pattern_id"] == "deterministic-runtime-arithmetic"
+
+
+def test_hard_cutover_gate_rejects_projected_retired_behavior_claims(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Future compatibility aliases will be supported after closeout.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "projected-retired-behavior-claim"
+    assert report["active_findings"][0]["residue_class"] == "projected-behavior-claim"
+
+
+def test_hard_cutover_gate_rejects_legacy_compatibility_public_text(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "Legacy compatibility text remains authoritative.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "legacy-compatibility-text"
+    assert report["active_findings"][0]["residue_class"] == "legacy-compatibility-text"
 
 
 def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:

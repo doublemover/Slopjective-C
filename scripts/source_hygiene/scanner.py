@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +11,7 @@ from .config import (
     REPORT_SCHEMA_VERSION,
 )
 from .files import is_excluded, iter_scan_files, normalize_path
+from .gate_contracts import build_gate_stats, gate_contract_summary
 from .generated_reports import (
     generated_truth_boundary_report,
     tracked_generated_reports,
@@ -21,6 +21,12 @@ from .pattern_model import ForbiddenPattern
 from .patterns import FORBIDDEN_PATTERNS
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
+from .scan_config import (
+    SourceHygieneScanConfig,
+    compile_policy_patterns,
+    pattern_in_scope,
+)
+from .violations import build_pattern_violation
 
 __all__ = [
     "DEFAULT_JSON_REPORT",
@@ -37,25 +43,20 @@ __all__ = [
 ]
 
 
-def _is_pattern_in_scope(pattern: ForbiddenPattern, repo_path: str) -> bool:
-    if pattern.include_paths and not is_excluded(repo_path, pattern.include_paths):
-        return False
-    if pattern.exclude_paths and is_excluded(repo_path, pattern.exclude_paths):
-        return False
-    return True
-
-
 def scan_forbidden_patterns(
     root: Path,
     scan_roots: Iterable[str],
     excludes: Iterable[str],
+    patterns: Iterable[ForbiddenPattern] = FORBIDDEN_PATTERNS,
 ) -> list[dict[str, Any]]:
-    compiled = [
-        (pattern, re.compile(pattern.regex, re.IGNORECASE))
-        for pattern in FORBIDDEN_PATTERNS
-    ]
+    config = SourceHygieneScanConfig(
+        scan_roots=tuple(scan_roots),
+        excludes=tuple(excludes),
+        patterns=tuple(patterns),
+    )
+    compiled = compile_policy_patterns(config.patterns)
     findings: list[dict[str, Any]] = []
-    for path in iter_scan_files(root, scan_roots, excludes):
+    for path in iter_scan_files(root, config.scan_roots, config.excludes):
         repo_path = normalize_path(path, root)
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
@@ -65,10 +66,11 @@ def scan_forbidden_patterns(
             line_number = index + 1
             previous_line = lines[index - 1] if index > 0 else ""
             next_line = lines[index + 1] if index + 1 < len(lines) else ""
-            for pattern, regex in compiled:
-                if not _is_pattern_in_scope(pattern, repo_path):
+            for compiled_pattern in compiled:
+                pattern = compiled_pattern.pattern
+                if not pattern_in_scope(pattern, repo_path):
                     continue
-                if regex.search(line):
+                if compiled_pattern.regex.search(line):
                     if is_canonical_guardrail_context(
                         repo_path,
                         previous_line,
@@ -77,14 +79,12 @@ def scan_forbidden_patterns(
                     ):
                         continue
                     findings.append(
-                        {
-                            "pattern_id": pattern.pattern_id,
-                            "severity": pattern.severity,
-                            "description": pattern.description,
-                            "path": repo_path,
-                            "line": line_number,
-                            "excerpt": line.strip()[:240],
-                        }
+                        build_pattern_violation(
+                            pattern=pattern,
+                            repo_path=repo_path,
+                            line_number=line_number,
+                            line=line,
+                        )
                     )
     findings.sort(key=lambda item: (item["path"], item["line"], item["pattern_id"]))
     return findings
@@ -96,28 +96,38 @@ def build_report(
     scan_roots: Iterable[str] = DEFAULT_SCAN_ROOTS,
     excludes: Iterable[str] = DEFAULT_EXCLUDES,
 ) -> dict[str, Any]:
-    findings = scan_forbidden_patterns(root, scan_roots, excludes)
+    config = SourceHygieneScanConfig(
+        scan_roots=tuple(scan_roots),
+        excludes=tuple(excludes),
+    )
+    findings = scan_forbidden_patterns(
+        root,
+        config.scan_roots,
+        config.excludes,
+        config.patterns,
+    )
     generated_reports = tracked_generated_reports(root)
     generated_truth = generated_truth_boundary_report(root)
     generated_truth_findings = generated_truth["findings"]
+    stats = build_gate_stats(
+        finding_count=len(findings),
+        tracked_generated_report_count=len(generated_reports),
+        generated_truth_boundary_finding_count=len(generated_truth_findings),
+    )
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "root": str(root),
-        "scan_roots": list(scan_roots),
-        "excluded_globs": list(excludes),
-        "forbidden_patterns": [asdict(pattern) for pattern in FORBIDDEN_PATTERNS],
+        "scan_roots": list(config.scan_roots),
+        "excluded_globs": list(config.excludes),
+        "gate_contract": gate_contract_summary(),
+        "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,
         "active_findings": findings,
         "tracked_generated_reports": generated_reports,
         "generated_truth_boundaries": generated_truth["boundaries"],
         "generated_truth_boundary_findings": generated_truth_findings,
-        "stats": {
-            "finding_count": len(findings),
-            "active_finding_count": len(findings),
-            "tracked_generated_report_count": len(generated_reports),
-            "generated_truth_boundary_finding_count": len(generated_truth_findings),
-        },
+        "stats": stats,
         "ok": len(findings) == 0
         and not generated_reports
         and not generated_truth_findings,

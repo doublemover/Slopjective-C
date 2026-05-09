@@ -11,6 +11,7 @@ HARD_CUTOVER_RESIDUE_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bcompat(?:ibility)?[-_\s]+(?:wrapper|bridge|adapter|layer|facade|shim)s?\b"
         r"|\b(?:wrapper|bridge|adapter|layer|facade|shim)s?[-_\s]+compat(?:ibility)?\b",
         include_paths=IMPLEMENTATION_SOURCE_PATHS,
+        residue_class="shim-fallback-language",
     ),
     ForbiddenPattern(
         "fallback-implementation-surface",
@@ -18,6 +19,7 @@ HARD_CUTOVER_RESIDUE_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bfallback[-_\s]+(?:implementation|handler|adapter|bridge|shim|wrapper|path|route|mode|layer|dispatch|hot[-_\s]+path)s?\b"
         r"|\b(?:implementation|handler|adapter|bridge|shim|wrapper|path|route|mode|layer|dispatch|hot[-_\s]+path)s?[-_\s]+fallback\b",
         include_paths=IMPLEMENTATION_SOURCE_PATHS,
+        residue_class="shim-fallback-language",
     ),
     ForbiddenPattern(
         "migration-implementation-surface",
@@ -25,6 +27,7 @@ HARD_CUTOVER_RESIDUE_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bmigration[-_\s]+(?:lane|path|mode|support|bridge|adapter|wrapper|shim)s?\b"
         r"|\b(?:bridge|adapter|wrapper|shim|support)s?[-_\s]+migration\b",
         include_paths=IMPLEMENTATION_SOURCE_PATHS,
+        residue_class="shim-fallback-language",
     ),
     ForbiddenPattern(
         "legacy-compatibility-support-surface",
@@ -32,5 +35,6 @@ HARD_CUTOVER_RESIDUE_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\blegacy[-_\s]+(?:support|mode|path|bridge|adapter|wrapper|shim)s?\b"
         r"|\b(?:backcompat|back[-_\s]?compat|backward[-_\s]+compat(?:ibility)?)\b",
         include_paths=IMPLEMENTATION_SOURCE_PATHS,
+        residue_class="legacy-compatibility-text",
     ),
 )
