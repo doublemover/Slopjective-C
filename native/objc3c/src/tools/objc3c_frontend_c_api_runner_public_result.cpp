@@ -1,7 +1,5 @@
 #include "tools/objc3c_frontend_c_api_runner_public_result.h"
 
-#include "tools/objc3c_frontend_c_api_runner_result.h"
-
 namespace {
 
 bool FrontendCApiResultHasArtifact(
@@ -28,20 +26,7 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
   view.process_exit_code = result.process_exit_code;
   view.success = result.success != 0;
   view.semantic_skipped = result.semantic_skipped != 0;
-  view.paths.summary = summary_path.generic_string();
-  view.paths.diagnostics =
-      FrontendCApiResultArtifactPath(result,
-                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
-  view.paths.manifest =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
-  view.paths.ir =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
-  view.paths.object =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
-  view.paths.runtime_metadata_binary =
-      FrontendCApiResultArtifactPath(
-          result,
-          OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
+  view.paths = BuildFrontendCApiRunnerArtifactPathView(result, summary_path);
   view.last_error = last_error;
   view.result_error_message = result_error_message;
   view.c_api_ownership.result_owned_error_message =

@@ -3,8 +3,8 @@
 #include <filesystem>
 
 #include "io/objc3_json.h"
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_commands.h"
-#include "tools/objc3c_frontend_c_api_runner_result.h"
 
 namespace fs = std::filesystem;
 
@@ -17,21 +17,15 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &summary_path_text,
     const std::string &runtime_metadata_binary_path_text) {
-  const std::string diagnostics_path_text =
-      FrontendCApiResultArtifactPath(result,
-                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
-  const std::string manifest_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
-  const std::string ir_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
-  const std::string object_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  FrontendCApiRunnerArtifactPathView paths =
+      BuildFrontendCApiRunnerArtifactPathView(result, summary_path_text);
+  paths.runtime_metadata_binary = runtime_metadata_binary_path_text;
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   const bool compile_surface_ready = result.emit.attempted != 0;
   const bool runtime_inspector_ready =
-      FrontendCApiRunnerPathExists(object_path_text) &&
-      FrontendCApiRunnerPathExists(runtime_metadata_binary_path_text);
+      FrontendCApiRunnerPathExists(paths.object) &&
+      FrontendCApiRunnerPathExists(paths.runtime_metadata_binary);
   const bool showcase_surface_ready =
       fs::exists(fs::path("showcase") / "portfolio.json") &&
       fs::exists(fs::path("showcase") / "tutorial_walkthrough.json");
@@ -58,7 +52,7 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
   out << grandchild_indent << "\"source_path\": \""
       << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
   out << grandchild_indent << "\"summary_path\": \""
-      << EscapeJsonString(summary_path_text) << "\",\n";
+      << EscapeJsonString(paths.summary) << "\",\n";
   out << grandchild_indent << "\"artifact_roots\": [\n";
   out << grandchild_indent << "  \"tmp/artifacts/playground\",\n";
   out << grandchild_indent << "  \"tmp/reports/playground\",\n";
@@ -73,19 +67,19 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
   out << grandchild_indent << "],\n";
   out << grandchild_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "  \"summary\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.summary))
       << "\",\n";
   out << grandchild_indent << "  \"diagnostics\": \""
       << EscapeJsonString(
-             BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
+             BuildFrontendCApiRunnerReadCommand(paths.diagnostics))
       << "\",\n";
   out << grandchild_indent << "  \"manifest\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.manifest))
       << "\",\n";
   out << grandchild_indent << "  \"repro_runner\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerReproCommand(
              options,
-             fs::path(summary_path_text),
+             fs::path(paths.summary),
              true))
       << "\"\n";
   out << grandchild_indent << "}\n";
@@ -95,9 +89,9 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
   out << grandchild_indent << "\"available\": "
       << (runtime_inspector_ready ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"object_path\": \""
-      << EscapeJsonString(object_path_text) << "\",\n";
+      << EscapeJsonString(paths.object) << "\",\n";
   out << grandchild_indent << "\"runtime_metadata_binary_path\": \""
-      << EscapeJsonString(runtime_metadata_binary_path_text) << "\",\n";
+      << EscapeJsonString(paths.runtime_metadata_binary) << "\",\n";
   out << grandchild_indent << "\"public_actions\": [\n";
   out << grandchild_indent << "  \"inspect-runtime-inspector\",\n";
   out << grandchild_indent << "  \"inspect-capability-explorer\",\n";
@@ -111,10 +105,10 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
       << "\"tmp/reports/objc3c-public-workflow/capability-explorer.json\",\n";
   out << grandchild_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "  \"ir\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(ir_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.ir))
       << "\",\n";
   out << grandchild_indent << "  \"object\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(object_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.object))
       << "\"\n";
   out << grandchild_indent << "}\n";
   out << child_indent << "},\n";

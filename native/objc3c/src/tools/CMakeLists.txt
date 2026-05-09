@@ -1,4 +1,5 @@
 add_executable(objc3c_tools_frontend_c_api_runner
+  objc3c_frontend_c_api_runner_artifact_paths.cpp
   objc3c_frontend_c_api_runner_bonus_experiences_json.cpp
   objc3c_frontend_c_api_runner_c_string.cpp
   objc3c_frontend_c_api_runner_compile_options.cpp

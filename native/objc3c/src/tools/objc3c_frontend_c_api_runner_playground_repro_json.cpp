@@ -3,8 +3,8 @@
 #include <sstream>
 
 #include "io/objc3_json.h"
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_commands.h"
-#include "tools/objc3c_frontend_c_api_runner_result.h"
 
 namespace fs = std::filesystem;
 
@@ -20,15 +20,8 @@ void WriteFrontendCApiRunnerPlaygroundReproJson(
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
           ? "llvm-direct"
           : "clang";
-  const std::string diagnostics_path_text =
-      FrontendCApiResultArtifactPath(result,
-                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
-  const std::string manifest_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
-  const std::string ir_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
-  const std::string object_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  const FrontendCApiRunnerArtifactPathView paths =
+      BuildFrontendCApiRunnerArtifactPathView(result, summary_path_text);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
 
@@ -40,18 +33,18 @@ void WriteFrontendCApiRunnerPlaygroundReproJson(
   out << child_indent << "\"source_path\": \""
       << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
   out << child_indent << "\"summary_path\": \""
-      << EscapeJsonString(summary_path_text) << "\",\n";
+      << EscapeJsonString(paths.summary) << "\",\n";
   out << child_indent << "\"artifact_root\": "
       << "\"" << EscapeJsonString(options.out_dir.generic_string()) << "\",\n";
   out << child_indent << "\"artifact_paths\": {\n";
   out << grandchild_indent << "\"diagnostics\": \""
-      << EscapeJsonString(diagnostics_path_text) << "\",\n";
+      << EscapeJsonString(paths.diagnostics) << "\",\n";
   out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(manifest_path_text) << "\",\n";
-  out << grandchild_indent << "\"ir\": \"" << EscapeJsonString(ir_path_text)
+      << EscapeJsonString(paths.manifest) << "\",\n";
+  out << grandchild_indent << "\"ir\": \"" << EscapeJsonString(paths.ir)
       << "\",\n";
   out << grandchild_indent << "\"object\": \""
-      << EscapeJsonString(object_path_text) << "\"\n";
+      << EscapeJsonString(paths.object) << "\"\n";
   out << child_indent << "},\n";
   out << child_indent << "\"compile_profile\": {\n";
   out << grandchild_indent << "\"ir_object_backend\": \"" << backend_name
@@ -79,19 +72,19 @@ void WriteFrontendCApiRunnerPlaygroundReproJson(
   out << child_indent << "],\n";
   out << child_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "\"summary\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.summary))
       << "\",\n";
   out << grandchild_indent << "\"diagnostics\": \""
       << EscapeJsonString(
-             BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
+             BuildFrontendCApiRunnerReadCommand(paths.diagnostics))
       << "\",\n";
   out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.manifest))
       << "\",\n";
   out << grandchild_indent << "\"repro_runner\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerReproCommand(
              options,
-             fs::path(summary_path_text),
+             fs::path(paths.summary),
              true))
       << "\"\n";
   out << child_indent << "}\n";

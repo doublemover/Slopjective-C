@@ -4,8 +4,8 @@
 
 #include "ast/objc3_ast.h"
 #include "io/objc3_json.h"
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_commands.h"
-#include "tools/objc3c_frontend_c_api_runner_result.h"
 
 using objc3::io::EscapeJsonString;
 
@@ -21,11 +21,11 @@ void WriteFrontendCApiRunnerRuntimeInspectorJson(
     const std::string &indent,
     const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result) {
-  const std::string object_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  const FrontendCApiRunnerArtifactPathView paths =
+      BuildFrontendCApiRunnerArtifactPathView(result, std::string());
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
-  const bool available = FrontendCApiRunnerPathExists(object_path_text);
+  const bool available = FrontendCApiRunnerPathExists(paths.object);
   const std::string availability_reason =
       available ? std::string() : "object artifact missing or not emitted";
   out << "{\n";
@@ -41,7 +41,7 @@ void WriteFrontendCApiRunnerRuntimeInspectorJson(
       << EscapeJsonString(kObjc3RuntimeMetadataObjectInspectionFixturePath)
       << "\",\n";
   out << child_indent << "\"object_path\": \""
-      << EscapeJsonString(object_path_text) << "\",\n";
+      << EscapeJsonString(paths.object) << "\",\n";
   out << child_indent << "\"section_inventory_row_key\": \""
       << EscapeJsonString(
              kObjc3RuntimeMetadataObjectInspectionSectionInventoryRowKey)
@@ -53,12 +53,12 @@ void WriteFrontendCApiRunnerRuntimeInspectorJson(
   out << child_indent << "\"section_inventory_command\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSectionCommand,
-             object_path_text))
+             paths.object))
       << "\",\n";
   out << child_indent << "\"symbol_inventory_command\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
-             object_path_text))
+             paths.object))
       << "\",\n";
   out << child_indent << "\"arc_debug_state_snapshot_symbol\": \""
       << kObjc3RuntimeArcDebugStateSnapshotSymbol << "\",\n";
@@ -77,12 +77,12 @@ void WriteFrontendCApiRunnerRuntimeInspectorJson(
   out << grandchild_indent << "\"object_sections\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSectionCommand,
-             object_path_text))
+             paths.object))
       << "\",\n";
   out << grandchild_indent << "\"object_symbols\": \""
       << EscapeJsonString(BuildFrontendCApiRunnerObjectInspectionCommand(
              kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
-             object_path_text))
+             paths.object))
       << "\"\n";
   out << child_indent << "},\n";
   out << child_indent << "\"availability_reason\": \""

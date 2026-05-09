@@ -7,7 +7,6 @@
 #include "tools/objc3c_frontend_c_api_runner_observability_json.h"
 #include "tools/objc3c_frontend_c_api_runner_output_contract_json.h"
 #include "tools/objc3c_frontend_c_api_runner_public_result.h"
-#include "tools/objc3c_frontend_c_api_runner_result.h"
 #include "tools/objc3c_frontend_c_api_runner_runtime_inspector_json.h"
 #include "tools/objc3c_frontend_c_api_runner_stage_trace_json.h"
 

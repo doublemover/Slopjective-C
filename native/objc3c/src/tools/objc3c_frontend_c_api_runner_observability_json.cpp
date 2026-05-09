@@ -3,8 +3,11 @@
 #include <sstream>
 
 #include "io/objc3_json.h"
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_commands.h"
-#include "tools/objc3c_frontend_c_api_runner_result.h"
+#include "tools/objc3c_frontend_c_api_runner_diagnostic_totals.h"
+#include "tools/objc3c_frontend_c_api_runner_stage_selection.h"
+#include "tools/objc3c_frontend_c_api_runner_status_mapping.h"
 
 using objc3::io::EscapeJsonString;
 
@@ -16,15 +19,9 @@ void WriteFrontendCApiRunnerObservabilityJson(
     objc3c_frontend_c_status_t status,
     const std::string &result_error_message,
     const std::string &runtime_metadata_binary_path_text) {
-  const std::string diagnostics_path_text =
-      FrontendCApiResultArtifactPath(result,
-                                     OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
-  const std::string manifest_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
-  const std::string ir_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
-  const std::string object_path_text =
-      FrontendCApiResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
+  FrontendCApiRunnerArtifactPathView paths =
+      BuildFrontendCApiRunnerArtifactPathView(result, summary_path_text);
+  paths.runtime_metadata_binary = runtime_metadata_binary_path_text;
   const FrontendCApiDiagnosticTotals diagnostic_totals =
       BuildFrontendCApiDiagnosticTotals(result);
   const std::string last_attempted_stage =
@@ -56,38 +53,38 @@ void WriteFrontendCApiRunnerObservabilityJson(
   out << child_indent << "\"artifact_presence\": {\n";
   out << grandchild_indent << "\"summary\": true,\n";
   out << grandchild_indent << "\"diagnostics\": "
-      << (FrontendCApiRunnerPathExists(diagnostics_path_text) ? "true"
+      << (FrontendCApiRunnerPathExists(paths.diagnostics) ? "true"
                                                               : "false")
       << ",\n";
   out << grandchild_indent << "\"manifest\": "
-      << (FrontendCApiRunnerPathExists(manifest_path_text) ? "true" : "false")
+      << (FrontendCApiRunnerPathExists(paths.manifest) ? "true" : "false")
       << ",\n";
   out << grandchild_indent << "\"ir\": "
-      << (FrontendCApiRunnerPathExists(ir_path_text) ? "true" : "false")
+      << (FrontendCApiRunnerPathExists(paths.ir) ? "true" : "false")
       << ",\n";
   out << grandchild_indent << "\"object\": "
-      << (FrontendCApiRunnerPathExists(object_path_text) ? "true" : "false")
+      << (FrontendCApiRunnerPathExists(paths.object) ? "true" : "false")
       << ",\n";
   out << grandchild_indent << "\"runtime_metadata_binary\": "
-      << (!runtime_metadata_binary_path_text.empty() ? "true" : "false")
+      << (!paths.runtime_metadata_binary.empty() ? "true" : "false")
       << "\n";
   out << child_indent << "},\n";
   out << child_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "\"summary\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(summary_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.summary))
       << "\",\n";
   out << grandchild_indent << "\"diagnostics\": \""
       << EscapeJsonString(
-             BuildFrontendCApiRunnerReadCommand(diagnostics_path_text))
+             BuildFrontendCApiRunnerReadCommand(paths.diagnostics))
       << "\",\n";
   out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(manifest_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.manifest))
       << "\",\n";
   out << grandchild_indent << "\"ir\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(ir_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.ir))
       << "\",\n";
   out << grandchild_indent << "\"object\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(object_path_text))
+      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.object))
       << "\"\n";
   out << child_indent << "}\n";
   out << indent << "}";
