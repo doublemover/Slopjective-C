@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "contracts/objc3_diagnostic_owner_contract.h"
 #include "diag/objc3_diag_utils.h"
 
 namespace {
@@ -35,4 +36,23 @@ void CanonicalizeObjc3SemaPassDiagnostics(std::vector<std::string> &diagnostics)
 
 bool AreObjc3SemaPassDiagnosticsCanonical(const std::vector<std::string> &diagnostics) {
   return std::is_sorted(diagnostics.begin(), diagnostics.end(), IsObjc3SemaDiagnosticLess);
+}
+
+bool AreObjc3SemaPassDiagnosticsHardCutoverOwned(
+    const std::vector<std::string> &diagnostics) {
+  if (!Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kSemantic)) {
+    return false;
+  }
+  for (const std::string &diagnostic : diagnostics) {
+    unsigned line = 0u;
+    unsigned column = 0u;
+    std::string code;
+    if (!TryParseDiagnosticCoordinateAndCode(diagnostic, line, column, code) ||
+        !Objc3RenderedDiagnosticCodeMatchesStage(
+            Objc3FrontendDiagnosticStage::kSemantic,
+            code)) {
+      return false;
+    }
+  }
+  return true;
 }

@@ -9,3 +9,5 @@ using Objc3SemanticDiagnosticsBus = Objc3SemaDiagnosticsBus;
 
 void CanonicalizeObjc3SemaPassDiagnostics(std::vector<std::string> &diagnostics);
 bool AreObjc3SemaPassDiagnosticsCanonical(const std::vector<std::string> &diagnostics);
+bool AreObjc3SemaPassDiagnosticsHardCutoverOwned(
+    const std::vector<std::string> &diagnostics);

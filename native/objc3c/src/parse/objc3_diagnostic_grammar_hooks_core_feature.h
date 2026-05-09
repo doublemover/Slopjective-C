@@ -13,6 +13,8 @@ struct Objc3DiagnosticGrammarHooksCoreFeatureSurface {
   bool grammar_hook_namespace_consistent = false;
   bool coordinate_order_consistent = false;
   bool source_precision_consistent = false;
+  bool owner_contract_consistent = false;
+  bool recovery_is_failure_boundary = false;
   bool core_feature_consistent = false;
   std::string core_feature_key;
 };

@@ -10,5 +10,10 @@ inline Objc3FrontendDiagnosticStageSlice PostPipelineDiagnosticSlice(
   return Objc3FrontendDiagnosticStageSlice{
       Objc3FrontendDiagnosticStage::kPostPipeline,
       Objc3FrontendDiagnosticsBusContractId(),
-      &post_pipeline_diagnostics};
+      &post_pipeline_diagnostics,
+      kObjc3DiagnosticOwnerContractId,
+      kObjc3DiagnosticNoFallbackOwnerModel,
+      false,
+      false,
+      false};
 }

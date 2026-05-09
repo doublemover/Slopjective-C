@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "contracts/objc3_diagnostic_owner_contract.h"
 #include "sema/objc3_sema_canonical_literal_contract.h"
 #include "sema/objc3_sema_contract.h"
 
@@ -19,7 +20,7 @@ inline constexpr const char *kObjc3SemaStageInputOwner =
 inline constexpr const char *kObjc3SemaTypedSemanticHandoffOwner =
     "native.frontend.sema.typed-handoff";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
-    "native.frontend.sema.diagnostic-handoff";
+    "native.frontend.sema.diagnostic-stage";
 inline constexpr const char *kObjc3SemaNoFallbackOwnerModel =
     "strict-hard-cutover-no-fallback-no-compatibility-shim";
 
@@ -91,10 +92,14 @@ struct Objc3SemaPassFlowSummary {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner = kObjc3SemaTypedSemanticHandoffOwner;
   std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string diagnostic_catalog_owner = std::string(::kObjc3SemaDiagnosticCatalogOwner);
+  std::string diagnostic_fixit_owner = std::string(::kObjc3SemaDiagnosticFixitOwner);
+  std::string diagnostic_recovery_owner = std::string(::kObjc3SemaDiagnosticRecoveryOwner);
   std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
   bool owner_split_explicit = false;
   bool strict_no_fallback = true;
   bool strict_no_compatibility = true;
+  bool recovery_counts_as_success = false;
   bool replay_key_deterministic = false;
   bool deterministic = false;
 };
@@ -114,7 +119,8 @@ inline bool Objc3SemaOwnerSplitIsReady(
          Objc3SemaOwnerIsExplicit(typed_semantic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(diagnostic_handoff_owner) &&
          owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         strict_no_fallback && strict_no_compatibility;
+         strict_no_fallback && strict_no_compatibility &&
+         Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kSemantic);
 }
 
 inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summary) {
@@ -145,6 +151,9 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.pass_execution_fingerprint != 1469598103934665603ull &&
          !summary.deterministic_handoff_key.empty() &&
          summary.owner_split_explicit &&
+         Objc3SemaOwnerIsExplicit(summary.diagnostic_catalog_owner) &&
+         Objc3SemaOwnerIsExplicit(summary.diagnostic_fixit_owner) &&
+         Objc3SemaOwnerIsExplicit(summary.diagnostic_recovery_owner) &&
          Objc3SemaOwnerSplitIsReady(
              summary.stage_input_owner,
              summary.typed_semantic_handoff_owner,
@@ -152,6 +161,7 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
              summary.owner_model,
              summary.strict_no_fallback,
              summary.strict_no_compatibility) &&
+         !summary.recovery_counts_as_success &&
          summary.replay_key_deterministic &&
          summary.symbol_globals_count == summary.type_metadata_global_entries &&
          summary.symbol_functions_count == summary.type_metadata_function_entries &&
@@ -163,9 +173,13 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
 struct Objc3SemaDiagnosticsBus {
   std::vector<std::string> *diagnostics = nullptr;
   std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
+  std::string diagnostic_catalog_owner = std::string(::kObjc3SemaDiagnosticCatalogOwner);
+  std::string diagnostic_fixit_owner = std::string(::kObjc3SemaDiagnosticFixitOwner);
+  std::string diagnostic_recovery_owner = std::string(::kObjc3SemaDiagnosticRecoveryOwner);
   std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
   bool strict_no_fallback = true;
   bool strict_no_compatibility = true;
+  bool recovery_counts_as_success = false;
 
   void Publish(const std::string &diagnostic) const {
     if (diagnostics == nullptr) {
@@ -201,6 +215,7 @@ struct Objc3SemaPassManagerInput {
   std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
   bool strict_no_fallback = true;
   bool strict_no_compatibility = true;
+  bool recovery_counts_as_success = false;
 };
 
 struct Objc3ParserSemaConformanceMatrix {

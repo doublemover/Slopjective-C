@@ -9,10 +9,12 @@ constexpr std::array<NativeDiagCodeCatalogEntry,
     kNativeDiagArtifactToolingCatalog = {{
         {'A', Objc3DiagnosticSubsystem::kArtifact,
          Objc3DiagnosticCategory::kArtifact,
-         "artifact, manifest, and schema diagnostics", 1, 399},
+         "artifact, manifest, and schema diagnostics", 1, 399,
+         kObjc3ArtifactDiagnosticCatalogOwner},
         {'T', Objc3DiagnosticSubsystem::kTooling,
          Objc3DiagnosticCategory::kTooling,
-         "tooling and workflow diagnostics", 1, 399},
+         "tooling and workflow diagnostics", 1, 399,
+         kObjc3ToolingDiagnosticCatalogOwner},
     }};
 
 }  // namespace

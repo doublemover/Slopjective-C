@@ -9,8 +9,13 @@
 inline bool Objc3FrontendDiagnosticStageSliceIsValid(
     const Objc3FrontendDiagnosticStageSlice &slice) {
   return Objc3FrontendDiagnosticStageIsKnown(slice.stage) &&
+         Objc3DiagnosticStageIsHardCutover(slice.stage) &&
          Objc3ContractIdMatches(
              slice.contract_id,
              objc3c::contracts::kObjc3FrontendDiagnosticsBusContract) &&
-         slice.diagnostics != nullptr;
+         slice.diagnostics != nullptr &&
+         slice.owner_contract_id == kObjc3DiagnosticOwnerContractId &&
+         slice.owner_model == kObjc3DiagnosticNoFallbackOwnerModel &&
+         !slice.fallback_allowed && !slice.compatibility_shim_allowed &&
+         !slice.recovery_counts_as_success;
 }

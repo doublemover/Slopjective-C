@@ -32,6 +32,10 @@ void Advance(const std::vector<Objc3LexToken> &tokens, std::size_t &index) {
 void SynchronizeObjc3ParserTopLevel(
     const std::vector<Objc3LexToken> &tokens,
     std::size_t &index) {
+  if (!Objc3ParserRecoveryBoundaryIsHardCutoverOwned() ||
+      Objc3ParserRecoveryBoundaryCountsAsSuccess()) {
+    return;
+  }
   while (!At(tokens, index, TokenKind::Eof)) {
     if (Match(tokens, index, TokenKind::Semicolon)) {
       return;
@@ -46,6 +50,10 @@ void SynchronizeObjc3ParserTopLevel(
 void SynchronizeObjc3ParserFunctionTail(
     const std::vector<Objc3LexToken> &tokens,
     std::size_t &index) {
+  if (!Objc3ParserRecoveryBoundaryIsHardCutoverOwned() ||
+      Objc3ParserRecoveryBoundaryCountsAsSuccess()) {
+    return;
+  }
   if (At(tokens, index, TokenKind::LBrace)) {
     int depth = 0;
     while (!At(tokens, index, TokenKind::Eof)) {
@@ -70,6 +78,10 @@ void SynchronizeObjc3ParserFunctionTail(
 void SynchronizeObjc3ParserStatement(
     const std::vector<Objc3LexToken> &tokens,
     std::size_t &index) {
+  if (!Objc3ParserRecoveryBoundaryIsHardCutoverOwned() ||
+      Objc3ParserRecoveryBoundaryCountsAsSuccess()) {
+    return;
+  }
   while (!At(tokens, index, TokenKind::Eof)) {
     if (Match(tokens, index, TokenKind::Semicolon)) {
       return;

@@ -10,6 +10,8 @@ struct NativeDiagCatalogSummary {
   bool families_unique = false;
   bool ranges_valid = false;
   bool subsystem_mappings_complete = false;
+  bool owner_mappings_complete = false;
+  bool hard_cutover_flags_consistent = false;
 };
 
 NativeDiagCatalogSummary BuildNativeDiagCatalogSummary();

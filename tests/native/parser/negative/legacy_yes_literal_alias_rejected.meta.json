@@ -3,6 +3,15 @@
   "fixture": "legacy_yes_literal_alias_rejected.objc3",
   "origin": "hand-authored",
   "owner_phase": "parser",
+  "diagnostic_owner_contract": {
+    "contract_id": "objc3c.native.diagnostic.owner-split.hard-cutover.v1",
+    "catalog_owner": "native.frontend.parser.diagnostic-catalog",
+    "stage_owner": "native.frontend.parser.diagnostic-stage",
+    "fixit_owner": "native.frontend.parser.diagnostic-fixit",
+    "recovery_owner": "native.frontend.parser.diagnostic-recovery",
+    "owner_model": "strict-hard-cutover-no-fallback-no-compatibility-shim",
+    "recovery_counts_as_success": false
+  },
   "behavior_family": "negative",
   "fixture_kind": "rejection",
   "retired_surface_tags": [
@@ -11,7 +20,9 @@
   "boundary": {
     "canonical_behavior_source": true,
     "behavior_contract": "canonical-rejection",
-    "retired_positive_surface": true
+    "retired_positive_surface": true,
+    "fallback_allowed": false,
+    "shim_allowed": false
   },
   "expected": {
     "stage": "compile",

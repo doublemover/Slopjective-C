@@ -6,6 +6,7 @@
 #include "diag/objc3_diag_category.h"
 #include "diag/objc3_diag_code.h"
 #include "diag/objc3_diag_severity.h"
+#include "contracts/objc3_diagnostic_owner_contract.h"
 
 struct NativeDiagCodeCatalogEntry {
   char family = '\0';
@@ -14,6 +15,9 @@ struct NativeDiagCodeCatalogEntry {
   const char *summary = "";
   unsigned min_ordinal = 0;
   unsigned max_ordinal = 999;
+  std::string_view catalog_owner = kObjc3DiagnosticOwnerContractId;
+  bool legacy_positive_allowed = false;
+  bool fallback_allowed = false;
 };
 
 const NativeDiagCodeCatalogEntry *FindNativeDiagCodeCatalogEntry(

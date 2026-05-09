@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ast/objc3_ast_declarations.h"
+#include "contracts/objc3_diagnostic_owner_contract.h"
 
 // Parser-to-sema contract types. Keep parser outputs wrapped so downstream
 // lowering/IR/runtime consumers bind to explicit parser contracts.
@@ -46,6 +47,12 @@ struct Objc3ParserContractSnapshot {
   std::string long_tail_grammar_handoff_key;
   bool long_tail_grammar_handoff_deterministic = true;
   std::size_t parser_diagnostic_count = 0;
+  std::string diagnostic_owner_contract_id = std::string(kObjc3DiagnosticOwnerContractId);
+  std::string diagnostic_stage_owner = std::string(kObjc3ParserDiagnosticStageOwner);
+  std::string diagnostic_fixit_owner = std::string(kObjc3ParserDiagnosticFixitOwner);
+  std::string diagnostic_recovery_owner = std::string(kObjc3ParserDiagnosticRecoveryOwner);
+  bool diagnostic_owner_split_explicit = true;
+  bool diagnostic_recovery_counts_as_success = false;
   std::uint64_t ast_shape_fingerprint = 0;
   std::uint64_t ast_top_level_layout_fingerprint = 0;
   bool deterministic_handoff = true;

@@ -4,6 +4,15 @@
 
 namespace objc3c::parse {
 
+bool IsObjc3ParserOwnedDiagnosticCode(const char *code) {
+  if (code == nullptr) {
+    return false;
+  }
+  return Objc3RenderedDiagnosticCodeMatchesStage(
+      Objc3FrontendDiagnosticStage::kParser,
+      code);
+}
+
 std::string BuildObjc3ParserDiagnostic(
     const Objc3LexToken &token,
     const char *code,

@@ -2,6 +2,17 @@
 
 namespace objc3c::parse {
 
+bool Objc3ParserRecoveryBoundaryIsHardCutoverOwned() {
+  return Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kParser) &&
+         Objc3DiagnosticOwnerIsExplicit(kObjc3ParserRecoveryBoundaryOwner);
+}
+
+bool Objc3ParserRecoveryBoundaryCountsAsSuccess() {
+  const Objc3DiagnosticStageOwnerContract *contract =
+      FindObjc3DiagnosticStageOwnerContract(Objc3FrontendDiagnosticStage::kParser);
+  return contract == nullptr || contract->recovery_counts_as_success;
+}
+
 bool IsObjc3TopLevelRecoveryBoundaryToken(Objc3LexTokenKind kind) {
   switch (kind) {
   case Objc3LexTokenKind::KwModule:

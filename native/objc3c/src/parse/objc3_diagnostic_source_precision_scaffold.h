@@ -14,6 +14,8 @@ struct Objc3ParserDiagnosticSourcePrecisionScaffold {
   std::uint64_t coordinate_fingerprint = 1469598103934665603ull;
   bool coordinate_format_consistent = false;
   bool diagnostic_code_suffix_consistent = false;
+  bool diagnostic_owner_contract_consistent = false;
+  bool recovery_rejected_as_success = true;
   bool scaffold_consistent = false;
   std::string scaffold_key;
 };

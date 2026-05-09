@@ -449,6 +449,24 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
       snapshot.long_tail_grammar_handoff_deterministic ? 1ull : 0ull);
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.parser_diagnostic_count));
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      snapshot.diagnostic_owner_contract_id);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      snapshot.diagnostic_stage_owner);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      snapshot.diagnostic_fixit_owner);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      snapshot.diagnostic_recovery_owner);
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      snapshot.diagnostic_owner_split_explicit ? 1ull : 0ull);
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      snapshot.diagnostic_recovery_counts_as_success ? 1ull : 0ull);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_shape_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_top_level_layout_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.deterministic_handoff ? 1ull : 0ull);
@@ -533,7 +551,19 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
                                          snapshot.interface_decl_count + snapshot.implementation_decl_count +
                                          snapshot.function_decl_count;
   snapshot.parser_diagnostic_count = parser_diagnostic_count;
-  snapshot.deterministic_handoff = true;
+  snapshot.diagnostic_owner_contract_id = std::string(kObjc3DiagnosticOwnerContractId);
+  snapshot.diagnostic_stage_owner = std::string(kObjc3ParserDiagnosticStageOwner);
+  snapshot.diagnostic_fixit_owner = std::string(kObjc3ParserDiagnosticFixitOwner);
+  snapshot.diagnostic_recovery_owner = std::string(kObjc3ParserDiagnosticRecoveryOwner);
+  snapshot.diagnostic_owner_split_explicit =
+      Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kParser) &&
+      Objc3DiagnosticOwnerIsExplicit(snapshot.diagnostic_stage_owner) &&
+      Objc3DiagnosticOwnerIsExplicit(snapshot.diagnostic_fixit_owner) &&
+      Objc3DiagnosticOwnerIsExplicit(snapshot.diagnostic_recovery_owner);
+  snapshot.diagnostic_recovery_counts_as_success = false;
+  snapshot.deterministic_handoff =
+      snapshot.diagnostic_owner_split_explicit &&
+      !snapshot.diagnostic_recovery_counts_as_success;
   snapshot.parser_recovery_replay_ready = true;
   snapshot.long_tail_grammar_construct_count = BuildObjc3LongTailGrammarConstructCount(snapshot);
   snapshot.long_tail_grammar_covered_construct_count = BuildObjc3LongTailGrammarCoveredConstructCount(snapshot);

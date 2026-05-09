@@ -17,11 +17,30 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
   result.sema_pass_flow_summary.language_profile = input.language_profile;
   result.sema_pass_flow_summary.canonical_literal_rejection_total_sites =
       input.canonical_literal_rejection_counts.total_literal_sites();
+  result.sema_pass_flow_summary.stage_input_owner = input.stage_input_owner;
+  result.sema_pass_flow_summary.typed_semantic_handoff_owner =
+      input.typed_semantic_handoff_owner;
+  result.sema_pass_flow_summary.diagnostic_handoff_owner =
+      input.diagnostics_bus.diagnostic_handoff_owner;
+  result.sema_pass_flow_summary.diagnostic_catalog_owner =
+      input.diagnostics_bus.diagnostic_catalog_owner;
+  result.sema_pass_flow_summary.diagnostic_fixit_owner =
+      input.diagnostics_bus.diagnostic_fixit_owner;
+  result.sema_pass_flow_summary.diagnostic_recovery_owner =
+      input.diagnostics_bus.diagnostic_recovery_owner;
+  result.sema_pass_flow_summary.owner_model = input.owner_model;
+  result.sema_pass_flow_summary.strict_no_fallback = input.strict_no_fallback;
+  result.sema_pass_flow_summary.strict_no_compatibility =
+      input.strict_no_compatibility;
+  result.sema_pass_flow_summary.recovery_counts_as_success =
+      input.recovery_counts_as_success ||
+      input.diagnostics_bus.recovery_counts_as_success;
 
   bool deterministic_semantic_diagnostics = handoff.deterministic;
   bool diagnostics_canonicalized = true;
   bool diagnostics_accounting_consistent = true;
-  bool diagnostics_bus_publish_consistent = true;
+  bool diagnostics_bus_publish_consistent =
+      Objc3SemaDiagnosticsBusHasHardCutoverOwner(input.diagnostics_bus);
   std::size_t expected_diagnostics_size = 0u;
 
   for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {
@@ -63,10 +82,14 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
     CanonicalizeObjc3SemaPassDiagnostics(pass_diagnostics);
     const bool pass_diagnostics_canonical =
         AreObjc3SemaPassDiagnosticsCanonical(pass_diagnostics);
+    const bool pass_diagnostics_hard_cutover_owned =
+        AreObjc3SemaPassDiagnosticsHardCutoverOwned(pass_diagnostics);
     diagnostics_canonicalized =
-        diagnostics_canonicalized && pass_diagnostics_canonical;
+        diagnostics_canonicalized && pass_diagnostics_canonical &&
+        pass_diagnostics_hard_cutover_owned;
     deterministic_semantic_diagnostics =
-        deterministic_semantic_diagnostics && pass_diagnostics_canonical;
+        deterministic_semantic_diagnostics && pass_diagnostics_canonical &&
+        pass_diagnostics_hard_cutover_owned;
 
     const std::size_t diagnostics_bus_count_before_publish =
         Objc3SemaDiagnosticsBusCount(input.diagnostics_bus);

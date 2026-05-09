@@ -67,7 +67,11 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.diagnostic_handoff_owner,
       summary.owner_model,
       summary.strict_no_fallback,
-      summary.strict_no_compatibility);
+      summary.strict_no_compatibility) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_catalog_owner) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_fixit_owner) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_recovery_owner) &&
+      !summary.recovery_counts_as_success;
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -120,11 +124,16 @@ void FinalizeObjc3SemaPassFlowSummary(
               << ":stage_input_owner=" << summary.stage_input_owner
               << ":typed_handoff_owner=" << summary.typed_semantic_handoff_owner
               << ":diagnostic_owner=" << summary.diagnostic_handoff_owner
+              << ":diagnostic_catalog_owner=" << summary.diagnostic_catalog_owner
+              << ":diagnostic_fixit_owner=" << summary.diagnostic_fixit_owner
+              << ":diagnostic_recovery_owner=" << summary.diagnostic_recovery_owner
               << ":owner_model=" << summary.owner_model
               << ":strict_no_fallback="
               << (summary.strict_no_fallback ? "true" : "false")
               << ":strict_no_compatibility="
-              << (summary.strict_no_compatibility ? "true" : "false");
+              << (summary.strict_no_compatibility ? "true" : "false")
+              << ":recovery_counts_as_success="
+              << (summary.recovery_counts_as_success ? "true" : "false");
   summary.deterministic_handoff_key = handoff_key.str();
   summary.replay_key_deterministic =
       summary.deterministic_handoff_key.rfind("sema-pass-flow:v1:", 0) == 0 &&

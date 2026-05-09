@@ -9,10 +9,12 @@ constexpr std::array<NativeDiagCodeCatalogEntry,
     kNativeDiagRuntimeApiCatalog = {{
         {'R', Objc3DiagnosticSubsystem::kRuntime,
          Objc3DiagnosticCategory::kRuntime,
-         "runtime dispatch, C API, and metadata diagnostics", 1, 399},
+         "runtime dispatch, C API, and metadata diagnostics", 1, 399,
+         kObjc3RuntimeDiagnosticCatalogOwner},
         {'E', Objc3DiagnosticSubsystem::kFrontendApi,
          Objc3DiagnosticCategory::kFrontendApi,
-         "public frontend C API and embedding diagnostics", 1, 99},
+         "public frontend C API and embedding diagnostics", 1, 99,
+         kObjc3FrontendApiDiagnosticCatalogOwner},
     }};
 
 }  // namespace
