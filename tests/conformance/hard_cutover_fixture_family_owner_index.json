@@ -599,7 +599,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "generated_replay_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
@@ -609,9 +610,10 @@
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/objc3c/behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/objc3c/behavior_owner_splits/generated_replay_provenance.json"
       ],
-      "retired_disposition": "generated replay artifacts under tests/tooling/fixtures/objc3c are resolved through behavior-first phase indexes before any replay path is cited; runtime dispatch fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance path names remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "generated replay artifacts under tests/tooling/fixtures/objc3c are resolved through behavior-first phase indexes and generated replay provenance before any replay path is cited; replay packets, module.ll outputs, module.manifest.json outputs, generator labels, validation outputs, generated-only rows, report-only rows, migration-only rows, runtime dispatch fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance path names remain canonical rejection, strict-error, or provenance-only evidence rather than positive behavior truth"
     },
     {
       "family": "tooling_native_execution_metadata",
@@ -1207,6 +1209,7 @@
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/objc3c/behavior_owner_splits/generated_replay_provenance.json",
     "tests/tooling/fixtures/stress/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/stress/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/stress/behavior_owner_splits/sema.json",

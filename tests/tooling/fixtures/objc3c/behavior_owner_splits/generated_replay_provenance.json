@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-replay-behavior-owner-split",
+  "owner_phase": "generated_replay_provenance",
+  "source_root": "tests/tooling/fixtures/objc3c",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "generated replay provenance covers replay packets, generated module outputs, manifest outputs, validation payload rows, generator labels, report-only rows, generated-only rows, and migration-only rows as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "validation_*/M*.json",
+    "validation_*/replay_run_*/module.ll",
+    "validation_*/replay_run_*/module.manifest.json",
+    "validation_*/replay_run_*/module.*",
+    "tests/fixtures/generated/manifest.json",
+    "generator labels:*",
+    "validation outputs:*",
+    "*generated_output*",
+    "*generated-output*",
+    "*report_only*",
+    "*report-only*",
+    "*migration_only*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
+  "retired_surface_rule": "generated replay provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, report-only, shim, fallback, old-mode, and migration-only replay rows stay provenance, canonical rejection, or strict-error evidence"
+}

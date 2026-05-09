@@ -7,7 +7,8 @@
     "primary_axis": "behavior phase before validation contract directory name",
     "generated_rule": "all replay contracts under this root are provenance-only and have no phase support claim authority",
     "positive_rule": "generated replay artifacts can only point back to canonical behavior owners; they never define positive parser, sema, lowering, IR, runtime, or e2e behavior by themselves",
-    "retired_surface_rule": "runtime dispatch fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance path replay names are canonical rejection, strict-error, or provenance-only evidence"
+    "provenance_rule": "replay packets, generator labels, module.ll outputs, module.manifest.json outputs, report-only rows, generated-only rows, and migration-only rows stay generated replay provenance unless a canonical hand-authored fixture owner separately owns behavior",
+    "retired_surface_rule": "runtime dispatch fallback, shim, compatibility, old-mode, unsupported, generated-only, report-only, migration-only, and alternate acceptance path replay names are canonical rejection, strict-error, or provenance-only evidence"
   },
   "owner_splits": [
     {
@@ -37,6 +38,10 @@
     {
       "owner_phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "generated_replay_provenance",
+      "path": "tests/tooling/fixtures/objc3c/behavior_owner_splits/generated_replay_provenance.json"
     }
   ]
 }

@@ -4,7 +4,7 @@
   "owner_phase": "canonical_rejection",
   "source_root": "tests/tooling/fixtures/objc3c",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "generated replay names that mention runtime dispatch, host linking, diagnostics recovery, unsupported ownership, fallback-like dispatch, or compatibility-like import surfaces are non-positive unless a canonical behavior owner claims support",
+  "support_boundary": "generated replay names that mention runtime dispatch, host linking, diagnostics recovery, unsupported ownership, fallback-like dispatch, compatibility-like import surfaces, old-mode rows, shim rows, generated-only rows, report-only rows, or migration-only rows are non-positive unless a canonical behavior owner claims support",
   "phase_support_claim_authority": false,
   "selectors": [
     "validation_runtime_dispatch_host_link_contract/**",
@@ -18,8 +18,11 @@
     "*shim*",
     "*old_mode*",
     "*old-mode*",
-    "*legacy*"
+    "*legacy*",
+    "*generated-only*",
+    "*report-only*",
+    "*migration-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
-  "retired_surface_rule": "generated replay artifacts are canonical rejection, strict-error, or provenance-only evidence for retired surfaces; they cannot create behavior support"
+  "retired_surface_rule": "generated replay artifacts are canonical rejection, strict-error, or provenance-only evidence for retired surfaces; generated-only, report-only, shim, fallback, old-mode, and migration-only replay rows cannot create behavior support"
 }
