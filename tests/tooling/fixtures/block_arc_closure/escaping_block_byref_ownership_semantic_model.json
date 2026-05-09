@@ -10,7 +10,8 @@
     "parser",
     "sema",
     "runtime",
-    "canonical_rejection"
+    "canonical_rejection",
+    "block_arc_provenance"
   ],
   "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "ownership_transfer_capture_family_source_surface_contract_id": "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1",
@@ -56,7 +57,8 @@
   "claim_narrowing_constraints": [
     "no-public-block-or-arc-abi-widening",
     "no-lowering-owned-reinterpretation-of-capture-family-truth",
-    "no-evidence-only-sidecar-ownership-model"
+    "no-evidence-only-sidecar-ownership-model",
+    "semantic-profile-source-lists-private-helper-snapshots-generated-reports-and-proof-only-byref-rows-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "escaping-block-capture-legality",

@@ -8,7 +8,7 @@
     "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
     "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
   ],
-  "support_boundary": "block/ARC closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-report-only source truth, public runtime ABI widening, proof-only promotion helper claims, stack-only byref success, source-only sidecar ownership, unsupported ownership widening, non-runtime-backed interaction claims, milestone-local scaffolding, broader error/concurrency overclaiming, wrapper-only runnable actions, or successor-boundary widening are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "block/ARC closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, public runtime ABI widening, proof-only promotion helper claims, private-snapshot-only proof, stack-only byref success, source-only sidecar ownership, descriptor-only support, manifest-only support, unsupported ownership widening, non-runtime-backed interaction claims, milestone-local scaffolding, broader error/concurrency overclaiming, wrapper-only runnable actions, migration-only rows, or successor-boundary widening are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "owner_policy:report_only_allowed=false",
@@ -31,6 +31,7 @@
     "explicit_non_goals:no-public-runtime-abi-widening",
     "explicit_non_goals:no-claim-that-arc-automation-is-complete-beyond-the-runtime-owned-helper-and-lowering-surfaces-already-proved",
     "explicit_non_goals:no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path",
+    "explicit_non_goals:no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-helper-snapshots-arc-debug-snapshots-byref-forwarding-snapshots-public-workflow-labels-packaged-proof-summaries-or-provenance-rows",
     "explicit_non_goals:no-broader-error-or-concurrency-interaction-claim-before-successor-milestones-land",
     "interaction_boundaries:errors=status:deferred-to-M321",
     "interaction_boundaries:concurrency=status:deferred-to-M322",
@@ -42,14 +43,30 @@
     "*legacy*",
     "*unsupported*",
     "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*",
     "*generated-report*",
     "*public-runtime-abi-widening*",
     "*wrapper-only*",
+    "*wrapper_only*",
     "*proof-only*",
+    "*proof_only*",
+    "*private-snapshot-only*",
+    "*private_snapshot_only*",
     "*stack-only*",
+    "*stack_only*",
     "*source-only*",
-    "*successor-boundary-widening*"
+    "*source_only*",
+    "*descriptor-only*",
+    "*descriptor_only*",
+    "*manifest-only*",
+    "*manifest_only*",
+    "*migration-only*",
+    "*migration_only*",
+    "*successor-boundary-widening*",
+    "*successor_boundary_widening*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-report-only source truth, public runtime ABI widening, proof-only helper claims, stack-only byref success, source-only sidecar ownership, unsupported ownership widening, wrapper-only runnable actions, non-runtime-backed interaction claims, and successor-boundary widening remain canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, public runtime ABI widening, proof-only helper claims, private-snapshot-only proof, stack-only byref success, source-only sidecar ownership, descriptor-only rows, manifest-only rows, unsupported ownership widening, wrapper-only runnable actions, migration-only rows, non-runtime-backed interaction claims, and successor-boundary widening remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

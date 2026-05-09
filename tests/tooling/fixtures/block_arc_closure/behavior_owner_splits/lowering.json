@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
     "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
   ],
-  "support_boundary": "lowering ownership covers block/ARC helper emission, byref promotion/copy/dispose/forwarding packets, ARC retain/release/autorelease/autoreleasepool/weak helper traffic, and compile-manifest/runtime-registration coupling before IR or runtime owners cite artifacts",
+  "support_boundary": "lowering ownership covers block/ARC helper emission, byref promotion/copy/dispose/forwarding packets, ARC retain/release/autorelease/autoreleasepool/weak helper traffic, compile-manifest/runtime-registration coupling, and generated artifact provenance before IR or runtime owners cite artifacts",
   "phase_support_claim_authority": false,
   "selectors": [
     "compile_manifest_surface_keys:runtime_block_arc_unified_source_surface",
@@ -20,5 +20,5 @@
     "implementation_invariants:promotion-runs-copy-helper-once-for-owned-capture-storage"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, proof-only promotion helper claims, stack-only byref success, missing runtime-registration replay, and lowering report-only success are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode ARC lowering, proof-only promotion helper claims, stack-only byref success, missing runtime-registration replay, descriptor-only lowering rows, and lowering report-only success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

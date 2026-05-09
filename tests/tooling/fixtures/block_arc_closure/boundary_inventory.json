@@ -8,7 +8,14 @@
   "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
   "summary_implementation_anchor": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m320/M320-A001",
-  "generated_report_behavior_boundary": "generated block/ARC closure reports are provenance-only and cannot establish positive runtime, e2e, compatibility, or public ABI support",
+  "generated_report_behavior_boundary": "generated block/ARC closure reports are provenance-only and cannot establish positive parser, sema, lowering, IR, runtime, e2e, compatibility, ARC, byref, block runtime, or public ABI support",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before block source ownership, byref forwarding/copy/dispose, ARC lifetime insertion, weak/current-property helper traffic, private helper ABI snapshot, generated report, runtime acceptance artifact, public command, packaged runnable proof, or successor-boundary provenance row",
+    "support_authority": "block/ARC closure rows are source, semantic profile, lowering, runtime ABI, runtime helper, report, executable proof, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
+    "generated_report_rule": "runtime acceptance reports, runnable block/ARC reports, compile manifests, runtime-registration descriptors, private helper snapshots, ARC debug snapshots, byref forwarding snapshots, public workflow labels, and packaged proof summaries cannot define canonical support",
+    "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, proof-only promotion helper claims, stack-only byref success, source-only sidecar ownership, public runtime ABI widening, wrapper-only runnable actions, migration-only rows, milestone-local scaffolding, broader error/concurrency overclaims, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "block source semantics, byref promotion/copy/dispose/forwarding, ARC lifetime insertion, weak/current-property helpers, autoreleasepool helper traffic, private helper ABI snapshots, runtime acceptance reports, generated reports, public workflows, packaged proof labels, and successor-boundary rows are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
+  },
   "fail_closed_boundary_inventory": {
     "missing_behavior_owner_split": "fail-closed",
     "missing_owner_split_contract": "fail-closed",
@@ -144,6 +151,7 @@
     "no-public-runtime-abi-widening",
     "no-claim-that-arc-automation-is-complete-beyond-the-runtime-owned-helper-and-lowering-surfaces-already-proved",
     "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path",
+    "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-helper-snapshots-arc-debug-snapshots-byref-forwarding-snapshots-public-workflow-labels-packaged-proof-summaries-or-provenance-rows",
     "no-broader-error-or-concurrency-interaction-claim-before-successor-milestones-land"
   ],
   "successor_map": [

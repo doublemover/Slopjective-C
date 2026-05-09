@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json",
     "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json"
   ],
-  "support_boundary": "e2e ownership covers packaged runnable block/ARC conformance, runnable block/ARC end-to-end, public command routing, workflow actions, and closure publication only after lower phase owners and executable proof pass",
+  "support_boundary": "e2e ownership covers packaged runnable block/ARC conformance, runnable block/ARC end-to-end, public command routing, workflow actions, packaged proof, and closure publication only after lower phase owners and executable proof pass; public command wrappers and workflow labels are routing/provenance without canonical behavior ownership",
   "phase_support_claim_authority": false,
   "selectors": [
     "public_command_surfaces:test:objc3c:block-arc-conformance",
@@ -18,5 +18,5 @@
     "hard_cutover_requirements:successor-boundary-owners-must-not-widen-current-runtime-claims"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-report-only e2e claims, milestone-local runtime scaffolding, and successor-boundary widening are canonical rejection or provenance-only evidence"
+  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-only reports, generated-report-only e2e claims, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

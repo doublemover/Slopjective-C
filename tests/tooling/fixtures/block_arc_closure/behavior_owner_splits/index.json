@@ -11,10 +11,11 @@
     "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json"
   ],
   "split_policy": {
-    "primary_axis": "behavior phase before block/ARC source owner, byref forwarding contract, ARC lifetime policy, private helper ABI, generated report, runtime acceptance artifact, public command, or packaged runnable proof",
-    "positive_rule": "block/ARC closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
-    "provenance_rule": "runtime acceptance reports, runnable block/ARC reports, compile manifests, runtime-registration descriptors, private helper snapshots, public workflow labels, and generated reports are provenance until a phase owner claims behavior",
-    "retired_surface_rule": "fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-report-only source truth, proof-only promotion helper claims, stack-only byref success, public runtime ABI widening, milestone-local scaffolding, broader error/concurrency overclaims, and successor-boundary widening are canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before block/ARC source owner, byref forwarding/copy/dispose, ARC lifetime policy, weak/current-property helper traffic, private helper ABI, generated report, runtime acceptance artifact, public command, packaged runnable proof, or successor-boundary provenance",
+    "positive_rule": "block/ARC closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners over hand-authored fixtures; generated reports, compile artifacts, descriptors, private snapshots, workflow labels, packaged proof labels, and provenance rows are never positive support by themselves",
+    "provenance_rule": "runtime acceptance reports, runnable block/ARC reports, compile manifests, runtime-registration descriptors, private helper snapshots, ARC debug snapshots, byref forwarding snapshots, source/probe lists, public workflow labels, packaged proof summaries, machine-owned output roots, and generated reports are provenance until a phase owner claims behavior",
+    "retired_surface_rule": "fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, proof-only promotion helper claims, stack-only byref success, source-only sidecar ownership, public runtime ABI widening, wrapper-only runnable actions, migration-only rows, milestone-local scaffolding, broader error/concurrency overclaims, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, block source semantics, byref promotion/copy/dispose/forwarding, ARC lifetime insertion, weak/current-property helpers, autoreleasepool helper traffic, private helper ABI snapshots, generated reports, runtime acceptance reports, public workflow routing, packaged proof labels, and successor-boundary rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
   },
   "owner_splits": [
     {
@@ -44,6 +45,10 @@
     {
       "owner_phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "block_arc_provenance",
+      "path": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/block_arc_provenance.json"
     }
   ]
 }
