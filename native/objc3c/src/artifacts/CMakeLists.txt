@@ -11,6 +11,7 @@ target_link_libraries(objc3c_artifacts_reports INTERFACE
 )
 
 add_library(objc3c_artifacts STATIC
+  evidence/error_handling_replay_evidence.cpp
   identity/artifact_identity.cpp
   interop/interop_bridge_artifacts.cpp
   json/artifact_json_model.cpp
