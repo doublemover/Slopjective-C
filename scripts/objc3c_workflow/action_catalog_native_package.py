@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+from .action_catalog_native_package_proof import NATIVE_PACKAGE_PROOF_ACTION_SPECS
+from .action_catalog_native_package_toolchain import (
+    NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS,
+)
 from .action_spec import ActionSpec
 
 NATIVE_PACKAGE_ACTION_SPECS: dict[str, ActionSpec] = {
-    "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1"),
-    "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1"),
+    "package-runnable-toolchain": NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS[
+        "package-runnable-toolchain"
+    ],
+    "proof-objc3c": NATIVE_PACKAGE_PROOF_ACTION_SPECS["proof-objc3c"],
 }
+
+__all__ = ["NATIVE_PACKAGE_ACTION_SPECS"]
