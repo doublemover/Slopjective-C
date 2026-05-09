@@ -32,6 +32,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
+#include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
@@ -1572,38 +1573,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &metaprogramming_macro_host_process_cache_runtime_integration_summary =
           artifact_preservation_plan
               .metaprogramming_macro_host_process_cache_runtime_integration_summary;
-  std::size_t interface_class_method_symbols = 0;
-  std::size_t interface_instance_method_symbols = 0;
-  for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
-    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
-      if (method_metadata.is_class_method) {
-        ++interface_class_method_symbols;
-      } else {
-        ++interface_instance_method_symbols;
-      }
-    }
+  const Objc3FrontendArtifactSourceShapePlan source_shape_plan =
+      BuildObjc3FrontendArtifactSourceShapePlan(program, pipeline_result);
+  for (const auto &failure : source_shape_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  std::size_t implementation_class_method_symbols = 0;
-  std::size_t implementation_instance_method_symbols = 0;
-  std::size_t implementation_methods_with_body = 0;
-  for (const auto &implementation_metadata : type_metadata_handoff.implementations_lexicographic) {
-    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
-      if (method_metadata.is_class_method) {
-        ++implementation_class_method_symbols;
-      } else {
-        ++implementation_instance_method_symbols;
-      }
-      if (method_metadata.has_definition) {
-        ++implementation_methods_with_body;
-      }
-    }
-  }
-
-  std::vector<int> resolved_global_values;
-  if (!ResolveGlobalInitializerValues(program.globals, resolved_global_values) ||
-      resolved_global_values.size() != program.globals.size()) {
-    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: global initializer failed const evaluation");
-  }
+  const auto &interface_implementation_method_counts =
+      source_shape_plan.interface_implementation_method_counts;
+  const std::size_t interface_class_method_symbols =
+      interface_implementation_method_counts.interface_class_method_symbols;
+  const std::size_t interface_instance_method_symbols =
+      interface_implementation_method_counts.interface_instance_method_symbols;
+  const std::size_t implementation_class_method_symbols =
+      interface_implementation_method_counts.implementation_class_method_symbols;
+  const std::size_t implementation_instance_method_symbols =
+      interface_implementation_method_counts
+          .implementation_instance_method_symbols;
+  const std::size_t implementation_methods_with_body =
+      interface_implementation_method_counts.implementation_methods_with_body;
+  const std::vector<int> &resolved_global_values =
+      source_shape_plan.resolved_global_values;
 
   std::ostringstream manifest;
   manifest << "{\n";
