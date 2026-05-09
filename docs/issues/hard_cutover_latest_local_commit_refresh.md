@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `5086bf939`. It does not assert validation, remote issue
+refreshes through source commit `1c5747bb5`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -371,7 +371,7 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `5086bf939` without running validation, GitHub commands, push, or remote
+to source commit `1c5747bb5` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
@@ -410,6 +410,20 @@ issue edits. It groups the latest owner evidence as follows:
 - interop preservation artifact owners: `5672756b4`
 - diagnostics hardening readiness owners: `881539432`
 - accessor metadata lowering summary owners: `5086bf939`
+- object-model closure behavior owners: `43d17c999`
+- sema contract flow handoff owners: `43bc46be9`
+- lowering pass graph feature owners: `ccc8db449`
+- sema parity publication owners: `0a6dcae3f`
+- IR statement emission owners: `bbe3185ed`
+- public conformance reporting owners: `e0a078d7e`
+- sema intermodule flow owners: `a9ab19c86`
+- sema closeout readiness owners: `9b2b33d42`
+- sema closeout signoff owners: `90812d527`
+- frontend C API behavior owners: `d2c776808`
+- sema core summary owners: `64f73e8b1`
+- ownership-aware lowering scaffold owners: `69aaa347c`
+- sema type annotation readiness owners: `ba8b86d4c`
+- IR expression emission owners: `1c5747bb5`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:

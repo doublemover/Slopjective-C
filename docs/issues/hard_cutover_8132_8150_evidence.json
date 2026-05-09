@@ -19,8 +19,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "5086bf939",
-    "current_head_summary": "HC move accessor metadata lowering summaries",
+    "current_head": "1c5747bb5",
+    "current_head_summary": "refactor(ir): extract expression emission",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -205,7 +205,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "5086bf939",
+    "through_commit": "1c5747bb5",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -642,6 +642,186 @@
           "5086bf939"
         ],
         "owner_boundary": "accessor metadata lowering summary ownership is committed local artifact, lowering, and typed metadata evidence"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "43d17c999"
+        ],
+        "owner_boundary": "object-model closure behavior owner splits are committed local runtime, fixture, and behavior evidence only"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "43bc46be9"
+        ],
+        "owner_boundary": "sema contract flow handoff ownership is committed local semantic, lowering, and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ccc8db449"
+        ],
+        "owner_boundary": "lowering pass graph feature module ownership is committed local lowering, pipeline, and feature-surface evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "0a6dcae3f"
+        ],
+        "owner_boundary": "sema parity publication ownership is committed local semantic and publication evidence"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "bbe3185ed"
+        ],
+        "owner_boundary": "IR statement emission ownership is committed local IR and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8142",
+          "#8144",
+          "#8145",
+          "#8148",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "e0a078d7e"
+        ],
+        "owner_boundary": "public conformance reporting behavior owner splits are committed local workflow, fixture, schema, capability, and source-surface evidence only"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "a9ab19c86"
+        ],
+        "owner_boundary": "sema intermodule flow ownership is committed local semantic and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8145",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "9b2b33d42"
+        ],
+        "owner_boundary": "sema closeout readiness ownership is committed local semantic, capability, and closeout-readiness evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8145",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "90812d527"
+        ],
+        "owner_boundary": "sema closeout signoff ownership is committed local semantic, capability, and closeout-readiness evidence"
+      },
+      {
+        "issues": [
+          "#8140",
+          "#8141",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "d2c776808"
+        ],
+        "owner_boundary": "frontend C API behavior owner splits are committed local public contract and fixture evidence only"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "64f73e8b1"
+        ],
+        "owner_boundary": "sema core summary ownership is committed local semantic and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "69aaa347c"
+        ],
+        "owner_boundary": "ownership-aware lowering scaffold ownership is committed local lowering and pipeline evidence"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ba8b86d4c"
+        ],
+        "owner_boundary": "sema type annotation readiness ownership is committed local semantic and deep handoff evidence"
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "1c5747bb5"
+        ],
+        "owner_boundary": "IR expression emission ownership is committed local IR and deep handoff evidence"
       },
       {
         "issues": [
@@ -1962,7 +2142,8 @@
         "790be44b6",
         "8c35392ea",
         "228d345b9",
-        "61ccee955"
+        "61ccee955",
+        "43d17c999"
       ],
       "index_evidence": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
@@ -1999,7 +2180,11 @@
         "121c069aa",
         "8b103d250",
         "112256a5a",
-        "232997ba4"
+        "232997ba4",
+        "43bc46be9",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ],
       "index_evidence": [
         "tests/native/sema/types/typed_i32_bool_flow.objc3",
@@ -2016,7 +2201,12 @@
         "f69c6388f",
         "5464aa831",
         "f42bd035f",
-        "668456c12"
+        "668456c12",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ],
       "index_evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
@@ -2031,7 +2221,8 @@
         "17f74aff3",
         "183d5ff4b",
         "aa410fda7",
-        "bd3905d5c"
+        "bd3905d5c",
+        "bbe3185ed"
       ],
       "index_evidence": [
         "tests/native/ir/module/basic_i32_return_main.objc3",
@@ -2049,7 +2240,8 @@
         "fd22db929",
         "65abde135",
         "feb4cee08",
-        "d57506a67"
+        "d57506a67",
+        "ccc8db449"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",
@@ -2084,7 +2276,8 @@
         "4e6046642",
         "93ae37eab",
         "fb443536f",
-        "232997ba4"
+        "232997ba4",
+        "ccc8db449"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",
@@ -2123,7 +2316,8 @@
         "a612ccede",
         "72919dc66",
         "37e788a6b",
-        "5ed60a087"
+        "5ed60a087",
+        "e0a078d7e"
       ],
       "index_evidence": [
         "docs/workflows/commands.md",
@@ -2145,7 +2339,8 @@
         "eb25dbc34",
         "3196d7571",
         "2341a9bc4",
-        "93d70f907"
+        "93d70f907",
+        "43d17c999"
       ],
       "index_evidence": [
         "tests/tooling/runtime/README.md",
@@ -2165,7 +2360,9 @@
         "67aa58ad9",
         "16e517982",
         "e157ebe20",
-        "e02bde405"
+        "e02bde405",
+        "43d17c999",
+        "e0a078d7e"
       ],
       "index_evidence": [
         "tests/native/README.md",
@@ -2190,7 +2387,10 @@
         "ced378fe3",
         "7ef7fd02a",
         "d463f1bb6",
-        "f996dd674"
+        "f996dd674",
+        "43d17c999",
+        "e0a078d7e",
+        "9b2b33d42"
       ],
       "index_evidence": [
         "docs/support/capability_matrix.json",
@@ -2207,7 +2407,10 @@
         "6e2d0e987",
         "f5af084ec",
         "ffca53ae0",
-        "2d70b8e34"
+        "2d70b8e34",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ],
       "index_evidence": [
         "tests/native/sema/types/typed_i32_bool_flow.objc3",
@@ -2227,7 +2430,14 @@
         "73ce6b57f",
         "668456c12",
         "183d5ff4b",
-        "aa410fda7"
+        "aa410fda7",
+        "43d17c999",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "bbe3185ed",
+        "a9ab19c86",
+        "9b2b33d42"
       ],
       "index_evidence": [
         "tests/native/sema/ownership/strong_id_assignment.objc3",
@@ -2247,7 +2457,8 @@
         "972d97906",
         "a87b2c92e",
         "709148d75",
-        "22b8bb1c3"
+        "22b8bb1c3",
+        "e0a078d7e"
       ],
       "index_evidence": [
         "schemas/objc3c-capability-matrix-v1.schema.json",
@@ -2265,7 +2476,8 @@
         "058acec90",
         "f00e2e871",
         "6d0a19f84",
-        "f49c6f38f"
+        "f49c6f38f",
+        "e0a078d7e"
       ],
       "index_evidence": [
         "docs/workflows/commands.md",
@@ -2310,7 +2522,21 @@
         "f996dd674",
         "5672756b4",
         "881539432",
-        "5086bf939"
+        "5086bf939",
+        "43d17c999",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "bbe3185ed",
+        "e0a078d7e",
+        "a9ab19c86",
+        "9b2b33d42",
+        "90812d527",
+        "d2c776808",
+        "64f73e8b1",
+        "69aaa347c",
+        "ba8b86d4c",
+        "1c5747bb5"
       ],
       "index_evidence": [
         "tests/conformance/hard_cutover_issue_index.json",

@@ -21,8 +21,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "5086bf939",
-    "current_head_summary": "HC move accessor metadata lowering summaries",
+    "current_head": "1c5747bb5",
+    "current_head_summary": "refactor(ir): extract expression emission",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -196,7 +196,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "5086bf939",
+    "through_commit": "1c5747bb5",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -598,6 +598,172 @@
         ],
         "primary_commits": [
           "5086bf939"
+        ]
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "43d17c999"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "43bc46be9"
+        ]
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ccc8db449"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "0a6dcae3f"
+        ]
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "bbe3185ed"
+        ]
+      },
+      {
+        "issues": [
+          "#8142",
+          "#8144",
+          "#8145",
+          "#8148",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "e0a078d7e"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "a9ab19c86"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8145",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "9b2b33d42"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8145",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "90812d527"
+        ]
+      },
+      {
+        "issues": [
+          "#8140",
+          "#8141",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "d2c776808"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "64f73e8b1"
+        ]
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "69aaa347c"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "ba8b86d4c"
+        ]
+      },
+      {
+        "issues": [
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "1c5747bb5"
         ]
       },
       {
@@ -1243,7 +1409,8 @@
         "ebe18944b",
         "1897efd7a",
         "3334f4a59",
-        "2728c61d5"
+        "2728c61d5",
+        "43d17c999"
       ]
     },
     {
@@ -1269,7 +1436,11 @@
         "9bbd9a143",
         "2728c61d5",
         "730f316fd",
-        "589f12fd0"
+        "589f12fd0",
+        "43bc46be9",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ]
     },
     {
@@ -1278,7 +1449,12 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "68f793396",
-        "dae4e84b4"
+        "dae4e84b4",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ]
     },
     {
@@ -1289,7 +1465,8 @@
         "1da2a515b",
         "062da3dbc",
         "68f793396",
-        "3c335bfae"
+        "3c335bfae",
+        "bbe3185ed"
       ]
     },
     {
@@ -1318,7 +1495,8 @@
         "e1347e564",
         "d3079ed69",
         "4204602fc",
-        "f7ff17441"
+        "f7ff17441",
+        "ccc8db449"
       ]
     },
     {
@@ -1344,7 +1522,8 @@
         "05250580f",
         "371509a81",
         "40ffba0e8",
-        "ce6e66578"
+        "ce6e66578",
+        "ccc8db449"
       ]
     },
     {
@@ -1377,7 +1556,8 @@
       "primary_refresh_commits": [
         "99cab5b8a",
         "b1f1ba7a7",
-        "371509a81"
+        "371509a81",
+        "e0a078d7e"
       ]
     },
     {
@@ -1390,7 +1570,8 @@
         "1897efd7a",
         "3334f4a59",
         "ef2b4e7ad",
-        "7be1a0eec"
+        "7be1a0eec",
+        "43d17c999"
       ]
     },
     {
@@ -1404,7 +1585,9 @@
         "5788dcf91",
         "4653e8d07",
         "106006a74",
-        "d9077c97f"
+        "d9077c97f",
+        "43d17c999",
+        "e0a078d7e"
       ]
     },
     {
@@ -1423,7 +1606,10 @@
         "ced378fe3",
         "7ef7fd02a",
         "d463f1bb6",
-        "f996dd674"
+        "f996dd674",
+        "43d17c999",
+        "e0a078d7e",
+        "9b2b33d42"
       ]
     },
     {
@@ -1438,7 +1624,10 @@
         "6f529ddfd",
         "6fb35f438",
         "1f0432fb2",
-        "e1347e564"
+        "e1347e564",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ]
     },
     {
@@ -1453,7 +1642,13 @@
         "6f529ddfd",
         "6fb35f438",
         "4204602fc",
-        "589f12fd0"
+        "589f12fd0",
+        "43d17c999",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "a9ab19c86",
+        "9b2b33d42"
       ]
     },
     {
@@ -1476,14 +1671,17 @@
         "63e7ad1eb",
         "d3079ed69",
         "4204602fc",
-        "f7ff17441"
+        "f7ff17441",
+        "e0a078d7e"
       ]
     },
     {
       "issue": "#8149",
       "anchor": "#8149",
       "status_for_tracker": "evidence-ready",
-      "primary_refresh_commits": []
+      "primary_refresh_commits": [
+        "e0a078d7e"
+      ]
     },
     {
       "issue": "#8150",
@@ -1524,7 +1722,21 @@
         "f996dd674",
         "5672756b4",
         "881539432",
-        "5086bf939"
+        "5086bf939",
+        "43d17c999",
+        "43bc46be9",
+        "ccc8db449",
+        "0a6dcae3f",
+        "bbe3185ed",
+        "e0a078d7e",
+        "a9ab19c86",
+        "9b2b33d42",
+        "90812d527",
+        "d2c776808",
+        "64f73e8b1",
+        "69aaa347c",
+        "ba8b86d4c",
+        "1c5747bb5"
       ]
     }
   ]

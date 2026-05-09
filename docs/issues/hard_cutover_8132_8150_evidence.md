@@ -30,7 +30,21 @@ Canonical behavior and no-compatibility indexes:
 
 Current branch head covered by the support/evidence closeout map:
 
-- latest source head folded into this docs-only map: `5086bf939` (`HC move accessor metadata lowering summaries`)
+- latest source head folded into this docs-only map: `1c5747bb5` (`refactor(ir): extract expression emission`)
+- prior covered source head: `ba8b86d4c` (`HC extract sema type annotation readiness builder`)
+- prior covered source head: `69aaa347c` (`HC extract ownership-aware lowering scaffold module`)
+- prior covered source head: `64f73e8b1` (`HC extract sema core summary builder`)
+- prior covered source head: `d2c776808` (`HC split frontend C API behavior owners`)
+- prior covered source head: `90812d527` (`HC extract sema closeout signoff helpers`)
+- prior covered source head: `9b2b33d42` (`HC extract sema closeout readiness builders`)
+- prior covered source head: `a9ab19c86` (`HC extract sema intermodule flow builders`)
+- prior covered source head: `e0a078d7e` (`HC split public conformance reporting owners`)
+- prior covered source head: `bbe3185ed` (`refactor(ir): extract statement emission`)
+- prior covered source head: `0a6dcae3f` (`HC extract sema parity publication builder`)
+- prior covered source head: `ccc8db449` (`HC split lowering pass graph feature modules`)
+- prior covered source head: `43bc46be9` (`HC extract sema contract flow handoff module`)
+- prior covered source head: `43d17c999` (`HC split object model closure behavior owners`)
+- prior covered source head: `5086bf939` (`HC move accessor metadata lowering summaries`)
 - prior covered source head: `881539432` (`HC extract diagnostics hardening readiness modules`)
 - prior covered source head: `5672756b4` (`HC move interop preservation artifact builders`)
 - prior covered source head: `f996dd674` (`HC split metaprogramming interop behavior owners`)
@@ -443,6 +457,40 @@ Post-`4fddfacb7` local owner refresh:
 - Accessor metadata lowering summary ownership refreshes local artifact,
   lowering, and typed metadata evidence for `#8136`, `#8138`, `#8146`,
   `#8147`, and `#8150`.
+- Object-model closure behavior owner splits refresh local runtime, fixture, and
+  behavior evidence for `#8133`, `#8143`, `#8144`, `#8145`, `#8147`, and
+  `#8150`.
+- Sema contract flow handoff ownership refreshes local semantic, lowering, and
+  deep handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
+- Lowering pass graph feature module ownership refreshes local lowering,
+  pipeline, and feature-surface evidence for `#8136`, `#8138`, `#8140`,
+  `#8147`, and `#8150`.
+- Sema parity publication ownership refreshes local semantic and publication
+  evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
+- IR statement emission ownership refreshes local IR and deep handoff evidence
+  for `#8137`, `#8147`, and `#8150`.
+- Public conformance reporting behavior owner splits refresh local workflow,
+  fixture, schema, capability, and source-surface evidence for `#8142`,
+  `#8144`, `#8145`, `#8148`, `#8149`, and `#8150`.
+- Sema intermodule flow ownership refreshes local semantic and deep handoff
+  evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
+- Sema closeout readiness ownership refreshes local semantic, capability, and
+  closeout-readiness evidence for `#8135`, `#8136`, `#8145`, `#8146`,
+  `#8147`, and `#8150`.
+- Sema closeout signoff ownership refreshes local semantic, capability, and
+  closeout-readiness evidence for `#8135`, `#8136`, `#8145`, `#8146`,
+  `#8147`, and `#8150`.
+- Frontend C API behavior owner splits refresh local public contract, fixture,
+  and capability evidence for `#8140`, `#8141`, `#8144`, `#8145`, and
+  `#8150`.
+- Sema core summary ownership refreshes local semantic and deep handoff evidence
+  for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
+- Ownership-aware lowering scaffold ownership refreshes local lowering/pipeline
+  evidence for `#8136`, `#8147`, and `#8150`.
+- Sema type annotation readiness ownership refreshes local semantic and deep
+  handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
+- IR expression emission ownership refreshes local IR and deep handoff evidence
+  for `#8137`, `#8147`, and `#8150`.
 - Parser inline-asm finalizer, semantic constant evaluator, and runtime dispatch
   entrypoint owners refresh parser, sema, runtime dispatch, and runtime
   acceptance evidence for `#8133`, `#8134`, `#8135`, `#8143`, `#8146`,
@@ -457,7 +505,7 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8144` and `#8150`.
 - Generated replay behavior owner splits refresh local generated-fixture
   ownership evidence for `#8144` and `#8150`.
-- The latest committed source head folded into this docs-only map is `5086bf939`.
+- The latest committed source head folded into this docs-only map is `1c5747bb5`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
 These issue rows are local implementation-evidence summaries only. They are not
@@ -484,7 +532,7 @@ claims.
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
 | `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed source refresh through `5086bf939`. Validation, push, GitHub issue edits, and remote closure remain deferred by current constraints. |
+| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed source refresh through `1c5747bb5`. Validation, push, GitHub issue edits, and remote closure remain deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

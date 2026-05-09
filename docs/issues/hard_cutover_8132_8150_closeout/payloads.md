@@ -23,8 +23,22 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-source head is `5086bf939` (`HC move accessor metadata lowering summaries`).
-Prior covered source heads were `881539432` (`HC extract diagnostics hardening readiness modules`),
+source head is `1c5747bb5` (`refactor(ir): extract expression emission`).
+Prior covered source heads were `ba8b86d4c` (`HC extract sema type annotation readiness builder`),
+`69aaa347c` (`HC extract ownership-aware lowering scaffold module`),
+`64f73e8b1` (`HC extract sema core summary builder`),
+`d2c776808` (`HC split frontend C API behavior owners`),
+`90812d527` (`HC extract sema closeout signoff helpers`),
+`9b2b33d42` (`HC extract sema closeout readiness builders`),
+`a9ab19c86` (`HC extract sema intermodule flow builders`),
+`e0a078d7e` (`HC split public conformance reporting owners`),
+`bbe3185ed` (`refactor(ir): extract statement emission`),
+`0a6dcae3f` (`HC extract sema parity publication builder`),
+`ccc8db449` (`HC split lowering pass graph feature modules`),
+`43bc46be9` (`HC extract sema contract flow handoff module`),
+`43d17c999` (`HC split object model closure behavior owners`),
+`5086bf939` (`HC move accessor metadata lowering summaries`),
+`881539432` (`HC extract diagnostics hardening readiness modules`),
 `5672756b4` (`HC move interop preservation artifact builders`),
 `f996dd674` (`HC split metaprogramming interop behavior owners`),
 `ca7ec4cb2` (`HC extract lowering diagnostics surfacing modules`),
@@ -207,6 +221,20 @@ commits that landed after the first docs commit.
 | `#8138`, `#8141`, `#8146`, `#8147`, `#8150` | `5672756b4` | Interop preservation artifact ownership refreshes local semantic/artifact/API evidence. |
 | `#8135`, `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `881539432` | Diagnostics hardening readiness module ownership refreshes local lowering/pipeline diagnostic evidence. |
 | `#8136`, `#8138`, `#8146`, `#8147`, `#8150` | `5086bf939` | Accessor metadata lowering summary ownership refreshes local artifact/lowering/type evidence. |
+| `#8133`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `43d17c999` | Object-model closure behavior owner splits refresh local runtime/fixture behavior evidence without asserting validation. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `43bc46be9` | Sema contract flow handoff ownership refreshes local semantic/lowering handoff evidence. |
+| `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `ccc8db449` | Lowering pass graph feature module ownership refreshes local lowering/pipeline feature evidence. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `0a6dcae3f` | Sema parity publication ownership refreshes local semantic publication evidence. |
+| `#8137`, `#8147`, `#8150` | `bbe3185ed` | IR statement emission ownership refreshes local IR/deep handoff evidence. |
+| `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `e0a078d7e` | Public conformance reporting behavior owner splits refresh local workflow/fixture/schema/source evidence without asserting validation. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `a9ab19c86` | Sema intermodule flow ownership refreshes local semantic/deep handoff evidence. |
+| `#8135`, `#8136`, `#8145`, `#8146`, `#8147`, `#8150` | `9b2b33d42` | Sema closeout readiness ownership refreshes local semantic/capability closeout evidence. |
+| `#8135`, `#8136`, `#8145`, `#8146`, `#8147`, `#8150` | `90812d527` | Sema closeout signoff ownership refreshes local semantic/capability closeout evidence. |
+| `#8140`, `#8141`, `#8144`, `#8145`, `#8150` | `d2c776808` | Frontend C API behavior owner splits refresh local public contract/fixture evidence without asserting validation. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `64f73e8b1` | Sema core summary ownership refreshes local semantic/deep handoff evidence. |
+| `#8136`, `#8147`, `#8150` | `69aaa347c` | Ownership-aware lowering scaffold ownership refreshes local lowering/pipeline evidence. |
+| `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `ba8b86d4c` | Sema type annotation readiness ownership refreshes local semantic/deep handoff evidence. |
+| `#8137`, `#8147`, `#8150` | `1c5747bb5` | IR expression emission ownership refreshes local IR/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -514,14 +542,14 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`5086bf939`.
+`1c5747bb5`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `5086bf939`.
+`98d10a61c`, and the latest local implementation slices through `1c5747bb5`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 
