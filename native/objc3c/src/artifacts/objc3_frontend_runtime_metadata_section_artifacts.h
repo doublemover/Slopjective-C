@@ -1,10 +1,39 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 #include "pipeline/objc3_frontend_types.h"
+#include "runtime/metadata/runtime_metadata_model.h"
 
 namespace objc3::artifacts::frontend {
+
+struct Objc3AccessorStorageLoweringMetadataSummary {
+  std::size_t synthesized_accessor_owner_entries = 0;
+  std::size_t synthesized_getter_entries = 0;
+  std::size_t synthesized_setter_entries = 0;
+  std::size_t current_property_read_entries = 0;
+  std::size_t current_property_write_entries = 0;
+  std::size_t current_property_exchange_entries = 0;
+  std::size_t weak_current_property_load_entries = 0;
+  std::size_t weak_current_property_store_entries = 0;
+  bool deterministic = false;
+};
+
+struct Objc3ExecutableAccessorLayoutLoweringSummary {
+  std::size_t property_metadata_entries = 0;
+  std::size_t ivar_metadata_entries = 0;
+  std::size_t property_attribute_profile_entries = 0;
+  std::size_t accessor_ownership_profile_entries = 0;
+  std::size_t synthesized_binding_entries = 0;
+  std::size_t implementation_owned_property_entries = 0;
+  std::size_t synthesized_getter_entries = 0;
+  std::size_t synthesized_setter_entries = 0;
+  std::size_t synthesized_accessor_entries = 0;
+  std::size_t ivar_layout_entries = 0;
+  std::size_t ivar_layout_owner_entries = 0;
+  bool deterministic = false;
+};
 
 [[nodiscard]] std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph);
@@ -71,5 +100,13 @@ BuildRuntimeMetadataSourceToSectionMatrixSummary(
 
 [[nodiscard]] std::string BuildRuntimeMetadataSourceToSectionMatrixSummaryJson(
     const Objc3RuntimeMetadataSourceToSectionMatrixSummary &summary);
+
+[[nodiscard]] Objc3AccessorStorageLoweringMetadataSummary
+BuildAccessorStorageLoweringMetadataSummary(
+    const Objc3RuntimeMetadataSourceRecordSet &records);
+
+[[nodiscard]] Objc3ExecutableAccessorLayoutLoweringSummary
+BuildExecutableAccessorLayoutLoweringSummary(
+    const Objc3ExecutableMetadataSourceGraph &source_graph);
 
 }  // namespace objc3::artifacts::frontend

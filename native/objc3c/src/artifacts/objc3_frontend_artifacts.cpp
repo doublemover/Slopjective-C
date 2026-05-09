@@ -231,6 +231,8 @@ using objc3::artifacts::frontend::BuildRuntimeMetadataSectionPublicationSummary;
 using objc3::artifacts::frontend::BuildRuntimeMetadataSourceToSectionMatrixSummary;
 using objc3::artifacts::frontend::
     BuildRuntimeMetadataSourceToSectionMatrixSummaryJson;
+using objc3::artifacts::frontend::BuildAccessorStorageLoweringMetadataSummary;
+using objc3::artifacts::frontend::BuildExecutableAccessorLayoutLoweringSummary;
 using objc3::artifacts::frontend::BuildExecutableMetadataSourceGraphJson;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataSemanticConsistencyBoundaryJson;
@@ -248,6 +250,9 @@ using objc3::artifacts::frontend::
     BuildExecutableMetadataDebugProjectionSummary;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataDebugProjectionSummaryJson;
+using objc3::artifacts::frontend::Objc3AccessorStorageLoweringMetadataSummary;
+using objc3::artifacts::frontend::
+    Objc3ExecutableAccessorLayoutLoweringSummary;
 using objc3::artifacts::frontend::BuildGenericMetadataAbiLoweringContract;
 using objc3::artifacts::frontend::
     BuildLightweightGenericsConstraintLoweringContract;
@@ -699,112 +704,6 @@ BuildConcurrencyConcurrencyReplayRaceGuardLoweringContract(
       structured_summary.ready_for_lowering_and_runtime &&
       executor_summary.ready_for_lowering_and_runtime;
   return contract;
-}
-
-struct Objc3AccessorStorageLoweringMetadataSummary {
-  std::size_t synthesized_accessor_owner_entries = 0;
-  std::size_t synthesized_getter_entries = 0;
-  std::size_t synthesized_setter_entries = 0;
-  std::size_t current_property_read_entries = 0;
-  std::size_t current_property_write_entries = 0;
-  std::size_t current_property_exchange_entries = 0;
-  std::size_t weak_current_property_load_entries = 0;
-  std::size_t weak_current_property_store_entries = 0;
-  bool deterministic = false;
-};
-
-Objc3AccessorStorageLoweringMetadataSummary
-BuildAccessorStorageLoweringMetadataSummary(
-    const Objc3RuntimeMetadataSourceRecordSet &records) {
-  Objc3AccessorStorageLoweringMetadataSummary summary;
-  summary.deterministic = records.deterministic;
-  for (const auto &property_record : records.properties_lexicographic) {
-    if (!property_record.synthesizes_executable_accessors) {
-      continue;
-    }
-    ++summary.synthesized_accessor_owner_entries;
-    if (!property_record.getter_storage_runtime_helper_symbol.empty()) {
-      ++summary.synthesized_getter_entries;
-      if (property_record.getter_storage_runtime_helper_symbol ==
-          kObjc3RuntimeReadCurrentPropertyI32Symbol) {
-        ++summary.current_property_read_entries;
-      } else if (property_record.getter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol) {
-        ++summary.weak_current_property_load_entries;
-      }
-    }
-    if (!property_record.setter_storage_runtime_helper_symbol.empty()) {
-      ++summary.synthesized_setter_entries;
-      if (property_record.setter_storage_runtime_helper_symbol ==
-          kObjc3RuntimeWriteCurrentPropertyI32Symbol) {
-        ++summary.current_property_write_entries;
-      } else if (property_record.setter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeExchangeCurrentPropertyI32Symbol) {
-        ++summary.current_property_exchange_entries;
-      } else if (property_record.setter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol) {
-        ++summary.weak_current_property_store_entries;
-      }
-    }
-  }
-  return summary;
-}
-
-struct Objc3ExecutableAccessorLayoutLoweringSummary {
-  std::size_t property_metadata_entries = 0;
-  std::size_t ivar_metadata_entries = 0;
-  std::size_t property_attribute_profile_entries = 0;
-  std::size_t accessor_ownership_profile_entries = 0;
-  std::size_t synthesized_binding_entries = 0;
-  std::size_t implementation_owned_property_entries = 0;
-  std::size_t synthesized_getter_entries = 0;
-  std::size_t synthesized_setter_entries = 0;
-  std::size_t synthesized_accessor_entries = 0;
-  std::size_t ivar_layout_entries = 0;
-  std::size_t ivar_layout_owner_entries = 0;
-  bool deterministic = false;
-};
-
-Objc3ExecutableAccessorLayoutLoweringSummary
-BuildExecutableAccessorLayoutLoweringSummary(
-    const Objc3ExecutableMetadataSourceGraph &source_graph) {
-  Objc3ExecutableAccessorLayoutLoweringSummary summary;
-  summary.deterministic = source_graph.deterministic;
-  std::set<std::string> ivar_layout_owner_identities;
-  for (const auto &property_node : source_graph.property_nodes_lexicographic) {
-    ++summary.property_metadata_entries;
-    if (!property_node.property_attribute_profile.empty()) {
-      ++summary.property_attribute_profile_entries;
-    }
-    if (!property_node.accessor_ownership_profile.empty()) {
-      ++summary.accessor_ownership_profile_entries;
-    }
-    if (!property_node.executable_synthesized_binding_kind.empty()) {
-      ++summary.synthesized_binding_entries;
-    }
-    if (property_node.owner_kind == "class-implementation" &&
-        property_node.synthesizes_executable_accessors) {
-      ++summary.implementation_owned_property_entries;
-      if (!property_node.effective_getter_selector.empty()) {
-        ++summary.synthesized_getter_entries;
-        ++summary.synthesized_accessor_entries;
-      }
-      if (property_node.effective_setter_available &&
-          !property_node.effective_setter_selector.empty()) {
-        ++summary.synthesized_setter_entries;
-        ++summary.synthesized_accessor_entries;
-      }
-    }
-  }
-  for (const auto &ivar_node : source_graph.ivar_nodes_lexicographic) {
-    ++summary.ivar_metadata_entries;
-    ++summary.ivar_layout_entries;
-    if (!ivar_node.declaration_owner_identity.empty()) {
-      ivar_layout_owner_identities.insert(ivar_node.declaration_owner_identity);
-    }
-  }
-  summary.ivar_layout_owner_entries = ivar_layout_owner_identities.size();
-  return summary;
 }
 
 }  // namespace
