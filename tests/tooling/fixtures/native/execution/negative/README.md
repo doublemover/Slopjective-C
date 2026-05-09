@@ -117,6 +117,12 @@ Field notes:
 - `numeric_zero_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32`; numeric zero receivers are intentionally non-elided and retain dispatch linkage.
 - `nil_bound_identifier_reassigned_function.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S206`) for invalid mutable nil-bound identifier reassignment to a function value.
 
+## Unsupported runnable-claim fixture notes
+
+- `unsupported_feature_claim_throws.objc3` is a compile-stage negative expecting `O3S221` because parsed `throws` declarations are not runnable native-mode coverage.
+- `unsupported_feature_claim_arc_parameter_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC parameter ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
+- `unsupported_feature_claim_arc_return_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC return ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
+
 ## Prototype fixture notes
 
 - `prototype_signature_mismatch.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S206`).

@@ -11,6 +11,8 @@ strict diagnostic expectations.
   deterministic exit code without relying on compatibility shims.
 - `execution/negative/`: compile, link, or run failures with sidecar
   `*.meta.json` diagnostic metadata.
+- `execution/negative/unsupported_feature_claim_*.objc3`: parsed source
+  surfaces that must fail closed as compile-stage runnable-claim rejections.
 - `recovery/positive/`: canonical parser/sema/lowering recovery fixtures and IR
   expectations for accepted source forms.
 - `recovery/negative/`: rejected recovery fixtures for parser and semantic

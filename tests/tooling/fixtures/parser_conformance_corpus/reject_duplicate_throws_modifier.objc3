@@ -1,6 +1,4 @@
-module Probe;
-
-fn risky() throws -> i32 {
+fn risky() throws throws -> i32 {
   return 1;
 }
 

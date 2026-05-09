@@ -1,4 +1,4 @@
-module Probe;
+module UnsupportedFeatureClaimThrows;
 
 fn risky() throws -> i32 {
   return 1;

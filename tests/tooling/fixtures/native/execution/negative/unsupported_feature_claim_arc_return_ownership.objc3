@@ -1,4 +1,4 @@
-module Probe;
+module UnsupportedFeatureClaimArcReturnOwnership;
 
 fn produce() -> __strong id {
   return nil;

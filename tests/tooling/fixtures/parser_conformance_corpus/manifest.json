@@ -31,6 +31,30 @@
       "path": "reject_post_comma_nondecl.objc3",
       "expect": "reject",
       "diagnostic_code": "O3P100"
+    },
+    {
+      "id": "A010-C006",
+      "path": "reject_extern_without_fn.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P100"
+    },
+    {
+      "id": "A010-C007",
+      "path": "reject_duplicate_pure_qualifier.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P100"
+    },
+    {
+      "id": "A010-C008",
+      "path": "reject_misplaced_pure_after_fn.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P100"
+    },
+    {
+      "id": "A010-C009",
+      "path": "reject_duplicate_throws_modifier.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P181"
     }
   ]
 }

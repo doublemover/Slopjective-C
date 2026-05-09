@@ -43,6 +43,14 @@
       "hard_cutover_rule": "runtime-like positives cannot stand in for runtime acceptance; unresolved dispatch, missing runtime symbols, and strict runtime diagnostics stay negative"
     },
     {
+      "family": "unsupported_feature_claims",
+      "paths": [
+        "tests/tooling/fixtures/native/execution/negative"
+      ],
+      "metadata": "compile-stage sidecars for source surfaces that are parsed but not runnable in the native hard-cutover surface",
+      "hard_cutover_rule": "throws and ARC ownership qualifier runnable claims are explicit O3S221 rejections, not source-only shims or fallback execution paths"
+    },
+    {
       "family": "library_cli_parity",
       "paths": [
         "tests/tooling/fixtures/native/library_cli_parity",

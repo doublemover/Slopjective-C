@@ -1,0 +1,12 @@
+module UnsupportedFeatureClaimArcParameterOwnership;
+
+fn consume(value: __strong id) -> i32 {
+  if (value == nil) {
+    return 0;
+  }
+  return 1;
+}
+
+fn main() -> i32 {
+  return consume(nil);
+}
