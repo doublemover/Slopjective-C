@@ -108,6 +108,12 @@ from scripts.objc3c_workflow.request_handler_dispatch import (
     dispatch_parsed_workflow_request as owned_dispatch_parsed_workflow_request,
 )
 from scripts.objc3c_workflow.request_handlers import dispatch_parsed_workflow_request
+from scripts.objc3c_workflow.request_parse_dispatch import (
+    parse_and_dispatch_workflow_request as owned_parse_and_dispatch_workflow_request,
+)
+from scripts.objc3c_workflow.request_dispatch import (
+    parse_and_dispatch_workflow_request,
+)
 
 
 def test_workflow_argument_parser_models_public_requests() -> None:
@@ -123,6 +129,7 @@ def test_workflow_argument_parser_models_public_requests() -> None:
     assert DescribeActionRequest is ModelDescribeActionRequest
     assert WorkflowUsageError is OwnedWorkflowUsageError
     assert dispatch_parsed_workflow_request is owned_dispatch_parsed_workflow_request
+    assert parse_and_dispatch_workflow_request is owned_parse_and_dispatch_workflow_request
 
 
 def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:
