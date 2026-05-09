@@ -52,6 +52,7 @@ add_library(objc3c_pipeline STATIC
   objc3_typed_sema_to_lowering_contract_surface_core.h
   objc3_typed_sema_to_lowering_contract_surface.h
   objc3_ir_emission_completeness_scaffold.cpp
+  objc3_ir_emission_core_feature_implementation_surface.cpp
   objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
   objc3_lowering_pipeline_pass_graph_scaffold.cpp
 )
