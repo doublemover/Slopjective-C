@@ -8,8 +8,8 @@
 /*
  * Owned immutable string returned by libobjc3c_frontend. Strings returned as
  * members of objc3c_frontend_compile_result_t are result-owned and released
- * only by objc3c_frontend_result_destroy(); standalone strings, if added to the
- * public API, are released with objc3c_frontend_string_release().
+ * only by objc3c_frontend_result_destroy(); standalone owned strings returned
+ * by a public function are released with objc3c_frontend_string_release().
  */
 typedef struct objc3c_frontend_string {
   const char *data;

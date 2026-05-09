@@ -13,9 +13,31 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 - artifact header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_artifact.h`
 - string header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_string.h`
 - error header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
-- optional C API header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- C-only name surface: `native/objc3c/src/libobjc3c_frontend/c_api.h`
 
 `objc3c_frontend.h` exposes the canonical C ABI with an opaque frontend context type.
+
+## Header Ownership
+
+- `objc3c_frontend_version.h`: export macros, version values, and ABI gates
+- `objc3c_frontend_context.h`: opaque context lifecycle
+- `objc3c_frontend_options.h`: borrowed compile inputs, paths, and emit options
+- `objc3c_frontend_result.h`: result storage, status values, and result-owned strings
+- `objc3c_frontend_diagnostic.h`: stage summary and severity metadata
+- `objc3c_frontend_artifact.h`: artifact kind selectors
+- `objc3c_frontend_string.h`: owned string and borrowed view lifetime rules
+- `objc3c_frontend_error.h`: context error copy semantics
+- `c_api.h`: C-only names over the same ABI and ownership rules
+
+## Ownership Rules
+
+- compile result storage is caller-owned and zero-initialized before first use
+- result-owned strings are released by result destruction, not by string release
+- accessor-returned result strings/views are borrowed until result destruction
+- standalone owned strings are released by the matching string release function
+- stage summaries are value snapshots; detailed diagnostics are read through the
+  diagnostics artifact path when produced
+- undefined artifact selectors return no path
 
 ## Stability
 

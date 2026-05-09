@@ -13,13 +13,15 @@ extern "C" {
 #endif
 
 /*
- * C ABI contract for non-C++ embedding environments. It preserves the
- * underlying objc3c_frontend ABI data structures and exposes a stable native
- * bridge over the primary libobjc3c_frontend entrypoints. Result/string
- * ownership is explicit on this surface: compile_result storage is
- * caller-owned, result payload strings are released only by
- * objc3c_frontend_c_result_destroy(), and borrowed option strings/paths must
- * remain valid for the duration of the call.
+ * C ABI contract for non-C++ embedding environments. This header exposes
+ * C-only names over the same objc3c_frontend ABI data structures and primary
+ * libobjc3c_frontend entrypoints.
+ *
+ * Result/string ownership is explicit on this surface: compile_result storage
+ * is caller-owned, result payload strings are released only by
+ * objc3c_frontend_c_result_destroy(), standalone owned strings are released
+ * with objc3c_frontend_c_string_release(), and borrowed option strings/paths
+ * must remain valid for the duration of the call.
  */
 typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
 typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;

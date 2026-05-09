@@ -16,10 +16,22 @@ extern "C" {
 
 /*
  * Public embedding ABI contract:
- * - This header aggregates the exported symbol and struct-layout surface for libobjc3c_frontend.
+ * - This header aggregates the exported symbol and struct-layout surface for
+ *   libobjc3c_frontend.
  * - Callers should gate startup with objc3c_frontend_is_abi_compatible().
  * - Reserved struct fields are for forward ABI growth and should be zero-initialized by callers.
  * - ABI evolution policy for exposed structs/enums is additive; existing fields and values remain stable.
+ *
+ * Header ownership:
+ * - objc3c_frontend_version.h owns export macros, version values, and ABI gates.
+ * - objc3c_frontend_context.h owns the opaque context lifecycle.
+ * - objc3c_frontend_options.h owns borrowed compile input/output options.
+ * - objc3c_frontend_result.h owns compile result storage and status values.
+ * - objc3c_frontend_diagnostic.h owns stage summaries and severity values.
+ * - objc3c_frontend_artifact.h owns artifact path selectors.
+ * - objc3c_frontend_string.h owns string/view lifetime rules.
+ * - objc3c_frontend_error.h owns context error copy semantics.
+ * - c_api.h owns the C-only mirror names over this same ABI.
  */
 
 /*

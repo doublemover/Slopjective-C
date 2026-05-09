@@ -79,8 +79,8 @@ Do not treat these as authoritative proof:
 - strict dispatch status/error coverage must remain live-probe-backed and must
   include success for nil receiver, resolved live methods, resolved builtins,
   and resolved property accessors, plus structured errors for unknown selectors,
-  unknown receiver classes, missing class graph state, unsupported return
-  types, unsupported argument layouts, malformed metadata, and category
+  unknown receiver classes, missing class graph state, rejected return
+  shapes, rejected argument layouts, malformed metadata, and category
   conflicts
 - the hard-cutover runtime module tree under
   `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`

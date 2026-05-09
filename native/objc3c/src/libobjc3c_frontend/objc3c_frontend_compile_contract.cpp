@@ -90,9 +90,9 @@ bool ValidateSupportedFrontendLanguageVersion(uint8_t requested_language_version
     return true;
   }
 
-  error = "unsupported compile_options.language_version: " +
+  error = "invalid compile_options.language_version: " +
           std::to_string(normalized_language_version) +
-          " (only Objective-C version 3 is supported).";
+          " (accepted value is Objective-C version 3 or 0 for default).";
   return false;
 }
 

@@ -7,7 +7,11 @@
 #include "objc3c_frontend_diagnostic.h"
 #include "objc3c_frontend_string.h"
 
-/* Top-level compile status values returned by compile entrypoints. */
+/*
+ * Top-level compile status values returned by compile entrypoints. Status
+ * values classify the completed call; detailed parser/sema/lower/emit
+ * diagnostics live in the result-owned diagnostics artifact when produced.
+ */
 typedef enum objc3c_frontend_status {
   OBJC3C_FRONTEND_STATUS_OK = 0,
   OBJC3C_FRONTEND_STATUS_DIAGNOSTICS = 1,
@@ -24,6 +28,8 @@ typedef enum objc3c_frontend_status {
  * Non-NULL string members are owned by this result and released only by
  * objc3c_frontend_result_destroy(); callers must not release them directly.
  * NULL string members mean the payload was not produced for that invocation.
+ * Stage summaries are value snapshots; they do not borrow transient diagnostic
+ * storage from the pipeline.
  */
 typedef struct objc3c_frontend_compile_result {
   objc3c_frontend_status_t status;
@@ -55,6 +61,8 @@ OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
  * produced artifact. Returns NULL when result is NULL, the artifact was not
  * produced, or artifact_kind is not a defined objc3c_frontend_artifact_kind_t.
  * The pointer remains valid until objc3c_frontend_result_destroy(result).
+ * The returned pointer is borrowed and must not be passed to
+ * objc3c_frontend_string_release().
  */
 OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
 objc3c_frontend_result_artifact_path(
@@ -64,6 +72,8 @@ objc3c_frontend_result_artifact_path(
  * Returns a borrowed pointer to the result-owned error string. Returns NULL
  * when result is NULL or no error payload was produced. The pointer remains
  * valid until objc3c_frontend_result_destroy(result).
+ * The returned pointer is borrowed and must not be passed to
+ * objc3c_frontend_string_release().
  */
 OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
 objc3c_frontend_result_error_message(

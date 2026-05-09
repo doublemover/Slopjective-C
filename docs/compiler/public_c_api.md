@@ -3,10 +3,11 @@
 The public C API is a compiler integration surface. It does not create language
 support without a matching capability matrix row.
 
-Current public C API ownership lives in:
+Current runtime public C API ownership lives in:
 
 - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
+- `native/objc3c/src/runtime/public/objc3_runtime_result_contract.h`
 
 The exported runtime surface is:
 
@@ -22,6 +23,36 @@ The exported runtime surface is:
 code, and diagnostic message. `objc3_runtime_dispatch_i32` remains the narrow
 plain i32 lowering entrypoint for supported live sends; it does not create a
 second dispatch mode or bypass the checked result ownership contract.
+
+Current frontend public C API ownership lives in:
+
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_version.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_context.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_options.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_result.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_diagnostic.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_artifact.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_string.h`
+- `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
+- `native/objc3c/src/libobjc3c_frontend/c_api.h`
+
+The frontend result contract is:
+
+- callers own `objc3c_frontend_compile_result_t` storage and zero-initialize it
+  before first use,
+- compile entrypoints populate result-owned strings,
+- `objc3c_frontend_result_destroy()` and
+  `objc3c_frontend_c_result_destroy()` release result-owned strings and clear
+  result storage,
+- borrowed result strings returned by accessors remain valid only until result
+  destruction,
+- standalone owned strings are released only through the matching string
+  release function,
+- stage summaries are value snapshots, while detailed diagnostics are read
+  through the result-owned diagnostics artifact path,
+- artifact accessors return `NULL` for undefined artifact kinds or missing
+  outputs.
 
 Do not infer language support from the existence of a C entrypoint. Public docs
 must route claims through `docs/support/capability_matrix.md` and

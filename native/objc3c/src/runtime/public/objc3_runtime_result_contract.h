@@ -4,6 +4,10 @@
 
 namespace objc3c::runtime {
 
+/*
+ * Internal result materialization helpers for the runtime public ABI. These are
+ * not exported C entrypoints; objc3_runtime_result.h remains the C layout owner.
+ */
 const char *RuntimeDispatchDiagnosticCode(
     objc3_runtime_dispatch_status_code status_code);
 const char *RuntimeDispatchDiagnosticMessage(

@@ -2019,8 +2019,8 @@ Do not treat these as authoritative proof:
 - strict dispatch status/error coverage must remain live-probe-backed and must
   include success for nil receiver, resolved live methods, resolved builtins,
   and resolved property accessors, plus structured errors for unknown selectors,
-  unknown receiver classes, missing class graph state, unsupported return
-  types, unsupported argument layouts, malformed metadata, and category
+  unknown receiver classes, missing class graph state, rejected return
+  shapes, rejected argument layouts, malformed metadata, and category
   conflicts
 - the hard-cutover runtime module tree under
   `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`
@@ -2099,8 +2099,8 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
   success for nil receiver, resolved live method, resolved builtin, or resolved
   property accessor behavior through live status evidence
 - runtime dispatch errors are claimable only when tests cover unknown selector,
-  unknown receiver class, missing class graph, unsupported return type,
-  unsupported argument layout, malformed metadata, and category conflict cases
+  unknown receiver class, missing class graph, rejected return shape,
+  rejected argument layout, malformed metadata, and category conflict cases
 - linked strict dispatch status probes, including
   `tests/tooling/runtime/strict_dispatch_error_status_probe.cpp`, are required
   evidence for the dispatch gate; manifest or source inventory alone is not
@@ -2122,9 +2122,31 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 - artifact header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_artifact.h`
 - string header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_string.h`
 - error header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
-- optional C API header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- C-only name surface: `native/objc3c/src/libobjc3c_frontend/c_api.h`
 
 `objc3c_frontend.h` exposes the canonical C ABI with an opaque frontend context type.
+
+## Header Ownership
+
+- `objc3c_frontend_version.h`: export macros, version values, and ABI gates
+- `objc3c_frontend_context.h`: opaque context lifecycle
+- `objc3c_frontend_options.h`: borrowed compile inputs, paths, and emit options
+- `objc3c_frontend_result.h`: result storage, status values, and result-owned strings
+- `objc3c_frontend_diagnostic.h`: stage summary and severity metadata
+- `objc3c_frontend_artifact.h`: artifact kind selectors
+- `objc3c_frontend_string.h`: owned string and borrowed view lifetime rules
+- `objc3c_frontend_error.h`: context error copy semantics
+- `c_api.h`: C-only names over the same ABI and ownership rules
+
+## Ownership Rules
+
+- compile result storage is caller-owned and zero-initialized before first use
+- result-owned strings are released by result destruction, not by string release
+- accessor-returned result strings/views are borrowed until result destruction
+- standalone owned strings are released by the matching string release function
+- stage summaries are value snapshots; detailed diagnostics are read through the
+  diagnostics artifact path when produced
+- undefined artifact selectors return no path
 
 ## Stability
 

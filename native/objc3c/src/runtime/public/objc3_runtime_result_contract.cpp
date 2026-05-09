@@ -23,9 +23,9 @@ constexpr RuntimeDispatchDiagnostic kRuntimeDispatchDiagnostics[] = {
     {OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, "O3RT004",
      "runtime dispatch failed: malformed metadata"},
     {OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE, "O3RT005",
-     "runtime dispatch failed: unsupported return type"},
+     "runtime dispatch failed: rejected return shape"},
     {OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT, "O3RT006",
-     "runtime dispatch failed: unsupported argument layout"},
+     "runtime dispatch failed: rejected argument layout"},
     {OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT, "O3RT007",
      "runtime dispatch failed: category conflict"}};
 

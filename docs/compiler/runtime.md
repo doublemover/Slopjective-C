@@ -10,14 +10,16 @@ Strict runtime ownership is split as follows:
   plain i32 dispatch entrypoint, testing snapshots, and reset.
 - `native/objc3c/src/runtime/public/objc3_runtime_result.h` owns registration
   and dispatch status codes plus the checked dispatch result payload.
-- `native/objc3c/src/runtime/errors/` owns runtime dispatch diagnostic codes and
-  messages.
+- `native/objc3c/src/runtime/public/objc3_runtime_result_contract.h` owns the
+  internal mapping from dispatch statuses to public diagnostic code/message
+  payloads.
+- `native/objc3c/src/runtime/errors/` owns Objective-C error bridging and catch
+  filter helpers.
 - `native/objc3c/src/runtime/images/` owns image descriptor validation and
   runtime-owned registration identity handling.
 - `native/objc3c/src/runtime/strings/` owns borrowed runtime string storage used
   by the current public snapshot surfaces.
 
 The public behavior claim remains the strict dispatch diagnostic row. The
-broader runtime module split and public C API result surface are internal
-capability rows that keep ownership clear without claiming more language
-support than the evidence map proves.
+broader runtime module split and public C API result surface keep ownership
+clear without claiming more language support than the evidence map proves.

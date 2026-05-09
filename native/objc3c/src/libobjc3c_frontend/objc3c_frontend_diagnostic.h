@@ -3,7 +3,11 @@
 
 #include <stdint.h>
 
-/* Deterministic stage identifiers for per-stage summaries in compile results. */
+/*
+ * Deterministic stage identifiers for per-stage summaries in compile results.
+ * This header owns caller-visible diagnostic summary metadata; detailed
+ * diagnostics are published through the diagnostics artifact path.
+ */
 typedef enum objc3c_frontend_stage_id {
   OBJC3C_FRONTEND_STAGE_LEX = 0,
   OBJC3C_FRONTEND_STAGE_PARSE = 1,
