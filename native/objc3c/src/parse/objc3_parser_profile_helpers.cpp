@@ -79,7 +79,7 @@ std::string BuildAutoreleasePoolScopeSymbol(unsigned serial, unsigned depth) {
   return out.str();
 }
 
-std::string DescribeCompatDiagnosticToken(const Objc3LexToken &token) {
+std::string DescribeParserDiagnosticToken(const Objc3LexToken &token) {
   if (token.kind == Objc3LexTokenKind::Eof) {
     return "end of file";
   }

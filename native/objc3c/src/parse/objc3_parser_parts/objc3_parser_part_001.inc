@@ -7,7 +7,15 @@
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_message_send_profiles.h"
 #include "parse/objc3_parse_support.h"
+#include "parse/objc3_parser_cstyle_type_parser.h"
+#include "parse/objc3_parser_cursor.h"
+#include "parse/objc3_parser_declaration_surface.h"
+#include "parse/objc3_parser_diagnostics.h"
+#include "parse/objc3_parser_expression_surface.h"
 #include "parse/objc3_parser_profile_helpers.h"
+#include "parse/objc3_parser_statement_surface.h"
+#include "parse/objc3_parser_token_metadata.h"
+#include "parse/objc3_parser_type_surface.h"
 #include "parse/objc3_type_feature_profiles.h"
 #include "support/objc3_method_family.h"
 
@@ -56,7 +64,19 @@ using objc3c::parse::ComputeDispatchAbiArgumentPaddingSlots;
 using objc3c::parse::CountMarkerOccurrences;
 using objc3c::parse::CountNamespaceSegments;
 using objc3c::parse::CountTopLevelGenericArgumentSlots;
-using objc3c::parse::DescribeCompatDiagnosticToken;
+using objc3c::parse::AdvanceToken;
+using objc3c::parse::BuildObjc3RemovedOptionalTemplateAliasDiagnostic;
+using objc3c::parse::BuildObjc3UnsupportedTopLevelDiagnostic;
+using objc3c::parse::DescribeParserDiagnosticToken;
+using objc3c::parse::IsObjc3CStyleFunctionDeclarationStart;
+using objc3c::parse::IsObjc3CStyleTypeLeadToken;
+using objc3c::parse::IsObjc3ActorClassDeclarationLead;
+using objc3c::parse::IsObjc3IdentifierAssignmentStatementLead;
+using objc3c::parse::IsObjc3IdentifierColonStatementLead;
+using objc3c::parse::IsObjc3IdentifierUpdateStatementLead;
+using objc3c::parse::IsObjc3PrefixUpdateStatementLead;
+using objc3c::parse::IsObjc3RemovedOptionalTemplateAliasLead;
+using objc3c::parse::IsObjc3TopLevelFunctionQualifierLead;
 using objc3c::parse::IsCrossModuleConformanceProfileNormalized;
 using objc3c::parse::IsGenericMetadataAbiProfileNormalized;
 using objc3c::parse::IsIncrementalModuleCacheInvalidationProfileNormalized;
@@ -68,12 +88,19 @@ using objc3c::parse::IsPublicPrivateApiPartitionProfileNormalized;
 using objc3c::parse::IsSuperDispatchReceiver;
 using objc3c::parse::IsThrowsDeclarationProfileNormalized;
 using objc3c::parse::IsVarianceBridgeCastProfileNormalized;
+using objc3c::parse::MakeObjc3ParserSemaTokenMetadata;
+using objc3c::parse::MatchTokenKind;
+using objc3c::parse::Objc3CStyleFunctionTypeParseResult;
+using objc3c::parse::ParseObjc3CStyleFunctionType;
+using objc3c::parse::PeekToken;
+using objc3c::parse::PreviousToken;
+using objc3c::parse::AtTokenKind;
 using objc3c::parse::TryParseVectorTypeSpelling;
 using objc3c::parse::kDispatchAbiMarshallingRuntimeArgSlots;
 using objc3c::parse::kRuntimeLinkHostLinkDispatchSymbol;
 
 static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, const Token &token) {
-  return MakeObjc3SemaTokenMetadata(kind, token.text, token.line, token.column);
+  return MakeObjc3ParserSemaTokenMetadata(kind, token);
 }
 
 struct Objc3ResultLikeProfile {

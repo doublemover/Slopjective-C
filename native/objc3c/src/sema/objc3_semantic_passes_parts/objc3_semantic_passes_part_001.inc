@@ -1,7 +1,12 @@
 #include "sema/objc3_semantic_passes.h"
+#include "sema/objc3_semantic_context.h"
+#include "sema/objc3_semantic_feature_claims.h"
 #include "sema/objc3_semantic_pass_helpers.h"
+#include "sema/objc3_semantic_symbol_lookup.h"
+#include "sema/objc3_semantic_type_factory.h"
 #include "sema/objc3_semantic_type_predicates.h"
 #include "sema/objc3_semantic_type_helpers.h"
+#include "sema/objc3_semantic_type_relations.h"
 #include "sema/objc3_static_analysis.h"
 #include "sema/objc3_type_form_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
@@ -36,41 +41,6 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
     const Objc3MethodDecl &method);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property);
-
-static SemanticTypeInfo ScopeLookupType(
-    const std::vector<SemanticScope> &scopes, const std::string &name);
-
-static SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
-  SemanticTypeInfo info;
-  info.type = type;
-  info.canonical_type.value_type = type;
-  info.canonical_type.kind =
-      IsObjCReferenceAliasValueType(type)
-          ? Objc3SemanticCanonicalTypeKind::Object
-          : Objc3SemanticCanonicalTypeKind::Scalar;
-  info.canonical_type.canonical_spelling = objc3c::support::ValueTypeName(type);
-  if (IsObjCReferenceAliasValueType(type)) {
-    info.ownership_kind = SemanticOwnershipKind::Retained;
-  }
-  return info;
-}
-
-static SemanticTypeInfo MakeVectorSemanticType(ValueType base_type, const std::string &base_spelling,
-                                               unsigned lane_count) {
-  SemanticTypeInfo info;
-  info.type = base_type;
-  info.canonical_type.value_type = base_type;
-  info.canonical_type.kind = Objc3SemanticCanonicalTypeKind::Vector;
-  info.canonical_type.is_vector = true;
-  info.canonical_type.vector_base_spelling = base_spelling;
-  info.canonical_type.vector_lane_count = lane_count;
-  info.canonical_type.canonical_spelling =
-      "vector<" + base_spelling + "," + std::to_string(lane_count) + ">";
-  info.is_vector = true;
-  info.vector_base_spelling = base_spelling;
-  info.vector_lane_count = lane_count;
-  return info;
-}
 
 static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
   if (param.vector_spelling) {
@@ -266,48 +236,6 @@ static SemanticTypeInfo MakeSemanticTypeFromPropertyInfo(
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
     info.has_nullability_suffix = property.has_nullability_suffix;
-  }
-  return info;
-}
-
-static SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
-  return MakeScalarSemanticType(type);
-}
-
-static SemanticTypeInfo MakeCallableSemanticType(std::vector<ValueType> param_types,
-                                                 ValueType return_type) {
-  SemanticTypeInfo info;
-  info.type = ValueType::Function;
-  info.canonical_type.value_type = ValueType::Function;
-  info.canonical_type.kind = Objc3SemanticCanonicalTypeKind::Block;
-  info.canonical_type.canonical_spelling = "block";
-  info.canonical_type.replay_key = "value=Function;kind=block";
-  info.is_callable = true;
-  info.callable_param_types = std::move(param_types);
-  info.callable_return_type = return_type;
-  return info;
-}
-
-static SemanticTypeInfo MakeCallableSemanticTypeFromBlockLiteral(const Expr &expr) {
-  std::vector<ValueType> param_types = expr.block_parameter_types_source_order;
-  if (param_types.size() < expr.block_parameter_count) {
-    param_types.resize(expr.block_parameter_count, ValueType::Unknown);
-  }
-  SemanticTypeInfo info =
-      MakeCallableSemanticType(std::move(param_types), ValueType::Unknown);
-  info.callable_block_runtime_handle_candidate =
-      expr.block_escape_shape_promotes_to_heap_candidate;
-  info.callable_block_runtime_handle_has_byref_capture =
-      expr.block_byref_capture_count > 0u;
-  info.callable_block_runtime_handle_has_owned_object_capture =
-      expr.block_runtime_owned_object_capture_count > 0u;
-  if (!expr.block_byref_capture_names_lexicographic.empty()) {
-    info.callable_block_runtime_first_byref_capture_name =
-        expr.block_byref_capture_names_lexicographic.front();
-  }
-  if (!expr.block_runtime_owned_object_capture_names_lexicographic.empty()) {
-    info.callable_block_runtime_first_owned_capture_name =
-        expr.block_runtime_owned_object_capture_names_lexicographic.front();
   }
   return info;
 }
@@ -583,75 +511,6 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
   return out.str();
 }
 
-struct Objc3UnsupportedFeatureClaimEnforcementStats {
-  std::size_t live_unsupported_feature_family_count = 0;
-  std::size_t live_unsupported_feature_site_count = 0;
-  std::size_t live_unsupported_feature_diagnostic_count = 0;
-  std::size_t throws_source_rejection_site_count = 0;
-  std::size_t blocks_source_rejection_site_count = 0;
-  std::size_t arc_source_rejection_site_count = 0;
-};
-
-struct Objc3UnsupportedFeatureClaimContext {
-  std::size_t owned_runtime_backed_object_property_sites = 0;
-  bool has_owned_runtime_backed_object_storage = false;
-  bool allow_source_only_block_literals = false;
-  bool allow_source_only_defer_statements = false;
-  bool allow_source_only_error_runtime_surface = false;
-  bool arc_mode_enabled = false;
-};
-
-static bool IsRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
-  return !property.vector_spelling &&
-         (property.id_spelling || property.class_spelling ||
-          property.instancetype_spelling ||
-          property.object_pointer_type_spelling);
-}
-
-static bool IsOwnedRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
-  return IsRuntimeBackedObjectProperty(property) &&
-         (property.is_copy || property.is_strong ||
-          property.ownership_qualifier_spelling == "__strong");
-}
-
-static Objc3UnsupportedFeatureClaimContext
-BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
-                                    bool allow_source_only_block_literals,
-                                    bool allow_source_only_defer_statements,
-                                    bool allow_source_only_error_runtime_surface,
-                                    bool arc_mode_enabled) {
-  Objc3UnsupportedFeatureClaimContext context;
-  std::unordered_set<std::string> seen_owned_storage_sites;
-  const auto record_properties = [&](const auto &owner_name,
-                                     const auto &properties) {
-    for (const auto &property : properties) {
-      if (!IsOwnedRuntimeBackedObjectProperty(property)) {
-        continue;
-      }
-      const std::string key = owner_name + "::" + property.name;
-      if (!seen_owned_storage_sites.emplace(key).second) {
-        continue;
-      }
-      ++context.owned_runtime_backed_object_property_sites;
-    }
-  };
-
-  for (const auto &interface_decl : ast.interfaces) {
-    record_properties(interface_decl.name, interface_decl.properties);
-  }
-  for (const auto &implementation_decl : ast.implementations) {
-    record_properties(implementation_decl.name, implementation_decl.properties);
-  }
-  context.has_owned_runtime_backed_object_storage =
-      context.owned_runtime_backed_object_property_sites > 0u;
-  context.allow_source_only_block_literals = allow_source_only_block_literals;
-  context.allow_source_only_defer_statements = allow_source_only_defer_statements;
-  context.allow_source_only_error_runtime_surface =
-      allow_source_only_error_runtime_surface;
-  context.arc_mode_enabled = arc_mode_enabled;
-  return context;
-}
-
 static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
@@ -725,36 +584,6 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   return summary;
 }
 
-static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
-  if (lhs.is_vector != rhs.is_vector) {
-    return false;
-  }
-  if (lhs.type != rhs.type) {
-    return false;
-  }
-  if (lhs.is_callable != rhs.is_callable) {
-    return false;
-  }
-  if (!lhs.is_vector) {
-    if (lhs.is_callable) {
-      return lhs.callable_param_types == rhs.callable_param_types &&
-             lhs.callable_return_type == rhs.callable_return_type;
-    }
-    return true;
-  }
-  return lhs.vector_lane_count == rhs.vector_lane_count && lhs.vector_base_spelling == rhs.vector_base_spelling;
-}
-
-static bool IsEscapingBlockRuntimeHandleCompatible(
-    const SemanticTypeInfo &expected, const SemanticTypeInfo &value) {
-  if (!IsCallableSemanticType(value) || !IsScalarSemanticType(expected)) {
-    return false;
-  }
-  return expected.type == ValueType::I32 ||
-         expected.type == ValueType::ObjCId ||
-         expected.type == ValueType::ObjCObjectPtr;
-}
-
 static void DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
     unsigned line, unsigned column, const SemanticTypeInfo &value,
     std::vector<std::string> &diagnostics) {
@@ -764,55 +593,6 @@ static void DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
   if (!value.callable_block_runtime_handle_candidate) {
     return;
   }
-}
-
-static std::string SemanticTypeName(const SemanticTypeInfo &info) {
-  if (!info.is_vector) {
-    if (info.is_callable) {
-      std::ostringstream out;
-      out << "block(";
-      for (std::size_t index = 0; index < info.callable_param_types.size(); ++index) {
-        if (index > 0u) {
-          out << ", ";
-        }
-        out << objc3c::support::ValueTypeName(info.callable_param_types[index]);
-      }
-      out << ") -> " << objc3c::support::ValueTypeName(info.callable_return_type);
-      return out.str();
-    }
-    return objc3c::support::ValueTypeName(info.type);
-  }
-  const std::string base =
-      info.vector_base_spelling.empty() ? std::string(objc3c::support::ValueTypeName(info.type))
-                                        : info.vector_base_spelling;
-  return base + "x" + std::to_string(info.vector_lane_count);
-}
-
-static unsigned OwnershipQualifierLine(
-    const std::vector<Objc3SemaTokenMetadata> &tokens,
-    unsigned default_line) {
-  return tokens.empty() ? default_line : tokens.front().line;
-}
-
-static unsigned OwnershipQualifierColumn(
-    const std::vector<Objc3SemaTokenMetadata> &tokens,
-    unsigned default_column) {
-  return tokens.empty() ? default_column : tokens.front().column;
-}
-
-static void RecordUnsupportedFeatureClaimDiagnostic(
-    std::size_t &site_counter,
-    unsigned line,
-    unsigned column,
-    const std::string &message,
-    std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
-  // unsupported-feature enforcement anchor: accepted
-  // advanced surfaces fail closed here before lowering/runtime publication.
-  ++site_counter;
-  ++stats.live_unsupported_feature_site_count;
-  ++stats.live_unsupported_feature_diagnostic_count;
-  diagnostics.push_back(MakeDiag(line, column, "O3S221", message));
 }
 
 static void DiagnoseUnsupportedFeatureClaimsInExpr(

@@ -1,59 +1,4 @@
-    } else if (Match(TokenKind::KwInstancetype)) {
-      type = ValueType::ObjCInstancetype;
-      instancetype_spelling = true;
-    } else if (Match(TokenKind::KwNSInteger) || Match(TokenKind::KwNSUInteger)) {
-      type = ValueType::I32;
-    } else if (AtRemovedOptionalTemplateAlias()) {
-      return RejectRemovedOptionalTemplateAlias(Peek());
-    } else if (At(TokenKind::Identifier) && parse_builtin_type(Peek().text)) {
-      Advance();
-    } else if (At(TokenKind::Identifier)) {
-      const Token object_name = Advance();
-      type = ValueType::ObjCObjectPtr;
-      object_pointer_spelling = true;
-      object_pointer_name = object_name.text;
-    } else {
-      diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
-                                      std::string("expected ") + diagnostic_context + " type"));
-      return false;
-    }
-
-    while (Match(TokenKind::Star)) {
-      ++pointer_depth;
-    }
-
-    if (pointer_depth > 0u) {
-      if (type == ValueType::Void) {
-        // C-style declarations use void* as an opaque object-pointer boundary.
-        type = ValueType::ObjCObjectPtr;
-        object_pointer_spelling = true;
-        if (object_pointer_name.empty()) {
-          object_pointer_name = "void";
-        }
-      } else if (type == ValueType::I32 || type == ValueType::Bool) {
-        const char *pointer_type = type == ValueType::I32 ? "i32*" : "bool*";
-        diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
-                                        std::string("unsupported pointer type in C-style compatibility declaration: unsupported pointer type '") + pointer_type +
-                                            "' in C-style compatibility declaration"));
-        return false;
-      }
-      if (!object_pointer_spelling && !id_spelling && !class_spelling && !sel_spelling && !instancetype_spelling) {
-        object_pointer_spelling = true;
-      }
-      if (object_pointer_name.empty() && At(TokenKind::Identifier)) {
-        object_pointer_name = Peek().text;
-      }
-    }
-
-    if (!allow_void && type == ValueType::Void) {
-      diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P108",
-                                      "void is only allowed as '(void)' in C-style compatibility parameter lists"));
-      return false;
-    }
-    return true;
-  }
-
-  bool ParseCStyleCompatFunctionParameters(FunctionDecl &fn) {
+  bool ParseCStyleFunctionParameters(FunctionDecl &fn) {
     if (At(TokenKind::RParen)) {
       return true;
     }
@@ -65,15 +10,22 @@
       param.line = type_token.line;
       param.column = type_token.column;
 
-      unsigned pointer_depth = 0;
-      if (!ParseCStyleCompatType(param.type, parameter_index == 0, param.id_spelling, param.class_spelling,
-                                 param.sel_spelling, param.instancetype_spelling, param.object_pointer_type_spelling,
-                                 param.object_pointer_type_name, pointer_depth,
-                                 type_token.line, type_token.column, "parameter")) {
+      const Objc3CStyleFunctionTypeParseResult parsed_type =
+          ParseObjc3CStyleFunctionType(tokens_, index_, parameter_index == 0,
+                                       type_token.line, type_token.column,
+                                       "parameter", diagnostics_);
+      if (!parsed_type.ok) {
         return false;
       }
-      param.has_pointer_declarator = pointer_depth > 0u;
-      param.pointer_declarator_depth = pointer_depth;
+      param.type = parsed_type.type;
+      param.id_spelling = parsed_type.id_spelling;
+      param.class_spelling = parsed_type.class_spelling;
+      param.sel_spelling = parsed_type.sel_spelling;
+      param.instancetype_spelling = parsed_type.instancetype_spelling;
+      param.object_pointer_type_spelling = parsed_type.object_pointer_spelling;
+      param.object_pointer_type_name = parsed_type.object_pointer_name;
+      param.has_pointer_declarator = parsed_type.pointer_depth > 0u;
+      param.pointer_declarator_depth = parsed_type.pointer_depth;
 
       if (parameter_index == 0 && param.type == ValueType::Void && At(TokenKind::RParen)) {
         return true;
@@ -82,7 +34,7 @@
         const Token &token = Peek();
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P101",
-                     "expected parameter identifier, found " + DescribeCompatDiagnosticToken(token)));
+                     "expected parameter identifier, found " + DescribeParserDiagnosticToken(token)));
         return false;
       }
 
@@ -101,40 +53,50 @@
         const Token &token = Peek();
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P104",
-                     "trailing ',' in C-style compatibility parameter list is not allowed"));
+                     "trailing ',' in C-style parameter list is not allowed"));
         return false;
       }
       if (!AtCStyleTypeLeadToken() && !At(TokenKind::Identifier)) {
         const Token &token = Peek();
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P100",
-                     "expected parameter declaration after ',' in C-style compatibility parameter list, found " +
-                         DescribeCompatDiagnosticToken(token)));
+                     "expected parameter declaration after ',' in C-style parameter list, found " +
+                         DescribeParserDiagnosticToken(token)));
         return false;
       }
     }
   }
 
-  void ParseTopLevelCompatFunctionDecl(Objc3ParsedProgram &program) {
+  void ParseTopLevelCStyleFunctionDecl(Objc3ParsedProgram &program) {
     auto fn = std::make_unique<FunctionDecl>();
     const Token &return_type_token = Peek();
-    unsigned return_pointer_depth = 0;
-    if (!ParseCStyleCompatType(fn->return_type, true, fn->return_id_spelling, fn->return_class_spelling,
-                               fn->return_sel_spelling, fn->return_instancetype_spelling,
-                               fn->return_object_pointer_type_spelling, fn->return_object_pointer_type_name,
-                               return_pointer_depth, return_type_token.line, return_type_token.column, "function return")) {
+    const Objc3CStyleFunctionTypeParseResult parsed_return_type =
+        ParseObjc3CStyleFunctionType(tokens_, index_, true,
+                                     return_type_token.line,
+                                     return_type_token.column,
+                                     "function return", diagnostics_);
+    if (!parsed_return_type.ok) {
       SynchronizeTopLevel();
       return;
     }
-    fn->has_return_pointer_declarator = return_pointer_depth > 0u;
-    fn->return_pointer_declarator_depth = return_pointer_depth;
+    fn->return_type = parsed_return_type.type;
+    fn->return_id_spelling = parsed_return_type.id_spelling;
+    fn->return_class_spelling = parsed_return_type.class_spelling;
+    fn->return_sel_spelling = parsed_return_type.sel_spelling;
+    fn->return_instancetype_spelling = parsed_return_type.instancetype_spelling;
+    fn->return_object_pointer_type_spelling =
+        parsed_return_type.object_pointer_spelling;
+    fn->return_object_pointer_type_name =
+        parsed_return_type.object_pointer_name;
+    fn->has_return_pointer_declarator = parsed_return_type.pointer_depth > 0u;
+    fn->return_pointer_declarator_depth = parsed_return_type.pointer_depth;
     fn->return_typecheck_family_symbol = BuildObjcTypecheckReturnFamilySymbol(*fn);
 
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
       diagnostics_.push_back(
           MakeDiag(token.line, token.column, "O3P101",
-                   "expected function identifier, found " + DescribeCompatDiagnosticToken(token)));
+                   "expected function identifier, found " + DescribeParserDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
@@ -150,12 +112,12 @@
       const Token &token = Peek();
       diagnostics_.push_back(
           MakeDiag(token.line, token.column, "O3P106",
-                   "missing '(' after function name; found " + DescribeCompatDiagnosticToken(token)));
+                   "missing '(' after function name; found " + DescribeParserDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
 
-    if (!ParseCStyleCompatFunctionParameters(*fn)) {
+    if (!ParseCStyleFunctionParameters(*fn)) {
       SynchronizeTopLevel();
       return;
     }
@@ -164,7 +126,7 @@
       const Token &token = Peek();
       diagnostics_.push_back(
           MakeDiag(token.line, token.column, "O3P109",
-                   "missing ')' after parameters; found " + DescribeCompatDiagnosticToken(token)));
+                   "missing ')' after parameters; found " + DescribeParserDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
@@ -293,94 +255,37 @@
   }
 
   bool AtIdentifierColon() const {
-    return At(TokenKind::Identifier) && (index_ + 1 < tokens_.size()) &&
-           tokens_[index_ + 1].kind == TokenKind::Colon;
-  }
-
-  static bool IsAssignmentOperatorToken(TokenKind kind) {
-    return kind == TokenKind::Equal || kind == TokenKind::PlusEqual || kind == TokenKind::MinusEqual ||
-           kind == TokenKind::StarEqual || kind == TokenKind::SlashEqual || kind == TokenKind::PercentEqual ||
-           kind == TokenKind::AmpersandEqual || kind == TokenKind::PipeEqual || kind == TokenKind::CaretEqual ||
-           kind == TokenKind::LessLessEqual || kind == TokenKind::GreaterGreaterEqual;
-  }
-
-  static bool IsUpdateOperatorToken(TokenKind kind) {
-    return kind == TokenKind::PlusPlus || kind == TokenKind::MinusMinus;
+    return IsObjc3IdentifierColonStatementLead(tokens_, index_);
   }
 
   bool AtIdentifierAssignment() const {
-    return At(TokenKind::Identifier) && (index_ + 1 < tokens_.size()) &&
-           IsAssignmentOperatorToken(tokens_[index_ + 1].kind);
+    return IsObjc3IdentifierAssignmentStatementLead(tokens_, index_);
   }
 
   bool AtIdentifierUpdate() const {
-    return At(TokenKind::Identifier) && (index_ + 1 < tokens_.size()) &&
-           IsUpdateOperatorToken(tokens_[index_ + 1].kind);
+    return IsObjc3IdentifierUpdateStatementLead(tokens_, index_);
   }
 
   bool AtPrefixUpdate() const {
-    return IsUpdateOperatorToken(Peek().kind) && (index_ + 1 < tokens_.size()) &&
-           tokens_[index_ + 1].kind == TokenKind::Identifier;
+    return IsObjc3PrefixUpdateStatementLead(tokens_, index_);
   }
 
   bool MatchAssignmentOperator(std::string &op) {
-    if (Match(TokenKind::Equal)) {
-      op = "=";
-      return true;
+    if (!objc3c::parse::IsObjc3AssignmentOperatorToken(Peek().kind)) {
+      return false;
     }
-    if (Match(TokenKind::PlusEqual)) {
-      op = "+=";
-      return true;
-    }
-    if (Match(TokenKind::MinusEqual)) {
-      op = "-=";
-      return true;
-    }
-    if (Match(TokenKind::StarEqual)) {
-      op = "*=";
-      return true;
-    }
-    if (Match(TokenKind::SlashEqual)) {
-      op = "/=";
-      return true;
-    }
-    if (Match(TokenKind::PercentEqual)) {
-      op = "%=";
-      return true;
-    }
-    if (Match(TokenKind::AmpersandEqual)) {
-      op = "&=";
-      return true;
-    }
-    if (Match(TokenKind::PipeEqual)) {
-      op = "|=";
-      return true;
-    }
-    if (Match(TokenKind::CaretEqual)) {
-      op = "^=";
-      return true;
-    }
-    if (Match(TokenKind::LessLessEqual)) {
-      op = "<<=";
-      return true;
-    }
-    if (Match(TokenKind::GreaterGreaterEqual)) {
-      op = ">>=";
-      return true;
-    }
-    return false;
+    op = objc3c::parse::Objc3AssignmentOperatorSpelling(Peek().kind);
+    Advance();
+    return true;
   }
 
   bool MatchUpdateOperator(std::string &op) {
-    if (Match(TokenKind::PlusPlus)) {
-      op = "++";
-      return true;
+    if (!objc3c::parse::IsObjc3UpdateOperatorToken(Peek().kind)) {
+      return false;
     }
-    if (Match(TokenKind::MinusMinus)) {
-      op = "--";
-      return true;
-    }
-    return false;
+    op = objc3c::parse::Objc3UpdateOperatorSpelling(Peek().kind);
+    Advance();
+    return true;
   }
 
   void ParseModule(Objc3ParsedProgram &program) {
@@ -832,13 +737,11 @@
   }
 
   bool AtIdentifierText(const char *text) const {
-    return At(TokenKind::Identifier) && Peek().text == text;
+    return objc3c::parse::AtIdentifierText(tokens_, index_, text);
   }
 
   bool AtIdentifierTextOffset(std::size_t offset, const char *text) const {
-    const std::size_t cursor = index_ + offset;
-    return cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::Identifier &&
-           tokens_[cursor].text == text;
+    return objc3c::parse::AtIdentifierTextOffset(tokens_, index_, offset, text);
   }
 
   bool ParseOptionalThrowsClause(FunctionDecl &fn) {

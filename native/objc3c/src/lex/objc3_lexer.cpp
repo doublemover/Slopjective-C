@@ -1,10 +1,12 @@
 #include "lex/objc3_lexer.h"
 
 #include <cctype>
-#include <string>
 
 #include "diag/objc3_diag_utils.h"
+#include "lex/objc3_lexer_char_class.h"
 #include "support/objc3_ascii_predicates.h"
+#include "token/objc3_token_kind.h"
+#include "token/objc3_token_punctuation.h"
 
 namespace {
 
@@ -14,32 +16,6 @@ using objc3c::support::IsHexDigit;
 using objc3c::support::IsOctalDigit;
 using Token = Objc3LexToken;
 using TokenKind = Objc3LexTokenKind;
-
-bool IsIdentStart(char c) {
-  return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_';
-}
-
-bool IsIdentBody(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_';
-}
-
-bool IsHorizontalWhitespace(char c) {
-  return c == ' ' || c == '\t' || c == '\r' || c == '\v' || c == '\f';
-}
-
-std::string EscapeStringTokenText(const std::string &value) {
-  std::string escaped;
-  escaped.reserve(value.size() + 2u);
-  escaped.push_back('"');
-  for (char c : value) {
-    if (c == '"' || c == '\\') {
-      escaped.push_back('\\');
-    }
-    escaped.push_back(c);
-  }
-  escaped.push_back('"');
-  return escaped;
-}
 
 }  // namespace
 
@@ -143,50 +119,12 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
     }
     if (c == '@') {
       Advance();
-      if (index_ < source_.size() && IsIdentStart(source_[index_])) {
+      if (index_ < source_.size() && IsObjc3IdentifierStart(source_[index_])) {
         const std::string directive = ConsumeIdentifier();
-        if (directive == "interface") {
-          tokens.push_back(Token{TokenKind::KwAtInterface, "@interface", token_line, token_column});
-          continue;
-        }
-        if (directive == "implementation") {
-          tokens.push_back(Token{TokenKind::KwAtImplementation, "@implementation", token_line, token_column});
-          continue;
-        }
-        if (directive == "protocol") {
-          tokens.push_back(Token{TokenKind::KwAtProtocol, "@protocol", token_line, token_column});
-          continue;
-        }
-        if (directive == "required") {
-          tokens.push_back(Token{TokenKind::KwAtRequired, "@required", token_line, token_column});
-          continue;
-        }
-        if (directive == "optional") {
-          tokens.push_back(Token{TokenKind::KwAtOptional, "@optional", token_line, token_column});
-          continue;
-        }
-        if (directive == "property") {
-          tokens.push_back(Token{TokenKind::KwAtProperty, "@property", token_line, token_column});
-          continue;
-        }
-        if (directive == "keypath") {
-          tokens.push_back(Token{TokenKind::KwAtKeypath, "@keypath", token_line, token_column});
-          continue;
-        }
-        if (directive == "cleanup") {
-          tokens.push_back(Token{TokenKind::KwAtCleanup, "@cleanup", token_line, token_column});
-          continue;
-        }
-        if (directive == "resource") {
-          tokens.push_back(Token{TokenKind::KwAtResource, "@resource", token_line, token_column});
-          continue;
-        }
-        if (directive == "end") {
-          tokens.push_back(Token{TokenKind::KwAtEnd, "@end", token_line, token_column});
-          continue;
-        }
-        if (directive == "autoreleasepool") {
-          tokens.push_back(Token{TokenKind::KwAtAutoreleasePool, "@autoreleasepool", token_line, token_column});
+        const Objc3TokenKindClassification at_directive =
+            ClassifyObjc3AtDirectiveToken(directive);
+        if (at_directive.recognized) {
+          tokens.push_back(Token{at_directive.kind, "@" + directive, token_line, token_column});
           continue;
         }
         diagnostics.push_back(MakeDiag(token_line, token_column, "O3L001",
@@ -226,106 +164,41 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
                      "unterminated string literal"));
         continue;
       }
-      tokens.push_back(Token{TokenKind::String, EscapeStringTokenText(value),
+      tokens.push_back(Token{TokenKind::String, EscapeObjc3StringTokenText(value),
                              token_line, token_column});
       continue;
     }
-    if (IsIdentStart(c)) {
+    if (IsObjc3IdentifierStart(c)) {
       std::string ident = ConsumeIdentifier();
       TokenKind kind = TokenKind::Identifier;
-      if (ident == "module") {
-        kind = TokenKind::KwModule;
-      } else if (ident == "let") {
-        kind = TokenKind::KwLet;
-      } else if (ident == "var") {
-        kind = TokenKind::KwVar;
-      } else if (ident == "fn") {
-        kind = TokenKind::KwFn;
-      } else if (ident == "async") {
-        kind = TokenKind::KwAsync;
-      } else if (ident == "pure") {
-        kind = TokenKind::KwPure;
-      } else if (ident == "extern") {
-        kind = TokenKind::KwExtern;
-      } else if (ident == "return") {
-        kind = TokenKind::KwReturn;
-      } else if (ident == "if") {
-        kind = TokenKind::KwIf;
-      } else if (ident == "else") {
-        kind = TokenKind::KwElse;
-      } else if (ident == "guard") {
-        kind = TokenKind::KwGuard;
-      // source-closure anchor: reserve defer/match as explicit
-      // frontend-owned keywords so later Part 5 work can fail closed
-      // deterministically instead of drifting as plain identifiers.
-      } else if (ident == "defer") {
-        kind = TokenKind::KwDefer;
-      } else if (ident == "do") {
-        kind = TokenKind::KwDo;
-      } else if (ident == "await") {
-        kind = TokenKind::KwAwait;
-      } else if (ident == "try") {
-        kind = TokenKind::KwTry;
-      } else if (ident == "throw") {
-        kind = TokenKind::KwThrow;
-      } else if (ident == "catch") {
-        kind = TokenKind::KwCatch;
-      } else if (ident == "for") {
-        kind = TokenKind::KwFor;
-      } else if (ident == "switch") {
-        kind = TokenKind::KwSwitch;
-      } else if (ident == "match") {
-        kind = TokenKind::KwMatch;
-      } else if (ident == "case") {
-        kind = TokenKind::KwCase;
-      } else if (ident == "default") {
-        kind = TokenKind::KwDefault;
-      } else if (ident == "while") {
-        kind = TokenKind::KwWhile;
-      } else if (ident == "break") {
-        kind = TokenKind::KwBreak;
-      } else if (ident == "continue") {
-        kind = TokenKind::KwContinue;
-      } else if (ident == "i32") {
-        kind = TokenKind::KwI32;
-      } else if (ident == "bool") {
-        kind = TokenKind::KwBool;
-      } else if (ident == "BOOL") {
-        kind = TokenKind::KwBOOL;
-      } else if (ident == "NSInteger") {
-        kind = TokenKind::KwNSInteger;
-      } else if (ident == "NSUInteger") {
-        kind = TokenKind::KwNSUInteger;
-      } else if (ident == "void") {
-        kind = TokenKind::KwVoid;
-      } else if (ident == "id") {
-        kind = TokenKind::KwId;
-      } else if (ident == "Class") {
-        kind = TokenKind::KwClass;
-      } else if (ident == "SEL") {
-        kind = TokenKind::KwSEL;
-      } else if (ident == "Protocol") {
-        kind = TokenKind::KwProtocol;
-      } else if (ident == "instancetype") {
-        kind = TokenKind::KwInstancetype;
-      } else if (ident == "true") {
-        kind = TokenKind::KwTrue;
-      } else if (ident == "false") {
-        kind = TokenKind::KwFalse;
-      } else if (ident == "nil") {
-        kind = TokenKind::KwNil;
-      } else if (ident == "YES") {
-        ++migration_hints_.legacy_yes_count;
-        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
-                                       "legacy literal alias 'YES' is rejected; use canonical 'true'"));
-      } else if (ident == "NO") {
-        ++migration_hints_.legacy_no_count;
-        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
-                                       "legacy literal alias 'NO' is rejected; use canonical 'false'"));
-      } else if (ident == "NULL") {
-        ++migration_hints_.legacy_null_count;
-        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
-                                       "legacy literal alias 'NULL' is rejected; use canonical 'nil'"));
+      const Objc3TokenKindClassification keyword = ClassifyObjc3IdentifierToken(ident);
+      if (keyword.recognized) {
+        kind = keyword.kind;
+      } else {
+        const Objc3LegacyLiteralAliasKind alias = ClassifyObjc3LegacyLiteralAlias(ident);
+        switch (alias) {
+        case Objc3LegacyLiteralAliasKind::Yes:
+          ++migration_hints_.legacy_yes_count;
+          break;
+        case Objc3LegacyLiteralAliasKind::No:
+          ++migration_hints_.legacy_no_count;
+          break;
+        case Objc3LegacyLiteralAliasKind::Null:
+          ++migration_hints_.legacy_null_count;
+          break;
+        case Objc3LegacyLiteralAliasKind::None:
+          break;
+        }
+        if (alias != Objc3LegacyLiteralAliasKind::None) {
+          diagnostics.push_back(MakeDiag(
+              token_line,
+              token_column,
+              "O3C002",
+              std::string("legacy literal alias '") +
+                  Objc3LegacyLiteralAliasDiagnosticSpelling(alias) +
+                  "' is rejected; use canonical '" +
+                  Objc3LegacyLiteralAliasCanonicalSpelling(alias) + "'"));
+        }
       }
       tokens.push_back(Token{kind, ident, token_line, token_column});
       continue;
@@ -336,163 +209,31 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
       continue;
     }
 
-    Advance();
-    switch (c) {
-      case '(':
-        tokens.push_back(Token{TokenKind::LParen, "(", token_line, token_column});
-        break;
-      case ')':
-        tokens.push_back(Token{TokenKind::RParen, ")", token_line, token_column});
-        break;
-      case '[':
-        tokens.push_back(Token{TokenKind::LBracket, "[", token_line, token_column});
-        break;
-      case ']':
-        tokens.push_back(Token{TokenKind::RBracket, "]", token_line, token_column});
-        break;
-      case '{':
-        tokens.push_back(Token{TokenKind::LBrace, "{", token_line, token_column});
-        break;
-      case '}':
-        tokens.push_back(Token{TokenKind::RBrace, "}", token_line, token_column});
-        break;
-      case ',':
-        tokens.push_back(Token{TokenKind::Comma, ",", token_line, token_column});
-        break;
-      case ':':
-        tokens.push_back(Token{TokenKind::Colon, ":", token_line, token_column});
-        break;
-      case '.':
-        tokens.push_back(Token{TokenKind::Dot, ".", token_line, token_column});
-        break;
-      case ';':
-        tokens.push_back(Token{TokenKind::Semicolon, ";", token_line, token_column});
-        break;
-      case '=':
-        if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::EqualEqual, "==", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Equal, "=", token_line, token_column});
-        }
-        break;
-      case '!':
-        if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::BangEqual, "!=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Bang, "!", token_line, token_column});
-        }
-        break;
-      case '<':
-        if (MatchChar('<')) {
-          if (MatchChar('=')) {
-            tokens.push_back(Token{TokenKind::LessLessEqual, "<<=", token_line, token_column});
-          } else {
-            tokens.push_back(Token{TokenKind::LessLess, "<<", token_line, token_column});
-          }
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::LessEqual, "<=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Less, "<", token_line, token_column});
-        }
-        break;
-      case '>':
-        if (MatchChar('>')) {
-          if (MatchChar('=')) {
-            tokens.push_back(Token{TokenKind::GreaterGreaterEqual, ">>=", token_line, token_column});
-          } else {
-            tokens.push_back(Token{TokenKind::GreaterGreater, ">>", token_line, token_column});
-          }
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::GreaterEqual, ">=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Greater, ">", token_line, token_column});
-        }
-        break;
-      case '&':
-        if (MatchChar('&')) {
-          tokens.push_back(Token{TokenKind::AndAnd, "&&", token_line, token_column});
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::AmpersandEqual, "&=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Ampersand, "&", token_line, token_column});
-        }
-        break;
-      case '|':
-        if (MatchChar('|')) {
-          tokens.push_back(Token{TokenKind::OrOr, "||", token_line, token_column});
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::PipeEqual, "|=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Pipe, "|", token_line, token_column});
-        }
-        break;
-      case '^':
-        if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::CaretEqual, "^=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Caret, "^", token_line, token_column});
-        }
-        break;
-      case '?':
-        if (MatchChar('?')) {
-          tokens.push_back(Token{TokenKind::QuestionQuestion, "??", token_line, token_column});
-          break;
-        }
-        if (MatchChar('.')) {
-          tokens.push_back(Token{TokenKind::QuestionDot, "?.", token_line, token_column});
-          break;
-        }
-        tokens.push_back(Token{TokenKind::Question, "?", token_line, token_column});
-        break;
-      case '~':
-        tokens.push_back(Token{TokenKind::Tilde, "~", token_line, token_column});
-        break;
-      case '+':
-        if (MatchChar('+')) {
-          tokens.push_back(Token{TokenKind::PlusPlus, "++", token_line, token_column});
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::PlusEqual, "+=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Plus, "+", token_line, token_column});
-        }
-        break;
-      case '-':
-        if (MatchChar('-')) {
-          tokens.push_back(Token{TokenKind::MinusMinus, "--", token_line, token_column});
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::MinusEqual, "-=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Minus, "-", token_line, token_column});
-        }
-        break;
-      case '*':
-        if (MatchChar('/')) {
-          diagnostics.push_back(MakeDiag(token_line, token_column, "O3L004", "stray block comment terminator"));
-        } else if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::StarEqual, "*=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Star, "*", token_line, token_column});
-        }
-        break;
-      case '/':
-        if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::SlashEqual, "/=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Slash, "/", token_line, token_column});
-        }
-        break;
-      case '%':
-        if (MatchChar('=')) {
-          tokens.push_back(Token{TokenKind::PercentEqual, "%=", token_line, token_column});
-        } else {
-          tokens.push_back(Token{TokenKind::Percent, "%", token_line, token_column});
-        }
-        break;
-      default:
-        diagnostics.push_back(
-            MakeDiag(token_line, token_column, "O3L001", std::string("unexpected character '") + c + "'"));
-        break;
+    const Objc3PunctuationTokenClassification punctuation =
+        ClassifyObjc3PunctuationToken(source_, index_);
+    if (punctuation.recognized) {
+      for (std::size_t offset = 0; offset < punctuation.width; ++offset) {
+        Advance();
+      }
+      if (punctuation.stray_block_comment_terminator) {
+        diagnostics.push_back(MakeDiag(
+            token_line,
+            token_column,
+            "O3L004",
+            "stray block comment terminator"));
+        continue;
+      }
+      tokens.push_back(Token{
+          punctuation.kind,
+          punctuation.text,
+          token_line,
+          token_column});
+      continue;
     }
+
+    Advance();
+    diagnostics.push_back(
+        MakeDiag(token_line, token_column, "O3L001", std::string("unexpected character '") + c + "'"));
   }
   return tokens;
 }
@@ -557,14 +298,14 @@ bool Objc3Lexer::ConsumeNamedIdentifierPragmaDirective(
   }
 
   std::size_t cursor = index_ + 1;
-  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+  while (cursor < source_.size() && IsObjc3HorizontalWhitespace(source_[cursor])) {
     ++cursor;
   }
   if (!MatchLiteralAt(cursor, "pragma")) {
     return false;
   }
   cursor += 6;
-  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+  while (cursor < source_.size() && IsObjc3HorizontalWhitespace(source_[cursor])) {
     ++cursor;
   }
   if (!MatchLiteralAt(cursor, directive_name)) {
@@ -593,7 +334,7 @@ bool Objc3Lexer::ConsumeNamedIdentifierPragmaDirective(
   }
 
   SkipHorizontalWhitespace();
-  if (index_ >= source_.size() || !IsIdentStart(source_[index_])) {
+  if (index_ >= source_.size() || !IsObjc3IdentifierStart(source_[index_])) {
     diagnostics.push_back(
         MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
     ConsumeToEndOfLine();
@@ -672,14 +413,14 @@ bool Objc3Lexer::ConsumeLanguageVersionPragmaDirective(std::vector<std::string> 
   }
 
   std::size_t cursor = index_ + 1;
-  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+  while (cursor < source_.size() && IsObjc3HorizontalWhitespace(source_[cursor])) {
     ++cursor;
   }
   if (!MatchLiteralAt(cursor, "pragma")) {
     return false;
   }
   cursor += 6;
-  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+  while (cursor < source_.size() && IsObjc3HorizontalWhitespace(source_[cursor])) {
     ++cursor;
   }
   if (!strict_pragma_matching && !MatchLiteralAt(cursor, "objc_language_version")) {
@@ -783,7 +524,7 @@ void Objc3Lexer::RecordLanguageVersionPragmaObservation(unsigned line, unsigned 
 }
 
 void Objc3Lexer::SkipHorizontalWhitespace() {
-  while (index_ < source_.size() && IsHorizontalWhitespace(source_[index_])) {
+  while (index_ < source_.size() && IsObjc3HorizontalWhitespace(source_[index_])) {
     Advance();
   }
 }
@@ -859,7 +600,7 @@ void Objc3Lexer::SkipTrivia(std::vector<std::string> &diagnostics) {
 std::string Objc3Lexer::ConsumeIdentifier() {
   const std::size_t begin = index_;
   Advance();
-  while (index_ < source_.size() && IsIdentBody(source_[index_])) {
+  while (index_ < source_.size() && IsObjc3IdentifierBody(source_[index_])) {
     Advance();
   }
   return source_.substr(begin, index_ - begin);

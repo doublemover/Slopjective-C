@@ -525,9 +525,6 @@
 
 Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3Parser parser(tokens);
-  Objc3ParseResult result;
-  result.program = parser.Parse();
-  result.diagnostics = parser.TakeDiagnostics();
   // source/frontend-truth anchor: the parser contract snapshot stays
   // the canonical declaration/grammar coverage record consumed by the emitted
   // runnable feature-claim inventory. Later lanes may refine claims, but they
@@ -535,7 +532,5 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   // truth-surface wiring anchor: the parser does not admit hidden
   // strictness/concurrency claim syntax, so unsupported selection surfaces stay
   // explicit in the frontend truth packet rather than being inferred.
-  result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());
-  result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
-  return result;
+  return BuildObjc3ParseResult(parser.Parse(), parser.TakeDiagnostics(), tokens.size());
 }

@@ -24,7 +24,7 @@ std::string BuildTypedKeyPathLiteralProfile(
 
 std::string BuildAutoreleasePoolScopeSymbol(unsigned serial, unsigned depth);
 
-std::string DescribeCompatDiagnosticToken(const Objc3LexToken &token);
+std::string DescribeParserDiagnosticToken(const Objc3LexToken &token);
 
 std::size_t CountMarkerOccurrences(const std::string &text,
                                    const std::string &marker);

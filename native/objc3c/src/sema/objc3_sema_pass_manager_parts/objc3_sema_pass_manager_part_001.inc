@@ -7,6 +7,7 @@
 
 #include "diag/objc3_diag_utils.h"
 #include "sema/objc3_parser_sema_handoff_scaffold.h"
+#include "sema/objc3_sema_diagnostic_contract.h"
 #include "sema/objc3_sema_pass_block_equivalence.h"
 #include "sema/objc3_sema_pass_flow_scaffold.h"
 #include "sema/objc3_semantic_passes.h"
@@ -832,16 +833,19 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     deterministic_semantic_diagnostics =
         deterministic_semantic_diagnostics && pass_diagnostics_canonical;
 
-    const std::size_t diagnostics_bus_count_before_publish = input.diagnostics_bus.Count();
+    const std::size_t diagnostics_bus_count_before_publish =
+        Objc3SemaDiagnosticsBusCount(input.diagnostics_bus);
     result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());
     expected_diagnostics_size += pass_diagnostics.size();
     diagnostics_accounting_consistent =
         diagnostics_accounting_consistent && result.diagnostics.size() == expected_diagnostics_size;
-    input.diagnostics_bus.PublishBatch(pass_diagnostics);
-    const std::size_t diagnostics_bus_count_after_publish = input.diagnostics_bus.Count();
-    const bool pass_bus_publish_consistent = input.diagnostics_bus.diagnostics == nullptr ||
-                                             diagnostics_bus_count_after_publish ==
-                                                 diagnostics_bus_count_before_publish + pass_diagnostics.size();
+    PublishObjc3SemaDiagnostics(input.diagnostics_bus, pass_diagnostics);
+    const std::size_t diagnostics_bus_count_after_publish =
+        Objc3SemaDiagnosticsBusCount(input.diagnostics_bus);
+    const bool pass_bus_publish_consistent =
+        !Objc3SemaDiagnosticsBusHasSink(input.diagnostics_bus) ||
+        diagnostics_bus_count_after_publish ==
+            diagnostics_bus_count_before_publish + pass_diagnostics.size();
     diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent && pass_bus_publish_consistent;
     result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();
     result.diagnostics_emitted_by_pass[pass_index] = pass_diagnostics.size();

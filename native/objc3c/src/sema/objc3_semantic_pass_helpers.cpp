@@ -13,27 +13,3 @@ std::string JoinStringVector(const std::vector<std::string> &items,
   }
   return out.str();
 }
-
-OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
-    std::vector<OwnershipResourceMoveScope> &scopes,
-    const std::string &name) {
-  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-    auto found = it->find(name);
-    if (found != it->end()) {
-      return &found->second;
-    }
-  }
-  return nullptr;
-}
-
-const OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
-    const std::vector<OwnershipResourceMoveScope> &scopes,
-    const std::string &name) {
-  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-    auto found = it->find(name);
-    if (found != it->end()) {
-      return &found->second;
-    }
-  }
-  return nullptr;
-}

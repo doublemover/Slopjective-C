@@ -1214,8 +1214,7 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddProtocolDecl(program, std::move(*decl));
         }
-      } else if (AtIdentifierText("actor") &&
-                 AtIdentifierTextOffset(1, "class")) {
+      } else if (IsObjc3ActorClassDeclarationLead(tokens_, index_)) {
         // source-surface anchor: `actor class` stays a contextual
         // parser form rather than a dedicated lexer keyword while lane-A
         // completes actor-member frontend admission.
@@ -1240,8 +1239,7 @@ class Objc3Parser {
           if (decl != nullptr) {
             ast_builder_.AddInterfaceDecl(program, std::move(*decl));
           }
-        } else if (AtIdentifierText("actor") &&
-                   AtIdentifierTextOffset(1, "class")) {
+        } else if (IsObjc3ActorClassDeclarationLead(tokens_, index_)) {
           const Token actor_token = Advance();
           Advance();
           auto decl = ParseObjcActorInterfaceDecl(actor_token,
@@ -1251,23 +1249,19 @@ class Objc3Parser {
           }
         } else {
           const Token &token = Peek();
-          diagnostics_.push_back(MakeDiag(
-              token.line, token.column, "O3P100",
-              "unsupported Objective-C 3 statement"));
+          diagnostics_.push_back(BuildObjc3UnsupportedTopLevelDiagnostic(token));
           SynchronizeTopLevel();
         }
-      } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync) ||
-                 At(TokenKind::KwFn)) {
+      } else if (IsObjc3TopLevelFunctionQualifierLead(Peek().kind)) {
         ParseTopLevelFunctionDecl(program);
       } else if (AtRemovedOptionalTemplateAlias()) {
         RejectRemovedOptionalTemplateAlias(Peek());
         SynchronizeTopLevel();
       } else if (AtCStyleTopLevelFunctionDeclStart()) {
-        ParseTopLevelCompatFunctionDecl(program);
+        ParseTopLevelCStyleFunctionDecl(program);
       } else {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100",
-                                        "unsupported Objective-C 3 statement"));
+        diagnostics_.push_back(BuildObjc3UnsupportedTopLevelDiagnostic(token));
         SynchronizeTopLevel();
       }
     }
@@ -1280,137 +1274,29 @@ class Objc3Parser {
   std::vector<std::string> TakeDiagnostics() { return diagnostics_; }
 
  private:
-  bool At(TokenKind kind) const { return tokens_[index_].kind == kind; }
+  bool At(TokenKind kind) const { return AtTokenKind(tokens_, index_, kind); }
 
-  const Token &Peek() const { return tokens_[index_]; }
+  const Token &Peek() const { return PeekToken(tokens_, index_); }
 
-  const Token &Previous() const { return tokens_[index_ - 1]; }
+  const Token &Previous() const { return PreviousToken(tokens_, index_); }
 
-  const Token &Advance() {
-    if (!At(TokenKind::Eof)) {
-      ++index_;
-    }
-    return Previous();
-  }
+  const Token &Advance() { return AdvanceToken(tokens_, index_); }
 
-  bool Match(TokenKind kind) {
-    if (At(kind)) {
-      Advance();
-      return true;
-    }
-    return false;
-  }
+  bool Match(TokenKind kind) { return MatchTokenKind(tokens_, index_, kind); }
 
   bool AtRemovedOptionalTemplateAlias() const {
-    return At(TokenKind::Identifier) && Peek().text == "optional" &&
-           index_ + 1 < tokens_.size() &&
-           tokens_[index_ + 1].kind == TokenKind::Less;
+    return IsObjc3RemovedOptionalTemplateAliasLead(tokens_, index_);
   }
 
   bool RejectRemovedOptionalTemplateAlias(const Token &token) {
-    diagnostics_.push_back(
-        MakeDiag(token.line, token.column, "O3C004",
-                 "optional<T> aliases are rejected; use canonical Optional<T> spelling"));
+    diagnostics_.push_back(BuildObjc3RemovedOptionalTemplateAliasDiagnostic(token));
     return false;
   }
 
-  static bool IsCompatBuiltinTypeSpelling(const std::string &spelling) {
-    return spelling == "int" || spelling == "bool" || spelling == "BOOL" || spelling == "void" ||
-           spelling == "id" || spelling == "Class" || spelling == "SEL" || spelling == "Protocol" ||
-           spelling == "instancetype" || spelling == "NSInteger" || spelling == "NSUInteger";
-  }
-
   bool AtCStyleTypeLeadToken() const {
-    if (At(TokenKind::KwI32) || At(TokenKind::KwBool) || At(TokenKind::KwBOOL) || At(TokenKind::KwVoid) ||
-        At(TokenKind::KwId) || At(TokenKind::KwClass) || At(TokenKind::KwSEL) || At(TokenKind::KwProtocol) ||
-        At(TokenKind::KwInstancetype) || At(TokenKind::KwNSInteger) || At(TokenKind::KwNSUInteger)) {
-      return true;
-    }
-    return At(TokenKind::Identifier) && IsCompatBuiltinTypeSpelling(Peek().text);
+    return IsObjc3CStyleTypeLeadToken(tokens_, index_);
   }
 
   bool AtCStyleTopLevelFunctionDeclStart() const {
-    if (!AtCStyleTypeLeadToken()) {
-      return false;
-    }
-    std::size_t cursor = index_ + 1;
-    while (cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::Star) {
-      ++cursor;
-    }
-    if (cursor >= tokens_.size() || tokens_[cursor].kind != TokenKind::Identifier) {
-      return false;
-    }
-    ++cursor;
-    return cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::LParen;
+    return IsObjc3CStyleFunctionDeclarationStart(tokens_, index_);
   }
-
-  bool ParseCStyleCompatType(ValueType &type, bool allow_void, bool &id_spelling, bool &class_spelling,
-                             bool &sel_spelling, bool &instancetype_spelling, bool &object_pointer_spelling,
-                             std::string &object_pointer_name, unsigned &pointer_depth, unsigned diag_line,
-                             unsigned diag_column, const char *diagnostic_context) {
-    type = ValueType::Unknown;
-    id_spelling = false;
-    class_spelling = false;
-    sel_spelling = false;
-    instancetype_spelling = false;
-    object_pointer_spelling = false;
-    object_pointer_name.clear();
-    pointer_depth = 0;
-
-    const auto parse_builtin_type = [&](const std::string &spelling) -> bool {
-      if (spelling == "int" || spelling == "NSInteger" || spelling == "NSUInteger") {
-        type = ValueType::I32;
-        return true;
-      }
-      if (spelling == "bool" || spelling == "BOOL") {
-        type = ValueType::Bool;
-        return true;
-      }
-      if (spelling == "void") {
-        type = ValueType::Void;
-        return true;
-      }
-      if (spelling == "id") {
-        type = ValueType::ObjCId;
-        id_spelling = true;
-        return true;
-      }
-      if (spelling == "Class") {
-        type = ValueType::ObjCClass;
-        class_spelling = true;
-        return true;
-      }
-      if (spelling == "SEL") {
-        type = ValueType::ObjCSel;
-        sel_spelling = true;
-        return true;
-      }
-      if (spelling == "Protocol") {
-        type = ValueType::ObjCProtocol;
-        return true;
-      }
-      if (spelling == "instancetype") {
-        type = ValueType::ObjCInstancetype;
-        instancetype_spelling = true;
-        return true;
-      }
-      return false;
-    };
-
-    if (Match(TokenKind::KwI32)) {
-      type = ValueType::I32;
-    } else if (Match(TokenKind::KwBool) || Match(TokenKind::KwBOOL)) {
-      type = ValueType::Bool;
-    } else if (Match(TokenKind::KwVoid)) {
-      type = ValueType::Void;
-    } else if (Match(TokenKind::KwId)) {
-      type = ValueType::ObjCId;
-      id_spelling = true;
-    } else if (Match(TokenKind::KwClass)) {
-      type = ValueType::ObjCClass;
-      class_spelling = true;
-    } else if (Match(TokenKind::KwSEL)) {
-      type = ValueType::ObjCSel;
-      sel_spelling = true;
-    } else if (Match(TokenKind::KwProtocol)) {
-      type = ValueType::ObjCProtocol;

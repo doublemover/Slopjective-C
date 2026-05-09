@@ -388,16 +388,6 @@ bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &gl
   return true;
 }
 
-static SemanticTypeInfo ScopeLookupType(const std::vector<SemanticScope> &scopes, const std::string &name) {
-  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-    auto found = it->find(name);
-    if (found != it->end()) {
-      return found->second;
-    }
-  }
-  return MakeScalarSemanticType(ValueType::Unknown);
-}
-
 static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {
   return objc3c::support::SupportsObjCParamTypeSuffix(param);
 }

@@ -913,7 +913,9 @@ std::string ExplainNonDeterministicSemanticTypeMetadataHandoff(
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
-  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  const Objc3SemanticBodyValidationContext context =
+      BuildObjc3SemanticBodyValidationContext(program, surface, options, diagnostics);
+  const Objc3Program &ast = *context.ast;
   std::vector<std::string> protocol_definition_diagnostics;
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions = BuildProtocolSemanticDefinitions(
