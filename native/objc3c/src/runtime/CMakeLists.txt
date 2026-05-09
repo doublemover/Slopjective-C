@@ -106,6 +106,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_fast_path_seed.h
   dispatch/method_invocation.cpp
   dispatch/method_invocation.h
+  dispatch/method_invocation_signatures.cpp
+  dispatch/method_invocation_signatures.h
   dispatch/method_list_resolution.cpp
   dispatch/method_list_resolution.h
   dispatch/method_class_chain_resolution.cpp
