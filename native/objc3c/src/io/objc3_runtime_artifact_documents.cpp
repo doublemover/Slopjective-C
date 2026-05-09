@@ -1,7 +1,9 @@
 #include "io/objc3_process_internal.h"
 #include "io/objc3_cross_module_imported_modules_document.h"
+#include "io/objc3_metaprogramming_macro_host_cache_document.h"
 #include "io/objc3_runtime_artifact_contracts.h"
-#include "io/objc3_runtime_artifact_document_renderers.h"
+#include "io/objc3_runtime_metadata_discovery_document.h"
+#include "io/objc3_runtime_registration_descriptor_document.h"
 
 bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     const std::filesystem::path &ir_path,
