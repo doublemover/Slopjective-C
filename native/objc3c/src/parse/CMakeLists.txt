@@ -24,10 +24,12 @@ add_library(objc3c_parse STATIC
   objc3_parser_expression_surface.cpp
   objc3_parser_literal_expression_nodes.cpp
   objc3_parser_loop_control_statement_nodes.cpp
+  objc3_parser_ns_error_bridging_profiles.cpp
   objc3_parser_profile_helpers.cpp
   objc3_parser_recovery_boundaries.cpp
   objc3_parser_rejection_diagnostics.cpp
   objc3_parser_recovery.cpp
+  objc3_parser_result_like_profiles.cpp
   objc3_parser_statement_profiles.cpp
   objc3_parser_statement_surface.cpp
   objc3_parser_token_metadata.cpp
