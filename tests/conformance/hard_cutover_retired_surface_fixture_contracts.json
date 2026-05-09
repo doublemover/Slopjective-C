@@ -4,7 +4,7 @@
   "source_basis": "hand-authored from checked-in tests/native fixture sidecars and conformance owner indexes; no scripts, tests, builds, lints, formatters, generators, npm, cmake, gh, or push were run for this contract index",
   "policy": {
     "primary_axis": "retired surface before fixture path",
-    "positive_expectation_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are never positive expectations",
+    "positive_expectation_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved typed runtime dispatch projections are never positive expectations",
     "fixture_owner_rule": "each retired surface must name its canonical native fixture family, behavior outcome, diagnostic owner, and sidecar metadata",
     "strict_naming_rule": "retired-surface fixture names must end in _rejected, _strict_error, or _contract according to their rejection or strict-error disposition",
     "absence_rule": "retired-source lane behavior support has no fixture because the positive support surface is absent",
@@ -155,7 +155,7 @@
     },
     {
       "surface_family": "non_nil_runtime_dispatch_linkage",
-      "historical_positive_surface": "non-nil receiver dispatch through projected fallback helper",
+      "historical_positive_surface": "non-nil receiver dispatch through an unresolved typed msgsend_i32 projection",
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "lowering_or_link_strict_error",
       "diagnostic_owner": "link.unresolved_symbol",
@@ -217,7 +217,7 @@
     },
     {
       "surface_family": "unknown_receiver_runtime_dispatch",
-      "historical_positive_surface": "unknown receiver runtime fallback dispatch",
+      "historical_positive_surface": "unknown receiver runtime dispatch acceptance",
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "runtime_strict_error",
       "diagnostic_owner": "O3RT002",

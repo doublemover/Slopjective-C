@@ -42,7 +42,7 @@
     },
     {
       "pattern_id": "link.unresolved_symbol",
-      "surface": "non-nil runtime dispatch fallback linkage",
+      "surface": "non-nil runtime dispatch typed projection linkage",
       "boundary": "lowering, ir, and runtime strict-error evidence"
     },
     {

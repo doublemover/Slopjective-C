@@ -23,3 +23,8 @@ retired-surface contract index under
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` records
 the fixture family, outcome owner, diagnostic owner, sidecar, and positive
 absence for each retired surface.
+
+Runtime dispatch fixtures are typed boundary evidence. `objc3_runtime_dispatch_i32`
+and related message-send projections either materialize through the canonical
+runtime owner path or remain strict link/run errors; they are never fallback,
+shim, or compatibility acceptance lanes.

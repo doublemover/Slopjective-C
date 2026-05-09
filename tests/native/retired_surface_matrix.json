@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_of_truth": "tests/native",
-  "policy": "retired old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and runtime-dispatch surfaces are never positive fixtures",
+  "policy": "retired old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, and typed runtime-dispatch projection surfaces are never positive fixtures",
   "entries": [
     {
       "surface": "legacy-literal-aliases",
