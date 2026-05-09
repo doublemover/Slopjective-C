@@ -12,6 +12,10 @@ add_library(objc3c_driver STATIC
   objc3_driver_conformance_publication_sidecar.cpp
   objc3_driver_conformance_release_artifact_publication.cpp
   objc3_driver_conformance_surface.cpp
+  objc3_driver_frontend_diagnostic_artifact_publication.cpp
+  objc3_driver_frontend_error_bridge_artifact_publication.cpp
+  objc3_driver_frontend_manifest_artifact_publication.cpp
+  objc3_driver_frontend_runtime_metadata_artifact_publication.cpp
   objc3_driver_conformance_validation_paths.cpp
   objc3_driver_conformance_validation_publication.cpp
   objc3_driver_frontend_core_artifact_publication.cpp
@@ -20,6 +24,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_metaprogramming_cache_publication.cpp
   objc3_driver_object_backend.cpp
   objc3_driver_runtime_import_artifact_publication.cpp
+  objc3_driver_runtime_import_artifact_readiness.cpp
   objc3_driver_runtime_registration_accessor_surface.cpp
   objc3_driver_runtime_registration_command_surface.cpp
   objc3_driver_runtime_registration_descriptor_inputs.cpp
