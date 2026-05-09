@@ -3,10 +3,7 @@
 #include <string>
 
 #include "tools/objc3c_frontend_c_api_runner_dump_emitter.h"
-#include "tools/objc3c_frontend_c_api_runner_observability_json.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json.h"
-#include "tools/objc3c_frontend_c_api_runner_runtime_inspector_json.h"
-#include "tools/objc3c_frontend_c_api_runner_stage_trace_json.h"
+#include "tools/objc3c_frontend_c_api_runner_dump_payloads.h"
 
 bool ShouldEmitFrontendCApiRunnerDumpActions(
     const FrontendCApiRunnerOptions &options) {
@@ -24,30 +21,14 @@ void EmitFrontendCApiRunnerDumpActions(
     const std::string &runtime_metadata_binary_path_text,
     const std::string &summary_json) {
   FrontendCApiRunnerDumpEmitter emitter;
-  if (options.dump_summary_json) {
-    emitter.EmitJsonPayload(summary_json);
-  }
-  if (options.dump_observability_json) {
-    emitter.EmitJsonPayload(
-        BuildFrontendCApiRunnerObservabilityJson(
-            summary_path,
-            result,
-            status,
-            result_error_message,
-            runtime_metadata_binary_path_text));
-  }
-  if (options.dump_playground_repro_json) {
-    emitter.EmitJsonPayload(
-        BuildFrontendCApiRunnerPlaygroundReproJson(
-            options,
-            result,
-            summary_path));
-  }
-  if (options.dump_runtime_inspector_json) {
-    emitter.EmitJsonPayload(
-        BuildFrontendCApiRunnerRuntimeInspectorJson(options, result));
-  }
-  if (options.dump_stage_trace_json) {
-    emitter.EmitJsonPayload(BuildFrontendCApiRunnerStageTraceJson(result));
+  for (const std::string &payload : BuildFrontendCApiRunnerDumpPayloads(
+           options,
+           summary_path,
+           result,
+           status,
+           result_error_message,
+           runtime_metadata_binary_path_text,
+           summary_json)) {
+    emitter.EmitJsonPayload(payload);
   }
 }

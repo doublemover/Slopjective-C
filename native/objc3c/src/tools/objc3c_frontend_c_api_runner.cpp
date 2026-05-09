@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "tools/objc3c_frontend_c_api_runner_command_parser.h"
 #include "tools/objc3c_frontend_c_api_runner_options.h"
 #include "tools/objc3c_frontend_c_api_runner_session.h"
 

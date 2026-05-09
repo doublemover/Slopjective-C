@@ -29,9 +29,3 @@ struct FrontendCApiRunnerOptions {
   bool dump_runtime_inspector_json = false;
   bool dump_stage_trace_json = false;
 };
-
-std::string FrontendCApiRunnerUsage();
-bool ParseFrontendCApiRunnerOptions(int argc,
-                                    char **argv,
-                                    FrontendCApiRunnerOptions &options,
-                                    std::string &error);

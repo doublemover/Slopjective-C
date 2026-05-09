@@ -3,7 +3,6 @@
 #include <string>
 
 #include "libobjc3c_frontend/c_api.h"
-#include "tools/objc3c_frontend_c_api_runner_options.h"
 #include "tools/objc3c_frontend_c_api_runner_result.h"
 
 struct FrontendCApiRunnerCompileSession {
@@ -20,8 +19,3 @@ struct FrontendCApiRunnerCompileSession {
   FrontendCApiRunnerCompileSession &operator=(
       const FrontendCApiRunnerCompileSession &) = delete;
 };
-
-bool RunFrontendCApiRunnerCompileSession(
-    const FrontendCApiRunnerOptions &options,
-    FrontendCApiRunnerCompileSession &session,
-    std::string &error);

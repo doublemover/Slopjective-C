@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "tools/objc3c_frontend_c_api_runner_compile_session.h"
+#include "tools/objc3c_frontend_c_api_runner_compile_session_run.h"
 #include "tools/objc3c_frontend_c_api_runner_session_output.h"
 #include "tools/objc3c_frontend_c_api_runner_summary_path.h"
 
