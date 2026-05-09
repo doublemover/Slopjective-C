@@ -236,6 +236,62 @@ through `6efdaf8f9`. It excludes uncommitted worktree edits.
 | `#8149` | Control-plane evidence is refreshed by LLVM tooling workflow owners. |
 | `#8150` | Local closeout evidence now also includes the committed post-`2fb0664e0` owner wave through `6efdaf8f9`; remote closeout remains deferred. |
 
+## Post-`6efdaf8f9` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `6efdaf8f9`
+through `a20f67559`. It excludes uncommitted worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Developer tooling dump owners | `#8138`, `#8142`, `#8149`, `#8150` | `f7d0edb3e` | Compile-observability, runtime-inspector, and compile-stage-trace dump actions now route through explicit input policy and JSON capture runner owners under the existing public workflow boundary. |
+| Frontend conformance report artifact contracts | `#8138`, `#8140`, `#8145`, `#8148`, `#8150` | `0e5af63ab` | Frontend compatibility/strictness semantics, versioned conformance lowering, machine-readable report contracts, feature-aware report emission, and release-evidence packaging now live under report contract owners and CMake topology. |
+| IR emitter context records | `#8137`, `#8147`, `#8150` | `aab946e78` | Function effects, lowered message sends, control labels, block bindings, keypath artifacts, cleanup frames, and function context records moved into a dedicated IR emitter context header. |
+| Runtime method resolution helpers | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `a20f67559` | Runtime method-list resolution and protocol selector declaration probing now have dedicated helpers and CMake entries while preserving strict malformed-metadata and unsupported-dispatch failure handling. |
+
+## Post-`6efdaf8f9` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8133` | Runtime dispatch evidence is refreshed by dedicated method-list resolution and protocol selector declaration helpers. |
+| `#8137` | IR/deep handoff evidence is refreshed by extracted IR emitter context records and conformance report lowering contracts. |
+| `#8138` | Pipeline/artifact evidence is refreshed by developer-tooling dump owners and frontend conformance report contract owners. |
+| `#8140` | Frontend/driver evidence is refreshed by frontend conformance report artifact contract ownership. |
+| `#8141` | Public runtime/C API evidence is refreshed by runtime method resolution helper ownership without adding compatibility wrappers. |
+| `#8142` | Workflow evidence is refreshed by explicit developer-tooling dump action/input/runner ownership under the npm bridge. |
+| `#8143` | Runtime acceptance evidence is refreshed by method-list resolution, selector matching, category resolution, and protocol declaration probing helpers. |
+| `#8145` | Capability truth evidence is refreshed by strict frontend conformance report contracts that classify compatibility terminology as artifact semantics, not support modes. |
+| `#8147` | Runtime metadata/deep semantic evidence is refreshed by IR emitter context records and runtime method/protocol resolution helpers. |
+| `#8148` | JSON/schema/artifact evidence is refreshed by machine-readable frontend conformance report JSON contract ownership. |
+| `#8149` | Control-plane evidence is refreshed by developer-tooling dump input policy and managed flag rejection. |
+| `#8150` | Local closeout evidence now also includes the committed post-`6efdaf8f9` owner wave through `a20f67559`; remote closeout remains deferred. |
+
+## Post-`a20f67559` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `a20f67559`
+through `9676679c2`. It excludes uncommitted worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Closeout evidence index refresh | `#8150` | `442f1d2e2` | Local closeout tracking records the post-`2fb0664e0` owner wave without claiming remote issue closure. |
+| Workflow action facades | `#8142`, `#8149`, `#8150` | `c18da62ff` | Docs, hygiene, schema, native build, and tiny command inventory actions now route through import-compatible facade modules with owner-specific implementation files. |
+| Reporting and release catalog owners | `#8142`, `#8145`, `#8148`, `#8149`, `#8150` | `d7779f6ac` | Stress, public reporting/performance, release channel, and security-hardening action specs now live in owner catalog modules behind the existing aggregate catalog symbol. |
+| Frontend artifact diagnostics gate | `#8138`, `#8140`, `#8148`, `#8150` | `ff67214ec` | Frontend artifact diagnostics are split into explicit diagnostics contracts while keeping report publication tied to the artifact topology. |
+| Tooling/test handler owners | `#8142`, `#8149`, `#8150` | `0be9037f1` | Developer/ecosystem, public test, runtime validation, and native package handlers now merge through owner registries instead of one broad handler map. |
+| Workflow and native owner contracts | `#8144`, `#8149`, `#8150` | `9676679c2` | Static contracts now assert strict-error fixture naming, native split owner CMake registration, workflow facade ownership, and the renamed action-handler integrity module. |
+
+## Post-`a20f67559` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8138` | Artifact evidence is refreshed by the frontend artifact diagnostics gate and report contract topology. |
+| `#8140` | Frontend evidence is refreshed by explicit diagnostics artifact ownership. |
+| `#8142` | Workflow evidence is refreshed by action facade, catalog, and handler owner splits. |
+| `#8144` | Behavior fixture evidence is refreshed by strict-error naming and owner-contract tests. |
+| `#8145` | Capability truth evidence is refreshed by owner catalog modules and hard-cutover facade contracts. |
+| `#8148` | JSON/schema/artifact evidence is refreshed by reporting/release catalog ownership and artifact diagnostics contracts. |
+| `#8149` | Control-plane evidence is refreshed by workflow facade/handler/catalog owner contracts. |
+| `#8150` | Local closeout evidence now also includes the committed post-`a20f67559` owner wave through `9676679c2`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -291,3 +347,9 @@ This post-`0d2111b18` refresh references `f2c3dc1ea`, `9b61442c4`, and
 
 This post-`2fb0664e0` refresh references `34411837b`, `c36b89616`,
 `b4f3a295f`, and `6efdaf8f9`.
+
+This post-`6efdaf8f9` refresh references `f7d0edb3e`, `0e5af63ab`,
+`aab946e78`, and `a20f67559`.
+
+This post-`a20f67559` refresh references `442f1d2e2`, `c18da62ff`,
+`d7779f6ac`, `ff67214ec`, `0be9037f1`, and `9676679c2`.
