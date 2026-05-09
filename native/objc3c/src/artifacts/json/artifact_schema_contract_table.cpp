@@ -1,13 +1,16 @@
 #include "artifacts/json/artifact_schema_contract_table.h"
 
+#include "artifacts/json/release_readiness_schema_records.h"
+
 #include <array>
+#include <vector>
 
 namespace objc3::artifacts::json {
 namespace {
 
 // Registry-owned artifact schemas keep payload identity separate from file path
 // so contract_id and schema_id based artifacts can use the same lookup surface.
-constexpr std::array<ArtifactSchemaContract, 6> kArtifactSchemaContracts{{
+constexpr std::array<ArtifactSchemaContract, 6> kBaseArtifactSchemaContracts{{
     {"objc3c-public-command-contract-v1",
      "contract_id",
      "objc3c-public-command-contract-v1",
@@ -51,6 +54,18 @@ constexpr std::array<ArtifactSchemaContract, 6> kArtifactSchemaContracts{{
      "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
      "conformance-dashboard"},
 }};
+
+const std::vector<ArtifactSchemaContract> kArtifactSchemaContracts = [] {
+  std::vector<ArtifactSchemaContract> contracts(
+      kBaseArtifactSchemaContracts.begin(),
+      kBaseArtifactSchemaContracts.end());
+  const std::span<const ArtifactSchemaContract> release_readiness_contracts =
+      ReleaseReadinessSchemaContracts();
+  contracts.insert(contracts.end(),
+                   release_readiness_contracts.begin(),
+                   release_readiness_contracts.end());
+  return contracts;
+}();
 
 }  // namespace
 

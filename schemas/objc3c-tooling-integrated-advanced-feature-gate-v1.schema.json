@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-tooling-integrated-advanced-feature-gate-v1.schema.json",
+  "title": "objc3c Integrated Advanced Feature Gate (v1)",
+  "description": "Gate sidecar that joins conformance publication, validation, release evidence, and dashboard artifacts.",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-tooling-integrated-advanced-feature-gate-v1",
+    "payload_id_field": "schema_id",
+    "payload_id_value": "objc3c-tooling-integrated-advanced-feature-gate-v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/release_readiness_schema_records.cpp",
+    "artifact_family": "advanced-feature-gate"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_id",
+    "dependency_contract_ids",
+    "surface_kind",
+    "report_artifact",
+    "publication_artifact",
+    "validation_artifact_expected",
+    "release_evidence_operation_artifact_expected",
+    "dashboard_artifact_expected",
+    "gate_model",
+    "targeted_profile_ids",
+    "native_validation_required",
+    "report_payload_ready",
+    "release_evidence_ready",
+    "ready"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.tooling.integrated.advanced.feature.gate.v1"
+    },
+    "schema_id": {
+      "const": "objc3c-tooling-integrated-advanced-feature-gate-v1"
+    },
+    "dependency_contract_ids": {
+      "$ref": "#/$defs/nonEmptyStringArray"
+    },
+    "surface_kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "report_artifact": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "publication_artifact": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "validation_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "release_evidence_operation_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "dashboard_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "gate_model": {
+      "type": "string",
+      "minLength": 16
+    },
+    "targeted_profile_ids": {
+      "$ref": "#/$defs/profileArray"
+    },
+    "native_validation_required": {
+      "type": "boolean"
+    },
+    "report_payload_ready": {
+      "type": "boolean"
+    },
+    "release_evidence_ready": {
+      "type": "boolean"
+    },
+    "ready": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "artifactPath": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 260
+    },
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "profileArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "strict",
+          "strict-concurrency",
+          "strict-system"
+        ]
+      }
+    }
+  }
+}

@@ -21,6 +21,9 @@ canonical support truth.
 | ------ | ---- |
 | `objc3-conformance-dashboard-status-v1.schema.json` | Dashboard-ready conformance status snapshots used by public reporting and release gates. |
 | `objc3-conformance-evidence-bundle-v1.schema.json` | Aggregated conformance manifests, profile claims, test evidence, and known-deviation records for release evidence. |
+| `objc3c-tooling-release-evidence-operation-v1.schema.json` | Release-evidence operation sidecars that connect validation, dashboard publication, runbooks, and checklist/schema references. |
+| `objc3c-tooling-integrated-advanced-feature-gate-v1.schema.json` | Integrated advanced-feature gate sidecars over report, publication, validation, release-evidence, and dashboard artifacts. |
+| `objc3c-tooling-release-candidate-execution-matrix-v1.schema.json` | Release-candidate execution matrix sidecars for final conformance publication bundle readiness. |
 | `objc3-runtime-2025Q4.manifest.schema.json` | Runtime artifact manifests for the `NR-OBJC-RUNTIME` normative reference. |
 | `objc3-abi-2025Q4.schema.json` | ABI artifact manifests for the `NR-ABI-PLATFORM` normative reference. |
 

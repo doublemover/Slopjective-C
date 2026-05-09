@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-tooling-release-candidate-execution-matrix-v1.schema.json",
+  "title": "objc3c Release Candidate Execution Matrix (v1)",
+  "description": "Release-candidate matrix sidecar for final conformance publication bundle readiness.",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-tooling-release-candidate-execution-matrix-v1",
+    "payload_id_field": "schema_id",
+    "payload_id_value": "objc3c-tooling-release-candidate-execution-matrix-v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/release_readiness_schema_records.cpp",
+    "artifact_family": "release-candidate-matrix"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_id",
+    "surface_kind",
+    "release_label",
+    "report_artifact",
+    "publication_artifact",
+    "advanced_feature_gate_artifact",
+    "validation_artifact_expected",
+    "release_evidence_operation_artifact_expected",
+    "dashboard_artifact_expected",
+    "targeted_profile_ids",
+    "matrix_rows",
+    "matrix_model",
+    "ready"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.tooling.release.candidate.execution.matrix.v1"
+    },
+    "schema_id": {
+      "const": "objc3c-tooling-release-candidate-execution-matrix-v1"
+    },
+    "surface_kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release_label": {
+      "$ref": "#/$defs/releaseLabel"
+    },
+    "report_artifact": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "publication_artifact": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "advanced_feature_gate_artifact": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "validation_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "release_evidence_operation_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "dashboard_artifact_expected": {
+      "$ref": "#/$defs/artifactPath"
+    },
+    "targeted_profile_ids": {
+      "$ref": "#/$defs/profileArray"
+    },
+    "matrix_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/matrixRow"
+      }
+    },
+    "matrix_model": {
+      "type": "string",
+      "minLength": 16
+    },
+    "ready": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "artifactPath": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 260
+    },
+    "matrixRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "contract_id",
+        "status"
+      ],
+      "properties": {
+        "lane": {
+          "type": "string",
+          "pattern": "^[A-Z]$"
+        },
+        "contract_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "blocked"
+          ]
+        }
+      }
+    },
+    "profileArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "strict",
+          "strict-concurrency",
+          "strict-system"
+        ]
+      }
+    },
+    "releaseLabel": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    }
+  }
+}

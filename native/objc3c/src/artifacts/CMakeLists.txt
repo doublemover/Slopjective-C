@@ -26,6 +26,8 @@ add_library(objc3c_artifacts_json STATIC
   json/runtime_metadata_manifest_json.h
   json/runtime_metadata_manifest_records.cpp
   json/runtime_metadata_manifest_records.h
+  json/release_readiness_schema_records.cpp
+  json/release_readiness_schema_records.h
   json/semantic_type_manifest_json.cpp
   json/semantic_type_manifest_json.h
   json/semantic_type_manifest_records.cpp
