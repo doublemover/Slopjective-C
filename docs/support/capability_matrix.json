@@ -1,10 +1,33 @@
 {
   "schema_version": "objc3c-capability-matrix-v1",
+  "matrix_version": "2026-05-09-hard-cutover",
+  "schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
+  "evidence_map_path": "docs/support/evidence_map.json",
   "states": [
     "implemented",
     "rejected",
     "reserved",
     "internal"
+  ],
+  "command_surface": {
+    "public_bridge": "npm run objc3c -- <action>",
+    "action_owner": "scripts/objc3c_workflow/action_catalog.py",
+    "public_command_pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$",
+    "unsupported_public_surfaces": [
+      "direct python or PowerShell helper invocations",
+      "direct CMake or native helper invocations",
+      "retired package-script aliases",
+      "public_scripts alias metadata",
+      "workflow registry facade claims",
+      "success-without-evidence capability claims"
+    ]
+  },
+  "hard_cutover_rules": [
+    "Only implemented behavior rows may claim public Objective-C 3.0 support.",
+    "Rejected and reserved rows are diagnostic or documentation truth, not alternate acceptance paths.",
+    "Internal rows can name source, schema, workflow, or report owners without widening language support.",
+    "Publicly replayable commands must use npm run objc3c -- <action>.",
+    "Docs, spec, and site content must not advertise shims, fallbacks, migration lanes, or compatibility modes as supported surfaces."
   ],
   "capabilities": [
     {
@@ -227,8 +250,20 @@
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
-      "summary": "The capability matrix schema, evidence map, native objc3c_json module, and artifact schema registry own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
+      "summary": "The canonical capability matrix schema under schemas/, the machine-readable evidence map, the native objc3c_json module, and the artifact schema registry own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
       "evidence": [
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-capability-matrix-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-capability-evidence-map-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "docs/support/evidence_map.json"
+        },
         {
           "kind": "schema",
           "path": "docs/support/capability_matrix.schema.json"

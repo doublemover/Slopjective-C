@@ -6,6 +6,14 @@ public replay commands only when they go through `npm run objc3c -- <action>`.
 Helper tests and source files can be evidence without becoming public workflow
 commands.
 
+Machine-readable truth is split deliberately:
+
+- matrix data: `docs/support/capability_matrix.json`
+- matrix schema: `schemas/objc3c-capability-matrix-v1.schema.json`
+- local schema mirror: `docs/support/capability_matrix.schema.json`
+- evidence rows: `docs/support/evidence_map.json`
+- evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
+
 Command and evidence truth is hard-cut to the current surfaces:
 
 - `package.json` exposes one public bridge: `objc3c`.
@@ -22,6 +30,9 @@ Command and evidence truth is hard-cut to the current surfaces:
   headers under `native/objc3c/src/runtime/public/`.
 - Shared JSON/schema claims are owned by checked-in schema files and the native
   `objc3c_json` / artifact JSON modules, not by prose-only summaries.
+- The hard-cutover matrix explicitly rejects shims, fallback paths, migration
+  lanes, direct helper commands, and compatibility-mode claims as public support
+  surfaces unless a row marks the behavior implemented with evidence.
 
 | Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
 | ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +47,7 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; compiler/runtime/pipeline/artifacts/IO owner modules under `native/objc3c/src/` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h` |
 | npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `docs/runbooks/objc3c_public_command_surface.md` |
-| Shared JSON and schema registry helpers     | internal    |                                                    | `docs/support/capability_matrix.schema.json`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
+| Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
 
 State meanings:
 
@@ -53,3 +64,5 @@ Command rule:
 - Direct `python`, `pwsh`, CMake, or native helper invocations may appear as
   evidence owners, but public docs must not present them as user-facing command
   surface.
+- Compatibility shims, fallback paths, migration lanes, old modes, and
+  prose-only capability claims are not alternate support states.

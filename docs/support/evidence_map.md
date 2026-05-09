@@ -7,6 +7,10 @@ column is limited to public npm-bridge commands; blank cells are supporting
 files, source owners, schemas, or helper tests, not user-facing workflow
 actions.
 
+The machine-readable evidence map is `docs/support/evidence_map.json`; its
+schema is `schemas/objc3c-capability-evidence-map-v1.schema.json`. The
+capability matrix schema is `schemas/objc3c-capability-matrix-v1.schema.json`.
+
 | Capability ID                                | Support claim                                      | Evidence kind | Path                                                                                                      | Command                                  |
 | -------------------------------------------- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `compiler.parser.core-declarations`          | `objc3c.behavior.parser.canonical-syntax`          | test          | `tests/native/parser/positive/canonical_module_main.objc3`                                                | `npm run objc3c -- test-behavior-matrix` |
@@ -36,6 +40,9 @@ actions.
 | `workflow.command.npm-objc3c-bridge`         |                                                    | source        | `scripts/objc3c_workflow/request_dispatch.py`                                                            |                                          |
 | `workflow.command.npm-objc3c-bridge`         |                                                    | source        | `scripts/objc3c_workflow/path_bootstrap.py`                                                              |                                          |
 | `workflow.command.npm-objc3c-bridge`         |                                                    | doc           | `docs/runbooks/objc3c_public_command_surface.md`                                                         |                                          |
+| `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3c-capability-matrix-v1.schema.json`                                                         |                                          |
+| `tooling.json.schema-registry`               |                                                    | schema        | `schemas/objc3c-capability-evidence-map-v1.schema.json`                                                   |                                          |
+| `tooling.json.schema-registry`               |                                                    | schema        | `docs/support/evidence_map.json`                                                                          |                                          |
 | `tooling.json.schema-registry`               |                                                    | schema        | `docs/support/capability_matrix.schema.json`                                                              |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/io/json/json_schema.cpp`                                                              |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/artifacts/json/artifact_schema_registry.cpp`                                           |                                          |

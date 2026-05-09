@@ -1,11 +1,33 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "objc3c-capability-matrix-v1",
+  "$comment": "Canonical copy: schemas/objc3c-capability-matrix-v1.schema.json",
   "type": "object",
-  "required": ["schema_version", "states", "capabilities"],
+  "required": [
+    "schema_version",
+    "matrix_version",
+    "schema_path",
+    "evidence_map_path",
+    "states",
+    "command_surface",
+    "hard_cutover_rules",
+    "capabilities"
+  ],
   "properties": {
     "schema_version": {
       "const": "objc3c-capability-matrix-v1"
+    },
+    "matrix_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_path": {
+      "type": "string",
+      "const": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    "evidence_map_path": {
+      "type": "string",
+      "const": "docs/support/evidence_map.json"
     },
     "states": {
       "type": "array",
@@ -13,6 +35,48 @@
         "enum": ["implemented", "rejected", "reserved", "internal"]
       },
       "minItems": 4,
+      "uniqueItems": true
+    },
+    "command_surface": {
+      "type": "object",
+      "required": [
+        "public_bridge",
+        "action_owner",
+        "public_command_pattern",
+        "unsupported_public_surfaces"
+      ],
+      "properties": {
+        "public_bridge": {
+          "type": "string",
+          "const": "npm run objc3c -- <action>"
+        },
+        "action_owner": {
+          "type": "string",
+          "const": "scripts/objc3c_workflow/action_catalog.py"
+        },
+        "public_command_pattern": {
+          "type": "string",
+          "const": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
+        "unsupported_public_surfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "hard_cutover_rules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
       "uniqueItems": true
     },
     "capabilities": {
