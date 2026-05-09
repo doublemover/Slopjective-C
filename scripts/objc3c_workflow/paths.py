@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .path_imports import install_import_roots
+if __package__:
+    from .path_imports import install_import_roots
+    from .path_policy import ordered_import_roots
+else:
+    from path_imports import install_import_roots
+    from path_policy import ordered_import_roots
 
 
 WORKFLOW_PACKAGE_ROOT = Path(__file__).resolve().parent
@@ -13,7 +18,7 @@ ROOT = WORKFLOW_PACKAGE_ROOT.parents[1]
 
 
 def workflow_import_roots() -> tuple[Path, Path]:
-    return (ROOT, SCRIPT_ROOT)
+    return ordered_import_roots(ROOT, SCRIPT_ROOT)
 
 
 def ensure_workflow_import_paths() -> None:

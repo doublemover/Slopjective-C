@@ -6,12 +6,15 @@ import sys
 from collections.abc import Iterable
 from pathlib import Path
 
+if __package__:
+    from .path_policy import missing_import_roots
+else:
+    from path_policy import missing_import_roots
+
 
 def install_import_roots(import_roots: Iterable[Path]) -> None:
-    for import_root in import_roots:
-        import_root_text = str(import_root)
-        if import_root_text not in sys.path:
-            sys.path.insert(0, import_root_text)
+    for root_text in reversed(missing_import_roots(sys.path, import_roots)):
+        sys.path.insert(0, root_text)
 
 
 __all__ = ["install_import_roots"]
