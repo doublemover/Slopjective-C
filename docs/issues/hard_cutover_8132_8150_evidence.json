@@ -768,6 +768,145 @@
       }
     ]
   },
+  "followup_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "f66452822",
+    "through_commit": "dfe365b2e",
+    "commit_count": 43,
+    "count_policy": "counts committed owner/evidence commits after the prior docs/support closeout refresh and excludes uncommitted worktree edits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8136",
+          "#8137",
+          "#8146",
+          "#8147"
+        ],
+        "commits": [
+          "d63a55535",
+          "9d53be5fb",
+          "0f1933ab3",
+          "0ab5fb9ae",
+          "9f897ba25",
+          "78dbcb9c3",
+          "03ffe9df8"
+        ],
+        "owner_boundary": "static hard-cut expectations, canonical literal handoff, typed sema-to-lowering handoff, parser owner paths, artifact-claim IR metadata, pipeline result handoff, and tooling split expectations are compiler/frontend ownership evidence"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8147"
+        ],
+        "commits": [
+          "ddee73e25",
+          "0da123b82",
+          "074736203",
+          "bc75578aa",
+          "d0cb959fe",
+          "3712b7a32",
+          "334382bba",
+          "543dec411",
+          "c1b56d77f",
+          "96b65d03b",
+          "9074073ac"
+        ],
+        "owner_boundary": "runtime image metadata, dispatch fast-path, method resolution table, cache snapshot, builtin lookup, class metadata, class graph snapshot, dispatch state snapshot, protocol conformance snapshot/query, and image registration API owners are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
+      },
+      {
+        "issues": [
+          "#8139",
+          "#8140",
+          "#8141",
+          "#8143"
+        ],
+        "commits": [
+          "c1cf8f7b6",
+          "937878ddd",
+          "03ffe9df8",
+          "6acb1d390"
+        ],
+        "owner_boundary": "frontend C API contract tightening, consolidated result accessors, native driver CLI owner splits, and tooling split expectations are public-contract evidence, not compatibility wrappers"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8148"
+        ],
+        "commits": [
+          "328bd8fe9",
+          "3bfc42ea5",
+          "34bb8547b",
+          "68865ee06",
+          "545e4159f",
+          "6017b3968",
+          "018f6aa84",
+          "a23c7d97a",
+          "e1842acf8",
+          "7b914509f",
+          "9f897ba25",
+          "78dbcb9c3",
+          "54e81ff4a"
+        ],
+        "owner_boundary": "JSON writers, telemetry/schema guidance, IO/process owners, schema validation, developer tooling documents, dashboard renderers, conformance artifact adapters/input owners, artifact-claim metadata, and pipeline handoff own IO/schema/artifact evidence without fallback support"
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8138",
+          "#8145",
+          "#8148"
+        ],
+        "commits": [
+          "bad575206",
+          "8fd99d3e",
+          "34bb8547b",
+          "68865ee06",
+          "dfe365b2e"
+        ],
+        "owner_boundary": "diagnostic render/sink owner collapse, config state owner collapse, schema retired-term guidance, and canonical config tooling expectations keep compatibility wording bounded to rejection or hygiene evidence"
+      },
+      {
+        "issues": [
+          "#8142",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "3bfc42ea5",
+          "7af7e36a6",
+          "26cf43410",
+          "29ecc147b",
+          "6acb1d390"
+        ],
+        "owner_boundary": "telemetry command evidence constraints, workflow handler registries, workflow catalog core/application specs, and native driver public-workflow command owners preserve the npm bridge as the public command surface"
+      },
+      {
+        "issues": [
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "commits": [
+          "d63a55535",
+          "3fc0f3dd7",
+          "9b53ca57b",
+          "9debafbeb",
+          "5487641c4",
+          "0ab5fb9ae",
+          "03ffe9df8",
+          "4dcbbb24c"
+        ],
+        "owner_boundary": "fixture boundaries, runtime dispatch sidecars, retired-positive conformance policy, parser owner paths, tooling expectations, and fixture residue contracts keep positives canonical and retired behavior rejected, strict-error, or absent"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",

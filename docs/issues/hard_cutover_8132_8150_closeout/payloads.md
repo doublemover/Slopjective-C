@@ -17,6 +17,19 @@ owner commits after `abc203478` through `6d6fa804d`, grouped by issue
 acceptance owner, without changing the no-validation, no-GitHub, no-push,
 local-only status of these payloads.
 
+The same local refresh document now also folds in the follow-up committed owner
+wave after `f66452822` through `dfe365b2e`. That follow-up covers JSON value
+writers, schema retired-term guidance, diagnostic/config owner collapse,
+runtime class metadata and dispatch owner splits, IO/process owners, canonical
+literal and typed sema/lowering contracts, retired fixture sidecars, workflow
+handler/catalog splits, frontend C API contract tightening, frontend result
+accessors, conformance artifact adapters, artifact-claim IR metadata owners,
+pipeline result handoff, tooling expectation refreshes, runtime class graph
+snapshots, runtime dispatch/protocol/registration owner splits, native driver
+CLI ownership, conformance claim validation input ownership, fixture residue
+contracts, and canonical config tooling expectations. It still does not assert
+validation, `gh`, push, or remote issue edits.
+
 ## Latest Local Owner Refresh
 
 | Issue Area | Local Commits | Closeout Meaning |
@@ -27,11 +40,24 @@ local-only status of these payloads.
 | `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe`, `c8060c3e3`, `531b53843`, `6d6fa804d` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
 | `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer local evidence; final closure still waits on validation, push, and remote issue updates. |
 
+## Follow-up Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8132`, `#8134`, `#8136`, `#8137`, `#8146`, `#8147` | `d63a55535`, `9d53be5fb`, `0f1933ab3`, `0ab5fb9ae`, `9f897ba25`, `78dbcb9c3`, `03ffe9df8` | Compiler/parser/frontend/lowering/IR evidence now includes static hard-cut expectations, canonical literal handoff, typed sema-to-lowering handoff, parser include-owner paths, artifact-claim IR metadata, pipeline result handoff, and tooling split expectations. |
+| `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, and image registration API owners; fallback dispatch remains strict-error evidence. |
+| `#8139`, `#8140`, `#8141`, `#8143` | `c1cf8f7b6`, `937878ddd`, `03ffe9df8`, `6acb1d390` | Public frontend/API evidence now includes tightened frontend C API contracts, consolidated result accessors, native driver CLI ownership, and tooling split expectations without adding compatibility wrappers. |
+| `#8138`, `#8148` | `328bd8fe9`, `3bfc42ea5`, `34bb8547b`, `68865ee06`, `545e4159f`, `6017b3968`, `018f6aa84`, `a23c7d97a`, `e1842acf8`, `7b914509f`, `9f897ba25`, `78dbcb9c3`, `54e81ff4a` | IO/JSON/schema/artifact evidence now includes JSON value writers, telemetry command constraints, schema retired-term guidance, schema contract-table ownership, IO string/process owners, schema validation owners, developer tooling dump/playground owners, dashboard renderers, conformance artifact adapters/input owners, artifact-claim metadata, and pipeline handoff. |
+| `#8135`, `#8138`, `#8145`, `#8148` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e` | Diagnostic/config/capability truth evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, and schema guidance that keeps retired compatibility terms out of public support claims. |
+| `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application specs, and native driver public-workflow command owners while keeping public command truth at `npm run objc3c -- <action>`. |
+| `#8144`, `#8145`, `#8150` | `d63a55535`, `3fc0f3dd7`, `9b53ca57b`, `9debafbeb`, `5487641c4`, `0ab5fb9ae`, `03ffe9df8`, `4dcbbb24c` | Fixture and retired-surface evidence now includes static hard-cut expectations, positive-residue wording cleanup, fixture boundary indexes, runtime dispatch sidecars, retired-positive conformance policies, parser owner-path replacement, tooling split expectations, and fixture boundary residue contracts. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
 target topology, frontend/driver targets, AST ownership, IR/pipeline ownership,
-native ownership/schema surfaces, and driver/C API runner owners.
+native ownership/schema surfaces, driver/C API runner owners, parser owner-path
+replacements, and tooling split expectation updates.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/support/capability_matrix.json`, commits `1877caeb7`, `df28562af`,
@@ -44,8 +70,11 @@ compatibility mode, or migration lane is claimed as public behavior.
 ## #8133
 
 Strict typed runtime dispatch is indexed from local dispatch-result, selector,
-keypath, cache, state, and wrapper ownership commits. Runtime fallback behavior
-is represented as strict-error fixture evidence.
+keypath, cache, state, wrapper, runtime image metadata, method fast-path,
+method-resolution, builtin-lookup, class graph snapshot, dispatch state
+snapshot, protocol conformance snapshot/query, and image registration API
+ownership commits. Runtime fallback behavior is represented as strict-error
+fixture evidence.
 
 Evidence: `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
 `tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3`,
@@ -59,7 +88,8 @@ positive acceptance lane.
 
 Parser, lexer, token, and AST ownership split evidence is indexed from parser
 facade, expression/statement, message-send profile, C-style type, attribute,
-contract fingerprint, recovery diagnostic, and parse-namespace commits.
+contract fingerprint, recovery diagnostic, parse-namespace, canonical literal
+handoff, and parser owner-path commits.
 
 Evidence: parser positive and negative fixtures under `tests/native/parser/`,
 commits `28a65a27a`, `b0f031ef5`, `87f9a36af`, `29111e0c3`, `2d70b8e34`,
@@ -72,7 +102,8 @@ fixtures.
 ## #8135
 
 Semantic analysis owner evidence is indexed from sema pass helper, equivalence,
-publication, frontend ownership, and diagnostic catalog table commits.
+publication, frontend ownership, diagnostic catalog table, diagnostic owner
+collapse, and config removed-option owner commits.
 
 Evidence: `tests/native/sema/types/typed_i32_bool_flow.objc3`,
 `tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3`,
@@ -86,7 +117,8 @@ semantic rejection evidence.
 
 Lowering owner split evidence is indexed from runtime-call lowering, dispatch
 ARC contracts, backend handoff, lower/IR dispatch, block validator, and IR
-control-flow lowering commits.
+control-flow lowering commits, plus typed sema-to-lowering and pipeline result
+handoff ownership.
 
 Evidence: `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`,
 `tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3`,
@@ -100,7 +132,8 @@ evidence only.
 
 IR ownership split evidence is indexed from emitter, message-send validation,
 runtime metadata emission, surface serialization, synthesized property accessor,
-control-flow lowering, and runtime-helper owner commits.
+control-flow lowering, runtime-helper, artifact-claim metadata, typed handoff,
+and pipeline handoff owner commits.
 
 Evidence: `tests/native/ir/module/basic_i32_return_main.objc3`,
 `tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3`,
@@ -114,7 +147,10 @@ strict-error evidence when unavailable.
 
 Pipeline, IO, artifact, and config owner split evidence is indexed from
 pipeline classification, IO/artifact support, artifact publication, config
-diagnostics, pipeline/IO artifact contracts, and config truth-table commits.
+diagnostics, pipeline/IO artifact contracts, config truth-table commits, JSON
+value/container writers, IO string/process owners, schema validation owners,
+artifact adapters, conformance claim validation input owners, dashboard
+renderers, and pipeline result handoff.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/support/evidence_map.json`, commits `4c5fbe849`, `7a5412e51`,
@@ -127,7 +163,8 @@ fallback or migration support.
 ## #8139
 
 Native target-family evidence is indexed from root, frontend/driver, config,
-CLI, support, and AST target split commits.
+CLI, support, AST target split commits, newer native driver CLI ownership, and
+newer diagnostics/config/IO/runtime/artifact/IR/pipeline owner CMake updates.
 
 Evidence: `docs/support/capability_matrix.json`, `docs/support/evidence_map.json`,
 commits `1877caeb7`, `df28562af`, `445494349`, `2e6b613b8`, `1e26582d3`,
@@ -140,7 +177,8 @@ fallback lane.
 
 Driver, frontend, and runner split evidence is indexed from frontend/driver,
 C API runner, result accessor, ADR, basic artifact publication, and driver/C API
-runner owner commits.
+runner owner commits, plus tightened frontend C API contracts and tooling split
+expectation updates and native driver CLI owner splits.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `docs/support/evidence_map.json`, commits `c576b6a22`, `c18135fcc`,
@@ -152,7 +190,9 @@ Retired-surface state: direct helper entrypoints are not public command support.
 
 Public C API ownership evidence is indexed from C API ownership coverage,
 frontend C API result accessor, runner owner, sema/frontend ownership, driver/C
-API runner, and edge-case contract rename commits.
+API runner, edge-case contract rename commits, tightened frontend C API
+contracts, consolidated result accessors, native driver public-workflow command
+owners, and artifact/IR metadata owners.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/evidence_map.json`, commits `a51cac68d`, `d8bbebb2b`,
@@ -165,7 +205,9 @@ compatibility wrapper.
 
 Workflow command-surface evidence is indexed around the single public npm bridge
 and the retirement of direct helpers, package-script aliases, and registry
-facades.
+facades. The follow-up handler registry and catalog core-spec splits keep that
+surface hard-cut to `npm run objc3c -- <action>`, with application catalog specs
+and native driver public-workflow command owners preserving the same boundary.
 
 Evidence: `docs/workflows/commands.md`, `docs/support/capability_matrix.json`,
 commits `b3401be67`, `d86f03a25`, `72b62d7ed`, `d5668d12e`, `5c025aa97`,
@@ -178,7 +220,10 @@ Retired-surface state: public command truth is `npm run objc3c -- <action>`.
 
 Runtime acceptance split evidence is indexed from acceptance helpers and
 acceptance-domain commits covering error, concurrency, interop, object model,
-registration, storage reflection, and runtime package surfaces.
+registration, storage reflection, runtime package surfaces, class metadata,
+method cache/resolution/builtin lookup, dispatch state snapshots, protocol
+conformance snapshots/query owners, image registration API owners, and class
+graph snapshots.
 
 Evidence: `tests/tooling/runtime/README.md`,
 `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
@@ -193,7 +238,9 @@ behavior.
 
 Behavior-first fixture evidence is indexed from behavior catalog, cutover
 boundary, strict fixture, wording, removed-mode fixture, retired-surface matrix,
-and issue evidence commits.
+issue evidence commits, runtime dispatch sidecars, positive-residue wording
+cleanup, fixture residue contracts, and refreshed static/tooling hard-cut
+expectations.
 
 Evidence: `tests/native/README.md`, `tests/native/retired_surface_matrix.json`,
 `tests/conformance/hard_cutover_issue_index.json`,
@@ -208,7 +255,9 @@ absent from support.
 
 Capability truth evidence is indexed from capability docs, command bridge docs,
 schema truth docs, evidence-map tie-ins, support truth, and diagnostic catalog
-table commits.
+table commits, plus diagnostic/config owner collapse and schema retired-term
+guidance plus canonical config tooling expectations that prevent stale
+compatibility wording from becoming support truth.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/capability_matrix.md`, `docs/support/evidence_map.json`,
@@ -223,7 +272,8 @@ compatibility-mode support claims.
 
 Frontend type-surface evidence is indexed from frontend type/dispatch helper,
 AST/lowering owner surface, parser-source-model, C-style type surface, and AST
-type owner commits.
+type owner commits, plus canonical literal handoff, typed sema metadata handoff,
+and tooling split expectation updates.
 
 Evidence: `tests/native/sema/types/typed_i32_bool_flow.objc3`,
 `tests/native/sema/types/assignment_unknown_target_rejected.objc3`, commits
@@ -236,7 +286,8 @@ Retired-surface state: no compatibility aliases are represented as type support.
 Deep sema/lowering/runtime metadata evidence is indexed from compiler profile,
 sema pass, equivalence, publication, backend handoff, runtime-call lowering,
 block validation, message-send validation, runtime metadata emission,
-control-flow lowering, and runtime-helper owner commits.
+control-flow lowering, runtime-helper, typed handoff, artifact-claim metadata,
+runtime class graph snapshot, and pipeline result handoff owner commits.
 
 Evidence: `tests/native/sema/ownership/strong_id_assignment.objc3`,
 `tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3`,
@@ -252,7 +303,10 @@ Retired-surface state: unsupported feature claims stay strict diagnostics.
 JSON/schema infrastructure evidence is indexed from native JSON helpers,
 artifact JSON writers, manifest writers, schema infrastructure, artifact
 registry owners, capability evidence schemas, evidence-map docs, schema id
-normalization, and config truth tables.
+normalization, config truth tables, JSON value/container writers, schema
+validation owner splits, schema retired-term guidance, conformance claim
+validation input owners, artifact adapters, dashboard renderers, artifact-claim
+metadata, config tooling expectations, and pipeline result handoff.
 
 Evidence: `docs/support/capability_matrix.schema.json`,
 `docs/support/evidence_map.json`, `tests/tooling/test_objc3c_shared_json_schema.py`,
@@ -266,7 +320,9 @@ fallback support.
 
 Source-hygiene and command-surface evidence is indexed from command hygiene,
 source root coverage, allowlist retirement, guardrail scanning, and workflow
-hygiene owner commits.
+hygiene owner commits, plus telemetry command constraints, workflow handler
+registries, workflow catalog core/application specs, and native driver public
+workflow command owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -277,8 +333,9 @@ are retired from public claims.
 
 ## #8150
 
-Final closure evidence is local and evidence-ready. Remote issue closure, push,
-and validation remain deferred under the current worker constraints.
+Final closure evidence is local and evidence-ready, including the follow-up
+committed owner wave through `dfe365b2e`. Remote issue closure, push, and
+validation remain deferred under the current worker constraints.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

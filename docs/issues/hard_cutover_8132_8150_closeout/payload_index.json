@@ -161,6 +161,135 @@
       }
     ]
   },
+  "followup_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "f66452822",
+    "through_commit": "dfe365b2e",
+    "commit_count": 43,
+    "count_policy": "counts committed owner/evidence commits after the prior docs/support closeout refresh and excludes uncommitted worktree edits",
+    "issue_owner_buckets": [
+      {
+        "issues": [
+          "#8132",
+          "#8134",
+          "#8136",
+          "#8137",
+          "#8146",
+          "#8147"
+        ],
+        "primary_commits": [
+          "d63a55535",
+          "9d53be5fb",
+          "0f1933ab3",
+          "0ab5fb9ae",
+          "9f897ba25",
+          "78dbcb9c3",
+          "03ffe9df8"
+        ]
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8147"
+        ],
+        "primary_commits": [
+          "ddee73e25",
+          "0da123b82",
+          "074736203",
+          "bc75578aa",
+          "d0cb959fe",
+          "3712b7a32",
+          "334382bba",
+          "543dec411",
+          "c1b56d77f",
+          "96b65d03b",
+          "9074073ac"
+        ]
+      },
+      {
+        "issues": [
+          "#8139",
+          "#8140",
+          "#8141",
+          "#8143"
+        ],
+        "primary_commits": [
+          "c1cf8f7b6",
+          "937878ddd",
+          "03ffe9df8",
+          "6acb1d390"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8148"
+        ],
+        "primary_commits": [
+          "328bd8fe9",
+          "3bfc42ea5",
+          "34bb8547b",
+          "68865ee06",
+          "545e4159f",
+          "6017b3968",
+          "018f6aa84",
+          "a23c7d97a",
+          "e1842acf8",
+          "7b914509f",
+          "9f897ba25",
+          "78dbcb9c3",
+          "54e81ff4a"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8138",
+          "#8145",
+          "#8148"
+        ],
+        "primary_commits": [
+          "bad575206",
+          "8fd99d3e",
+          "34bb8547b",
+          "68865ee06",
+          "dfe365b2e"
+        ]
+      },
+      {
+        "issues": [
+          "#8142",
+          "#8149",
+          "#8150"
+        ],
+        "primary_commits": [
+          "3bfc42ea5",
+          "7af7e36a6",
+          "26cf43410",
+          "29ecc147b",
+          "6acb1d390"
+        ]
+      },
+      {
+        "issues": [
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "primary_commits": [
+          "d63a55535",
+          "3fc0f3dd7",
+          "9b53ca57b",
+          "9debafbeb",
+          "5487641c4",
+          "0ab5fb9ae",
+          "03ffe9df8",
+          "4dcbbb24c"
+        ]
+      }
+    ]
+  },
   "issue_payloads": [
     {
       "issue": "#8132",
