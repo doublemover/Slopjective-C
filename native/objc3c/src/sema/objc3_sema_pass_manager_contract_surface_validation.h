@@ -17,68 +17,9 @@
          surface.deterministic_module_boundary_summary_readiness_record &&
          IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
              surface.module_boundary_summary_readiness_record) &&
-         surface.cross_module_conformance_summary.cross_module_conformance_sites ==
-             surface.cross_module_conformance_sites_total &&
-         surface.cross_module_conformance_summary.namespace_segment_sites ==
-             surface.cross_module_conformance_namespace_segment_sites_total &&
-         surface.cross_module_conformance_summary.import_edge_candidate_sites ==
-             surface.cross_module_conformance_import_edge_candidate_sites_total &&
-         surface.cross_module_conformance_summary.object_pointer_type_sites ==
-             surface.cross_module_conformance_object_pointer_type_sites_total &&
-         surface.cross_module_conformance_summary.pointer_declarator_sites ==
-             surface.cross_module_conformance_pointer_declarator_sites_total &&
-         surface.cross_module_conformance_summary.normalized_sites ==
-             surface.cross_module_conformance_normalized_sites_total &&
-         surface.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
-             surface.cross_module_conformance_cache_invalidation_candidate_sites_total &&
-         surface.cross_module_conformance_summary.contract_violation_sites ==
-             surface.cross_module_conformance_contract_violation_sites_total &&
-         surface.cross_module_conformance_summary.namespace_segment_sites <=
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.import_edge_candidate_sites <=
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.normalized_sites <=
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.cache_invalidation_candidate_sites <=
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.normalized_sites +
-                 surface.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.contract_violation_sites <=
-             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
-         surface.cross_module_conformance_summary.deterministic &&
-         surface.deterministic_cross_module_conformance_handoff &&
-         surface.throws_propagation_summary.throws_propagation_sites ==
-             surface.throws_propagation_sites_total &&
-         surface.throws_propagation_summary.namespace_segment_sites ==
-             surface.throws_propagation_namespace_segment_sites_total &&
-         surface.throws_propagation_summary.import_edge_candidate_sites ==
-             surface.throws_propagation_import_edge_candidate_sites_total &&
-         surface.throws_propagation_summary.object_pointer_type_sites ==
-             surface.throws_propagation_object_pointer_type_sites_total &&
-         surface.throws_propagation_summary.pointer_declarator_sites ==
-             surface.throws_propagation_pointer_declarator_sites_total &&
-         surface.throws_propagation_summary.normalized_sites ==
-             surface.throws_propagation_normalized_sites_total &&
-         surface.throws_propagation_summary.cache_invalidation_candidate_sites ==
-             surface.throws_propagation_cache_invalidation_candidate_sites_total &&
-         surface.throws_propagation_summary.contract_violation_sites ==
-             surface.throws_propagation_contract_violation_sites_total &&
-         surface.throws_propagation_summary.namespace_segment_sites <=
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.import_edge_candidate_sites <=
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.normalized_sites <=
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.cache_invalidation_candidate_sites <=
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.normalized_sites +
-                 surface.throws_propagation_summary.cache_invalidation_candidate_sites ==
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.contract_violation_sites <=
-             surface.throws_propagation_summary.throws_propagation_sites &&
-         surface.throws_propagation_summary.deterministic &&
-         surface.deterministic_throws_propagation_handoff &&
+         surface.deterministic_intermodule_flow_summary_readiness_record &&
+         IsReadyObjc3SemaIntermoduleFlowSummaryReadinessRecord(
+             surface.intermodule_flow_summary_readiness_record) &&
          surface.actor_isolation_sendability_summary
                  .actor_isolation_sendability_sites ==
              surface.actor_isolation_sendability_sites_total &&

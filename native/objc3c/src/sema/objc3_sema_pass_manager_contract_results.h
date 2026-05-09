@@ -27,6 +27,9 @@
   Objc3SemaModuleBoundarySummaryReadinessRecord
       module_boundary_summary_readiness_record;
   bool deterministic_module_boundary_summary_readiness_record = false;
+  Objc3SemaIntermoduleFlowSummaryReadinessRecord
+      intermodule_flow_summary_readiness_record;
+  bool deterministic_intermodule_flow_summary_readiness_record = false;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;

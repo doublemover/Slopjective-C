@@ -335,6 +335,26 @@
   result.parity_surface
       .deterministic_module_boundary_summary_readiness_record =
       result.deterministic_module_boundary_summary_readiness_record;
+  result.intermodule_flow_summary_readiness_record =
+      BuildObjc3SemaIntermoduleFlowSummaryReadinessRecord(
+          input,
+          result.parity_surface,
+          result.deterministic_cross_module_conformance_handoff,
+          result.deterministic_throws_propagation_handoff);
+  result.deterministic_intermodule_flow_summary_readiness_record =
+      IsReadyObjc3SemaIntermoduleFlowSummaryReadinessRecord(
+          result.intermodule_flow_summary_readiness_record);
+  result.parity_surface.intermodule_flow_summary_readiness_record =
+      result.intermodule_flow_summary_readiness_record;
+  result.parity_surface
+      .deterministic_intermodule_flow_summary_readiness_record =
+      result.deterministic_intermodule_flow_summary_readiness_record;
+  result.parity_surface.deterministic_cross_module_conformance_handoff =
+      result.parity_surface.intermodule_flow_summary_readiness_record
+          .cross_module_conformance_ready;
+  result.parity_surface.deterministic_throws_propagation_handoff =
+      result.parity_surface.intermodule_flow_summary_readiness_record
+          .throws_propagation_ready;
   result.parity_surface.ready =
       result.parity_surface
           .deterministic_parity_closeout_publication_readiness_record &&
@@ -364,4 +384,8 @@
       result.parity_surface
           .deterministic_module_boundary_summary_readiness_record &&
       IsReadyObjc3SemaModuleBoundarySummaryReadinessRecord(
-          result.parity_surface.module_boundary_summary_readiness_record);
+          result.parity_surface.module_boundary_summary_readiness_record) &&
+      result.parity_surface
+          .deterministic_intermodule_flow_summary_readiness_record &&
+      IsReadyObjc3SemaIntermoduleFlowSummaryReadinessRecord(
+          result.parity_surface.intermodule_flow_summary_readiness_record);
