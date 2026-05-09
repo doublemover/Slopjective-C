@@ -51,6 +51,8 @@ add_library(objc3c_support STATIC
   objc3_pointer_declarator_depth_consistency.h
   objc3_current_property_runtime_profiles.cpp
   objc3_current_property_runtime_profiles.h
+  objc3_property_attribute_profile_match.cpp
+  objc3_property_attribute_profile_match.h
   objc3_property_accessor_profile_builder.cpp
   objc3_property_accessor_profile_builder.h
   objc3_property_accessor_rebuild_policy.cpp
@@ -60,9 +62,10 @@ add_library(objc3c_support STATIC
   objc3_property_ownership_classification.cpp
   objc3_property_ownership_classification.h
   objc3_property_ownership_kinds.h
+  objc3_property_ownership_profile_tokens.cpp
+  objc3_property_ownership_profile_tokens.h
   objc3_property_ownership_profile_application.h
   objc3_property_ownership_profiles.h
-  objc3_property_profile_tokens.cpp
   objc3_property_profile_tokens.h
   objc3_property_storage_profile_helpers.h
   objc3_property_storage_modifier_counts.cpp
