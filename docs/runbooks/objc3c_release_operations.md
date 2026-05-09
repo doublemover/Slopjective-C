@@ -97,7 +97,7 @@ The live workflow for this milestone must expose:
 - an integrated release-operations validation command
 - an end-to-end release-operations validation command
 
-These entrypoints must stay on the shared public workflow runner and publish
+These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge and publish
 machine-owned artifacts under `tmp/reports/release-operations/` and
 `tmp/artifacts/release-operations/`.
 

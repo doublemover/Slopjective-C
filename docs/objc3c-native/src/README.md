@@ -60,13 +60,13 @@ adding sidecar scaffolding:
 Use these naming rules when downstream cleanup work renames or consolidates
 repo surfaces:
 
-- user-facing package entrypoints come from `package.json` and map directly to
-  `scripts.objc3c_workflow`
+- user-facing package entrypoints come from the `package.json` bridge:
+  `npm run objc3c -- <action>`
 - checked-in generated docs keep one source root each:
   - `site/index.md` <= `site/src/`
   - `docs/objc3c-native.md` <= `docs/objc3c-native/src/`
-  - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json` +
-    `scripts.objc3c_workflow`
+  - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json`
+    bridge: `npm run objc3c -- <action>`
 - implementation paths stay under `native/objc3c/`, `scripts/`, and `tests/`
 - transient outputs stay under `tmp/`
 - published binaries and libraries stay under `artifacts/`
@@ -92,7 +92,7 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - generator action: `npm run objc3c -- build-site`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
-  - sources: `package.json`, `scripts.objc3c_workflow`, `scripts/build_objc3c_public_command_contract.py`
+  - sources: `package.json`, `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
 
 Generated proof and report outputs under `tmp/` are evidence, not canonical

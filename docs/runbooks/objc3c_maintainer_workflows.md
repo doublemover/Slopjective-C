@@ -12,7 +12,7 @@ checked into the repo:
   - source: `docs/objc3c-native/src/*.md`
   - build/check: `npm run objc3c -- build-native-docs` / `npm run objc3c -- check-native-docs`
 - machine-facing operator appendix:
-  - source: `package.json` + `scripts.objc3c_workflow` + `scripts/build_objc3c_public_command_contract.py`
+  - source: `package.json` + `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
   - maintainer contract checks:
     - `npm run objc3c -- build-public-command-contract`
@@ -65,7 +65,7 @@ Developer-tooling entrypoint:
 - `docs/runbooks/objc3c_developer_tooling.md` is the maintainer boundary for
   live inspection, debug, and explainability work
 - developer ergonomics changes must stay on the existing native tooling,
-  runtime ABI, and public workflow runner surfaces named there
+  runtime ABI, and `npm run objc3c -- <action>` bridge surfaces named there
 - use the direct commands in that runbook when you need compile summaries,
   runtime debug-state inspection, or parity validation without inventing a
   sidecar workflow
@@ -129,7 +129,7 @@ Release-foundation entrypoint:
   release artifact taxonomy, runnable payload selection, reproducible package
   assembly, SBOM publication, and attestation binding
 - release-foundation work must stay on the existing runnable package,
-  release-evidence, repo-superclean, and public workflow runner surfaces
+  release-evidence, repo-superclean, and `npm run objc3c -- <action>` bridge surfaces
   instead of inventing a second package layout, hand-maintained checksum
   spreadsheet, or installer-shaped sidecar bundle
 - use the public runner actions for source-surface checking, schema checking,
@@ -142,7 +142,7 @@ Packaging-channels entrypoint:
   portable archives, local installer images, offline bootstrap bundles, and
   install or rollback smoke
 - packaging-channel work must stay on the existing runnable package,
-  release-foundation, and public workflow runner surfaces instead of inventing
+  release-foundation, and `npm run objc3c -- <action>` bridge surfaces instead of inventing
   a second installer payload or manual archive assembly flow
 - use the public runner actions for packaging-channel source checks, schema
   checks, package generation, and install smoke before widening distribution
@@ -154,7 +154,7 @@ Release-operations entrypoint:
   semantic versioning claims, support windows, update-manifest publication,
   compatibility warnings, rollback guidance, and release-operations metadata
 - release-operations work must stay on the existing release-foundation,
-  packaging-channel, and public workflow runner surfaces instead of inventing a
+  packaging-channel, and `npm run objc3c -- <action>` bridge surfaces instead of inventing a
   hosted updater, second payload lineage, or package-manager-only upgrade flow
 - use the public runner actions for release-operations source checking, schema
   checking, update-manifest derivation, publication, and end-to-end validation
@@ -166,7 +166,7 @@ Runtime-performance entrypoint:
   startup/dispatch/reflection/ownership hot-path measurement, runtime counter
   snapshots, and runnable runtime-performance validation
 - runtime-performance work must stay on the existing runtime library, runtime
-  acceptance probes, public workflow runner, and runnable package surfaces
+  acceptance probes, `npm run objc3c -- <action>` bridge, and runnable package surfaces
   instead of inventing a benchmark-only runtime adapter or sidecar report flow
 - use that runbook before widening runtime hot-path claims, counter fields, or
   packaged runtime-performance validation
@@ -178,7 +178,7 @@ Compiler-throughput entrypoint:
   invalidation, macro-host cache publication, docs-generation cost, and
   heavyweight validation-tier ownership
 - compiler-throughput work must stay on the existing native compiler
-  executable, compile wrapper, public workflow runner, native docs generators,
+  executable, compile wrapper, `npm run objc3c -- <action>` bridge, native docs generators,
   and runnable package surfaces instead of inventing a second benchmark harness
   or spreadsheet-only workflow
 - use the public runner actions for compiler-throughput benchmarking and

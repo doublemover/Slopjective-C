@@ -63,7 +63,7 @@ That means this milestone must build local package semantics first:
 ## Claim Boundary
 
 The package ecosystem may claim support only when evidence flows through the
-shared public workflow runner and the existing runnable package path.
+shared `npm run objc3c -- <action>` bridge and the existing runnable package path.
 
 Supported in this boundary:
 
@@ -79,7 +79,7 @@ Not supported in this boundary:
 - a hosted package registry service
 - network-backed dependency resolution
 - system package manager publication
-- manual package manifests that bypass the public workflow runner
+- manual package manifests that bypass the `npm run objc3c -- <action>` bridge
 - a second compiler payload, package layout, or install workflow
 
 ## Dependency Resolution And Lock Policy
@@ -156,7 +156,7 @@ Machine-owned generated outputs stay under:
 - `tmp/reports/package-ecosystem/`
 
 No package ecosystem artifact is claimable unless it can be regenerated from
-checked-in contracts and validated through the public workflow runner.
+checked-in contracts and validated through the `npm run objc3c -- <action>` bridge.
 
 ## Local Package Authoring Workflow
 

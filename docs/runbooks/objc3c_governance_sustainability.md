@@ -130,7 +130,7 @@ Current governance entry surfaces:
 - `scripts/check_objc3c_dependency_boundaries.py`
 - `docs/runbooks/objc3c_maintainer_workflows.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 
 Current budget surfaces measured by the governance inventory summary:
 

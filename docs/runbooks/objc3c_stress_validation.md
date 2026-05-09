@@ -63,7 +63,7 @@ Downstream work must preserve these rules:
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native build and compile roots:
@@ -166,7 +166,7 @@ Downstream work must preserve these rules:
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
 
 ## Explicit Non-Goals

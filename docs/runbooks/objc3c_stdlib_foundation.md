@@ -30,7 +30,7 @@ Authoritative inputs:
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 
 ## Non-goals
@@ -49,7 +49,7 @@ The stdlib-foundation implementation path should leave behind:
 - one checked-in stdlib root
 - canonical module partitions using the names from `spec/STANDARD_LIBRARY_CONTRACT.md`
 - a machine-readable workspace contract under `stdlib/`
-- runner/package integration through the existing public command surface
+- runner/package integration through the existing `npm run objc3c -- <action>` bridge
 - runnable validation rooted in the existing package and compile workflow
 
 ## Lowering And Import Artifact Surface
@@ -76,7 +76,7 @@ and identifier-safe implementation module declarations.
 - `scripts/check_objc3c_stdlib_foundation_integration.py`
 - `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`

@@ -63,7 +63,7 @@ This milestone must leave behind:
 - checked-in schema and artifact-surface contracts for dashboard/report outputs
 - a machine-owned dashboard summary under `tmp/reports/distribution-credibility/`
 - a machine-owned trust report under `tmp/artifacts/distribution-credibility/`
-- integrated and end-to-end validation entrypoints on the shared public workflow runner
+- integrated and end-to-end validation entrypoints on the shared `npm run objc3c -- <action>` bridge
 
 The canonical publication artifacts are:
 
@@ -121,7 +121,7 @@ The live workflow for this milestone must expose:
 - an integrated distribution-credibility validation command
 - an end-to-end distribution-credibility validation command
 
-These entrypoints must stay on the shared public workflow runner and reuse the
+These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge and reuse the
 existing release-foundation, packaging-channel, release-operations, and release-evidence
 surfaces instead of inventing a milestone-only drill lane.
 

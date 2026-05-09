@@ -30,7 +30,7 @@ Exact live implementation paths for downstream work:
 - `scripts/check_stdlib_surface.py`
 - `scripts/materialize_objc3c_stdlib_workspace.py`
 - `scripts/run_objc3c_stdlib_workspace_smoke.py`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 
 ## Core family split
 

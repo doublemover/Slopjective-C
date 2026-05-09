@@ -36,7 +36,7 @@ Replayable generators and validators:
   - `scripts/build_objc3c_native.ps1`
   - published binary: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - public command and workflow surface:
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - runtime inspection and debug-state implementation:
@@ -163,8 +163,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 
 - extend the existing native tool or runtime ABI before adding any new script
   wrapper
-- treat `scripts.objc3c_workflow` as the only public command
-  routing surface
+- treat the `package.json` bridge, `npm run objc3c -- <action>`, as the
+  only public command routing surface
 - keep emitted reports and dumps under `tmp/`
 - keep checked-in developer guidance under `docs/runbooks/`
 - prove inspection/debug behavior through the existing runtime acceptance and
@@ -312,7 +312,7 @@ The npm entrypoints must route to the same action family once implemented:
 
 - no release-scope debug launcher
 - no ad hoc LLVM-only inspection path treated as source of truth
-- no duplicate command surface outside `package.json` and
-  `scripts.objc3c_workflow`
+- no duplicate command surface outside the `package.json` bridge:
+  `npm run objc3c -- <action>`
 - no hand-authored report snapshots under checked-in doc roots
 - no new parallel source-of-truth copy for runtime inspection semantics

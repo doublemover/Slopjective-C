@@ -46,7 +46,7 @@ The current usable substrate is:
 - package ecosystem: deterministic local package locks, package authoring, and
   offline mirror validation
 - application architecture: project template and canonical application workspace
-  replay through the public workflow runner
+  replay through the `npm run objc3c -- <action>` bridge
 - performance governance: generated performance dashboards and budget evidence
 - distribution credibility: release trust reports, provenance, and generated
   publication metadata
@@ -60,7 +60,7 @@ Supported in this boundary:
 - migration replay drills over checked-in package and application surfaces
 - rollback drills that consume generated update and release-operation metadata
 - soak and aging evidence that can be replayed under `tmp/reports/`
-- operator-visible support-window publication through the public workflow runner
+- operator-visible support-window publication through the `npm run objc3c -- <action>` bridge
 
 Not supported in this boundary:
 

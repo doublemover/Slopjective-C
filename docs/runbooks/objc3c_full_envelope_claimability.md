@@ -259,7 +259,7 @@ matrix:
 - `docs/runbooks/objc3c_release_foundation.md`
 - `docs/runbooks/objc3c_release_operations.md`
 - `docs/runbooks/objc3c_distribution_credibility.md`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 
 ## Non-Goals
 

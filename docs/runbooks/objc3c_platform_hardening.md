@@ -53,7 +53,7 @@ Replayable generators and validators:
   - `scripts/check_objc3c_release_operations_integration.py`
   - `scripts/check_objc3c_release_operations_end_to_end.py`
 - public command and workflow surface:
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
@@ -201,8 +201,8 @@ No unsupported host may be described as:
 
 ## Working Rules For Downstream Issues
 
-- treat `scripts.objc3c_workflow` as the only public command
-  routing surface
+- treat the `package.json` bridge, `npm run objc3c -- <action>`, as the
+  only public command routing surface
 - keep support-tier and compatibility publication machine-owned
 - keep transient package/install reports and matrix captures under `tmp/`
 - keep checked-in platform policy under `docs/runbooks/`,

@@ -36,7 +36,7 @@ Exact live implementation paths for downstream work:
 - `scripts/run_objc3c_stdlib_workspace_smoke.py`
 - `scripts/check_objc3c_stdlib_advanced_integration.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 
 ## Advanced family split
 

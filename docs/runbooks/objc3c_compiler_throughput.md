@@ -13,7 +13,7 @@ Use it when changing:
 - compiler-throughput summaries, cache-proof artifacts, and packaged validation
 
 Downstream compiler-throughput work must stay on the existing native compiler executable,
-compile wrapper, public workflow runner, native build wrapper, and validation
+compile wrapper, `npm run objc3c -- <action>` bridge, native build wrapper, and validation
 scripts listed here. Do not add a second benchmark harness, spreadsheet-only
 measurement flow, or release-scope validation packet.
 
@@ -52,7 +52,7 @@ The current audit inventory is:
   - `scripts/objc3c_native_compile.ps1`
   - `artifacts/bin/objc3c-native.exe`
   - `scripts/build_objc3c_native.ps1`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
 - incremental build and invalidation:
   - wrapper `--use-cache`
   - `tmp/artifacts/objc3c-native/cache/`
@@ -169,7 +169,7 @@ Disallowed optimization moves:
 - compile/build wrappers:
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/build_objc3c_native.ps1`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `scripts/check_objc3c_native_perf_budget.ps1`
   - `scripts/check_objc3c_compiler_throughput_integration.py`
 - heavyweight validation suites:

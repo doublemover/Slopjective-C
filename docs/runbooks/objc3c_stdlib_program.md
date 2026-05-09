@@ -48,7 +48,7 @@ of inventing a second examples tree inside `stdlib/`.
   be presented as runnable-now stories
 - not-yet-runnable capabilities must be framed as actor-shaped comparison or
   migration guidance rather than runnable parity claims
-- `package.json` and `scripts.objc3c_workflow` remain the
+- the `package.json` bridge, `npm run objc3c -- <action>`, remains the
   authoritative command truth
 - `tmp/` artifacts and legacy redirects may not become the primary onboarding
   route
@@ -61,7 +61,7 @@ of inventing a second examples tree inside `stdlib/`.
 - `scripts/check_showcase_surface.py`
 - `scripts/check_showcase_integration.py`
 - `scripts/check_getting_started_integration.py`
-- `scripts.objc3c_workflow`
+- package bridge: `npm run objc3c -- <action>`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 - `package.json`
 - `showcase/portfolio.json`

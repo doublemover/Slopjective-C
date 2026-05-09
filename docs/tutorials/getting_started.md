@@ -25,7 +25,7 @@ Teach from checked-in runnable sources first.
 - start with the smallest command that proves the compiler and runtime are alive
 - read one showcase story at a time instead of scanning the whole implementation tree
 - move from compile, to run, to comparison, to deeper implementation notes in that order
-- treat the public package scripts and workflow runner as the command truth
+- treat the `npm run objc3c -- <action>` package bridge as the command truth
 - keep maintainer-only workflow detail out of the primary reader path
 
 ## Step 1 Verify The Toolchain

@@ -60,7 +60,7 @@ Authoritative checked-in contracts for this milestone live under:
 
 The live meaning is:
 
-- first-party testing reuses the existing public workflow runner and checked-in
+- first-party testing reuses the `npm run objc3c -- <action>` bridge and checked-in
   showcase, stdlib, developer-tooling, and documentation surfaces
 - project templates are derived from checked-in showcase sources and are only
   claimable when they remain traceable through public workflow actions

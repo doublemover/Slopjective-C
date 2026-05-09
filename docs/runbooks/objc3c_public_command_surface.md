@@ -6,7 +6,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Current package script count: `1`
 - Operator command count: `1`
 - Maintainer command count: `0`
-- Runner path: `scripts.objc3c_workflow`
+- Package bridge: `npm run objc3c -- <action>`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
 

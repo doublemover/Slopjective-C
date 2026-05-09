@@ -13,7 +13,7 @@ Use it when changing:
 - runtime performance summaries, regression artifacts, and packaged validation
 
 Downstream runtime-performance work must stay on the existing runtime library, runtime
-acceptance helpers, public workflow runner, and runnable toolchain package
+acceptance helpers, `npm run objc3c -- <action>` bridge, and runnable toolchain package
 surfaces listed here. Do not add a release-scope runtime benchmark harness,
 standalone spreadsheet flow, or synthetic performance evidence path.
 
@@ -107,7 +107,7 @@ Disallowed optimization moves:
   - `scripts/check_objc3c_runtime_performance_integration.py`
   - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
   - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
 - authoritative live runtime probes:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`

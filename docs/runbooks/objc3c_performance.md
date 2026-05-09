@@ -57,7 +57,7 @@ The only current claim classes allowed from this surface are:
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime and build roots:
@@ -127,7 +127,7 @@ The only current claim classes allowed from this surface are:
   - `scripts/build_objc3c_native.ps1`
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
 
 ## Explicit Non-Goals
 

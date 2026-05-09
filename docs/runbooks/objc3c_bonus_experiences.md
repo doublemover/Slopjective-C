@@ -35,7 +35,7 @@ real implementation exists.
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime tooling entrypoints:
@@ -174,8 +174,8 @@ mock JSON, or hand-written walkthrough output as authoritative.
 
 ## Working Rules For Downstream Issues
 
-- keep public command routing in `scripts.objc3c_workflow`
-  and `package.json`
+- keep public command routing through the `package.json` bridge:
+  `npm run objc3c -- <action>`
 - keep checked-in bonus-experience guidance in `docs/runbooks/`
 - keep runnable example sources under `showcase/` or existing tutorial/example
   roots

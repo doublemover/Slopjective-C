@@ -45,7 +45,7 @@ Treat these as the live documentation-generation surfaces:
   - `docs/objc3c-native.md`
 - machine-facing generated operator appendix:
   - `package.json`
-  - `scripts.objc3c_workflow`
+  - package bridge: `npm run objc3c -- <action>`
   - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
