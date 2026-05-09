@@ -1,6 +1,7 @@
 #include "runtime/concurrency/continuation_state.h"
 
 #include "runtime/concurrency/continuation_operations.h"
+#include "runtime/concurrency/continuation_resume_operations.h"
 #include "runtime/concurrency/continuation_snapshot_fields.h"
 #include "runtime/concurrency/continuation_state_store.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"

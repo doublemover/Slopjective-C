@@ -186,11 +186,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_builder.h
   public/objc3_runtime_result_contract.cpp
   public/objc3_runtime_result_contract.h
+  public/objc3_runtime_result_diagnostics.cpp
   public/objc3_runtime_selector.h
   reflection/property_entry_descriptor_snapshot_fields.cpp
   reflection/property_entry_descriptor_snapshot_fields.h
   reflection/property_entry_layout_snapshot_fields.cpp
   reflection/property_entry_layout_snapshot_fields.h
+  reflection/property_entry_query.cpp
+  reflection/property_entry_query.h
   reflection/property_entry_snapshot_fields.cpp
   reflection/property_entry_snapshot_fields.h
   reflection/property_reflection_query_state.cpp
@@ -201,6 +204,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   reflection/storage_accessor_snapshot.cpp
   selectors/keypath_table.cpp
   selectors/keypath_table.h
+  selectors/selector_lookup.cpp
   selectors/selector_materialization.cpp
   selectors/selector_records.cpp
   selectors/selector_records.h
@@ -247,8 +251,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/ivar_storage_span.h
   storage/ivar_layout.cpp
   storage/ivar_layout.h
+  storage/property_accessor_dispatch_record.cpp
+  storage/property_accessor_dispatch_record.h
   storage/property_accessor_profiles.cpp
   storage/property_accessor_profiles.h
+  storage/property_accessor_records.cpp
+  storage/property_accessor_records.h
   storage/property_accessor_resolution.cpp
   storage/property_accessor_resolution.h
   storage/property_accessors.cpp

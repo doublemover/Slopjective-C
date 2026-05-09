@@ -1,5 +1,6 @@
 #include "runtime/concurrency/actor_state_store.h"
 
+#include "runtime/concurrency/actor_guard_operations.h"
 #include "runtime/concurrency/actor_isolation_operations.h"
 
 extern "C" int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag) {

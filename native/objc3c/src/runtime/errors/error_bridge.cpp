@@ -1,6 +1,8 @@
 #include "runtime/errors/error_bridge.h"
 
+#include "runtime/errors/error_bridge_catch_operations.h"
 #include "runtime/errors/error_bridge_operations.h"
+#include "runtime/errors/error_bridge_snapshot.h"
 #include "runtime/errors/error_bridge_state.h"
 
 namespace objc3c::runtime {

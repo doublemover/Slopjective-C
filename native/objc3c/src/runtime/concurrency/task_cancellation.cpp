@@ -1,6 +1,6 @@
 #include "runtime/concurrency/task_state_store.h"
 
-#include "runtime/concurrency/task_runtime_operations.h"
+#include "runtime/concurrency/task_cancellation_state.h"
 
 extern "C" int objc3_runtime_task_is_cancelled_i32(int executor_tag) {
   objc3c::runtime::RuntimeTaskState &state =

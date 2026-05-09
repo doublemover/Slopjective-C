@@ -1,4 +1,4 @@
-#include "runtime/concurrency/actor_mailbox_state.h"
+#include "runtime/concurrency/actor_mailbox_operations.h"
 
 #include "runtime/concurrency/actor.h"
 #include "runtime/concurrency/actor_state_store.h"

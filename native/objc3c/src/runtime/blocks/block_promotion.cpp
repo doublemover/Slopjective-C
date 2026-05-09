@@ -2,7 +2,7 @@
 
 #include "runtime/blocks/block_handle_allocation.h"
 #include "runtime/blocks/block_record.h"
-#include "runtime/blocks/block_record_builder.h"
+#include "runtime/blocks/block_promotion_plan.h"
 #include "runtime/blocks/block_runtime_records.h"
 #include "runtime/blocks/block_runtime_state.h"
 #include "runtime/state/runtime_state_records.h"

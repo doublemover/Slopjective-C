@@ -1,6 +1,6 @@
 #include "runtime/concurrency/actor_state_store.h"
 
-#include "runtime/concurrency/actor_mailbox_state.h"
+#include "runtime/concurrency/actor_mailbox_operations.h"
 
 extern "C" int objc3_runtime_actor_bind_executor_i32(int actor_handle,
                                                      int executor_tag) {

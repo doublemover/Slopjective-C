@@ -12,9 +12,5 @@ int EnterRuntimeActorNonisolated(RuntimeActorState &state,
 int HopRuntimeActorToExecutor(RuntimeActorState &state,
                               int value,
                               int executor_tag);
-int RecordRuntimeActorReplayProof(RuntimeActorState &state,
-                                  int executor_tag);
-int RecordRuntimeActorRaceGuard(RuntimeActorState &state,
-                                int executor_tag);
 
 }  // namespace objc3c::runtime

@@ -1,6 +1,7 @@
 #include "runtime/concurrency/task_state_store.h"
 
-#include "runtime/concurrency/task_runtime_operations.h"
+#include "runtime/concurrency/task_cancellation_state.h"
+#include "runtime/concurrency/task_group_operations.h"
 
 extern "C" int objc3_runtime_enter_task_group_scope_i32(int executor_tag) {
   objc3c::runtime::RuntimeTaskState &state =
