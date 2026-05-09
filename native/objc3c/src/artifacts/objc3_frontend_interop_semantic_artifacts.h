@@ -7,6 +7,23 @@
 
 namespace objc3::artifacts::frontend {
 
+[[nodiscard]] Objc3InteropInteropLoweringContract
+BuildInteropInteropLoweringContract(
+    const Objc3InteropInteropSemanticModelSummary &semantic_summary,
+    const Objc3InteropInteropRuntimeParitySummary &runtime_parity_summary,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropSwiftInteropIsolationSummary &swift_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary);
+
+[[nodiscard]] Objc3InteropForeignCallLifetimeLoweringContract
+BuildInteropForeignCallLifetimeLoweringContract(
+    const Objc3Program &program,
+    const Objc3InteropInteropLoweringContract &dependency_contract,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary);
+
 [[nodiscard]] std::string BuildInteropInteropSemanticModelSummaryJson(
     const Objc3InteropInteropSemanticModelSummary &summary);
 
