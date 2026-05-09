@@ -11,7 +11,9 @@ add_library(objc3c_config STATIC
   objc3_feature_state_lookup.cpp
   objc3_feature_state_names.cpp
   objc3_feature_state_predicates.cpp
+  objc3_feature_state_table_contract_accumulate.cpp
   objc3_feature_state_table_contract.cpp
+  objc3_feature_state_table_contract_finalize.cpp
   objc3_feature_state_tables.cpp
   objc3_language_profile_data.cpp
   objc3_language_profile_names.cpp
