@@ -99,40 +99,36 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
       kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel;
 
   std::ostringstream discovery;
-  discovery << "{\n"
-            << "  \"contract_id\": \""
-            << EscapeJsonString(kObjc3RuntimeLinkerRetentionContractId)
-            << "\",\n"
-            << "  \"object_format\": \"" << EscapeJsonString(artifacts.object_format)
-            << "\",\n"
-            << "  \"object_artifact\": \""
-            << EscapeJsonString(artifacts.object_artifact_relative_path)
-            << "\",\n"
-            << "  \"linker_anchor_symbol\": \""
-            << EscapeJsonString(artifacts.linker_anchor_symbol) << "\",\n"
-            << "  \"discovery_root_symbol\": \""
-            << EscapeJsonString(artifacts.discovery_root_symbol) << "\",\n"
-            << "  \"linker_anchor_logical_section\": \""
-            << EscapeJsonString(artifacts.linker_anchor_logical_section) << "\",\n"
-            << "  \"discovery_root_logical_section\": \""
-            << EscapeJsonString(artifacts.discovery_root_logical_section) << "\",\n"
-            << "  \"linker_anchor_emitted_section\": \""
-            << EscapeJsonString(artifacts.linker_anchor_emitted_section) << "\",\n"
-            << "  \"discovery_root_emitted_section\": \""
-            << EscapeJsonString(artifacts.discovery_root_emitted_section) << "\",\n"
-            << "  \"linker_response_artifact_suffix\": \""
-            << EscapeJsonString(artifacts.linker_response_artifact_suffix) << "\",\n"
-            << "  \"discovery_artifact_suffix\": \""
-            << EscapeJsonString(artifacts.discovery_artifact_suffix) << "\",\n"
-            << "  \"translation_unit_identity_model\": \""
-            << EscapeJsonString(artifacts.translation_unit_identity_model)
-            << "\",\n"
-            << "  \"translation_unit_identity_key\": \""
-            << EscapeJsonString(artifacts.translation_unit_identity_key) << "\",\n"
-            << "  \"driver_linker_flags\": [\"" << EscapeJsonString(artifacts.driver_linker_flag)
-            << "\"]\n"
-            << "}\n";
-  artifacts.discovery_json = discovery.str();
+  JsonObjectWriter discovery_document(discovery);
+  discovery_document.StringField("contract_id",
+                                 kObjc3RuntimeLinkerRetentionContractId);
+  discovery_document.StringField("object_format", artifacts.object_format);
+  discovery_document.StringField("object_artifact",
+                                 artifacts.object_artifact_relative_path);
+  discovery_document.StringField("linker_anchor_symbol",
+                                 artifacts.linker_anchor_symbol);
+  discovery_document.StringField("discovery_root_symbol",
+                                 artifacts.discovery_root_symbol);
+  discovery_document.StringField("linker_anchor_logical_section",
+                                 artifacts.linker_anchor_logical_section);
+  discovery_document.StringField("discovery_root_logical_section",
+                                 artifacts.discovery_root_logical_section);
+  discovery_document.StringField("linker_anchor_emitted_section",
+                                 artifacts.linker_anchor_emitted_section);
+  discovery_document.StringField("discovery_root_emitted_section",
+                                 artifacts.discovery_root_emitted_section);
+  discovery_document.StringField("linker_response_artifact_suffix",
+                                 artifacts.linker_response_artifact_suffix);
+  discovery_document.StringField("discovery_artifact_suffix",
+                                 artifacts.discovery_artifact_suffix);
+  discovery_document.StringField("translation_unit_identity_model",
+                                 artifacts.translation_unit_identity_model);
+  discovery_document.StringField("translation_unit_identity_key",
+                                 artifacts.translation_unit_identity_key);
+  discovery_document.RawJsonField(
+      "driver_linker_flags",
+      BuildIndentedStringArrayJson({artifacts.driver_linker_flag}, "    "));
+  artifacts.discovery_json = FinishJsonObject(discovery_document, discovery);
   return true;
 }
 

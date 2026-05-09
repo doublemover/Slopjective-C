@@ -22,5 +22,13 @@ struct ArtifactSchemaContract {
 [[nodiscard]] std::optional<ArtifactSchemaContract> LookupArtifactSchemaContractByPayloadId(
     std::string_view payload_id);
 [[nodiscard]] std::optional<std::string> LookupArtifactSchemaPath(std::string_view schema_id);
+[[nodiscard]] bool RequireArtifactSchemaContract(
+    std::string_view schema_id,
+    ArtifactSchemaContract &contract,
+    std::string &error);
+[[nodiscard]] bool RequireArtifactSchemaContractByPayloadId(
+    std::string_view payload_id,
+    ArtifactSchemaContract &contract,
+    std::string &error);
 
 }  // namespace objc3::artifacts::json
