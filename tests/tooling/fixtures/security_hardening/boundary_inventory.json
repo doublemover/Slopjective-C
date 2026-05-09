@@ -5,6 +5,66 @@
   "issue": "M327-A001",
   "runbook": "docs/runbooks/objc3c_security_hardening.md",
   "summary_implementation_anchor": "scripts/build_security_hardening_boundary_inventory_summary.py",
+  "hard_cutover_source_owner_contract": {
+    "source_owned": true,
+    "report_only_allowed": false,
+    "fallback_claims_allowed": false,
+    "generated_report_claims_allowed": false
+  },
+  "source_owner_contracts": {
+    "security_response_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/response_drill_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_security_hardening_response_policy_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_response_drill.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "release_key_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_security_hardening_release_key_policy_summary.py",
+      "check_implementation_anchors": [],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "supply_chain_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+        "tests/tooling/fixtures/security_hardening/source_surface.json",
+        "tests/tooling/fixtures/security_hardening/schema_surface.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_security_hardening_macro_trust_policy_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_supply_chain_audit.py",
+        "scripts/check_security_hardening_source_surface.py",
+        "scripts/check_security_hardening_schema_surface.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_hardening_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_security_hardening_artifact_contract_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_runtime_hardening.py",
+        "scripts/check_objc3c_security_hardening_integration.py",
+        "scripts/check_objc3c_security_hardening_end_to_end.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    }
+  },
   "authoritative_code_paths": [
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",

@@ -4,6 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_evidence_owner_contracts import (
+    owner_contract_count,
+    owner_contract_ids,
+    validate_boundary_owner_contracts,
+)
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
 from objc3c_tooling.public_runner import public_workflow_action_names
@@ -40,7 +45,7 @@ def main() -> int:
     ]
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_security_hardening_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_security_hardening_boundary_inventory_summary.py",
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_policy_contract_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["policy_contract_paths"]),
         "all_macro_security_fixture_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["macro_security_fixture_paths"]),
@@ -52,6 +57,7 @@ def main() -> int:
         "runbook_mentions_disclosure_and_response": "### Disclosure And Response Boundary" in runbook_text,
         "runbook_mentions_no_hosted_advisory_service": "no hosted advisory service" in runbook_text,
     }
+    checks.update(validate_boundary_owner_contracts("security_hardening", contract, ROOT))
 
     payload = {
         "contract_id": "objc3c.security.hardening.boundary.inventory.summary.v1",
@@ -66,6 +72,9 @@ def main() -> int:
         "missing_actions": missing_actions,
         "report_path_count": len(contract["report_paths"]),
         "gap_claim_count": len(contract["gap_claims"]),
+        "source_owner_contract_count": owner_contract_count("security_hardening"),
+        "source_owner_contract_ids": list(owner_contract_ids("security_hardening")),
+        "hard_cutover_source_owner_contract": contract["hard_cutover_source_owner_contract"],
         "checks": checks,
     }
 
@@ -81,6 +90,7 @@ def main() -> int:
         f"- Public actions: `{payload['public_action_count']}`\n"
         f"- Report paths: `{payload['report_path_count']}`\n"
         f"- Gap claims: `{payload['gap_claim_count']}`\n"
+        f"- Source owners: `{payload['source_owner_contract_count']}`\n"
         f"- Status: `{payload['status']}`\n",
         encoding="utf-8",
     )

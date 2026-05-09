@@ -6,6 +6,11 @@ from objc3c_tooling.public_runner import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_evidence_owner_contracts import (
+    owner_contract_count,
+    owner_contract_ids,
+    validate_boundary_owner_contracts,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json"
@@ -30,7 +35,7 @@ def main() -> int:
     package_text = (ROOT / "package.json").read_text(encoding="utf-8")
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
         "runbook_exists": RUNBOOK_PATH.is_file(),
         "all_authoritative_code_paths_exist": all((ROOT / path).is_file() for path in contract["authoritative_code_paths"]),
         "all_authoritative_probe_paths_exist": all((ROOT / path).is_file() for path in contract["authoritative_probe_paths"]),
@@ -54,12 +59,16 @@ def main() -> int:
         "package_json_preserves_public_commands": all(command in package_text for command in contract["public_commands"]),
         "workflow_runner_preserves_public_actions": public_workflow_has_action_identifiers(contract["public_workflows"]),
     }
+    checks.update(validate_boundary_owner_contracts("metaprogramming_interop_closure", contract, ROOT))
 
     summary = {
         "issue": "metaprogramming-interop-closure-boundary-inventory",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "focus_track_count": len(contract["focus_tracks"]),
+        "source_owner_contract_count": owner_contract_count("metaprogramming_interop_closure"),
+        "source_owner_contract_ids": list(owner_contract_ids("metaprogramming_interop_closure")),
+        "hard_cutover_source_owner_contract": contract["hard_cutover_source_owner_contract"],
         "metaprogramming_surface_key_count": len(contract["authoritative_metaprogramming_surface_keys"]),
         "interop_surface_key_count": len(contract["authoritative_interop_surface_keys"]),
         "authoritative_code_path_count": len(contract["authoritative_code_paths"]),
@@ -86,6 +95,7 @@ def main() -> int:
         f"- Interop surface keys: `{summary['interop_surface_key_count']}`\n"
         f"- Metaprogramming required cases: `{summary['metaprogramming_required_case_count']}`\n"
         f"- Interop required cases: `{summary['interop_required_case_count']}`\n"
+        f"- Source owners: `{summary['source_owner_contract_count']}`\n"
         f"- Status: `{summary['status']}`\n",
         encoding="utf-8",
     )

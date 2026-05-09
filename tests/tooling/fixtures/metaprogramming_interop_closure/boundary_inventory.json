@@ -5,6 +5,74 @@
   "issue": "M323-A001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
   "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
+  "hard_cutover_source_owner_contract": {
+    "source_owned": true,
+    "report_only_allowed": false,
+    "fallback_claims_allowed": false,
+    "generated_report_claims_allowed": false
+  },
+  "source_owner_contracts": {
+    "metaprogramming_runtime_owner": {
+      "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/metaprogramming_runtime_semantic_model.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "property_behavior_owner": {
+      "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_runtime_materialization_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_macro_runtime_materialization_implementation_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
+      "check_implementation_anchors": [],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "interop_runtime_owner": {
+      "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/metaprogramming_interop_closure/interop_bridge_cross_module_artifact_implementation_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_metaprogramming_interop_closure_live_interop_runtime.py",
+        "scripts/check_metaprogramming_interop_closure_interop_lowering.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "metaprogramming_lowering_owner": {
+      "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/lowering_runtime_artifact_contract.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_abi_packaged_proof_owner": {
+      "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_executable_proof_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py"
+      ],
+      "report_only_allowed": false,
+      "fallback_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    }
+  },
   "focus_tracks": [
     "metaprogramming-property-behavior-runtime-materialization",
     "mixed-image-package-loading-and-foreign-boundary-interop"
