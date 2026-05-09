@@ -32,6 +32,11 @@ from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_
 from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
+from scripts.source_hygiene.report_writer import (
+    REPORT_SUMMARY_FIELDS,
+    REPORT_WRITER_CONTRACT_ID,
+    report_writer_contract_payload,
+)
 from scripts.source_hygiene.owners import (
     SOURCE_HYGIENE_BLOCKER_METADATA_OWNER,
     SOURCE_HYGIENE_GENERATED_REPORT_OWNER,
@@ -652,12 +657,19 @@ def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:
 
     write_reports(report, json_path, text_path)
     payload = json.loads(json_path.read_text(encoding="utf-8"))
+    text = text_path.read_text(encoding="utf-8")
+    writer_contract = report_writer_contract_payload()
 
     assert payload["schema_version"] == "source-hygiene-hard-cutover-report-v1"
     assert isinstance(payload["forbidden_patterns"], list)
     assert isinstance(payload["active_findings"], list)
     assert payload["stats"]["active_finding_count"] == 0
-    assert text_path.read_text(encoding="utf-8").startswith("schema_version:")
+    assert writer_contract["contract_id"] == REPORT_WRITER_CONTRACT_ID
+    assert writer_contract["summary_fields"] == list(REPORT_SUMMARY_FIELDS)
+    assert text.startswith("schema_version:")
+    assert [line.split(":", 1)[0] for line in text.splitlines()[:5]] == list(
+        REPORT_SUMMARY_FIELDS
+    )
 
 
 def test_hard_cutover_gate_excludes_canonical_config_registry(tmp_path: Path) -> None:
