@@ -1,6 +1,3 @@
-      counts.fail_closed_diagnostic_sites);
-}
-
 static bool IsAsyncKeywordSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;

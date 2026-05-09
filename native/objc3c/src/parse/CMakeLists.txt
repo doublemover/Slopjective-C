@@ -18,6 +18,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_cursor.cpp
   objc3_parser_declaration_surface.cpp
   objc3_parser_diagnostic_builder.cpp
+  objc3_parser_error_diagnostics_recovery_profiles.cpp
   objc3_parser_error_bridge_attribute_profiles.cpp
   objc3_parser_expression_nodes.cpp
   objc3_parser_expression_statement_nodes.cpp

@@ -1,5 +1,4 @@
 #include "parse/objc3_parser_core_profile_prelude.inc"
-#include "parse/objc3_parser_core_pointer_async_profiles.inc"
 #include "parse/objc3_parser_core_concurrency_profiles.inc"
 #include "parse/objc3_parser_core_interop_profiles.inc"
 #include "parse/objc3_parser_core_cstyle_parameters.inc"

@@ -17,6 +17,7 @@
 #include "parse/objc3_parser_core.h"
 #include "parse/objc3_parser_declaration_surface.h"
 #include "parse/objc3_parser_diagnostics.h"
+#include "parse/objc3_parser_error_diagnostics_recovery_profiles.h"
 #include "parse/objc3_parser_expression_nodes.h"
 #include "parse/objc3_parser_expression_surface.h"
 #include "parse/objc3_parser_inline_asm_intrinsic_profiles.h"
