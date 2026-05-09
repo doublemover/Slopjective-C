@@ -33,6 +33,9 @@ hard-cutover issue evidence files. Implementation commit lists in those files
 are local source evidence only. They are not validation reports, pushed-state
 evidence, remote issue edits, release claims, or remote closure, and they do
 not close the gap left by deferred validation, push, or tracker operations.
+Source-head labels in those issue maps identify the latest committed local
+implementation evidence covered by the docs; they do not upgrade capability
+state or imply validation, GitHub issue edits, push state, or remote closeout.
 
 ## Support States
 
