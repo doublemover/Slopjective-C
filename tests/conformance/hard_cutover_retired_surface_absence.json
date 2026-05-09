@@ -44,6 +44,10 @@
     "tests/native/e2e/smoke",
     "tests/native/e2e/feature_matrix"
   ],
+  "runtime_probe_roots": [
+    "tests/tooling/runtime"
+  ],
+  "runtime_probe_policy": "runtime probes may prove canonical storage, reflection, public ABI, registration, and object-model behavior or strict dispatch errors; they are not compatibility, shim, fallback, or migration-lane positive support",
   "retired_surface_disposition": [
     {
       "surface": "old-mode literal aliases",

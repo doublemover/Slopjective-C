@@ -99,8 +99,16 @@
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
+      "runtime_probe_fixtures": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
+      ],
       "behavior_focus": "runnable positive exit-code fixtures and strict compile/link/run rejection sidecars",
-      "hard_cutover_rule": "runtime-like positives are canonical e2e fixtures only; unresolved runtime dispatch, unsupported feature claims, and compatibility-looking names stay negative or get renamed"
+      "hard_cutover_rule": "runtime-like positives are canonical e2e or runtime-probe fixtures only; storage/reflection/public ABI probes anchor current owners, while unresolved runtime dispatch, unsupported feature claims, and compatibility-looking names stay negative or get renamed"
     },
     {
       "boundary": "ir_module_roundtrip",

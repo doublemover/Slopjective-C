@@ -141,6 +141,32 @@
       "support_boundary": "runtime dispatch misses and unresolved dispatch symbols are strict errors"
     },
     {
+      "outcome": "runtime_probe_public_abi_ownership",
+      "kind": "runtime-probe-evidence",
+      "owning_indexes": [
+        "tests/conformance/hard_cutover_acceptance_area_owners.json",
+        "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+        "tests/conformance/hard_cutover_behavior_evidence_topology.json",
+        "tests/tooling/runtime/README.md"
+      ],
+      "owning_issues": [
+        "#8133",
+        "#8141",
+        "#8143",
+        "#8144"
+      ],
+      "evidence": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
+      ],
+      "support_boundary": "runtime probes anchor storage, reflection, and public ABI ownership; they do not make rejected dispatch, shim, fallback, compatibility, or migration-lane behavior positive"
+    },
+    {
       "outcome": "negative_execution",
       "kind": "negative-execution",
       "owning_indexes": [

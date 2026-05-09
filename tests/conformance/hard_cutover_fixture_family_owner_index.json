@@ -182,6 +182,42 @@
       "retired_disposition": "runtime dispatch fallback is strict-error behavior"
     },
     {
+      "family": "runtime_tooling_probe_metadata",
+      "kind": "metadata_fixture_family",
+      "source": "tests/tooling/runtime",
+      "acceptance_area": "runtime_storage_reflection_public_abi",
+      "owning_issues": [
+        "#8133",
+        "#8141",
+        "#8143",
+        "#8144"
+      ],
+      "owned_boundaries": [
+        "dispatch",
+        "storage",
+        "reflection",
+        "public_abi",
+        "registration",
+        "object_model"
+      ],
+      "positive_evidence": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+        "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp"
+      ],
+      "strict_error_evidence": [
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+      ],
+      "retired_disposition": "runtime probe metadata anchors current storage/reflection/public ABI owners and keeps unsupported dispatch outcomes strict-error only"
+    },
+    {
       "family": "e2e_behavior",
       "kind": "phase_fixture_family",
       "source": "tests/native/e2e",

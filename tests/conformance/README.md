@@ -49,7 +49,8 @@ Machine-readable indexes:
   for `#8132`-`#8150`, keyed to behavior fixture boundaries and local commits)
 - `tests/conformance/hard_cutover_acceptance_area_owners.json` (acceptance-area
   ownership index tying compiler/runtime/workflow/docs areas to code paths,
-  behavior fixtures, and hard-cutover issues)
+  behavior fixtures, current runtime storage/reflection/public ABI probe anchors,
+  and hard-cutover issues)
 - `tests/conformance/hard_cutover_behavior_evidence_topology.json` (behavior-first
   phase/family topology connecting native fixtures, strict-error coverage,
   generated-boundary status, and issue closeout artifacts)
@@ -79,6 +80,12 @@ old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, or
 runtime-dispatch paths as positive behavior. When a fixture documents an
 unavailable feature configuration, the expected result is a strict error with
 stable diagnostic metadata, not fallback acceptance.
+
+Runtime probe metadata under `tests/tooling/runtime/` is treated as fixture
+evidence for canonical runtime ownership only. Storage, reflection, registration,
+object-model, and public ABI probes may anchor live owner paths; strict dispatch
+probes remain rejection/strict-error evidence and must not become legacy shim,
+fallback, compatibility, or migration-lane positive claims.
 
 Live validation entrypoints:
 

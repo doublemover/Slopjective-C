@@ -251,6 +251,12 @@
           "strict_rejection_name": true,
           "positive_expectation": false
         }
+      ],
+      "runtime_probe_evidence": [
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
       ]
     }
   ],

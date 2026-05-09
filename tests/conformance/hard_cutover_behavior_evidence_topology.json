@@ -125,6 +125,8 @@
         "errors",
         "object_model",
         "storage",
+        "reflection",
+        "public_abi",
         "arc",
         "blocks",
         "concurrency"
@@ -139,14 +141,31 @@
       "strict_or_rejection_evidence": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
-        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+      ],
+      "runtime_probe_evidence": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+        "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp"
       ],
       "owner_index_area": "runtime_dispatch_registration",
+      "related_owner_areas": [
+        "runtime_storage_reflection_public_abi",
+        "frontend_public_c_api_runner"
+      ],
       "issues": [
         "#8133",
-        "#8143"
+        "#8141",
+        "#8143",
+        "#8144"
       ],
-      "retired_surface_disposition": "runtime dispatch fallback is strict-error behavior"
+      "retired_surface_disposition": "runtime dispatch fallback is strict-error behavior; storage/reflection/public ABI probes are canonical owner evidence only"
     },
     {
       "phase": "e2e",

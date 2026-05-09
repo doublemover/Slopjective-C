@@ -114,6 +114,45 @@
       "retired_surface_disposition": "dispatch fallback and unknown receiver behavior are runtime strict errors"
     },
     {
+      "area": "runtime_storage_reflection_public_abi",
+      "issues": [
+        "#8133",
+        "#8141",
+        "#8143",
+        "#8144"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp",
+        "native/objc3c/src/runtime/storage/property_lookup.cpp",
+        "native/objc3c/src/runtime/storage/property_value_storage.cpp",
+        "native/objc3c/src/runtime/storage/weak_slot_zeroing.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp",
+        "native/objc3c/src/runtime/reflection/property_entry_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/property_entry_descriptor_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/property_registry_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/storage_accessor_snapshot.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_registration.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_selector.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
+      ],
+      "behavior_fixtures": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
+      ],
+      "retired_surface_disposition": "storage, reflection, and public ABI probes are canonical runtime ownership evidence; strict-result probes keep rejected dispatch as strict errors and do not create shim, fallback, compatibility, or migration-lane support"
+    },
+    {
       "area": "frontend_public_c_api_runner",
       "issues": [
         "#8140",
