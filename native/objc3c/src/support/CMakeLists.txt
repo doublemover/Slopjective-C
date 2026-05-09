@@ -1,7 +1,14 @@
 add_library(objc3c_support STATIC
   objc3_ascii_predicates.h
-  objc3_concurrency_symbol_profiles.cpp
+  objc3_concurrency_cancellation_symbols.cpp
+  objc3_concurrency_cancellation_symbols.h
+  objc3_concurrency_profile_tokens.cpp
+  objc3_concurrency_profile_tokens.h
   objc3_concurrency_symbol_profiles.h
+  objc3_concurrency_task_group_symbols.cpp
+  objc3_concurrency_task_group_symbols.h
+  objc3_concurrency_task_symbols.cpp
+  objc3_concurrency_task_symbols.h
   objc3_file_reading.cpp
   objc3_file_reading.h
   objc3_identifier_safe_suffix.cpp
