@@ -5,6 +5,10 @@ from __future__ import annotations
 from .test_orchestration_ci_profile import TEST_CI_PROFILE
 from .test_orchestration_full_profile import TEST_FULL_PROFILE
 from .test_orchestration_nightly_profile import TEST_NIGHTLY_PROFILE
+from .test_orchestration_owner_contracts import (
+    require_test_orchestration_profile_payload,
+    require_test_orchestration_profile_payloads,
+)
 from .test_orchestration_profile_model import (
     TestOrchestrationProfile,
     TestOrchestrationStep,
@@ -26,14 +30,18 @@ def test_orchestration_steps(action: str) -> list[WorkflowStep]:
 
 
 def test_orchestration_profile_payload(action: str) -> dict[str, object]:
-    return TEST_ORCHESTRATION_PROFILES[action].owner_payload()
+    payload = TEST_ORCHESTRATION_PROFILES[action].owner_payload()
+    require_test_orchestration_profile_payload(payload)
+    return payload
 
 
 def test_orchestration_profile_payloads() -> dict[str, dict[str, object]]:
-    return {
+    payloads = {
         action: profile.owner_payload()
         for action, profile in TEST_ORCHESTRATION_PROFILES.items()
     }
+    require_test_orchestration_profile_payloads(payloads)
+    return payloads
 
 
 __all__ = [
@@ -41,6 +49,8 @@ __all__ = [
     "TestOrchestrationProfile",
     "TestOrchestrationStep",
     "WorkflowStep",
+    "require_test_orchestration_profile_payload",
+    "require_test_orchestration_profile_payloads",
     "test_orchestration_profile_payload",
     "test_orchestration_profile_payloads",
     "test_orchestration_steps",

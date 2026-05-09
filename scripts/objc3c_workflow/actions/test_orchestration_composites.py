@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from ..composite_validation import run_composite_validation
-from .test_orchestration_profiles import test_orchestration_steps
+from .test_orchestration_profiles import (
+    test_orchestration_profile_payload,
+    test_orchestration_steps,
+)
 
 
 def _run_profile(action: str) -> int:
+    test_orchestration_profile_payload(action)
     return run_composite_validation(action, test_orchestration_steps(action))
 
 

@@ -18,6 +18,7 @@ from scripts.objc3c_workflow.actions.test_orchestration_profile_model import (
 )
 from scripts.objc3c_workflow.actions.test_orchestration_profiles import (
     TEST_ORCHESTRATION_PROFILES,
+    require_test_orchestration_profile_payload,
     test_orchestration_profile_payload,
     test_orchestration_profile_payloads,
     test_orchestration_steps,
@@ -31,6 +32,7 @@ ACTION_ROOT = ROOT / "scripts" / "objc3c_workflow" / "actions"
 
 PROFILE_OWNER_MODULES = (
     "test_orchestration_profile_model",
+    "test_orchestration_owner_contracts",
     "test_orchestration_smoke_profile",
     "test_orchestration_ci_profile",
     "test_orchestration_full_profile",
@@ -109,3 +111,17 @@ def test_test_orchestration_profile_payloads_are_owner_explicit() -> None:
             "hard_blocking_decision_owner": "test_orchestration_composites",
         },
     ]
+
+
+def test_test_orchestration_profile_payload_rejects_missing_step_owner() -> None:
+    payload = test_orchestration_profile_payload("test-smoke")
+    broken_step = dict(payload["steps"][0])
+    broken_step.pop("command_owner")
+    payload["steps"] = [broken_step, *payload["steps"][1:]]
+
+    try:
+        require_test_orchestration_profile_payload(payload)
+    except ValueError as exc:
+        assert "step 1 is missing owner keys: command_owner" in str(exc)
+    else:
+        raise AssertionError("missing test orchestration step owner was accepted")

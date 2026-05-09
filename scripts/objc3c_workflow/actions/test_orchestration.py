@@ -12,6 +12,8 @@ from .test_orchestration_profiles import (
     TEST_ORCHESTRATION_PROFILES,
     TestOrchestrationProfile,
     TestOrchestrationStep,
+    require_test_orchestration_profile_payload,
+    require_test_orchestration_profile_payloads,
     test_orchestration_profile_payload,
     test_orchestration_profile_payloads,
     test_orchestration_steps,
