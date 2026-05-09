@@ -26,3 +26,13 @@ void EmitObjc3IRRuntimeClassMetaclassBundleSection(
     const Objc3IRRuntimeObjectMetadataEmissionOptions &options,
     const Objc3RuntimeMetadataLayoutPolicyFamily &family,
     std::ostringstream &out, std::vector<std::string> &retained_globals);
+
+void EmitObjc3IRRuntimeProtocolBundleSection(
+    const Objc3IRRuntimeObjectMetadataEmissionOptions &options,
+    const Objc3RuntimeMetadataLayoutPolicyFamily &family,
+    std::ostringstream &out, std::vector<std::string> &retained_globals);
+
+void EmitObjc3IRRuntimeCategoryBundleSection(
+    const Objc3IRRuntimeObjectMetadataEmissionOptions &options,
+    const Objc3RuntimeMetadataLayoutPolicyFamily &family,
+    std::ostringstream &out, std::vector<std::string> &retained_globals);
