@@ -6,14 +6,22 @@ set(OBJC3C_SEMA_PUBLIC_DEPS
   objc3c_support
 )
 
+target_sources(objc3c_sema_model INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_concurrency_symbol_graph_summaries.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_linkage_summaries.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_type_source_closure.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/semantic_effect.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/semantic_ownership.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/semantic_program.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/semantic_symbol.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/semantic_type.h
+)
+
 add_library(objc3c_sema_contracts INTERFACE)
 target_link_libraries(objc3c_sema_contracts INTERFACE
   ${OBJC3C_SEMA_PUBLIC_DEPS}
 )
 target_sources(objc3c_sema_contracts INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_concurrency_symbol_graph_summaries.h
-  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_linkage_summaries.h
-  ${CMAKE_CURRENT_LIST_DIR}/model/frontend_type_source_closure.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_handoff_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_handoff_scaffold.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_canonical_literal_contract.h
