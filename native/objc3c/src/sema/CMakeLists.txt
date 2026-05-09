@@ -8,6 +8,7 @@ add_library(objc3c_sema STATIC
   objc3_sema_diagnostics_bus.cpp
   objc3_sema_pass_block_equivalence.cpp
   objc3_sema_pass_flow_scaffold.cpp
+  objc3_sema_type_summary_equivalence.cpp
   objc3_semantic_pass_helpers.cpp
   objc3_semantic_symbol_lookup.cpp
   objc3_semantic_type_factory.cpp
