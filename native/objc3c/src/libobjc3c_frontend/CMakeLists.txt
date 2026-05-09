@@ -14,19 +14,35 @@ add_library(objc3c_frontend STATIC
   frontend_compile_entrypoints.cpp
   frontend_compile_pipeline.cpp
   frontend_conformance_artifacts.cpp
+  frontend_ir_artifact_publication.cpp
   frontend_ir_object_emission.cpp
+  frontend_ir_object_status.cpp
+  frontend_runtime_registration_artifact_inputs.cpp
+  frontend_runtime_registration_descriptor_inputs.cpp
+  frontend_runtime_registration_manifest_inputs.cpp
   frontend_stage_finalization.cpp
+  frontend_stage_result_population.cpp
   frontend_toolchain_runtime_artifacts.cpp
+  frontend_toolchain_runtime_sidecars.cpp
   objc3c_frontend_abi_surface.cpp
   objc3c_frontend_artifact_plan.cpp
   objc3c_frontend_artifact_publication.cpp
+  objc3c_frontend_artifact_publication_status.cpp
   objc3c_frontend_basic_artifacts.cpp
   objc3c_frontend_compile_contract.cpp
+  objc3c_frontend_diagnostic_json.cpp
   objc3c_frontend_context_state.cpp
   objc3c_frontend_core_artifacts.cpp
   objc3c_frontend_diagnostics.cpp
   objc3c_frontend_file_output.cpp
+  objc3c_frontend_option_borrowing.cpp
+  objc3c_frontend_option_resolution.cpp
+  objc3c_frontend_option_validation.cpp
+  objc3c_frontend_owned_string_storage.cpp
+  objc3c_frontend_pipeline_options.cpp
   objc3c_frontend_result_accessors.cpp
+  objc3c_frontend_result_error_accessors.cpp
+  objc3c_frontend_result_lifecycle.cpp
   objc3c_frontend_result_ownership.cpp
   objc3c_frontend_runtime_artifacts.cpp
   objc3c_frontend_string_api.cpp

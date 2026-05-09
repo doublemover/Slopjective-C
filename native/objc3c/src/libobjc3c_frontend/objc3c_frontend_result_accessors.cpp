@@ -1,16 +1,5 @@
 #include "libobjc3c_frontend/objc3c_frontend_result.h"
 
-#include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
-
-extern "C" OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
-    objc3c_frontend_compile_result_t *result) {
-  if (result == nullptr) {
-    return;
-  }
-  objc3c::frontend::ReleaseCompileResultOwnedStrings(result);
-  *result = {};
-}
-
 extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
 objc3c_frontend_result_artifact_path(
     const objc3c_frontend_compile_result_t *result,
@@ -49,17 +38,4 @@ extern "C" OBJC3C_FRONTEND_API uint8_t objc3c_frontend_result_has_artifact(
   const objc3c_frontend_string_view_t view =
       objc3c_frontend_result_artifact_path_view(result, artifact_kind);
   return view.data != nullptr && view.size != 0u ? 1u : 0u;
-}
-
-extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
-objc3c_frontend_result_error_message(
-    const objc3c_frontend_compile_result_t *result) {
-  return result == nullptr ? nullptr : result->error_message;
-}
-
-extern "C" OBJC3C_FRONTEND_API objc3c_frontend_string_view_t
-objc3c_frontend_result_error_message_view(
-    const objc3c_frontend_compile_result_t *result) {
-  return objc3c_frontend_string_view(
-      objc3c_frontend_result_error_message(result));
 }
