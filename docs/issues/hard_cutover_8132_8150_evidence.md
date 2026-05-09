@@ -30,7 +30,15 @@ Canonical behavior and no-compatibility indexes:
 
 Current branch head covered by the support/evidence closeout map:
 
-- latest source head folded into this docs-only map: `c23bd7931` (`refactor(ir): extract runtime method list metadata emission`)
+- latest source head folded into this docs-only map: `bdee53836` (`HC extract final readiness advanced keys`)
+- prior covered source head: `605f0da0e` (`HC split retired surface matrix owners`)
+- prior covered source head: `8a07c3be5` (`HC extract frontend artifact function manifest builder`)
+- prior covered source head: `ce773db3b` (`refactor(ir): extract runtime object metadata emission`)
+- prior covered source head: `0a08675a4` (`HC extract frontend artifact metadata mode gate`)
+- prior covered source head: `e4c33ba87` (`HC split generated boundary provenance owners`)
+- prior covered source head: `c38a808a1` (`HC extract final readiness gate implementation surface`)
+- prior covered source head: `ed9da896f` (`HC extract parser sema contract readiness builders`)
+- prior covered source head: `c23bd7931` (`refactor(ir): extract runtime method list metadata emission`)
 - prior covered source head: `d51b5697b` (`HC extract type system source closure helpers`)
 - prior covered source head: `c5b0c6fc3` (`HC split native execution metadata behavior owners`)
 - prior covered source head: `47c0219d3` (`HC extract sema dispatch runtime ARC parity validator`)
@@ -582,6 +590,29 @@ Post-`4fddfacb7` local owner refresh:
 - IR runtime method list metadata emission ownership refreshes local IR,
   runtime metadata, and deep handoff evidence for `#8137`, `#8143`, `#8147`,
   and `#8150`.
+- Parser sema contract readiness builder ownership refreshes local parser,
+  semantic, frontend type, and deep handoff evidence for `#8134`, `#8135`,
+  `#8146`, `#8147`, and `#8150`.
+- Final readiness gate implementation surface ownership refreshes local
+  pipeline, capability, and deep handoff evidence for `#8138`, `#8145`,
+  `#8147`, and `#8150`.
+- Generated boundary provenance owner splits refresh local fixture,
+  generated-boundary, and capability evidence for `#8144`, `#8145`, and
+  `#8150` without asserting validation.
+- Frontend artifact metadata mode gate ownership refreshes local artifact,
+  frontend, schema, and deep handoff evidence for `#8138`, `#8140`, `#8147`,
+  `#8148`, and `#8150`.
+- IR runtime object metadata emission ownership refreshes local IR, runtime
+  metadata, and deep handoff evidence for `#8137`, `#8143`, `#8147`, and
+  `#8150`.
+- Frontend artifact function manifest builder ownership refreshes local
+  artifact, frontend, schema, and deep handoff evidence for `#8138`, `#8140`,
+  `#8147`, `#8148`, and `#8150`.
+- Retired surface matrix owner splits refresh local strict-error,
+  parser-rejection, fixture, and capability evidence for `#8133`, `#8134`,
+  `#8144`, `#8145`, and `#8150` without asserting validation.
+- Final readiness advanced key ownership refreshes local pipeline, capability,
+  and deep handoff evidence for `#8138`, `#8145`, `#8147`, and `#8150`.
 - Parser inline-asm finalizer, semantic constant evaluator, and runtime dispatch
   entrypoint owners refresh parser, sema, runtime dispatch, and runtime
   acceptance evidence for `#8133`, `#8134`, `#8135`, `#8143`, `#8146`,
@@ -596,7 +627,7 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8144` and `#8150`.
 - Generated replay behavior owner splits refresh local generated-fixture
   ownership evidence for `#8144` and `#8150`.
-- The latest committed source head folded into this docs-only map is `c23bd7931`.
+- The latest committed source head folded into this docs-only map is `bdee53836`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
 These issue rows are local implementation-evidence summaries only. They are not
@@ -623,7 +654,7 @@ claims.
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
 | `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed source refresh through `c23bd7931`. Validation, push, GitHub issue edits, and remote closure remain deferred by current constraints. |
+| `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, and the latest local committed source refresh through `bdee53836`. Validation, push, GitHub issue edits, and remote closure remain deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

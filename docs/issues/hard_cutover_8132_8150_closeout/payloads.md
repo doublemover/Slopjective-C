@@ -23,8 +23,16 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-source head is `c23bd7931` (`refactor(ir): extract runtime method list metadata emission`).
-Prior covered source heads were `d51b5697b` (`HC extract type system source closure helpers`),
+source head is `bdee53836` (`HC extract final readiness advanced keys`).
+Prior covered source heads were `605f0da0e` (`HC split retired surface matrix owners`),
+`8a07c3be5` (`HC extract frontend artifact function manifest builder`),
+`ce773db3b` (`refactor(ir): extract runtime object metadata emission`),
+`0a08675a4` (`HC extract frontend artifact metadata mode gate`),
+`e4c33ba87` (`HC split generated boundary provenance owners`),
+`c38a808a1` (`HC extract final readiness gate implementation surface`),
+`ed9da896f` (`HC extract parser sema contract readiness builders`),
+`c23bd7931` (`refactor(ir): extract runtime method list metadata emission`),
+`d51b5697b` (`HC extract type system source closure helpers`),
 `c5b0c6fc3` (`HC split native execution metadata behavior owners`),
 `47c0219d3` (`HC extract sema dispatch runtime ARC parity validator`),
 `7942235c7` (`HC extract concurrency source closure helpers`),
@@ -289,6 +297,14 @@ commits that landed after the first docs commit.
 | `#8139`, `#8144`, `#8147`, `#8150` | `c5b0c6fc3` | Native execution metadata behavior owner splits refresh local native/fixture/metadata evidence without asserting validation. |
 | `#8138`, `#8140`, `#8146`, `#8147`, `#8150` | `d51b5697b` | Type system source closure helper ownership refreshes local pipeline/frontend type/source-closure evidence. |
 | `#8137`, `#8143`, `#8147`, `#8150` | `c23bd7931` | IR runtime method list metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
+| `#8134`, `#8135`, `#8146`, `#8147`, `#8150` | `ed9da896f` | Parser sema contract readiness builder ownership refreshes local parser/semantic/frontend type/deep handoff evidence. |
+| `#8138`, `#8145`, `#8147`, `#8150` | `c38a808a1` | Final readiness gate implementation surface ownership refreshes local pipeline/capability/deep handoff evidence. |
+| `#8144`, `#8145`, `#8150` | `e4c33ba87` | Generated boundary provenance owner splits refresh local fixture/generated-boundary/capability evidence without asserting validation. |
+| `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `0a08675a4` | Frontend artifact metadata mode gate ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
+| `#8137`, `#8143`, `#8147`, `#8150` | `ce773db3b` | IR runtime object metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
+| `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `8a07c3be5` | Frontend artifact function manifest builder ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
+| `#8133`, `#8134`, `#8144`, `#8145`, `#8150` | `605f0da0e` | Retired surface matrix owner splits refresh local strict-error/parser-rejection/fixture/capability evidence without asserting validation. |
+| `#8138`, `#8145`, `#8147`, `#8150` | `bdee53836` | Final readiness advanced key ownership refreshes local pipeline/capability/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -596,14 +612,14 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`c23bd7931`.
+`bdee53836`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `c23bd7931`.
+`98d10a61c`, and the latest local implementation slices through `bdee53836`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 
