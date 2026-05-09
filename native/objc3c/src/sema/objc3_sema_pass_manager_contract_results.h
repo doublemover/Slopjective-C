@@ -24,6 +24,9 @@
   Objc3SemaUnsafeErrorParityValidationReadinessRecord
       unsafe_error_parity_validation_readiness_record;
   bool deterministic_unsafe_error_parity_validation_readiness_record = false;
+  Objc3SemaControlBindingParityValidationReadinessRecord
+      control_binding_parity_validation_readiness_record;
+  bool deterministic_control_binding_parity_validation_readiness_record = false;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   bool deterministic_parser_sema_docs_runbook_sync = false;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
