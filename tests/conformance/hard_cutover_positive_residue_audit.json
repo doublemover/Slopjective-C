@@ -54,6 +54,12 @@
       "disposition": "not fallback execution support"
     },
     {
+      "path": "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
+      "token": "fallback",
+      "classification": "ordinary local value in unselected static switch behavior",
+      "disposition": "not fallback execution support"
+    },
+    {
       "path": "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
       "token": "fallback",
       "classification": "ordinary optional-flow fallback value in canonical semantics",
