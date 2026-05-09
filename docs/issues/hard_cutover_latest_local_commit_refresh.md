@@ -180,6 +180,33 @@ through `0d2111b18`. It excludes uncommitted worktree edits.
 | `#8149` | Control-plane evidence is refreshed by ecosystem publication and application workflow owners. |
 | `#8150` | Local closeout evidence now also includes the committed post-`0350f4a4a` owner wave through `0d2111b18`; remote closeout remains deferred. |
 
+## Post-`0d2111b18` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `0d2111b18`
+through `2fb0664e0`. It excludes uncommitted worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Runtime dispatch support owners | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `f2c3dc1ea` | Receiver identity, dispatch resolution state, target resolution, method cache/class-chain snapshots, destroy-plan, borrowed-string, and builtin-method owners refresh strict runtime dispatch and public runtime contract evidence. |
+| Parse/lowering readiness key owners | `#8136`, `#8137`, `#8138`, `#8147`, `#8148`, `#8150` | `9b61442c4` | Parse/lowering readiness artifact and diagnostic key owners refresh pipeline, lowering, artifact, and schema evidence. |
+| Bonus tooling workflow owners | `#8138`, `#8142`, `#8149` | `2fb0664e0` | Bonus tooling inspection/template owner splits refresh internal developer-tooling workflow evidence without creating direct helper support. |
+
+## Post-`0d2111b18` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8133` | Runtime dispatch evidence is refreshed by receiver identity and dispatch resolution state/target owners. |
+| `#8136` | Lowering evidence is refreshed by parse/lowering readiness artifact and diagnostic key owners. |
+| `#8137` | IR/deep handoff evidence is refreshed by parse/lowering readiness key owners and runtime dispatch support owners. |
+| `#8138` | Pipeline/artifact evidence is refreshed by parse/lowering readiness keys and bonus tooling workflow owners. |
+| `#8141` | Public runtime/C API evidence is refreshed by borrowed-string and runtime dispatch support owners. |
+| `#8142` | Workflow evidence is refreshed by bonus tooling workflow owner splits. |
+| `#8143` | Runtime acceptance evidence is refreshed by receiver identity, dispatch resolution, method cache/class-chain, and builtin-method owners. |
+| `#8147` | Runtime metadata/deep semantic evidence is refreshed by runtime dispatch support owners and parse/lowering readiness keys. |
+| `#8148` | JSON/schema/artifact evidence is refreshed by parse/lowering readiness artifact and diagnostic keys. |
+| `#8149` | Control-plane evidence is refreshed by bonus tooling workflow owners. |
+| `#8150` | Local closeout evidence now also includes the committed post-`0d2111b18` owner wave through `2fb0664e0`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -229,3 +256,6 @@ This post-`e760e3450` refresh references `c26e133a5`, `f737d848e`,
 
 This post-`0350f4a4a` refresh references `0a2204b59`, `2bee2d918`, and
 `0d2111b18`.
+
+This post-`0d2111b18` refresh references `f2c3dc1ea`, `9b61442c4`, and
+`2fb0664e0`.

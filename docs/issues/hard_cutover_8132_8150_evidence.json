@@ -1114,6 +1114,56 @@
       }
     ]
   },
+  "post_0d211_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "0d2111b18",
+    "through_commit": "2fb0664e0",
+    "commit_count": 3,
+    "count_policy": "counts committed owner/evidence commits after the 0d2111b18 closeout refresh and excludes docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8133",
+          "#8141",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "commits": [
+          "f2c3dc1ea"
+        ],
+        "owner_boundary": "receiver identity, dispatch resolution state/target, method cache/class-chain snapshots, destroy-plan, borrowed-string, and builtin-method owners refresh strict runtime dispatch and public runtime contract evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8137",
+          "#8138",
+          "#8147",
+          "#8148",
+          "#8150"
+        ],
+        "commits": [
+          "9b61442c4"
+        ],
+        "owner_boundary": "parse/lowering readiness artifact and diagnostic key owners refresh lowering, IR/deep handoff, pipeline, artifact, and schema evidence"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8149"
+        ],
+        "commits": [
+          "2fb0664e0"
+        ],
+        "owner_boundary": "bonus tooling inspection/template owners are internal developer tooling workflow evidence and do not create direct helper support"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",
