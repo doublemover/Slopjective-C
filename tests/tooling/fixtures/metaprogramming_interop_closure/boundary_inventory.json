@@ -7,10 +7,11 @@
   "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
   "behavior_owner_split_index": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
   "behavior_boundary": {
-    "primary_axis": "behavior phase before metaprogramming/interop source-owner contract",
-    "support_authority": "metaprogramming and interop closure rows are source, acceptance, package, probe, and provenance evidence only until a behavior owner split claims the phase",
-    "generated_report_rule": "runtime reports, runnable conformance/e2e summaries, package artifacts, runtime-import artifacts, cache snapshots, and generated bridge payloads cannot define canonical support",
-    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public ABI widening, stale acceptance, and report-only evidence is canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before metaprogramming expansion, synthesized artifact, module replay, interop call, FFI metadata, closure/error boundary, source-owner contract, report, package, or workflow",
+    "support_authority": "metaprogramming and interop closure rows are source, acceptance, package, probe, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
+    "generated_report_rule": "runtime reports, runnable conformance/e2e summaries, package artifacts, runtime-import artifacts, module replay rows, FFI metadata rows, closure/error composition rows, cache snapshots, and generated bridge payloads cannot define canonical support",
+    "retired_surface_rule": "compatibility, shim, fallback, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, report-only, and generated-report-only evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "metaprogramming expansion, synthesized artifacts, module replay, interop calls, FFI metadata, closure/error boundaries, runtime acceptance reports, public workflows, generated bridge payloads, package manifests, runtime-import artifacts, and cache snapshots are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
   },
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
@@ -27,9 +28,10 @@
         "lowering",
         "ir",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "metaprogramming claims require semantic, lowering, IR/provenance, and runtime owner assignment; unsupported macro topologies remain fail-closed evidence",
+      "support_boundary": "metaprogramming claims require semantic, lowering, IR, and runtime owner assignment; expansion summaries, synthesized artifacts, module replay, cache snapshots, runtime-import artifacts, and generated reports stay provenance unless the behavior owner claims support; unsupported macro topologies remain fail-closed evidence",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py"
@@ -48,9 +50,10 @@
         "lowering",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "property behavior support requires semantic legality, lowering helper selection, runtime materialization, and packaged evidence; unsupported combinations and storage fallback claims stay rejection evidence",
+      "support_boundary": "property behavior support requires semantic legality, lowering helper selection, runtime materialization, and packaged evidence; synthesized-accessor artifacts, generated materialization reports, module replay rows, and storage reflection metadata are provenance until claimed by a behavior owner; unsupported combinations and storage fallback claims stay rejection evidence",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
       "check_implementation_anchors": [],
       "report_only_allowed": false,
@@ -68,9 +71,10 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "mixed-image and C/C++/Swift bridge compatibility names are narrow packaged-proof provenance until runtime/e2e owners claim support; broader compatibility remains canonical rejection",
+      "support_boundary": "mixed-image and C/C++/Swift bridge compatibility names, interop-call labels, FFI metadata, bridge payloads, and module replay rows are narrow packaged-proof provenance until parser, sema, lowering, IR, runtime, or e2e owners claim support; broader compatibility remains canonical rejection",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_live_interop_runtime.py",
@@ -87,9 +91,10 @@
         "lowering",
         "ir",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "lowering/runtime artifact rows bind host-cache and runtime-import provenance; generated reports and cache snapshots cannot create support",
+      "support_boundary": "lowering/runtime artifact rows bind host-cache, synthesized-artifact, module-replay, and runtime-import provenance; generated reports, cache snapshots, and replay manifests cannot create support",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py"
@@ -107,9 +112,10 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "packaged proof is runtime/e2e evidence only when package artifacts, bridge payloads, and probes stay coupled; report-only or stale acceptance remains rejection/provenance",
+      "support_boundary": "packaged proof is runtime/e2e evidence only when package artifacts, bridge payloads, interop probes, FFI metadata, closure/error composition rows, and module replay stay coupled with canonical behavior owners; report-only, generated-only, or stale acceptance remains rejection/provenance",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_executable_proof_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py"
@@ -210,6 +216,7 @@
     "public runtime ABI widening for macro host execution or package loader helpers",
     "claiming unsupported property-behavior combinations as runtime complete",
     "claiming unsupported foreign loader topologies or unsupported bridge ecosystems as live",
+    "treating generated bridge payloads, runtime-import artifacts, module replay manifests, FFI metadata, closure/error composition summaries, or report-only rows as positive metaprogramming or interop behavior truth",
     "creating shared scaffolding parallel to the shared runtime acceptance and packaged e2e surfaces"
   ],
   "successor_milestones": [

@@ -4,7 +4,7 @@
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
   "interop_policy": "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json",
-  "support_boundary": "metaprogramming and interop rows that mention compatibility, shim, fallback, old-mode, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, report-only, or generated-report-only evidence are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "metaprogramming and interop rows that mention compatibility, shim, fallback, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, generated-only, report-only, generated-report-only, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, or cache-only evidence are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "hard_cutover_source_owner_contract:report_only_allowed=false",
@@ -24,8 +24,23 @@
     "*legacy*",
     "*unsupported*",
     "*report-only*",
+    "*generated-only*",
+    "*generated_report_only*",
+    "*generated-report-only*",
+    "*module-replay*",
+    "*module_replay*",
+    "*ffi-metadata*",
+    "*ffi_metadata*",
+    "*closure-error*",
+    "*closure_error*",
+    "*package-only*",
+    "*package_only*",
+    "*cache-only*",
+    "*cache_only*",
+    "*migration-only*",
+    "*migration_only*",
     "*stale*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported, public-ABI-widening, stale-acceptance, report-only, generated-report-only, and foreign-baseline support claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported, public-ABI-widening, stale-acceptance, generated-only, report-only, generated-report-only, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, cache-only, migration-only, and foreign-baseline support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

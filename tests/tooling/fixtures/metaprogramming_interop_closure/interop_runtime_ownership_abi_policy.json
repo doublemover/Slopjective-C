@@ -7,10 +7,11 @@
   "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
   "behavior_owner_split_index": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
   "compatibility_boundary_policy": {
-    "primary_axis": "behavior owner before interop compatibility label",
-    "support_authority": "mixed-image and C/C++/Swift compatibility rows are narrow packaged-proof provenance unless parser, sema, lowering, IR, runtime, and e2e owners claim behavior",
+    "primary_axis": "behavior owner before interop compatibility label, interop call, FFI metadata, module replay, bridge payload, or closure/error composition row",
+    "support_authority": "mixed-image and C/C++/Swift compatibility rows, interop calls, FFI metadata, bridge payloads, and closure/error composition rows are narrow packaged-proof provenance unless parser, sema, lowering, IR, runtime, and e2e owners claim behavior",
     "positive_support_from_label": false,
-    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public package-loader ABI widening, and broader cross-language semantics map to canonical_rejection or provenance-only evidence"
+    "positive_support_from_metadata": false,
+    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public package-loader ABI widening, FFI-metadata-only, closure-error-summary-only, and broader cross-language semantics map to canonical_rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "canonical_surfaces": [
     "runtime_cross_module_package_interop_source_surface",
@@ -33,7 +34,8 @@
   "claim_narrowing_constraints": [
     "public-runtime-abi-widening-for-package-loader-or-bridge-helpers-remains-out-of-scope",
     "interop-stability-claims-must-stay-narrower-than-the-current-packaged-mixed-image-proof-surface",
-    "ownership-error-and-async-boundary-claims-are-limited-to-guarded-composition-with-existing-runtime-evidence rather than general foreign-boundary completeness"
+    "ownership-error-and-async-boundary-claims-are-limited-to-guarded-composition-with-existing-runtime-evidence rather than general foreign-boundary completeness",
+    "FFI metadata rows, interop-call labels, generated bridge payloads, and closure/error composition summaries are provenance until claimed by canonical behavior owners"
   ],
   "authoritative_interop_case_ids": [
     "cross-module-runtime-package-interop-source-surface",

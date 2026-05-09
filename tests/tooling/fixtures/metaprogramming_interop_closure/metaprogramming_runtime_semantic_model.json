@@ -23,7 +23,8 @@
   "claim_narrowing_constraints": [
     "public claims stay narrower than the private metaprogramming runtime ABI/cache snapshots and runtime-import artifacts",
     "package loading through the public runtime header remains fail-closed until deliberate ABI widening lands",
-    "unsupported macro execution topologies and unsupported property-behavior combinations remain diagnostic-backed and fail-closed"
+    "unsupported macro execution topologies and unsupported property-behavior combinations remain diagnostic-backed and fail-closed",
+    "metaprogramming expansion summaries, synthesized artifacts, module replay, cache snapshots, runtime-import artifacts, and generated reports are provenance until claimed by a canonical behavior owner"
   ],
   "authoritative_case_ids": [
     "metaprogramming-source-surface",
