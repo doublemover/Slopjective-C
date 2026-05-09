@@ -11,6 +11,8 @@ struct Objc3SemaParserHandoffPublication {
   bool owner_record_deterministic = false;
   Objc3ParserSemaHandoffPublicationEvidenceRecord evidence_record;
   bool evidence_record_deterministic = false;
+  Objc3ParserSemaHandoffPublicationTransferRecord transfer_record;
+  bool transfer_record_deterministic = false;
   bool ready = false;
 };
 

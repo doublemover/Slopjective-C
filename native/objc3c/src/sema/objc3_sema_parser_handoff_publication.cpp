@@ -84,6 +84,142 @@ BuildObjc3ParserSemaHandoffPublicationEvidenceRecord(
   return record;
 }
 
+std::size_t Objc3ParserSemaPublicationTransferCount(bool ready) {
+  return ready ? 1u : 0u;
+}
+
+Objc3ParserSemaHandoffPublicationTransferRecord
+BuildObjc3ParserSemaHandoffPublicationTransferRecord(
+    const Objc3ParserSemaHandoffScaffold &handoff,
+    const Objc3ParserSemaHandoffPublicationEvidenceRecord &evidence_record) {
+  Objc3ParserSemaHandoffPublicationTransferRecord record;
+  const Objc3ParserSemaConformanceEvidenceRecord &conformance_evidence =
+      handoff.parser_sema_conformance_evidence_record;
+  const Objc3ParserSemaContractReadinessRecord &contract_readiness =
+      handoff.parser_sema_contract_readiness_record;
+  const bool conformance_evidence_ready =
+      handoff.deterministic_parser_sema_conformance_evidence_record &&
+      IsReadyObjc3ParserSemaConformanceEvidenceRecord(conformance_evidence);
+  const bool contract_readiness_ready =
+      handoff.deterministic_parser_sema_contract_readiness_record &&
+      IsReadyObjc3ParserSemaContractReadinessRecord(contract_readiness);
+  record.stage_input_owner = handoff.owner_record.stage_input_owner;
+  record.parser_sema_contract_handoff_owner =
+      handoff.owner_record.parser_sema_contract_handoff_owner;
+  record.owner_model = handoff.owner_record.owner_model;
+  record.strict_no_fallback = handoff.owner_record.strict_no_fallback;
+  record.strict_no_compatibility =
+      handoff.owner_record.strict_no_compatibility;
+  record.owner_record_ready =
+      IsReadyObjc3ParserSemaHandoffOwnerRecord(handoff.owner_record);
+  record.conformance_matrix_ready =
+      conformance_evidence_ready &&
+      conformance_evidence.conformance_matrix_deterministic;
+  record.conformance_corpus_ready =
+      conformance_evidence_ready &&
+      conformance_evidence.conformance_corpus_deterministic;
+  record.performance_quality_guardrails_ready =
+      contract_readiness_ready &&
+      contract_readiness.performance_quality_guardrails_ready;
+  record.cross_lane_integration_sync_ready =
+      contract_readiness_ready &&
+      contract_readiness.cross_lane_integration_sync_ready;
+  record.docs_runbook_sync_ready =
+      contract_readiness_ready && contract_readiness.docs_runbook_sync_ready;
+  record.release_candidate_replay_ready =
+      contract_readiness_ready &&
+      contract_readiness.release_candidate_replay_dry_run_ready;
+  record.advanced_core_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_core_shard1_ready;
+  record.advanced_contract_rejection_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_contract_rejection_shard1_ready;
+  record.advanced_diagnostics_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_diagnostics_shard1_ready;
+  record.advanced_conformance_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_conformance_shard1_ready;
+  record.advanced_integration_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_integration_shard1_ready;
+  record.advanced_performance_shard1_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_performance_shard1_ready;
+  record.advanced_core_shard2_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_core_shard2_ready;
+  record.advanced_contract_rejection_shard2_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_contract_rejection_shard2_ready;
+  record.advanced_diagnostics_shard2_ready =
+      contract_readiness_ready &&
+      contract_readiness.advanced_diagnostics_shard2_ready;
+  record.integration_closeout_ready =
+      contract_readiness_ready && contract_readiness.integration_closeout_ready;
+  record.scaffold_readiness_ready =
+      handoff.readiness_record_deterministic &&
+      IsReadyObjc3ParserSemaHandoffScaffoldReadinessRecord(
+          handoff.readiness_record) &&
+      handoff.deterministic;
+  record.evidence_record_ready =
+      IsReadyObjc3ParserSemaHandoffPublicationEvidenceRecord(evidence_record);
+  record.passed_transfer_count =
+      Objc3ParserSemaPublicationTransferCount(record.owner_record_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.conformance_matrix_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.conformance_corpus_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.performance_quality_guardrails_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.cross_lane_integration_sync_ready) +
+      Objc3ParserSemaPublicationTransferCount(record.docs_runbook_sync_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.release_candidate_replay_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_core_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_contract_rejection_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_diagnostics_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_conformance_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_integration_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_performance_shard1_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_core_shard2_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_contract_rejection_shard2_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.advanced_diagnostics_shard2_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.integration_closeout_ready) +
+      Objc3ParserSemaPublicationTransferCount(
+          record.scaffold_readiness_ready) +
+      Objc3ParserSemaPublicationTransferCount(record.evidence_record_ready);
+  record.failed_transfer_count =
+      record.required_transfer_count >= record.passed_transfer_count
+          ? (record.required_transfer_count - record.passed_transfer_count)
+          : record.required_transfer_count;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(record.handoff_publication_transfer_owner) &&
+      Objc3SemaOwnerIsExplicit(record.handoff_publication_evidence_owner) &&
+      Objc3SemaOwnerIsExplicit(record.handoff_scaffold_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parser_sema_contract_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.required_transfer_count == 19u &&
+      record.passed_transfer_count == record.required_transfer_count &&
+      record.failed_transfer_count == 0u;
+  return record;
+}
+
 }  // namespace
 
 Objc3SemaParserHandoffPublication PublishObjc3ParserSemaHandoff(
@@ -92,155 +228,111 @@ Objc3SemaParserHandoffPublication PublishObjc3ParserSemaHandoff(
   Objc3SemaParserHandoffPublication publication;
 
   publication.owner_record = handoff.owner_record;
+  publication.evidence_record =
+      BuildObjc3ParserSemaHandoffPublicationEvidenceRecord(handoff);
+  publication.transfer_record =
+      BuildObjc3ParserSemaHandoffPublicationTransferRecord(
+          handoff, publication.evidence_record);
   publication.owner_record_deterministic =
-      IsReadyObjc3ParserSemaHandoffOwnerRecord(handoff.owner_record);
+      publication.transfer_record.owner_record_ready;
+  publication.evidence_record_deterministic =
+      publication.transfer_record.evidence_record_ready;
+  publication.transfer_record_deterministic =
+      IsReadyObjc3ParserSemaHandoffPublicationTransferRecord(
+          publication.transfer_record);
+
   result.parser_sema_handoff_owner_record = handoff.owner_record;
   result.deterministic_parser_sema_handoff_owner_record =
       publication.owner_record_deterministic;
-  if (!result.deterministic_parser_sema_handoff_owner_record) {
-    return publication;
-  }
-
   result.parser_contract_snapshot = handoff.parser_contract_snapshot;
+
   result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;
   result.deterministic_parser_sema_conformance_matrix =
-      handoff.parser_sema_conformance_matrix.deterministic;
-  if (!result.deterministic_parser_sema_conformance_matrix) {
-    return publication;
-  }
+      publication.transfer_record.conformance_matrix_ready;
 
   result.parser_sema_conformance_corpus = handoff.parser_sema_conformance_corpus;
   result.deterministic_parser_sema_conformance_corpus =
-      handoff.parser_sema_conformance_corpus.deterministic;
-  if (!result.deterministic_parser_sema_conformance_corpus) {
-    return publication;
-  }
+      publication.transfer_record.conformance_corpus_ready;
 
   result.parser_sema_performance_quality_guardrails =
       handoff.parser_sema_performance_quality_guardrails;
   result.deterministic_parser_sema_performance_quality_guardrails =
-      handoff.parser_sema_performance_quality_guardrails.deterministic;
-  if (!result.deterministic_parser_sema_performance_quality_guardrails) {
-    return publication;
-  }
+      publication.transfer_record.performance_quality_guardrails_ready;
 
   result.parser_sema_cross_lane_integration_sync =
       handoff.parser_sema_cross_lane_integration_sync;
   result.deterministic_parser_sema_cross_lane_integration_sync =
-      handoff.parser_sema_cross_lane_integration_sync.deterministic;
-  if (!result.deterministic_parser_sema_cross_lane_integration_sync) {
-    return publication;
-  }
+      publication.transfer_record.cross_lane_integration_sync_ready;
 
   result.parser_sema_docs_runbook_sync = handoff.parser_sema_docs_runbook_sync;
   result.deterministic_parser_sema_docs_runbook_sync =
-      handoff.parser_sema_docs_runbook_sync.deterministic;
-  if (!result.deterministic_parser_sema_docs_runbook_sync) {
-    return publication;
-  }
+      publication.transfer_record.docs_runbook_sync_ready;
 
   result.parser_sema_release_candidate_replay_dry_run =
       handoff.parser_sema_release_candidate_replay_dry_run;
   result.deterministic_parser_sema_release_candidate_replay_dry_run =
-      handoff.parser_sema_release_candidate_replay_dry_run.deterministic;
-  if (!result.deterministic_parser_sema_release_candidate_replay_dry_run) {
-    return publication;
-  }
+      publication.transfer_record.release_candidate_replay_ready;
 
   result.parser_sema_advanced_core_shard1 =
       handoff.parser_sema_advanced_core_shard1;
   result.deterministic_parser_sema_advanced_core_shard1 =
-      handoff.parser_sema_advanced_core_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_core_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_core_shard1_ready;
 
   result.parser_sema_advanced_contract_rejection_shard1 =
       handoff.parser_sema_advanced_contract_rejection_shard1;
   result.deterministic_parser_sema_advanced_contract_rejection_shard1 =
-      handoff.parser_sema_advanced_contract_rejection_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_contract_rejection_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_contract_rejection_shard1_ready;
 
   result.parser_sema_advanced_diagnostics_shard1 =
       handoff.parser_sema_advanced_diagnostics_shard1;
   result.deterministic_parser_sema_advanced_diagnostics_shard1 =
-      handoff.parser_sema_advanced_diagnostics_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_diagnostics_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_diagnostics_shard1_ready;
 
   result.parser_sema_advanced_conformance_shard1 =
       handoff.parser_sema_advanced_conformance_shard1;
   result.deterministic_parser_sema_advanced_conformance_shard1 =
-      handoff.parser_sema_advanced_conformance_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_conformance_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_conformance_shard1_ready;
 
   result.parser_sema_advanced_integration_shard1 =
       handoff.parser_sema_advanced_integration_shard1;
   result.deterministic_parser_sema_advanced_integration_shard1 =
-      handoff.parser_sema_advanced_integration_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_integration_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_integration_shard1_ready;
 
   result.parser_sema_advanced_performance_shard1 =
       handoff.parser_sema_advanced_performance_shard1;
   result.deterministic_parser_sema_advanced_performance_shard1 =
-      handoff.parser_sema_advanced_performance_shard1.deterministic;
-  if (!result.deterministic_parser_sema_advanced_performance_shard1) {
-    return publication;
-  }
+      publication.transfer_record.advanced_performance_shard1_ready;
 
   result.parser_sema_advanced_core_shard2 =
       handoff.parser_sema_advanced_core_shard2;
   result.deterministic_parser_sema_advanced_core_shard2 =
-      handoff.parser_sema_advanced_core_shard2.deterministic;
-  if (!result.deterministic_parser_sema_advanced_core_shard2) {
-    return publication;
-  }
+      publication.transfer_record.advanced_core_shard2_ready;
 
   result.parser_sema_advanced_contract_rejection_shard2 =
       handoff.parser_sema_advanced_contract_rejection_shard2;
   result.deterministic_parser_sema_advanced_contract_rejection_shard2 =
-      handoff.parser_sema_advanced_contract_rejection_shard2.deterministic;
-  if (!result.deterministic_parser_sema_advanced_contract_rejection_shard2) {
-    return publication;
-  }
+      publication.transfer_record.advanced_contract_rejection_shard2_ready;
 
   result.parser_sema_advanced_diagnostics_shard2 =
       handoff.parser_sema_advanced_diagnostics_shard2;
   result.deterministic_parser_sema_advanced_diagnostics_shard2 =
-      handoff.parser_sema_advanced_diagnostics_shard2.deterministic;
-  if (!result.deterministic_parser_sema_advanced_diagnostics_shard2) {
-    return publication;
-  }
+      publication.transfer_record.advanced_diagnostics_shard2_ready;
 
   result.parser_sema_integration_closeout_signoff =
       handoff.parser_sema_integration_closeout_signoff;
   result.deterministic_parser_sema_integration_closeout_signoff =
-      handoff.parser_sema_integration_closeout_signoff.deterministic;
-  if (!result.deterministic_parser_sema_integration_closeout_signoff) {
-    return publication;
-  }
+      publication.transfer_record.integration_closeout_ready;
 
-  result.deterministic_parser_sema_handoff = handoff.deterministic;
-  if (!handoff.deterministic) {
-    return publication;
-  }
-
-  publication.evidence_record =
-      BuildObjc3ParserSemaHandoffPublicationEvidenceRecord(handoff);
-  publication.evidence_record_deterministic =
-      IsReadyObjc3ParserSemaHandoffPublicationEvidenceRecord(
-          publication.evidence_record);
+  result.deterministic_parser_sema_handoff =
+      publication.transfer_record.scaffold_readiness_ready;
   result.parser_sema_handoff_publication_evidence_record =
       publication.evidence_record;
   result.deterministic_parser_sema_handoff_publication_evidence_record =
       publication.evidence_record_deterministic;
-  publication.ready = publication.evidence_record_deterministic;
+  result.parser_sema_handoff_publication_transfer_record =
+      publication.transfer_record;
+  result.deterministic_parser_sema_handoff_publication_transfer_record =
+      publication.transfer_record_deterministic;
+  publication.ready = publication.transfer_record_deterministic;
   return publication;
 }
