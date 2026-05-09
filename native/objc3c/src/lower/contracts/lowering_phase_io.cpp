@@ -13,11 +13,17 @@ Objc3LoweringPhaseInput Objc3BuildLoweringPhaseInput(
   input.module_name = program.module_name;
   input.arc_mode_enabled = arc_mode_enabled;
   input.artifacts = artifacts;
+  input.typed_boundary = Objc3BuildTypedSemaToLoweringBoundary(program);
+  input.runtime_metadata_handoff =
+      Objc3BuildRuntimeMetadataLoweringHandoff(program);
+  input.backend_handoff = Objc3BuildLoweringBackendHandoff(artifacts);
   return input;
 }
 
 bool Objc3LoweringPhaseInputIsReady(const Objc3LoweringPhaseInput &input) {
   return input.program != nullptr && !input.module_name.empty() &&
+         Objc3TypedSemaToLoweringBoundaryIsReady(input.typed_boundary) &&
+         Objc3LoweringBackendHandoffIsReady(input.backend_handoff) &&
          (!input.artifacts.emit_ir || !input.artifacts.ir_relative_path.empty()) &&
          (!input.artifacts.emit_object ||
           !input.artifacts.object_relative_path.empty()) &&
@@ -36,6 +42,13 @@ std::string Objc3LoweringPhaseInputReplayKey(
       << ";program="
       << (input.program == nullptr ? "(none)"
                                    : Objc3ProgramLoweringReplayKey(*input.program))
+      << ";typed_boundary="
+      << Objc3TypedSemaToLoweringBoundaryReplayKey(input.typed_boundary)
+      << ";runtime_metadata="
+      << Objc3RuntimeMetadataLoweringHandoffReplayKey(
+             input.runtime_metadata_handoff)
+      << ";backend_handoff="
+      << Objc3LoweringBackendHandoffReplayKey(input.backend_handoff)
       << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(input.artifacts);
   return out.str();
 }

@@ -1,8 +1,11 @@
 #pragma once
 
 #include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/lowering_backend_handoff.h"
 #include "lower/contracts/lowering_artifact_publication.h"
 #include "lower/contracts/lowering_diagnostics.h"
+#include "lower/contracts/runtime_metadata_handoff.h"
+#include "lower/contracts/typed_sema_lowering_boundary.h"
 
 #include <string>
 #include <vector>
@@ -13,6 +16,9 @@ struct Objc3LoweringPhaseInput {
   std::string module_name;
   bool arc_mode_enabled = false;
   Objc3LoweringArtifactPlan artifacts;
+  Objc3TypedSemaToLoweringBoundary typed_boundary;
+  Objc3RuntimeMetadataLoweringHandoff runtime_metadata_handoff;
+  Objc3LoweringBackendHandoff backend_handoff;
 };
 
 struct Objc3LoweringPhaseOutput {
