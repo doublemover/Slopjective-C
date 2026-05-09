@@ -289,7 +289,38 @@
         "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
         "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
       ],
-      "retired_disposition": "runtime-dispatch fallback lowering remains strict-error or removed-flag rejection evidence"
+      "retired_disposition": "lowering behavior rows are resolved through lowering-family owner splits before any lowering fixture is cited; canonical lowering positives remain hand-authored lowering fixtures, strict-error and removed runtime-dispatch fallback rows remain rejection/linkage evidence, and old-mode, shim, fallback, generated-only, report-only, or migration-only lowering claims remain rejection or provenance-only rather than positive behavior truth"
+    },
+    {
+      "family": "lowering_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/lowering/behavior_owner_splits",
+      "acceptance_area": "lowering_and_ir",
+      "owning_issues": [
+        "#8136",
+        "#8137",
+        "#8144",
+        "#8147"
+      ],
+      "owned_boundaries": [
+        "lowering",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "parser",
+        "sema",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "index_evidence": [
+        "tests/native/lowering/behavior_owner_splits/index.json",
+        "tests/native/lowering/behavior_owner_splits/lowering.json",
+        "tests/native/lowering/behavior_owner_splits/docs_evidence.json",
+        "tests/native/lowering/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "lowering fixture positives, strict-error/linkage negatives, semantic-to-IR contract pointers, and lowering-family index rows are split into lowering behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only lowering claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "ir_behavior",
@@ -1023,6 +1054,10 @@
     "tests/native/sema/behavior_owner_splits/sema.json",
     "tests/native/sema/behavior_owner_splits/docs_evidence.json",
     "tests/native/sema/behavior_owner_splits/rejection_provenance.json",
+    "tests/native/lowering/behavior_owner_splits/index.json",
+    "tests/native/lowering/behavior_owner_splits/lowering.json",
+    "tests/native/lowering/behavior_owner_splits/docs_evidence.json",
+    "tests/native/lowering/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
