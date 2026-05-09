@@ -36,6 +36,10 @@ from scripts.source_hygiene.patterns_public_legacy import PUBLIC_LEGACY_PATTERNS
 from scripts.source_hygiene.patterns_public_migration import PUBLIC_MIGRATION_PATTERNS
 from scripts.source_hygiene.patterns_public_projection import PUBLIC_PROJECTION_PATTERNS
 from scripts.source_hygiene.patterns_public_shims import PUBLIC_SHIM_PATTERNS
+from scripts.source_hygiene.patterns import (
+    FORBIDDEN_PATTERN_GROUPS,
+    FORBIDDEN_PATTERNS,
+)
 from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS, SOURCE_HYGIENE_ROOTS_CONTRACT_ID
 from scripts.source_hygiene.scanner import build_report, write_reports
 from scripts.source_hygiene.scan_config import SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID
@@ -481,6 +485,30 @@ def test_hard_cutover_policy_data_covers_closure_residue_classes(tmp_path: Path)
     assert {
         pattern["gate_contract"] for pattern in report["forbidden_patterns"]
     } == {HARD_CUTOVER_GATE_ID}
+
+
+def test_hard_cutover_pattern_groups_are_reported_as_owner_contracts(
+    tmp_path: Path,
+) -> None:
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+    report_groups = report["forbidden_pattern_groups"]
+    config_groups = report["scan_config_contract"]["pattern_groups"]
+
+    assert report_groups == config_groups
+    assert len({group.group_id for group in FORBIDDEN_PATTERN_GROUPS}) == len(
+        FORBIDDEN_PATTERN_GROUPS
+    )
+    assert [
+        pattern.pattern_id
+        for group in FORBIDDEN_PATTERN_GROUPS
+        for pattern in group.patterns
+    ] == [pattern.pattern_id for pattern in FORBIDDEN_PATTERNS]
+    assert {
+        group["group_id"]: group["owner_surface"] for group in report_groups
+    } == {
+        group.group_id: group.owner_surface for group in FORBIDDEN_PATTERN_GROUPS
+    }
+    assert all(group["pattern_count"] > 0 for group in report_groups)
 
 
 def test_hard_cutover_report_declares_allowlist_free_contract(tmp_path: Path) -> None:

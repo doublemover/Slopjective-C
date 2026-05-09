@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Iterable, Pattern
 
 from .files import is_excluded
-from .pattern_model import ForbiddenPattern
-from .patterns import FORBIDDEN_PATTERNS
+from .pattern_model import ForbiddenPattern, pattern_group_report_records
+from .patterns import FORBIDDEN_PATTERN_GROUPS, FORBIDDEN_PATTERNS
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
 
 SOURCE_HYGIENE_SCAN_CONFIG_CONTRACT_ID = "source-hygiene-scan-config-v1"
@@ -43,6 +43,7 @@ def scan_config_contract_summary(
         "pattern_owner_surfaces": sorted(
             {pattern.owner_surface for pattern in config.patterns}
         ),
+        "pattern_groups": pattern_group_report_records(FORBIDDEN_PATTERN_GROUPS),
         "path_scope_is_fail_closed": True,
         "compiled_patterns_are_case_insensitive": True,
     }

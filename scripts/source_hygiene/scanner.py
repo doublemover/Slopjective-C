@@ -18,8 +18,8 @@ from .generated_reports import (
     tracked_generated_reports,
 )
 from .guardrails import is_canonical_guardrail_context
-from .pattern_model import ForbiddenPattern
-from .patterns import FORBIDDEN_PATTERNS
+from .pattern_model import ForbiddenPattern, pattern_group_report_records
+from .patterns import FORBIDDEN_PATTERN_GROUPS, FORBIDDEN_PATTERNS
 from .owners import source_hygiene_owner_contract_summary
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
@@ -140,6 +140,9 @@ def build_report(
         "roots_contract": roots_contract_summary(),
         "violation_contract": violation_contract_summary(),
         "blocker_metadata": owner_contract["blocker_metadata"],
+        "forbidden_pattern_groups": pattern_group_report_records(
+            FORBIDDEN_PATTERN_GROUPS
+        ),
         "forbidden_patterns": [asdict(pattern) for pattern in config.patterns],
         "findings": findings,
         "active_findings": findings,
