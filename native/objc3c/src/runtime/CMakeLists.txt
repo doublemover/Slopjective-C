@@ -164,6 +164,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/current_property_weak.cpp
   state/runtime_reset.cpp
   state/runtime_reset.h
+  state/runtime_bootstrap_replay.cpp
+  state/runtime_bootstrap_replay.h
+  state/runtime_live_state_reset.cpp
+  state/runtime_live_state_reset.h
+  state/runtime_reset_policy.cpp
+  state/runtime_reset_policy.h
   state/runtime_state_clear.cpp
   state/runtime_state_clear.h
   state/runtime_state.cpp
@@ -172,6 +178,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_state_store.cpp
   state/runtime_state_store.h
   state/runtime_thread_records.h
+  state/runtime_thread_local_reset.cpp
+  state/runtime_thread_local_reset.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
   storage/instance_storage.cpp
