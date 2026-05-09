@@ -10,6 +10,11 @@ Entries are grouped by behavior owner phase in this order:
 5. runtime
 6. e2e
 
+The same phase grouping is extracted into `phase_splits/*.json` for
+phase-local ownership checks. Those files do not replace `manifest.json`; they
+make the parser, sema, lowering, IR, runtime, and e2e portions of the canonical
+manifest citable without treating the full manifest as one mixed fixture bucket.
+
 The manifest mirrors each fixture sidecar instead of replacing it. A canonical
 positive must have no diagnostic code or retired-surface tag. A canonical
 rejection or strict-error fixture must declare the stable diagnostic code and,

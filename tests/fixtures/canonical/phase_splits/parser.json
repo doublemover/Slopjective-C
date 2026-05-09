@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "parser",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.parser.canonical-syntax",
+  "positive_support_authority": "tests/native/parser/positive",
+  "negative_support_authority": "tests/native/parser/negative",
+  "fixtures": [
+    {
+      "path": "tests/native/parser/positive/canonical_module_main.objc3",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/positive/objc_property_surface.objc3",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG"
+    }
+  ],
+  "retired_surface_rule": "legacy literal aliases plus removed parser mode and fallback flags are parser rejections"
+}

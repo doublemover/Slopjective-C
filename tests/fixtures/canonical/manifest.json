@@ -24,7 +24,15 @@
     "canonical_rejection_owner": "canonical_rejection",
     "legacy_positive_residue_disposition": "legacy-looking, fallback-looking, shim-looking, unsupported, or compatibility-looking fixture surfaces are canonical rejection candidates until indexed as positives with no diagnostic code and no retired-surface tag",
     "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
-    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "phase_split_indexes": [
+      "tests/fixtures/canonical/phase_splits/parser.json",
+      "tests/fixtures/canonical/phase_splits/sema.json",
+      "tests/fixtures/canonical/phase_splits/lowering.json",
+      "tests/fixtures/canonical/phase_splits/ir.json",
+      "tests/fixtures/canonical/phase_splits/runtime.json",
+      "tests/fixtures/canonical/phase_splits/e2e.json"
+    ]
   },
   "support_claims": [
     {

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "e2e",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.e2e.runnable-smoke",
+  "positive_support_authority": "tests/native/e2e/{smoke,feature_matrix}",
+  "negative_support_authority": "tests/native/e2e/negative_execution",
+  "fixtures": [
+    {
+      "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "behavior_family": "smoke",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/nil_keyword_message_send_elision.objc3",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    }
+  ],
+  "retired_surface_rule": "legacy literals and runtime dispatch misses stay negative or strict-error execution evidence"
+}
