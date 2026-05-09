@@ -3906,8 +3906,9 @@ std::string BuildToolingMigrationCanonicalizationSourceCompletionReplayKey(
   out << "compat=" << summary.language_profile
       << ";canonical-rejection-diagnostics="
       << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
-      << ";legacy=" << summary.legacy_yes_sites << ":" << summary.legacy_no_sites
-      << ":" << summary.legacy_null_sites << ":" << summary.legacy_total_sites
+      << ";canonical-literal-rejections=" << summary.legacy_yes_sites << ":"
+      << summary.legacy_no_sites << ":" << summary.legacy_null_sites << ":"
+      << summary.legacy_total_sites
       << ";canonical=" << summary.canonical_true_rewrite_sites << ":"
       << summary.canonical_false_rewrite_sites << ":"
       << summary.canonical_nil_rewrite_sites
@@ -5838,7 +5839,8 @@ BuildInteropCppSwiftInteropAnnotationSourceCompletionSummary(
 
 Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
 BuildToolingDiagnosticsMigratorSourceInventorySummary(
-    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendCanonicalLiteralRejectionCounts
+        &canonical_literal_rejection_counts,
     const Objc3FrontendErrorHandlingErrorSourceClosureSummary &error_handling_summary,
     const Objc3FrontendConcurrencyAsyncSourceClosureSummary &concurrency_async_summary,
     const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
@@ -5973,7 +5975,8 @@ BuildToolingDiagnosticsMigratorSourceInventorySummary(
       summary.metaprogramming_surface_sites + summary.interop_surface_sites;
   summary.fixit_surface_sites = summary.diagnostic_surface_sites;
   summary.migrator_surface_sites = summary.diagnostic_surface_sites;
-  summary.canonicalization_hint_sites = migration_hints.legacy_total();
+  summary.canonicalization_hint_sites =
+      canonical_literal_rejection_counts.total_literal_sites();
 
   const bool dependencies_ready =
       error_handling_summary.ready_for_semantic_expansion &&
@@ -6008,15 +6011,20 @@ BuildToolingDiagnosticsMigratorSourceInventorySummary(
 Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
 BuildToolingMigrationCanonicalizationSourceCompletionSummary(
     const Objc3FrontendOptions &options,
-    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendCanonicalLiteralRejectionCounts
+        &canonical_literal_rejection_counts,
     const Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
         &inventory_summary) {
   Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary summary;
   summary.language_profile = "canonical";
-  summary.legacy_yes_sites = migration_hints.legacy_yes_count;
-  summary.legacy_no_sites = migration_hints.legacy_no_count;
-  summary.legacy_null_sites = migration_hints.legacy_null_count;
-  summary.legacy_total_sites = migration_hints.legacy_total();
+  summary.legacy_yes_sites =
+      canonical_literal_rejection_counts.yes_literal_sites;
+  summary.legacy_no_sites =
+      canonical_literal_rejection_counts.no_literal_sites;
+  summary.legacy_null_sites =
+      canonical_literal_rejection_counts.null_literal_sites;
+  summary.legacy_total_sites =
+      canonical_literal_rejection_counts.total_literal_sites();
   summary.canonical_true_rewrite_sites = summary.legacy_yes_sites;
   summary.canonical_false_rewrite_sites = summary.legacy_no_sites;
   summary.canonical_nil_rewrite_sites = summary.legacy_null_sites;
@@ -6328,7 +6336,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.tooling_diagnostics_migrator_source_inventory_summary =
       BuildToolingDiagnosticsMigratorSourceInventorySummary(
-          result.migration_hints, result.error_handling_error_source_closure_summary,
+          result.canonical_literal_rejection_counts,
+          result.error_handling_error_source_closure_summary,
           result.concurrency_async_source_closure_summary,
           result.concurrency_actor_member_isolation_source_closure_summary,
           result.concurrency_task_group_cancellation_source_closure_summary,
@@ -6344,7 +6353,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.interop_cpp_swift_interop_annotation_source_completion_summary);
   result.tooling_migration_canonicalization_source_completion_summary =
       BuildToolingMigrationCanonicalizationSourceCompletionSummary(
-          options, result.migration_hints,
+          options, result.canonical_literal_rejection_counts,
           result.tooling_diagnostics_migrator_source_inventory_summary);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),

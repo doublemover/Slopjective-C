@@ -76,14 +76,18 @@ inline const char *Objc3TypedSemaToLoweringLanguageProfileName(
 
 inline std::string BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(
     const Objc3FrontendOptions &options,
-    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendCanonicalLiteralRejectionCounts
+        &canonical_literal_rejection_counts,
     const Objc3FrontendLanguageVersionPragmaContract &pragma_contract,
     bool compatibility_handoff_consistent) {
   return "language_profile=" +
          std::string(Objc3TypedSemaToLoweringLanguageProfileName(options.language_profile)) +
-         ";legacy_literals=" + std::to_string(migration_hints.legacy_yes_count) + ":" +
-         std::to_string(migration_hints.legacy_no_count) + ":" +
-         std::to_string(migration_hints.legacy_null_count) +
+         ";canonical_literal_rejections=" +
+         std::to_string(canonical_literal_rejection_counts.yes_literal_sites) +
+         ":" +
+         std::to_string(canonical_literal_rejection_counts.no_literal_sites) +
+         ":" +
+         std::to_string(canonical_literal_rejection_counts.null_literal_sites) +
          ";language_version_pragma=" + (pragma_contract.seen ? "seen" : "none") + ":" +
          std::to_string(pragma_contract.directive_count) + ":" +
          (pragma_contract.duplicate ? "duplicate" : "single") + ":" +

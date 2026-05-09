@@ -962,10 +962,14 @@ std::string BuildToolingMigrationCanonicalizationSourceCompletionSummaryJson(
       << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"canonical_literal_rejection_diagnostics_required\":"
       << (summary.canonical_literal_rejection_diagnostics_required ? "true" : "false")
-      << ",\"legacy_yes_sites\":" << summary.legacy_yes_sites
-      << ",\"legacy_no_sites\":" << summary.legacy_no_sites
-      << ",\"legacy_null_sites\":" << summary.legacy_null_sites
-      << ",\"legacy_total_sites\":" << summary.legacy_total_sites
+      << ",\"canonical_yes_literal_rejection_sites\":"
+      << summary.legacy_yes_sites
+      << ",\"canonical_no_literal_rejection_sites\":"
+      << summary.legacy_no_sites
+      << ",\"canonical_null_literal_rejection_sites\":"
+      << summary.legacy_null_sites
+      << ",\"canonical_literal_rejection_total_sites\":"
+      << summary.legacy_total_sites
       << ",\"canonical_true_rewrite_sites\":"
       << summary.canonical_true_rewrite_sites
       << ",\"canonical_false_rewrite_sites\":"
@@ -1090,7 +1094,8 @@ std::string BuildToolingLegacyCanonicalMigrationSemanticsReplayKey(
   out << "mode=" << summary.effective_language_profile
       << ";canonical-rejection-diagnostics="
       << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
-      << ";legacy-sites=" << summary.current_run_legacy_literal_sites
+      << ";canonical-literal-rejection-sites="
+      << summary.current_run_legacy_literal_sites
       << ";candidates=" << summary.current_run_canonicalization_candidate_sites
       << ";families=" << summary.fixit_family_count
       << ";fail-closed=" << (summary.fail_closed ? "true" : "false")
@@ -1171,7 +1176,7 @@ std::string BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
       << EscapeJsonString(summary.effective_language_profile)
       << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
       << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
-      << ",\"current_run_legacy_literal_sites\":"
+      << ",\"current_run_canonical_literal_rejection_sites\":"
       << summary.current_run_legacy_literal_sites
       << ",\"current_run_canonicalization_candidate_sites\":"
       << summary.current_run_canonicalization_candidate_sites
@@ -10052,7 +10057,8 @@ std::string BuildToolingFeatureAwareConformanceReportEmissionReplayKey(
       << ";canonical-rejection-diagnostics="
       << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";families=" << summary.fixit_family_count
-      << ";legacy-sites=" << summary.current_run_legacy_literal_sites
+      << ";canonical-literal-rejection-sites="
+      << summary.current_run_canonical_literal_rejection_sites
       << ";ready="
       << (summary.ready_for_runtime_publication ? "true" : "false");
   return out.str();
@@ -10072,7 +10078,7 @@ BuildToolingFeatureAwareConformanceReportEmissionSummary(
       migration_summary.canonical_literal_rejection_diagnostics_enabled;
   summary.fixit_family_ids = fixit_summary.fixit_family_ids;
   summary.fixit_family_count = fixit_summary.fixit_family_count;
-  summary.current_run_legacy_literal_sites =
+  summary.current_run_canonical_literal_rejection_sites =
       migration_summary.current_run_legacy_literal_sites;
   summary.canonical_mode_rejection_code =
       migration_summary.canonical_mode_rejection_code;
@@ -10119,8 +10125,8 @@ std::string BuildToolingFeatureAwareConformanceReportEmissionSummaryJson(
       << ",\"fixit_family_ids\":"
       << BuildStringArrayJson(summary.fixit_family_ids)
       << ",\"fixit_family_count\":" << summary.fixit_family_count
-      << ",\"current_run_legacy_literal_sites\":"
-      << summary.current_run_legacy_literal_sites
+      << ",\"current_run_canonical_literal_rejection_sites\":"
+      << summary.current_run_canonical_literal_rejection_sites
       << ",\"canonical_mode_rejection_code\":\""
       << EscapeJsonString(summary.canonical_mode_rejection_code)
       << "\",\"report_payload_emitted\":"
@@ -17449,10 +17455,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "    \"feature_macro_surface_supported\":false,\n";
   manifest << "    \"feature_claim_truth_surface_contract_id\":\""
            << kObjc3FeatureClaimStrictnessTruthSurfaceContractId << "\",\n";
-  manifest << "    \"migration_hints\":{\"legacy_yes\":" << pipeline_result.migration_hints.legacy_yes_count
-           << ",\"legacy_no\":" << pipeline_result.migration_hints.legacy_no_count << ",\"legacy_null\":"
-           << pipeline_result.migration_hints.legacy_null_count
-           << ",\"legacy_total\":" << pipeline_result.migration_hints.legacy_total() << "},\n";
+  manifest << "    \"canonical_literal_rejection_counts\":{\"yes_literal_sites\":"
+           << pipeline_result.canonical_literal_rejection_counts.yes_literal_sites
+           << ",\"no_literal_sites\":"
+           << pipeline_result.canonical_literal_rejection_counts.no_literal_sites
+           << ",\"null_literal_sites\":"
+           << pipeline_result.canonical_literal_rejection_counts
+                  .null_literal_sites
+           << ",\"total_literal_sites\":"
+           << pipeline_result.canonical_literal_rejection_counts
+                  .total_literal_sites()
+           << "},\n";
   manifest << "    \"language_version_pragma_contract\":{\"seen\":"
            << (pipeline_result.language_version_pragma_contract.seen ? "true" : "false")
            << ",\"directive_count\":" << pipeline_result.language_version_pragma_contract.directive_count
@@ -17994,7 +18007,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_pass_flow_summary.language_profile == Objc3SemaLanguageProfile::Canonical
                    ? "canonical"
                    : "canonical")
-           << "\",\"pass_flow_migration_legacy_literal_total\":"
+           << "\",\"pass_flow_canonical_literal_rejection_total\":"
            << pipeline_result.sema_pass_flow_summary.migration_legacy_literal_total
            << ",\"pass_flow_duplicate_execution_count\":"
            << pipeline_result.sema_pass_flow_summary.duplicate_pass_execution_count
@@ -25028,9 +25041,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           versioned_conformance_report_lowering);
   ir_frontend_metadata.versioned_conformance_report_lowering_replay_key =
       versioned_conformance_report_lowering.replay_key;
-  ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;
-  ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;
-  ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;
+  ir_frontend_metadata.migration_legacy_yes =
+      pipeline_result.canonical_literal_rejection_counts.yes_literal_sites;
+  ir_frontend_metadata.migration_legacy_no =
+      pipeline_result.canonical_literal_rejection_counts.no_literal_sites;
+  ir_frontend_metadata.migration_legacy_null =
+      pipeline_result.canonical_literal_rejection_counts.null_literal_sites;
   ir_frontend_metadata.declared_interfaces = interface_implementation_summary.declared_interfaces;
   ir_frontend_metadata.declared_implementations = interface_implementation_summary.declared_implementations;
   ir_frontend_metadata.resolved_interface_symbols = interface_implementation_summary.resolved_interfaces;

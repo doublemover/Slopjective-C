@@ -110,7 +110,7 @@ struct Objc3ToolingFeatureAwareConformanceReportEmissionSummary {
   bool canonical_literal_rejection_diagnostics_enabled = false;
   std::vector<std::string> fixit_family_ids;
   std::size_t fixit_family_count = 0;
-  std::size_t current_run_legacy_literal_sites = 0;
+  std::size_t current_run_canonical_literal_rejection_sites = 0;
   std::string canonical_mode_rejection_code =
       kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode;
   bool report_payload_emitted = false;

@@ -76,14 +76,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       parser_snapshot.ast_shape_fingerprint ==
           BuildObjc3ParsedProgramAstShapeFingerprint(pipeline_result.program) &&
       parse_artifact_layout_fingerprint_consistent;
-  const std::size_t legacy_literal_total = pipeline_result.migration_hints.legacy_total();
-  const bool migration_hints_consistent =
-      legacy_literal_total ==
-          pipeline_result.migration_hints.legacy_yes_count +
-              pipeline_result.migration_hints.legacy_no_count +
-              pipeline_result.migration_hints.legacy_null_count &&
-      legacy_literal_total <= parser_snapshot.token_count &&
-      legacy_literal_total == 0;
+  const bool canonical_literal_rejection_counts_consistent =
+      IsObjc3FrontendCanonicalLiteralRejectionCountsConsistent(
+          pipeline_result.canonical_literal_rejection_counts,
+          parser_snapshot.token_count);
   const bool language_version_pragma_contract_consistent =
       IsObjc3TypedSemaToLoweringLanguageVersionPragmaContractConsistent(
           pipeline_result.language_version_pragma_contract);
@@ -91,11 +87,11 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       IsObjc3TypedSemaToLoweringLanguageVersionPragmaCoordinateOrderConsistent(
           pipeline_result.language_version_pragma_contract);
   surface.compatibility_handoff_consistent =
-      migration_hints_consistent &&
+      canonical_literal_rejection_counts_consistent &&
       language_version_pragma_contract_consistent;
   surface.compatibility_handoff_key = BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(
       options,
-      pipeline_result.migration_hints,
+      pipeline_result.canonical_literal_rejection_counts,
       pipeline_result.language_version_pragma_contract,
       surface.compatibility_handoff_consistent);
   const std::uint64_t parser_contract_snapshot_fingerprint =

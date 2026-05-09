@@ -110,14 +110,18 @@ inline bool IsObjc3LanguageVersionPragmaCoordinateOrderConsistent(
 
 inline std::string BuildObjc3CompatibilityHandoffKey(
     const Objc3FrontendOptions &options,
-    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendCanonicalLiteralRejectionCounts
+        &canonical_literal_rejection_counts,
     const Objc3FrontendLanguageVersionPragmaContract &pragma_contract,
     bool compatibility_handoff_consistent) {
   return "language_profile=" +
          std::string(Objc3FrontendLanguageProfileName(options.language_profile)) +
-         ";legacy_literals=" + std::to_string(migration_hints.legacy_yes_count) + ":" +
-         std::to_string(migration_hints.legacy_no_count) + ":" +
-         std::to_string(migration_hints.legacy_null_count) +
+         ";canonical_literal_rejections=" +
+         std::to_string(canonical_literal_rejection_counts.yes_literal_sites) +
+         ":" +
+         std::to_string(canonical_literal_rejection_counts.no_literal_sites) +
+         ":" +
+         std::to_string(canonical_literal_rejection_counts.null_literal_sites) +
          ";language_version_pragma=" + (pragma_contract.seen ? "seen" : "none") + ":" +
          std::to_string(pragma_contract.directive_count) + ":" +
          (pragma_contract.duplicate ? "duplicate" : "single") + ":" +
@@ -1860,14 +1864,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.parse_artifact_fingerprint_consistent =
       surface.parser_ast_shape_fingerprint == surface.ast_shape_fingerprint &&
       surface.parse_artifact_layout_fingerprint_consistent;
-  const std::size_t legacy_literal_total = pipeline_result.migration_hints.legacy_total();
-  const bool migration_hints_consistent =
-      legacy_literal_total ==
-          pipeline_result.migration_hints.legacy_yes_count +
-              pipeline_result.migration_hints.legacy_no_count +
-              pipeline_result.migration_hints.legacy_null_count &&
-      legacy_literal_total <= surface.parser_token_count &&
-      legacy_literal_total == 0;
+  const bool canonical_literal_rejection_counts_consistent =
+      IsObjc3FrontendCanonicalLiteralRejectionCountsConsistent(
+          pipeline_result.canonical_literal_rejection_counts,
+          surface.parser_token_count);
   const bool language_version_pragma_contract_consistent =
       IsObjc3LanguageVersionPragmaContractConsistent(
           pipeline_result.language_version_pragma_contract);
@@ -1875,11 +1875,11 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       IsObjc3LanguageVersionPragmaCoordinateOrderConsistent(
           pipeline_result.language_version_pragma_contract);
   surface.compatibility_handoff_consistent =
-      migration_hints_consistent &&
+      canonical_literal_rejection_counts_consistent &&
       language_version_pragma_contract_consistent;
   surface.compatibility_handoff_key = BuildObjc3CompatibilityHandoffKey(
       options,
-      pipeline_result.migration_hints,
+      pipeline_result.canonical_literal_rejection_counts,
       pipeline_result.language_version_pragma_contract,
       surface.compatibility_handoff_consistent);
   const Objc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface

@@ -69,7 +69,8 @@ struct Objc3FrontendPipelineResult {
       lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface;
   Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
       lowering_runtime_stability_core_feature_implementation_surface;
-  Objc3FrontendMigrationHints migration_hints;
+  Objc3FrontendCanonicalLiteralRejectionCounts
+      canonical_literal_rejection_counts;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3FrontendBootstrapRegistrationSourcePragmaContract
       bootstrap_registration_source_pragma_contract;

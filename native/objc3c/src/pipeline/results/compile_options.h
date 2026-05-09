@@ -13,6 +13,7 @@
 #include "lower/objc3_lowering_contract.h"
 #include "parse/objc3_diagnostics_bus.h"
 #include "parse/objc3_parser_contract.h"
+#include "pipeline/results/canonical_literal_rejection_counts.h"
 #include "sema/objc3_sema_contract.h"
 #include "sema/objc3_sema_pass_manager_contract.h"
 #include "token/objc3_token_contract.h"
@@ -40,14 +41,6 @@ struct Objc3FrontendOptions {
   std::string metaprogramming_cache_root_relative_path;
   std::vector<std::string> imported_runtime_surface_paths;
   Objc3LoweringContract lowering;
-};
-
-struct Objc3FrontendMigrationHints {
-  std::size_t legacy_yes_count = 0;
-  std::size_t legacy_no_count = 0;
-  std::size_t legacy_null_count = 0;
-
-  std::size_t legacy_total() const { return legacy_yes_count + legacy_no_count + legacy_null_count; }
 };
 
 struct Objc3FrontendLanguageVersionPragmaContract {
