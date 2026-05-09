@@ -1,0 +1,216 @@
+{
+  "contract_id": "objc3c.performance.governance.owner.contracts.v1",
+  "surface_kind": "performance-benchmark-lab-budget-breach-owner-contracts",
+  "benchmark_source_owners": [
+    {
+      "owner_id": "performance-benchmark-source-owner",
+      "benchmark_source_id": "objc3-showcase-workloads",
+      "source_surface_path": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+      "report_paths": [
+        "tmp/reports/performance/benchmark-summary.json",
+        "tmp/reports/performance/comparative-baselines-summary.json"
+      ],
+      "lab_profile_ids": [
+        "windows-live-toolchain-lab"
+      ],
+      "budget_ids": [
+        "comparative-baseline"
+      ],
+      "action_ids": [
+        "benchmark-performance",
+        "benchmark-comparative-baselines"
+      ],
+      "evidence_contract": "checked-in-workloads-plus-raw-telemetry-packets"
+    },
+    {
+      "owner_id": "compiler-throughput-source-owner",
+      "benchmark_source_id": "compiler-throughput-workloads",
+      "source_surface_path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+      "report_paths": [
+        "tmp/reports/compiler-throughput/benchmark-summary.json",
+        "tmp/reports/compiler-throughput/integration-summary.json"
+      ],
+      "lab_profile_ids": [
+        "windows-live-toolchain-lab"
+      ],
+      "budget_ids": [
+        "compile-throughput"
+      ],
+      "action_ids": [
+        "benchmark-compiler-throughput",
+        "validate-compiler-throughput"
+      ],
+      "evidence_contract": "native-compiler-cache-docs-throughput-with-provenance"
+    },
+    {
+      "owner_id": "runtime-performance-source-owner",
+      "benchmark_source_id": "runtime-hot-path-workloads",
+      "source_surface_path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+      "report_paths": [
+        "tmp/reports/runtime-performance/benchmark-summary.json",
+        "tmp/reports/runtime-performance/integration-summary.json"
+      ],
+      "lab_profile_ids": [
+        "windows-live-toolchain-lab"
+      ],
+      "budget_ids": [
+        "runtime-hot-path"
+      ],
+      "action_ids": [
+        "benchmark-runtime-performance",
+        "validate-runtime-performance"
+      ],
+      "evidence_contract": "runtime-acceptance-probes-plus-hot-path-telemetry"
+    },
+    {
+      "owner_id": "performance-governance-publication-owner",
+      "benchmark_source_id": "performance-governance-publication",
+      "source_surface_path": "tests/tooling/fixtures/performance_governance/source_surface.json",
+      "report_paths": [
+        "tmp/reports/performance-governance/dashboard-summary.json",
+        "tmp/reports/performance-governance/public-summary.json"
+      ],
+      "lab_profile_ids": [
+        "windows-live-toolchain-lab"
+      ],
+      "budget_ids": [
+        "publication-freshness"
+      ],
+      "action_ids": [
+        "build-performance-dashboard",
+        "publish-performance-report"
+      ],
+      "evidence_contract": "policy-derived-publication-from-child-summary-contracts"
+    }
+  ],
+  "lab_owners": [
+    {
+      "lab_profile_id": "windows-live-toolchain-lab",
+      "owner_id": "performance-governance-lab-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/lab_policy.json",
+      "required_machine_profile_fields": [
+        "hostname",
+        "os",
+        "arch",
+        "cpu_model",
+        "cpu_count",
+        "python_version"
+      ],
+      "required_report_roots": [
+        "tmp/reports/performance",
+        "tmp/reports/compiler-throughput",
+        "tmp/reports/runtime-performance"
+      ],
+      "environment_breach_id": "environment-drift"
+    }
+  ],
+  "budget_owners": [
+    {
+      "budget_id": "compile-throughput",
+      "owner_id": "compiler-throughput-budget-owner",
+      "source_summary_path": "tmp/reports/compiler-throughput/benchmark-summary.json",
+      "benchmark_source_owner_id": "compiler-throughput-source-owner",
+      "breach_owner_ids": [
+        "regression-breach-owner",
+        "coverage-gap-breach-owner",
+        "environment-drift-breach-owner",
+        "waiver-breach-owner"
+      ]
+    },
+    {
+      "budget_id": "runtime-hot-path",
+      "owner_id": "runtime-performance-budget-owner",
+      "source_summary_path": "tmp/reports/runtime-performance/benchmark-summary.json",
+      "benchmark_source_owner_id": "runtime-performance-source-owner",
+      "breach_owner_ids": [
+        "regression-breach-owner",
+        "coverage-gap-breach-owner",
+        "environment-drift-breach-owner",
+        "waiver-breach-owner"
+      ]
+    },
+    {
+      "budget_id": "comparative-baseline",
+      "owner_id": "performance-baseline-budget-owner",
+      "source_summary_path": "tmp/reports/performance/comparative-baselines-summary.json",
+      "benchmark_source_owner_id": "performance-benchmark-source-owner",
+      "breach_owner_ids": [
+        "regression-breach-owner",
+        "coverage-gap-breach-owner",
+        "environment-drift-breach-owner",
+        "waiver-breach-owner"
+      ]
+    },
+    {
+      "budget_id": "publication-freshness",
+      "owner_id": "performance-publication-budget-owner",
+      "source_summary_path": "tmp/reports/performance/integration-summary.json",
+      "benchmark_source_owner_id": "performance-governance-publication-owner",
+      "breach_owner_ids": [
+        "coverage-gap-breach-owner",
+        "environment-drift-breach-owner"
+      ]
+    }
+  ],
+  "breach_owners": [
+    {
+      "breach_id": "hard-regression",
+      "owner_id": "regression-breach-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+      "classification": "code-regression",
+      "severity": "blocking"
+    },
+    {
+      "breach_id": "soft-regression",
+      "owner_id": "regression-breach-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+      "classification": "code-regression",
+      "severity": "warning"
+    },
+    {
+      "breach_id": "coverage-gap",
+      "owner_id": "coverage-gap-breach-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+      "classification": "coverage-gap",
+      "severity": "blocking"
+    },
+    {
+      "breach_id": "environment-drift",
+      "owner_id": "environment-drift-breach-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+      "classification": "environment-drift",
+      "severity": "blocking"
+    },
+    {
+      "breach_id": "waived-regression",
+      "owner_id": "waiver-breach-owner",
+      "policy_path": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+      "classification": "code-regression",
+      "severity": "caution"
+    }
+  ],
+  "claim_restrictions": {
+    "forbidden_evidence_classes": [
+      "local-only-performance-evidence",
+      "report-only-performance-evidence",
+      "unsupported-benchmark-claim",
+      "compatibility-fallback-performance-claim",
+      "wrapper-only-action-surface"
+    ],
+    "required_public_claim_inputs": [
+      "checked_in_benchmark_source",
+      "approved_lab_profile",
+      "raw_sample_packets",
+      "budget_id",
+      "breach_id_or_release_ready_status",
+      "owner_id"
+    ]
+  },
+  "explicit_non_goals": [
+    "no local-only performance evidence",
+    "no report-only performance evidence",
+    "no unsupported benchmark claims",
+    "no compatibility or fallback performance claim",
+    "no wrapper-only action surface"
+  ]
+}

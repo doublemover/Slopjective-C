@@ -22,15 +22,29 @@
   },
   "claimability_policy": {
     "allowed_claim_classes": [
-      "local-measurement",
+      "same-machine-raw-sample-measurement",
       "toolchain-comparison",
-      "availability-limited",
-      "non-portable"
+      "availability-limited-with-explicit-reason"
     ],
     "disallowed_claim_classes": [
+      "local-only-performance-evidence",
+      "report-only-performance-evidence",
+      "unsupported-benchmark-claim",
+      "compatibility-fallback-performance-claim",
+      "wrapper-only-action-surface",
       "cross-machine-universal",
       "screenshot-derived",
       "hand-normalized-without-raw-samples"
+    ],
+    "required_claim_inputs": [
+      "checked_in_benchmark_source",
+      "approved_lab_profile",
+      "raw_sample_packets",
+      "machine_profile",
+      "tool_versions",
+      "budget_id",
+      "breach_id_or_release_ready_status",
+      "owner_id"
     ]
   },
   "exact_live_paths_for_downstream_work": [
