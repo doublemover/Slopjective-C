@@ -9,6 +9,18 @@ namespace objc3::artifacts::frontend {
 [[nodiscard]] std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph);
 
+[[nodiscard]] std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
+    const Objc3ExecutableMetadataSemanticConsistencyBoundary &boundary);
+
+[[nodiscard]] std::string BuildExecutableMetadataSemanticValidationSurfaceJson(
+    const Objc3ExecutableMetadataSemanticValidationSurface &surface);
+
+[[nodiscard]] std::string BuildExecutableMetadataLoweringHandoffSurfaceJson(
+    const Objc3ExecutableMetadataLoweringHandoffSurface &surface);
+
+[[nodiscard]] std::string BuildExecutableMetadataTypedLoweringHandoffJson(
+    const Objc3ExecutableMetadataTypedLoweringHandoff &surface);
+
 [[nodiscard]] Objc3RuntimeMetadataSectionAbiFreezeSummary
 BuildRuntimeMetadataSectionAbiFreezeSummary(
     const Objc3RuntimeMetadataSourceOwnershipBoundary
