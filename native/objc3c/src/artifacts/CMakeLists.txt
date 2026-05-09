@@ -150,6 +150,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_runtime_bootstrap_metadata.h
   objc3_frontend_artifact_runtime_metadata_plan.cpp
   objc3_frontend_artifact_runtime_metadata_plan.h
+  objc3_frontend_artifact_runtime_metadata_typed_bundles.cpp
+  objc3_frontend_artifact_runtime_metadata_typed_bundles.h
   objc3_frontend_artifact_runtime_import_plan.cpp
   objc3_frontend_artifact_runtime_import_plan.h
   objc3_frontend_artifact_runtime_registration_plan.cpp
