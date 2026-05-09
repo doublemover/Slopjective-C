@@ -1,11 +1,21 @@
 {
   "schema_version": 1,
+  "boundary": {
+    "kind": "generated-contract-artifacts",
+    "source_of_truth": "generator-output",
+    "allowed_path_roots": [
+      "tests/tooling/fixtures/objc3c"
+    ],
+    "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations"
+  },
   "fixtures": [
     {
       "path": "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
       "origin": "generated",
       "generator": "scripts/build_objc3c_native.ps1",
       "provenance": "frontend contract artifact generation",
+      "boundary": "generated-contract-artifact",
+      "canonical_behavior_source": false,
       "owner": "generated-fixture-provenance"
     },
     {
@@ -13,6 +23,8 @@
       "origin": "generated",
       "generator": "scripts/build_objc3c_native.ps1",
       "provenance": "frontend contract artifact generation",
+      "boundary": "generated-contract-artifact",
+      "canonical_behavior_source": false,
       "owner": "generated-fixture-provenance"
     }
   ]

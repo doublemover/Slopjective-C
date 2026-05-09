@@ -8,8 +8,10 @@ NATIVE_EXE = REPO_ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 CONFORMANCE_FIXTURE = REPO_ROOT / "tests" / "conformance" / "parser" / "TUV-01.json"
 
 
-def test_c_style_top_level_function_fixture_compiles_without_unsupported_statement(tmp_path: Path) -> None:
-    assert NATIVE_EXE.exists(), "native compiler binary must exist before running parser compatibility test"
+def test_canonical_top_level_function_fixture_compiles_without_unsupported_statement(
+    tmp_path: Path,
+) -> None:
+    assert NATIVE_EXE.exists(), "native compiler binary must exist before running parser canonical test"
 
     fixture_payload = json.loads(CONFORMANCE_FIXTURE.read_text(encoding="utf-8"))
     source_text = fixture_payload["source"]
@@ -38,7 +40,7 @@ def test_c_style_top_level_function_fixture_compiles_without_unsupported_stateme
     diagnostics_text = diagnostics_path.read_text(encoding="utf-8") if diagnostics_path.exists() else ""
 
     assert completed.returncode == 0, (
-        "expected parser compatibility path to accept a basic C-style top-level function fixture; "
+        "expected canonical parser path to accept a basic Objective-C 3 top-level function fixture; "
         f"stdout={completed.stdout!r} stderr={completed.stderr!r} diagnostics={diagnostics_text!r}"
     )
     assert "unsupported Objective-C 3 statement" not in diagnostics_text

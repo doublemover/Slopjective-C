@@ -6,6 +6,7 @@
     "negative_fixture_rule": "retired old-mode, shim, fallback, compatibility, and removed feature-toggle behavior must be represented as strict rejection metadata",
     "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes",
     "forbidden_positive_name_tokens": [
+      "legacy",
       "old_mode",
       "shim",
       "fallback",

@@ -83,6 +83,7 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
     generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
     canonical_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "canonical" / "manifest.json")
     generated_entries = load_manifest_fixture_entries(FIXTURE_ROOT / "generated" / "manifest.json")
+    generated_boundary = generated_manifest["boundary"]
 
     canonical_by_path = {entry["path"]: entry for entry in canonical_entries}
     generated_paths = {entry["path"] for entry in generated_entries}
@@ -103,6 +104,11 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
 
     assert canonical_manifest["fixtures"] == canonical_entries
     assert generated_manifest["fixtures"] == generated_entries
+    assert generated_boundary["kind"] == "generated-contract-artifacts"
+    assert generated_boundary["source_of_truth"] == "generator-output"
+    assert generated_boundary["allowed_path_roots"] == ["tests/tooling/fixtures/objc3c"]
+    assert "not canonical behavior expectations" in generated_boundary["hand_edit_policy"]
+    generated_allowed_roots = tuple(ROOT / root for root in generated_boundary["allowed_path_roots"])
 
     for entry in generated_entries:
         path = ROOT / entry["path"]
@@ -110,7 +116,10 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert entry["origin"] == "generated"
         assert entry["generator"]
         assert entry["provenance"]
+        assert entry["boundary"] == "generated-contract-artifact"
+        assert entry["canonical_behavior_source"] is False
         assert not path.is_relative_to(NATIVE_ROOT)
+        assert any(path.is_relative_to(root) for root in generated_allowed_roots)
 
 
 def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixtures() -> None:

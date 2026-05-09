@@ -37,6 +37,24 @@ def test_native_fixture_catalog_tracks_behavior_first_boundaries() -> None:
     assert "fallback execution paths" in unsupported_claims["hard_cutover_rule"]
 
 
+def test_compatibility_named_sources_are_not_positive_contracts() -> None:
+    catalog = _read_json(NATIVE_CATALOG)
+    native_root = ROOT / "tests" / "tooling" / "fixtures" / "native"
+    forbidden_tokens = tuple(catalog["policy"]["forbidden_positive_name_tokens"])
+    rejection_name_markers = ("negative", "rejected", "unsupported")
+
+    offenders = []
+    for source_path in native_root.rglob("*.objc3"):
+        source_name = source_path.name.lower()
+        if not any(token in source_name for token in forbidden_tokens):
+            continue
+        if any(marker in source_name for marker in rejection_name_markers):
+            continue
+        offenders.append(source_path.relative_to(ROOT).as_posix())
+
+    assert offenders == []
+
+
 def test_parser_conformance_manifest_tracks_strict_rejection_cases() -> None:
     manifest = _read_json(PARSER_MANIFEST)
     cases = {case["id"]: case for case in manifest["cases"]}
