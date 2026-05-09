@@ -5,6 +5,7 @@
   "issue": "M327-C001",
   "runbook": "docs/runbooks/objc3c_security_hardening.md",
   "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/owner_contracts.json",
     "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
     "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
     "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
@@ -26,5 +27,10 @@
     "publish_security_advisories_command",
     "validate_security_hardening_command",
     "validate_security_hardening_end_to_end_command"
+  ],
+  "reporting_truth_rules": [
+    "generated reports summarize source-owned security contracts and are never standalone proof",
+    "publication remains blocked when owner-contract evidence is missing",
+    "advisory output must not widen beyond macro provenance, response drill, runtime hardening, and installer/update key owner contracts"
   ]
 }

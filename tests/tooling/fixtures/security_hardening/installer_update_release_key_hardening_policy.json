@@ -11,6 +11,18 @@
     "tests/tooling/fixtures/packaging_channels/installer_policy.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json"
   ],
+  "release_key_owner_contract": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "installer_payload_owner": "security-hardening-installer-update-key",
+    "update_manifest_owner": "security-hardening-installer-update-key",
+    "release_key_policy_owner": "security-hardening-installer-update-key",
+    "trust_publication_owner": "security-hardening-installer-update-key",
+    "remote_key_custody_claim_allowed": false,
+    "automatic_key_rotation_claim_allowed": false,
+    "hosted_revocation_claim_allowed": false,
+    "fallback_update_trust_allowed": false,
+    "trust_bypass_for_unsigned_payload_allowed": false
+  },
   "required_artifacts": [
     "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
@@ -35,6 +47,8 @@
     "no remote key-custody claim",
     "no automatic key-rotation claim",
     "no hosted revocation claim",
-    "no signed-installer trust claim"
+    "no signed-installer trust claim",
+    "no fallback update trust claim",
+    "no trust bypass for unsigned payloads"
   ]
 }

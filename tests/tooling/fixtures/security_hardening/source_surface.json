@@ -11,6 +11,7 @@
   "supply_chain_audit_contract": "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
   "response_drill_contract": "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
   "runtime_hardening_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+  "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
   "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
   "package_bridge": "objc3c",
@@ -36,6 +37,17 @@
       "validate-security-hardening-end-to-end"
     ]
   },
+  "hard_cutover_security_guardrails": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "report_only_security_proof_allowed": false,
+    "generated_report_capability_truth_allowed": false,
+    "local_tabletop_capability_truth_allowed": false,
+    "fallback_claims_allowed": false,
+    "trust_bypass_claims_allowed": false,
+    "wrapper_only_security_actions_allowed": false,
+    "security_positive_claim_requires_source_contract": true,
+    "security_positive_claim_requires_runtime_or_release_evidence": true
+  },
   "checked_in_sources": [
     "docs/runbooks/objc3c_security_hardening.md",
     "schemas/objc3c-security-posture-v1.schema.json",
@@ -48,6 +60,7 @@
     "scripts/check_security_hardening_runtime_hardening.py",
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py",
+    "tests/tooling/fixtures/security_hardening/owner_contracts.json",
     "scripts/objc3c_workflow",
     "scripts/objc3c_workflow/actions/release_governance_security_targets.py",
     "package.json"
@@ -71,6 +84,10 @@
     "no remote key-management service",
     "no signed-installer trust claim",
     "no hostile-host execution safety guarantee",
-    "no second release package or runtime validation lane"
+    "no second release package or runtime validation lane",
+    "no report-only security proof",
+    "no local-only tabletop as capability truth",
+    "no fallback or trust-bypass security claim",
+    "no wrapper-only security action claim"
   ]
 }

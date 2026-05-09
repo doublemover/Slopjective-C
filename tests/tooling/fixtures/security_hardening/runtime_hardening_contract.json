@@ -1,6 +1,18 @@
 {
   "contract_id": "objc3c.security.hardening.runtime.contract.v1",
   "surface_kind": "security-runtime-hardening-contract",
+  "runtime_owner_contract": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "runtime_acceptance_owner": "security-hardening-runtime",
+    "runnable_candidate_owner": "security-hardening-runtime",
+    "conformance_owner": "security-hardening-runtime",
+    "regression_blocker_owner": "security-hardening-blockers",
+    "runtime_claim_requires_acceptance_report": true,
+    "runtime_claim_requires_runnable_candidate_report": true,
+    "runtime_fallback_acceptance_allowed": false,
+    "trust_bypass_for_missing_runtime_case_allowed": false,
+    "wrapper_only_runtime_security_action_allowed": false
+  },
   "required_validate_actions": [
     "test-runtime-acceptance",
     "validate-runnable-release-candidate",
@@ -22,5 +34,11 @@
     "live-unified-concurrency-runtime-implementation",
     "live-metaprogramming-cache-runtime-integration",
     "live-package-loading-interop-runtime-implementation"
+  ],
+  "non_claims": [
+    "no runtime hardening without runnable evidence",
+    "no runtime fallback acceptance",
+    "no trust bypass for a missing runtime case",
+    "no wrapper-only runtime security action"
   ]
 }

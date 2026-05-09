@@ -5,6 +5,7 @@
   "issue": "M327-A001",
   "runbook": "docs/runbooks/objc3c_security_hardening.md",
   "summary_implementation_anchor": "scripts/build_security_hardening_boundary_inventory_summary.py",
+  "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "report_only_allowed": false,
@@ -23,7 +24,10 @@
       ],
       "report_only_allowed": false,
       "fallback_claims_allowed": false,
-      "generated_report_claims_allowed": false
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
     },
     "release_key_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
@@ -32,7 +36,10 @@
       "check_implementation_anchors": [],
       "report_only_allowed": false,
       "fallback_claims_allowed": false,
-      "generated_report_claims_allowed": false
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
     },
     "supply_chain_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
@@ -49,7 +56,10 @@
       ],
       "report_only_allowed": false,
       "fallback_claims_allowed": false,
-      "generated_report_claims_allowed": false
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
     },
     "runtime_hardening_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
@@ -62,7 +72,10 @@
       ],
       "report_only_allowed": false,
       "fallback_claims_allowed": false,
-      "generated_report_claims_allowed": false
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
     }
   },
   "authoritative_code_paths": [
@@ -148,7 +161,11 @@
     "no remote release-key rotation claim",
     "no signed-installer publication claim",
     "no hostile-host execution safety claim",
-    "no external package-signing trust claim"
+    "no external package-signing trust claim",
+    "no report-only security proof",
+    "no local-only tabletop as capability truth",
+    "no fallback or trust-bypass security claim",
+    "no wrapper-only security action claim"
   ],
   "successor_issues": [
     "M327-B001",
