@@ -12,7 +12,8 @@ checked into the repo:
   - source: `docs/objc3c-native/src/*.md`
   - build/check: `npm run objc3c -- build-native-docs` / `npm run objc3c -- check-native-docs`
 - machine-facing operator appendix:
-  - source: `package.json` + `scripts/build_objc3c_public_command_contract.py`
+  - source: `package.json` + `scripts/objc3c_workflow/action_catalog.py` +
+    `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
   - maintainer contract checks:
     - `npm run objc3c -- build-public-command-contract`
@@ -21,8 +22,8 @@ checked into the repo:
 
 Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
 `tmp/artifacts/` as canonical documentation.
-Direct helper paths in this section are implementation anchors for registry
-actions, not an additional public command surface.
+Direct helper paths in this section are implementation anchors for action
+catalog actions, not an additional public command surface.
 
 ## Superclean Working Boundary
 

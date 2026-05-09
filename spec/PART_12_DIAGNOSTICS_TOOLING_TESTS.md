@@ -128,13 +128,14 @@ Implementations shall expose enough information for analyzers to:
 A conforming implementation shall provide a machine-readable conformance report emission surface equivalent to:
 
 - `--emit-objc3-conformance=<path>`
-- `--emit-objc3-conformance-format=json|yaml`
+- `--emit-objc3-conformance-format=json`
 - `--validate-objc3-conformance=<path>`
 
 Compatibility notes:
 
-- JSON output is required.
-- YAML output is optional; if provided, it shall be semantically equivalent to the JSON model in [§12.4.5](#part-12-4-5).
+- JSON output is the only conforming report format in the current surface.
+- YAML and other retired conformance formats are unsupported and must fail
+  closed if requested.
 - Implementations may provide different option spellings, but shall document the mapping to this canonical surface.
 - Validation failure shall return a non-zero exit status and a stable diagnostic code.
 

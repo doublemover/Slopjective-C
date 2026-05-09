@@ -11,8 +11,10 @@ Command and evidence truth is hard-cut to the current surfaces:
 - `package.json` exposes one public bridge: `objc3c`.
 - `npm run objc3c -- <action>` dispatches into the
   `scripts.objc3c_workflow` module.
-- `scripts/objc3c_workflow/registry.py` owns action names and guarantee
-  owners. There is no retired public-script alias table.
+- `scripts/objc3c_workflow/action_catalog.py` owns action names, validation
+  tiers, pass-through behavior, backend descriptions, and guarantee owners.
+  There is no supported workflow-registry facade or retired public-script alias
+  table.
 - Runtime dispatch claims are owned by the strict runtime C API and result
   headers under `native/objc3c/src/runtime/public/`.
 - Shared JSON/schema claims are owned by checked-in schema files and the native
@@ -28,9 +30,9 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Runtime dispatch strict diagnostic          | implemented | `objc3c.behavior.runtime.strict-dispatch-error`    | `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`; `native/objc3c/src/runtime/errors/`       |
 | Runnable smoke path                         | implemented | `objc3c.behavior.e2e.runnable-smoke`               | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                                           |
 | Async and actor runtime closure             | reserved    |                                                    | `docs/spec/concurrency_reserved.md`; `tests/conformance/diagnostics/manifest.json`                             |
-| Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; `native/objc3c/src/{parse,sema,lower,ir,pipeline,artifacts,runtime}/`      |
+| Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; compiler/runtime/pipeline/artifacts/IO owner modules under `native/objc3c/src/` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h` |
-| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/registry.py`; `docs/runbooks/objc3c_public_command_surface.md`       |
+| npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `docs/runbooks/objc3c_public_command_surface.md` |
 | Shared JSON and schema registry helpers     | internal    |                                                    | `docs/support/capability_matrix.schema.json`; `native/objc3c/src/io/json/`; `native/objc3c/src/artifacts/json/` |
 
 State meanings:
@@ -43,8 +45,8 @@ State meanings:
 Command rule:
 
 - Capability docs may advertise `npm run objc3c -- <action>` commands only.
-- Implementation-helper invocations, retired package-script aliases, and
-  success-without-evidence dispatch paths are not support claims.
+- Implementation-helper invocations, retired package-script aliases, registry
+  facades, and success-without-evidence dispatch paths are not support claims.
 - Direct `python`, `pwsh`, CMake, or native helper invocations may appear as
   evidence owners, but public docs must not present them as user-facing command
   surface.

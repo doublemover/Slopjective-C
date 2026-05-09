@@ -18,6 +18,12 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+- split native owner surfaces:
+  - compiler: driver, parser, semantic, lowering, and IR modules
+  - runtime: public C API, state, selectors, images, classes, dispatch,
+    storage, memory, blocks, errors, and concurrency modules
+  - pipeline/artifacts/IO: dispatch classification, frontend artifacts,
+    process execution, and JSON/schema helpers
 - runtime-owned installation and execution path:
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`

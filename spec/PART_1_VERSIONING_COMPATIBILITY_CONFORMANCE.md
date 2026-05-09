@@ -25,7 +25,7 @@ Public command truth lives in `package.json` and
 `scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
 `npm run objc3c -- <action>`; direct helper commands and retired package-script
 aliases are implementation details unless a public workflow document generated
-from the registry lists them through the npm bridge.
+from the action catalog lists them through the npm bridge.
 
 ## 1.2 Language mode selection {#part-1-2}
 
@@ -39,7 +39,8 @@ as supported input.
 In this repository, the public command bridge is intentionally single-script:
 `package.json` exposes `objc3c`, and `npm run objc3c -- <action>` dispatches to
 the `scripts.objc3c_workflow` module. Action names, validation tiers, and
-guarantee owners are registry-owned, not duplicated in per-doc command lists.
+guarantee owners are action-catalog-owned, not duplicated in per-doc command
+lists.
 
 A command-line mechanism equivalent to the following may select Objective-C 3.0
 for toolchains that also host other languages:

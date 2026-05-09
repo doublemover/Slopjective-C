@@ -11,7 +11,7 @@ Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more e
 
 | Area                       | Status           | Notes                                                                                                                            |
 | -------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Native compiler pipeline   | Implemented      | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split native compiler modules. |
+| Native compiler pipeline   | Implemented      | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split compiler/runtime/pipeline/artifacts/IO owner modules. |
 | Runnable language subset   | Implemented      | Functions, control flow, scalar types, and bracket message sends compile and run natively.                                       |
 | Object-model declarations  | Partial          | `@interface`, `@implementation`, `@protocol`, `@category`, and `@property` have meaningful parser/sema/metadata support.         |
 | Runtime metadata emission  | Partial          | Class, protocol, category, property, ivar, selector, and string metadata now emit into object artifacts.                         |
@@ -89,8 +89,9 @@ Implemented in parser, semantic passes, and emitted metadata:
 - object-model legality checks,
 - class, metaclass, protocol, category, property, and ivar descriptor families,
 - registration/bootstrap metadata and related artifact plumbing.
-- split compiler/runtime ownership for lowering, IR, JSON/schema artifacts,
-  dispatch classification, and public runtime C API boundaries.
+- include-sharded native ownership split across compiler, runtime, pipeline,
+  artifacts, and IO modules for lowering, IR, JSON/schema artifacts, dispatch
+  classification, and public runtime C API boundaries.
 
 What is still incomplete is the last step: consuming all of that emitted metadata as a fully live runtime object system.
 

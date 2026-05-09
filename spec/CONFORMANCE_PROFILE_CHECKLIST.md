@@ -454,7 +454,7 @@ M270-E002 runnable actor/isolation closeout note:
 
 A serious conformance claim should ship with:
 
-- a public machine-readable conformance report (JSON required; YAML optional) listing claimed profiles, optional feature sets, versions, and known deviations,
+- a public machine-readable conformance report in JSON listing claimed profiles, optional feature sets, versions, and known deviations,
 - CI proofs that:
   - module interfaces round-trip (emit → import) without semantic loss,
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
@@ -488,7 +488,8 @@ frontend currently accepts and advertises:
 
 That surface must keep the current state explicit:
 
-- language-version / compatibility / canonical rejection selection are live
+- language-version and canonical rejection selection are live
+- retired compatibility selections fail closed and are not support claims
 - strictness / strict-concurrency selection remain unsupported
 - feature-macro claim publication remains unsupported
 
@@ -591,7 +592,7 @@ The native toolchain must also expose explicit operator commands for the
 already-emitted conformance sidecars:
 
 - `--emit-objc3-conformance`
-- `--emit-objc3-conformance-format <json|yaml>`
+- `--emit-objc3-conformance-format <json>`
 - `--validate-objc3-conformance <report.json>`
 
 Current truthful support:
@@ -610,7 +611,7 @@ Current truthful support:
 The lane-E gate for this milestone freezes one integrated truth boundary:
 
 - claimed profile remains `core`
-- compatibility selection remains live
+- retired compatibility selection remains fail-closed
 - canonical rejection remains live
 - strictness and strict concurrency remain fail-closed
 - feature-macro claims remain suppressed
@@ -629,7 +630,8 @@ the shipped surface.
 That closeout matrix must keep the current truth explicit:
 
 - claimed profile remains `core`
-- canonical-only modes remain `canonical|legacy`
+- canonical-only mode remains the only live mode; retired legacy selection
+  remains fail-closed
 - canonical rejection remains live
 - strict, strict-concurrency, and strict-system remain unclaimed and fail
   closed

@@ -100,7 +100,7 @@ and identifier-safe implementation module declarations.
 - `npm run objc3c -- validate-runnable-stdlib-foundation`
 - `npm run objc3c -- package-runnable-toolchain`
 
-Stdlib helper scripts are implementation anchors owned by the action registry,
+Stdlib helper scripts are implementation anchors owned by the action catalog,
 not separate current-facing commands.
 
 ## Public actions

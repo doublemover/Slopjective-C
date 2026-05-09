@@ -151,7 +151,7 @@
       "id": "compiler.architecture.module-decomposition",
       "title": "Native compiler module decomposition",
       "state": "internal",
-      "summary": "The native compiler target graph is decomposed into explicit lexer, parser, semantic, lowering, IR, IO/JSON, pipeline, artifact, runtime, frontend, and driver modules. This is implementation ownership evidence, not a public language behavior claim.",
+      "summary": "The native compiler target graph is decomposed into explicit lexer, parser, semantic, lowering, IR, IO/JSON, pipeline, artifact, runtime, frontend, and driver modules, with include-sharded ownership split across compiler, runtime, pipeline, artifacts, and IO owner surfaces. This is implementation ownership evidence, not a public language behavior claim.",
       "evidence": [
         {
           "kind": "source",
@@ -191,7 +191,7 @@
       "id": "workflow.command.npm-objc3c-bridge",
       "title": "npm objc3c workflow bridge",
       "state": "internal",
-      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names and guarantee owners live in the registry; retired package-script alias surfaces are not support claims.",
+      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, and guarantee owners live in scripts/objc3c_workflow/action_catalog.py; retired registry facades and package-script alias surfaces are not support claims.",
       "evidence": [
         {
           "kind": "source",
@@ -199,7 +199,7 @@
         },
         {
           "kind": "source",
-          "path": "scripts/objc3c_workflow/registry.py"
+          "path": "scripts/objc3c_workflow/action_catalog.py"
         },
         {
           "kind": "doc",

@@ -23,7 +23,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-release-operations`
 - `npm run objc3c -- validate-distribution-credibility`
 
-Implementation helpers under `scripts/` are action-registry anchors for
+Implementation helpers under `scripts/` are action-catalog anchors for
 evidence generation and claim classification. They are not separate public
 commands.
 
@@ -45,7 +45,7 @@ These classes apply to public and internal claim surfaces equally. No release
 note, dashboard, tutorial, showcase, or README statement may imply a wider
 class than the checked-in matrix.
 
-Support classification and public-claim drift are registry-owned evidence
+Support classification and public-claim drift are action-catalog-owned evidence
 steps inside the full-envelope workflow. They validate the checked-in taxonomy,
 reject unsupported claim widening, and emit machine-owned summaries under
 `tmp/`/`reports/` without becoming public commands themselves.

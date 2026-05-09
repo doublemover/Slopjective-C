@@ -22,7 +22,7 @@ Canonical checked-in boundary surfaces:
 - `docs/runbooks/objc3c_package_ecosystem.md`
 - `docs/runbooks/objc3c_application_architecture_testing.md`
 - package bridge: `npm run objc3c -- <action>`
-- action registry: `scripts/objc3c_workflow/registry.py`
+- action catalog: `scripts/objc3c_workflow/action_catalog.py`
 
 Replayable boundary inventory:
 

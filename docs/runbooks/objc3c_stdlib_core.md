@@ -33,7 +33,7 @@ Exact live implementation paths for downstream work:
   - `npm run objc3c -- materialize-stdlib-workspace`
   - `npm run objc3c -- validate-stdlib-foundation`
 
-Stdlib helper scripts are implementation anchors owned by the action registry,
+Stdlib helper scripts are implementation anchors owned by the action catalog,
 not separate current-facing commands.
 
 ## Core family split

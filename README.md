@@ -102,7 +102,7 @@ Use the shortest path that matches what you are trying to do.
 | contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use the mapped package scripts                                          |
 | inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
-| run exact package-script workflows                              | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing                                                     |
+| run exact package-script workflows                              | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                            |
 | evaluate support status and evidence                            | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence before relying on a support claim                                         |
 
 Documentation boundary:
@@ -151,6 +151,8 @@ Explicit non-goals for cleanup work:
 
 - reintroducing milestone-coded command names or sidecar legacy files,
 - documenting Objective-C alias compatibility unless a capability row links live evidence,
+- describing old source modes, registry facades, fallback shims, or direct helper
+  commands as supported public paths,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
 - hand-editing generated outputs instead of their canonical inputs.
 

@@ -139,5 +139,5 @@ it must stay on this boundary.
 - published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
 - published Markdown report: `tmp/artifacts/public-conformance/report/public-conformance-report.md`
 
-Implementation helper paths under `scripts/` are owned by the action registry.
+Implementation helper paths under `scripts/` are owned by the action catalog.
 They are not a separate public reporting command surface.

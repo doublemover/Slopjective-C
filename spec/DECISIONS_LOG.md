@@ -589,7 +589,8 @@ validation sidecar.
 That gate currently permits only:
 
 - claimed profile `core`
-- compatibility selection `canonical|legacy`
+- language-version selection plus canonical rejection
+- retired compatibility selection fails closed
 - canonical rejection selection
 - JSON conformance publication/validation
 
@@ -618,7 +619,8 @@ operator probes.
 That matrix currently permits only:
 
 - claimed profile `core`
-- canonical-only modes `canonical|legacy`
+- canonical-only mode
+- retired legacy selection remains fail-closed
 - canonical rejection
 - JSON conformance emit/validate operations
 - native CLI report/publication/validation evidence
@@ -690,12 +692,13 @@ spec eventually defines.
 
 ---
 
-## D-018: Compatibility selections are live, source-only claims stay downgraded, and strictness stays rejected {#decisions-d-018}
+## D-018: Retired compatibility selections fail closed, source-only claims stay downgraded, and strictness stays rejected {#decisions-d-018}
 
 **Decision:** The native `objc3c` sema layer shall publish one fail-closed
 semantic legality packet that classifies the current frontend truth surface as:
 
 - valid live selections: language version, canonical-only mode, canonical rejection,
+- retired selections: compatibility/legacy mode requests fail closed,
 - downgraded recognized claims: source-only declaration/object-surface features,
 - rejected claim surfaces: strictness, strict concurrency, and feature-macro publication.
 

@@ -92,7 +92,8 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - generator action: `npm run objc3c -- build-site`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
-  - sources: `package.json`, `scripts/build_objc3c_public_command_contract.py`
+  - sources: `package.json`, `scripts/objc3c_workflow/action_catalog.py`,
+    `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
 
 Generated proof and report outputs under `tmp/` are evidence, not canonical
@@ -122,6 +123,8 @@ Explicit non-goals for this fragment tree:
 - Keep these fragments focused on the current live surface.
 - Put historical planning and closeout material under `tmp/archive/`.
 - Avoid milestone-coded sections and issue-era command chains here.
+- Do not reintroduce workflow registry facades, fallback shims, old source
+  modes, or direct helper commands as supported public paths.
 
 ## Contract Validation
 

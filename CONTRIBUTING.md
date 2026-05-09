@@ -83,7 +83,7 @@ publication helpers, also refresh the governance summaries:
 - governance publication metadata: `npm run objc3c -- publish-governance-sustainability`
 
 Direct helper paths under `scripts/` are implementation anchors for the action
-registry. Contributor-facing command examples should route through
+catalog at `scripts/objc3c_workflow/action_catalog.py`. Contributor-facing command examples should route through
 `npm run objc3c -- <action>`.
 
 ## PR Expectations
