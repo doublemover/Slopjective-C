@@ -39,7 +39,9 @@
   "authoritative_code_paths": [
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "scripts/check_objc3c_runtime_acceptance.py"
   ],
   "authoritative_fixture_paths": [

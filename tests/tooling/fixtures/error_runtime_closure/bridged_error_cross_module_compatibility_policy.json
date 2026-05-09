@@ -34,7 +34,7 @@
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge.cpp",
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py"
   ],

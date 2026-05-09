@@ -25,7 +25,7 @@
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py",
     "scripts.objc3c_workflow",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ],
   "authoritative_fixture_paths": [

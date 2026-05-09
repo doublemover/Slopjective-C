@@ -61,7 +61,9 @@
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp"
+    "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",

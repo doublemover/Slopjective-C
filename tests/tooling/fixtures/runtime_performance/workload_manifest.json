@@ -8,7 +8,11 @@
   "runtime_acceptance_report": "tmp/reports/runtime/acceptance/summary.json",
   "runtime_acceptance_script": "scripts/check_objc3c_runtime_acceptance.py",
   "authoritative_runtime_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
+    "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
     "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ],

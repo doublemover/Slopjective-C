@@ -12,7 +12,13 @@
     "compile-coupled-object-model-proof-and-packaged-validation-without-public-abi-widening"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/images/registration_api.cpp",
+    "native/objc3c/src/runtime/selectors/selector_table.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+    "native/objc3c/src/runtime/state/runtime_reset.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/lower/objc3_lowering_contract.h",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
@@ -86,7 +92,8 @@
       "summary": "Aggregate object-model and property reflection are runtime-backed today, but the supported query surface remains private testing API and must stay explicitly fail-closed rather than being overclaimed as public reflection ABI.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp"
       ],
@@ -144,7 +151,15 @@
     {
       "query_id": "runtime-object-model-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/images/registration_api.cpp",
+        "native/objc3c/src/runtime/selectors/selector_table.cpp",
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/state/runtime_reset.cpp"
+      ],
       "patterns": [
         "objc3_runtime_copy_realized_class_graph_state_for_testing",
         "objc3_runtime_copy_realized_class_entry_for_testing",

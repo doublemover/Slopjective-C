@@ -5,7 +5,10 @@
   "runbook": "docs/runbooks/objc3c_runtime_performance.md",
   "runtime_library_paths": [
     "native/objc3c/src/runtime/public/objc3_runtime_api.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/runtime/ARCHITECTURE.md"
   ],

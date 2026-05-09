@@ -20,7 +20,11 @@
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py"
   ],
