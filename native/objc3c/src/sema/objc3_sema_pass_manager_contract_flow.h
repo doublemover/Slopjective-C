@@ -22,12 +22,14 @@ enum class Objc3SemaLanguageProfile : std::uint8_t {
   Canonical = 0,
 };
 
-struct Objc3SemaMigrationHints {
-  std::size_t legacy_yes_count = 0;
-  std::size_t legacy_no_count = 0;
-  std::size_t legacy_null_count = 0;
+struct Objc3SemaCanonicalLiteralRejectionCounts {
+  std::size_t yes_literal_sites = 0;
+  std::size_t no_literal_sites = 0;
+  std::size_t null_literal_sites = 0;
 
-  std::size_t legacy_total() const { return legacy_yes_count + legacy_no_count + legacy_null_count; }
+  std::size_t total_literal_sites() const {
+    return yes_literal_sites + no_literal_sites + null_literal_sites;
+  }
 };
 
 inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder = {
@@ -51,7 +53,7 @@ struct Objc3SemaPassFlowSummary {
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  std::size_t migration_legacy_literal_total = 0;
+  std::size_t canonical_literal_rejection_total_sites = 0;
   std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
   std::size_t executed_pass_count = 0;
   std::size_t duplicate_pass_execution_count = 0;
@@ -154,7 +156,7 @@ struct Objc3SemaPassManagerInput {
   const Objc3ParserContractSnapshot *parser_contract_snapshot = nullptr;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  Objc3SemaMigrationHints migration_hints;
+  Objc3SemaCanonicalLiteralRejectionCounts canonical_literal_rejection_counts;
   Objc3SemaDiagnosticsBus diagnostics_bus;
 };
 

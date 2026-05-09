@@ -426,7 +426,8 @@ struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  Objc3SemaMigrationHints migration_hints;
+  Objc3SemaCanonicalLiteralRejectionCounts
+      canonical_literal_rejection_counts;
   Objc3SemaDiagnosticsBus diagnostics_bus;
   Objc3ParserContractSnapshot parser_contract_snapshot;
   bool parser_contract_compatibility_edge_case_detected = false;
@@ -463,7 +464,8 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.program = input.program;
   scaffold.validation_options = input.validation_options;
   scaffold.language_profile = input.language_profile;
-  scaffold.migration_hints = input.migration_hints;
+  scaffold.canonical_literal_rejection_counts =
+      input.canonical_literal_rejection_counts;
   scaffold.diagnostics_bus = input.diagnostics_bus;
   if (input.program == nullptr) {
     return scaffold;

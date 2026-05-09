@@ -15,8 +15,8 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
   Objc3SemaPassDiagnosticsRun run;
   result.executed = true;
   result.sema_pass_flow_summary.language_profile = input.language_profile;
-  result.sema_pass_flow_summary.migration_legacy_literal_total =
-      input.migration_hints.legacy_total();
+  result.sema_pass_flow_summary.canonical_literal_rejection_total_sites =
+      input.canonical_literal_rejection_counts.total_literal_sites();
 
   bool deterministic_semantic_diagnostics = handoff.deterministic;
   bool diagnostics_canonicalized = true;

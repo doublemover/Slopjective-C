@@ -22,8 +22,9 @@ using TokenKind = Objc3LexTokenKind;
 Objc3Lexer::Objc3Lexer(const std::string &source, const Objc3LexerOptions &options)
     : source_(source), options_(options) {}
 
-const Objc3LexerMigrationHints &Objc3Lexer::MigrationHints() const {
-  return migration_hints_;
+const Objc3LexerCanonicalLiteralRejectionCounts
+    &Objc3Lexer::CanonicalLiteralRejectionCounts() const {
+  return canonical_literal_rejection_counts_;
 }
 
 const Objc3LexerLanguageVersionPragmaContract &Objc3Lexer::LanguageVersionPragmaContract() const {
@@ -179,13 +180,13 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
             ClassifyObjc3RejectedCanonicalLiteral(ident);
         switch (rejected_literal) {
         case Objc3RejectedCanonicalLiteralKind::Yes:
-          ++migration_hints_.legacy_yes_count;
+          ++canonical_literal_rejection_counts_.yes_literal_sites;
           break;
         case Objc3RejectedCanonicalLiteralKind::No:
-          ++migration_hints_.legacy_no_count;
+          ++canonical_literal_rejection_counts_.no_literal_sites;
           break;
         case Objc3RejectedCanonicalLiteralKind::Null:
-          ++migration_hints_.legacy_null_count;
+          ++canonical_literal_rejection_counts_.null_literal_sites;
           break;
         case Objc3RejectedCanonicalLiteralKind::None:
           break;

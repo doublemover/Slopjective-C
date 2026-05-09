@@ -11,7 +11,8 @@ class Objc3Lexer {
   explicit Objc3Lexer(const std::string &source, const Objc3LexerOptions &options = Objc3LexerOptions{});
 
   std::vector<Objc3LexToken> Run(std::vector<std::string> &diagnostics);
-  const Objc3LexerMigrationHints &MigrationHints() const;
+  const Objc3LexerCanonicalLiteralRejectionCounts
+      &CanonicalLiteralRejectionCounts() const;
   const Objc3LexerLanguageVersionPragmaContract &LanguageVersionPragmaContract() const;
   const Objc3LexerBootstrapRegistrationSourceContract &BootstrapRegistrationSourceContract() const;
 
@@ -59,7 +60,8 @@ class Objc3Lexer {
 
   const std::string &source_;
   Objc3LexerOptions options_;
-  Objc3LexerMigrationHints migration_hints_;
+  Objc3LexerCanonicalLiteralRejectionCounts
+      canonical_literal_rejection_counts_;
   Objc3LexerLanguageVersionPragmaContract language_version_pragma_contract_;
   Objc3LexerBootstrapRegistrationSourceContract
       bootstrap_registration_source_contract_;

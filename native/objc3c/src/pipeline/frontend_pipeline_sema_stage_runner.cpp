@@ -37,11 +37,11 @@ Objc3SemaPassManagerResult RunObjc3FrontendSemaStage(
   sema_input.program = &result.program;
   sema_input.validation_options = semantic_options;
   sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
-  sema_input.migration_hints.legacy_yes_count =
+  sema_input.canonical_literal_rejection_counts.yes_literal_sites =
       result.canonical_literal_rejection_counts.yes_literal_sites;
-  sema_input.migration_hints.legacy_no_count =
+  sema_input.canonical_literal_rejection_counts.no_literal_sites =
       result.canonical_literal_rejection_counts.no_literal_sites;
-  sema_input.migration_hints.legacy_null_count =
+  sema_input.canonical_literal_rejection_counts.null_literal_sites =
       result.canonical_literal_rejection_counts.null_literal_sites;
   sema_input.diagnostics_bus.diagnostics =
       &result.stage_diagnostics.semantic;

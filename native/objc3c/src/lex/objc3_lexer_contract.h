@@ -15,12 +15,14 @@ struct Objc3LexerOptions {
   Objc3LexerLanguageProfile language_profile = Objc3LexerLanguageProfile::kCanonical;
 };
 
-struct Objc3LexerMigrationHints {
-  std::size_t legacy_yes_count = 0;
-  std::size_t legacy_no_count = 0;
-  std::size_t legacy_null_count = 0;
+struct Objc3LexerCanonicalLiteralRejectionCounts {
+  std::size_t yes_literal_sites = 0;
+  std::size_t no_literal_sites = 0;
+  std::size_t null_literal_sites = 0;
 
-  std::size_t LegacyLiteralTotal() const { return legacy_yes_count + legacy_no_count + legacy_null_count; }
+  std::size_t total_literal_sites() const {
+    return yes_literal_sites + no_literal_sites + null_literal_sites;
+  }
 };
 
 struct Objc3LexerLanguageVersionPragmaContract {

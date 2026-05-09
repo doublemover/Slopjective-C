@@ -84,7 +84,10 @@ void FinalizeObjc3SemaPassFlowSummary(
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.duplicate_pass_execution_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.missing_pass_execution_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_total));
-  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_legacy_literal_total));
+  fingerprint = fnv1a_mix(
+      fingerprint,
+      static_cast<std::uint64_t>(
+          summary.canonical_literal_rejection_total_sites));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.language_profile));
   for (std::size_t i = 0; i < summary.pass_executed.size(); ++i) {
     fingerprint = fnv1a_mix(fingerprint, summary.pass_executed[i] ? 1ull : 0ull);

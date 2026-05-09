@@ -17,13 +17,14 @@ std::vector<Objc3LexToken> RunObjc3FrontendLexStage(
   std::vector<Objc3LexToken> tokens =
       lexer.Run(result.stage_diagnostics.lexer);
 
-  const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();
+  const Objc3LexerCanonicalLiteralRejectionCounts &lexer_counts =
+      lexer.CanonicalLiteralRejectionCounts();
   result.canonical_literal_rejection_counts.yes_literal_sites =
-      lexer_hints.legacy_yes_count;
+      lexer_counts.yes_literal_sites;
   result.canonical_literal_rejection_counts.no_literal_sites =
-      lexer_hints.legacy_no_count;
+      lexer_counts.no_literal_sites;
   result.canonical_literal_rejection_counts.null_literal_sites =
-      lexer_hints.legacy_null_count;
+      lexer_counts.null_literal_sites;
 
   CopyLanguageVersionPragmaContract(lexer.LanguageVersionPragmaContract(),
                                     result.language_version_pragma_contract);
