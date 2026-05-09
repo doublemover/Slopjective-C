@@ -1,4 +1,4 @@
-#include "support/selectors/selector_spelling.h"
+#include "support/selectors/selector_code_units.h"
 
 namespace objc3c::support::selectors {
 
@@ -14,20 +14,6 @@ bool ContainsSelectorControlCodeUnit(std::string_view selector) {
     }
   }
   return false;
-}
-
-std::size_t CountSelectorArgumentSlots(std::string_view selector) {
-  std::size_t argument_slots = 0u;
-  for (char c : selector) {
-    if (c == ':') {
-      ++argument_slots;
-    }
-  }
-  return argument_slots;
-}
-
-bool IsValidSelectorSpelling(std::string_view selector) {
-  return !selector.empty() && !ContainsSelectorControlCodeUnit(selector);
 }
 
 }  // namespace objc3c::support::selectors

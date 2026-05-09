@@ -90,10 +90,15 @@ add_library(objc3c_support STATIC
   objc3_type_profile_helpers.h
   objc3_value_type_names.cpp
   objc3_value_type_names.h
+  selectors/selector_argument_slots.cpp
+  selectors/selector_argument_slots.h
+  selectors/selector_code_units.cpp
+  selectors/selector_code_units.h
   selectors/selector_normalization.cpp
   selectors/selector_normalization.h
-  selectors/selector_spelling.cpp
   selectors/selector_spelling.h
+  selectors/selector_validation.cpp
+  selectors/selector_validation.h
 )
 objc3c_apply_build_defaults(objc3c_support)
 target_link_libraries(objc3c_support PUBLIC
