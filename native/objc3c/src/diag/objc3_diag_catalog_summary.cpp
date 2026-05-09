@@ -25,18 +25,3 @@ NativeDiagCatalogSummary BuildNativeDiagCatalogSummary() {
   summary.families_unique = summary.family_count == summary.entry_count;
   return summary;
 }
-
-const NativeDiagCodeCatalogEntry *FindNativeDiagCodeCatalogEntryByFamily(
-    char family) {
-  for (const NativeDiagCodeCatalogEntry &entry :
-       NativeDiagCodeCatalogEntries()) {
-    if (entry.family == family) {
-      return &entry;
-    }
-  }
-  return nullptr;
-}
-
-bool NativeDiagCatalogHasFamily(char family) {
-  return FindNativeDiagCodeCatalogEntryByFamily(family) != nullptr;
-}
