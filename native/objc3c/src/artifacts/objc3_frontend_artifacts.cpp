@@ -1,5 +1,7 @@
 #include "artifacts/objc3_frontend_artifacts.h"
 
+#include "artifacts/objc3_runtime_state_publication_paths.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -22704,19 +22706,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "},\n";
-  std::string runtime_state_publication_emit_prefix = "module";
-  if (runtime_translation_unit_registration_manifest
-          .manifest_artifact_relative_path.ends_with(
-              kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix)) {
-    runtime_state_publication_emit_prefix =
-        runtime_translation_unit_registration_manifest
-            .manifest_artifact_relative_path.substr(
-                0,
-                runtime_translation_unit_registration_manifest
-                        .manifest_artifact_relative_path.size() -
-                    std::char_traits<char>::length(
-                        kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix));
-  }
+  const auto runtime_state_publication_paths =
+      objc3::artifacts::frontend::BuildRuntimeStatePublicationPaths(
+          runtime_translation_unit_registration_manifest
+              .manifest_artifact_relative_path);
+  const std::string &runtime_state_publication_emit_prefix =
+      runtime_state_publication_paths.emit_prefix;
   const auto accessor_storage_lowering_metadata_summary =
       BuildAccessorStorageLoweringMetadataSummary(runtime_metadata_source_records);
   const auto executable_accessor_layout_lowering_summary =
