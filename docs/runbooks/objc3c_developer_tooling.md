@@ -226,6 +226,10 @@ coordinates instead of building a shadow symbol index from ad hoc text scans.
 
 ## Language-Server Capability Publication Policy
 
+The canonical policy contract for this surface is:
+
+- `tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json`
+
 Language-server claims must stay narrower than the real shipped capability set.
 
 - supported capability claims may only be published when they can be backed by:

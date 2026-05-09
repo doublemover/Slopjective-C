@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/language_server_capability_fallback_policy.json"
+CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_developer_tooling.md"
 OUT_DIR = ROOT / "tmp/reports/developer-tooling/lsp-policy"
 JSON_OUT = OUT_DIR / "language_server_capability_publication_policy_summary.json"
@@ -24,7 +24,7 @@ def main() -> int:
     code_paths = [ROOT / path for path in contract["authoritative_code_paths"]]
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_lsp_policy_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_developer_tooling_lsp_policy_summary.py",
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "runbook_has_language_server_heading": "## Language-Server Capability Publication Policy" in runbook_text,
         "runbook_mentions_capability_map": "one canonical capability map" in runbook_text,

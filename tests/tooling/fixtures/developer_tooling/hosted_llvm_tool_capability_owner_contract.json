@@ -15,7 +15,7 @@
       "unsupported_claims": [
         "hosted LLVM availability",
         "hosted source parity",
-        "language-server execution fallback"
+        "language-server execution without owned implementation evidence"
       ]
     },
     {
@@ -41,7 +41,7 @@
       "unsupported_claims": [
         "parity success when the hosted route was skipped",
         "local-only source parity as hosted capability proof",
-        "fallback language-server parity"
+        "language-server parity without owned implementation evidence"
       ]
     },
     {
@@ -59,7 +59,7 @@
     }
   ],
   "global_claim_boundaries": [
-    "language-server fallback claims are unpublished until backed by first-class implementation contracts",
+    "unpublished language-server capability claims stay blocked until backed by first-class implementation contracts",
     "hosted execution support is unavailable without a hosted LLVM summary that records object emission",
     "local-only probe summaries are diagnostics and never CI capability truth",
     "workflow actions must publish owner contracts for the capability they expose"

@@ -25,10 +25,10 @@
     "codeAction",
     "statementLevelStepping"
   ],
-  "fallback_policy": {
-    "fallback_claims_supported": false,
+  "unpublished_capability_policy": {
+    "unowned_capability_claims_supported": false,
     "owner": "developer-tooling.language-server.publication",
-    "claim_boundary": "unpublished language-server capabilities must remain explicit gaps instead of fallback support claims"
+    "claim_boundary": "unpublished language-server capabilities must remain explicit gaps until owned implementation and evidence surfaces publish them"
   },
   "evidence_roots": [
     "tmp/reports/objc3c-public-workflow/compile-observability.json",

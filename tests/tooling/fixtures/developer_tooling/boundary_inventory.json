@@ -63,7 +63,7 @@
   "capability_truth_boundaries": [
     "hosted LLVM capability truth requires hosted clang plus llc object-emission summary evidence",
     "local LLVM probe output is diagnostic only and does not prove hosted execution support",
-    "language-server fallback capabilities remain unpublished until implemented by owned action surfaces"
+    "unpublished language-server capabilities remain blocked until implemented by owned action surfaces"
   ],
   "gap_capabilities": [
     "hosted-execution-without-llc-object-emission",
