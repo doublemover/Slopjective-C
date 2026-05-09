@@ -22,6 +22,7 @@
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
+#include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
@@ -116,8 +117,6 @@ using objc3::artifacts::frontend::BuildNSErrorBridgingLoweringContract;
 using objc3::artifacts::frontend::BuildResultLikeLoweringContract;
 using objc3::artifacts::frontend::BuildThrowsPropagationLoweringContract;
 using objc3::artifacts::frontend::BuildUnwindCleanupLoweringContract;
-using objc3::artifacts::frontend::BuildArcDiagnosticsFixitLoweringContract;
-using objc3::artifacts::frontend::BuildAutoreleasePoolScopeLoweringContract;
 using objc3::artifacts::frontend::BuildEffectsOwnershipSemanticModelSummaryJson;
 using objc3::artifacts::frontend::BuildInteropCppInteropInteractionSummaryJson;
 using objc3::artifacts::frontend::
@@ -325,15 +324,12 @@ using objc3::artifacts::frontend::BuildBlockSourceStorageAnnotationContract;
 using objc3::artifacts::frontend::BuildBlockStorageEscapeLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummaryJson;
-using objc3::artifacts::frontend::BuildOwnershipQualifierLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipResourceMoveUseAfterMoveSemanticsSummaryJson;
-using objc3::artifacts::frontend::BuildRetainReleaseOperationLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipSystemExtensionSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
     BuildOwnershipSystemExtensionLoweringContractJson;
-using objc3::artifacts::frontend::BuildWeakUnownedSemanticsLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipBorrowedRetainableAbiCompletionJson;
 using objc3::artifacts::frontend::
@@ -1325,154 +1321,52 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string runtime_dispatch_lowering_abi_replay_key =
       Objc3RuntimeDispatchLoweringAbiReplayKey(
           runtime_dispatch_lowering_abi_contract);
-  const Objc3OwnershipQualifierLoweringContract ownership_qualifier_lowering_contract =
-      BuildOwnershipQualifierLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid ownership-qualifier lowering contract");
+  const Objc3FrontendArtifactOwnershipAwareLoweringPlan
+      ownership_aware_lowering_plan =
+          BuildObjc3FrontendArtifactOwnershipAwareLoweringPlan(
+              pipeline_result, metadata_only_ir_emission_mode);
+  for (const auto &failure :
+       ownership_aware_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string ownership_qualifier_lowering_replay_key =
-      Objc3OwnershipQualifierLoweringReplayKey(ownership_qualifier_lowering_contract);
-  const Objc3RetainReleaseOperationLoweringContract retain_release_operation_lowering_contract =
-      BuildRetainReleaseOperationLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3RetainReleaseOperationLoweringContract(retain_release_operation_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid retain-release operation lowering contract");
-  }
-  const std::string retain_release_operation_lowering_replay_key =
-      Objc3RetainReleaseOperationLoweringReplayKey(retain_release_operation_lowering_contract);
-  const Objc3AutoreleasePoolScopeLoweringContract autoreleasepool_scope_lowering_contract =
-      BuildAutoreleasePoolScopeLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3AutoreleasePoolScopeLoweringContract(autoreleasepool_scope_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid autoreleasepool scope lowering contract");
-  }
-  const std::string autoreleasepool_scope_lowering_replay_key =
-      Objc3AutoreleasePoolScopeLoweringReplayKey(autoreleasepool_scope_lowering_contract);
-  const Objc3WeakUnownedSemanticsLoweringContract weak_unowned_semantics_lowering_contract =
-      BuildWeakUnownedSemanticsLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3WeakUnownedSemanticsLoweringContract(weak_unowned_semantics_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid weak-unowned semantics lowering contract");
-  }
-  const std::string weak_unowned_semantics_lowering_replay_key =
-      Objc3WeakUnownedSemanticsLoweringReplayKey(weak_unowned_semantics_lowering_contract);
-  const Objc3ArcDiagnosticsFixitLoweringContract arc_diagnostics_fixit_lowering_contract =
-      BuildArcDiagnosticsFixitLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3ArcDiagnosticsFixitLoweringContract(arc_diagnostics_fixit_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid ARC diagnostics/fix-it lowering contract");
-  }
-  const std::string arc_diagnostics_fixit_lowering_replay_key =
-      Objc3ArcDiagnosticsFixitLoweringReplayKey(arc_diagnostics_fixit_lowering_contract);
-  const Objc3OwnershipAwareLoweringBehaviorScaffold ownership_aware_lowering_behavior_scaffold =
-      BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
-          ownership_qualifier_lowering_contract,
-          ownership_qualifier_lowering_replay_key,
-          retain_release_operation_lowering_contract,
-          retain_release_operation_lowering_replay_key,
-          autoreleasepool_scope_lowering_contract,
-          autoreleasepool_scope_lowering_replay_key,
-          weak_unowned_semantics_lowering_contract,
-          weak_unowned_semantics_lowering_replay_key,
-          arc_diagnostics_fixit_lowering_contract,
-          arc_diagnostics_fixit_lowering_replay_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .compatibility_handoff_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .language_version_pragma_coordinate_order_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_artifact_edge_case_robustness_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_artifact_replay_key_deterministic,
-          pipeline_result.parse_lowering_readiness_surface.compatibility_handoff_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_artifact_edge_robustness_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_recovery_determinism_hardening_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_recovery_determinism_hardening_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_matrix_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_matrix_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_corpus_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_corpus_case_count,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_corpus_key,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_consistent,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_case_count,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_passed_case_count,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_failed_case_count,
-          pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_key,
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-              .conformance_corpus_ready,
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-              .conformance_corpus_key,
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-              .performance_quality_guardrails_ready,
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-              .performance_quality_guardrails_key);
-  if (!metadata_only_ir_emission_mode) {
-    std::string ownership_aware_lowering_behavior_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_error)) {
-      record_post_pipeline_failure("O3L305",         "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
-              ownership_aware_lowering_behavior_error);
-    }
-    std::string ownership_aware_lowering_behavior_expansion_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_expansion_error)) {
-      record_post_pipeline_failure("O3L310",         "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
-              ownership_aware_lowering_behavior_expansion_error);
-    }
-    std::string ownership_aware_lowering_behavior_edge_case_compatibility_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_edge_case_compatibility_error)) {
-      record_post_pipeline_failure("O3L312",         "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
-              ownership_aware_lowering_behavior_edge_case_compatibility_error);
-    }
-    std::string ownership_aware_lowering_behavior_recovery_determinism_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_recovery_determinism_error)) {
-      record_post_pipeline_failure("O3L318",         "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
-              ownership_aware_lowering_behavior_recovery_determinism_error);
-    }
-    std::string ownership_aware_lowering_behavior_conformance_matrix_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_conformance_matrix_error)) {
-      record_post_pipeline_failure("O3L319",         "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
-              ownership_aware_lowering_behavior_conformance_matrix_error);
-    }
-    std::string ownership_aware_lowering_behavior_conformance_corpus_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_conformance_corpus_error)) {
-      record_post_pipeline_failure("O3L320",         "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
-              ownership_aware_lowering_behavior_conformance_corpus_error);
-    }
-    std::string ownership_aware_lowering_behavior_performance_quality_guardrails_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_performance_quality_guardrails_error)) {
-      record_post_pipeline_failure("O3L328",         "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
-              ownership_aware_lowering_behavior_performance_quality_guardrails_error);
-    }
-    std::string ownership_aware_lowering_behavior_cross_lane_integration_error;
-    if (!IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
-            ownership_aware_lowering_behavior_scaffold,
-            ownership_aware_lowering_behavior_cross_lane_integration_error)) {
-      record_post_pipeline_failure("O3L329",         "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
-              ownership_aware_lowering_behavior_cross_lane_integration_error);
-    }
-  }
+  const Objc3OwnershipQualifierLoweringContract
+      &ownership_qualifier_lowering_contract =
+          ownership_aware_lowering_plan
+              .ownership_qualifier_lowering_contract;
+  const std::string &ownership_qualifier_lowering_replay_key =
+      ownership_aware_lowering_plan.ownership_qualifier_lowering_replay_key;
+  const Objc3RetainReleaseOperationLoweringContract
+      &retain_release_operation_lowering_contract =
+          ownership_aware_lowering_plan
+              .retain_release_operation_lowering_contract;
+  const std::string &retain_release_operation_lowering_replay_key =
+      ownership_aware_lowering_plan
+          .retain_release_operation_lowering_replay_key;
+  const Objc3AutoreleasePoolScopeLoweringContract
+      &autoreleasepool_scope_lowering_contract =
+          ownership_aware_lowering_plan
+              .autoreleasepool_scope_lowering_contract;
+  const std::string &autoreleasepool_scope_lowering_replay_key =
+      ownership_aware_lowering_plan
+          .autoreleasepool_scope_lowering_replay_key;
+  const Objc3WeakUnownedSemanticsLoweringContract
+      &weak_unowned_semantics_lowering_contract =
+          ownership_aware_lowering_plan
+              .weak_unowned_semantics_lowering_contract;
+  const std::string &weak_unowned_semantics_lowering_replay_key =
+      ownership_aware_lowering_plan
+          .weak_unowned_semantics_lowering_replay_key;
+  const Objc3ArcDiagnosticsFixitLoweringContract
+      &arc_diagnostics_fixit_lowering_contract =
+          ownership_aware_lowering_plan
+              .arc_diagnostics_fixit_lowering_contract;
+  const std::string &arc_diagnostics_fixit_lowering_replay_key =
+      ownership_aware_lowering_plan
+          .arc_diagnostics_fixit_lowering_replay_key;
+  const Objc3OwnershipAwareLoweringBehaviorScaffold
+      &ownership_aware_lowering_behavior_scaffold =
+          ownership_aware_lowering_plan
+              .ownership_aware_lowering_behavior_scaffold;
   const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
       BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockLiteralCaptureLoweringContract(block_literal_capture_lowering_contract)) {
