@@ -2,17 +2,7 @@
 
 from __future__ import annotations
 
-
-MARKDOWN_GLOBS = [
-    "README.md",
-    "CONTRIBUTING.md",
-    "docs/**/*.md",
-    "site/**/*.md",
-    "spec/**/*.md",
-    "showcase/**/*.md",
-    "stdlib/**/*.md",
-    "templates/**/*.md",
-]
+from .environment_markdown_globs import MARKDOWN_GLOBS
 
 
 __all__ = ["MARKDOWN_GLOBS"]
