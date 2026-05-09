@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+from .action_catalog_application_stdlib_integrations import (
+    APPLICATION_STDLIB_INTEGRATION_ACTION_SPECS,
+)
+from .action_catalog_application_stdlib_runnable import (
+    APPLICATION_STDLIB_RUNNABLE_ACTION_SPECS,
+)
+from .action_catalog_application_stdlib_workspace import (
+    APPLICATION_STDLIB_WORKSPACE_ACTION_SPECS,
+)
+from .action_catalog_sections import merge_action_catalog_sections
 from .action_spec import ActionSpec
 
-APPLICATION_STDLIB_ACTION_SPECS: dict[str, ActionSpec] = {
-    "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
-    "validate-stdlib-foundation": ActionSpec("validate-stdlib-foundation", "run the integrated stdlib boundary and smoke validation flow", "python:scripts/check_objc3c_stdlib_foundation_integration.py", validation_tier="repo", guarantee_owner="stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow"),
-    "validate-stdlib-advanced": ActionSpec("validate-stdlib-advanced", "run the integrated advanced stdlib helper validation flow", "python:scripts/check_objc3c_stdlib_advanced_integration.py", validation_tier="repo", guarantee_owner="advanced stdlib helper module contracts, profile gates, and shared smoke compilation stay executable on the live public workflow"),
-    "validate-stdlib-program": ActionSpec("validate-stdlib-program", "run the integrated stdlib program docs, showcase, tutorial, and capability-adoption validation flow", "python:scripts/check_objc3c_stdlib_program_integration.py", validation_tier="repo", guarantee_owner="stdlib publish/adoption docs, capability demos, tutorial routing, and stdlib smoke integration stay executable on the live public workflow"),
-    "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
-    "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
-    "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
-}
+APPLICATION_STDLIB_ACTION_SPECS: dict[str, ActionSpec] = merge_action_catalog_sections(
+    APPLICATION_STDLIB_WORKSPACE_ACTION_SPECS,
+    APPLICATION_STDLIB_INTEGRATION_ACTION_SPECS,
+    APPLICATION_STDLIB_RUNNABLE_ACTION_SPECS,
+)
+
+
+__all__ = ["APPLICATION_STDLIB_ACTION_SPECS"]

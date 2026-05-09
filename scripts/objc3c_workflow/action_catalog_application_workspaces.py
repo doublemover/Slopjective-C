@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from .action_catalog_application_architecture import (
+    APPLICATION_ARCHITECTURE_ACTION_SPECS,
+)
+from .action_catalog_application_developer_tooling import (
+    APPLICATION_DEVELOPER_TOOLING_ACTION_SPECS,
+)
+from .action_catalog_application_playground import APPLICATION_PLAYGROUND_ACTION_SPECS
+from .action_catalog_sections import merge_action_catalog_sections
 from .action_spec import ActionSpec
 
-APPLICATION_WORKSPACE_ACTION_SPECS: dict[str, ActionSpec] = {
-    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared evidence-only buckets", pass_through_args=True),
-    "materialize-canonical-application-workspace": ActionSpec("materialize-canonical-application-workspace", "materialize the canonical application workspace from the checked-in showcase and stdlib surfaces", "python:scripts/materialize_objc3c_canonical_application_workspace.py", validation_tier="repo", guarantee_owner="canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts", pass_through_args=True),
-    "validate-application-architecture": ActionSpec("validate-application-architecture", "run the integrated template and canonical application workspace validation flow", "python:scripts/check_objc3c_application_architecture_integration.py", validation_tier="repo", guarantee_owner="template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces"),
-    "validate-runnable-application-architecture": ActionSpec("validate-runnable-application-architecture", "validate packaged canonical application workspace and template surfaces end to end from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_application_architecture_end_to_end.py", validation_tier="full", guarantee_owner="packaged canonical application workspaces and template harness validation stay reproducible from the staged runnable toolchain bundle"),
-    "validate-runnable-developer-tooling": ActionSpec("validate-runnable-developer-tooling", "validate packaged editor, formatter, debug, workspace, and integrated developer-tooling behavior from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_developer_tooling_end_to_end.py", validation_tier="full", guarantee_owner="packaged editor, formatter, debug anchors, workspace drills, and integrated developer-tooling validation stay reproducible from the staged runnable toolchain bundle"),
-}
+APPLICATION_WORKSPACE_ACTION_SPECS: dict[str, ActionSpec] = merge_action_catalog_sections(
+    APPLICATION_PLAYGROUND_ACTION_SPECS,
+    APPLICATION_ARCHITECTURE_ACTION_SPECS,
+    APPLICATION_DEVELOPER_TOOLING_ACTION_SPECS,
+)
+
+
+__all__ = ["APPLICATION_WORKSPACE_ACTION_SPECS"]
