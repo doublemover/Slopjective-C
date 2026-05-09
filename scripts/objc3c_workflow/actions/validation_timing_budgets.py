@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 
-from .validation_timing_reports import safe_float
+from .validation_timing_numbers import safe_float
 
 
 def validation_speed_budget_mode() -> str:

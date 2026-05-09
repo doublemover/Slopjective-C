@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from .validation_timing_budgets import validation_speed_budgets
-from .validation_timing_reports import (
-    load_child_reports,
-    safe_float,
+from .validation_timing_child_report_loading import load_child_reports
+from .validation_timing_numbers import safe_float
+from .validation_timing_report_summaries import (
     summarize_execution_replay_report,
     summarize_execution_smoke_report,
     summarize_runtime_acceptance_report,
