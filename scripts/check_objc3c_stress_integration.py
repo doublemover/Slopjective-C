@@ -14,24 +14,9 @@ from objc3c_tooling.public_runner import public_workflow_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATE_STRESS_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-stress.json"
+WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "workflow_surface.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "stress" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stress.integration.summary.v1"
-REQUIRED_STEPS = [
-    "check-stress-surface",
-    "test-fuzz-safety",
-    "test-lowering-runtime-stress",
-    "test-mixed-module-differential",
-    "test-stress-minimization",
-    "test-stress-crash-triage",
-]
-REQUIRED_CHILD_REPORTS = {
-    "tmp/reports/stress/source-surface-summary.json": "objc3c.stress.source.surface.summary.v1",
-    "tmp/reports/stress/lowering-runtime-stress-summary.json": "objc3c.stress.lowering-runtime.summary.v1",
-    "tmp/reports/stress/mixed-module-differential-summary.json": "objc3c.stress.mixed-module-differential.summary.v1",
-    "tmp/reports/stress/minimization-summary.json": "objc3c.stress.minimization.summary.v1",
-    "tmp/reports/stress/crash-triage-summary.json": "objc3c.stress.crash.triage.summary.v1",
-}
 
 
 
@@ -40,12 +25,24 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def ensure_validate_stress_report() -> dict[str, Any]:
-    report = load_json(VALIDATE_STRESS_REPORT) if VALIDATE_STRESS_REPORT.is_file() else None
+def workflow_report_path(validate_action: str) -> Path:
+    return ROOT / "tmp" / "reports" / "objc3c-public-workflow" / f"{validate_action}.json"
+
+
+def load_workflow_surface() -> dict[str, Any]:
+    surface = load_json(WORKFLOW_SURFACE)
+    expect(surface.get("contract_id") == "objc3c.stress.workflow.surface.v1", "stress workflow surface contract_id drifted")
+    expect(surface.get("schema_version") == 1, "stress workflow surface schema_version drifted")
+    return surface
+
+
+def ensure_validate_stress_report(validate_action: str) -> dict[str, Any]:
+    report_path = workflow_report_path(validate_action)
+    report = load_json(report_path) if report_path.is_file() else None
     if isinstance(report, dict) and report.get("status") == "PASS":
         return report
     completed = subprocess.run(
-        public_workflow_command("validate-stress"),
+        public_workflow_command(validate_action),
         cwd=ROOT,
         check=False,
         text=True,
@@ -55,17 +52,22 @@ def ensure_validate_stress_report() -> dict[str, Any]:
         sys.stdout.write(completed.stdout)
     if completed.stderr:
         sys.stderr.write(completed.stderr)
-    expect(completed.returncode == 0, "validate-stress command failed during stress integration validation")
-    return load_json(VALIDATE_STRESS_REPORT)
+    expect(completed.returncode == 0, f"{validate_action} command failed during stress integration validation")
+    return load_json(report_path)
 
 
 def main() -> int:
-    workflow_report = ensure_validate_stress_report()
+    workflow_surface = load_workflow_surface()
+    validate_action = str(workflow_surface["validate_action"])
+    required_steps = list(workflow_surface["validate_child_actions"])
+    required_child_reports = dict(workflow_surface["required_child_reports"])
+    validate_report_path = workflow_report_path(validate_action)
+    workflow_report = ensure_validate_stress_report(validate_action)
     expect(workflow_report.get("status") == "PASS", "validate-stress workflow report did not pass")
     steps = workflow_report.get("steps", [])
     expect(isinstance(steps, list), "validate-stress workflow report steps drifted")
     step_actions = [str(step.get("action")) for step in steps if isinstance(step, dict)]
-    expect(step_actions == REQUIRED_STEPS, "validate-stress workflow report step inventory drifted")
+    expect(step_actions == required_steps, "validate-stress workflow report step inventory drifted")
 
     seen_report_paths: set[str] = set()
     for step in steps:
@@ -78,7 +80,7 @@ def main() -> int:
                     seen_report_paths.add(raw_path.replace("\\", "/"))
 
     child_reports: dict[str, dict[str, Any]] = {}
-    for relative_path, contract_id in REQUIRED_CHILD_REPORTS.items():
+    for relative_path, contract_id in required_child_reports.items():
         expect(relative_path in seen_report_paths, f"validate-stress workflow report did not publish {relative_path}")
         payload = load_json(ROOT / relative_path)
         expect(payload.get("contract_id") == contract_id, f"stress child report contract drifted for {relative_path}")
@@ -89,9 +91,10 @@ def main() -> int:
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
-        "workflow_report_path": repo_rel(VALIDATE_STRESS_REPORT),
-        "required_steps": REQUIRED_STEPS,
-        "child_report_paths": list(REQUIRED_CHILD_REPORTS.keys()),
+        "workflow_surface": repo_rel(WORKFLOW_SURFACE),
+        "workflow_report_path": repo_rel(validate_report_path),
+        "required_steps": required_steps,
+        "child_report_paths": list(required_child_reports.keys()),
         "child_reports": {
             relative_path: {
                 "contract_id": report["contract_id"],

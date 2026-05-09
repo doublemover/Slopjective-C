@@ -19,3 +19,6 @@ The checked-in safety policy lives in
 
 The checked-in machine-owned artifact and minimization contract lives in
 `tests/tooling/fixtures/stress/artifact_surface.json`.
+
+The checked-in public workflow contract lives in
+`tests/tooling/fixtures/stress/workflow_surface.json`.

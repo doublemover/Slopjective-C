@@ -17,6 +17,7 @@ from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "stress" / "integration-summary.json"
+WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "workflow_surface.json"
 COMMAND_SURFACE = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 PACKAGE_JSON = ROOT / "package.json"
 RENDER_COMMAND_SURFACE = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
@@ -59,12 +60,24 @@ def ensure_integration_report() -> dict[str, Any]:
     return load_json(INTEGRATION_REPORT)
 
 
+def load_workflow_surface() -> dict[str, Any]:
+    surface = load_json(WORKFLOW_SURFACE)
+    expect(surface.get("contract_id") == "objc3c.stress.workflow.surface.v1", "stress workflow surface contract_id drifted")
+    expect(surface.get("schema_version") == 1, "stress workflow surface schema_version drifted")
+    return surface
+
+
 def main() -> int:
+    workflow_surface = load_workflow_surface()
     integration_report = ensure_integration_report()
     expect(integration_report.get("status") == "PASS", "stress integration report did not pass")
 
-    nightly_payload = public_workflow_action_payload("test-nightly")
-    expect(nightly_payload.get("action") == "test-nightly", "test-nightly describe payload drifted")
+    nightly_action = str(workflow_surface["nightly_action"])
+    validate_action = str(workflow_surface["validate_action"])
+    required_actions = list(workflow_surface["required_actions"])
+    command_surface_path = ROOT / str(workflow_surface["command_surface"])
+    nightly_payload = public_workflow_action_payload(nightly_action)
+    expect(nightly_payload.get("action") == nightly_action, "test-nightly describe payload drifted")
     expect(nightly_payload.get("validation_tier") == "nightly", "test-nightly validation_tier drifted")
 
     package_payload = load_json(PACKAGE_JSON)
@@ -73,7 +86,7 @@ def main() -> int:
     expect("objc3c" in scripts, "package.json missing objc3c package bridge")
 
     expect(
-        public_workflow_has_actions(["test-nightly", "validate-stress"]),
+        public_workflow_has_actions([nightly_action, *required_actions]),
         "workflow registry no longer exposes test-nightly and validate-stress",
     )
 
@@ -86,30 +99,22 @@ def main() -> int:
         "task hygiene gate failed during stress end-to-end validation",
     )
 
-    command_surface_text = COMMAND_SURFACE.read_text(encoding="utf-8")
-    expect("validate-stress" in command_surface_text, "public command surface is missing validate-stress")
-    expect(
-        "validate-stress-integration" in command_surface_text,
-        "public command surface is missing validate-stress-integration",
-    )
-    expect("validate-stress-end-to-end" in command_surface_text, "public command surface is missing validate-stress-end-to-end")
+    command_surface_text = command_surface_path.read_text(encoding="utf-8")
+    for action in required_actions:
+        expect(action in command_surface_text, f"public command surface is missing {action}")
 
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
+        "workflow_surface": repo_rel(WORKFLOW_SURFACE),
         "integration_report_path": repo_rel(INTEGRATION_REPORT),
         "nightly_description_action": nightly_payload["action"],
         "nightly_validation_tier": nightly_payload["validation_tier"],
-        "nightly_includes_validate_stress": True,
-        "command_surface_path": repo_rel(COMMAND_SURFACE),
+        "nightly_includes_validate_stress": validate_action in required_actions,
+        "command_surface_path": repo_rel(command_surface_path),
         "package_bridge": "objc3c",
-        "required_actions": [
-            "check-stress-surface",
-            "validate-stress",
-            "validate-stress-integration",
-            "validate-stress-end-to-end",
-        ],
+        "required_actions": required_actions,
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

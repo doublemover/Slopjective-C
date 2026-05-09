@@ -18,6 +18,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "source-surface-summary.jso
 SURFACE_CONTRACT_ID = "objc3c.stress.source.surface.v1"
 SUMMARY_CONTRACT_ID = "objc3c.stress.source.surface.summary.v1"
 SOURCE_CHECK_SCRIPT = "scripts/check_stress_source_surface.py"
+WORKFLOW_SURFACE = "tests/tooling/fixtures/stress/workflow_surface.json"
 EXPECTED_FAMILIES = [
     "parser-sema-fuzz",
     "lowering-runtime-stress",
@@ -59,6 +60,8 @@ def main() -> int:
         return fail("stress source surface safety_policy drifted")
     if surface.get("artifact_surface") != "tests/tooling/fixtures/stress/artifact_surface.json":
         return fail("stress source surface artifact_surface drifted")
+    if surface.get("workflow_surface") != WORKFLOW_SURFACE:
+        return fail("stress source surface workflow_surface drifted")
 
     require_path("docs/runbooks/objc3c_stress_validation.md", kind="runbook")
     require_path("tests/tooling/fixtures/stress/README.md", kind="stress README")
@@ -67,8 +70,10 @@ def main() -> int:
         "tests/tooling/fixtures/stress/artifact_surface.json",
         kind="stress artifact surface",
     )
+    workflow_surface_path = require_path(WORKFLOW_SURFACE, kind="stress workflow surface")
     safety_policy = load_json(safety_policy_path)
     artifact_surface = load_json(artifact_surface_path)
+    workflow_surface = load_json(workflow_surface_path)
     if safety_policy.get("policy_id") != "objc3c.stress.validation.safety-policy.v1":
         return fail("stress safety policy_id drifted")
     if safety_policy.get("schema_version") != 1:
@@ -112,6 +117,30 @@ def main() -> int:
     for relative_path in summary_reports.values():
         if not isinstance(relative_path, str) or not relative_path.startswith("tmp/reports/stress/"):
             return fail("stress artifact surface summary_reports contains an invalid path")
+    if workflow_surface.get("contract_id") != "objc3c.stress.workflow.surface.v1":
+        return fail("stress workflow surface contract_id drifted")
+    if workflow_surface.get("schema_version") != 1:
+        return fail("stress workflow surface schema_version drifted")
+    if workflow_surface.get("source_check_action") != surface.get("source_check_action"):
+        return fail("stress workflow source_check_action drifted from source surface")
+    if workflow_surface.get("validate_action") != "validate-stress":
+        return fail("stress workflow validate_action drifted")
+    if workflow_surface.get("package_bridge") != surface.get("package_bridge"):
+        return fail("stress workflow package_bridge drifted from source surface")
+    required_actions = workflow_surface.get("required_actions")
+    validate_child_actions = workflow_surface.get("validate_child_actions")
+    if not isinstance(required_actions, list) or not required_actions:
+        return fail("stress workflow required_actions drifted")
+    if not isinstance(validate_child_actions, list) or not validate_child_actions:
+        return fail("stress workflow validate_child_actions drifted")
+    if validate_child_actions != required_actions[: len(validate_child_actions)]:
+        return fail("stress workflow validate_child_actions drifted from required action order")
+    required_child_reports = workflow_surface.get("required_child_reports")
+    if not isinstance(required_child_reports, dict) or not required_child_reports:
+        return fail("stress workflow required_child_reports drifted")
+    for relative_path in required_child_reports:
+        if not isinstance(relative_path, str) or not relative_path.startswith("tmp/reports/stress/"):
+            return fail("stress workflow required_child_reports contains an invalid path")
 
     checked_in_roots = surface.get("checked_in_roots")
     if not isinstance(checked_in_roots, list) or not checked_in_roots:
@@ -164,11 +193,13 @@ def main() -> int:
         "source_check_script": surface["source_check_script"],
         "safety_policy": repo_rel(safety_policy_path),
         "artifact_surface": repo_rel(artifact_surface_path),
+        "workflow_surface": repo_rel(workflow_surface_path),
         "checked_in_root_count": len(checked_in_roots),
         "required_guard_count": len(safety_policy["required_guards"]),
         "machine_owned_artifact_root_count": len(artifact_surface["machine_owned_artifact_roots"]),
         "machine_owned_report_root_count": len(artifact_surface["machine_owned_report_roots"]),
         "summary_report_count": len(artifact_surface["summary_reports"]),
+        "required_action_count": len(required_actions),
         "family_summaries": family_summaries,
     }
     write_report_json(SUMMARY_PATH, summary, sort_keys=False)

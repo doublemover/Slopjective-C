@@ -6,9 +6,10 @@
   "package_bridge": "objc3c",
   "source_check_action": "check-stress-surface",
   "source_check_command": "npm run objc3c -- check-stress-surface",
-  "source_check_implementation_anchor": "scripts/check_stress_source_surface.py",
+  "source_check_script": "scripts/check_stress_source_surface.py",
   "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
   "artifact_surface": "tests/tooling/fixtures/stress/artifact_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/stress/workflow_surface.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/stress",
     "tests/tooling/fixtures/native",

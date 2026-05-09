@@ -1,0 +1,46 @@
+{
+  "contract_id": "objc3c.stress.workflow.surface.v1",
+  "schema_version": 1,
+  "package_bridge": "objc3c",
+  "source_check_action": "check-stress-surface",
+  "validate_action": "validate-stress",
+  "integration_action": "validate-stress-integration",
+  "end_to_end_action": "validate-stress-end-to-end",
+  "nightly_action": "test-nightly",
+  "command_surface": "docs/runbooks/objc3c_public_command_surface.md",
+  "required_actions": [
+    "check-stress-surface",
+    "test-fuzz-safety",
+    "test-lowering-runtime-stress",
+    "test-mixed-module-differential",
+    "test-stress-minimization",
+    "test-stress-crash-triage",
+    "validate-stress",
+    "validate-stress-integration",
+    "validate-stress-end-to-end"
+  ],
+  "validate_child_actions": [
+    "check-stress-surface",
+    "test-fuzz-safety",
+    "test-lowering-runtime-stress",
+    "test-mixed-module-differential",
+    "test-stress-minimization",
+    "test-stress-crash-triage"
+  ],
+  "required_child_reports": {
+    "tmp/reports/stress/source-surface-summary.json": "objc3c.stress.source.surface.summary.v1",
+    "tmp/reports/stress/lowering-runtime-stress-summary.json": "objc3c.stress.lowering-runtime.summary.v1",
+    "tmp/reports/stress/mixed-module-differential-summary.json": "objc3c.stress.mixed-module-differential.summary.v1",
+    "tmp/reports/stress/minimization-summary.json": "objc3c.stress.minimization.summary.v1",
+    "tmp/reports/stress/crash-triage-summary.json": "objc3c.stress.crash.triage.summary.v1"
+  },
+  "report_paths": [
+    "tmp/reports/stress/source-surface-summary.json",
+    "tmp/reports/stress/lowering-runtime-stress-summary.json",
+    "tmp/reports/stress/mixed-module-differential-summary.json",
+    "tmp/reports/stress/minimization-summary.json",
+    "tmp/reports/stress/crash-triage-summary.json",
+    "tmp/reports/stress/integration-summary.json",
+    "tmp/reports/stress/end-to-end-summary.json"
+  ]
+}
