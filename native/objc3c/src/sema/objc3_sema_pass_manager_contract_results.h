@@ -83,6 +83,9 @@
   Objc3SemaTypeMetadataMappingReadinessRecord
       type_metadata_mapping_readiness_record;
   bool deterministic_type_metadata_mapping_readiness_record = false;
+  Objc3SemaAtomicVectorMappingPublicationRecord
+      atomic_vector_mapping_publication_record;
+  bool deterministic_atomic_vector_mapping_publication_record = false;
   Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
   bool deterministic_typed_semantic_handoff_record = false;
   Objc3SemaParityValidationRecord parity_validation_record;

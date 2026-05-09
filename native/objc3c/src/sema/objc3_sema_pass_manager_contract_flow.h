@@ -65,6 +65,8 @@ inline constexpr const char *kObjc3SemaTypeMetadataPublicationOwner =
     "native.frontend.sema.type-metadata-publication";
 inline constexpr const char *kObjc3SemaTypeMetadataMappingReadinessOwner =
     "native.frontend.sema.type-metadata-mapping-readiness";
+inline constexpr const char *kObjc3SemaAtomicVectorMappingPublicationOwner =
+    "native.frontend.sema.atomic-vector-mapping-publication";
 inline constexpr const char *kObjc3SemaTypedSemanticHandoffPublicationOwner =
     "native.frontend.sema.typed-semantic-handoff-publication";
 inline constexpr const char *kObjc3SemaParityValidationOwner =
@@ -605,6 +607,8 @@ struct Objc3SemaTypeMetadataPublicationRecord {
       kObjc3SemaTypedSemanticHandoffOwner;
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
+  std::string atomic_vector_mapping_publication_owner =
+      kObjc3SemaAtomicVectorMappingPublicationOwner;
   std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
   bool strict_no_fallback = true;
   bool strict_no_compatibility = true;
@@ -630,6 +634,8 @@ inline bool IsReadyObjc3SemaTypeMetadataPublicationRecord(
   return Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.atomic_vector_mapping_publication_owner) &&
          record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
          record.strict_no_fallback && record.strict_no_compatibility &&
          record.cardinality_consistent &&
@@ -745,6 +751,38 @@ inline bool IsReadyObjc3SemaTypedSemanticHandoffRecord(
          record.symbol_dispatch_handoffs_ready &&
          record.block_dispatch_handoffs_ready &&
          record.ownership_runtime_handoffs_ready && record.deterministic;
+}
+
+struct Objc3SemaAtomicVectorMappingPublicationRecord {
+  std::string atomic_vector_mapping_publication_owner =
+      kObjc3SemaAtomicVectorMappingPublicationOwner;
+  std::string integration_surface_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
+  bool deterministic_atomic_memory_order_mapping = false;
+  Objc3VectorTypeLoweringSummary vector_type_lowering;
+  bool deterministic_vector_type_lowering = false;
+  bool atomic_memory_order_mapping_ready = false;
+  bool vector_type_lowering_ready = false;
+  bool mapping_summaries_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaAtomicVectorMappingPublicationRecord(
+    const Objc3SemaAtomicVectorMappingPublicationRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.atomic_vector_mapping_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.atomic_memory_order_mapping_ready &&
+         record.vector_type_lowering_ready &&
+         record.mapping_summaries_ready && record.deterministic;
 }
 
 struct Objc3SemaTypeMetadataMappingReadinessRecord {
@@ -1909,6 +1947,8 @@ struct Objc3SemaParityContractSurface {
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
   Objc3SemaTypeMetadataMappingReadinessRecord
       type_metadata_mapping_readiness_record;
+  Objc3SemaAtomicVectorMappingPublicationRecord
+      atomic_vector_mapping_publication_record;
   Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
   Objc3SemaParityValidationRecord parity_validation_record;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
@@ -2353,6 +2393,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_pass_manager_publication_record = false;
   bool deterministic_type_metadata_publication_record = false;
   bool deterministic_type_metadata_mapping_readiness_record = false;
+  bool deterministic_atomic_vector_mapping_publication_record = false;
   bool deterministic_typed_semantic_handoff_record = false;
   bool deterministic_parity_validation_record = false;
   bool deterministic_closeout_signoff_record = false;
@@ -2545,6 +2586,46 @@ BuildObjc3SemaTypedSemanticHandoffRecord(
   return record;
 }
 
+inline Objc3SemaAtomicVectorMappingPublicationRecord
+BuildObjc3SemaAtomicVectorMappingPublicationRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3AtomicMemoryOrderMappingSummary &atomic_memory_order_mapping,
+    bool deterministic_atomic_memory_order_mapping,
+    const Objc3VectorTypeLoweringSummary &vector_type_lowering,
+    bool deterministic_vector_type_lowering) {
+  Objc3SemaAtomicVectorMappingPublicationRecord record;
+  record.integration_surface_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.atomic_memory_order_mapping = atomic_memory_order_mapping;
+  record.deterministic_atomic_memory_order_mapping =
+      deterministic_atomic_memory_order_mapping;
+  record.vector_type_lowering = vector_type_lowering;
+  record.deterministic_vector_type_lowering =
+      deterministic_vector_type_lowering;
+  record.atomic_memory_order_mapping_ready =
+      record.deterministic_atomic_memory_order_mapping &&
+      record.atomic_memory_order_mapping.deterministic;
+  record.vector_type_lowering_ready =
+      record.deterministic_vector_type_lowering &&
+      record.vector_type_lowering.deterministic;
+  record.mapping_summaries_ready =
+      record.atomic_memory_order_mapping_ready &&
+      record.vector_type_lowering_ready;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.atomic_vector_mapping_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.atomic_memory_order_mapping_ready &&
+      record.vector_type_lowering_ready && record.mapping_summaries_ready;
+  return record;
+}
+
 inline Objc3SemaTypeMetadataMappingReadinessRecord
 BuildObjc3SemaTypeMetadataMappingReadinessRecord(
     const Objc3SemaPassManagerInput &input,
@@ -2578,21 +2659,27 @@ BuildObjc3SemaTypeMetadataMappingReadinessRecord(
       record.interfaces_total == record.type_metadata_interface_entries &&
       record.implementations_total ==
           record.type_metadata_implementation_entries;
+  const Objc3SemaAtomicVectorMappingPublicationRecord &mapping_publication =
+      surface.atomic_vector_mapping_publication_record;
+  record.atomic_vector_mapping_publication_owner =
+      mapping_publication.atomic_vector_mapping_publication_owner;
   record.atomic_memory_order_mapping_ready =
-      surface.deterministic_atomic_memory_order_mapping &&
-      surface.atomic_memory_order_mapping.deterministic;
+      surface.deterministic_atomic_vector_mapping_publication_record &&
+      mapping_publication.atomic_memory_order_mapping_ready;
   record.vector_type_lowering_ready =
-      surface.deterministic_vector_type_lowering &&
-      surface.vector_type_lowering.deterministic;
+      surface.deterministic_atomic_vector_mapping_publication_record &&
+      mapping_publication.vector_type_lowering_ready;
   record.mapping_summaries_ready =
-      record.atomic_memory_order_mapping_ready &&
-      record.vector_type_lowering_ready;
+      surface.deterministic_atomic_vector_mapping_publication_record &&
+      mapping_publication.mapping_summaries_ready;
   record.deterministic =
       Objc3SemaOwnerIsExplicit(
           record.type_metadata_mapping_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(
+          record.atomic_vector_mapping_publication_owner) &&
       record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
       record.strict_no_fallback && record.strict_no_compatibility &&
       record.type_metadata_publication_ready &&
