@@ -363,26 +363,3 @@ int objc3_runtime_copy_registration_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-void objc3_runtime_reset_for_testing(void) {
-  RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  (void)objc3c::runtime::RuntimeStateLockDiscipline();
-  (void)objc3c::runtime::RuntimeStateOwnershipModel();
-  // live-restart-hardening anchor: teardown clears only live runtime
-  // state, preserves the retained bootstrap catalog for restart, zeroes image-
-  // local init cells, and advances reset-generation evidence for repeated
-  // restart-cycle probes.
-  if (objc3c::runtime::RuntimeResetClearsLiveExecutionState()) {
-    ClearLiveRegistrationStateUnlocked(state);
-  }
-  state.last_reset_cleared_image_local_init_state_count =
-      objc3c::runtime::RuntimeResetPreservesBootstrapCatalog()
-          ? ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state)
-          : 0;
-  ++state.reset_generation;
-  state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-  state.last_replayed_image_count = 0;
-  state.last_replayed_module_name.clear();
-  state.last_replayed_translation_unit_identity_key.clear();
-  ResetRuntimeAutoreleasepoolStateForTesting();
-}

@@ -89,6 +89,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/keypath_table.h
   selectors/selector_table.cpp
   selectors/selector_table.h
+  storage/current_property_context.cpp
+  storage/current_property_context.h
   state/runtime_reset.cpp
   state/runtime_reset.h
   state/runtime_state_clear.cpp

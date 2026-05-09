@@ -9,6 +9,22 @@
 
 namespace objc3c::runtime {
 
+void ClearImageWalkSnapshotUnlocked(RuntimeState &state) {
+  state.last_discovery_root_entry_count = 0;
+  state.last_walked_class_descriptor_count = 0;
+  state.last_walked_protocol_descriptor_count = 0;
+  state.last_walked_category_descriptor_count = 0;
+  state.last_walked_property_descriptor_count = 0;
+  state.last_walked_ivar_descriptor_count = 0;
+  state.last_walked_selector_pool_count = 0;
+  state.last_walked_string_pool_count = 0;
+  state.last_walked_keypath_descriptor_count = 0;
+  state.last_linker_anchor_matches_discovery_root = false;
+  state.last_registration_used_staged_table = false;
+  state.last_walked_module_name.clear();
+  state.last_walked_translation_unit_identity_key.clear();
+}
+
 int CopyRuntimeImageWalkStateForTesting(
     objc3_runtime_image_walk_state_snapshot *snapshot) {
   if (snapshot == nullptr) {

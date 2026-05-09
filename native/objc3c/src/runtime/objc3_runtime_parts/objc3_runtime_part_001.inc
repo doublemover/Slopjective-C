@@ -51,7 +51,10 @@ using objc3c::runtime::EmittedMethodListHeader;
 using objc3c::runtime::EmittedMethodListRef;
 using objc3c::runtime::EmittedPropertyDescriptor;
 using objc3c::runtime::EmittedProtocolRecord;
+using objc3c::runtime::ClearImageWalkSnapshotUnlocked;
+using objc3c::runtime::FindRuntimePropertyAccessorByNameUnlocked;
 using objc3c::runtime::HasTerminalStrictDispatchError;
+using objc3c::runtime::InvokeRuntimeBuiltinMethod;
 using objc3c::runtime::KeyPathSlot;
 using objc3c::runtime::MethodCacheEntry;
 using objc3c::runtime::PropertyLookupCacheEntry;
@@ -65,6 +68,7 @@ using objc3c::runtime::RuntimeInstanceRecord;
 using objc3c::runtime::RuntimeState;
 using objc3c::runtime::RuntimeDispatchFrame;
 using objc3c::runtime::RuntimeWeakSlotRef;
+using objc3c::runtime::ReplayRegisteredImagesForTestingUnlocked;
 using objc3c::runtime::SelectorSlot;
 using objc3c::runtime::SlowPathResolution;
 namespace {
@@ -80,6 +84,7 @@ using objc3c::runtime::MethodCacheKey;
 using objc3c::runtime::MethodCacheKeyHash;
 using objc3c::runtime::BuildReceiverBaseIdentity;
 using objc3c::runtime::ClassifyRuntimeReturnType;
+using objc3c::runtime::DecodeReceiverIdentity;
 using objc3c::runtime::DescribeResolvedImplementationKind;
 using objc3c::runtime::DispatchFamily;
 using objc3c::runtime::IsRuntimeReceiverBaseIdentity;
@@ -126,14 +131,6 @@ std::size_t AlignTo(std::size_t value, std::size_t alignment) {
   const std::size_t effective_alignment = std::max<std::size_t>(alignment, 1u);
   const std::size_t remainder = value % effective_alignment;
   return remainder == 0u ? value : value + (effective_alignment - remainder);
-}
-
-void ResetRuntimeAutoreleasepoolStateForTesting() {
-  objc3c::runtime::ResetRuntimeAutoreleasepoolStateForTesting();
-  objc3c::runtime::ResetRuntimeArcDebugStateForTesting();
-  objc3c::runtime::ResetRuntimeBlockDebugStateForTesting();
-  objc3c::runtime::ResetRuntimeErrorBridgeStateForTesting();
-  objc3c::runtime::ResetRuntimeConcurrencyDebugStateForTesting();
 }
 
 std::string BuildSynthesizedInstanceMethodOwnerIdentity(

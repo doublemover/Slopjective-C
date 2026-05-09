@@ -4,6 +4,9 @@
 
 namespace objc3c::runtime {
 
+struct RuntimeState;
+
+void ClearImageWalkSnapshotUnlocked(RuntimeState &state);
 int CopyRuntimeImageWalkStateForTesting(
     objc3_runtime_image_walk_state_snapshot *snapshot);
 int CopyRuntimeResetReplayStateForTesting(

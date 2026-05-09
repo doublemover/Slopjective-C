@@ -451,77 +451,6 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
   return false;
 }
 
-const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
-    RuntimeState &state, const RealizedClassNode &start_node,
-    const char *property_name, const RealizedClassNode *&resolved_node,
-    bool &inherited, bool &used_cache) {
-  // property-metadata-reflection anchor: private reflective helper
-  // lookup walks the realized runtime-owned property graph by class/property
-  // name instead of rediscovering accessors or layout from source.
-  if (property_name == nullptr || property_name[0] == '\0') {
-    return nullptr;
-  }
-  PropertyLookupCacheKey cache_key;
-  cache_key.start_base_identity = start_node.base_identity;
-  cache_key.property_name = property_name;
-  const auto cache_it = state.property_lookup_cache.find(cache_key);
-  if (cache_it != state.property_lookup_cache.end()) {
-    used_cache = true;
-    ++state.property_lookup_cache_hit_count;
-    if (!cache_it->second.found) {
-      inherited = false;
-      resolved_node = nullptr;
-      return nullptr;
-    }
-    if (cache_it->second.resolved_node_index < state.realized_class_nodes.size()) {
-      const RealizedClassNode &cached_node =
-          state.realized_class_nodes[cache_it->second.resolved_node_index];
-      if (cache_it->second.accessor_index <
-          cached_node.runtime_property_accessors.size()) {
-        resolved_node = &cached_node;
-        inherited = cache_it->second.inherited;
-        return &cached_node.runtime_property_accessors[cache_it->second.accessor_index];
-      }
-    }
-    state.property_lookup_cache.erase(cache_it);
-  }
-  used_cache = false;
-  ++state.property_lookup_cache_miss_count;
-  std::unordered_set<const RealizedClassNode *> visited;
-  const RealizedClassNode *node = &start_node;
-  inherited = false;
-  while (node != nullptr && visited.insert(node).second) {
-    if (node->runtime_layout_ready) {
-      for (const RealizedPropertyAccessor &accessor :
-           node->runtime_property_accessors) {
-        if (accessor.property_descriptor == nullptr ||
-            accessor.property_descriptor->property_name == nullptr) {
-          continue;
-        }
-        if (std::strcmp(accessor.property_descriptor->property_name,
-                        property_name) == 0) {
-          resolved_node = node;
-          inherited = node != &start_node;
-          const std::size_t resolved_node_index = static_cast<std::size_t>(
-              node - state.realized_class_nodes.data());
-          const std::size_t accessor_index = static_cast<std::size_t>(
-              &accessor - node->runtime_property_accessors.data());
-          state.property_lookup_cache.emplace(
-              std::move(cache_key),
-              PropertyLookupCacheEntry{true, inherited, resolved_node_index,
-                                       accessor_index});
-          return &accessor;
-        }
-      }
-    }
-    node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
-                                : nullptr;
-  }
-  state.property_lookup_cache.emplace(std::move(cache_key),
-                                      PropertyLookupCacheEntry{});
-  return nullptr;
-}
-
 bool TryResolveMethodFromAttachedCategoriesUnlocked(
     RuntimeState &state, const RealizedClassNode &node, DispatchFamily family,
     std::uint64_t normalized_receiver_identity, std::uint64_t selector_stable_id,
@@ -614,51 +543,6 @@ bool TryResolveRuntimeBuiltinObjectSampleMethod(
     return true;
   }
   return false;
-}
-
-bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
-                            std::uint64_t &base_identity,
-                            DispatchFamily &family,
-                            std::uint64_t &normalized_receiver_identity) {
-  if (receiver <= 0) {
-    return false;
-  }
-  const auto runtime_instance_it = state.runtime_instances_by_receiver.find(receiver);
-  if (runtime_instance_it != state.runtime_instances_by_receiver.end()) {
-    base_identity = runtime_instance_it->second.base_identity;
-    family = DispatchFamily::Instance;
-    normalized_receiver_identity = base_identity + 1u;
-    return true;
-  }
-  const std::int64_t signed_receiver = receiver;
-  if (signed_receiver < static_cast<std::int64_t>(RuntimeReceiverIdentityBase())) {
-    return false;
-  }
-  const std::int64_t delta =
-      signed_receiver - static_cast<std::int64_t>(RuntimeReceiverIdentityBase());
-  const std::int64_t ordinal =
-      delta / static_cast<std::int64_t>(RuntimeReceiverIdentityStride());
-  const std::int64_t salt =
-      delta % static_cast<std::int64_t>(RuntimeReceiverIdentityStride());
-  if (ordinal < 0) {
-    return false;
-  }
-  base_identity = static_cast<std::uint64_t>(
-      static_cast<std::int64_t>(RuntimeReceiverIdentityBase()) +
-      ordinal * static_cast<std::int64_t>(RuntimeReceiverIdentityStride()));
-  switch (salt) {
-    case 0:
-    case 2:
-      family = DispatchFamily::Class;
-      normalized_receiver_identity = base_identity + 2u;
-      return true;
-    case 1:
-      family = DispatchFamily::Instance;
-      normalized_receiver_identity = base_identity + 1u;
-      return true;
-    default:
-      return false;
-  }
 }
 
 std::vector<const RegisteredImageMetadata *> OrderedRegisteredImages(
@@ -1302,8 +1186,3 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
   }
   return resolution;
 }
-
-const RealizedClassNode *FindRealizedClassNodeByBaseIdentityUnlocked(
-    const RuntimeState &state, std::uint64_t base_identity) {
-  const auto class_name_it = state.realized_class_name_by_base_identity.find(base_identity);
-  if (class_name_it == state.realized_class_name_by_base_identity.end()) {

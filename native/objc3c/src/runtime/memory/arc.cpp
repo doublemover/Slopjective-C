@@ -1,5 +1,6 @@
 #include "runtime/memory/arc.h"
 
+#include "runtime/classes/class_graph.h"
 #include "runtime/memory/arc_debug_state.h"
 #include "runtime/memory/autorelease_pool.h"
 #include "runtime/metadata/runtime_realized_records.h"
@@ -17,31 +18,6 @@ namespace objc3c::runtime {
 
 namespace {
 
-const RealizedClassNode *FindArcClassNodeByBaseIdentityUnlocked(
-    const RuntimeState &state,
-    std::uint64_t base_identity) {
-  const auto class_name_it =
-      state.realized_class_name_by_base_identity.find(base_identity);
-  if (class_name_it == state.realized_class_name_by_base_identity.end()) {
-    return nullptr;
-  }
-  const auto node_indexes_it =
-      state.realized_class_node_indices_by_name.find(class_name_it->second);
-  if (node_indexes_it == state.realized_class_node_indices_by_name.end()) {
-    return nullptr;
-  }
-  for (const std::size_t node_index : node_indexes_it->second) {
-    if (node_index >= state.realized_class_nodes.size()) {
-      continue;
-    }
-    const RealizedClassNode &node = state.realized_class_nodes[node_index];
-    if (node.base_identity == base_identity) {
-      return &node;
-    }
-  }
-  return nullptr;
-}
-
 void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
   const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
@@ -56,7 +32,8 @@ void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
   RemoveWeakSlotRefsOwnedByReceiverUnlocked(state, receiver);
 
   const RealizedClassNode *node =
-      FindArcClassNodeByBaseIdentityUnlocked(state, instance.base_identity);
+      FindRealizedClassNodeByBaseIdentityUnlocked(state,
+                                                  instance.base_identity);
   std::vector<int> owned_values_to_release;
   if (node != nullptr && node->runtime_layout_ready) {
     owned_values_to_release.reserve(node->runtime_property_accessors.size());
