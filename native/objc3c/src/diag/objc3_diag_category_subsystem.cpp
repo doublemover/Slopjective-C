@@ -24,18 +24,3 @@ Objc3DiagnosticCategory DiagnosticCategoryForSubsystem(
   }
   return Objc3DiagnosticCategory::kUnknown;
 }
-
-Objc3DiagnosticCategory DiagnosticCategoryForCode(std::string_view code) {
-  Objc3DiagnosticCode parsed;
-  if (!TryParseNativeDiagCode(code, parsed)) {
-    return Objc3DiagnosticCategory::kUnknown;
-  }
-  return DiagnosticCategoryForSubsystem(parsed.subsystem);
-}
-
-bool DiagnosticCategoryIsFrontendCompiler(Objc3DiagnosticCategory category) {
-  return category == Objc3DiagnosticCategory::kConfiguration ||
-         category == Objc3DiagnosticCategory::kLexical ||
-         category == Objc3DiagnosticCategory::kParsing ||
-         category == Objc3DiagnosticCategory::kSemanticAnalysis;
-}

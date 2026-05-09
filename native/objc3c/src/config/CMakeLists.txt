@@ -7,9 +7,10 @@ add_library(objc3c_config STATIC
   objc3_config_validation_rejected.cpp
   objc3_feature_state_catalog.cpp
   objc3_feature_state_core_data.cpp
+  objc3_feature_state_list.cpp
+  objc3_feature_state_lookup.cpp
   objc3_feature_state_names.cpp
   objc3_feature_state_predicates.cpp
-  objc3_feature_state_query.cpp
   objc3_feature_state_table_contract.cpp
   objc3_feature_state_tables.cpp
   objc3_language_profile_data.cpp

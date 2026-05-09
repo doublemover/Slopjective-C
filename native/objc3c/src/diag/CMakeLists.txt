@@ -1,6 +1,8 @@
 add_library(objc3c_diag STATIC
-  objc3_diag_category_mapping.cpp
+  objc3_diag_category_code.cpp
+  objc3_diag_category_frontend.cpp
   objc3_diag_category_names.cpp
+  objc3_diag_category_subsystem.cpp
   objc3_diag_code.cpp
   objc3_diag_coordinate.cpp
   objc3_diag_format.cpp
@@ -18,7 +20,8 @@ add_library(objc3c_diag STATIC
   objc3_diag_sink_methods.cpp
   objc3_diag_sort_key.cpp
   objc3_diag_sort_normalize.cpp
-  objc3_diag_catalog.cpp
+  objc3_diag_catalog_lookup.cpp
+  objc3_diag_catalog_membership.cpp
   objc3_diag_catalog_artifact_tooling_data.cpp
   objc3_diag_catalog_family.cpp
   objc3_diag_catalog_frontend_data.cpp
@@ -28,7 +31,8 @@ add_library(objc3c_diag STATIC
   objc3_diag_parse_coordinate_code.cpp
   objc3_diag_parse_rendered.cpp
   objc3_diag_parse_segments.cpp
-  objc3_diag_subsystem.cpp
+  objc3_diag_subsystem_names.cpp
+  objc3_diag_subsystem_prefix.cpp
   objc3_diag_text_case.cpp
   objc3_diag_text_prefix.cpp
 )

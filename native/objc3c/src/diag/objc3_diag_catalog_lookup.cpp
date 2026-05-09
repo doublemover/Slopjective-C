@@ -17,7 +17,3 @@ const NativeDiagCodeCatalogEntry *FindNativeDiagCodeCatalogEntry(
   }
   return nullptr;
 }
-
-bool NativeDiagCodeIsWithinCatalog(std::string_view candidate) {
-  return FindNativeDiagCodeCatalogEntry(candidate) != nullptr;
-}

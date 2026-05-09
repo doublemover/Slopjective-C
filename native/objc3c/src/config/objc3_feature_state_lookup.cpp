@@ -4,10 +4,6 @@
 
 namespace objc3c::config {
 
-std::span<const LanguageFeatureState> CanonicalFeatureStates() {
-  return CanonicalFeatureStateEntries();
-}
-
 const LanguageFeatureState *FindCanonicalFeatureState(
     std::string_view feature) {
   for (const auto &state : CanonicalFeatureStateEntries()) {
