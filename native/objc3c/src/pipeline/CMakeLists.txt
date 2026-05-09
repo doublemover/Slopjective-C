@@ -63,6 +63,7 @@ add_library(objc3c_pipeline STATIC
   objc3_lowering_pipeline_pass_graph_core_feature_readiness.cpp
   objc3_lowering_pipeline_pass_graph_scaffold.cpp
   objc3_ownership_aware_lowering_behavior_scaffold.cpp
+  objc3_parse_lowering_readiness_surface.cpp
 )
 objc3c_apply_build_defaults(objc3c_pipeline)
 objc3c_apply_llvm_direct_config(objc3c_pipeline)
