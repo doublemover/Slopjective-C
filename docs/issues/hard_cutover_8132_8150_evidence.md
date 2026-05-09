@@ -13,6 +13,8 @@ Canonical behavior and no-compatibility indexes:
 - `tests/native/retired_surface_matrix.json`
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
+- `tests/conformance/hard_cutover_acceptance_area_owners.json`
+- `tests/conformance/hard_cutover_positive_residue_audit.json`
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -23,6 +25,13 @@ Retired hard-cutover surfaces are documented this way:
 - runtime dispatch fallback: lowering, IR, runtime, and e2e strict-error fixtures
 - migration lane as behavior support: absent from public support and not a
   positive fixture class
+
+Acceptance area ownership is now indexed in
+`tests/conformance/hard_cutover_acceptance_area_owners.json`. The residue audit
+in `tests/conformance/hard_cutover_positive_residue_audit.json` records that the
+remaining positive-fixture lexical hits for `fallback`, `shim`, and `migrator`
+are ordinary variable/function/symbol names or diagnostic inventory labels, not
+old-mode, compatibility-shim, fallback-dispatch, or migration-lane acceptance.
 
 Additional local commits folded into this evidence map after the first index
 pass:

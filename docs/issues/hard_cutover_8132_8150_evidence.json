@@ -17,7 +17,9 @@
     "tests/fixtures/canonical/manifest.json",
     "tests/native/retired_surface_matrix.json",
     "docs/support/capability_matrix.json",
-    "docs/support/evidence_map.json"
+    "docs/support/evidence_map.json",
+    "tests/conformance/hard_cutover_acceptance_area_owners.json",
+    "tests/conformance/hard_cutover_positive_residue_audit.json"
   ],
   "post_index_local_commit_refresh": [
     {

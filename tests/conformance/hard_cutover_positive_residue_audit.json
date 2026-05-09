@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-positive-residue-audit",
+  "source_basis": "read-only text inspection over tests/native, tests/fixtures, tests/tooling/fixtures/native, tests/conformance, and docs/issues on 2026-05-09",
+  "validation": "not run",
+  "result": "no remaining old-mode, shim, fallback, compatibility, or migration-lane positive expectation was found that requires conversion",
+  "conversion_policy": {
+    "true_retired_positive": "rename or move to canonical rejection/strict-error fixture metadata",
+    "lexical_false_positive": "document why the token is ordinary source text and not a compatibility support claim",
+    "negative_fixture": "keep retained names only when the sidecar or index states rejection/strict-error behavior"
+  },
+  "confirmed_rejections": [
+    "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+    "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
+    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+    "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+    "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+    "tests/tooling/fixtures/native/compatibility_alias_without_object_return_rejected.objc3",
+    "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
+    "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+    "tests/tooling/fixtures/native/property_setter_selector_compatibility_negative.objc3"
+  ],
+  "absent_retired_positive_paths": [
+    "tests/tooling/fixtures/native/legacy_canonical_migration_positive.objc3",
+    "tests/tooling/fixtures/native/legacy_canonical_migration_negative.objc3",
+    "tests/tooling/fixtures/native/execution/positive/objc_literal_aliases_globals.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/objc_literal_aliases_globals.objc3"
+  ],
+  "documented_lexical_positive_hits": [
+    {
+      "path": "tests/tooling/fixtures/native/dispatch_intent_source_closure_positive.objc3",
+      "token": "fallbackPath",
+      "classification": "ordinary selector spelling inside a dispatch-intent source fixture",
+      "disposition": "not a runtime fallback acceptance path"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
+      "token": "fallback",
+      "classification": "ordinary helper function name in canonical control-flow behavior",
+      "disposition": "not a compatibility fallback mode"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
+      "token": "fallback",
+      "classification": "ordinary parameter name in canonical return-path behavior",
+      "disposition": "not a retired fallback surface"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
+      "token": "fallback",
+      "classification": "ordinary local value in static-branch return behavior",
+      "disposition": "not fallback execution support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
+      "token": "fallback",
+      "classification": "ordinary optional-flow fallback value in canonical semantics",
+      "disposition": "not an old-mode or migration lane"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/optional_binding_send_coalescing_keypath_positive.objc3",
+      "token": "fallback",
+      "classification": "ordinary nil-coalescing value in canonical optional behavior",
+      "disposition": "not compatibility fallback support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+      "token": "BridgeProviderShim",
+      "classification": "foreign bridge symbol name in interop packaging evidence",
+      "disposition": "not a compatibility shim feature gate"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+      "token": "BridgeProviderShim",
+      "classification": "foreign bridge symbol name in header-module evidence",
+      "disposition": "not a compatibility shim feature gate"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
+      "token": "SemanticBridgeShim",
+      "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
+      "disposition": "not a compatibility shim feature gate"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/diagnostics_migrator_source_inventory_positive.objc3",
+      "token": "migrator",
+      "classification": "diagnostic inventory naming for source migration reporting",
+      "disposition": "not a migration lane that accepts old syntax"
+    }
+  ]
+}

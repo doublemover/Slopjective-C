@@ -47,9 +47,15 @@ Machine-readable indexes:
   runtime/e2e fixture groups)
 - `tests/conformance/hard_cutover_issue_index.json` (local issue evidence map
   for `#8132`-`#8150`, keyed to behavior fixture boundaries and local commits)
+- `tests/conformance/hard_cutover_acceptance_area_owners.json` (acceptance-area
+  ownership index tying compiler/runtime/workflow/docs areas to code paths,
+  behavior fixtures, and hard-cutover issues)
 - `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
   old-mode, shim, fallback, compatibility, and migration-lane surfaces mapped
   to rejection, strict-error, or absent support)
+- `tests/conformance/hard_cutover_positive_residue_audit.json` (read-only
+  positive-fixture residue audit documenting compatibility-looking lexical hits
+  that are not positive compatibility expectations)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
