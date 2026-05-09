@@ -10,7 +10,7 @@ _Last updated: 2026-05-09_
 
 Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the schema-backed capability matrix and evidence map instead of archived planning notes, and public commands route through the single npm objc3c bridge.
 
-> Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model is still in progress.
+> Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model remains unclaimed until the capability matrix marks it implemented with evidence.
 
 ## At a Glance <a id="toc-status-scope-note"></a>
 

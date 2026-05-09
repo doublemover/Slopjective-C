@@ -173,7 +173,7 @@ Current blocker register:
 | `ACT-04`  | `SPT-0500`        | `W1`   | Record `KC-01` through `KC-10` checklist definitions with blocking behavior and remediation actions.         | `D-LEAD` | `2026-02-23T21:00:00Z` | Checklist sections 1-4 include all mandatory `KC-*` rows                                                        | `RK-12-02`   | `KC-01` to `KC-10` |
 | `ACT-05`  | `SPT-0501`        | `W2`   | Record handoff windows (`T+24h`, `T+48h`, `T+72h`) and escalation route in artifact and checklist.           | `D-LEAD` | `2026-02-24T15:00:00Z` | Bootstrap section 5 and checklist section 4 handoff confirmations                                               | `RK-12-02`   | `KC-05`, `KC-10`   |
 | `ACT-06`  | `SPT-0502`        | `W2`   | Complete `D-14` done-criteria traceability in issue package and publication crosswalk.                       | `D-LEAD` | `2026-02-24T16:00:00Z` | `docs/reference/legacy_spec_anchor_index.md` sections 9-10 and section 13                                       | `RK-12-01`   | `KC-01`, `KC-09`   |
-| `ACT-07`  | `SPT-0503`        | `W2`   | Execute `python scripts/spec_lint.py` and capture pass result in checklist and publication record.           | `D-LEAD` | `2026-02-24T17:00:00Z` | Checklist section 5 and bootstrap section 9 validation tables show pass                                         | `RK-12-02`   | `KC-08`            |
+| `ACT-07`  | `SPT-0503`        | `W2`   | Execute `npm run objc3c -- lint-spec` and capture pass result in checklist and publication record.           | `D-LEAD` | `2026-02-24T17:00:00Z` | Checklist section 5 and bootstrap section 9 validation tables show pass                                         | `RK-12-02`   | `KC-08`            |
 | `ACT-08`  | `SPT-0504`        | `W3+`  | Publish closeout summary with artifact paths, source revision, and validation outputs for handoff consumers. | `D-LEAD` | `2026-02-25T16:00:00Z` | Issue `#191` closeout summary contains evidence package details                                                 | `RK-12-03`   | `KC-09`, `KC-10`   |
 
 ## 9. Acceptance and Publication Record
@@ -195,7 +195,7 @@ Validation record:
 
 | command                       | outcome                  |
 | ----------------------------- | ------------------------ |
-| `python scripts/spec_lint.py` | `PASS` (`spec-lint: OK`) |
+| `npm run objc3c -- lint-spec` | `PASS` (`spec-lint: OK`) |
 
 Publication sign-off record:
 

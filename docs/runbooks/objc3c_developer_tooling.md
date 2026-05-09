@@ -235,7 +235,7 @@ Language-server claims must stay narrower than the real shipped capability set.
   - compile-owned declaration coordinates
   - emitted artifact presence and runtime inspection facts
 - unsupported capability classes must fail closed with explicit unpublished-status
-  metadata instead of pretending partial support:
+  metadata instead of pretending unpublished capabilities are supported:
   - references
   - rename
   - semantic tokens

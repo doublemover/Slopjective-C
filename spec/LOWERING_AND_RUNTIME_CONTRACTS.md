@@ -7222,7 +7222,7 @@ consume directly.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation_a002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
+  - checker source: `scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
   - `M261-B001` is the next issue.
 
 ## M261 block source storage annotations (A003)
@@ -7256,7 +7256,7 @@ through lane-D runnable work must consume directly.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion_a003_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
+  - checker source: `scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
   - `M261-B001` is the next issue.
 
 ## M261 block runtime semantic rules (B001)
@@ -7272,7 +7272,7 @@ byref, helper, escape, or invocation behavior.
   - block literals are currently validated as deterministic function-shaped
     source values only.
   - byref, helper-intent, and escape-shape truth remains source-owned and is
-    not yet runnable runtime behavior.
+    reserved runtime behavior.
   - native emit paths still fail closed on block literals with `O3S221`.
 - emitted IR boundary:
   - `; executable_block_runtime_semantic_rules = ...`
@@ -7285,7 +7285,7 @@ byref, helper, escape, or invocation behavior.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_block_runtime_semantic_rules_contract_and_architecture_freeze_b001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
   - `M261-B002` is the next issue.
 
 ## M261 capture legality, escape classification, and invocation typing (B002)
@@ -7316,7 +7316,7 @@ sema capability without claiming runnable native block execution yet.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation_b002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
+  - checker source: `scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
   - `M261-B003` is the next issue.
 
 ## M261 byref mutation, copy-dispose eligibility, and object-capture ownership semantics (B003)
@@ -7347,7 +7347,7 @@ every object capture the same.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion_b003_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
+  - checker source: `scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
   - `M261-C001` is the next issue.
 
 ## M261 block lowering ABI and artifact boundary (C001)
@@ -7377,7 +7377,7 @@ block objects while explicitly preserving the current native fail-closed rule.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze_c001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
   - `M261-C002` is the next issue.
 
 ## M261 executable block object and invoke-thunk lowering (C002)
@@ -7407,7 +7407,7 @@ native lowering slice.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation_c002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
+  - checker source: `scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
   - `M261-C003` is the next issue.
 
 ## M261 byref-cell, copy-helper, and dispose-helper lowering (C003)
@@ -7443,7 +7443,7 @@ for local nonescaping block captures.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation_c003_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
+  - checker source: `scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
   - `M261-C004` is the next issue.
 
 ## M261 heap-promotion and escaping-block runtime hook lowering (C004)
@@ -7478,7 +7478,7 @@ values.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion_c004_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
+  - checker source: `scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
   - `M261-D001` is the next issue.
 
 ## M261 block runtime API and object layout (D001)
@@ -7508,7 +7508,7 @@ that the runnable `M261-C004` block lowering slice currently consumes.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_block_runtime_api_and_object_layout_contract_and_architecture_freeze_d001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
   - `M261-D002` is the next issue.
 
 ## M261 block object allocation, copy-dispose, and invoke support (D002)
@@ -7536,7 +7536,7 @@ runtime capability for promoted block records.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation_d002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
+  - checker source: `scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
   - `M261-D003` is the next issue.
 
 ## M261 byref forwarding, heap promotion, and ownership interop for escaping blocks (D003)
@@ -7562,7 +7562,7 @@ blocks no longer borrow stack-cell addresses after promotion.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion_d003_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
+  - checker source: `scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
   - `M261-E001` is the next issue.
 
 ## M261 runnable block-runtime gate (E001)
@@ -7594,7 +7594,7 @@ retained source, sema, lowering, and runtime evidence chain.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_runnable_block_runtime_gate_contract_and_architecture_freeze_e001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
   - `M261-E002` is the next issue.
 
 ## M261 runnable block execution matrix and docs (E002)
@@ -7626,7 +7626,7 @@ execution matrix above the retained `A003/B003/C004/D003/E001` chain.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m261_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks_cross_lane_integration_sync_e002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
+  - checker source: `scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
   - `M262-A001` is the next issue.
 
 ## M262 ARC source surface and mode boundary (A001)
@@ -7660,7 +7660,7 @@ truthfully present in the compiler.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m262_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze_a001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
   - `M262-A002` is the next issue.
 
 ## M262 ARC mode handling for methods, properties, returns, and block captures (A002)
@@ -7691,7 +7691,7 @@ mode without claiming full ARC automation.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m262_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation_a002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
+  - checker source: `scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
   - `M262-B001` is the next issue.
 
 ## M262 ARC semantic rules and forbidden forms (B001)
@@ -7718,7 +7718,7 @@ explicit ARC mode exists.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m262_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze_b001_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
+  - checker source: `scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
   - `M262-B002` is the next issue.
 
 ## M262 implicit retain-release inference and lifetime-extension semantics (B002)
@@ -7747,7 +7747,7 @@ signatures.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m262_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation_b002_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
+  - checker source: `scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
   - `M262-B003` is the next issue.
 
 ## M262 weak, autorelease-return, property-synthesis, and block-interaction ARC semantics (B003)
@@ -7776,7 +7776,7 @@ inference baseline.
 - architecture/spec/checker anchors for this issue are:
   - `docs/contracts/m262_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion_b003_expectations.md`
   - `docs/reference/legacy_spec_anchor_index.md`
-  - `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
+  - checker source: `scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
   - `M262-C001` is the next issue.
 
 ## M262 ARC lowering ABI and cleanup model (C001)

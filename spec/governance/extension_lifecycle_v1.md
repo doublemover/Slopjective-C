@@ -18,7 +18,7 @@ This document is aligned to:
 | `LS-1`   | `experimental` | Early validation with controlled blast radius.               | Off in conforming mode.                                | Vendor or private canonical IDs only.                |
 | `LS-2`   | `provisional`  | Cross-vendor convergence with frozen core semantics.         | Off by default unless explicit board waiver.           | Vendor canonical ID required.                        |
 | `LS-3`   | `stable`       | Normative portable behavior eligible for conformance claims. | May be enabled by default according to profile policy. | Public `objc3.meta.*` canonical ID required.         |
-| `LS-4`   | `deprecated`   | Supported compatibility path pending retirement.             | Same as stable unless release policy narrows defaults. | Existing published ID retained with no reassignment. |
+| `LS-4`   | `deprecated`   | Published surface pending retirement; no fallback path implied. | Release policy decides whether it remains enableable before removal. | Existing published ID retained with no reassignment. |
 | `LS-5`   | `retired`      | Tombstone state for removed active support.                  | Not enableable.                                        | Tombstone-only record; ID never reused.              |
 
 ## 2. Lifecycle Invariants
