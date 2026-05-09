@@ -61,6 +61,6 @@ def test_adoption_migration_playbook_bounds_replay_fields_to_risk_inventory() ->
     assert truthfulness["source_compatibility_claims_allowed"] is False
     assert truthfulness["migration_or_fallback_support_claims_allowed"] is False
     assert truthfulness["wrapper_only_publication_allowed"] is False
-    assert "risk inventory" in str(truthfulness["compatibility_report_boundary"])
-    assert "not a source-compatibility guarantee" in str(truthfulness["compatibility_report_boundary"])
+    assert "risk inventory" in str(truthfulness["upgrade_support_report_boundary"])
+    assert "not a source-compatibility guarantee" in str(truthfulness["upgrade_support_report_boundary"])
     assert "not fallback support" in str(truthfulness["rollback_target_boundary"])

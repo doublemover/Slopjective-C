@@ -98,7 +98,7 @@
       "source_report": "release-operations",
       "required_fields": [
         "update_manifest_path",
-        "compatibility_report",
+        "upgrade_support_report",
         "channel_catalog"
       ]
     },

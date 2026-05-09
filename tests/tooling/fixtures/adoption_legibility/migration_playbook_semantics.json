@@ -67,7 +67,7 @@
     {
       "phase_id": "support-and-rollback-check",
       "sequence": 4,
-      "description": "Check compatibility-report boundaries, support-window status, rollback-risk inventory, and long-horizon evidence before public adoption claims.",
+      "description": "Check upgrade-support report boundaries, support-window status, rollback-risk inventory, and long-horizon evidence before public adoption claims.",
       "required_paths": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
@@ -119,13 +119,13 @@
     "target_channel",
     "package_lock",
     "canonical_application_workspace",
-    "compatibility_report",
+    "upgrade_support_report",
     "rollback_target"
   ],
   "hard_cutover_truthfulness": {
     "source_compatibility_claims_allowed": false,
     "migration_or_fallback_support_claims_allowed": false,
-    "compatibility_report_boundary": "compatibility_report is a replay field for risk inventory only, not a source-compatibility guarantee",
+    "upgrade_support_report_boundary": "upgrade_support_report is a replay field for risk inventory only, not a source-compatibility guarantee",
     "rollback_target_boundary": "rollback_target identifies evidence-linked release operations state, not fallback support for retired behavior",
     "wrapper_only_publication_allowed": false
   },

@@ -156,7 +156,7 @@ def main() -> int:
         "published_sbom": release_foundation.get("published_sbom"),
         "published_attestation": release_foundation.get("published_attestation"),
         "update_manifest_path": release_operations.get("update_manifest_path"),
-        "compatibility_report": release_operations.get("compatibility_report"),
+        "upgrade_support_report": release_operations.get("upgrade_support_report"),
         "channel_catalog": release_operations.get("channel_catalog"),
         "trust_report_json": distribution.get("trust_report_json"),
     }

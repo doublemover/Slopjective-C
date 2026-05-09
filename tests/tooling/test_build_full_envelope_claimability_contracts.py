@@ -53,7 +53,7 @@ def test_dashboard_owner_fields_cover_release_artifacts_and_public_summary() -> 
         "published_sbom",
         "published_attestation",
         "update_manifest_path",
-        "compatibility_report",
+        "upgrade_support_report",
         "channel_catalog",
         "trust_report_json",
     )

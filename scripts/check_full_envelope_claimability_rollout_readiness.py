@@ -118,7 +118,7 @@ def main() -> int:
                 release_foundation.get("published_sbom"),
                 release_foundation.get("published_attestation"),
                 release_operations.get("update_manifest_path"),
-                release_operations.get("compatibility_report"),
+                release_operations.get("upgrade_support_report"),
                 release_operations.get("channel_catalog"),
                 distribution.get("trust_report_json"),
             )

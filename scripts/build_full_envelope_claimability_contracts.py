@@ -55,7 +55,7 @@ RELEASE_ARTIFACT_FIELDS = (
     "published_sbom",
     "published_attestation",
     "update_manifest_path",
-    "compatibility_report",
+    "upgrade_support_report",
     "channel_catalog",
     "trust_report_json",
 )
