@@ -6,6 +6,7 @@ add_library(objc3c_pipeline STATIC
   frontend_executable_metadata_source_graph_helpers.cpp
   frontend_executable_metadata_source_graph_readiness.cpp
   frontend_dispatch_source_completion_helpers.cpp
+  frontend_interop_source_completion_helpers.cpp
   frontend_pipeline_orchestration.cpp
   frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
