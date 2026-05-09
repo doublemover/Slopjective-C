@@ -22,6 +22,7 @@ metadata, and issue payloads each have a bounded role.
 | Generated boundary | `tests/fixtures/generated/manifest.json` | `#8138`, `#8144`, `#8148` | generated artifacts are provenance/schema evidence only |
 | Tooling native execution metadata | `tests/tooling/fixtures/native` | `#8143`, `#8144` | metadata mirrors positive/negative native behavior and cannot widen support |
 | Issue closeout evidence | `docs/issues` | `#8132`-`#8150` | local tracker payloads summarize committed evidence and point back to owner indexes |
+| Latest local owner refresh | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | `#8132`-`#8150` | docs/issues-only refresh of local owner commits after `abc203478`; validation, push, GitHub updates, and remote closure remain deferred |
 
 Generated fixtures and issue payloads are deliberately not behavior authorities.
 They may prove provenance, schema shape, or closeout linkage, but canonical

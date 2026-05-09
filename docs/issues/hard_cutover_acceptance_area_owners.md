@@ -16,3 +16,12 @@ performed while preparing it.
 | Workflow and hygiene | `#8142`, `#8149` | workflow action catalog, registry views, action integrity, request dispatch, command/validation docs | public command truth is `npm run objc3c -- <action>` |
 | Canonical behavior fixtures | `#8144`, `#8150` | canonical manifest, retired surface matrix, retired-surface absence index, positive-residue audit | retired behavior is rejection, strict-error, or absent; positives are canonical only |
 | Capability docs and stdlib truth | `#8145` | support matrix/evidence map, README support onboarding, stdlib runbooks and policy surfaces | docs reject shim, fallback, migration-lane, and compatibility-mode support claims |
+
+## Latest Local Owner Refresh
+
+The latest docs/issues-only refresh for these ownership areas is
+`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in the local
+owner wave after `abc203478` through `3dcf928fe` and keeps the same acceptance
+boundaries: new owner modules are evidence of canonical ownership, while
+old-mode, shim, fallback, compatibility, and migration-lane support remain
+rejection, strict-error, or absent evidence.

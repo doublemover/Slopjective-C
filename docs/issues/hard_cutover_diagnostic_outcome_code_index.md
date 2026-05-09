@@ -23,3 +23,9 @@ retired or unsupported surface, but they are not compatibility support claims.
 The `absent-support` row exists because migration-lane support has no diagnostic
 surface to execute: it is absent from public support and positive fixture
 indexes.
+
+Latest diagnostic owner evidence is folded into
+`docs/issues/hard_cutover_latest_local_commit_refresh.md`, including diagnostic
+code, severity, core render/record, parse, removed-mode classifier, and catalog
+owner splits. Those commits refresh diagnostic ownership only; they do not add
+new compatibility diagnostics or positive retired-surface behavior.

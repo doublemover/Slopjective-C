@@ -11,6 +11,22 @@ contracts, runtime class graph rebuild ownership, public API ownership contract
 clarifications, and JSON schema support owners without changing the no-validation
 or no-GitHub status of these payloads.
 
+The latest docs/issues-only refresh is
+`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in the 80
+local commits after `abc203478` through `3dcf928fe`, grouped by issue acceptance
+owner, without changing the no-validation, no-GitHub, no-push, local-only status
+of these payloads.
+
+## Latest Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8132`, `#8134`, `#8146`, `#8147` | `f1df8b644`, `86c31c6dc`, `f5619d174`, `11c20dec5`, `18e1f247b`, `cd5358bf6`, `1e1f314a8`, `bcf43808c`, `388a72716`, `fb54d008b`, `e1576ff03`, `64bf96d9b`, `578ade056` | Parser, AST, ObjC reference, type, and frontend surfaces have newer owner evidence; retired parser/old-mode surfaces remain rejection evidence. |
+| `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime fallback remains removed or strict-error behavior. |
+| `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch fallback stays strict-error evidence. |
+| `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
+| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer local evidence; final closure still waits on validation, push, and remote issue updates. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root

@@ -23,6 +23,7 @@ Canonical behavior and no-compatibility indexes:
 - `docs/issues/hard_cutover_behavior_outcome_owner_index.md`
 - `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`
 - `docs/issues/hard_cutover_diagnostic_outcome_code_index.md`
+- `docs/issues/hard_cutover_latest_local_commit_refresh.md`
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -141,6 +142,23 @@ pass:
   metadata contract IDs, sema feature-surface contracts, and artifact schema
   registry requirement evidence.
 
+Latest local owner refresh after the docs/issues outcome-index pass:
+
+- `docs/issues/hard_cutover_latest_local_commit_refresh.md` folds in the 80
+  local commits after `abc203478` through `3dcf928fe` without running
+  validation, GitHub commands, push, or remote issue edits.
+- Parser, AST, ObjC reference, and type-surface owner splits refresh `#8132`,
+  `#8134`, `#8146`, and `#8147`.
+- Lowering and IR handoff/publication owner splits refresh `#8136`, `#8137`,
+  and `#8147`.
+- Runtime error, reset, concurrency, block, selector/keypath, storage, ARC, and
+  public-result owners refresh `#8133`, `#8143`, and `#8147`.
+- Driver, frontend, publication, public C API, contract, config, pipeline, and
+  JSON/schema owners refresh `#8138`, `#8140`, `#8141`, and `#8148`.
+- Diagnostic, stdlib/support docs, workflow, source-hygiene, control-plane, and
+  retired-surface fixture contract owners refresh `#8135`, `#8142`, `#8144`,
+  `#8145`, `#8149`, and `#8150`.
+
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
 | `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, and schema split commits. |
@@ -161,7 +179,7 @@ pass:
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with canonical ownership and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization. |
 | `#8149` | evidence-ready | Source hygiene and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the latest 80-commit owner refresh. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

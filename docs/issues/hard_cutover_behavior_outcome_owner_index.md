@@ -21,6 +21,7 @@ prove absence or traceability.
 | Generated provenance only | provenance-only | generated manifest and objc3c contract artifacts | generated artifacts do not define behavior support |
 | Positive residue false positive | audit-disposition | positive residue audit | lexical hits are identifiers or inventory labels, not support claims |
 | Issue closeout only | closeout-index | docs/issues evidence and payload indexes | issue docs summarize traceability; they do not create support |
+| Latest local owner refresh | closeout-index | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | post-outcome local commits refresh owner traceability only; validation and remote closure remain deferred |
 
 Outcome ownership is deliberately stricter than file ownership. A fixture may
 live under a broad behavior family, but the expected result determines whether
