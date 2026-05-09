@@ -1,6 +1,10 @@
 #include "runtime/images/registration.h"
 
 #include "runtime/images/image_descriptor.h"
+#include "runtime/state/runtime_state_records.h"
+#include "runtime/state/runtime_state_store.h"
+
+#include <mutex>
 
 namespace objc3c::runtime {
 
@@ -24,3 +28,11 @@ bool RuntimeRegistrationTableShapeIsSupported(
 }
 
 }  // namespace objc3c::runtime
+
+extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
+    const objc3_runtime_registration_table *registration_table) {
+  objc3c::runtime::RuntimeState &state =
+      objc3c::runtime::ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.staged_registration_table = registration_table;
+}
