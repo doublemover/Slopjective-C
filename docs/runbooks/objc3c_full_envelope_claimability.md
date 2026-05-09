@@ -98,9 +98,9 @@ The canonical release blockers for this milestone are:
 - the full-envelope dashboard projection would publish `preview-only` or
   `candidate-scoped` instead of `production-strength`
 
-This milestone is allowed to conclude that the current envelope remains
-release-blocked. The policy surface must state that explicitly instead of
-implicitly treating every passing integration script as enough for release.
+This milestone may conclude that the current envelope remains release-blocked.
+The policy surface states that through checked-in contract fields rather than
+treating passing integration scripts as sufficient release evidence.
 
 The release-blocker summary owns the dashboard release-blocker projection. The
 dashboard consumes that projection and must not invent a separate claim class,
@@ -140,8 +140,9 @@ The checked-in contract and schema surface for those outputs is:
 
 The envelope dashboard is a projection over the support matrix, claim policy,
 release-blocker summary, rollout-readiness summary, and the live conformance,
-performance, release, and trust integration reports. It is not allowed to
-become a separate manual truth source.
+performance, release, and trust integration reports. Its claim class, blocker
+state, acceptance matrix, and release artifact fields are owned by checked-in
+contracts.
 
 The dashboard must carry the `dashboard_release_blocker_projection` emitted by
 the full-envelope release-blocker summary step in the workflow. The
@@ -163,7 +164,7 @@ Later evidence packaging and closeout gates must consume the shared full-envelop
 dashboard and the live validation integrations instead of publishing a second
 soak or external-validation truth surface.
 
-## Release-Candidate Compatibility And Evidence Packaging
+## Release-Candidate Evidence Packaging
 
 The full-envelope evidence package for this milestone must terminate in the live:
 

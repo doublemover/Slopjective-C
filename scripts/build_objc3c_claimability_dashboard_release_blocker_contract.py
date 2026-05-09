@@ -10,6 +10,26 @@ from typing import Any, Sequence
 from objc3c_tooling.reports import expected_json_report
 from objc3c_tooling.reports import write_report_outputs
 from objc3c_tooling.paths import display_path as repo_rel
+try:
+    from build_full_envelope_claimability_contracts import (
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        NON_PRODUCTION_PUBLIC_CLAIM_CLASSES,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        NON_PRODUCTION_PUBLIC_CLAIM_CLASSES,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = (
@@ -92,6 +112,12 @@ def build_summary(policy_path: Path) -> dict[str, Any]:
     )
     blocking_rollout_classes = require_string_list(projection, "blocking_rollout_classes")
     required_dashboard_fields = require_string_list(projection, "required_dashboard_fields")
+    required_public_summary_fields = require_string_list(
+        projection, "required_public_summary_fields"
+    )
+    source_owned_decision_fields = require_string_list(
+        projection, "source_owned_decision_fields"
+    )
 
     release_blocker_text = RELEASE_BLOCKER_SCRIPT.read_text(encoding="utf-8")
     dashboard_text = DASHBOARD_SCRIPT.read_text(encoding="utf-8")
@@ -110,21 +136,21 @@ def build_summary(policy_path: Path) -> dict[str, Any]:
         "projection_has_blocker_id": blocker
         == "claimability-dashboard-not-production-strength",
         "projection_names_dashboard_outputs": dashboard_summary_path
-        == "tmp/reports/full-envelope-claimability/dashboard-summary.json"
+        == DASHBOARD_SUMMARY
         and public_summary_path
-        == "tmp/reports/full-envelope-claimability/public-summary.json",
+        == PUBLIC_SUMMARY,
         "projection_blocks_non_production_claim_classes": set(
             blocking_public_claim_classes
         )
-        == {"preview-only", "candidate-scoped"},
+        == set(NON_PRODUCTION_PUBLIC_CLAIM_CLASSES),
         "projection_blocks_non_stable_rollouts": set(blocking_rollout_classes)
-        == {"preview", "candidate"},
-        "projection_requires_dashboard_decision_fields": {
-            "current_rollout_class",
-            "public_claim_class",
-            "production_strength_claimable",
-            "triggered_release_blockers",
-        }.issubset(required_dashboard_fields),
+        == {ROLLOUT_CLASS_PREVIEW, ROLLOUT_CLASS_CANDIDATE},
+        "projection_requires_dashboard_decision_fields": set(DASHBOARD_DECISION_FIELDS).issubset(required_dashboard_fields),
+        "projection_requires_public_summary_decision_fields": set(PUBLIC_SUMMARY_DECISION_FIELDS).issubset(required_public_summary_fields),
+        "projection_has_source_owned_decision_fields": set(DASHBOARD_DECISION_FIELDS).issubset(
+            source_owned_decision_fields
+        )
+        and set(PUBLIC_SUMMARY_DECISION_FIELDS).issubset(source_owned_decision_fields),
         "release_blocker_script_emits_projection": all(
             marker in release_blocker_text
             for marker in (
@@ -166,6 +192,8 @@ def build_summary(policy_path: Path) -> dict[str, Any]:
             "blocking_public_claim_classes": blocking_public_claim_classes,
             "blocking_rollout_classes": blocking_rollout_classes,
             "required_dashboard_fields": required_dashboard_fields,
+            "required_public_summary_fields": required_public_summary_fields,
+            "source_owned_decision_fields": source_owned_decision_fields,
         },
         "source_truth_paths": source_truth_paths,
         "tmp_source_truth_paths": tmp_source_truth_paths,

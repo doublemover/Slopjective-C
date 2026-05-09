@@ -5,6 +5,36 @@ import json
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        CLAIM_POLICY_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PERFORMANCE_GOVERNANCE_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_BLOCKER_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+        ROLLOUT_CLASS_STABLE,
+        SUPPORT_MATRIX_SUMMARY,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        CLAIM_POLICY_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PERFORMANCE_GOVERNANCE_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_BLOCKER_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+        ROLLOUT_CLASS_STABLE,
+        SUPPORT_MATRIX_SUMMARY,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/stability_rollout_implementation_contract.json"
@@ -40,14 +70,14 @@ def main() -> int:
         for path in contract["required_integration_reports"]
     }
 
-    support_matrix = policy_summaries["tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json"]
-    claim_policy = policy_summaries["tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json"]
-    blocker_summary = policy_summaries["tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json"]
-    public_conformance = integration_reports["tmp/reports/public-conformance/integration-summary.json"]
-    performance = integration_reports["tmp/reports/performance-governance/integration-summary.json"]
-    release_foundation = integration_reports["tmp/reports/release-foundation/integration-summary.json"]
-    release_operations = integration_reports["tmp/reports/release-operations/integration-summary.json"]
-    distribution = integration_reports["tmp/reports/distribution-credibility/integration-summary.json"]
+    support_matrix = policy_summaries[SUPPORT_MATRIX_SUMMARY]
+    claim_policy = policy_summaries[CLAIM_POLICY_SUMMARY]
+    blocker_summary = policy_summaries[RELEASE_BLOCKER_SUMMARY]
+    public_conformance = integration_reports[PUBLIC_CONFORMANCE_SUMMARY]
+    performance = integration_reports[PERFORMANCE_GOVERNANCE_SUMMARY]
+    release_foundation = integration_reports[RELEASE_FOUNDATION_SUMMARY]
+    release_operations = integration_reports[RELEASE_OPERATIONS_SUMMARY]
+    distribution = integration_reports[DISTRIBUTION_CREDIBILITY_SUMMARY]
 
     triggered_reasons: list[str] = []
     if public_conformance.get("public_status") != "claim-ready":
@@ -59,14 +89,14 @@ def main() -> int:
     if distribution.get("trust_state") != "ready":
         triggered_reasons.append(f"distribution-trust:{distribution.get('trust_state')}")
 
-    current_rollout_class = "stable"
-    if blocker_summary.get("current_rollout_class") == "preview":
-        current_rollout_class = "preview"
+    current_rollout_class = ROLLOUT_CLASS_STABLE
+    if blocker_summary.get("current_rollout_class") == ROLLOUT_CLASS_PREVIEW:
+        current_rollout_class = ROLLOUT_CLASS_PREVIEW
     elif triggered_reasons:
-        current_rollout_class = "candidate"
+        current_rollout_class = ROLLOUT_CLASS_CANDIDATE
 
     production_strength_claimable = (
-        current_rollout_class == "stable"
+        current_rollout_class == ROLLOUT_CLASS_STABLE
         and public_conformance.get("public_status") == "claim-ready"
         and performance.get("claim_ready") is True
         and performance.get("release_status") == "release-ready"
@@ -79,7 +109,7 @@ def main() -> int:
         "all_policy_summaries_pass": all(summary.get("status") == "PASS" for summary in policy_summaries.values()),
         "all_integration_reports_pass": all(report.get("status") == "PASS" for report in integration_reports.values()),
         "derived_rollout_class_is_allowed": current_rollout_class in contract["expected_rollout_classes"],
-        "preview_rollout_matches_blocker_state": blocker_summary.get("current_rollout_class") == "preview" and current_rollout_class == "preview",
+        "preview_rollout_matches_blocker_state": blocker_summary.get("current_rollout_class") == ROLLOUT_CLASS_PREVIEW and current_rollout_class == ROLLOUT_CLASS_PREVIEW,
         "production_strength_claim_is_currently_false": production_strength_claimable is False,
         "release_artifact_paths_remain_published": all(
             bool(value)
@@ -95,6 +125,19 @@ def main() -> int:
         ),
         "support_matrix_reports_supported_surfaces": support_matrix.get("support_row_counts_by_class", {}).get("supported", 0) > 0,
         "claim_policy_keeps_preview_non_production": claim_policy.get("checks", {}).get("preview_window_excludes_supported_claims") is True,
+        "rollout_contract_uses_source_owned_policy_inputs": contract["required_policy_summaries"] == [
+            SUPPORT_MATRIX_SUMMARY,
+            CLAIM_POLICY_SUMMARY,
+            RELEASE_BLOCKER_SUMMARY,
+        ],
+        "rollout_contract_uses_source_owned_release_inputs": contract["required_integration_reports"] == [
+            PUBLIC_CONFORMANCE_SUMMARY,
+            PERFORMANCE_GOVERNANCE_SUMMARY,
+            RELEASE_FOUNDATION_SUMMARY,
+            RELEASE_OPERATIONS_SUMMARY,
+            DISTRIBUTION_CREDIBILITY_SUMMARY,
+        ],
+        "rollout_artifact_fields_match_owner_constants": set(contract["required_release_artifact_fields"]) == set(RELEASE_ARTIFACT_FIELDS),
     }
 
     payload = {

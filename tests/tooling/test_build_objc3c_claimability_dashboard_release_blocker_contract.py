@@ -5,6 +5,10 @@ import json
 import sys
 from pathlib import Path
 
+SCRIPTS_ROOT = Path(__file__).resolve().parents[2] / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "scripts"
@@ -43,6 +47,8 @@ def test_dashboard_release_blocker_contract_summary(tmp_path: Path) -> None:
     )
     assert payload["checks"]["dashboard_script_consumes_projection"] is True
     assert payload["checks"]["release_blocker_script_emits_projection"] is True
+    assert payload["checks"]["projection_requires_public_summary_decision_fields"] is True
+    assert payload["checks"]["projection_has_source_owned_decision_fields"] is True
     assert payload["checks"]["source_truth_excludes_tmp"] is True
 
 

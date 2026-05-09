@@ -6,6 +6,42 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        ACCEPTANCE_FAMILIES,
+        CLAIMABILITY_REPORT_MD,
+        CLAIM_POLICY_SUMMARY,
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_BLOCKER_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_READINESS_SUMMARY,
+        SUPPORT_MATRIX_SUMMARY,
+        public_claim_class_for_rollout,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        ACCEPTANCE_FAMILIES,
+        CLAIMABILITY_REPORT_MD,
+        CLAIM_POLICY_SUMMARY,
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_BLOCKER_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_READINESS_SUMMARY,
+        SUPPORT_MATRIX_SUMMARY,
+        public_claim_class_for_rollout,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json"
@@ -13,9 +49,9 @@ SCHEMA_PATH = ROOT / "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.j
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
 OUT_REPORT_DIR = ROOT / "tmp/reports/full-envelope-claimability"
 OUT_ARTIFACT_DIR = ROOT / "tmp/artifacts/full-envelope-claimability/report"
-DASHBOARD_JSON = OUT_REPORT_DIR / "dashboard-summary.json"
-PUBLIC_JSON = OUT_REPORT_DIR / "public-summary.json"
-REPORT_MD = OUT_ARTIFACT_DIR / "full-envelope-claimability-report.md"
+DASHBOARD_JSON = resolve_repo_path(DASHBOARD_SUMMARY)
+PUBLIC_JSON = resolve_repo_path(PUBLIC_SUMMARY)
+REPORT_MD = resolve_repo_path(CLAIMABILITY_REPORT_MD)
 
 
 def expect(condition: bool, message: str) -> None:
@@ -27,6 +63,22 @@ def read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     expect(isinstance(payload, dict), f"JSON object expected at {path}")
     return payload
+
+
+def acceptance_signal(family: str, report: dict[str, Any]) -> str | None:
+    if family == "public-conformance":
+        return report.get("public_status")
+    if family == "performance-governance":
+        return report.get("release_status")
+    if family in {"release-foundation", "release-operations"}:
+        return "publishable" if any(report.get(field) for field in RELEASE_ARTIFACT_FIELDS) else "missing-artifacts"
+    if family == "distribution-credibility":
+        return report.get("trust_state")
+    return next(
+        spec.claim_signal
+        for spec in ACCEPTANCE_FAMILIES
+        if spec.family == family
+    )
 
 
 
@@ -45,22 +97,19 @@ def main() -> int:
         for path in contract["required_integration_reports"]
     }
 
-    support_matrix = source_summaries["tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json"]
-    claim_policy = source_summaries["tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json"]
-    release_blockers = source_summaries["tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json"]
-    rollout = source_summaries["tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"]
+    support_matrix = source_summaries[SUPPORT_MATRIX_SUMMARY]
+    claim_policy = source_summaries[CLAIM_POLICY_SUMMARY]
+    release_blockers = source_summaries[RELEASE_BLOCKER_SUMMARY]
+    rollout = source_summaries[ROLLOUT_READINESS_SUMMARY]
 
-    public_conformance = integration_reports["tmp/reports/public-conformance/integration-summary.json"]
-    performance = integration_reports["tmp/reports/performance-governance/integration-summary.json"]
-    release_foundation = integration_reports["tmp/reports/release-foundation/integration-summary.json"]
-    release_operations = integration_reports["tmp/reports/release-operations/integration-summary.json"]
-    distribution = integration_reports["tmp/reports/distribution-credibility/integration-summary.json"]
+    release_foundation = integration_reports[RELEASE_FOUNDATION_SUMMARY]
+    release_operations = integration_reports[RELEASE_OPERATIONS_SUMMARY]
+    distribution = integration_reports[DISTRIBUTION_CREDIBILITY_SUMMARY]
 
-    public_claim_class = "preview-only"
-    if rollout["current_rollout_class"] == "stable" and rollout["production_strength_claimable"]:
-        public_claim_class = "production-strength"
-    elif rollout["current_rollout_class"] == "candidate":
-        public_claim_class = "candidate-scoped"
+    public_claim_class = public_claim_class_for_rollout(
+        rollout["current_rollout_class"],
+        rollout["production_strength_claimable"],
+    )
     dashboard_release_blocker_projection = release_blockers.get(
         "dashboard_release_blocker_projection"
     )
@@ -87,46 +136,30 @@ def main() -> int:
 
     acceptance_matrix = [
         {
-            "family": "conformance-corpus",
-            "status": integration_reports["tmp/reports/conformance/corpus-integration-summary.json"].get("status"),
-            "claim_signal": "passing-corpus-gate",
-        },
-        {
-            "family": "stress-integration",
-            "status": integration_reports["tmp/reports/stress/integration-summary.json"].get("status"),
-            "claim_signal": "passing-stress-gate",
-        },
-        {
-            "family": "external-validation",
-            "status": integration_reports["tmp/reports/external-validation/integration-summary.json"].get("status"),
-            "claim_signal": "passing-external-validation-gate",
-        },
-        {
-            "family": "public-conformance",
-            "status": public_conformance.get("status"),
-            "claim_signal": public_conformance.get("public_status"),
-        },
-        {
-            "family": "performance-governance",
-            "status": performance.get("status"),
-            "claim_signal": performance.get("release_status"),
-        },
-        {
-            "family": "release-foundation",
-            "status": release_foundation.get("status"),
-            "claim_signal": "publishable" if release_foundation.get("release_manifest_path") else "missing-artifacts",
-        },
-        {
-            "family": "release-operations",
-            "status": release_operations.get("status"),
-            "claim_signal": "publishable" if release_operations.get("compatibility_report") else "missing-artifacts",
-        },
-        {
-            "family": "distribution-credibility",
-            "status": distribution.get("status"),
-            "claim_signal": distribution.get("trust_state"),
-        },
+            "family": spec.family,
+            "status": integration_reports[spec.report_path].get("status"),
+            "claim_signal": acceptance_signal(spec.family, integration_reports[spec.report_path]),
+        }
+        for spec in ACCEPTANCE_FAMILIES
     ]
+    expect(
+        {row["family"] for row in acceptance_matrix}
+        == set(contract["required_acceptance_matrix_families"]),
+        "dashboard acceptance matrix family contract drifted",
+    )
+    expect(
+        all(isinstance(row["status"], str) and isinstance(row["claim_signal"], str) for row in acceptance_matrix),
+        "dashboard acceptance matrix must carry string status and claim_signal values",
+    )
+    release_artifacts = {
+        "release_manifest_path": release_foundation.get("release_manifest_path"),
+        "published_sbom": release_foundation.get("published_sbom"),
+        "published_attestation": release_foundation.get("published_attestation"),
+        "update_manifest_path": release_operations.get("update_manifest_path"),
+        "compatibility_report": release_operations.get("compatibility_report"),
+        "channel_catalog": release_operations.get("channel_catalog"),
+        "trust_report_json": distribution.get("trust_report_json"),
+    }
 
     dashboard_payload = {
         "contract_id": "objc3c.full_envelope.claimability.dashboard.summary.v1",
@@ -141,19 +174,23 @@ def main() -> int:
         "triggered_release_blockers": release_blockers["triggered_blockers"],
         "dashboard_release_blocker_projection": dashboard_release_blocker_projection,
         "acceptance_matrix": acceptance_matrix,
-        "release_artifacts": {
-            "release_manifest_path": release_foundation.get("release_manifest_path"),
-            "published_sbom": release_foundation.get("published_sbom"),
-            "published_attestation": release_foundation.get("published_attestation"),
-            "update_manifest_path": release_operations.get("update_manifest_path"),
-            "compatibility_report": release_operations.get("compatibility_report"),
-            "channel_catalog": release_operations.get("channel_catalog"),
-            "trust_report_json": distribution.get("trust_report_json"),
-        },
+        "release_artifacts": release_artifacts,
     }
 
     for required_key in schema.get("required", []):
         expect(required_key in dashboard_payload, f"dashboard payload missing schema-required key: {required_key}")
+    for required_key in contract["required_dashboard_fields"]:
+        expect(required_key in dashboard_payload, f"dashboard payload missing contract-required key: {required_key}")
+    for required_key in dashboard_release_blocker_projection["required_dashboard_fields"]:
+        expect(required_key in dashboard_payload, f"dashboard payload missing release-blocker-required key: {required_key}")
+    expect(
+        set(DASHBOARD_DECISION_FIELDS).issubset(dashboard_payload),
+        "dashboard payload missing source-owned decision fields",
+    )
+    expect(
+        set(contract["required_release_artifact_fields"]) == set(release_artifacts),
+        "dashboard release artifact field contract drifted",
+    )
 
     public_payload = {
         "contract_id": "objc3c.full_envelope.claimability.public.summary.v1",
@@ -168,6 +205,14 @@ def main() -> int:
         ],
         "report_markdown_path": repo_rel(REPORT_MD),
     }
+    for required_key in contract["required_public_summary_fields"]:
+        expect(required_key in public_payload, f"public summary missing contract-required key: {required_key}")
+    for required_key in dashboard_release_blocker_projection["required_public_summary_fields"]:
+        expect(required_key in public_payload, f"public summary missing release-blocker-required key: {required_key}")
+    expect(
+        set(PUBLIC_SUMMARY_DECISION_FIELDS).issubset(public_payload),
+        "public summary missing source-owned decision fields",
+    )
 
     report_text = (
         "# objc3c Full-Envelope Claimability Report\n\n"

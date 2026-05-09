@@ -28,6 +28,51 @@
   "artifact_output_paths": [
     "tmp/artifacts/full-envelope-claimability/report/full-envelope-claimability-report.md"
   ],
+  "required_dashboard_fields": [
+    "contract_id",
+    "status",
+    "current_rollout_class",
+    "production_strength_claimable",
+    "triggered_reasons",
+    "source_summaries",
+    "source_reports",
+    "public_claim_class",
+    "support_row_counts_by_class",
+    "triggered_release_blockers",
+    "dashboard_release_blocker_projection",
+    "acceptance_matrix",
+    "release_artifacts"
+  ],
+  "required_public_summary_fields": [
+    "contract_id",
+    "status",
+    "current_rollout_class",
+    "public_claim_class",
+    "production_strength_claimable",
+    "triggered_reason_count",
+    "dashboard_release_blocker",
+    "dashboard_blocks_production_strength_claim",
+    "report_markdown_path"
+  ],
+  "required_acceptance_matrix_families": [
+    "conformance-corpus",
+    "stress-integration",
+    "external-validation",
+    "public-conformance",
+    "performance-governance",
+    "release-foundation",
+    "release-operations",
+    "distribution-credibility"
+  ],
+  "required_release_artifact_fields": [
+    "release_manifest_path",
+    "published_sbom",
+    "published_attestation",
+    "update_manifest_path",
+    "compatibility_report",
+    "channel_catalog",
+    "trust_report_json"
+  ],
   "required_schemas": [
     "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"
   ]
