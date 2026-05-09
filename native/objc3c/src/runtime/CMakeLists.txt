@@ -149,6 +149,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_accessors.h
   storage/property_layout_realization.cpp
   storage/property_layout_realization.h
+  storage/property_layout_rules.cpp
+  storage/property_layout_rules.h
   storage/property_lookup.cpp
   storage/property_lookup.h
   storage/property_snapshot.cpp
