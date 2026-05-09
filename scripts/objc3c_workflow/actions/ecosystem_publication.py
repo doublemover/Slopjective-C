@@ -2,91 +2,118 @@
 
 from __future__ import annotations
 
-import sys
-
 from ..commands import run
-from ..environment import ROOT
+from .ecosystem_publication_contracts import (
+    ADOPTION_LEGIBILITY_INTEGRATION_PY,
+    ADOPTION_LEGIBILITY_PUBLICATION_PY,
+    GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY,
+    GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY,
+    LONG_HORIZON_OPERATIONS_INTEGRATION_PY,
+    LONG_HORIZON_OPERATIONS_PUBLICATION_PY,
+    PACKAGE_AUTHORING_WORKFLOW_PY,
+    PACKAGE_ECOSYSTEM_INTEGRATION_PY,
+    PACKAGE_LOCK_PY,
+    PACKAGE_MIRROR_REPRODUCIBILITY_PY,
+    PLANNING_ISSUE_PUBLISHER_PY,
+    PLANNING_PUBLICATION_AUDIT_PY,
+    PUBLICATION_ARTIFACT_CONTRACTS,
+    RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
+    PublicationArtifactContract,
+)
+from .ecosystem_publication_metadata import (
+    ACTION_FEEDS,
+    PACKAGE_FEED_METADATA,
+    PublicationFeedMetadata,
+)
 
-PACKAGE_LOCK_PY = ROOT / "scripts" / "build_objc3c_package_lock.py"
-PACKAGE_AUTHORING_WORKFLOW_PY = ROOT / "scripts" / "check_objc3c_package_authoring_workflow.py"
-PACKAGE_MIRROR_REPRODUCIBILITY_PY = (
-    ROOT / "scripts" / "check_objc3c_package_registry_mirror_reproducibility.py"
-)
-PACKAGE_ECOSYSTEM_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_package_ecosystem_integration.py"
-)
-RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_package_ecosystem_end_to_end.py"
-)
-LONG_HORIZON_OPERATIONS_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_long_horizon_operations_integration.py"
-)
-LONG_HORIZON_OPERATIONS_PUBLICATION_PY = (
-    ROOT / "scripts" / "publish_objc3c_long_horizon_operations_metadata.py"
-)
-ADOPTION_LEGIBILITY_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_adoption_legibility_integration.py"
-)
-ADOPTION_LEGIBILITY_PUBLICATION_PY = (
-    ROOT / "scripts" / "publish_objc3c_adoption_legibility_metadata.py"
-)
-GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
-)
-GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY = (
-    ROOT / "scripts" / "publish_objc3c_governance_sustainability_metadata.py"
-)
-PLANNING_ISSUE_PUBLISHER_PY = ROOT / "scripts" / "publish_objc3c_planning_issues.py"
-PLANNING_PUBLICATION_AUDIT_PY = ROOT / "scripts" / "audit_objc3c_planning_publication.py"
+
+def _run_publication_action(action_name: str, rest: list[str] | None = None) -> int:
+    contract = PUBLICATION_ARTIFACT_CONTRACTS[action_name]
+    return run(contract.command(rest))
 
 
 def action_build_package_lock(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_LOCK_PY)])
+    return _run_publication_action("build-package-lock")
 
 
 def action_validate_package_authoring(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_AUTHORING_WORKFLOW_PY)])
+    return _run_publication_action("validate-package-authoring")
 
 
 def action_validate_package_mirror(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_MIRROR_REPRODUCIBILITY_PY)])
+    return _run_publication_action("validate-package-mirror")
 
 
 def action_validate_package_ecosystem(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_ECOSYSTEM_INTEGRATION_PY)])
+    return _run_publication_action("validate-package-ecosystem")
 
 
 def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY)])
+    return _run_publication_action("validate-runnable-package-ecosystem")
 
 
 def action_validate_long_horizon_operations(_: list[str]) -> int:
-    return run([sys.executable, str(LONG_HORIZON_OPERATIONS_INTEGRATION_PY)])
+    return _run_publication_action("validate-long-horizon-operations")
 
 
 def action_publish_long_horizon_operations(_: list[str]) -> int:
-    return run([sys.executable, str(LONG_HORIZON_OPERATIONS_PUBLICATION_PY)])
+    return _run_publication_action("publish-long-horizon-operations")
 
 
 def action_validate_adoption_legibility(_: list[str]) -> int:
-    return run([sys.executable, str(ADOPTION_LEGIBILITY_INTEGRATION_PY)])
+    return _run_publication_action("validate-adoption-legibility")
 
 
 def action_publish_adoption_legibility(_: list[str]) -> int:
-    return run([sys.executable, str(ADOPTION_LEGIBILITY_PUBLICATION_PY)])
+    return _run_publication_action("publish-adoption-legibility")
 
 
 def action_validate_governance_sustainability(_: list[str]) -> int:
-    return run([sys.executable, str(GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY)])
+    return _run_publication_action("validate-governance-sustainability")
 
 
 def action_publish_governance_sustainability(_: list[str]) -> int:
-    return run([sys.executable, str(GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY)])
+    return _run_publication_action("publish-governance-sustainability")
 
 
 def action_publish_planning_issues(rest: list[str]) -> int:
-    return run([sys.executable, str(PLANNING_ISSUE_PUBLISHER_PY), *rest])
+    return _run_publication_action("publish-planning-issues", rest)
 
 
 def action_check_planning_publication_drift(rest: list[str]) -> int:
-    return run([sys.executable, str(PLANNING_PUBLICATION_AUDIT_PY), "--check", *rest])
+    return _run_publication_action("check-planning-publication-drift", rest)
+
+
+__all__ = [
+    "ACTION_FEEDS",
+    "ADOPTION_LEGIBILITY_INTEGRATION_PY",
+    "ADOPTION_LEGIBILITY_PUBLICATION_PY",
+    "GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY",
+    "GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY",
+    "LONG_HORIZON_OPERATIONS_INTEGRATION_PY",
+    "LONG_HORIZON_OPERATIONS_PUBLICATION_PY",
+    "PACKAGE_AUTHORING_WORKFLOW_PY",
+    "PACKAGE_ECOSYSTEM_INTEGRATION_PY",
+    "PACKAGE_FEED_METADATA",
+    "PACKAGE_LOCK_PY",
+    "PACKAGE_MIRROR_REPRODUCIBILITY_PY",
+    "PLANNING_ISSUE_PUBLISHER_PY",
+    "PLANNING_PUBLICATION_AUDIT_PY",
+    "PUBLICATION_ARTIFACT_CONTRACTS",
+    "PublicationArtifactContract",
+    "PublicationFeedMetadata",
+    "RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY",
+    "action_build_package_lock",
+    "action_check_planning_publication_drift",
+    "action_publish_adoption_legibility",
+    "action_publish_governance_sustainability",
+    "action_publish_long_horizon_operations",
+    "action_publish_planning_issues",
+    "action_validate_adoption_legibility",
+    "action_validate_governance_sustainability",
+    "action_validate_long_horizon_operations",
+    "action_validate_package_authoring",
+    "action_validate_package_ecosystem",
+    "action_validate_package_mirror",
+    "action_validate_runnable_package_ecosystem",
+]
