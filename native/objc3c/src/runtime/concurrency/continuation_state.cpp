@@ -1,5 +1,6 @@
 #include "runtime/concurrency/continuation_state.h"
 
+#include "runtime/concurrency/continuation_snapshot_fields.h"
 #include "runtime/concurrency/continuation_state_store.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
@@ -56,18 +57,8 @@ extern "C" int objc3_runtime_copy_async_continuation_state_for_testing(
 
   const objc3c::runtime::RuntimeContinuationState &state =
       objc3c::runtime::RuntimeContinuationStateForCurrentThread();
-  snapshot->allocation_call_count = state.allocation_call_count;
-  snapshot->handoff_call_count = state.handoff_call_count;
-  snapshot->resume_call_count = state.resume_call_count;
-  snapshot->live_continuation_handle_count = state.live_handles.size();
-  snapshot->last_allocated_continuation_handle = state.last_allocated_handle;
-  snapshot->last_allocated_resume_entry_tag =
-      state.last_allocated_resume_entry_tag;
-  snapshot->last_allocated_executor_tag = state.last_allocated_executor_tag;
-  snapshot->last_handoff_continuation_handle = state.last_handoff_handle;
-  snapshot->last_handoff_executor_tag = state.last_handoff_executor_tag;
-  snapshot->last_resume_continuation_handle = state.last_resume_handle;
-  snapshot->last_resume_result_value = state.last_resume_result_value;
-  snapshot->last_resume_return_value = state.last_resume_return_value;
+  objc3c::runtime::ResetRuntimeAsyncContinuationStateSnapshot(*snapshot);
+  objc3c::runtime::PopulateRuntimeAsyncContinuationStateSnapshot(
+      state, *snapshot);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
