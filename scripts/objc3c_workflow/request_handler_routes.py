@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
 
 from .argument_request_model import (
     DescribeActionRequest,
@@ -18,22 +17,20 @@ from .request_handler_actions import (
     handle_list_actions_request,
 )
 from .request_handler_package_scripts import handle_describe_package_script_request
-
-REQUEST_HANDLER_ROUTE_OWNER = "objc3c-workflow-request-handler-routes"
-REQUEST_HANDLER_UNHANDLED_OWNER = "objc3c-workflow-request-handler-unhandled"
-
-
-@dataclass(frozen=True)
-class WorkflowRequestHandlerRoute:
-    request_type: type[object]
-    handler: Callable[[object], int]
-    owner: str = REQUEST_HANDLER_ROUTE_OWNER
+from .request_handler_route_model import (
+    REQUEST_HANDLER_ROUTE_OWNER,
+    REQUEST_HANDLER_UNHANDLED_OWNER,
+    WorkflowRequestHandlerRoute,
+)
 
 
 REQUEST_HANDLER_ROUTES: tuple[WorkflowRequestHandlerRoute, ...] = (
     WorkflowRequestHandlerRoute(ListActionsRequest, handle_list_actions_request),
     WorkflowRequestHandlerRoute(DescribeActionRequest, handle_describe_action_request),
-    WorkflowRequestHandlerRoute(DescribePackageScriptRequest, handle_describe_package_script_request),
+    WorkflowRequestHandlerRoute(
+        DescribePackageScriptRequest,
+        handle_describe_package_script_request,
+    ),
     WorkflowRequestHandlerRoute(ExecuteActionRequest, handle_execute_action_request),
 )
 

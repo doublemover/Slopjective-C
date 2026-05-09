@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from .environment_tool_lookup import first_available_tool
+from .environment_tool_lookup import required_workflow_tool
 
 
-PWSH = first_available_tool("pwsh", fallback="pwsh")
-NPX = first_available_tool("npx.cmd", "npx", fallback="npx")
+PWSH = required_workflow_tool("pwsh")
+NPX = required_workflow_tool("npx")
 
 
-__all__ = ["NPX", "PWSH", "first_available_tool"]
+__all__ = ["NPX", "PWSH", "required_workflow_tool"]

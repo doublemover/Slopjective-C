@@ -1,16 +1,32 @@
-"""Host tool lookup helpers for workflow environment constants."""
+"""Host tool lookup helpers for required workflow environment constants."""
 
 from __future__ import annotations
 
 import shutil
 
+from .environment_tool_registry import WorkflowToolSpec, workflow_tool_spec
 
-def first_available_tool(*candidates: str, fallback: str) -> str:
-    for candidate in candidates:
+
+WORKFLOW_TOOL_LOOKUP_OWNER = "objc3c-workflow-required-tool-lookup"
+
+
+def resolve_required_tool(spec: WorkflowToolSpec) -> str:
+    for candidate in spec.candidates:
         resolved = shutil.which(candidate)
         if resolved:
             return resolved
-    return fallback
+    candidates = ", ".join(spec.candidates)
+    raise RuntimeError(
+        f"required workflow tool not found for {spec.tool_id}: {candidates}"
+    )
 
 
-__all__ = ["first_available_tool"]
+def required_workflow_tool(tool_id: str) -> str:
+    return resolve_required_tool(workflow_tool_spec(tool_id))
+
+
+__all__ = [
+    "WORKFLOW_TOOL_LOOKUP_OWNER",
+    "required_workflow_tool",
+    "resolve_required_tool",
+]
