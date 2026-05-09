@@ -1,6 +1,7 @@
-#include "support/objc3_property_ownership_profiles.h"
+#include "support/objc3_property_ownership_classification.h"
 
 #include "support/objc3_profile_token_match.h"
+#include "support/objc3_property_profile_tokens.h"
 
 namespace objc3c::support {
 
