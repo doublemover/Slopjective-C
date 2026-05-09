@@ -50,7 +50,12 @@ def select_validation_profiles(paths: Sequence[str]) -> dict[str, object]:
                 "matched_paths": matched_paths[:20],
                 "recommended_actions": list(rule.get("recommended_actions", ())),
                 "exhaustive_actions": list(rule.get("exhaustive_actions", ())),
-                "skipped_by_default": list(rule.get("skipped_by_default", ())),
+                "deferred_actions": list(rule.get("deferred_actions", ())),
+                "profile_owner": rule.get("profile_owner"),
+                "source_owner": rule.get("source_owner"),
+                "hard_blocking_decision_owner": rule.get(
+                    "hard_blocking_decision_owner"
+                ),
             }
         )
     if not matched_profiles and paths:
@@ -60,7 +65,10 @@ def select_validation_profiles(paths: Sequence[str]) -> dict[str, object]:
                 "matched_paths": list(paths)[:20],
                 "recommended_actions": ("test-smoke", "check-task-hygiene"),
                 "exhaustive_actions": ("test-full", "test-nightly"),
-                "skipped_by_default": ("nightly release and stress fan-out",),
+                "deferred_actions": ("nightly release and stress fan-out",),
+                "profile_owner": "validation_timing_changed_paths",
+                "source_owner": "validation_timing_changed_paths",
+                "hard_blocking_decision_owner": "validation_timing_budgets",
             }
         )
     return {
@@ -70,5 +78,11 @@ def select_validation_profiles(paths: Sequence[str]) -> dict[str, object]:
             "smoke": f"{WORKFLOW_COMMAND_TEXT} test-smoke",
             "full": f"{WORKFLOW_COMMAND_TEXT} test-full",
             "nightly": f"{WORKFLOW_COMMAND_TEXT} test-nightly",
+        },
+        "owners": {
+            "source_owner": "validation_timing_changed_paths",
+            "profile_owner": "validation_timing_profile_rules",
+            "command_owner": "test_orchestration_commands",
+            "hard_blocking_decision_owner": "validation_timing_budgets",
         },
     }

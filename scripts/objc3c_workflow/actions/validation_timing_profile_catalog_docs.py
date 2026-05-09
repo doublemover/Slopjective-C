@@ -13,10 +13,13 @@ DOCS_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "check-public-command-surface",
         ),
         exhaustive_actions=("validate-documentation-surface",),
-        skipped_by_default=(
+        deferred_actions=(
             "runtime acceptance",
             "execution smoke",
             "execution replay",
         ),
+        profile_owner="validation_timing_profile_catalog_docs",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
 }

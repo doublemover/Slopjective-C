@@ -8,6 +8,15 @@ from .test_orchestration_composites import (
     action_test_nightly,
     action_test_smoke,
 )
+from .test_orchestration_profiles import (
+    TEST_ORCHESTRATION_PROFILES,
+    TestOrchestrationProfile,
+    TestOrchestrationStep,
+    test_orchestration_profile_payload,
+    test_orchestration_profile_payloads,
+    test_orchestration_steps,
+    workflow_step,
+)
 from .test_orchestration_native import (
     action_test_behavior_matrix,
     action_test_compile_wrapper_self_audit,

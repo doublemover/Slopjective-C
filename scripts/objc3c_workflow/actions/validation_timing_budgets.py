@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 
 from .validation_timing_numbers import safe_float
 
 
+VALIDATION_TIMING_BUDGET_OWNER = "validation_timing_budgets"
+VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER = "validation_timing_budgets"
+
+
 def validation_speed_budget_mode() -> str:
-    budget_mode = os.environ.get(
-        "OBJC3C_VALIDATION_SPEED_BUDGET_MODE",
-        "warn",
-    ).strip().lower()
-    if budget_mode not in {"warn", "fail"}:
-        return "warn"
-    return budget_mode
+    return "fail"
 
 
 def validation_speed_budgets(
@@ -61,8 +58,12 @@ def validation_speed_budgets(
         elif actual <= threshold:
             budget["status"] = "PASS"
         else:
-            budget["status"] = "WARN"
-        budget["mode"] = "fail" if budget_mode == "fail" else "warning-only"
+            budget["status"] = "FAIL"
+        budget["mode"] = budget_mode
+        budget["budget_owner"] = VALIDATION_TIMING_BUDGET_OWNER
+        budget["hard_blocking_decision_owner"] = (
+            VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER
+        )
     if runtime_acceptance is not None:
         command_groups = runtime_acceptance.get("command_groups", {})
         wrapper_count = None
@@ -79,8 +80,12 @@ def validation_speed_budgets(
                 if isinstance(wrapper_count, int) and wrapper_count <= 1
                 else "UNKNOWN"
                 if wrapper_count is None
-                else "WARN",
-                "mode": "fail" if budget_mode == "fail" else "warning-only",
+                else "FAIL",
+                "mode": budget_mode,
+                "budget_owner": VALIDATION_TIMING_BUDGET_OWNER,
+                "hard_blocking_decision_owner": (
+                    VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER
+                ),
             }
         )
     return budgets
@@ -92,5 +97,5 @@ def validation_budget_violations(
     return [
         budget
         for budget in budgets
-        if budget.get("mode") == "fail" and budget.get("status") == "WARN"
+        if budget.get("mode") == "fail" and budget.get("status") == "FAIL"
     ]

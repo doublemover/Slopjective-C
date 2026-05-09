@@ -6,7 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..environment import ROOT, WORKFLOW_RUNNER_SURFACE
-from .validation_timing_budgets import validation_speed_budgets
+from .validation_timing_budgets import (
+    validation_budget_violations,
+    validation_speed_budgets,
+)
 from .validation_timing_changed_paths import (
     git_changed_paths,
     select_validation_profiles,
@@ -14,14 +17,15 @@ from .validation_timing_changed_paths import (
 from .validation_timing_profile_rules import VALIDATION_PROFILE_RULES
 from .validation_timing_dashboard_sections import dashboard_section_from_report
 from .validation_timing_numbers import safe_float
+from .validation_timing_owner_contracts import validation_timing_owner_payload
 from .validation_timing_report_io import latest_json_file, load_latest_report_payload
 
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 VALIDATION_TIMING_DASHBOARD_CONTRACT_ID = "objc3c.validation.speed.dashboard.v1"
 VALIDATION_TIMING_DASHBOARD_NOTES = [
     "This dashboard is generated from the latest local timing reports under tmp.",
-    "Budget results are warning-only until stable post-optimization baselines are established.",
-    "Generated reports are observability outputs; checked-in scripts remain the source of truth.",
+    "Budget failures are hard-blocking validation timing decisions.",
+    "Checked-in owner modules remain the source of truth for timing decisions.",
 ]
 
 
@@ -69,17 +73,25 @@ def build_validation_timing_dashboard_payload() -> dict[str, object]:
         or reports["test_full"].get("elapsed_seconds")
         or reports["test_smoke"].get("elapsed_seconds")
     )
+    budgets = validation_speed_budgets(
+        runtime_report if runtime_report.get("status") != "MISSING" else None,
+        smoke_report if smoke_report.get("status") != "MISSING" else None,
+        replay_report if replay_report.get("status") != "MISSING" else None,
+        total_seconds,
+    )
+    budget_violations = validation_budget_violations(budgets)
     return {
         "contract_id": VALIDATION_TIMING_DASHBOARD_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runner_path": WORKFLOW_RUNNER_SURFACE,
+        "owners": validation_timing_owner_payload(),
         "reports": reports,
-        "budgets": validation_speed_budgets(
-            runtime_report if runtime_report.get("status") != "MISSING" else None,
-            smoke_report if smoke_report.get("status") != "MISSING" else None,
-            replay_report if replay_report.get("status") != "MISSING" else None,
-            total_seconds,
-        ),
+        "budgets": budgets,
+        "hard_blocking_decision": {
+            "owner": "validation_timing_budgets",
+            "status": "FAIL" if budget_violations else "PASS",
+            "budget_violation_count": len(budget_violations),
+        },
         "validation_profiles": select_validation_profiles(git_changed_paths()),
         "profile_catalog": VALIDATION_PROFILE_RULES,
         "notes": VALIDATION_TIMING_DASHBOARD_NOTES,

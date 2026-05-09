@@ -12,11 +12,17 @@ def profile_rule(
     path_prefixes: Sequence[str],
     recommended_actions: Sequence[str],
     exhaustive_actions: Sequence[str],
-    skipped_by_default: Sequence[str],
+    deferred_actions: Sequence[str],
+    profile_owner: str,
+    source_owner: str,
+    hard_blocking_decision_owner: str,
 ) -> ValidationProfileRule:
     return {
         "path_prefixes": tuple(path_prefixes),
         "recommended_actions": tuple(recommended_actions),
         "exhaustive_actions": tuple(exhaustive_actions),
-        "skipped_by_default": tuple(skipped_by_default),
+        "deferred_actions": tuple(deferred_actions),
+        "profile_owner": profile_owner,
+        "source_owner": source_owner,
+        "hard_blocking_decision_owner": hard_blocking_decision_owner,
     }

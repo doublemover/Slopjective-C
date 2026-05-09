@@ -21,6 +21,8 @@ def dashboard_section_from_report(
             "label": label,
             "report_path": relative_path_or_none(path),
             "status": "MISSING",
+            "report_owner": "validation_timing_report_io",
+            "source_owner": "validation_timing_dashboard_sections",
         }
     timing = payload.get("timing", {})
     timing_payload = timing if isinstance(timing, dict) else {}
@@ -29,6 +31,8 @@ def dashboard_section_from_report(
         "report_path": relative_path_or_none(path),
         "status": payload.get("status", "UNKNOWN"),
         "elapsed_seconds": safe_float(timing_payload.get("elapsed_seconds", 0.0)),
+        "report_owner": "validation_timing_report_io",
+        "source_owner": "validation_timing_dashboard_sections",
     }
     if "case_count" in payload or "default_compile_backend" in payload:
         section.update(

@@ -5,7 +5,16 @@ from pathlib import Path
 
 from scripts.objc3c_workflow.actions import validation_timing
 from scripts.objc3c_workflow.actions import validation_timing_reports
+from scripts.objc3c_workflow.actions.validation_timing_budgets import (
+    validation_budget_violations,
+    validation_speed_budget_mode,
+    validation_speed_budgets,
+)
 from scripts.objc3c_workflow.actions.validation_timing_numbers import safe_float
+from scripts.objc3c_workflow.actions.validation_timing_owner_contracts import (
+    VALIDATION_TIMING_REQUIRED_OWNER_KEYS,
+    validation_timing_owner_payload,
+)
 from scripts.objc3c_workflow.actions.validation_timing_report_summaries import (
     summarize_runtime_acceptance_report,
 )
@@ -19,6 +28,7 @@ OWNER_MODULES = (
     "validation_timing_child_report_loading",
     "validation_timing_report_summaries",
     "validation_timing_dashboard_sections",
+    "validation_timing_owner_contracts",
 )
 
 
@@ -43,6 +53,9 @@ def test_validation_timing_public_facades_export_owner_functions() -> None:
     )
     assert validation_timing_reports.summarize_runtime_acceptance_report is (
         summarize_runtime_acceptance_report
+    )
+    assert validation_timing.validation_timing_owner_payload is (
+        validation_timing_owner_payload
     )
 
 
@@ -81,3 +94,39 @@ def test_validation_timing_summary_contract_uses_strict_command_groups() -> None
         "count": 1,
         "duration_seconds": 2.0,
     }
+
+
+def test_validation_timing_budget_contract_is_hard_blocking() -> None:
+    budgets = validation_speed_budgets(
+        {"elapsed_seconds": 61.0, "command_groups": {"wrapper": {"count": 2}}},
+        {"elapsed_seconds": 90.0},
+        {"elapsed_seconds": 31.0},
+        total_seconds=121.0,
+    )
+
+    violations = validation_budget_violations(budgets)
+
+    assert validation_speed_budget_mode() == "fail"
+    assert {budget["mode"] for budget in budgets} == {"fail"}
+    assert all(
+        budget["budget_owner"] == "validation_timing_budgets" for budget in budgets
+    )
+    assert all(
+        budget["hard_blocking_decision_owner"] == "validation_timing_budgets"
+        for budget in budgets
+    )
+    assert {violation["name"] for violation in violations} == {
+        "runtime_acceptance_elapsed_seconds",
+        "execution_replay_elapsed_seconds",
+        "composite_elapsed_seconds",
+        "runtime_acceptance_wrapper_invocations",
+    }
+
+
+def test_validation_timing_owner_payload_covers_blocking_contract() -> None:
+    owners = validation_timing_owner_payload()
+
+    for owner_key in VALIDATION_TIMING_REQUIRED_OWNER_KEYS:
+        assert owners[owner_key]
+    assert owners["budget_owner"] == "validation_timing_budgets"
+    assert owners["hard_blocking_decision_owner"] == "validation_timing_budgets"

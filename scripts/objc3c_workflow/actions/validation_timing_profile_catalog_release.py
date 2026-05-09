@@ -16,7 +16,10 @@ RELEASE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "validate-runtime-architecture",
         ),
         exhaustive_actions=("test-nightly",),
-        skipped_by_default=("stress and fuzz validation",),
+        deferred_actions=("stress and fuzz validation",),
+        profile_owner="validation_timing_profile_catalog_release",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
     "stress": profile_rule(
         path_prefixes=(
@@ -32,7 +35,10 @@ RELEASE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "test-lowering-runtime-stress",
         ),
         exhaustive_actions=("test-nightly",),
-        skipped_by_default=("docs-only validation"),
+        deferred_actions=("docs-only validation"),
+        profile_owner="validation_timing_profile_catalog_release",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
     "release-claim": profile_rule(
         path_prefixes=(
@@ -48,6 +54,9 @@ RELEASE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "validate-public-conformance-reporting",
         ),
         exhaustive_actions=("test-nightly",),
-        skipped_by_default=("local-only playground inspections"),
+        deferred_actions=("local-only playground inspections"),
+        profile_owner="validation_timing_profile_catalog_release",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
 }

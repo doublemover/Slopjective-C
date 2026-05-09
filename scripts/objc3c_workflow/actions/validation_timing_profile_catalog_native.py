@@ -20,7 +20,10 @@ NATIVE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "test-execution-replay-focused",
         ),
         exhaustive_actions=("test-full", "test-nightly"),
-        skipped_by_default=("full smoke matrix", "nightly recovery fan-out"),
+        deferred_actions=("full smoke matrix", "nightly recovery fan-out"),
+        profile_owner="validation_timing_profile_catalog_native",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
     "runtime": profile_rule(
         path_prefixes=(
@@ -36,7 +39,10 @@ NATIVE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "test-execution-replay-focused",
         ),
         exhaustive_actions=("test-runtime-acceptance", "test-nightly"),
-        skipped_by_default=("release packaging validations",),
+        deferred_actions=("release packaging validations",),
+        profile_owner="validation_timing_profile_catalog_native",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
     "diagnostics": profile_rule(
         path_prefixes=(
@@ -49,6 +55,9 @@ NATIVE_PROFILE_RULES: dict[str, ValidationProfileRule] = {
             "test-runtime-acceptance-diagnostics",
         ),
         exhaustive_actions=("test-runtime-acceptance", "test-nightly"),
-        skipped_by_default=("runtime-only smoke cases not touching diagnostics"),
+        deferred_actions=("runtime-only smoke cases not touching diagnostics"),
+        profile_owner="validation_timing_profile_catalog_native",
+        source_owner="validation_timing_changed_paths",
+        hard_blocking_decision_owner="validation_timing_budgets",
     ),
 }

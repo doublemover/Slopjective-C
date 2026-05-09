@@ -28,3 +28,23 @@ REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE = (
 REGISTRY_SCHEMA_INDEX_FACADE_SURFACE = (
     "scripts/objc3c_workflow/registry_schema_index.py"
 )
+REGISTRY_STORE_OWNER_SURFACE = "scripts/objc3c_workflow/registry_store.py"
+REGISTRY_VIEW_OWNER_SURFACE = "scripts/objc3c_workflow/registry_views.py"
+
+WORKFLOW_SCHEMA_INDEX_OWNED_FIELDS = (
+    "schema_version",
+    "schema_id",
+    "schema_path",
+    "owner_surface",
+    "owned_fields",
+    "constants_owner_surface",
+    "model_owner_surface",
+    "catalog_owner_surface",
+    "index_facade_surface",
+    "schema_owner_surfaces",
+    "registry_store_contract",
+    "registry_view_contract",
+    "capability_truth_schema_ids",
+    "capability_truth",
+    "schemas",
+)

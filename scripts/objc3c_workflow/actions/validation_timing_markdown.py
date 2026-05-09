@@ -11,6 +11,7 @@ def write_validation_timing_markdown(payload: dict[str, object], path: Path) -> 
         "",
         f"- generated: `{payload['generated_at_utc']}`",
         "- contract: `objc3c.validation.speed.dashboard.v1`",
+        f"- hard-blocking: `{payload.get('hard_blocking_decision')}`",
         "",
         "## Reports",
     ]
@@ -31,8 +32,14 @@ def write_validation_timing_markdown(payload: dict[str, object], path: Path) -> 
             if isinstance(budget, dict):
                 lines.append(
                     f"- `{budget.get('name')}`: `{budget.get('status')}` "
-                    f"actual=`{budget.get('actual_seconds', budget.get('actual_count'))}`"
+                    f"actual=`{budget.get('actual_seconds', budget.get('actual_count'))}` "
+                    f"owner=`{budget.get('budget_owner')}`"
                 )
+    lines.extend(["", "## Owners"])
+    owners = payload.get("owners", {})
+    if isinstance(owners, dict):
+        for key, owner in owners.items():
+            lines.append(f"- `{key}`: `{owner}`")
     lines.extend(["", "## Validation Profiles"])
     profiles = payload.get("validation_profiles", {})
     if isinstance(profiles, dict):

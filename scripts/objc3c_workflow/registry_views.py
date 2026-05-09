@@ -15,6 +15,33 @@ from .registry_store import (
     catalog_has_action,
     require_catalog_action_spec,
 )
+from .registry_schema_constants import (
+    REGISTRY_STORE_OWNER_SURFACE,
+    REGISTRY_VIEW_OWNER_SURFACE,
+)
+
+REGISTRY_VIEW_CONTRACT_ID = "objc3c-workflow-registry-view-v1"
+REGISTRY_VIEW_OWNED_FUNCTIONS = (
+    "action_count",
+    "action_items",
+    "action_names",
+    "action_spec",
+    "action_specs",
+    "actions_by_category",
+    "actions_matching",
+    "has_action",
+    "require_action_spec",
+)
+
+
+def registry_view_contract() -> dict[str, object]:
+    return {
+        "contract_id": REGISTRY_VIEW_CONTRACT_ID,
+        "owner_surface": REGISTRY_VIEW_OWNER_SURFACE,
+        "owned_functions": list(REGISTRY_VIEW_OWNED_FUNCTIONS),
+        "store_surface": REGISTRY_STORE_OWNER_SURFACE,
+        "public_contract": True,
+    }
 
 
 def action_spec(action: str) -> ActionSpec | None:
@@ -51,3 +78,20 @@ def actions_matching(predicate: Callable[[str, ActionSpec], bool]) -> list[str]:
 
 def action_count() -> int:
     return catalog_action_count()
+
+
+__all__ = [
+    "REGISTRY_VIEW_CONTRACT_ID",
+    "REGISTRY_VIEW_OWNER_SURFACE",
+    "REGISTRY_VIEW_OWNED_FUNCTIONS",
+    "action_count",
+    "action_items",
+    "action_names",
+    "action_spec",
+    "action_specs",
+    "actions_by_category",
+    "actions_matching",
+    "has_action",
+    "registry_view_contract",
+    "require_action_spec",
+]

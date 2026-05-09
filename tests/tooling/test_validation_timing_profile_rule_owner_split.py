@@ -40,6 +40,7 @@ def test_validation_timing_profile_rules_is_catalog_facade() -> None:
         assert f"from .{module_name} import" in facade_text
     assert "path_prefixes" not in facade_text
     assert "recommended_actions" not in facade_text
+    assert "profile_owner" not in facade_text
 
 
 def test_validation_timing_profile_catalog_preserves_owner_order() -> None:
@@ -76,3 +77,27 @@ def test_validation_timing_profile_selection_still_matches_native_paths() -> Non
     assert "test-runtime-acceptance-fast" in profiles["runtime"][
         "recommended_actions"
     ]
+    assert profiles["runtime"]["profile_owner"] == (
+        "validation_timing_profile_catalog_native"
+    )
+    assert profiles["runtime"]["source_owner"] == "validation_timing_changed_paths"
+    assert profiles["runtime"]["hard_blocking_decision_owner"] == (
+        "validation_timing_budgets"
+    )
+    assert "deferred_actions" in profiles["runtime"]
+
+
+def test_validation_timing_repo_profile_is_owner_explicit() -> None:
+    payload = select_validation_profiles(["unknown/new_surface.objc3"])
+    profile = payload["profiles"][0]
+
+    assert profile["profile"] == "repo"
+    assert profile["profile_owner"] == "validation_timing_changed_paths"
+    assert profile["source_owner"] == "validation_timing_changed_paths"
+    assert profile["hard_blocking_decision_owner"] == "validation_timing_budgets"
+    assert payload["owners"] == {
+        "source_owner": "validation_timing_changed_paths",
+        "profile_owner": "validation_timing_profile_rules",
+        "command_owner": "test_orchestration_commands",
+        "hard_blocking_decision_owner": "validation_timing_budgets",
+    }
