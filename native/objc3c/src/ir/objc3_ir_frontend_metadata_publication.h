@@ -50,3 +50,6 @@ void EmitObjc3IRTypeSymbolDispatchCounterNodes(
 
 void EmitObjc3IRDispatchOwnershipLoweringCounterNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRBlockLoweringCounterNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
