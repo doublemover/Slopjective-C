@@ -2,6 +2,7 @@
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "runtime/reflection/property_entry_snapshot_fields.h"
+#include "runtime/reflection/property_reflection_query_state.h"
 #include "runtime/reflection/property_registry_snapshot_fields.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
@@ -43,14 +44,8 @@ extern "C" int objc3_runtime_copy_property_entry_for_testing(
 
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
   std::lock_guard<std::mutex> lock(state.mutex);
-  state.last_queried_property_class_name =
-      class_name != nullptr ? class_name : "";
-  state.last_queried_property_name =
-      property_name != nullptr ? property_name : "";
-  state.last_reflected_property_class_name.clear();
-  state.last_reflected_property_owner_identity.clear();
-  state.last_property_query_found = false;
-  state.last_property_query_inherited = false;
+  objc3c::runtime::BeginRuntimePropertyReflectionQueryUnlocked(
+      state, class_name, property_name);
 
   snapshot->queried_class_name =
       objc3c::runtime::BorrowRuntimeCString(
@@ -79,19 +74,15 @@ extern "C" int objc3_runtime_copy_property_entry_for_testing(
       objc3c::runtime::FindRuntimePropertyAccessorByNameUnlocked(
           state, start_node, property_name, resolved_node, inherited,
           used_cache);
-  state.last_property_query_used_cache = used_cache;
+  objc3c::runtime::RecordRuntimePropertyReflectionCacheUseUnlocked(
+      state, used_cache);
   if (accessor == nullptr || resolved_node == nullptr ||
       accessor->property_descriptor == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
 
-  state.last_property_query_found = true;
-  state.last_property_query_inherited = inherited;
-  state.last_reflected_property_class_name = resolved_node->class_name;
-  state.last_reflected_property_owner_identity =
-      accessor->property_descriptor->declaration_owner_identity != nullptr
-          ? accessor->property_descriptor->declaration_owner_identity
-          : "";
+  objc3c::runtime::RecordRuntimePropertyReflectionHitUnlocked(
+      state, *resolved_node, *accessor, inherited);
 
   objc3c::runtime::PopulateRuntimePropertyEntrySnapshotUnlocked(
       state, *resolved_node, *accessor, inherited, *snapshot);

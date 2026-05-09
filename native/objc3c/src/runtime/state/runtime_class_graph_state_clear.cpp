@@ -1,5 +1,6 @@
 #include "runtime/state/runtime_class_graph_state_clear.h"
 
+#include "runtime/reflection/property_reflection_query_state.h"
 #include "runtime/state/runtime_state_records.h"
 
 namespace objc3c::runtime {
@@ -33,13 +34,7 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_query_class_found = false;
   state.last_protocol_query_protocol_found = false;
   state.last_protocol_query_conforms = false;
-  state.last_queried_property_class_name.clear();
-  state.last_queried_property_name.clear();
-  state.last_reflected_property_class_name.clear();
-  state.last_reflected_property_owner_identity.clear();
-  state.last_property_query_found = false;
-  state.last_property_query_inherited = false;
-  state.last_property_query_used_cache = false;
+  ResetRuntimePropertyReflectionQueryStateUnlocked(state);
 }
 
 }  // namespace objc3c::runtime

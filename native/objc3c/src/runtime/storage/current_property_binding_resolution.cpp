@@ -2,6 +2,7 @@
 
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/reflection/property_reflection_query_state.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/storage/property_accessors.h"
 
@@ -41,7 +42,7 @@ RuntimeCurrentPropertyBindingResolution ResolveCurrentPropertyBindingUnlocked(
       FindRuntimePropertyAccessorByNameUnlocked(
           state, start_node, property_name, resolved_node, inherited,
           used_cache);
-  state.last_property_query_used_cache = used_cache;
+  RecordRuntimePropertyReflectionCacheUseUnlocked(state, used_cache);
   if (accessor == nullptr || resolved_node == nullptr) {
     return resolution;
   }

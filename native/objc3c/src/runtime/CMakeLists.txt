@@ -181,6 +181,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   reflection/property_entry_layout_snapshot_fields.h
   reflection/property_entry_snapshot_fields.cpp
   reflection/property_entry_snapshot_fields.h
+  reflection/property_reflection_query_state.cpp
+  reflection/property_reflection_query_state.h
   reflection/property_registry_snapshot_fields.cpp
   reflection/property_registry_snapshot_fields.h
   reflection/property_snapshot_api.cpp
@@ -239,6 +241,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_accessor_resolution.h
   storage/property_accessors.cpp
   storage/property_accessors.h
+  storage/property_ivar_layout_index.cpp
+  storage/property_ivar_layout_index.h
   storage/property_layout_realization.cpp
   storage/property_layout_realization.h
   storage/property_layout_rules.cpp
