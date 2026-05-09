@@ -80,5 +80,8 @@ This root is not a place for:
   `npm run objc3c -- package-runnable-toolchain` flow
 - validation and packaging commands for this root use the public
   `npm run objc3c -- <action>` surface
+- package-script aliases, direct helper commands, stdlib-local wrappers,
+  fallback import/package lanes, and migration-lane support claims are not
+  public stdlib entrypoints
 - reader-facing onboarding, comparison, and capability-demo work stays on the
   live `docs/tutorials/`, `showcase/`, and `site/src/index.body.md` surfaces

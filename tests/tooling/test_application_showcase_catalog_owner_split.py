@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from scripts.objc3c_workflow.action_catalog_application_architecture import (
     APPLICATION_ARCHITECTURE_ACTION_SPECS,
 )
@@ -36,6 +39,8 @@ from scripts.objc3c_workflow.action_catalog_core_showcase_examples import (
 from scripts.objc3c_workflow.action_catalog_core_stdlib_surface import (
     CORE_STDLIB_SURFACE_ACTION_SPECS,
 )
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_application_workspace_catalog_aggregates_owner_catalogs() -> None:
@@ -102,3 +107,126 @@ def test_core_showcase_catalog_preserves_public_order_and_owner_identity() -> No
         CORE_SHOWCASE_ACTION_SPECS["validate-getting-started"]
         is CORE_GETTING_STARTED_ACTION_SPECS["validate-getting-started"]
     )
+
+
+def test_showcase_portfolio_publishes_canonical_npm_command_truth() -> None:
+    payload = json.loads(
+        (ROOT / "showcase" / "portfolio.json").read_text(encoding="utf-8")
+    )
+
+    assert payload["public_command_model"] == {
+        "entrypoint_kind": "single-npm-bridge",
+        "canonical_template": "npm run objc3c -- <action>",
+        "authoritative_script": "package.json#scripts.objc3c",
+        "retired_public_semantics": [
+            "package-script aliases",
+            "direct helper script commands",
+            "showcase-local wrappers",
+            "fallback compile or runtime lanes",
+            "migration-lane support claims",
+        ],
+    }
+    assert "public_entrypoints" not in payload
+    assert payload["public_actions"] == {
+        "build_native": "build-native-binaries",
+        "compile_example": "compile-objc3c",
+        "check_surface": "check-showcase-surface",
+        "validate_showcase": "validate-showcase",
+        "validate_runnable_showcase": "validate-runnable-showcase",
+        "package_runnable_toolchain": "package-runnable-toolchain",
+        "execution_smoke": "test-execution-smoke",
+        "execution_replay": "test-execution-replay",
+    }
+    assert payload["command_surfaces"] == {
+        name: f"npm run objc3c -- {action}"
+        for name, action in payload["public_actions"].items()
+    }
+    assert payload["build_run_package_surface"] == {
+        "emit_prefix": "module",
+        "workspace_layout": "checked-in showcase directories rooted at showcase/<example-id>",
+        "artifact_root": "tmp/artifacts/showcase",
+        "report_root": "tmp/reports/showcase",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+        "build_native_action": "build-native-binaries",
+        "compile_action": "compile-objc3c",
+        "surface_check_action": "check-showcase-surface",
+        "integrated_validation_action": "validate-showcase",
+        "packaged_validation_action": "validate-runnable-showcase",
+        "package_action": "package-runnable-toolchain",
+        "execution_smoke_action": "test-execution-smoke",
+        "execution_replay_action": "test-execution-replay",
+    }
+    assert payload["runtime_presentation_surface"] == {
+        "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
+        "runtime_library_resolution_model": (
+            "registration-manifest-runtime-archive-path-is-authoritative"
+        ),
+        "driver_linker_flag_consumption_model": (
+            "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands"
+        ),
+        "integrated_validation_action": "validate-showcase",
+        "packaged_validation_action": "validate-runnable-showcase",
+        "shared_execution_smoke_action": "test-execution-smoke",
+        "shared_execution_replay_action": "test-execution-replay",
+        "presentation_readme": "showcase/README.md",
+    }
+
+
+def test_showcase_walkthrough_steps_use_workflow_actions_and_public_commands() -> None:
+    payload = json.loads(
+        (ROOT / "showcase" / "tutorial_walkthrough.json").read_text(encoding="utf-8")
+    )
+
+    for step in payload["steps"]:
+        assert "public_entrypoint" not in step
+        action = step["workflow_action"]
+        command = step["public_command"]
+        assert command.startswith(f"npm run objc3c -- {action}")
+        assert ":" not in action
+        assert not command.startswith("python ")
+        assert not command.startswith("pwsh ")
+
+
+def test_stdlib_program_surface_records_canonical_command_model() -> None:
+    payload = json.loads(
+        (ROOT / "stdlib" / "program_surface.json").read_text(encoding="utf-8")
+    )
+
+    assert payload["public_command_model"] == {
+        "entrypoint_kind": "single-npm-bridge",
+        "canonical_template": "npm run objc3c -- <action>",
+        "authoritative_script": "package.json#scripts.objc3c",
+        "retired_public_semantics": [
+            "package-script aliases",
+            "direct helper script commands",
+            "stdlib-local wrappers",
+            "fallback import or package lanes",
+            "migration-lane support claims",
+        ],
+    }
+    assert payload["onboarding_policy"]["command_truth_rule"] == (
+        "package.json objc3c is the authoritative public npm entrypoint; "
+        "workflow examples use npm run objc3c -- <action>"
+    )
+    for command in payload["command_surfaces"].values():
+        assert command.startswith("npm run objc3c -- ")
+        assert not command.startswith("python ")
+        assert not command.startswith("pwsh ")
+
+
+def test_site_index_contract_records_public_command_model() -> None:
+    payload = json.loads(
+        (ROOT / "site" / "src" / "index.contract.json").read_text(encoding="utf-8")
+    )
+
+    assert payload["public_command_model"] == {
+        "entrypoint_kind": "single-npm-bridge",
+        "canonical_template": "npm run objc3c -- <action>",
+        "authoritative_script": "package.json#scripts.objc3c",
+        "forbidden_public_command_semantics": [
+            "package-script aliases",
+            "direct helper script commands",
+            "fallback command lanes",
+            "migration-lane support claims",
+        ],
+    }

@@ -8,6 +8,17 @@
     "schemas/objc3c-capability-matrix-v1.schema.json",
     "schemas/objc3c-capability-evidence-map-v1.schema.json"
   ],
+  "public_command_model": {
+    "entrypoint_kind": "single-npm-bridge",
+    "canonical_template": "npm run objc3c -- <action>",
+    "authoritative_script": "package.json#scripts.objc3c",
+    "forbidden_public_command_semantics": [
+      "package-script aliases",
+      "direct helper script commands",
+      "fallback command lanes",
+      "migration-lane support claims"
+    ]
+  },
   "front_matter": [
     "---",
     "title: Objective-C 3.0 Draft Specification",

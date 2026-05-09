@@ -6,15 +6,37 @@
   "machine_output_root": "tmp/artifacts/showcase",
   "machine_report_root": "tmp/reports/showcase",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-  "public_entrypoints": {
-    "build_native": "build:objc3c-native",
-    "compile_example": "compile:objc3c",
-    "check_surface": "check:showcase:surface",
-    "validate_showcase": "test:showcase",
-    "validate_runnable_showcase": "test:showcase:e2e",
-    "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain",
-    "execution_smoke": "test:objc3c:execution-smoke",
-    "execution_replay": "test:objc3c:execution-replay-proof"
+  "public_command_model": {
+    "entrypoint_kind": "single-npm-bridge",
+    "canonical_template": "npm run objc3c -- <action>",
+    "authoritative_script": "package.json#scripts.objc3c",
+    "retired_public_semantics": [
+      "package-script aliases",
+      "direct helper script commands",
+      "showcase-local wrappers",
+      "fallback compile or runtime lanes",
+      "migration-lane support claims"
+    ]
+  },
+  "public_actions": {
+    "build_native": "build-native-binaries",
+    "compile_example": "compile-objc3c",
+    "check_surface": "check-showcase-surface",
+    "validate_showcase": "validate-showcase",
+    "validate_runnable_showcase": "validate-runnable-showcase",
+    "package_runnable_toolchain": "package-runnable-toolchain",
+    "execution_smoke": "test-execution-smoke",
+    "execution_replay": "test-execution-replay"
+  },
+  "command_surfaces": {
+    "build_native": "npm run objc3c -- build-native-binaries",
+    "compile_example": "npm run objc3c -- compile-objc3c",
+    "check_surface": "npm run objc3c -- check-showcase-surface",
+    "validate_showcase": "npm run objc3c -- validate-showcase",
+    "validate_runnable_showcase": "npm run objc3c -- validate-runnable-showcase",
+    "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain",
+    "execution_smoke": "npm run objc3c -- test-execution-smoke",
+    "execution_replay": "npm run objc3c -- test-execution-replay"
   },
   "build_run_package_surface": {
     "emit_prefix": "module",
@@ -22,24 +44,24 @@
     "artifact_root": "tmp/artifacts/showcase",
     "report_root": "tmp/reports/showcase",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-    "build_native_entrypoint": "build:objc3c-native",
-    "compile_entrypoint": "compile:objc3c",
-    "surface_check_entrypoint": "check:showcase:surface",
-    "integrated_validation_entrypoint": "test:showcase",
-    "packaged_validation_entrypoint": "test:showcase:e2e",
-    "package_entrypoint": "package:objc3c-native:runnable-toolchain",
-    "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
-    "execution_replay_entrypoint": "test:objc3c:execution-replay-proof"
+    "build_native_action": "build-native-binaries",
+    "compile_action": "compile-objc3c",
+    "surface_check_action": "check-showcase-surface",
+    "integrated_validation_action": "validate-showcase",
+    "packaged_validation_action": "validate-runnable-showcase",
+    "package_action": "package-runnable-toolchain",
+    "execution_smoke_action": "test-execution-smoke",
+    "execution_replay_action": "test-execution-replay"
   },
   "tutorial_build_run_verify_surface": {
     "getting_started_readme": "docs/tutorials/getting_started.md",
     "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
-    "migration_readme": "docs/tutorials/objc2_to_objc3_migration.md",
-    "build_native_entrypoint": "build:objc3c-native",
-    "compile_entrypoint": "compile:objc3c",
-    "surface_check_entrypoint": "check:showcase:surface",
-    "integrated_validation_entrypoint": "test:showcase",
-    "packaged_validation_entrypoint": "test:showcase:e2e",
+    "objc2_conversion_readme": "docs/tutorials/objc2_to_objc3_migration.md",
+    "build_native_action": "build-native-binaries",
+    "compile_action": "compile-objc3c",
+    "surface_check_action": "check-showcase-surface",
+    "integrated_validation_action": "validate-showcase",
+    "packaged_validation_action": "validate-runnable-showcase",
     "artifact_root": "tmp/artifacts/showcase",
     "report_root": "tmp/reports/showcase",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain"
@@ -49,10 +71,10 @@
     "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
     "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
-    "integrated_validation_entrypoint": "test:showcase",
-    "packaged_validation_entrypoint": "test:showcase:e2e",
-    "shared_execution_smoke_entrypoint": "test:objc3c:execution-smoke",
-    "shared_execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+    "integrated_validation_action": "validate-showcase",
+    "packaged_validation_action": "validate-runnable-showcase",
+    "shared_execution_smoke_action": "test-execution-smoke",
+    "shared_execution_replay_action": "test-execution-replay",
     "presentation_readme": "showcase/README.md"
   },
   "examples": [

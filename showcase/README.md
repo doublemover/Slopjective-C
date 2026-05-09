@@ -12,7 +12,7 @@ Choose the story that matches the question before you read deeper docs:
 - `auroraBoard`
   - use this when the question starts with categories, reflection, or synthesized behaviors
   - pair it with `docs/tutorials/getting_started.md`
-  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for forward-mapping ObjC2 habits
+  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for ObjC2 pattern conversion notes
   - stdlib follow-up modules: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `signalMesh`
   - use this when the question is about actor-shaped messaging, status bridging, or runtime messaging
@@ -33,14 +33,14 @@ stdlib module surface that matches the same story.
 The adoption evidence generator treats this portfolio as the runnable proof for
 onboarding and comparison claims:
 
-- `auroraBoard` anchors Objective-C 2 object-model migration guidance.
+- `auroraBoard` anchors Objective-C 2 object-model pattern-conversion guidance.
 - `signalMesh` anchors Swift-facing async, executor, and messaging comparison.
 - `patchKit` anchors macro, derive, property-behavior, and C++-facing interop
   comparison.
 
 Replay the adoption evidence with:
 
-- `python scripts/build_objc3c_adoption_legibility_evidence.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
 Generated adoption reports stay under `tmp/reports/adoption-legibility/` and
 generated artifacts stay under `tmp/artifacts/adoption-legibility/`.
@@ -64,10 +64,10 @@ Shared live tooling:
 - `npm run objc3c -- <action>`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
-- `scripts/objc3c_native_compile.ps1`
-- `scripts/check_showcase_surface.py`
-- `scripts/check_objc3c_native_execution_smoke.ps1`
-- `scripts/check_objc3c_execution_replay_proof.ps1`
+
+Package-script aliases, direct helper scripts, showcase-local wrappers,
+fallback compile/runtime lanes, and migration-lane support claims are not
+public entrypoints for this portfolio.
 
 Machine-owned outputs only:
 
