@@ -975,7 +975,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "object_model_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
@@ -985,9 +986,10 @@
         "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/object_model_provenance.json"
       ],
-      "retired_disposition": "object-model closure source-owner contracts, loader/category/protocol workload maps, private runtime query snapshots, generated compile artifacts, runtime-registration descriptors, public command surfaces, workflow labels, and generated reports are resolved through behavior-first phase indexes before any object-model row is cited as support; unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, compatibility, shim, old-mode, report-only, generated-report-only, and milestone-local alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "object-model closure source-owner contracts, object identity rows, property synthesis rows, ivar binding/layout rows, runtime metadata records, dispatch/object inspection rows, loader/category/protocol workload maps, private runtime query snapshots, generated compile artifacts, runtime-registration manifests, runtime-registration descriptors, public command surfaces, workflow labels, packaged proof summaries, closure/provenance rows, and generated reports are resolved through behavior-first phase indexes and object model provenance before any object-model row is cited as support; unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, shim, fallback, old-mode, migration-only, report-only, generated-only, generated-report-only, descriptor-only, manifest-only, query-only, dispatch-inspection-only, object-inspection-only, property-synthesis-report-only, ivar-layout-snapshot-only, and milestone-local alternate acceptance semantics remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
       "family": "error_runtime_closure_owner_split_indexes",

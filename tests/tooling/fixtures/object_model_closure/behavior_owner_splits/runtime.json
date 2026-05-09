@@ -3,7 +3,7 @@
   "catalog": "objc3c-object-model-closure-behavior-owner-split",
   "owner_phase": "runtime",
   "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
-  "support_boundary": "runtime ownership covers class realization, category attachment, protocol conformance, selector lookup, dispatch cache state, object-model query state, private reflection query state, replayed images, and storage reflection when canonical runtime owners claim behavior",
+  "support_boundary": "runtime ownership covers object identity, class realization, property synthesis, ivar binding/layout, runtime metadata, category attachment, protocol conformance, selector lookup, dispatch cache state, dispatch/object inspection, object-model query state, private reflection query state, replayed images, and storage reflection when canonical runtime owners claim behavior; query-only dumps, generated reports, and workflow labels stay provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "source_owner_contracts:object_model_runtime_owner",
@@ -22,5 +22,5 @@
     "authoritative_probe_paths:tests/tooling/runtime/live_dispatch_fast_path_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "unresolved dispatch miss fallback, universal selector success, source-only reflection truth, public ABI widening, compatibility runtime shims, and old-mode runtime adapters remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "unresolved dispatch miss fallback, universal selector success, source-only reflection truth, query-only runtime proof, public ABI widening, compatibility runtime shims, fallback runtime adapters, and old-mode runtime adapters remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

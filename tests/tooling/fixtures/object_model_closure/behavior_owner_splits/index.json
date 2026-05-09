@@ -4,10 +4,11 @@
   "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
   "acceptance_workload_map": "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json",
   "split_policy": {
-    "primary_axis": "behavior phase before object-model source-owner contract, loader workload, runtime acceptance report, generated compile artifact, private query proof, public command surface, or public runtime ABI boundary",
-    "positive_rule": "object-model closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
-    "provenance_rule": "generated reports, compile manifests, runtime-registration descriptors, packaged proof summaries, private query snapshots, and workflow labels are provenance until a phase owner claims the behavior",
-    "retired_surface_rule": "unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, report-only support, generated-report-only support, source-only reflection truth, compatibility, shim, old-mode, and milestone-local parallel acceptance scaffolding are canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before object identity, property synthesis, ivar binding/layout, runtime metadata, dispatch/object inspection, loader workload, runtime acceptance report, generated compile artifact, private query proof, public command surface, public runtime ABI boundary, or closure/provenance row",
+    "positive_rule": "object-model closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners over hand-authored fixtures; generated reports, artifacts, descriptors, private snapshots, inspection dumps, labels, and provenance rows are never positive support by themselves",
+    "provenance_rule": "generated reports, compile manifests, runtime-registration descriptors, runtime metadata dumps, packaged proof summaries, private query snapshots, dispatch/object inspection dumps, property/ivar layout snapshots, workload maps, public command wrappers, workflow labels, and closure rows are provenance until a phase owner claims the behavior",
+    "retired_surface_rule": "unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, report-only support, generated-only support, generated-report-only support, source-only reflection truth, probe-local reflection truth, compatibility, shim, fallback, old-mode, migration-only, descriptor-only, manifest-only, query-only, and milestone-local parallel acceptance scaffolding are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, object identity, property synthesis, ivar binding/layout, runtime metadata, dispatch/object inspection, loader replay, generated compile artifacts, private query snapshots, public workflow routing, and closure/provenance rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
   },
   "owner_splits": [
     {
@@ -37,6 +38,10 @@
     {
       "owner_phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "object_model_provenance",
+      "path": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/object_model_provenance.json"
     }
   ]
 }
