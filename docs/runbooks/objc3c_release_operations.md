@@ -31,7 +31,7 @@ Support windows are intentionally narrow and channel-scoped:
 
 - `stable`: supported and preferred for normal users
 - `candidate`: supported for release-drill and pre-publish verification
-- `preview`: blocked unless generated migration and revert evidence exists
+- `preview`: blocked unless generated conversion replay and revert evidence exists
 
 Within one major line:
 

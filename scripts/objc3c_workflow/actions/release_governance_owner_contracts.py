@@ -171,8 +171,8 @@ RELEASE_GATE_OWNERS: dict[str, ReleaseGateOwner] = {
         ),
         hard_cutover_guardrails=(
             ("missing_upstream_artifact_behavior", "fail-closed"),
-            ("compatibility_update_fallback_allowed", False),
-            ("update_fallback_support_allowed", False),
+            ("retired_update_path_allowed", False),
+            ("alternate_update_support_path_allowed", False),
             ("publication_claim_owner", "release-operations-gate"),
             ("blocker_owner_required_before_publication", True),
             ("report_only_release_claim_allowed", False),
@@ -426,11 +426,11 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
     ),
     ReleaseGovernanceActionContract(
         "validate-packaging-channels-end-to-end",
-        "validate install bootstrap rollback and offline bundle behavior end to end",
+        "validate install bootstrap revert and offline bundle behavior end to end",
         "python:scripts/check_objc3c_packaging_channels_end_to_end.py",
         "packaging-channels",
         "full",
-        "packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots",
+        "packaging-channel artifacts stay installable revert-safe and offline-bootstrappable under temp-owned roots",
     ),
     ReleaseGovernanceActionContract(
         "build-platform-support-matrix",

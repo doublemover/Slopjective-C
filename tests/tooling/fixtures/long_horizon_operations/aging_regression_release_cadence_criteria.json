@@ -23,7 +23,7 @@
         "application-architecture",
         "performance-governance"
       ],
-      "rollback_required": true
+      "revert_required": true
     },
     {
       "cadence_id": "minor-additive",
@@ -36,24 +36,24 @@
         "conformance-corpus",
         "stress-integration"
       ],
-      "rollback_required": true
+      "revert_required": true
     },
     {
       "cadence_id": "preview-aging",
-      "allowed_scope": "preview release-drill only until generated migration and rollback evidence exists",
+      "allowed_scope": "preview release-drill only until generated conversion replay and revert evidence exists",
       "minimum_evidence_families": [
         "release-operations",
         "performance-governance",
         "external-validation",
         "public-conformance"
       ],
-      "rollback_required": true
+      "revert_required": true
     }
   ],
   "aging_regression_rules": [
     "Performance publication-freshness blocking values from performance governance are release-blocking.",
     "Soak evidence must include conformance, stress, external-validation, and public-conformance families before a production-strength claim can mention stability.",
-    "Migration and rollback evidence must be regenerated for every release-cadence class that changes package or application behavior.",
+    "Conversion replay and revert evidence must be regenerated for every release-cadence class that changes package or application behavior.",
     "Any stale package or application evidence demotes cadence claims to release-drill only."
   ],
   "required_actions": [
@@ -73,7 +73,7 @@
     "missing soak family",
     "missing package ecosystem evidence",
     "missing canonical application evidence",
-    "missing rollback guidance",
+    "missing revert guidance",
     "manual or non-replayable aging evidence"
   ],
   "blocker_metadata_projection": "claim_audit.blocker_metadata.aging_release_cadence"

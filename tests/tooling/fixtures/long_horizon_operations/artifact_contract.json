@@ -7,8 +7,8 @@
     "owner_split",
     "owner_contracts",
     "support_window",
-    "migration_replay",
-    "rollback",
+    "upgrade_replay",
+    "revert_readiness",
     "soak",
     "aging_regression",
     "claim_audit"
@@ -20,11 +20,11 @@
       "publication_projection": "operator_publication.support_window_summary",
       "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
     },
-    "rollback_owner": {
+    "revert_owner": {
       "source_contract": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
-      "artifact_section": "rollback",
-      "publication_projection": "operator_publication.rollback_channels",
-      "blocker_projection": "claim_audit.blocker_metadata.rollback"
+      "artifact_section": "revert_readiness",
+      "publication_projection": "operator_publication.revert_channels",
+      "blocker_projection": "claim_audit.blocker_metadata.revert_readiness"
     },
     "cadence_owner": {
       "source_contract": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
@@ -61,17 +61,17 @@
   ],
   "generated_reports": [
     "tmp/reports/long-horizon-operations/boundary-inventory-summary.json",
-    "tmp/reports/long-horizon-operations/deprecation-compatibility-policy-summary.json",
-    "tmp/reports/long-horizon-operations/migration-rollback-support-window-summary.json",
+    "tmp/reports/long-horizon-operations/deprecation-support-policy-summary.json",
+    "tmp/reports/long-horizon-operations/conversion-replay-revert-support-window-summary.json",
     "tmp/reports/long-horizon-operations/aging-regression-release-cadence-summary.json",
     "tmp/reports/long-horizon-operations/artifact-contract-summary.json"
   ],
   "claim_rules": [
     "All long-horizon machine-owned artifacts must be regenerated from checked-in source contracts.",
     "tmp/ artifacts and reports are replay outputs, never canonical source authority.",
-    "Compatibility, support-window, migration, rollback, soak, and aging claims must share one generated evidence contract.",
+    "Upgrade, support-window, conversion replay, revert readiness, soak, and aging claims must share one generated evidence contract.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims.",
-    "Deprecation, rollback, cadence, and publication blockers must project through claim_audit.blocker_metadata."
+    "Deprecation, revert readiness, cadence, and publication blockers must project through claim_audit.blocker_metadata."
   ],
   "required_generation_implementation_anchors": [
     "scripts/build_long_horizon_operations_boundary_inventory_summary.py",

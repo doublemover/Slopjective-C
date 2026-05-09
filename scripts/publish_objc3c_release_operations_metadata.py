@@ -13,9 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
 UPGRADE_PATH_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_path_surface.json"
-COMPATIBILITY_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
+UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
 UPDATE_CHANNEL_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "update_channel_policy.json"
-FALLBACK_DIAGNOSTICS_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "fallback_diagnostics_policy.json"
+FAIL_CLOSED_DIAGNOSTICS_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "fallback_diagnostics_policy.json"
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "metadata_surface.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
 CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
@@ -28,9 +28,9 @@ def main() -> int:
     update_manifest = load_json(UPDATE_MANIFEST)
     versioning_model = load_json(VERSIONING_MODEL)
     upgrade_surface = load_json(UPGRADE_PATH_SURFACE)
-    claim_policy = load_json(COMPATIBILITY_CLAIM_POLICY)
+    claim_policy = load_json(UPGRADE_CLAIM_POLICY)
     update_channel_policy = load_json(UPDATE_CHANNEL_POLICY)
-    fallback_policy = load_json(FALLBACK_DIAGNOSTICS_POLICY)
+    fail_closed_policy = load_json(FAIL_CLOSED_DIAGNOSTICS_POLICY)
     metadata_surface = load_json(METADATA_SURFACE)
 
     warning_index = {
@@ -46,7 +46,7 @@ def main() -> int:
                 "severity": warning_index.get(warning_id, "warn"),
                 "message": f"{channel['channel_id']} channel emitted release-operations warning {warning_id}",
             })
-    for diagnostic in fallback_policy["diagnostic_classes"]:
+    for diagnostic in fail_closed_policy["diagnostic_classes"]:
         warnings.append({
             "channel_id": "policy",
             "warning_id": diagnostic["diagnostic_id"],
@@ -86,7 +86,7 @@ def main() -> int:
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
         "warnings": warnings,
         "revert_guidance": revert_guidance,
-        "fail_closed_diagnostics": fallback_policy["diagnostic_classes"],
+        "fail_closed_diagnostics": fail_closed_policy["diagnostic_classes"],
         "forbidden_claims": claim_policy["forbidden_claims"],
     }
     for field_name in metadata_surface["required_upgrade_support_report_fields"]:
@@ -117,7 +117,7 @@ def main() -> int:
         "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT),
         "channel_catalog": repo_rel(CHANNEL_CATALOG),
         "warning_count": len(warnings),
-        "claim_class_count": len(claim_policy["claim_classes"]),
+        "claim_class_count": len(claim_policy["upgrade_claim_classes"]),
         "platform_support_matrix": update_manifest["platform_support_matrix"],
     }
     write_json_file(SUMMARY_PATH, summary)

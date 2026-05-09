@@ -7,6 +7,8 @@
     "contract_id",
     "schema_version",
     "generated_from",
+    "owner_split",
+    "owner_contracts",
     "support_window",
     "upgrade_replay",
     "revert_readiness",
@@ -26,8 +28,16 @@
     },
     "generated_from": {
       "type": "object",
-      "required": ["contracts", "commands"],
+      "required": ["owner_split", "owner_contracts", "contracts", "commands"],
       "properties": {
+        "owner_split": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "owner_contracts": {
+          "type": "object",
+          "additionalProperties": {"type": "object"}
+        },
         "contracts": {
           "type": "array",
           "items": {"type": "string"},
@@ -44,12 +54,26 @@
       },
       "additionalProperties": false
     },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "owner_contracts": {
+      "type": "object",
+      "additionalProperties": {"type": "object"}
+    },
     "support_window": {
       "type": "object",
-      "required": ["current_version", "supported_major_line", "channels"],
+      "required": ["current_version", "supported_major_line", "default_channel", "supported_platform_ids", "channels"],
       "properties": {
         "current_version": {"type": "string"},
         "supported_major_line": {"type": "integer"},
+        "default_channel": {"type": "string"},
+        "supported_platform_ids": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "support_tiers": {"type": "object"},
         "channels": {
           "type": "array",
           "items": {"type": "object"},
@@ -60,11 +84,17 @@
     },
     "upgrade_replay": {
       "type": "object",
-      "required": ["status", "source_version", "target_version", "evidence_paths"],
+      "required": ["status", "source_version", "target_version", "source_channel", "target_channel", "requirements", "evidence_paths"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "source_version": {"type": "string"},
         "target_version": {"type": "string"},
+        "source_channel": {"type": "string"},
+        "target_channel": {"type": "string"},
+        "requirements": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
         "evidence_paths": {
           "type": "array",
           "items": {"type": "string"}
@@ -120,7 +150,7 @@
     },
     "claim_audit": {
       "type": "object",
-      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "release_blockers"],
+      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "blocker_metadata", "release_blockers"],
       "properties": {
         "support_state": {"type": "string"},
         "earned_claims": {
@@ -130,6 +160,10 @@
         "demoted_or_out_of_scope_claims": {
           "type": "array",
           "items": {"type": "string"}
+        },
+        "blocker_metadata": {
+          "type": "object",
+          "additionalProperties": {"type": "object"}
         },
         "release_blockers": {
           "type": "array",

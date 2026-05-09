@@ -2,7 +2,7 @@
   "contract_id": "objc3c.release.operations.fail_closed.diagnostics.policy.v1",
   "schema_version": 1,
   "missing_artifact_behavior": "fail-closed",
-  "publication_rule": "release-operations publication must stop when a required upstream artifact, channel artifact, schema field, or same-major rollback primitive is absent",
+  "publication_rule": "release-operations publication must stop when a required upstream artifact, channel artifact, schema field, or same-major revert primitive is absent",
   "diagnostic_classes": [
     {
       "diagnostic_id": "abi-major-mismatch",
@@ -19,10 +19,10 @@
       "blocks_publication": true
     },
     {
-      "diagnostic_id": "data-format-migration-required",
+      "diagnostic_id": "data-format-conversion-required",
       "severity": "error",
       "trigger": "offline bundle or installer receipt format changes across minor lines",
-      "required_action": "block publication until generated migration and revert evidence exists",
+      "required_action": "block publication until generated conversion replay and revert evidence exists",
       "blocks_publication": true
     },
     {
@@ -40,8 +40,8 @@
   "forbidden_behaviors": [
     "silent cross-major upgrade",
     "warning-free preview promotion",
-    "rollback path omission",
-    "runtime fallback publication",
-    "data-format fallback publication"
+    "revert path omission",
+    "runtime alternate-path publication",
+    "data-format alternate-path publication"
   ]
 }

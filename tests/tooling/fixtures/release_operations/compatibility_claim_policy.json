@@ -1,7 +1,7 @@
 {
-  "contract_id": "objc3c.release.operations.compatibility.claim.policy.v1",
+  "contract_id": "objc3c.release.operations.upgrade.claim.policy.v1",
   "schema_version": 1,
-  "claim_classes": [
+  "upgrade_claim_classes": [
     {
       "claim_id": "same-major-stable-upgrade",
       "allowed_channels": ["stable", "candidate"],
@@ -12,7 +12,7 @@
     {
       "claim_id": "preview-upgrade",
       "allowed_channels": ["preview"],
-      "allowed_scope": "blocked unless generated migration and rollback evidence exists",
+      "allowed_scope": "blocked unless generated conversion replay and revert evidence exists",
       "requires_machine_warning": true,
       "required_phrase": "preview upgrade is evidence-gated"
     },
@@ -27,8 +27,8 @@
   "forbidden_claims": [
     "background auto-update",
     "package-manager parity",
-    "cross-major forward compatibility",
-    "manual waiver-only compatibility status",
-    "best-effort preview compatibility"
+    "cross-major forward support",
+    "manual waiver-only support status",
+    "best-effort preview support"
   ]
 }

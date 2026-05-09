@@ -13,7 +13,7 @@ OWNER_SPLIT = {
     "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
     "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "migration_rollback_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
     "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
     "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py",
 }
@@ -24,11 +24,11 @@ OWNER_CONTRACTS = {
         "publication_projection": "operator_publication.support_window_summary",
         "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy",
     },
-    "rollback_owner": {
-        "source_contract": OWNER_SPLIT["migration_rollback_support_window"],
-        "artifact_section": "rollback",
-        "publication_projection": "operator_publication.rollback_channels",
-        "blocker_projection": "claim_audit.blocker_metadata.rollback",
+    "revert_owner": {
+        "source_contract": OWNER_SPLIT["conversion_replay_revert_support_window"],
+        "artifact_section": "revert_readiness",
+        "publication_projection": "operator_publication.revert_channels",
+        "blocker_projection": "claim_audit.blocker_metadata.revert_readiness",
     },
     "cadence_owner": {
         "source_contract": OWNER_SPLIT["aging_release_cadence"],
@@ -49,14 +49,14 @@ BLOCKER_METADATA = {
         "blocked_when": "advertised support lacks current support-window authority or generated replay evidence",
         "release_blocker_field": "claim_audit.release_blockers",
     },
-    "rollback": {
-        "owner": "rollback_owner",
-        "blocked_when": "advertised channel lacks generated rollback guidance or transport",
+    "revert_readiness": {
+        "owner": "revert_owner",
+        "blocked_when": "advertised channel lacks generated revert guidance or transport",
         "release_blocker_field": "claim_audit.release_blockers",
     },
     "aging_release_cadence": {
         "owner": "cadence_owner",
-        "blocked_when": "cadence claim lacks package, application, soak, freshness, or rollback evidence",
+        "blocked_when": "cadence claim lacks package, application, soak, freshness, or revert evidence",
         "release_blocker_field": "claim_audit.release_blockers",
     },
     "metadata_publication": {
@@ -86,7 +86,7 @@ class LongHorizonEvidencePaths:
     summary_path: Path
     boundary_summary: Path
     deprecation_summary: Path
-    migration_summary: Path
+    conversion_summary: Path
     aging_summary: Path
     artifact_contract_summary: Path
     update_manifest: Path
@@ -110,8 +110,8 @@ class LongHorizonEvidencePaths:
             artifact_path=artifacts / "long-horizon-operations" / "long-horizon-operations-evidence.json",
             summary_path=long_horizon_reports / "evidence-summary.json",
             boundary_summary=long_horizon_reports / "boundary-inventory-summary.json",
-            deprecation_summary=long_horizon_reports / "deprecation-compatibility-policy-summary.json",
-            migration_summary=long_horizon_reports / "migration-rollback-support-window-summary.json",
+            deprecation_summary=long_horizon_reports / "deprecation-support-policy-summary.json",
+            conversion_summary=long_horizon_reports / "conversion-replay-revert-support-window-summary.json",
             aging_summary=long_horizon_reports / "aging-regression-release-cadence-summary.json",
             artifact_contract_summary=long_horizon_reports / "artifact-contract-summary.json",
             update_manifest=artifacts / "release-operations" / "update-manifest" / "objc3c-update-manifest.json",
@@ -135,7 +135,7 @@ class LongHorizonEvidencePaths:
         return (
             EvidenceStep("boundary-inventory", python_script_command("scripts/build_long_horizon_operations_boundary_inventory_summary.py")),
             EvidenceStep("deprecation-policy", python_script_command("scripts/build_long_horizon_operations_deprecation_policy_summary.py")),
-            EvidenceStep("migration-rollback-support-window", python_script_command("scripts/build_long_horizon_operations_migration_rollback_summary.py")),
+            EvidenceStep("conversion-replay-revert-support-window", python_script_command("scripts/build_long_horizon_operations_migration_rollback_summary.py")),
             EvidenceStep("aging-cadence", python_script_command("scripts/build_long_horizon_operations_aging_cadence_summary.py")),
             EvidenceStep("artifact-contract", python_script_command("scripts/build_long_horizon_operations_artifact_contract_summary.py")),
             EvidenceStep("package-ecosystem-integration", python_script_command("scripts/check_objc3c_package_ecosystem_integration.py")),
@@ -151,7 +151,7 @@ class LongHorizonEvidencePaths:
         return (
             RequiredReport("boundary", self.boundary_summary),
             RequiredReport("deprecation", self.deprecation_summary),
-            RequiredReport("migration", self.migration_summary),
+            RequiredReport("conversion", self.conversion_summary),
             RequiredReport("aging", self.aging_summary),
             RequiredReport("artifact_contract", self.artifact_contract_summary),
             RequiredReport("package", self.package_integration),

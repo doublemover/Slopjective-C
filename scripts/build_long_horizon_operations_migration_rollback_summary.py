@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the migration, rollback, and support-window semantics summary."""
+"""Build the conversion replay, revert, and support-window semantics summary."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
 CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "migration-rollback-support-window-summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "conversion-replay-revert-support-window-summary.json"
 
 
 
@@ -78,15 +78,15 @@ def main() -> int:
         failures,
     )
 
-    rollback_rules = semantics.get("rollback_rules", [])
+    revert_rules = semantics.get("revert_rules", [])
     revert_guidance = upgrade_support_report.get("revert_guidance", [])
-    rollback_channels = {str(entry.get("channel_id")) for entry in revert_guidance if isinstance(entry, dict)}
-    for rule in rollback_rules if isinstance(rollback_rules, list) else []:
+    revert_channels = {str(entry.get("channel_id")) for entry in revert_guidance if isinstance(entry, dict)}
+    for rule in revert_rules if isinstance(revert_rules, list) else []:
         if not isinstance(rule, dict):
-            failures.append("rollback rule must be an object")
+            failures.append("revert rule must be an object")
             continue
         channel_id = str(rule.get("channel_id"))
-        expect(channel_id in rollback_channels, f"missing revert guidance for {channel_id}", failures)
+        expect(channel_id in revert_channels, f"missing revert guidance for {channel_id}", failures)
         matching = [entry for entry in revert_guidance if isinstance(entry, dict) and entry.get("channel_id") == channel_id]
         if matching:
             expect(
@@ -95,11 +95,11 @@ def main() -> int:
                 failures,
             )
 
-    replay_requirements = semantics.get("migration_replay_requirements", [])
-    expect(isinstance(replay_requirements, list) and len(replay_requirements) >= 8, "migration replay requirements are too narrow", failures)
+    replay_requirements = semantics.get("conversion_replay_requirements", [])
+    expect(isinstance(replay_requirements, list) and len(replay_requirements) >= 8, "conversion replay requirements are too narrow", failures)
 
     payload = {
-        "contract_id": "objc3c.long_horizon_operations.migration_rollback_support_window.summary.v1",
+        "contract_id": "objc3c.long_horizon_operations.conversion_replay_revert_support_window.summary.v1",
         "status": "PASS" if not failures else "FAIL",
         "semantics": repo_rel(SEMANTICS_PATH),
         "versioning_model": repo_rel(VERSIONING_MODEL),
@@ -110,16 +110,16 @@ def main() -> int:
         "steps": steps,
         "support_window_count": len(version_support_windows) if isinstance(version_support_windows, dict) else 0,
         "upgrade_path_count": len(upgrade_support_report.get("upgrade_paths", [])) if isinstance(upgrade_support_report.get("upgrade_paths"), list) else 0,
-        "rollback_rule_count": len(rollback_rules) if isinstance(rollback_rules, list) else 0,
-        "rollback_channel_count": len(rollback_channels),
-        "migration_replay_requirements": replay_requirements,
+        "revert_rule_count": len(revert_rules) if isinstance(revert_rules, list) else 0,
+        "revert_channel_count": len(revert_channels),
+        "conversion_replay_requirements": replay_requirements,
         "fail_closed_conditions": semantics.get("fail_closed_conditions", []),
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, payload)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
-    print("long-horizon-migration-rollback: PASS" if not failures else "long-horizon-migration-rollback: FAIL")
+    print("long-horizon-conversion-revert: PASS" if not failures else "long-horizon-conversion-revert: FAIL")
     return 0 if not failures else 1
 
 

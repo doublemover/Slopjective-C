@@ -7,13 +7,13 @@
     "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
     "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "migration_rollback_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
     "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
     "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py"
   },
   "working_scope": [
-    "compatibility maintenance policy over release, package, and canonical application workflows",
-    "migration replay and rollback evidence generated from checked-in surfaces",
+    "support-window maintenance policy over release, package, and canonical application workflows",
+    "conversion replay and revert evidence generated from checked-in surfaces",
     "soak and aging-regression evidence that remains replayable under tmp/reports/",
     "operator-visible support-window publication and long-horizon workflow entrypoints"
   ],
@@ -21,8 +21,8 @@
     "hosted package registry service",
     "network-backed dependency resolution",
     "background auto-update daemon",
-    "cross-major compatibility claims without generated migration evidence",
-    "manual compatibility waivers as a substitute for generated evidence"
+    "cross-major support claims without generated conversion evidence",
+    "manual support waivers as a substitute for generated evidence"
   ],
   "substrate_runbooks": [
     "docs/runbooks/objc3c_release_operations.md",

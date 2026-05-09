@@ -18,7 +18,7 @@ SUMMARY_CONTRACT_ID = "objc3c.release.operations.source.surface.summary.v1"
 EXPECTED_CONTRACT_IDS = {
     "versioning_model": "objc3c.release.operations.versioning.model.v1",
     "upgrade_path_surface": "objc3c.release.operations.upgrade.path.surface.v1",
-    "compatibility_claim_policy": "objc3c.release.operations.compatibility.claim.policy.v1",
+    "upgrade_claim_policy": "objc3c.release.operations.upgrade.claim.policy.v1",
     "update_channel_policy": "objc3c.release.operations.update.channel.policy.v1",
     "fail_closed_diagnostics_policy": "objc3c.release.operations.fail_closed.diagnostics.policy.v1",
     "metadata_surface": "objc3c.release.operations.metadata.surface.v1",

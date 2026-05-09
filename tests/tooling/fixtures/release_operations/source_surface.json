@@ -59,8 +59,8 @@
     ],
     "hard_cutover_guardrails": {
       "missing_upstream_artifact_behavior": "fail-closed",
-      "compatibility_update_fallback_allowed": false,
-      "update_fallback_support_allowed": false,
+      "retired_update_path_allowed": false,
+      "alternate_update_support_path_allowed": false,
       "publication_claim_owner": "release-operations-gate",
       "blocker_owner_required_before_publication": true,
       "report_only_release_claim_allowed": false,
@@ -87,16 +87,16 @@
     "no hosted updater",
     "no package-manager-specific upgrade flow",
     "no second payload lineage",
-    "no compatibility shim",
+    "no retired update adapter",
     "no report-only support claim"
   ],
   "hard_cutover_policy": {
     "upstream_artifacts": "required-before-publication",
     "missing_artifact_behavior": "fail-closed",
-    "diagnostic_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+    "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
     "public_action_names": "preserved"
   },
-  "compatibility_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+  "upgrade_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
   "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json",
   "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
   "metadata_surface": "tests/tooling/fixtures/release_operations/metadata_surface.json",

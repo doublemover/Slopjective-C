@@ -46,8 +46,8 @@
     ],
     "hard_cutover_guardrails": {
       "missing_upstream_artifact_behavior": "fail-closed",
-      "compatibility_update_fallback_allowed": false,
-      "update_fallback_support_allowed": false,
+      "retired_update_path_allowed": false,
+      "alternate_update_support_path_allowed": false,
       "publication_claim_owner": "release-operations-gate",
       "blocker_owner_required_before_publication": true,
       "report_only_release_claim_allowed": false,
@@ -68,5 +68,5 @@
   "integration_summary_contract": "objc3c.release.operations.integration.summary.v1",
   "end_to_end_summary_contract": "objc3c.release.operations.end-to-end.summary.v1",
   "nightly_action": "test-nightly",
-  "fallback_policy": "fail-closed: upstream artifacts must exist or their owner action must fail before release-operations publication"
+  "fail_closed_policy": "upstream artifacts must exist or their owner action must fail before release-operations publication"
 }

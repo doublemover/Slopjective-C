@@ -74,7 +74,7 @@ def main() -> int:
         expect(len(axis.get("deferred_behavior", [])) >= 2, f"{axis_id} must name deferred behavior", failures)
 
     required_replay_fields = [str(field) for field in semantics.get("required_adoption_replay_fields", [])]
-    long_horizon_fields = [str(field) for field in long_horizon.get("migration_replay_requirements", [])]
+    long_horizon_fields = [str(field) for field in long_horizon.get("conversion_replay_requirements", [])]
     expect(required_replay_fields == long_horizon_fields, "adoption replay fields drift from long-horizon support semantics", failures)
     if missing_paths:
         failures.append("adoption replay phases reference missing paths")

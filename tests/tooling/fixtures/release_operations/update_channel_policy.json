@@ -48,8 +48,8 @@
       "warning_classes": [
         "preview-channel",
         "cross-major-unsupported",
-        "data-format-migration-blocked",
-        "rollback-recommended"
+        "data-format-conversion-blocked",
+        "revert-recommended"
       ],
       "permitted_upgrade_targets": [
         "preview"
@@ -88,11 +88,11 @@
       "severity": "error"
     },
     {
-      "warning_id": "data-format-migration-blocked",
+      "warning_id": "data-format-conversion-blocked",
       "severity": "error"
     },
     {
-      "warning_id": "rollback-recommended",
+      "warning_id": "revert-recommended",
       "severity": "warn"
     }
   ]

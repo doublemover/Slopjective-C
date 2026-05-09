@@ -65,9 +65,9 @@
       ]
     },
     {
-      "phase_id": "support-and-rollback-check",
+      "phase_id": "support-and-revert-check",
       "sequence": 4,
-      "description": "Check upgrade-support report boundaries, support-window status, rollback-risk inventory, and long-horizon evidence before public adoption claims.",
+      "description": "Check upgrade-support report boundaries, support-window status, revert-risk inventory, and long-horizon evidence before public adoption claims.",
       "required_paths": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
@@ -120,13 +120,13 @@
     "package_lock",
     "canonical_application_workspace",
     "upgrade_support_report",
-    "rollback_target"
+    "revert_target"
   ],
   "hard_cutover_truthfulness": {
     "retired_source_acceptance_claims_allowed": false,
     "retired_surface_acceptance_claims_allowed": false,
     "upgrade_support_report_boundary": "upgrade_support_report is a replay field for risk inventory only, not a retired source acceptance guarantee",
-    "rollback_target_boundary": "rollback_target identifies evidence-linked release operations state, not alternate support for retired behavior",
+    "revert_target_boundary": "revert_target identifies evidence-linked release operations state, not alternate support for retired behavior",
     "wrapper_only_publication_allowed": false
   },
   "publication_policy": {
@@ -142,7 +142,7 @@
     "adoption replay phase sequence is missing or out of order",
     "phase omits concrete paths or workflow actions",
     "interop guidance axis omits a runnable showcase anchor",
-    "same-major support or rollback evidence is not named",
+    "same-major support or revert evidence is not named",
     "adoption replay fields drift from long-horizon support semantics",
     "adoption replay wording implies retired source acceptance support"
   ]

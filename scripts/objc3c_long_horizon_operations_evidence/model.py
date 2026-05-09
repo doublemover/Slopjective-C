@@ -32,7 +32,7 @@ def present_existing_paths(paths: tuple[Path, ...]) -> list[Path]:
     return [path for path in paths if path.is_file()]
 
 
-def rollback_channels(upgrade_support_report: dict[str, Any]) -> list[str]:
+def revert_channels(upgrade_support_report: dict[str, Any]) -> list[str]:
     revert_guidance = upgrade_support_report.get("revert_guidance", [])
     return [
         str(entry.get("channel_id"))
@@ -62,8 +62,8 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
     failures = inputs.failures
     update_manifest = inputs.update_manifest
     upgrade_support_report = inputs.upgrade_support_report
-    rollback_channel_ids = rollback_channels(upgrade_support_report)
-    migration_summary = reports.get("migration", {})
+    revert_channel_ids = revert_channels(upgrade_support_report)
+    conversion_summary = reports.get("conversion", {})
     aging_summary = reports.get("aging", {})
     soak_reports = paths.soak_report_paths()
     evidence_paths = present_existing_paths(
@@ -95,19 +95,19 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
             "supported_platform_ids": update_manifest.get("supported_platform_ids", []),
             "channels": update_manifest.get("channels", []),
         },
-        "migration_replay": {
+        "upgrade_replay": {
             "status": "PASS" if not failures else "FAIL",
             "source_version": str(update_manifest.get("current_version", "")),
             "target_version": candidate_target_version(update_manifest),
             "source_channel": "stable",
             "target_channel": "candidate",
-            "requirements": migration_summary.get("migration_replay_requirements", []),
+            "requirements": conversion_summary.get("conversion_replay_requirements", []),
             "evidence_paths": [rel(paths, path) for path in evidence_paths],
         },
-        "rollback": {
-            "status": "PASS" if rollback_channel_ids and not failures else "FAIL",
-            "channels": rollback_channel_ids,
-            "evidence_paths": [rel(paths, paths.upgrade_support_report), rel(paths, paths.migration_summary)],
+        "revert_readiness": {
+            "status": "PASS" if revert_channel_ids and not failures else "FAIL",
+            "channels": revert_channel_ids,
+            "evidence_paths": [rel(paths, paths.upgrade_support_report), rel(paths, paths.conversion_summary)],
         },
         "soak": {
             "status": "PASS" if all(path.is_file() for path in soak_reports) and not failures else "FAIL",
@@ -132,18 +132,18 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
             },
         },
         "claim_audit": {
-            "support_state": "supported-for-same-major-maintenance-with-generated-migration-rollback-soak-and-aging-evidence",
+            "support_state": "supported-for-same-major-maintenance-with-generated-conversion-revert-soak-and-aging-evidence",
             "earned_claims": [
                 "same-major support windows are generated from release operations metadata",
-                "migration replay evidence composes release, package, and canonical application reports",
+                "conversion replay evidence composes release, package, and canonical application reports",
                 "revert guidance is read from the generated upgrade support report",
                 "soak and aging evidence consume conformance, stress, external-validation, public-conformance, and performance governance reports",
             ],
             "demoted_or_out_of_scope_claims": [
-                "cross-major compatibility without generated migration replay",
+                "cross-major support without generated conversion replay",
                 "hosted registry availability",
                 "background auto-update behavior",
-                "manual compatibility waivers without generated evidence",
+                "manual support waivers without generated evidence",
             ],
             "blocker_metadata": BLOCKER_METADATA,
             "release_blockers": failures,
@@ -169,9 +169,9 @@ def build_summary(
         "step_count": len(inputs.steps),
         "steps": inputs.steps,
         "report_count": len(paths.required_reports()),
-        "migration_evidence_path_count": len(artifact["migration_replay"]["evidence_paths"]),
+        "conversion_evidence_path_count": len(artifact["upgrade_replay"]["evidence_paths"]),
         "soak_evidence_path_count": len(artifact["soak"]["evidence_paths"]),
-        "rollback_channel_count": len(artifact["rollback"]["channels"]),
+        "revert_channel_count": len(artifact["revert_readiness"]["channels"]),
         "support_state": artifact["claim_audit"]["support_state"],
         "failures": failures,
     }

@@ -1,11 +1,11 @@
 {
-  "contract_id": "objc3c.long_horizon_operations.migration_rollback_support_window_semantics.v1",
+  "contract_id": "objc3c.long_horizon_operations.conversion_replay_revert_support_window_semantics.v1",
   "schema_version": 1,
   "owner_contract": {
-    "owner": "rollback_owner",
-    "artifact_section": "rollback",
-    "publication_projection": "operator_publication.rollback_channels",
-    "blocker_projection": "claim_audit.blocker_metadata.rollback"
+    "owner": "revert_owner",
+    "artifact_section": "revert_readiness",
+    "publication_projection": "operator_publication.revert_channels",
+    "blocker_projection": "claim_audit.blocker_metadata.revert_readiness"
   },
   "depends_on": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
@@ -37,7 +37,7 @@
     "A public support claim must name a channel and a same-major supported line.",
     "Expired support windows become release-blocking when advertised as supported."
   ],
-  "migration_replay_requirements": [
+  "conversion_replay_requirements": [
     "source_version",
     "target_version",
     "source_channel",
@@ -45,22 +45,22 @@
     "package_lock",
     "canonical_application_workspace",
     "upgrade_support_report",
-    "rollback_target"
+    "revert_target"
   ],
-  "rollback_rules": [
+  "revert_rules": [
     {
       "channel_id": "stable",
-      "rollback_transport": "local-installer",
+      "revert_transport": "local-installer",
       "required_evidence": "upgrade_support_report.revert_guidance"
     },
     {
       "channel_id": "candidate",
-      "rollback_transport": "local-installer",
+      "revert_transport": "local-installer",
       "required_evidence": "upgrade_support_report.revert_guidance"
     },
     {
       "channel_id": "preview",
-      "rollback_transport": "offline-bundle",
+      "revert_transport": "offline-bundle",
       "required_evidence": "upgrade_support_report.revert_guidance"
     }
   ],
@@ -68,8 +68,8 @@
     "update manifest missing support window or platform support matrix",
     "upgrade support report missing revert guidance",
     "release channel catalog disagrees with update manifest default channel",
-    "cross-major target advertised without generated migration replay evidence",
-    "rollback transport not named for an advertised channel"
+    "cross-major target advertised without generated conversion replay evidence",
+    "revert transport not named for an advertised channel"
   ],
-  "blocker_metadata_projection": "claim_audit.blocker_metadata.rollback"
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.revert_readiness"
 }

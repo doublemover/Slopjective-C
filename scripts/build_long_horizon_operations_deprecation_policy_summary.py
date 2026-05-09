@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the long-horizon deprecation and compatibility policy summary."""
+"""Build the long-horizon deprecation support policy summary."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_compatibility_policy.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
-COMPATIBILITY_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
+UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
 UPDATE_CHANNEL_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "update_channel_policy.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "deprecation-compatibility-policy-summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "deprecation-support-policy-summary.json"
 
 
 
@@ -27,7 +27,7 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 def main() -> int:
     policy = load_json(POLICY_PATH)
     versioning = load_json(VERSIONING_MODEL)
-    claim_policy = load_json(COMPATIBILITY_CLAIM_POLICY)
+    claim_policy = load_json(UPGRADE_CLAIM_POLICY)
     channel_policy = load_json(UPDATE_CHANNEL_POLICY)
     failures: list[str] = []
 
@@ -58,16 +58,16 @@ def main() -> int:
         expect("operator_action" in entry, f"state {entry.get('state')} missing operator_action", failures)
 
     forbidden_claims = claim_policy.get("forbidden_claims", [])
-    expect(isinstance(forbidden_claims, list) and forbidden_claims, "release compatibility claim policy missing forbidden claims", failures)
+    expect(isinstance(forbidden_claims, list) and forbidden_claims, "release upgrade claim policy missing forbidden claims", failures)
     blocking_conditions = policy.get("release_blocking_conditions", [])
     expect(isinstance(blocking_conditions, list) and len(blocking_conditions) >= 4, "release-blocking conditions are too narrow", failures)
 
     payload = {
-        "contract_id": "objc3c.long_horizon_operations.deprecation_compatibility_policy.summary.v1",
+        "contract_id": "objc3c.long_horizon_operations.deprecation_support_policy.summary.v1",
         "status": "PASS" if not failures else "FAIL",
         "policy": repo_rel(POLICY_PATH),
         "versioning_model": repo_rel(VERSIONING_MODEL),
-        "compatibility_claim_policy": repo_rel(COMPATIBILITY_CLAIM_POLICY),
+        "upgrade_claim_policy": repo_rel(UPGRADE_CLAIM_POLICY),
         "update_channel_policy": repo_rel(UPDATE_CHANNEL_POLICY),
         "supported_major_line": versioning.get("supported_major_line"),
         "support_window_count": len(support_windows) if isinstance(support_windows, dict) else 0,

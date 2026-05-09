@@ -74,7 +74,7 @@ def main() -> int:
             f"{cadence.get('cadence_id')} missing release operations evidence",
             failures,
         )
-        expect(cadence.get("rollback_required") is True, f"{cadence.get('cadence_id')} must require rollback evidence", failures)
+        expect(cadence.get("revert_required") is True, f"{cadence.get('cadence_id')} must require revert evidence", failures)
 
     payload = {
         "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence.summary.v1",
