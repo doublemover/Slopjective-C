@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-from .arguments import WorkflowUsageError
+from .argument_requests import WorkflowUsageError
 
 
 def emit_usage_error(exc: WorkflowUsageError) -> int:

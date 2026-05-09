@@ -7,6 +7,10 @@ from scripts.objc3c_workflow.action_handler_integrity import (
     orphan_action_handlers,
 )
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
+from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
+from scripts.objc3c_workflow.argument_requests import (
+    DescribeActionRequest as OwnedDescribeActionRequest,
+)
 from scripts.objc3c_workflow.arguments import (
     DescribeActionRequest,
     DescribePackageScriptRequest,
@@ -27,6 +31,8 @@ def test_workflow_argument_parser_models_public_requests() -> None:
         "compile-objc3c",
         ["sample.objc3"],
     )
+    assert parse_workflow_args is parse_workflow_args_impl
+    assert DescribeActionRequest is OwnedDescribeActionRequest
 
 
 def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:

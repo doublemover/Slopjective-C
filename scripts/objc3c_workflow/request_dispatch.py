@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from .arguments import WorkflowRequest, WorkflowUsageError, parse_workflow_args
+from .argument_parser import parse_workflow_args
+from .argument_requests import WorkflowRequest, WorkflowUsageError
 from .request_errors import emit_usage_error
 from .request_handlers import dispatch_parsed_workflow_request
 
