@@ -21,7 +21,7 @@ Canonical checked-in boundary surfaces:
 - `tests/tooling/fixtures/adoption_legibility/boundary_inventory.json`
 - `README.md`
 - `docs/tutorials/getting_started.md`
-- `docs/tutorials/objc2_to_objc3_migration.md`
+- conversion guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `showcase/README.md`
 - `site/index.md`

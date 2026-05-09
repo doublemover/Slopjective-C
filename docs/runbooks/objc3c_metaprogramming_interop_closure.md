@@ -49,8 +49,8 @@ Current closure constraints:
 
 ## Interop Runtime Surface
 
-- import/export, runtime package loading, bridge generation, mixed-image compatibility, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
-- interop claims must pass through ABI, ownership, error, and async compatibility on the real packaged toolchain; comparison-only narratives do not count
+- import/export, runtime package loading, bridge generation, mixed-image interop, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
+- interop claims must pass through ABI, ownership, error, and async behavior on the real packaged toolchain; comparison-only narratives do not count
 - packaged cross-module interop proof is anchored to the runnable interop e2e provider and consumer fixtures, packaged probe executables, and packaged execution smoke and replay steps
 - public runtime ABI widening for interop/package-loading helpers remains out of scope for this milestone
 

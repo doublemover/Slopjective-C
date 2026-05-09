@@ -38,11 +38,11 @@ Error propagation, unwind ordering, and cleanup semantic model:
 - unwind ordering, cleanup execution, and catch filtering are one coupled runtime story and must not drift into separate evidence-only contracts
 - milestone claims stay narrower than the shared acceptance, runtime-probe, and packaged-e2e evidence and do not widen the public ABI
 
-Bridged error and cross-module compatibility policy:
+Bridged error and cross-module policy:
 
 - bridged NSError/status behavior is supported only through the currently emitted lowering packets, private runtime helper ABI, and replayable cross-module artifact surfaces
 - cross-module propagation claims are limited to the manifest/runtime-registration/replay path already exercised by the shared conformance and packaged e2e reports
-- compatibility claims remain fail-closed where a wider public ABI, richer interop surface, or new transport model would be required
+- cross-module claims remain fail-closed where a wider public ABI, richer interop surface, or new transport model would be required
 
 Throws ABI and helper semantics implementation:
 

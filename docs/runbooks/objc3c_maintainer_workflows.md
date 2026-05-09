@@ -57,7 +57,7 @@ Contributor-facing entrypoint:
 
 - `CONTRIBUTING.md` is the contributor instruction surface for normal repo
   changes
-- `docs/tutorials/README.md` is the learning-path and migration-guide root
+- `docs/tutorials/README.md` is the learning-path and conversion-guide root
 - `showcase/README.md` is the runnable example map and live showcase boundary
 - `README.md` stays focused on onboarding, setup, and repo navigation
 - this runbook is maintainer-only and should not accumulate contributor
