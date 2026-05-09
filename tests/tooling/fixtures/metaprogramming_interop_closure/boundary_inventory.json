@@ -88,7 +88,7 @@
   "current_gaps": [
     "property-behavior runtime materialization is still bounded by metaprogramming runtime-boundary and lowering probes rather than a dedicated public runtime ABI",
     "macro host execution and package loading remain fail-closed on private runtime snapshots and runtime-import artifacts",
-    "interop ownership, error, and async compatibility claims are narrower than the current packaged mixed-image proof surface",
+    "interop ownership, error, and async stability claims are narrower than the current packaged mixed-image proof surface",
     "integration surfaces for runnable interop are still marked stale-or-missing relative to the acceptance report"
   ],
   "explicit_non_goals": [

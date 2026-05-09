@@ -19,13 +19,13 @@
   ],
   "semantic_models": [
     "supported-interop-claims-are-bounded-by-runtime-import-surfaces-cross-module-link-plans-and-private-runtime-snapshots-rather-than-a-widened-public-runtime-header",
-    "mixed-image-and-c-cpp-swift-bridge-compatibility-claims-are-live-only-for-the-current-packaged-provider-consumer-topology-and-canonical-bridge-artifact-set",
-    "ownership-error-and-async-compatibility-claims-stay-narrow-and-must-not-outrun-the-separately-proved-arc-error-and-concurrency-runtime-surfaces",
+    "mixed-image-and-c-cpp-swift-bridge-interop-stability-claims-are-live-only-for-the-current-packaged-provider-consumer-topology-and-canonical-bridge-artifact-set",
+    "ownership-error-and-async-interop-stability-claims-stay-narrow-and-must-not-outrun-the-separately-proved-arc-error-and-concurrency-runtime-surfaces",
     "unsupported-foreign-loader-topologies-public-package-loader-entrypoints-and-broader-cross-language-semantics-remain-fail-closed-or-comparison-only"
   ],
   "claim_narrowing_constraints": [
     "public-runtime-abi-widening-for-package-loader-or-bridge-helpers-remains-out-of-scope",
-    "interop-compatibility-claims-must-stay-narrower-than-the-current-packaged-mixed-image-proof-surface",
+    "interop-stability-claims-must-stay-narrower-than-the-current-packaged-mixed-image-proof-surface",
     "ownership-error-and-async-boundary-claims-are-limited-to-guarded-composition-with-existing-runtime-evidence rather than general foreign-boundary completeness"
   ],
   "authoritative_interop_case_ids": [

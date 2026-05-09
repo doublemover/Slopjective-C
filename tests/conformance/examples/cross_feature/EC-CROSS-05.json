@@ -1,6 +1,6 @@
 {
   "id": "EC-CROSS-05",
-  "title": "Accept cross-feature expression with nil-coalescing fallback",
+  "title": "Accept cross-feature expression with nil-coalescing default",
   "feature": "try await + postfix ? + ?.",
   "bucket": "semantic",
   "profile": "strict",

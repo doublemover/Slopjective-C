@@ -3,7 +3,7 @@
 Minimum scope:
 
 - emit interface -> import -> semantic equivalence,
-- metadata version compatibility behavior,
+- metadata version strict verification behavior,
 - cross-module preservation of effects/isolation/dispatch attributes,
 - OCI-1 (portable concurrency metadata) export/import checks.
 
@@ -24,7 +24,7 @@ These fixtures cover the next E.3.2 implementation band:
 - `EXE-05.json`, `EXEC-ATTR-03.json` for executor annotation/hop metadata
   preservation and canonical interface round-trips.
 - `ACT-08.json`, `ACT-09.json` for actor isolation metadata and contextual
-  keyword compatibility round-trip behavior.
+  keyword canonical round-trip behavior.
 - `SND-XM-01.json`, `SND-XM-02.json` for sendability metadata preservation and
   strict import-time mismatch diagnostics.
 - `SYS-ATTR-05.json`..`SYS-ATTR-08.json` for Part 8 canonical spellings and

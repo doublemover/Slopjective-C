@@ -1,6 +1,6 @@
 {
   "id": "INT-C-07",
-  "title": "Lower async throws exports to canonical C thunk ABI with stable parameter order and separate-compilation compatibility",
+  "title": "Lower async throws exports to canonical C thunk ABI with stable parameter order and separate-compilation import stability",
   "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
   "bucket": "lowering_abi",
   "profile": "core",
@@ -41,7 +41,7 @@
           ],
           "abi_requirements": [
             "optimized lowering preserves canonical thunk parameter order and callback signature shape from -O0",
-            "optimized code generation keeps separate-compilation C caller compatibility for exported thunk declarations",
+            "optimized code generation keeps separate-compilation C caller import stability for exported thunk declarations",
             "optimization does not elide required async thunk callback ABI edges"
           ],
           "runtime_assertions": [
@@ -65,7 +65,7 @@
           "field_id": "interop.async_c_thunk_separate_compilation_shape",
           "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-11-2-4",
           "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
-          "required_shape": "imported thunk declaration is ABI-compatible with exporter across translation units",
+          "required_shape": "imported thunk declaration is ABI-equivalent with exporter across translation units",
           "must_match_modes": [
             "debug-o0",
             "optimized-o2"

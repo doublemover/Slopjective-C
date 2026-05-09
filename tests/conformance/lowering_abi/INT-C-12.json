@@ -1,6 +1,6 @@
 {
   "id": "INT-C-12",
-  "title": "Preserve Objective-C runtime selector compatibility while exporting async throws method surfaces as C thunks",
+  "title": "Preserve Objective-C runtime selector identity while exporting async throws method surfaces as C thunks",
   "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
   "bucket": "lowering_abi",
   "profile": "core",
@@ -43,7 +43,7 @@
           ],
           "abi_requirements": [
             "optimized lowering preserves selector-surface and method-thunk ABI split from -O0",
-            "optimized lowering preserves separate-compilation compatibility for exported method thunk signatures",
+            "optimized lowering preserves separate-compilation import stability for exported method thunk signatures",
             "optimized lowering preserves status/error invariants for async throws method callbacks"
           ],
           "runtime_assertions": [

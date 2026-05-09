@@ -1,6 +1,6 @@
 {
   "id": "M01-A003",
-  "title": "Accept optional member access with nil-coalescing fallback",
+  "title": "Accept optional member access with nil-coalescing default",
   "feature": "optional member access and nil-coalescing precedence",
   "bucket": "parser",
   "profile": "core",

@@ -1,6 +1,6 @@
 {
   "id": "MTC-73-01",
-  "title": "Accept statement-form match with ordered case selection and binding fallback",
+  "title": "Accept statement-form match with ordered case selection and binding default",
   "feature": "match statement implementation semantics",
   "bucket": "semantic",
   "profile": "core",
