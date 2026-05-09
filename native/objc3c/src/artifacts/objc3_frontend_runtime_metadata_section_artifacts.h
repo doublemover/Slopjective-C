@@ -21,6 +21,20 @@ namespace objc3::artifacts::frontend {
 [[nodiscard]] std::string BuildExecutableMetadataTypedLoweringHandoffJson(
     const Objc3ExecutableMetadataTypedLoweringHandoff &surface);
 
+[[nodiscard]] std::string BuildExecutableMetadataDebugProjectionRowDescriptor(
+    const Objc3ExecutableMetadataDebugProjectionMatrixRow &row);
+
+[[nodiscard]] std::string BuildExecutableMetadataDebugProjectionReplayKey(
+    const Objc3ExecutableMetadataDebugProjectionSummary &summary);
+
+[[nodiscard]] Objc3ExecutableMetadataDebugProjectionSummary
+BuildExecutableMetadataDebugProjectionSummary(
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff);
+
+[[nodiscard]] std::string BuildExecutableMetadataDebugProjectionSummaryJson(
+    const Objc3ExecutableMetadataDebugProjectionSummary &summary);
+
 [[nodiscard]] Objc3RuntimeMetadataSectionAbiFreezeSummary
 BuildRuntimeMetadataSectionAbiFreezeSummary(
     const Objc3RuntimeMetadataSourceOwnershipBoundary
