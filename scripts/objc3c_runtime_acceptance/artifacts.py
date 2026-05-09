@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
+
+from .artifact_registry_keys import ARTIFACT_REGISTRY_REUSE_MODEL
+from .artifact_registry_keys import ARTIFACT_REGISTRY_SUMMARY_CONTRACT_ID
+from .artifact_registry_keys import artifact_registry_key_digest
+from .artifact_registry_keys import build_artifact_registry_key_payload
+from .artifact_registry_keys import required_compile_artifacts
 
 
 class ArtifactRegistryProgress(Protocol):
@@ -49,40 +54,25 @@ class RuntimeAcceptanceArtifactRegistry:
         backend: str,
         emit_prefix: str,
     ) -> tuple[str, dict[str, Any]]:
-        source_path = fixture.resolve()
-        key_payload = {
-            "contract_id": "objc3c.runtime.acceptance.artifact.registry.key.v1",
-            "source_path": self._config.repo_display_path(source_path),
-            "source_sha256": self._config.optional_file_sha256_hex(source_path),
-            "extra_args": list(extra_args or []),
-            "backend": backend,
-            "emit_prefix": emit_prefix,
-            "compiler_binary": self._config.repo_display_path(self._config.native_exe),
-            "compiler_binary_sha256": self._config.optional_file_sha256_hex(
-                self._config.native_exe
-            ),
-            "runtime_support_library": self._config.repo_display_path(
-                self._config.runtime_lib
-            ),
-            "runtime_support_library_sha256": self._config.optional_file_sha256_hex(
-                self._config.runtime_lib
-            ),
-            "environment": {
-                "OBJC3C_RUNTIME_ACCEPTANCE_COMPILE_BACKEND": self._config.default_compile_backend,
-            },
-        }
-        key = self._config.sha256_text_hex(json.dumps(key_payload, sort_keys=True))
+        key_payload = build_artifact_registry_key_payload(
+            fixture=fixture,
+            extra_args=extra_args,
+            backend=backend,
+            emit_prefix=emit_prefix,
+            native_exe=self._config.native_exe,
+            runtime_lib=self._config.runtime_lib,
+            default_compile_backend=self._config.default_compile_backend,
+            repo_display_path=self._config.repo_display_path,
+            optional_file_sha256_hex=self._config.optional_file_sha256_hex,
+        )
+        key = artifact_registry_key_digest(
+            key_payload,
+            self._config.sha256_text_hex,
+        )
         return key, key_payload
 
     def required_artifacts(self, emit_prefix: str) -> list[str]:
-        return [
-            f"{emit_prefix}.obj",
-            f"{emit_prefix}.ll",
-            f"{emit_prefix}.manifest.json",
-            f"{emit_prefix}.runtime-registration-manifest.json",
-            f"{emit_prefix}.runtime-registration-descriptor.json",
-            f"{emit_prefix}.compile-provenance.json",
-        ]
+        return required_compile_artifacts(emit_prefix)
 
     def validate_artifacts(self, directory: Path, emit_prefix: str) -> list[str]:
         missing = [
@@ -201,18 +191,14 @@ class RuntimeAcceptanceArtifactRegistry:
 
     def summary(self) -> dict[str, Any]:
         return {
-            "contract_id": "objc3c.runtime.acceptance.artifact.registry.v1",
+            "contract_id": ARTIFACT_REGISTRY_SUMMARY_CONTRACT_ID,
             "entry_count": len(self.entries),
             "reuse_count": len(self.reuse_events),
             "miss_count": len(self.miss_events),
             "entries": list(self.entries.values()),
             "reuse_events": self.reuse_events,
             "miss_events": self.miss_events,
-            "reuse_model": (
-                "only opt-in immutable direct-native compile artifacts are copied "
-                "within one run; runtime-linked, negative, cache-mutating, and "
-                "cold-warm cases stay isolated unless explicitly opted in"
-            ),
+            "reuse_model": ARTIFACT_REGISTRY_REUSE_MODEL,
         }
 
 

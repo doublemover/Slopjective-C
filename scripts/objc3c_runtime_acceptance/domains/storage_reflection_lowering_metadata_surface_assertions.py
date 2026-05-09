@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.domains.storage_reflection_lowering_metadata_property_assertions import (
     expect_property_lowering,
 )
 
-from ..runtime_contracts import (
+from ..runtime_contract_storage_reflection import (
     DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,

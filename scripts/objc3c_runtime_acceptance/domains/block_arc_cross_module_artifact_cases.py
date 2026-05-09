@@ -6,10 +6,11 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_with_args
-from objc3c_runtime_acceptance.runtime_contracts import (
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.runtime_contract_block_arc import (
     BLOCK_OWNERSHIP_PRESERVATION_CONSUMER_FIXTURE,
     BLOCK_OWNERSHIP_PRESERVATION_PROVIDER_FIXTURE,
     RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,

@@ -6,11 +6,13 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 
-from ..runtime_contracts import (
+from ..c_api import PUBLIC_RUNTIME_ABI_BOUNDARY
+from ..runtime_contract_interop import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROBE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
-    PUBLIC_RUNTIME_ABI_BOUNDARY,
+)
+from ..runtime_contract_object_model import (
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,

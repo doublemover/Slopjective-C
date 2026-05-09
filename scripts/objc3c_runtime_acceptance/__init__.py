@@ -1,5 +1,5 @@
 """Importable runtime acceptance package."""
 
-from .acceptance import main
+from .cli_orchestration import main
 
 __all__ = ["main"]

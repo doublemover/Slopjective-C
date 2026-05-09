@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID
+from ..runtime_contract_errors import RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID
 
 
 def build_runtime_error_lowering_unwind_bridge_helper_surface(

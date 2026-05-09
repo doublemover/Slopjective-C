@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.metaprogramming_lowering_host_cache_assertions import (
     expect_expansion_lowering_surface,
@@ -14,9 +14,8 @@ from objc3c_runtime_acceptance.domains.metaprogramming_lowering_host_cache_asser
     expect_replay_preservation_surface,
     expect_synthesized_emission_surface,
 )
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
-
-from ..native_build import ROOT
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def check_metaprogramming_lowering_host_cache_surface_case(

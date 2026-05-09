@@ -11,7 +11,7 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_compilation im
     LiveMetaprogrammingCacheProvider,
 )
 
-from ..native_build import ROOT
+from ..paths import ROOT
 
 
 def build_live_metaprogramming_cache_runtime_integration_summary(

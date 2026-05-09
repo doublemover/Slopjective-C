@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..runtime_contracts import INTEROP_HEADER_MODULE_PROVIDER_FIXTURE
-from ..native_build import ROOT, compile_fixture_with_args
+from ..runtime_contract_interop import INTEROP_HEADER_MODULE_PROVIDER_FIXTURE
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
 
 
 def check_textual_binary_interface_parity_source_surface_case(

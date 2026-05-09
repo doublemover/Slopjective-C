@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 from .storage_reflection_runtime_accessor_payload import (
     SynthesizedAccessorRuntimePayload,

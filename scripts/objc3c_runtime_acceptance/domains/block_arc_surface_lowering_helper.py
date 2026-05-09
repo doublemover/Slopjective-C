@@ -9,12 +9,12 @@ from objc3c_runtime_acceptance.domains.block_arc_surface_support import (
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import (
+from ..c_api import RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH
+from ..runtime_contract_block_arc import (
     BLOCK_ARC_RUNTIME_ABI_PROBE,
     RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,
     RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
-    RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
 )
 

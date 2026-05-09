@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..native_build import ROOT
+from ..paths import ROOT
 
 
 def _relative_to_root(path: Path) -> str:

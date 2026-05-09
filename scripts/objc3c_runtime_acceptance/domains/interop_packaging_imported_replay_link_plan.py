@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ..assertions import expect
-from ..runtime_contracts import (
+from ..expectation_matching import expect
+from ..runtime_contract_object_model import (
     RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,

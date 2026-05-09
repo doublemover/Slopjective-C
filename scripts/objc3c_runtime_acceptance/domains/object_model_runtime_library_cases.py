@@ -8,7 +8,7 @@ from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..native_build import ROOT
+from ..paths import ROOT
 
 _EXPORTED_CASE_NAMES = ["check_runtime_library_case"]
 

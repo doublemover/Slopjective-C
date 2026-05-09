@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 
 def assert_dispatch_fast_path_probe_payload(payload: dict[str, Any]) -> None:

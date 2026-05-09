@@ -5,17 +5,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.fixture_compilation import (
     NegativeDiagnosticExpectation,
-    ROOT,
     compile_fixture_outputs,
     compile_fixture_with_args,
     compile_negative_diagnostic_batch,
 )
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..runtime_contracts import (
+from ..runtime_contract_block_arc import (
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
 )

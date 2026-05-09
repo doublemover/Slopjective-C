@@ -7,7 +7,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.progress import RuntimeAcceptanceProgress
+from objc3c_runtime_acceptance.progress_state import RuntimeAcceptanceProgress
 from objc3c_runtime_acceptance.summary_base import build_base_summary_fields
 from objc3c_runtime_acceptance.summary_bootstrap import (
     build_bootstrap_summary_sections,

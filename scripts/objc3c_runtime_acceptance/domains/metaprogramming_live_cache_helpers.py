@@ -7,9 +7,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
-
-from ..native_build import ROOT
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -> bool:

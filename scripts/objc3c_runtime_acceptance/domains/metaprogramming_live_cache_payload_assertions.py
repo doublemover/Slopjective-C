@@ -5,12 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_compilation import (
     LiveMetaprogrammingCacheCompile,
 )
 
-from ..native_build import ROOT
+from ..paths import ROOT
 
 _MATERIALIZED_HOST_CACHE_FIELDS: dict[str, Any] = {
     "cache_ready": True,

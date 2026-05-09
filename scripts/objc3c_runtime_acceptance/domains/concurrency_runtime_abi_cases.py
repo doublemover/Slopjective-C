@@ -9,12 +9,12 @@ from objc3c_runtime_acceptance.domains.concurrency_runtime_probe_assertions impo
     EXPECTED_RUNTIME_ABI_PAYLOADS,
     expect_probe_payload_fields,
 )
-from objc3c_runtime_acceptance.native_build import ROOT
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..runtime_contracts import (
+from ..runtime_contract_concurrency import (
     ACTOR_RUNTIME_ABI_PROBE,
     CONTINUATION_RUNTIME_ABI_PROBE,
     TASK_RUNTIME_ABI_PROBE,

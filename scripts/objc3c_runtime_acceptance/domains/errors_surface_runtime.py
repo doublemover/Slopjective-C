@@ -9,14 +9,16 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import (
+from ..c_api import (
     PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY,
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+    RUNTIME_PUBLIC_HEADER_PATH,
+)
+from ..runtime_contract_errors import (
     RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_PROPAGATION_CATCH_CLEANUP_RUNTIME_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
-    RUNTIME_PUBLIC_HEADER_PATH,
 )
 
 

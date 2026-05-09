@@ -8,8 +8,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
+from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.progress_format import repo_display_path
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
@@ -18,9 +20,6 @@ from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_helpers import
     compile_live_metaprogramming_cache_candidate,
     remove_metaprogramming_cache_entry_from_artifact,
 )
-
-from ..native_build import ROOT
-from ..progress import repo_display_path
 
 HOST_CACHE_PROBE_PATH = "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
 HOST_CACHE_PROBE_LABEL = "live metaprogramming host-cache runtime integration probe"

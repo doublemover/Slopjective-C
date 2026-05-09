@@ -20,7 +20,7 @@ from .registration_lifecycle_sources import run_registration_lifecycle_probe
 from .registration_lifecycle_sources import write_probe_fixture_config
 from .registration_lifecycle_summary import RegistrationLifecycleTimings
 from .registration_lifecycle_summary import build_registration_lifecycle_summary
-from ..runtime_contracts import (
+from ..runtime_contract_registration import (
     INSTALLATION_LIFECYCLE_FIXTURE,
     INSTALLATION_LIFECYCLE_PROBE,
 )

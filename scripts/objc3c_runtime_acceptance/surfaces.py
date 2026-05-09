@@ -1,4 +1,4 @@
-"""Surface builder facade for runtime acceptance reports."""
+"""Runtime acceptance report surface builders."""
 
 from __future__ import annotations
 
@@ -6,25 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from .case_result import CaseResult
-from . import runtime_contracts
-
-
-def __getattr__(name: str):
-    if name.endswith("_SURFACE_CONTRACT_ID"):
-        return getattr(runtime_contracts, name)
-    raise AttributeError(name)
-
-
-def exported_surface_names() -> list[str]:
-    local_builders = [
-        "build_acceptance_suite_surface",
-        "build_claim_boundary",
-    ]
-    contract_ids = [
-        name for name in dir(runtime_contracts) if name.endswith("_SURFACE_CONTRACT_ID")
-    ]
-    return sorted([*local_builders, *contract_ids])
-
 
 def build_claim_boundary(public_runtime_abi_boundary: list[str]) -> dict[str, Any]:
     return {
@@ -99,5 +80,4 @@ def build_acceptance_suite_surface(
 __all__ = [
     "build_acceptance_suite_surface",
     "build_claim_boundary",
-    "exported_surface_names",
 ]

@@ -11,9 +11,9 @@ from objc3c_runtime_acceptance.domains.block_arc_runtime_abi_assertions import (
 from objc3c_runtime_acceptance.domains.block_arc_runtime_shared import (
     compile_run_json_probe,
 )
-from objc3c_runtime_acceptance.native_build import ROOT
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..runtime_contracts import BLOCK_ARC_RUNTIME_ABI_PROBE
+from ..runtime_contract_block_arc import BLOCK_ARC_RUNTIME_ABI_PROBE
 
 
 def check_block_arc_runtime_abi_case(clangxx: str, run_dir: Path) -> CaseResult:

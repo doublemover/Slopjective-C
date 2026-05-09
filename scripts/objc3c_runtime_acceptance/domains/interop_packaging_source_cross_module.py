@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..runtime_contracts import INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE
-from ..native_build import ROOT, compile_fixture_with_args
+from ..runtime_contract_interop import INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
 
 
 def check_cross_module_runtime_package_interop_source_surface_case(

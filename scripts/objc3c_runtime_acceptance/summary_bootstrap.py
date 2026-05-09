@@ -11,7 +11,7 @@ from objc3c_runtime_acceptance.domains.probe_helpers import (
     build_runtime_bootstrap_registration_source_surface,
     build_runtime_state_publication_surface,
 )
-from objc3c_runtime_acceptance.runtime_contracts import PUBLIC_RUNTIME_ABI_BOUNDARY
+from objc3c_runtime_acceptance.c_api import PUBLIC_RUNTIME_ABI_BOUNDARY
 
 
 def build_bootstrap_summary_sections(

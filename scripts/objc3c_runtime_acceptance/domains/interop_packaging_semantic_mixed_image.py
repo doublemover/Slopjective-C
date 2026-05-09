@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
     INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
 )
-from ..native_build import ROOT, compile_fixture_expect_failure, compile_fixture_with_args
+from ..fixture_compilation import compile_fixture_expect_failure
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
 
 
 def check_mixed_image_compatibility_interop_semantics_case(

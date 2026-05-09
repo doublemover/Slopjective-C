@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
-from ..runtime_contracts import RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
+from ..runtime_contract_object_model import RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
 
 
 def assert_canonical_dispatch_compile_artifacts(

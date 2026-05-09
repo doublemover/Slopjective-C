@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 
 def expect_provider_replay_surface(surface: dict[str, Any]) -> None:

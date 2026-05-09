@@ -15,7 +15,8 @@ from objc3c_runtime_acceptance.domains.registration import (
 from objc3c_runtime_acceptance.domains.storage_reflection import (
     check_storage_ownership_reflection_case,
 )
-from objc3c_runtime_acceptance.native_build import ensure_native_binaries, find_clangxx
+from objc3c_runtime_acceptance.native_binaries import ensure_native_binaries
+from objc3c_runtime_acceptance.native_binaries import find_clangxx
 
 __all__ = [
     "check_arc_property_helper_case",

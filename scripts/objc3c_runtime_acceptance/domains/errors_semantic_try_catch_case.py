@@ -5,14 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.fixture_compilation import (
     NegativeDiagnosticExpectation,
-    ROOT,
     compile_fixture_outputs,
     compile_negative_diagnostic_batch,
 )
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseResult:

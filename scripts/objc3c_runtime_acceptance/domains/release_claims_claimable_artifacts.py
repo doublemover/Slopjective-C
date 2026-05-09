@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..native_build import ROOT, compile_fixture_with_args
-from ..runtime_contracts import RELEASE_CLAIMABLE_SURFACE_FIXTURE
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
+from ..runtime_contract_release import RELEASE_CLAIMABLE_SURFACE_FIXTURE
 
 
 @dataclass(frozen=True)

@@ -5,12 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import compile_fixture
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..native_build import ROOT
 from .storage_reflection_runtime_property_reflection_assertions import (
     assert_property_reflection_payload,
 )

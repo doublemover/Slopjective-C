@@ -12,12 +12,11 @@ from objc3c_runtime_acceptance.domains.metaprogramming_executable_lowering_asser
     expect_runtime_boundary_payload,
     expect_synthesized_emission_surface,
 )
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
-
-from ..native_build import ROOT
 
 
 def check_metaprogramming_executable_lowering_case(

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from objc3c_runtime_acceptance.acceptance import main
+from objc3c_runtime_acceptance.cli_orchestration import main
 
 
 if __name__ == "__main__":

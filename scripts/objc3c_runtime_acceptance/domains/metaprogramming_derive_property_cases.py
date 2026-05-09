@@ -6,14 +6,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.fixture_compilation import (
     compile_fixture_outputs,
     run_fixture_compile,
 )
-
-from ..native_build import ROOT
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def check_metaprogramming_derive_property_behavior_semantics_case(

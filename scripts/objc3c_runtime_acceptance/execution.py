@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
-from objc3c_runtime_acceptance.progress import RuntimeAcceptanceProgress
+from objc3c_runtime_acceptance.progress_state import RuntimeAcceptanceProgress
 from objc3c_runtime_acceptance.suite_catalog import RUNTIME_ACCEPTANCE_SUITE_CASES
 
 

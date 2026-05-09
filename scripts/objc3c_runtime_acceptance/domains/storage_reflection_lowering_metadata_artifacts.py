@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
 
-from ..native_build import ROOT
+from ..paths import ROOT
 
 
 def load_storage_lowering_compile_artifacts(

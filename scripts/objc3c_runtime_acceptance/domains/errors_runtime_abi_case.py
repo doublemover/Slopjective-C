@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import ROOT
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe

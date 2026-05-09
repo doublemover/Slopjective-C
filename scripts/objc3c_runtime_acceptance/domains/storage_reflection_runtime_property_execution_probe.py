@@ -6,12 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
-
-from ..native_build import ROOT
 
 PROPERTY_EXECUTION_CASE_ID = "property-execution"
 PROPERTY_EXECUTION_PROBE = "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp"

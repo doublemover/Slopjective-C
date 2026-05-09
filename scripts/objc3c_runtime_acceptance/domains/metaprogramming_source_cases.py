@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 
 def check_metaprogramming_source_surface_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "metaprogramming-source-surface"

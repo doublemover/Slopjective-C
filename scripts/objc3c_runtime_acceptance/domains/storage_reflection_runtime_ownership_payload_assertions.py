@@ -5,16 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_ownership_sources import (
     StorageOwnershipReflectionArtifacts,
 )
 
-from ..runtime_contracts import (
-    RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+from ..c_api import RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH
+from ..c_api import RUNTIME_PUBLIC_HEADER_PATH
+from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
-    RUNTIME_PUBLIC_HEADER_PATH,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
 )
 

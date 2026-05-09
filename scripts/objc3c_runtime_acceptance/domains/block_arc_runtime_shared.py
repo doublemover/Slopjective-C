@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.commands import run
-from objc3c_runtime_acceptance.native_build import (
-    ROOT,
+from objc3c_runtime_acceptance.compile_backends import link_fixture_executable
+from objc3c_runtime_acceptance.fixture_compilation import (
     compile_fixture_outputs,
     compile_fixture_outputs_with_args,
-    link_fixture_executable,
 )
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.process_execution import run
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe

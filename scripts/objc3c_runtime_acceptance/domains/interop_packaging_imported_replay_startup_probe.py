@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from ..assertions import expect
+from ..expectation_matching import expect
 
 
 @dataclass(frozen=True)

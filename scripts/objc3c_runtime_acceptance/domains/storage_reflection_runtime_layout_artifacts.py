@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
-
-from ..native_build import ROOT
 
 
 PROPERTY_LAYOUT_CASE_ID = "property-layout"

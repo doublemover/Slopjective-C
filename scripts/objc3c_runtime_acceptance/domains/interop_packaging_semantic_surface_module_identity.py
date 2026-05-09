@@ -6,15 +6,19 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 
-from ..runtime_contracts import (
+from .probe_helpers import (
+    RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID,
+)
+from ..runtime_contract_interop import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROBE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
-    MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE,
-    RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID,
-    RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID,
 )
+from ..runtime_contract_object_model import (
+    RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
+)
+from ..runtime_contract_registration import MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE
 
 
 def build_runtime_package_loading_module_identity_semantics_surface(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.domains.metaprogramming_live_cache_compilation import (
     LiveMetaprogrammingCacheCompile,
     LiveMetaprogrammingCacheConsumerLink,

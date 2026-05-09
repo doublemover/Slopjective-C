@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.native_build import NegativeDiagnosticExpectation
+from objc3c_runtime_acceptance.fixture_compilation import NegativeDiagnosticExpectation
 
 
 def build_macro_safety_negative_expectations(

@@ -6,16 +6,19 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import ROOT, compile_fixture_with_args
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+)
+from ..runtime_contract_registration import (
     MULTI_IMAGE_REGISTRATION_RESET_REPLAY_PROBE,
 )
 

@@ -20,7 +20,13 @@ RUNTIME_HEADER_PATHS = [
 DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 ACCEPTANCE_SCRIPT_PATH = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
-ACCEPTANCE_CORE_PATH = ROOT / "scripts/objc3c_runtime_acceptance/core.py"
+ACCEPTANCE_DISPATCH_SEMANTICS_PATH = (
+    ROOT
+    / "scripts"
+    / "objc3c_runtime_acceptance"
+    / "domains"
+    / "object_model_surface_query_semantics.py"
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -46,7 +52,9 @@ def main() -> int:
     )
     doc_text = DOC_PATH.read_text(encoding="utf-8")
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    acceptance_text = read_joined_text([ACCEPTANCE_SCRIPT_PATH, ACCEPTANCE_CORE_PATH])
+    acceptance_text = read_joined_text(
+        [ACCEPTANCE_SCRIPT_PATH, ACCEPTANCE_DISPATCH_SEMANTICS_PATH]
+    )
 
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
     probe_paths = [ROOT / path for path in contract["authoritative_probe_paths"]]

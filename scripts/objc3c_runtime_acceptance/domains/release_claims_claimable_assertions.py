@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..assertions import expect
+from ..expectation_matching import expect
 
 
 EXPECTED_OPTIONAL_GAP_IDS = ["throws", "async-await", "actors", "blocks", "arc"]

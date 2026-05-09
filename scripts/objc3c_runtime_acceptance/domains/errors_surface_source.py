@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import (
+from ..runtime_contract_errors import (
     RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
 )

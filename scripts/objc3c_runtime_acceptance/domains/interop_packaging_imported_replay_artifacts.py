@@ -8,8 +8,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from ..native_build import ROOT, compile_fixture_with_args
-from ..runtime_contracts import (
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
+from ..runtime_contract_interop import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
 )

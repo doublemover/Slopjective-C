@@ -6,12 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..native_build import ROOT
-from ..runtime_contracts import RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
+from ..runtime_contract_concurrency import RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
 
 
 def check_unified_concurrency_lowering_metadata_surface_case(

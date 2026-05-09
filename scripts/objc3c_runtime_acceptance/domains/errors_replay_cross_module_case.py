@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
-    ROOT,
+from objc3c_runtime_acceptance.fixture_compilation import (
     compile_fixture_outputs_with_args,
 )
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def check_cross_module_error_metadata_replay_preservation_case(

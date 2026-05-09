@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from objc3c_runtime_acceptance.domains.interop_packaging_imported_replay_startup_probe import (
     ImportedRuntimeStartupDispatchValues,
 )

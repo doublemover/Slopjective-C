@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.errors_surface_support import (
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID
+from ..runtime_contract_errors import RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID
 
 
 def build_runtime_bridging_filter_unwind_diagnostics_surface(

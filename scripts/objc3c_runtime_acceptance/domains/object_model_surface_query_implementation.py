@@ -9,9 +9,9 @@ from objc3c_runtime_acceptance.domains.object_model_surface_query_support import
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import (
+from ..c_api import RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH
+from ..runtime_contract_object_model import (
     REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
-    RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,

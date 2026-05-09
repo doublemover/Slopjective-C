@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..runtime_contracts import DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES
+from ..runtime_contract_release import DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES
 
 
 def write_deprecated_claim_sidecars(directory: Path) -> None:

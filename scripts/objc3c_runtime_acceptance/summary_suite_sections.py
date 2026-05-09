@@ -12,14 +12,16 @@ from objc3c_runtime_acceptance.dispatch import (
     build_property_ivar_accessor_reflection_implementation_surface,
     build_storage_accessor_runtime_abi_surface,
 )
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.compile_truth import (
     COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
-    COMPILE_PROVENANCE_CONTRACT_ID,
-    ROOT,
 )
-from objc3c_runtime_acceptance.runtime_contracts import (
-    RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+from objc3c_runtime_acceptance.compile_truth import COMPILE_PROVENANCE_CONTRACT_ID
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.domains.probe_helpers import (
     RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+)
+from objc3c_runtime_acceptance.runtime_contract_registration import (
+    RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
 )
 from objc3c_runtime_acceptance.surfaces import build_acceptance_suite_surface
 

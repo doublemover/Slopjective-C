@@ -7,16 +7,16 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from .commands import run
-from .progress import get_acceptance_progress
-from .progress import repo_display_path
+from .paths import ROOT
+from .paths import RUNTIME_LIB
+from .process_execution import run
+from .progress_format import repo_display_path
+from .progress_state import get_acceptance_progress
 from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
 from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.probe_output import parse_key_value_output
 
 
-ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_LIB = ROOT / "artifacts" / "lib" / "objc3_runtime.lib"
 RETRYABLE_PROBE_EXIT_CODES = {3221226356}
 DEFAULT_PROBE_RETRIES = int(
     os.environ.get("OBJC3C_RUNTIME_ACCEPTANCE_PROBE_RETRIES", "1")

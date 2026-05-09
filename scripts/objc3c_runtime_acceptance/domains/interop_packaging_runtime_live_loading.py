@@ -5,15 +5,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
     INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
 )
-from ..native_build import ROOT, compile_fixture_with_args
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
 from ..probes import compile_probe, parse_key_value_output, run_probe
 
 

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..commands import run
-from ..native_build import NATIVE_EXE, ROOT, compile_fixture_with_args
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import NATIVE_EXE, ROOT
+from ..process_execution import run
 from .release_claims_deprecated_sidecars import write_deprecated_claim_sidecars
-from ..runtime_contracts import (
+from ..runtime_contract_release import (
     DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
 )

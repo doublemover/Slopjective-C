@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
-from ..runtime_contracts import (
+from ..c_api import (
     BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
     BLOCK_ARC_RUNTIME_ARC_MODEL,
     BLOCK_ARC_RUNTIME_BLOCK_MODEL,

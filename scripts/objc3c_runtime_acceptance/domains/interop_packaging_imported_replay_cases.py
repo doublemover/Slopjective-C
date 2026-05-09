@@ -6,9 +6,9 @@ from pathlib import Path
 from time import perf_counter
 
 from ..case_result import CaseResult
-from ..native_build import ROOT
+from ..paths import ROOT
 from ..probes import compile_probe, parse_json_output, run_probe
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
     IMPORTED_RUNTIME_PACKAGING_PROBE,
     IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,

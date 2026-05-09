@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 
 BOUNDARY_EXPECTED_PAYLOAD = {

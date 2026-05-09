@@ -5,15 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import NegativeDiagnosticExpectation
-from objc3c_runtime_acceptance.native_build import ROOT
-from objc3c_runtime_acceptance.native_build import compile_fixture_expect_failure
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
-from objc3c_runtime_acceptance.native_build import compile_negative_diagnostic_batch
+from objc3c_runtime_acceptance.fixture_compilation import NegativeDiagnosticExpectation
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_expect_failure
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_negative_diagnostic_batch
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..runtime_contracts import (
+from ..runtime_contract_storage_reflection import (
     RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
 )

@@ -7,17 +7,15 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
-    ACCEPTANCE_ARTIFACT_REGISTRY,
-    DEFAULT_COMPILE_BACKEND,
-    DIRECT_COMPILE_BACKEND,
-    ROOT,
-    WRAPPER_COMPILE_BACKEND,
-    run_fixture_compile,
-)
-from objc3c_runtime_acceptance.progress import repo_display_path
+from objc3c_runtime_acceptance.compile_backends import DEFAULT_COMPILE_BACKEND
+from objc3c_runtime_acceptance.compile_backends import DIRECT_COMPILE_BACKEND
+from objc3c_runtime_acceptance.compile_backends import WRAPPER_COMPILE_BACKEND
+from objc3c_runtime_acceptance.fixture_compilation import run_fixture_compile
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.progress_format import repo_display_path
+from objc3c_runtime_acceptance.runtime_artifact_registry import ACCEPTANCE_ARTIFACT_REGISTRY
 
 
 def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:

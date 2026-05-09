@@ -6,7 +6,7 @@ from typing import Any
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import run_probe
-from objc3c_runtime_acceptance.progress import repo_display_path
+from objc3c_runtime_acceptance.progress_format import repo_display_path
 
 
 ROOT = Path(__file__).resolve().parents[3]

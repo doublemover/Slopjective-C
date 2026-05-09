@@ -9,7 +9,7 @@ from objc3c_runtime_acceptance.domains.storage_reflection_lowering_surface_suppo
     authoritative_case_ids,
 )
 
-from ..runtime_contracts import (
+from ..runtime_contract_storage_reflection import (
     DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,

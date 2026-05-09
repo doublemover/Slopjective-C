@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 
 EXPECTED_PROVIDER_ACTOR_FIELDS = {
     "contract_id": "objc3c.concurrency.actor.mailbox.isolation.import.surface.v1",

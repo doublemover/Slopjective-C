@@ -6,15 +6,15 @@ import json
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.fixture_compilation import (
     compile_fixture_manifest_only,
     compile_fixture_outputs,
 )
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..native_build import ROOT
-from ..runtime_contracts import RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+from ..runtime_contract_concurrency import RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
 
 
 def check_async_task_actor_normalization_completion_case(run_dir: Path) -> CaseResult:

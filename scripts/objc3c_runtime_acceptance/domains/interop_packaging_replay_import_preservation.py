@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
 )
-from ..native_build import ROOT, compile_fixture_with_args
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import ROOT
 
 
 def check_cross_language_replay_import_surface_preservation_case(

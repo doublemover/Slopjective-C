@@ -7,15 +7,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.assertions import expect
-from objc3c_runtime_acceptance.native_build import (
+from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.fixture_compilation import (
     NegativeDiagnosticExpectation,
-    ROOT,
     compile_fixture_outputs,
     compile_negative_diagnostic_batch,
 )
+from objc3c_runtime_acceptance.paths import ROOT
 
-from ..runtime_contracts import (
+from ..runtime_contract_object_model import (
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
 )

@@ -6,19 +6,18 @@ from pathlib import Path
 from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.compile_backends import DEFAULT_COMPILE_BACKEND
+from objc3c_runtime_acceptance.compile_backends import DIRECT_COMPILE_BACKEND
+from objc3c_runtime_acceptance.compile_backends import WRAPPER_COMPILE_BACKEND
 from objc3c_runtime_acceptance.diagnostics import build_probe_retry_policy
-from objc3c_runtime_acceptance.native_build import (
-    ACCEPTANCE_ARTIFACT_REGISTRY,
-    DEFAULT_COMPILE_BACKEND,
-    DIRECT_COMPILE_BACKEND,
-    ROOT,
-    RUNTIME_LIB,
-    WRAPPER_COMPILE_BACKEND,
-)
+from objc3c_runtime_acceptance.paths import ROOT
+from objc3c_runtime_acceptance.paths import RUNTIME_LIB
 from objc3c_runtime_acceptance.probes import ACCEPTANCE_PROBE_RETRY_EVENTS
-from objc3c_runtime_acceptance.progress import RuntimeAcceptanceProgress
-from objc3c_runtime_acceptance.progress import repo_display_path
-from objc3c_runtime_acceptance.runtime_contracts import PUBLIC_RUNTIME_ABI_BOUNDARY
+from objc3c_runtime_acceptance.progress_format import repo_display_path
+from objc3c_runtime_acceptance.progress_state import RuntimeAcceptanceProgress
+from objc3c_runtime_acceptance.result_normalization import normalize_case_results
+from objc3c_runtime_acceptance.runtime_artifact_registry import ACCEPTANCE_ARTIFACT_REGISTRY
+from objc3c_runtime_acceptance.c_api import PUBLIC_RUNTIME_ABI_BOUNDARY
 from objc3c_runtime_acceptance.surfaces import build_claim_boundary
 
 
@@ -52,17 +51,7 @@ def build_base_summary_fields(
         "progress_report_path": repo_display_path(progress_path),
         "timing": acceptance_progress.final_summary(),
         "artifact_registry": ACCEPTANCE_ARTIFACT_REGISTRY.summary(),
-        "cases": [
-            {
-                "case_id": result.case_id,
-                "probe": result.probe,
-                "fixture": result.fixture,
-                "claim_class": result.claim_class,
-                "passed": result.passed,
-                "summary": result.summary,
-            }
-            for result in results
-        ],
+        "cases": normalize_case_results(results),
         "claim_boundary": build_claim_boundary(PUBLIC_RUNTIME_ABI_BOUNDARY),
     }
 

@@ -5,19 +5,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.concurrency_runtime_probe_assertions import (
     EXPECTED_LIVE_RUNTIME_PAYLOADS,
     expect_probe_payload_fields,
 )
-from objc3c_runtime_acceptance.native_build import ROOT
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
 
-from ..runtime_contracts import (
+from ..runtime_contract_concurrency import (
     LIVE_ACTOR_RUNTIME_FIXTURE,
     LIVE_ACTOR_RUNTIME_PROBE,
     LIVE_CONTINUATION_RUNTIME_FIXTURE,

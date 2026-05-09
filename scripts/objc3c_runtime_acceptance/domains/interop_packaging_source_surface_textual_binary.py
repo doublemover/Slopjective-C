@@ -6,7 +6,7 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
 
-from ..runtime_contracts import (
+from ..runtime_contract_interop import (
     INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
     RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
 )

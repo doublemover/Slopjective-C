@@ -5,14 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..assertions import expect
+from ..expectation_matching import expect
 from ..case_result import CaseResult
-from ..commands import run
-from ..native_build import NATIVE_EXE, ROOT, compile_fixture_with_args
+from ..fixture_compilation import compile_fixture_with_args
+from ..paths import NATIVE_EXE, ROOT
+from ..process_execution import run
 from .release_claims_publication_dashboard_assertions import (
     expect_dashboard_schema_surface,
 )
-from ..runtime_contracts import (
+from ..runtime_contract_release import (
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
 )
 

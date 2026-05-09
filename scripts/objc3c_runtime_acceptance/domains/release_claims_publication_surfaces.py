@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..case_result import CaseResult
-from ..runtime_contracts import (
+from ..runtime_contract_release import (
     DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,

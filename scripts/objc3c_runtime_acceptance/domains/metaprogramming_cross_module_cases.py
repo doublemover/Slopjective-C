@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from objc3c_runtime_acceptance.assertions import expect
+from objc3c_runtime_acceptance.expectation_matching import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.metaprogramming_cross_module_assertions import (
     expect_cross_module_link_plan,
@@ -14,9 +14,8 @@ from objc3c_runtime_acceptance.domains.metaprogramming_cross_module_assertions i
     expect_provider_host_cache_surface,
     expect_provider_replay_surface,
 )
-from objc3c_runtime_acceptance.native_build import compile_fixture_with_args
-
-from ..native_build import ROOT
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
+from objc3c_runtime_acceptance.paths import ROOT
 
 
 def check_cross_module_metaprogramming_artifact_preservation_case(

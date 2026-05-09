@@ -1,4 +1,4 @@
-"""Subprocess execution for runtime acceptance."""
+"""Subprocess execution boundary for runtime acceptance."""
 
 from __future__ import annotations
 
@@ -6,10 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from .progress import get_acceptance_progress
-
-
-ROOT = Path(__file__).resolve().parents[2]
+from .paths import ROOT
+from .progress_state import get_acceptance_progress
 
 
 def run_command(
@@ -50,3 +48,6 @@ def run(
             returncode=result.returncode,
         )
     return result
+
+
+__all__ = ["run", "run_command"]

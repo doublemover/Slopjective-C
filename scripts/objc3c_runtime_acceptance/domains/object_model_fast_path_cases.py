@@ -12,12 +12,11 @@ from objc3c_runtime_acceptance.domains.object_model_fast_path_probe_assertions i
 from objc3c_runtime_acceptance.domains.object_model_fast_path_surface_assertions import (
     assert_dispatch_fast_path_compile_surfaces,
 )
-from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
+from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_outputs
+from objc3c_runtime_acceptance.paths import ROOT
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
-
-from ..native_build import ROOT
 
 _EXPORTED_CASE_NAMES = ["check_live_dispatch_fast_path_case"]
 
