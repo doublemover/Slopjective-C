@@ -138,239 +138,58 @@
       result.parity_surface
           .async_block_message_parity_validation_readiness_record
           .message_send_selector_lowering_ready;
+  result.dispatch_runtime_arc_parity_validation_readiness_record =
+      BuildObjc3SemaDispatchRuntimeArcParityValidationReadinessRecord(
+          input,
+          result.parity_surface,
+          result.deterministic_dispatch_abi_marshalling_handoff,
+          result.deterministic_nil_receiver_semantics_foldability_handoff,
+          result.deterministic_super_dispatch_method_family_handoff,
+          result.deterministic_runtime_link_host_link_handoff,
+          result.deterministic_retain_release_operation_handoff,
+          result.deterministic_weak_unowned_semantics_handoff,
+          result.deterministic_arc_diagnostics_fixit_handoff,
+          result.deterministic_autoreleasepool_scope_handoff);
+  result.deterministic_dispatch_runtime_arc_parity_validation_readiness_record =
+      IsReadyObjc3SemaDispatchRuntimeArcParityValidationReadinessRecord(
+          result.dispatch_runtime_arc_parity_validation_readiness_record);
+  result.parity_surface.dispatch_runtime_arc_parity_validation_readiness_record =
+      result.dispatch_runtime_arc_parity_validation_readiness_record;
+  result.parity_surface
+      .deterministic_dispatch_runtime_arc_parity_validation_readiness_record =
+      result.deterministic_dispatch_runtime_arc_parity_validation_readiness_record;
   result.parity_surface.deterministic_dispatch_abi_marshalling_handoff =
-      result.deterministic_dispatch_abi_marshalling_handoff &&
-      result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites ==
-          result.parity_surface.dispatch_abi_marshalling_sites_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.receiver_slots ==
-          result.parity_surface.dispatch_abi_marshalling_receiver_slots_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.selector_symbol_slots ==
-          result.parity_surface.dispatch_abi_marshalling_selector_symbol_slots_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.argument_slots ==
-          result.parity_surface.dispatch_abi_marshalling_argument_slots_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.keyword_argument_slots ==
-          result.parity_surface.dispatch_abi_marshalling_keyword_argument_slots_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.unary_argument_slots ==
-          result.parity_surface.dispatch_abi_marshalling_unary_argument_slots_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.arity_mismatch_sites ==
-          result.parity_surface.dispatch_abi_marshalling_arity_mismatch_sites_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites ==
-          result.parity_surface.dispatch_abi_marshalling_missing_selector_symbol_sites_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.contract_violation_sites ==
-          result.parity_surface.dispatch_abi_marshalling_contract_violation_sites_total &&
-      result.parity_surface.dispatch_abi_marshalling_summary.receiver_slots ==
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.selector_symbol_slots +
-              result.parity_surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites ==
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.keyword_argument_slots +
-              result.parity_surface.dispatch_abi_marshalling_summary.unary_argument_slots ==
-          result.parity_surface.dispatch_abi_marshalling_summary.argument_slots &&
-      result.parity_surface.dispatch_abi_marshalling_summary.keyword_argument_slots <=
-          result.parity_surface.dispatch_abi_marshalling_summary.argument_slots &&
-      result.parity_surface.dispatch_abi_marshalling_summary.unary_argument_slots <=
-          result.parity_surface.dispatch_abi_marshalling_summary.argument_slots &&
-      result.parity_surface.dispatch_abi_marshalling_summary.selector_symbol_slots <=
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites <=
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.arity_mismatch_sites <=
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.contract_violation_sites <=
-          result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
-      result.parity_surface.dispatch_abi_marshalling_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .dispatch_abi_marshalling_ready;
   result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff =
-      result.deterministic_nil_receiver_semantics_foldability_handoff &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_receiver_nil_literal_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_enabled_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_foldable_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_non_nil_receiver_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_contract_violation_sites_total &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
-          result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites +
-              result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites +
-              result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
-          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
-          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
-      result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .nil_receiver_semantics_foldability_ready;
   result.parity_surface.deterministic_super_dispatch_method_family_handoff =
-      result.deterministic_super_dispatch_method_family_handoff &&
-      result.parity_surface.super_dispatch_method_family_summary.message_send_sites ==
-          result.parity_surface.super_dispatch_method_family_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
-          result.parity_surface.super_dispatch_method_family_receiver_super_identifier_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites ==
-          result.parity_surface.super_dispatch_method_family_enabled_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
-          result.parity_surface.super_dispatch_method_family_requires_class_context_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites ==
-          result.parity_surface.super_dispatch_method_family_init_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_copy_sites ==
-          result.parity_surface.super_dispatch_method_family_copy_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites ==
-          result.parity_surface.super_dispatch_method_family_mutable_copy_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_new_sites ==
-          result.parity_surface.super_dispatch_method_family_new_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_none_sites ==
-          result.parity_surface.super_dispatch_method_family_none_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites ==
-          result.parity_surface.super_dispatch_method_family_returns_retained_result_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites ==
-          result.parity_surface.super_dispatch_method_family_returns_related_result_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites ==
-          result.parity_surface.super_dispatch_method_family_contract_violation_sites_total &&
-      result.parity_surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
-          result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
-          result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites +
-              result.parity_surface.super_dispatch_method_family_summary.method_family_copy_sites +
-              result.parity_surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
-              result.parity_surface.super_dispatch_method_family_summary.method_family_new_sites +
-              result.parity_surface.super_dispatch_method_family_summary.method_family_none_sites ==
-          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites <=
-          result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
-          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites <=
-          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
-      result.parity_surface.super_dispatch_method_family_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .super_dispatch_method_family_ready;
   result.parity_surface.deterministic_runtime_link_host_link_handoff =
-      result.deterministic_runtime_link_host_link_handoff &&
-      result.parity_surface.runtime_link_host_link_summary.message_send_sites ==
-          result.parity_surface.runtime_link_host_link_message_send_sites_total &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_link_required_sites ==
-          result.parity_surface.runtime_link_host_link_required_sites_total &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_link_elided_sites ==
-          result.parity_surface.runtime_link_host_link_elided_sites_total &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_arg_slots ==
-          result.parity_surface.runtime_link_host_link_runtime_dispatch_arg_slots_total &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_declaration_parameter_count ==
-          result.parity_surface.runtime_link_host_link_runtime_dispatch_declaration_parameter_count_total &&
-      result.parity_surface.runtime_link_host_link_summary.contract_violation_sites ==
-          result.parity_surface.runtime_link_host_link_contract_violation_sites_total &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_symbol ==
-          result.parity_surface.runtime_link_host_link_runtime_dispatch_symbol &&
-      result.parity_surface.runtime_link_host_link_summary.default_runtime_dispatch_symbol_binding ==
-          result.parity_surface.runtime_link_host_link_default_runtime_dispatch_symbol_binding &&
-      result.parity_surface.runtime_link_host_link_summary.runtime_link_required_sites +
-              result.parity_surface.runtime_link_host_link_summary.runtime_link_elided_sites ==
-          result.parity_surface.runtime_link_host_link_summary.message_send_sites &&
-      result.parity_surface.runtime_link_host_link_summary.contract_violation_sites <=
-          result.parity_surface.runtime_link_host_link_summary.message_send_sites &&
-      (result.parity_surface.runtime_link_host_link_summary.message_send_sites == 0 ||
-       result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_declaration_parameter_count ==
-           result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
-      (result.parity_surface.runtime_link_host_link_summary.default_runtime_dispatch_symbol_binding ==
-       (result.parity_surface.runtime_link_host_link_summary.runtime_dispatch_symbol ==
-        kObjc3RuntimeLinkHostLinkDefaultDispatchSymbol)) &&
-      result.parity_surface.runtime_link_host_link_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .runtime_link_host_link_ready;
   result.parity_surface.deterministic_retain_release_operation_handoff =
-      result.deterministic_retain_release_operation_handoff &&
-      result.parity_surface.retain_release_operation_summary.ownership_qualified_sites ==
-          result.parity_surface.retain_release_operation_ownership_qualified_sites_total &&
-      result.parity_surface.retain_release_operation_summary.retain_insertion_sites ==
-          result.parity_surface.retain_release_operation_retain_insertion_sites_total &&
-      result.parity_surface.retain_release_operation_summary.release_insertion_sites ==
-          result.parity_surface.retain_release_operation_release_insertion_sites_total &&
-      result.parity_surface.retain_release_operation_summary.autorelease_insertion_sites ==
-          result.parity_surface.retain_release_operation_autorelease_insertion_sites_total &&
-      result.parity_surface.retain_release_operation_summary.contract_violation_sites ==
-          result.parity_surface.retain_release_operation_contract_violation_sites_total &&
-      result.parity_surface.retain_release_operation_summary.retain_insertion_sites <=
-          result.parity_surface.retain_release_operation_summary.ownership_qualified_sites +
-              result.parity_surface.retain_release_operation_summary.contract_violation_sites &&
-      result.parity_surface.retain_release_operation_summary.release_insertion_sites <=
-          result.parity_surface.retain_release_operation_summary.ownership_qualified_sites +
-              result.parity_surface.retain_release_operation_summary.contract_violation_sites &&
-      result.parity_surface.retain_release_operation_summary.autorelease_insertion_sites <=
-          result.parity_surface.retain_release_operation_summary.ownership_qualified_sites +
-              result.parity_surface.retain_release_operation_summary.contract_violation_sites &&
-      result.parity_surface.retain_release_operation_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .retain_release_operation_ready;
   result.parity_surface.deterministic_weak_unowned_semantics_handoff =
-      result.deterministic_weak_unowned_semantics_handoff &&
-      result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites ==
-          result.parity_surface.weak_unowned_semantics_ownership_candidate_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.weak_reference_sites ==
-          result.parity_surface.weak_unowned_semantics_weak_reference_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.unowned_reference_sites ==
-          result.parity_surface.weak_unowned_semantics_unowned_reference_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.unowned_safe_reference_sites ==
-          result.parity_surface.weak_unowned_semantics_unowned_safe_reference_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites ==
-          result.parity_surface.weak_unowned_semantics_conflict_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites ==
-          result.parity_surface.weak_unowned_semantics_contract_violation_sites_total &&
-      result.parity_surface.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
-          result.parity_surface.weak_unowned_semantics_summary.unowned_reference_sites &&
-      result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
-          result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites &&
-      result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites <=
-          result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites +
-              result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
-      result.parity_surface.weak_unowned_semantics_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .weak_unowned_semantics_ready;
   result.parity_surface.deterministic_arc_diagnostics_fixit_handoff =
-      result.deterministic_arc_diagnostics_fixit_handoff &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites ==
-          result.parity_surface.ownership_arc_diagnostic_candidate_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites ==
-          result.parity_surface.ownership_arc_fixit_available_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites ==
-          result.parity_surface.ownership_arc_profiled_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
-          result.parity_surface.ownership_arc_weak_unowned_conflict_diagnostic_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites ==
-          result.parity_surface.ownership_arc_empty_fixit_hint_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites ==
-          result.parity_surface.ownership_arc_contract_violation_sites_total &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
-          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
-          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
-          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
-      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
-          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
-              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
-      result.parity_surface.arc_diagnostics_fixit_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .arc_diagnostics_fixit_ready;
   result.parity_surface.deterministic_autoreleasepool_scope_handoff =
-      result.deterministic_autoreleasepool_scope_handoff &&
-      result.parity_surface.autoreleasepool_scope_summary.scope_sites ==
-          result.parity_surface.autoreleasepool_scope_sites_total &&
-      result.parity_surface.autoreleasepool_scope_summary.scope_symbolized_sites ==
-          result.parity_surface.autoreleasepool_scope_symbolized_sites_total &&
-      result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites ==
-          result.parity_surface.autoreleasepool_scope_contract_violation_sites_total &&
-      result.parity_surface.autoreleasepool_scope_summary.max_scope_depth ==
-          result.parity_surface.autoreleasepool_scope_max_depth_total &&
-      result.parity_surface.autoreleasepool_scope_summary.scope_symbolized_sites <=
-          result.parity_surface.autoreleasepool_scope_summary.scope_sites &&
-      result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites <=
-          result.parity_surface.autoreleasepool_scope_summary.scope_sites &&
-      (result.parity_surface.autoreleasepool_scope_summary.scope_sites > 0u ||
-       result.parity_surface.autoreleasepool_scope_summary.max_scope_depth == 0u) &&
-      result.parity_surface.autoreleasepool_scope_summary.max_scope_depth <=
-          static_cast<unsigned>(result.parity_surface.autoreleasepool_scope_summary.scope_sites) &&
-      result.parity_surface.autoreleasepool_scope_summary.deterministic;
+      result.parity_surface
+          .dispatch_runtime_arc_parity_validation_readiness_record
+          .autoreleasepool_scope_ready;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
