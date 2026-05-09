@@ -157,13 +157,19 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildConcurrencyAsyncDiagnosticsCompatibilitySummaryJson;
 using objc3::artifacts::frontend::
+    BuildConcurrencyAsyncDirectCallLoweringJson;
+using objc3::artifacts::frontend::
     BuildConcurrencyAsyncEffectSuspensionSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyAwaitSuspensionResumeSemanticSummaryJson;
 using objc3::artifacts::frontend::
+    BuildConcurrencyContinuationAbiAsyncLoweringContractJson;
+using objc3::artifacts::frontend::
     BuildConcurrencyExecutorHopAffinityCompatibilitySummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyStructuredTaskCancellationSemanticSummaryJson;
+using objc3::artifacts::frontend::
+    BuildConcurrencySuspensionCleanupIntegrationJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyTaskExecutorCancellationSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
@@ -389,61 +395,6 @@ using objc3::artifacts::reports::
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
-inline constexpr const char
-    *kObjc3ConcurrencyContinuationAbiAsyncLoweringContractId =
-        "objc3c.concurrency.continuation.abi.async.lowering.contract.v1";
-inline constexpr const char
-    *kObjc3ConcurrencyContinuationAbiAsyncLoweringSurfacePath =
-        "frontend.pipeline.semantic_surface."
-        "objc_concurrency_continuation_abi_and_async_lowering_contract";
-inline constexpr const char
-    *kObjc3ConcurrencyContinuationAbiAsyncLoweringContinuationModel =
-        "async-entry-points-carry-deterministic-continuation-lowering-replay-keys-and-counts-into-emitted-ir";
-inline constexpr const char
-    *kObjc3ConcurrencyContinuationAbiAsyncLoweringAwaitModel =
-        "await-suspension-state-lowering-replay-keys-and-counts-are-published-alongside-continuation-lowering";
-inline constexpr const char
-    *kObjc3ConcurrencyContinuationAbiAsyncLoweringDeferredModel =
-        "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-runtime-work";
-// implementation anchor: publish a second Part 7 packet that states
-// the current runnable lowering truthfully. The live native slice is
-// direct-call based and non-suspending; it does not claim a full continuation
-// runtime yet.
-inline constexpr const char
-    *kObjc3ConcurrencyAsyncDirectCallLoweringContractId =
-        "objc3c.concurrency.async.direct.call.lowering.v1";
-inline constexpr const char
-    *kObjc3ConcurrencyAsyncDirectCallLoweringSurfacePath =
-        "frontend.pipeline.semantic_surface."
-        "objc_concurrency_async_function_await_and_continuation_lowering";
-inline constexpr const char
-    *kObjc3ConcurrencyAsyncDirectCallLoweringImplementationModel =
-        "supported-async-functions-and-await-lower-through-direct-calls-in-native-ir-and-object-emission-for-the-current-non-suspending-slice";
-inline constexpr const char
-    *kObjc3ConcurrencyAsyncDirectCallLoweringAwaitModel =
-        "await-marked-expressions-currently-reuse-the-operand-direct-call-lowering-path-without-materializing-a-suspension-state-machine";
-inline constexpr const char
-    *kObjc3ConcurrencyAsyncDirectCallLoweringDeferredModel =
-        "continuation-allocation-resume-suspend-state-machine-cleanup-and-executor-runtime-scheduling-remain-later-runtime-work";
-inline constexpr const char
-    *kObjc3ConcurrencySuspensionCleanupIntegrationContractId =
-        "objc3c.concurrency.suspension.autorelease.cleanup.integration.v1";
-// integration anchor: this packet ties the current direct-call async
-// slice to the already-live autoreleasepool and defer-cleanup lowering surfaces
-// instead of claiming a separate continuation cleanup runtime.
-inline constexpr const char
-    *kObjc3ConcurrencySuspensionCleanupIntegrationSurfacePath =
-        "frontend.pipeline.semantic_surface."
-        "objc_concurrency_suspension_autorelease_and_cleanup_integration";
-inline constexpr const char
-    *kObjc3ConcurrencySuspensionCleanupIntegrationModel =
-        "supported-non-suspending-async-lowering-reuses-existing-autoreleasepool-scope-and-defer-cleanup-lowering-through-real-ir-and-object-emission";
-inline constexpr const char
-    *kObjc3ConcurrencySuspensionCleanupIntegrationOrderingModel =
-        "current-proof-fixtures-show-terminal-return-paths-compose-await-direct-call-lowering-with-autoreleasepool-pop-and-defer-cleanup-without-a-separate-suspension-runtime";
-inline constexpr const char
-    *kObjc3ConcurrencySuspensionCleanupIntegrationDeferredModel =
-        "continuation-resume-cleanup-suspension-state-frames-and-executor-runtime-scheduling-remain-later-runtime-work";
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
   (void)mode;
   return "canonical";
@@ -1740,220 +1691,6 @@ BuildConcurrencyAwaitLoweringSuspensionStateLoweringContract(
       summary.deterministic && summary.ready_for_lowering_and_runtime &&
       contract.contract_violation_sites == 0;
   return contract;
-}
-
-std::string BuildConcurrencyContinuationAbiAsyncLoweringContractJson(
-    const Objc3AsyncContinuationLoweringContract &continuation_contract,
-    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
-    const std::string &continuation_replay_key,
-    const std::string &await_replay_key) {
-  const bool deterministic_handoff =
-      continuation_contract.deterministic && await_contract.deterministic;
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyContinuationAbiAsyncLoweringContractId)
-      << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencyContinuationAbiAsyncLoweringSurfacePath)
-      << "\",\"continuation_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
-      << "\",\"await_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
-      << "\",\"continuation_model\":\""
-      << EscapeJsonString(
-             kObjc3ConcurrencyContinuationAbiAsyncLoweringContinuationModel)
-      << "\",\"await_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyContinuationAbiAsyncLoweringAwaitModel)
-      << "\",\"deferred_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyContinuationAbiAsyncLoweringDeferredModel)
-      << "\",\"async_continuation_replay_key\":\""
-      << EscapeJsonString(continuation_replay_key)
-      << "\",\"await_suspension_replay_key\":\""
-      << EscapeJsonString(await_replay_key)
-      << "\",\"async_continuation_sites\":"
-      << continuation_contract.async_continuation_sites
-      << ",\"async_keyword_sites\":"
-      << continuation_contract.async_keyword_sites
-      << ",\"async_function_sites\":"
-      << continuation_contract.async_function_sites
-      << ",\"continuation_allocation_sites\":"
-      << continuation_contract.continuation_allocation_sites
-      << ",\"continuation_resume_sites\":"
-      << continuation_contract.continuation_resume_sites
-      << ",\"continuation_suspend_sites\":"
-      << continuation_contract.continuation_suspend_sites
-      << ",\"async_state_machine_sites\":"
-      << continuation_contract.async_state_machine_sites
-      << ",\"async_normalized_sites\":"
-      << continuation_contract.normalized_sites
-      << ",\"async_gate_blocked_sites\":"
-      << continuation_contract.gate_blocked_sites
-      << ",\"async_contract_violation_sites\":"
-      << continuation_contract.contract_violation_sites
-      << ",\"await_suspension_sites\":"
-      << await_contract.await_suspension_sites
-      << ",\"await_keyword_sites\":"
-      << await_contract.await_keyword_sites
-      << ",\"await_suspension_point_sites\":"
-      << await_contract.await_suspension_point_sites
-      << ",\"await_resume_sites\":"
-      << await_contract.await_resume_sites
-      << ",\"await_state_machine_sites\":"
-      << await_contract.await_state_machine_sites
-      << ",\"await_continuation_sites\":"
-      << await_contract.await_continuation_sites
-      << ",\"await_normalized_sites\":"
-      << await_contract.normalized_sites
-      << ",\"await_gate_blocked_sites\":"
-      << await_contract.gate_blocked_sites
-      << ",\"await_contract_violation_sites\":"
-      << await_contract.contract_violation_sites
-      << ",\"deterministic_handoff\":"
-      << (deterministic_handoff ? "true" : "false")
-      << ",\"ready_for_ir_emission\":"
-      << (deterministic_handoff ? "true" : "false")
-      << "}";
-  return out.str();
-}
-
-std::string BuildConcurrencyAsyncDirectCallLoweringJson(
-    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
-    const Objc3AsyncContinuationLoweringContract &continuation_contract,
-    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
-    const std::string &continuation_replay_key,
-    const std::string &await_replay_key) {
-  const bool deterministic = source_summary.deterministic_handoff &&
-                             continuation_contract.deterministic &&
-                             await_contract.deterministic;
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringContractId)
-      << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringSurfacePath)
-      << "\",\"implementation_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringImplementationModel)
-      << "\",\"await_lowering_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringAwaitModel)
-      << "\",\"deferred_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringDeferredModel)
-      << "\",\"source_closure_contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncSourceClosureContractId)
-      << "\",\"continuation_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
-      << "\",\"await_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
-      << "\",\"async_function_sites\":"
-      << source_summary.async_function_sites
-      << ",\"async_method_sites\":"
-      << source_summary.async_method_sites
-      << ",\"await_expression_sites\":"
-      << source_summary.await_expression_sites
-      << ",\"continuation_allocation_sites\":"
-      << continuation_contract.continuation_allocation_sites
-      << ",\"continuation_resume_sites\":"
-      << continuation_contract.continuation_resume_sites
-      << ",\"continuation_suspend_sites\":"
-      << continuation_contract.continuation_suspend_sites
-      << ",\"async_state_machine_sites\":"
-      << continuation_contract.async_state_machine_sites
-      << ",\"await_resume_sites\":"
-      << await_contract.await_resume_sites
-      << ",\"await_state_machine_sites\":"
-      << await_contract.await_state_machine_sites
-      << ",\"await_continuation_sites\":"
-      << await_contract.await_continuation_sites
-      << ",\"direct_call_lowering_supported\":"
-      << (deterministic ? "true" : "false")
-      << ",\"non_suspending_happy_path_only\":true"
-      << ",\"object_emission_supported\":"
-      << (deterministic ? "true" : "false")
-      << ",\"runtime_scheduler_required\":false"
-      << ",\"continuation_replay_key\":\""
-      << EscapeJsonString(continuation_replay_key)
-      << "\",\"await_replay_key\":\""
-      << EscapeJsonString(await_replay_key)
-      << "\",\"deterministic\":"
-      << (deterministic ? "true" : "false")
-      << ",\"ready_for_ir_object_emission\":"
-      << (deterministic ? "true" : "false")
-      << "}";
-  return out.str();
-}
-
-std::string BuildConcurrencySuspensionCleanupIntegrationJson(
-    const Objc3ControlFlowControlFlowSafetyLoweringContract &control_flow_contract,
-    const std::string &control_flow_replay_key,
-    const Objc3AutoreleasePoolScopeLoweringContract &autoreleasepool_contract,
-    const std::string &autoreleasepool_replay_key,
-    const Objc3AsyncContinuationLoweringContract &continuation_contract,
-    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
-    const std::string &continuation_replay_key,
-    const std::string &await_replay_key) {
-  const bool deterministic = control_flow_contract.deterministic &&
-                             autoreleasepool_contract.deterministic &&
-                             continuation_contract.deterministic &&
-                             await_contract.deterministic;
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencySuspensionCleanupIntegrationContractId)
-      << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencySuspensionCleanupIntegrationSurfacePath)
-      << "\",\"integration_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencySuspensionCleanupIntegrationModel)
-      << "\",\"cleanup_ordering_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencySuspensionCleanupIntegrationOrderingModel)
-      << "\",\"deferred_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencySuspensionCleanupIntegrationDeferredModel)
-      << "\",\"async_lowering_contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyAsyncDirectCallLoweringContractId)
-      << "\",\"control_flow_contract_id\":\""
-      << EscapeJsonString(kObjc3ControlFlowControlFlowSafetyLoweringContractId)
-      << "\",\"autoreleasepool_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AutoreleasePoolScopeLoweringLaneContract)
-      << "\",\"continuation_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
-      << "\",\"await_lane_contract_id\":\""
-      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
-      << "\",\"defer_statement_sites\":"
-      << control_flow_contract.defer_statement_sites
-      << ",\"live_defer_cleanup_sites\":"
-      << control_flow_contract.live_defer_cleanup_sites
-      << ",\"continuation_allocation_sites\":"
-      << continuation_contract.continuation_allocation_sites
-      << ",\"continuation_resume_sites\":"
-      << continuation_contract.continuation_resume_sites
-      << ",\"continuation_suspend_sites\":"
-      << continuation_contract.continuation_suspend_sites
-      << ",\"await_resume_sites\":"
-      << await_contract.await_resume_sites
-      << ",\"await_state_machine_sites\":"
-      << await_contract.await_state_machine_sites
-      << ",\"await_continuation_sites\":"
-      << await_contract.await_continuation_sites
-      << ",\"control_flow_replay_key\":\""
-      << EscapeJsonString(control_flow_replay_key)
-      << "\",\"autoreleasepool_replay_key\":\""
-      << EscapeJsonString(autoreleasepool_replay_key)
-      << "\",\"continuation_replay_key\":\""
-      << EscapeJsonString(continuation_replay_key)
-      << "\",\"await_replay_key\":\""
-      << EscapeJsonString(await_replay_key)
-      << "\",\"autoreleasepool_scope_supported\":"
-      << (!autoreleasepool_replay_key.empty() ? "true" : "false")
-      << ",\"defer_cleanup_supported\":"
-      << (control_flow_contract.live_defer_cleanup_sites > 0 ? "true" : "false")
-      << ",\"direct_call_lowering_supported\":"
-      << (deterministic ? "true" : "false")
-      << ",\"suspension_runtime_required\":false"
-      << ",\"state_machine_emission_present\":false"
-      << ",\"deterministic\":"
-      << (deterministic ? "true" : "false")
-      << ",\"ready_for_ir_object_emission\":"
-      << (deterministic ? "true" : "false")
-      << "}";
-  return out.str();
 }
 
 struct Objc3AccessorStorageLoweringMetadataSummary {
