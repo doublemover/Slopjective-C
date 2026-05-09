@@ -96,6 +96,18 @@ from scripts.objc3c_workflow.actions.ecosystem_publication import (
     action_validate_package_mirror,
     action_validate_runnable_package_ecosystem,
 )
+from scripts.objc3c_workflow.actions.hygiene import (
+    TASK_HYGIENE_PY,
+    action_check_dependency_boundaries,
+    action_check_release_evidence,
+    action_check_repo_superclean_surface,
+    action_check_source_hygiene_authenticity,
+    action_check_source_hygiene_hard_cutover,
+    action_check_task_hygiene,
+    action_lint,
+    action_lint_spec,
+    action_validate_repo_superclean,
+)
 from scripts.objc3c_workflow.actions.external_validation import (
     action_check_external_validation_surface,
     action_publish_external_repro_corpus,
@@ -104,7 +116,6 @@ from scripts.objc3c_workflow.actions.external_validation import (
     action_validate_external_validation_integration,
 )
 from scripts.objc3c_workflow.actions.native_build import (
-    BUILD_PS1,
     action_build_native_binaries,
     action_build_native_contracts,
     action_build_native_full,
@@ -240,13 +251,6 @@ REPLAY_PS1 = ROOT / "scripts" / "check_objc3c_execution_replay_proof.ps1"
 RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
 MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
 NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
-REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
-DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
-RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
-SOURCE_HYGIENE_AUTHENTICITY_PY = ROOT / "scripts" / "check_source_hygiene_authenticity.py"
-SOURCE_HYGIENE_HARD_CUTOVER_PY = ROOT / "scripts" / "check_source_hygiene_hard_cutover.py"
-SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
-TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
@@ -260,49 +264,6 @@ def run_steps(actions: Sequence[str]) -> int:
 
 def action_build_default(_: list[str]) -> int:
     return run_steps(["build-native-binaries"])
-
-
-def action_check_dependency_boundaries(_: list[str]) -> int:
-    return run([sys.executable, str(DEPENDENCY_BOUNDARIES_PY), "--strict"])
-
-
-def action_check_release_evidence(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_EVIDENCE_PY)])
-
-
-def action_check_source_hygiene_authenticity(_: list[str]) -> int:
-    return run([sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)])
-
-
-def action_check_source_hygiene_hard_cutover(_: list[str]) -> int:
-    return run([sys.executable, str(SOURCE_HYGIENE_HARD_CUTOVER_PY)])
-
-
-def action_check_task_hygiene(_: list[str]) -> int:
-    return run([sys.executable, str(TASK_HYGIENE_PY)])
-
-
-def action_check_repo_superclean_surface(_: list[str]) -> int:
-    return run([sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)])
-
-
-def action_validate_repo_superclean(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-repo-superclean",
-        [
-            ("build-native-contracts", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(BUILD_PS1), "-ExecutionMode", "contracts-binary"]),
-            ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
-            ("source-hygiene", [sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)]),
-        ],
-    )
-
-
-def action_lint_spec(_: list[str]) -> int:
-    return run([sys.executable, str(SPEC_LINT_PY)])
-
-
-def action_lint(_: list[str]) -> int:
-    return run_steps(["check-source-hygiene-hard-cutover", "check-task-hygiene", "build-site", "check-markdown"])
 
 
 def action_test_default(_: list[str]) -> int:
