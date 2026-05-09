@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "lower/objc3_lowering_contract.h"
+#include "pipeline/runtime_import_frontend_closure_boundary.h"
 #include "pipeline/runtime_import_link_plan.h"
 #include "pipeline/runtime_import_manifest_preservation.h"
 #include "pipeline/runtime_import_json_helpers.h"
@@ -14,7 +15,6 @@
 
 namespace {
 
-using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using JsonParser = objc3c::pipeline::RuntimeImportJsonParser;
 using JsonValue = objc3c::pipeline::RuntimeImportJsonValue;
 using objc3c::pipeline::AsArray;
@@ -24,12 +24,15 @@ using objc3c::pipeline::FindMember;
 using objc3c::pipeline::Objc3ImportedRuntimeModuleLinkPlan;
 using objc3c::pipeline::ParseRuntimeMetadataSourceRecordSet;
 using objc3c::pipeline::ParseSerializedRuntimeMetadataReusePayload;
+using objc3c::pipeline::PreserveImportedRuntimeMetadataSourceRecordInventory;
 using objc3c::pipeline::ReadBoolMember;
 using objc3c::pipeline::ReadSizeMember;
 using objc3c::pipeline::ReadStringArrayMember;
 using objc3c::pipeline::ReadStringMember;
 using objc3c::pipeline::ReadUnsignedMember;
 using objc3c::pipeline::SplitRuntimeImportLinkerResponseFlags;
+using objc3c::pipeline::ValidateImportedRuntimeFrontendClosureHardCutoverBoundary;
+using objc3c::pipeline::ValidateImportedRuntimeFrontendClosureInventory;
 using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestDescriptorInventory;
 using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestLinkerFlags;
 using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestReadiness;
@@ -1477,7 +1480,8 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
                                            error)) {
     return false;
   }
-  surface.frontend_closure_summary.runtime_metadata_source_records_ready = true;
+  PreserveImportedRuntimeMetadataSourceRecordInventory(
+      surface.frontend_closure_summary, local_runtime_metadata_source_records);
 
   const JsonValue *references_value = FindMember(root, "metadata_references");
   if (references_value == nullptr) {
@@ -1489,19 +1493,6 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     error = "JSON member 'metadata_references' must be an array";
     return false;
   }
-
-  surface.frontend_closure_summary.class_record_count =
-      local_runtime_metadata_source_records.classes_lexicographic.size();
-  surface.frontend_closure_summary.protocol_record_count =
-      local_runtime_metadata_source_records.protocols_lexicographic.size();
-  surface.frontend_closure_summary.category_record_count =
-      local_runtime_metadata_source_records.categories_lexicographic.size();
-  surface.frontend_closure_summary.property_record_count =
-      local_runtime_metadata_source_records.properties_lexicographic.size();
-  surface.frontend_closure_summary.method_record_count =
-      local_runtime_metadata_source_records.methods_lexicographic.size();
-  surface.frontend_closure_summary.ivar_record_count =
-      local_runtime_metadata_source_records.ivars_lexicographic.size();
 
   surface.frontend_closure_summary.superclass_reference_count = 0;
   surface.frontend_closure_summary.protocol_reference_count = 0;
@@ -1535,61 +1526,12 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     }
   }
 
-  const std::size_t declaration_count =
-      CountRuntimeMetadataSourceRecordSetDeclarations(
-          local_runtime_metadata_source_records);
-  if (surface.frontend_closure_summary.runtime_owned_declaration_count !=
-      declaration_count) {
-    error = "runtime-owned declaration count does not match imported record inventory";
-    return false;
-  }
-  if (surface.frontend_closure_summary.metadata_reference_count !=
-      references_array->size()) {
-    error = "metadata reference count does not match imported reference inventory";
-    return false;
-  }
-  if (surface.frontend_closure_summary.contract_id !=
-      kObjc3RuntimeAwareImportModuleFrontendClosureContractId) {
-    error = "unexpected import-surface contract id";
-    return false;
-  }
-  if (surface.frontend_closure_summary.source_surface_contract_id !=
-      kObjc3RuntimeAwareImportModuleSurfaceContractId) {
-    error = "unexpected import-surface source contract id";
-    return false;
-  }
-  if (surface.frontend_closure_summary.frontend_surface_path !=
-      kObjc3RuntimeAwareImportModuleFrontendClosureSurfacePath) {
-    error = "unexpected import-surface frontend surface path";
-    return false;
-  }
-  if (surface.frontend_closure_summary.payload_model !=
-      kObjc3RuntimeAwareImportModuleFrontendClosurePayloadModel) {
-    error = "unexpected import-surface payload model";
-    return false;
-  }
-  if (surface.frontend_closure_summary.artifact_relative_path !=
-      kObjc3RuntimeAwareImportModuleFrontendClosureArtifactRelativePath) {
-    error = "unexpected import-surface artifact name";
-    return false;
-  }
-  if (surface.frontend_closure_summary.authority_model !=
-      kObjc3RuntimeAwareImportModuleFrontendAuthorityModel) {
-    error = "unexpected import-surface authority model";
-    return false;
-  }
-  if (surface.frontend_closure_summary.payload_ownership_model !=
-      kObjc3RuntimeAwareImportModuleFrontendPayloadOwnershipModel) {
-    error = "unexpected import-surface ownership model";
-    return false;
-  }
-  if (!surface.frontend_closure_summary.ready_for_frontend_module_consumption) {
-    error = "import-surface artifact is not ready for frontend module consumption";
-    return false;
-  }
-  if (!IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-          surface.frontend_closure_summary)) {
-    error = "import-surface closure summary is incomplete";
+  if (!ValidateImportedRuntimeFrontendClosureInventory(
+          surface.frontend_closure_summary,
+          local_runtime_metadata_source_records, references_array->size(),
+          error) ||
+      !ValidateImportedRuntimeFrontendClosureHardCutoverBoundary(
+          surface.frontend_closure_summary, error)) {
     return false;
   }
   if (!ParseSerializedRuntimeMetadataReusePayload(root, surface, error)) {
