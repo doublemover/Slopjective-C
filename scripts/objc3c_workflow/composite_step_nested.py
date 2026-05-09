@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from time import perf_counter
+
+from .composite_step_payload import composite_step_payload
 
 RUNNER_SCRIPT_PATH = Path(__file__).with_name("runner.py").resolve()
 
@@ -28,12 +29,12 @@ def in_process_nested_step(
         nested_action = normalized[2]
         nested_rest = normalized[3:]
         exit_code = execute_nested_action(nested_action, nested_rest)
-        return {
-            "action": action,
-            "command": normalized,
-            "exit_code": exit_code,
-            "report_paths": [],
-            "executed_in_process": True,
-            "duration_seconds": round(perf_counter() - started_at, 6),
-        }
+        return composite_step_payload(
+            action=action,
+            command=normalized,
+            exit_code=exit_code,
+            report_paths=[],
+            started_at=started_at,
+            extra={"executed_in_process": True},
+        )
     return None

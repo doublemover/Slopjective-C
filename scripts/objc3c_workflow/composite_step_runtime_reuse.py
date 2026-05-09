@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
-from time import perf_counter
+
+from .composite_step_payload import composite_step_payload
 
 
 def runtime_acceptance_reuse_step(
@@ -16,13 +17,15 @@ def runtime_acceptance_reuse_step(
         action.startswith("test-runtime-acceptance")
         and os.environ.get("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN") == "1"
     ):
-        return {
-            "action": action,
-            "command": [str(token) for token in command],
-            "exit_code": 0,
-            "report_paths": ["tmp/reports/runtime/acceptance/summary.json"],
-            "report_reused": True,
-            "report_reuse_source": "OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN",
-            "duration_seconds": round(perf_counter() - started_at, 6),
-        }
+        return composite_step_payload(
+            action=action,
+            command=command,
+            exit_code=0,
+            report_paths=["tmp/reports/runtime/acceptance/summary.json"],
+            started_at=started_at,
+            extra={
+                "report_reused": True,
+                "report_reuse_source": "OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN",
+            },
+        )
     return None

@@ -4,6 +4,7 @@ import importlib
 from pathlib import Path
 
 from scripts.objc3c_workflow.composite_step_nested import RUNNER_SCRIPT_PATH
+from scripts.objc3c_workflow.composite_step_payload import composite_step_payload
 from scripts.objc3c_workflow.composite_step_runtime_reuse import (
     runtime_acceptance_reuse_step,
 )
@@ -21,6 +22,7 @@ OWNER_MODULES = (
     "composite_step_runtime_reuse",
     "composite_step_nested",
     "composite_step_subprocess",
+    "composite_step_payload",
 )
 
 
@@ -52,3 +54,21 @@ def test_runtime_acceptance_reuse_step_shape(monkeypatch) -> None:
     assert step["exit_code"] == 0
     assert step["report_reused"] is True
     assert step["report_paths"] == ["tmp/reports/runtime/acceptance/summary.json"]
+
+
+def test_composite_step_payload_preserves_shared_shape() -> None:
+    payload = composite_step_payload(
+        action="lint",
+        command=["python", "-m", "scripts.objc3c_workflow", "lint"],
+        exit_code=0,
+        report_paths=["tmp/reports/objc3c-public-workflow/lint.json"],
+        started_at=0.0,
+        extra={"executed_in_process": True},
+    )
+
+    assert payload["action"] == "lint"
+    assert payload["command"] == ["python", "-m", "scripts.objc3c_workflow", "lint"]
+    assert payload["exit_code"] == 0
+    assert payload["report_paths"] == ["tmp/reports/objc3c-public-workflow/lint.json"]
+    assert payload["executed_in_process"] is True
+    assert isinstance(payload["duration_seconds"], float)
