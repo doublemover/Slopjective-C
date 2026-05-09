@@ -36,6 +36,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/class_metadata_tables.h
   classes/class_graph.cpp
   classes/class_graph.h
+  classes/class_graph_snapshots.cpp
   classes/metaclass_graph.cpp
   classes/metaclass_graph.h
   classes/protocol_conformance.cpp
