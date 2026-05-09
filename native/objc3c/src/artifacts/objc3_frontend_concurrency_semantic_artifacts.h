@@ -11,6 +11,25 @@
 
 namespace objc3::artifacts::frontend {
 
+[[nodiscard]] Objc3ActorLoweringMetadataContract
+BuildConcurrencyActorLoweringMetadataContract(
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+        &source_summary,
+    const Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
+        &enforcement_summary,
+    const Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary
+        &hazard_summary);
+
+[[nodiscard]] Objc3AsyncContinuationLoweringContract
+BuildConcurrencyAsyncContinuationLoweringContract(
+    const Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary &summary,
+    const Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary
+        &compatibility_summary);
+
+[[nodiscard]] Objc3AwaitLoweringSuspensionStateLoweringContract
+BuildConcurrencyAwaitLoweringSuspensionStateLoweringContract(
+    const Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary &summary);
+
 [[nodiscard]] std::string
 BuildConcurrencyTaskExecutorCancellationSemanticModelSummaryJson(
     const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary &summary);
