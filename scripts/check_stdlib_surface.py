@@ -3,31 +3,25 @@
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
-from objc3c_tooling.paths import repo_rel
+
 from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.json_io import write_report_json
+from objc3c_tooling.paths import repo_rel
 
-
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE_PATH = ROOT / "stdlib" / "workspace.json"
-MODULE_INVENTORY_PATH = ROOT / "stdlib" / "module_inventory.json"
-STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
-PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
-CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
-ADVANCED_ARCHITECTURE_PATH = ROOT / "stdlib" / "advanced_architecture.json"
-SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
-LOWERING_IMPORT_SURFACE_PATH = ROOT / "stdlib" / "lowering_import_surface.json"
-ADVANCED_HELPER_PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "advanced_helper_package_surface.json"
-PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
-SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
-SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
-TABLE_ROW_RE = re.compile(
-    r"^\|\s*`(?P<module>[^`]+)`\s*\|\s*`(?P<capability>[^`]+)`\s*\|\s*(?P<profile>[^|]+?)\s*\|$"
+from check_stdlib_surface_model import (
+    CanonicalModuleSurface,
+    PackageImportSurface,
+    StdlibSurfaceDocuments,
+    StdlibSurfacePaths,
+    StdlibSurfaceReport,
+    parse_spec_canonical_modules,
+    write_stdlib_surface_report,
 )
+
+
+PATHS = StdlibSurfacePaths.from_script(Path(__file__))
+ROOT = PATHS.root
 
 
 def fail(message: str) -> int:
@@ -35,65 +29,23 @@ def fail(message: str) -> int:
     return 1
 
 
-
-
-def parse_spec_canonical_modules(spec_text: str) -> list[dict[str, str]]:
-    rows: list[dict[str, str]] = []
-    for raw_line in spec_text.splitlines():
-        match = TABLE_ROW_RE.match(raw_line.strip())
-        if not match:
-            continue
-        module = match.group("module")
-        capability = match.group("capability")
-        if not module.startswith("objc3."):
-            continue
-        rows.append(
-            {
-                "module": module,
-                "capability_id": capability,
-                "required_profile": match.group("profile").strip(),
-            }
-        )
-    return rows
-
-
 def main() -> int:
-    if not WORKSPACE_PATH.is_file():
-        return fail(f"missing workspace contract: {repo_rel(WORKSPACE_PATH)}")
-    if not MODULE_INVENTORY_PATH.is_file():
-        return fail(f"missing module inventory: {repo_rel(MODULE_INVENTORY_PATH)}")
-    if not STABILITY_POLICY_PATH.is_file():
-        return fail(f"missing stability policy: {repo_rel(STABILITY_POLICY_PATH)}")
-    if not PACKAGE_SURFACE_PATH.is_file():
-        return fail(f"missing package surface: {repo_rel(PACKAGE_SURFACE_PATH)}")
-    if not CORE_ARCHITECTURE_PATH.is_file():
-        return fail(f"missing core architecture contract: {repo_rel(CORE_ARCHITECTURE_PATH)}")
-    if not ADVANCED_ARCHITECTURE_PATH.is_file():
-        return fail(f"missing advanced architecture contract: {repo_rel(ADVANCED_ARCHITECTURE_PATH)}")
-    if not SEMANTIC_POLICY_PATH.is_file():
-        return fail(f"missing semantic policy contract: {repo_rel(SEMANTIC_POLICY_PATH)}")
-    if not LOWERING_IMPORT_SURFACE_PATH.is_file():
-        return fail(f"missing lowering/import surface contract: {repo_rel(LOWERING_IMPORT_SURFACE_PATH)}")
-    if not ADVANCED_HELPER_PACKAGE_SURFACE_PATH.is_file():
-        return fail(
-            f"missing advanced helper package surface contract: {repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)}"
-        )
-    if not PROGRAM_SURFACE_PATH.is_file():
-        return fail(f"missing program surface contract: {repo_rel(PROGRAM_SURFACE_PATH)}")
-    if not SPEC_CONTRACT_PATH.is_file():
-        return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
+    for surface_input in PATHS.required_inputs():
+        if not surface_input.path.is_file():
+            return fail(f"{surface_input.missing_message}: {repo_rel(surface_input.path)}")
 
-    workspace = load_json(WORKSPACE_PATH)
-    inventory = load_json(MODULE_INVENTORY_PATH)
-    stability_policy = load_json(STABILITY_POLICY_PATH)
-    package_surface = load_json(PACKAGE_SURFACE_PATH)
-    core_architecture = load_json(CORE_ARCHITECTURE_PATH)
-    advanced_architecture = load_json(ADVANCED_ARCHITECTURE_PATH)
-    semantic_policy = load_json(SEMANTIC_POLICY_PATH)
-    lowering_import_surface = load_json(LOWERING_IMPORT_SURFACE_PATH)
-    advanced_helper_package_surface = load_json(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)
-    program_surface = load_json(PROGRAM_SURFACE_PATH)
-    spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
+    documents = StdlibSurfaceDocuments.load(PATHS)
+    workspace = documents.workspace
+    inventory = documents.inventory
+    stability_policy = documents.stability_policy
+    package_surface = documents.package_surface
+    core_architecture = documents.core_architecture
+    advanced_architecture = documents.advanced_architecture
+    semantic_policy = documents.semantic_policy
+    lowering_import_surface = documents.lowering_import_surface
+    advanced_helper_package_surface = documents.advanced_helper_package_surface
+    program_surface = documents.program_surface
+    spec_text = documents.spec_text
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
         return fail("workspace contract_id drifted")
@@ -220,7 +172,7 @@ def main() -> int:
     if not isinstance(canonical_modules, list) or not canonical_modules:
         return fail("module inventory missing canonical_modules")
 
-    inventory_rows: list[dict[str, str]] = []
+    module_surfaces: list[CanonicalModuleSurface] = []
     required_extra_fields = (
         "implementation_module",
         "workspace_root",
@@ -240,35 +192,28 @@ def main() -> int:
             value = entry.get(field)
             if not isinstance(value, str) or not value:
                 return fail(f"module inventory entry {module} is missing {field}")
-        inventory_rows.append(
-            {
-                "module": module,
-                "implementation_module": str(entry["implementation_module"]),
-                "capability_id": capability_id,
-                "required_profile": required_profile,
-                "workspace_root": str(entry["workspace_root"]),
-                "source": str(entry["source"]),
-                "smoke_source": str(entry["smoke_source"]),
-                "manifest": str(entry["manifest"]),
-            }
+        module_surfaces.append(
+            CanonicalModuleSurface(
+                module=module,
+                implementation_module=str(entry["implementation_module"]),
+                capability_id=capability_id,
+                required_profile=required_profile,
+                workspace_root=str(entry["workspace_root"]),
+                source=str(entry["source"]),
+                smoke_source=str(entry["smoke_source"]),
+                manifest=str(entry["manifest"]),
+            )
         )
 
     spec_rows = parse_spec_canonical_modules(spec_text)
-    spec_comparison_rows = [
-        {
-            "module": entry["module"],
-            "capability_id": entry["capability_id"],
-            "required_profile": entry["required_profile"],
-        }
-        for entry in inventory_rows
-    ]
+    spec_comparison_rows = [module_surface.to_spec_row() for module_surface in module_surfaces]
     if spec_rows != spec_comparison_rows:
         return fail("module inventory drifted from spec canonical module table")
 
     layers = stability_policy.get("layers")
     if not isinstance(layers, list) or not layers:
         return fail("stability policy missing layers")
-    inventory_module_names = {entry["module"] for entry in inventory_rows}
+    inventory_module_names = {module_surface.module for module_surface in module_surfaces}
     covered_modules: set[str] = set()
     for layer in layers:
         if not isinstance(layer, dict):
@@ -308,9 +253,9 @@ def main() -> int:
     profile_gates = stability_policy.get("profile_gates")
     if not isinstance(profile_gates, dict) or not profile_gates:
         return fail("stability policy missing profile_gates")
-    for entry in inventory_rows:
-        if profile_gates.get(entry["module"]) != entry["required_profile"]:
-            return fail(f"stability policy profile_gates drifted for {entry['module']}")
+    for module_surface in module_surfaces:
+        if profile_gates.get(module_surface.module) != module_surface.required_profile:
+            return fail(f"stability policy profile_gates drifted for {module_surface.module}")
 
     breaking_change_rules = stability_policy.get("breaking_change_rules")
     if not isinstance(breaking_change_rules, list) or len(breaking_change_rules) < 3:
@@ -319,7 +264,7 @@ def main() -> int:
     module_imports = package_surface.get("module_imports")
     if not isinstance(module_imports, list) or not module_imports:
         return fail("package surface missing module_imports")
-    package_imports_by_module: dict[str, dict[str, str]] = {}
+    package_imports_by_module: dict[str, PackageImportSurface] = {}
     for entry in module_imports:
         if not isinstance(entry, dict):
             return fail("package surface module_import entry must be an object")
@@ -331,62 +276,67 @@ def main() -> int:
             for value in (canonical_module, implementation_module, source_declaration)
         ):
             return fail("package surface module_import entry is malformed")
-        package_imports_by_module[str(canonical_module)] = {
-            "implementation_module": str(implementation_module),
-            "source_declaration": str(source_declaration),
-        }
+        package_imports_by_module[str(canonical_module)] = PackageImportSurface(
+            canonical_module=str(canonical_module),
+            implementation_module=str(implementation_module),
+            source_declaration=str(source_declaration),
+        )
 
-    for entry in inventory_rows:
+    for module_surface in module_surfaces:
         for path_key in ("workspace_root", "source", "smoke_source", "manifest"):
-            path = ROOT / entry[path_key]
+            raw_path = module_surface.path_for(path_key)
+            path = ROOT / raw_path
             if path_key == "workspace_root":
                 if not path.is_dir():
-                    return fail(f"missing module workspace root: {entry[path_key]}")
+                    return fail(f"missing module workspace root: {raw_path}")
             else:
                 if not path.is_file():
-                    return fail(f"missing module artifact: {entry[path_key]}")
-        manifest_payload = load_json(ROOT / entry["manifest"])
+                    return fail(f"missing module artifact: {raw_path}")
+        manifest_payload = load_json(ROOT / module_surface.manifest)
         if manifest_payload.get("contract_id") != "objc3c.stdlib.module.surface.v1":
-            return fail(f"module manifest contract_id drifted for {entry['module']}")
-        if manifest_payload.get("canonical_module") != entry["module"]:
-            return fail(f"module manifest canonical_module drifted for {entry['module']}")
-        if manifest_payload.get("implementation_module") != entry["implementation_module"]:
-            return fail(f"module manifest implementation_module drifted for {entry['module']}")
-        if manifest_payload.get("capability_id") != entry["capability_id"]:
-            return fail(f"module manifest capability_id drifted for {entry['module']}")
-        if manifest_payload.get("workspace_root") != entry["workspace_root"]:
-            return fail(f"module manifest workspace_root drifted for {entry['module']}")
-        if manifest_payload.get("module_semver") != semantic_policy.get("module_semver", {}).get(entry["module"]):
-            return fail(f"module manifest module_semver drifted for {entry['module']}")
-        if manifest_payload.get("source") != entry["source"]:
-            return fail(f"module manifest source drifted for {entry['module']}")
-        if manifest_payload.get("smoke_source") != entry["smoke_source"]:
-            return fail(f"module manifest smoke_source drifted for {entry['module']}")
-        source_text = (ROOT / entry["source"]).read_text(encoding="utf-8")
-        expected_decl = f"module {entry['implementation_module']};"
+            return fail(f"module manifest contract_id drifted for {module_surface.module}")
+        if manifest_payload.get("canonical_module") != module_surface.module:
+            return fail(f"module manifest canonical_module drifted for {module_surface.module}")
+        if manifest_payload.get("implementation_module") != module_surface.implementation_module:
+            return fail(f"module manifest implementation_module drifted for {module_surface.module}")
+        if manifest_payload.get("capability_id") != module_surface.capability_id:
+            return fail(f"module manifest capability_id drifted for {module_surface.module}")
+        if manifest_payload.get("workspace_root") != module_surface.workspace_root:
+            return fail(f"module manifest workspace_root drifted for {module_surface.module}")
+        if (
+            manifest_payload.get("module_semver")
+            != semantic_policy.get("module_semver", {}).get(module_surface.module)
+        ):
+            return fail(f"module manifest module_semver drifted for {module_surface.module}")
+        if manifest_payload.get("source") != module_surface.source:
+            return fail(f"module manifest source drifted for {module_surface.module}")
+        if manifest_payload.get("smoke_source") != module_surface.smoke_source:
+            return fail(f"module manifest smoke_source drifted for {module_surface.module}")
+        source_text = (ROOT / module_surface.source).read_text(encoding="utf-8")
+        expected_decl = module_surface.expected_source_declaration()
         if expected_decl not in source_text:
-            return fail(f"module source declaration drifted for {entry['module']}")
-        package_import = package_imports_by_module.get(entry["module"])
+            return fail(f"module source declaration drifted for {module_surface.module}")
+        package_import = package_imports_by_module.get(module_surface.module)
         if package_import is None:
-            return fail(f"package surface missing canonical module {entry['module']}")
-        if package_import["implementation_module"] != entry["implementation_module"]:
-            return fail(f"package surface implementation_module drifted for {entry['module']}")
-        if package_import["source_declaration"] != expected_decl:
-            return fail(f"package surface source_declaration drifted for {entry['module']}")
+            return fail(f"package surface missing canonical module {module_surface.module}")
+        if package_import.implementation_module != module_surface.implementation_module:
+            return fail(f"package surface implementation_module drifted for {module_surface.module}")
+        if package_import.source_declaration != expected_decl:
+            return fail(f"package surface source_declaration drifted for {module_surface.module}")
         manifest_api_families = manifest_payload.get("api_families")
         if not isinstance(manifest_api_families, list) or not all(
             isinstance(value, str) and value for value in manifest_api_families
         ):
-            return fail(f"module manifest api_families malformed for {entry['module']}")
+            return fail(f"module manifest api_families malformed for {module_surface.module}")
         manifest_exports = manifest_payload.get("exports")
         if not isinstance(manifest_exports, list) or not all(
             isinstance(value, str) and value for value in manifest_exports
         ):
-            return fail(f"module manifest exports malformed for {entry['module']}")
+            return fail(f"module manifest exports malformed for {module_surface.module}")
         for export_name in manifest_exports:
             if export_name not in source_text:
                 return fail(
-                    f"module source missing exported symbol spelling {export_name} for {entry['module']}"
+                    f"module source missing exported symbol spelling {export_name} for {module_surface.module}"
                 )
 
     architecture_live_paths = core_architecture.get("live_paths")
@@ -412,13 +362,13 @@ def main() -> int:
     architecture_api_families = core_architecture.get("api_families")
     if not isinstance(architecture_api_families, dict) or not architecture_api_families:
         return fail("core architecture missing api_families")
-    inventory_modules_by_name = {entry["module"]: entry for entry in inventory_rows}
+    inventory_modules_by_name = {module_surface.module: module_surface for module_surface in module_surfaces}
     for module_name, families in architecture_api_families.items():
         if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
             return fail(f"core architecture referenced unknown module {module_name}")
         if not isinstance(families, list) or not families:
             return fail(f"core architecture api_families malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
         if manifest_payload.get("api_families") != families:
             return fail(f"module manifest api_families drifted for {module_name}")
     architecture_required_exports = core_architecture.get("required_exports")
@@ -429,7 +379,7 @@ def main() -> int:
             return fail(f"core architecture required_exports referenced unknown module {module_name}")
         if not isinstance(required_exports, list) or not required_exports:
             return fail(f"core architecture required_exports malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest exports drifted for {module_name}")
 
@@ -440,7 +390,7 @@ def main() -> int:
             return fail(f"advanced architecture referenced unknown module {module_name}")
         if not isinstance(families, list) or not families:
             return fail(f"advanced architecture api_families malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
         if manifest_payload.get("api_families") != families:
             return fail(f"module manifest advanced api_families drifted for {module_name}")
 
@@ -452,7 +402,7 @@ def main() -> int:
             return fail(f"advanced architecture required_exports referenced unknown module {module_name}")
         if not isinstance(required_exports, list) or not required_exports:
             return fail(f"advanced architecture required_exports malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest advanced exports drifted for {module_name}")
 
@@ -819,41 +769,29 @@ def main() -> int:
         manifest = entry.get("manifest")
         source = entry.get("source")
         smoke_source = entry.get("smoke_source")
-        if not all(isinstance(value, str) and value for value in (canonical_module, implementation_module, manifest, source, smoke_source)):
+        if not all(
+            isinstance(value, str) and value
+            for value in (canonical_module, implementation_module, manifest, source, smoke_source)
+        ):
             return fail("advanced helper package surface published a malformed module entry")
 
-    write_report_json(
-        SUMMARY_PATH,
-        {
-            "contract_id": SUMMARY_CONTRACT_ID,
-            "schema_version": 1,
-            "status": "PASS",
-            "workspace_contract": repo_rel(WORKSPACE_PATH),
-            "module_inventory": repo_rel(MODULE_INVENTORY_PATH),
-            "stability_policy": repo_rel(STABILITY_POLICY_PATH),
-            "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
-            "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
-            "advanced_architecture": repo_rel(ADVANCED_ARCHITECTURE_PATH),
-            "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
-            "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
-            "advanced_helper_package_surface": repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH),
-            "program_surface": repo_rel(PROGRAM_SURFACE_PATH),
-            "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
-            "canonical_modules": inventory_rows,
-            "layers": layers,
-            "module_imports": module_imports,
-            "api_families": architecture_api_families,
-            "advanced_api_families": advanced_api_families,
-            "required_exports": architecture_required_exports,
-            "advanced_required_exports": advanced_required_exports,
-            "module_semver": semantic_module_semver,
-            "artifact_filenames": artifact_filenames,
-            "advanced_helper_modules": advanced_helper_modules,
-            "capability_demo_examples": capability_demo_examples,
-        },
-        sort_keys=False,
+    write_stdlib_surface_report(
+        StdlibSurfaceReport(
+            paths=PATHS,
+            canonical_modules=module_surfaces,
+            layers=layers,
+            module_imports=module_imports,
+            api_families=architecture_api_families,
+            advanced_api_families=advanced_api_families,
+            required_exports=architecture_required_exports,
+            advanced_required_exports=advanced_required_exports,
+            module_semver=semantic_module_semver,
+            artifact_filenames=artifact_filenames,
+            advanced_helper_modules=advanced_helper_modules,
+            capability_demo_examples=capability_demo_examples,
+        )
     )
-    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print(f"summary_path: {repo_rel(PATHS.summary)}")
     return 0
 
 
