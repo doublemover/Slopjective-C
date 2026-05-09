@@ -25,7 +25,7 @@
   "reproducibility_rules": [
     "mirror package ids must match the generated lock package ids",
     "local registry package ids must match the generated lock package ids",
-    "publication metadata must state hosted registry support is deferred",
+    "publication metadata must fail closed for hosted registry support claims",
     "mirror validation must declare no-network-during-validation",
     "all generated paths remain under tmp/artifacts/package-ecosystem"
   ]

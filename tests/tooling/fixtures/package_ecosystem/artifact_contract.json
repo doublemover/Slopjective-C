@@ -8,8 +8,16 @@
   "registry_publication_semantics": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
   "schemas": {
     "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
-    "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+    "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json"
   },
+  "owner_split_modules": [
+    "scripts/objc3c_workflow/action_catalog_package_lock_contracts.py",
+    "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+    "scripts/objc3c_workflow/action_catalog_package_install_receipts.py",
+    "scripts/objc3c_workflow/action_catalog_package_integration_claims.py",
+    "scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py"
+  ],
   "generated_artifact_roots": [
     "tmp/artifacts/package-ecosystem/locks",
     "tmp/artifacts/package-ecosystem/mirrors",

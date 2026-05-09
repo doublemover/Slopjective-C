@@ -8,19 +8,6 @@ import sys
 
 from ..environment import ROOT
 
-PACKAGE_LOCK_PY = ROOT / "scripts" / "build_objc3c_package_lock.py"
-PACKAGE_AUTHORING_WORKFLOW_PY = (
-    ROOT / "scripts" / "check_objc3c_package_authoring_workflow.py"
-)
-PACKAGE_MIRROR_REPRODUCIBILITY_PY = (
-    ROOT / "scripts" / "check_objc3c_package_registry_mirror_reproducibility.py"
-)
-PACKAGE_ECOSYSTEM_INTEGRATION_PY = (
-    ROOT / "scripts" / "check_objc3c_package_ecosystem_integration.py"
-)
-RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_package_ecosystem_end_to_end.py"
-)
 LONG_HORIZON_OPERATIONS_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_long_horizon_operations_integration.py"
 )
@@ -58,26 +45,6 @@ class PublicationArtifactContract:
 
 
 PUBLICATION_ARTIFACT_CONTRACTS: dict[str, PublicationArtifactContract] = {
-    "build-package-lock": PublicationArtifactContract(
-        "build-package-lock",
-        PACKAGE_LOCK_PY,
-    ),
-    "validate-package-authoring": PublicationArtifactContract(
-        "validate-package-authoring",
-        PACKAGE_AUTHORING_WORKFLOW_PY,
-    ),
-    "validate-package-mirror": PublicationArtifactContract(
-        "validate-package-mirror",
-        PACKAGE_MIRROR_REPRODUCIBILITY_PY,
-    ),
-    "validate-package-ecosystem": PublicationArtifactContract(
-        "validate-package-ecosystem",
-        PACKAGE_ECOSYSTEM_INTEGRATION_PY,
-    ),
-    "validate-runnable-package-ecosystem": PublicationArtifactContract(
-        "validate-runnable-package-ecosystem",
-        RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
-    ),
     "validate-long-horizon-operations": PublicationArtifactContract(
         "validate-long-horizon-operations",
         LONG_HORIZON_OPERATIONS_INTEGRATION_PY,

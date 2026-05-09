@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from .action_spec import ActionSpec
+from .action_catalog_package_public_workflows import package_action_specs
+from .action_catalog_package_registry_publication import (
+    PACKAGE_REGISTRY_PUBLIC_ACTIONS,
+)
 
-PACKAGE_REGISTRY_ACTION_SPECS: dict[str, ActionSpec] = {
-    "validate-package-mirror": ActionSpec("validate-package-mirror", "validate offline mirror and local registry metadata reproducibility from the generated package lock", "python:scripts/check_objc3c_package_registry_mirror_reproducibility.py", validation_tier="repo", guarantee_owner="offline mirror and local registry metadata stay lock-derived, no-network, and hosted-registry-deferred"),
-}
+PACKAGE_REGISTRY_ACTION_SPECS = package_action_specs(PACKAGE_REGISTRY_PUBLIC_ACTIONS)
 
 __all__ = ["PACKAGE_REGISTRY_ACTION_SPECS"]

@@ -2,34 +2,34 @@
 
 from __future__ import annotations
 
-from .ecosystem_publication_contracts import (
+from .ecosystem_publication_package_contracts import (
     PACKAGE_AUTHORING_WORKFLOW_PY,
     PACKAGE_ECOSYSTEM_INTEGRATION_PY,
     PACKAGE_LOCK_PY,
     PACKAGE_MIRROR_REPRODUCIBILITY_PY,
     RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY,
 )
-from .ecosystem_publication_runner import run_publication_action
+from .ecosystem_publication_package_runner import run_package_publication_action
 
 
 def action_build_package_lock(_: list[str]) -> int:
-    return run_publication_action("build-package-lock")
+    return run_package_publication_action("build-package-lock")
 
 
 def action_validate_package_authoring(_: list[str]) -> int:
-    return run_publication_action("validate-package-authoring")
+    return run_package_publication_action("validate-package-authoring")
 
 
 def action_validate_package_mirror(_: list[str]) -> int:
-    return run_publication_action("validate-package-mirror")
+    return run_package_publication_action("validate-package-mirror")
 
 
 def action_validate_package_ecosystem(_: list[str]) -> int:
-    return run_publication_action("validate-package-ecosystem")
+    return run_package_publication_action("validate-package-ecosystem")
 
 
 def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
-    return run_publication_action("validate-runnable-package-ecosystem")
+    return run_package_publication_action("validate-runnable-package-ecosystem")
 
 
 __all__ = [

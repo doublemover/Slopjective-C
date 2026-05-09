@@ -38,16 +38,16 @@
     },
     {
       "layer_id": "hosted-registry",
-      "support_state": "deferred-release-blocking-if-claimed",
-      "source_of_truth": "none in this milestone",
+      "support_state": "unsupported-fail-closed-if-claimed",
+      "source_of_truth": "no checked-in source authority",
       "publication_path": "",
-      "claim_boundary": "no hosted registry, network fetch, auth, moderation, or availability claim"
+      "claim_boundary": "hosted registry, network fetch, auth, moderation, and availability claims fail closed"
     }
   ],
   "publication_rules": [
     "registry metadata must be generated from the lock and mirror evidence",
     "publication metadata may not introduce package identities absent from the lock graph",
-    "hosted-registry behavior is deferred and must fail closed if claimed",
+    "hosted-registry behavior must fail closed when claimed without checked-in source authority",
     "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
     "offline mirror publication must remain usable without network access"
   ],
