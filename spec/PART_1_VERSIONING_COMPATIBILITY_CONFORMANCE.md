@@ -16,7 +16,10 @@ Public support truth lives in:
 
 - `docs/support/capability_matrix.md`
 - `docs/support/capability_matrix.json`
+- `docs/support/evidence_map.json`
 - `docs/support/evidence_map.md`
+- `schemas/objc3c-capability-matrix-v1.schema.json`
+- `schemas/objc3c-capability-evidence-map-v1.schema.json`
 
 Any local claim in this part is subordinate to those capability and evidence
 surfaces.
@@ -225,6 +228,16 @@ Evidence map rows may cite source owners such as
 schema truth explicit without converting implementation surfaces into new
 language features.
 
+The machine-readable support contract is:
+
+- capability data: `docs/support/capability_matrix.json`
+- capability schema: `schemas/objc3c-capability-matrix-v1.schema.json`
+- evidence data: `docs/support/evidence_map.json`
+- evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
+
+Docs, spec prose, and site pages must not introduce a local status state beyond
+`implemented`, `rejected`, `reserved`, or `internal`.
+
 ### 1.5.3 Diagnostic escalation rule {#part-1-5-3}
 
 Diagnostic severity can vary by toolchain profile, but severity changes must not
@@ -268,6 +281,10 @@ reported as capability-backed behavior.
 
 Objective-C 3.0 source is canonical-only in this specification. Retired forms
 are rejected or reserved according to the capability matrix.
+
+Compatibility shims, fallback language paths, migration lanes, old modes, and
+success-without-evidence wording are not alternate Objective-C 3.0 support
+states.
 
 ### 1.7.2 Contained default changes {#part-1-7-2}
 

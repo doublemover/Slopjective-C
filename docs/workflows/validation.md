@@ -12,6 +12,10 @@ matrix:
 - behavior rows need executable evidence or canonical diagnostic evidence,
 - internal rows may name source, schema, or generated-doc owners without
   becoming language support,
+- machine-readable capability truth lives in `docs/support/capability_matrix.json`
+  against `schemas/objc3c-capability-matrix-v1.schema.json`,
+- machine-readable evidence truth lives in `docs/support/evidence_map.json`
+  against `schemas/objc3c-capability-evidence-map-v1.schema.json`,
 - replayable commands must use `npm run objc3c -- <action>`,
 - direct script, PowerShell, CMake, or native helper names are implementation
   evidence only,

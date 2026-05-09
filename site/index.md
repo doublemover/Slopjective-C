@@ -6,22 +6,25 @@ layout: default
 # Objective-C 3.0 Draft Specification <a id="toc"></a>
 
 _Working draft v0.11_  
-_Last updated: 2026-03-11_
+_Last updated: 2026-05-09_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the capability matrix and evidence map instead of archived planning notes.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the schema-backed capability matrix and evidence map instead of archived planning notes, and public commands route through the single npm objc3c bridge.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model is still in progress.
 
 ## At a Glance <a id="toc-status-scope-note"></a>
 
-| Area                       | Status           | Notes                                                                                                                            |
-| -------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Native compiler pipeline   | Implemented      | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables.                                       |
-| Runnable language subset   | Implemented      | Functions, control flow, scalar types, and bracket message sends compile and run natively.                                       |
-| Object-model declarations  | Partial          | `@interface`, `@implementation`, `@protocol`, `@category`, and `@property` have meaningful parser/sema/metadata support.         |
-| Runtime metadata emission  | Partial          | Class, protocol, category, property, ivar, selector, and string metadata now emit into object artifacts.                         |
-| Runtime realization        | In progress      | Bootstrap, registration, method binding, property/ivar realization, and reflective/runtime consumption are not fully closed out. |
-| Advanced language features | Not yet runnable | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop remain future work.                    |
+Only the capability matrix states are support states. This overview points at
+those rows instead of inventing local status vocabulary.
+
+| Area                       | Matrix state | Notes                                                                                                                                       |
+| -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native compiler pipeline   | internal     | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split compiler/runtime/pipeline/artifact/IO owner modules. |
+| Runnable language subset   | implemented  | Parser, sema, lowering, IR, runtime strict-dispatch diagnostic, and e2e smoke rows carry executable evidence.                                |
+| Object-model declarations  | internal     | Parser/sema/metadata support exists, but executable object-model behavior is not widened beyond matrix rows.                                 |
+| Runtime metadata emission  | internal     | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.        |
+| Runtime dispatch result    | internal     | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                           |
+| Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until matrix evidence changes.     |
 
 ## How to Read This Draft <a id="toc-how-to-read-this-draft"></a>
 
@@ -29,7 +32,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Use the capability matrix and evidence map when you need to verify a support claim.
+3. Use the schema-backed capability matrix and evidence map when you need to verify a support claim.
 
 ## Quick Routes <a id="toc-quick-routes"></a>
 
@@ -51,6 +54,8 @@ Use this page in three passes:
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
 | verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
 | inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
+| inspect machine-readable capability truth                | [capability matrix JSON](../docs/support/capability_matrix.json) and [evidence map JSON](../docs/support/evidence_map.json) |
+| inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
 ## Reader Promises <a id="toc-reader-promises"></a>
 
@@ -60,6 +65,8 @@ This page follows a strict public-doc model:
 - plain language before internal jargon,
 - direct links before repo scavenger hunts,
 - current implementation truth before historical narrative,
+- matrix states instead of local support adjectives,
+- command examples through `npm run objc3c -- <action>`,
 - and tutorial routing through checked-in learning paths and showcase sources instead of archived planning material.
 
 ## What Is Implemented and Runnable <a id="intro"></a>
@@ -71,10 +78,14 @@ The current native toolchain can compile and run a real subset of Objective-C 3.
 - scalar/control-flow semantics including `if`, `while`, `do while`, `for`, `switch`, `break`, `continue`, and `return`,
 - integer and boolean values in the canonical runnable subset,
 - bracket message-send syntax lowered through the current runtime dispatch path,
+- strict runtime dispatch diagnostics through `objc3_runtime_dispatch_i32_checked` and the public runtime result surface,
+- npm bridge workflow dispatch through `npm run objc3c -- <action>`,
 - native ownership-baseline runtime behavior for retainable object storage,
 - deterministic selector/string pool emission and metadata-bearing object artifacts.
 
-This is a real compiler/runtime path, not just parser scaffolding.
+This is a real compiler/runtime path, not parser scaffolding. It is still only a
+public support claim where the capability matrix marks a behavior implemented
+with evidence.
 
 ## What Is Implemented but Not Yet Fully Live <a id="decisions"></a>
 
@@ -90,8 +101,11 @@ Implemented in parser, semantic passes, and emitted metadata:
 - object-model legality checks,
 - class, metaclass, protocol, category, property, and ivar descriptor families,
 - registration/bootstrap metadata and related artifact plumbing.
+- include-sharded native ownership split across compiler, runtime, pipeline,
+  artifacts, and IO modules for lowering, IR, JSON/schema artifacts, dispatch
+  classification, and public runtime C API boundaries.
 
-What is still incomplete is the last step: consuming all of that emitted metadata as a fully live runtime object system.
+What is still incomplete is the last step: consuming all of that emitted metadata as a fully live runtime object system. The matrix keeps those owner files as internal evidence until executable behavior is proven.
 
 ## What Remains <a id="status-remaining"></a>
 

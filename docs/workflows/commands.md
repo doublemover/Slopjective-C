@@ -1,7 +1,8 @@
 # Commands
 
 Command support is generated from checked-in workflow contracts and public
-command docs. Capability claims route through `docs/support/capability_matrix.md`.
+command docs. Capability claims route through `docs/support/capability_matrix.md`
+and the schema-backed JSON matrix at `docs/support/capability_matrix.json`.
 
 The public command model is:
 
@@ -22,3 +23,8 @@ The public command model is:
 User-facing workflow docs advertise the npm bridge only. Retired package-script
 names, public-script metadata tables, helper invocations, native build commands,
 and implementation-only script names are not public command surface.
+
+Capability docs may cite command evidence only when the command matches the
+matrix schema pattern, `npm run objc3c -- <action>`. Direct helper invocations,
+shim paths, fallback modes, and migration-lane wording remain implementation
+history, not command support.
