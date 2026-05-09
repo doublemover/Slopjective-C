@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-stress-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "support_boundary": "lowering stress fixtures own canonical lowering, ABI handoff, and strict link-error provenance for required runtime symbols",
+  "source_families": [
+    "lowering-runtime-stress",
+    "mixed-module-differential",
+    "replay-backed-contracts"
+  ],
+  "owned_inputs": [
+    {
+      "path": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+      "selectors": [
+        "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
+      ],
+      "disposition": "canonical lowering stress provenance"
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+      "selectors": [
+        "mixed-image-package-lowering-bridge-emission",
+        "runtime_mixed_image_package_lowering_bridge_emission_surface"
+      ],
+      "disposition": "mixed-image lowering bridge emission evidence only"
+    },
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_result_like_lowering_contract",
+      "selectors": [
+        "replay_run_*/module.ll",
+        "replay_run_*/module.manifest.json"
+      ],
+      "disposition": "replay-backed lowering contract provenance"
+    }
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime fallback and alternate lowering paths remain strict-error or rejected provenance"
+}

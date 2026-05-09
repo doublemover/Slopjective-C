@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-stress-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "support_boundary": "e2e stress fixtures own deterministic compile-link-run, mixed-module provider/consumer replay, and end-to-end validation boundaries",
+  "source_families": [
+    "lowering-runtime-stress",
+    "mixed-module-differential",
+    "replay-backed-contracts"
+  ],
+  "owned_inputs": [
+    {
+      "path": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+      "selectors": [
+        "execution_cases[]",
+        "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
+        "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3"
+      ],
+      "disposition": "deterministic compile-link-run stress evidence"
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+      "selectors": [
+        "fixture_groups[].provider",
+        "fixture_groups[].consumer",
+        "cross-module-runtime-provider-consumer",
+        "header-module-bridge-provider-consumer",
+        "actor-isolation-provider-consumer",
+        "error-surface-provider-consumer"
+      ],
+      "disposition": "provider/consumer end-to-end replay provenance"
+    },
+    {
+      "path": "tests/conformance/module_roundtrip/manifest.json",
+      "selectors": [
+        "roundtrip replay fixtures"
+      ],
+      "disposition": "end-to-end module roundtrip provenance"
+    }
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "mixed-module compatibility wording is treated as replay provenance and never as alternate acceptance support"
+}

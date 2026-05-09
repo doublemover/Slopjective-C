@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-stress-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "support_boundary": "semantic stress fixtures own type flow, effects, ownership diagnostics, conservative control-flow rejection, and unsupported feature claims",
+  "source_families": [
+    "parser-sema-fuzz",
+    "lowering-runtime-stress",
+    "mixed-module-differential"
+  ],
+  "owned_inputs": [
+    {
+      "path": "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+      "selectors": [
+        "cases[].subsystem=semantic",
+        "tests/tooling/fixtures/native/*_negative.objc3"
+      ],
+      "disposition": "semantic rejection stress evidence"
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+      "selectors": [
+        "tests/tooling/fixtures/native/type_semantic_*.objc3",
+        "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
+        "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3"
+      ],
+      "disposition": "semantic model and diagnostics provenance inside the broader compile stress suite"
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+      "selectors": [
+        "import-version-feature-claim-diagnostics",
+        "runtime_import_version_feature_claim_diagnostics_surface"
+      ],
+      "disposition": "unsupported feature claim diagnostics; no compatibility support"
+    }
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported feature and compatibility-looking claims are semantic diagnostics or absent support"
+}

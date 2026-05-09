@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-stress-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "support_boundary": "runtime stress fixtures own live dispatch, package loading, runtime replay, storage/reflection-adjacent runtime behavior, and strict runtime errors",
+  "source_families": [
+    "lowering-runtime-stress",
+    "mixed-module-differential",
+    "replay-backed-contracts"
+  ],
+  "owned_inputs": [
+    {
+      "path": "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
+      "selectors": [
+        "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+        "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+        "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+        "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+        "tests/tooling/fixtures/native/execution/negative/message_send_runtime_dispatch_strict_error.objc3"
+      ],
+      "disposition": "canonical live-runtime stress and strict dispatch-error provenance"
+    },
+    {
+      "path": "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
+      "selectors": [
+        "runtime_cross_module_package_interop_source_surface",
+        "runtime_mixed_image_compatibility_interop_semantics_surface",
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+        "runtime_package_loading_interop_implementation_surface"
+      ],
+      "disposition": "runtime interop and package loading provenance; compatibility wording is not compatibility support"
+    },
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_concurrency_replay_contract",
+      "selectors": [
+        "replay_run_*/module.ll",
+        "replay_run_*/module.manifest.json"
+      ],
+      "disposition": "runtime replay stress seed"
+    }
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime fallback, compatibility interop, and unresolved dispatch remain strict-error or provenance-only evidence"
+}
