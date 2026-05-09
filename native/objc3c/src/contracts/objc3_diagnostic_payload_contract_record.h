@@ -3,14 +3,14 @@
 #include <string_view>
 
 #include "contracts/objc3_contract_helpers.h"
+#include "contracts/objc3_diagnostic_payload_contract_id.h"
 #include "contracts/objc3_native_contract_ids.h"
 
 struct Objc3DiagnosticPayloadContract {
   Objc3NativeContractDescriptor descriptor =
-      DescribeObjc3NativeContract(Objc3NativeContractId::kDiagnosticPayloadV1);
-  std::string_view contract_id =
-      Objc3NativeContractIdSpelling(
-          Objc3NativeContractId::kDiagnosticPayloadV1);
+      DescribeObjc3NativeContract(
+          objc3c::contracts::kObjc3DiagnosticPayloadContract);
+  std::string_view contract_id = Objc3DiagnosticPayloadContractId();
   std::string_view severity_field = "severity";
   std::string_view line_field = "line";
   std::string_view column_field = "column";

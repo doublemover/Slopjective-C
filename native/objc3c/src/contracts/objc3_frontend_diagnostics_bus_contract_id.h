@@ -4,7 +4,15 @@
 
 #include "contracts/objc3_native_contract_ids.h"
 
+namespace objc3c::contracts {
+
+inline constexpr Objc3NativeContractId kObjc3FrontendDiagnosticsBusContract =
+    Objc3NativeContractId::kFrontendDiagnosticsBusV1;
+inline constexpr const char *kObjc3FrontendDiagnosticsBusContractId =
+    Objc3NativeContractIdSpelling(kObjc3FrontendDiagnosticsBusContract).data();
+
+}  // namespace objc3c::contracts
+
 inline constexpr std::string_view Objc3FrontendDiagnosticsBusContractId() {
-  return Objc3NativeContractIdSpelling(
-      Objc3NativeContractId::kFrontendDiagnosticsBusV1);
+  return objc3c::contracts::kObjc3FrontendDiagnosticsBusContractId;
 }
