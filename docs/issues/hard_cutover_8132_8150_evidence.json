@@ -192,6 +192,71 @@
         "#8144",
         "#8150"
       ]
+    },
+    {
+      "ref": "ebe18944b",
+      "summary": "HC move method resolution owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ]
+    },
+    {
+      "ref": "99cab5b8a",
+      "summary": "HC split frontend C API runner option owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ]
+    },
+    {
+      "ref": "6063e4f32",
+      "summary": "HC clarify README support onboarding",
+      "issues": [
+        "#8145"
+      ]
+    },
+    {
+      "ref": "4653e8d07",
+      "summary": "HC split property support owner modules",
+      "issues": [
+        "#8138",
+        "#8144",
+        "#8150"
+      ]
+    },
+    {
+      "ref": "c1c990e16",
+      "summary": "HC split JSON schema validation owner",
+      "issues": [
+        "#8148"
+      ]
+    },
+    {
+      "ref": "b1f1ba7a7",
+      "summary": "HC split frontend C API runner command owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ]
+    },
+    {
+      "ref": "b0e6a33a5",
+      "summary": "HC split artifact JSON publication contract",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "ed3273640",
+      "summary": "HC split ObjC type support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ]
     }
   ],
   "hard_cutover_disposition": {

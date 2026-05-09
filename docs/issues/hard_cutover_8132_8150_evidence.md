@@ -57,6 +57,19 @@ pass:
   `#8141`, and `#8148`.
 - `5788dcf91` folds those latest local commits into the issue evidence maps for
   `#8144` and `#8150`.
+- `ebe18944b` adds method-resolution owner evidence for `#8133` and `#8143`.
+- `99cab5b8a` adds frontend C API runner option-owner evidence for `#8140`,
+  `#8141`, and `#8142`.
+- `6063e4f32` adds README support onboarding evidence for `#8145`.
+- `4653e8d07` adds property support owner modules and carried the prior issue
+  evidence fold-in for `#8138`, `#8144`, and `#8150`.
+- `c1c990e16` adds JSON schema validation owner evidence for `#8148`.
+- `b1f1ba7a7` adds frontend C API runner command-owner evidence for `#8140`,
+  `#8141`, and `#8142`.
+- `b0e6a33a5` adds artifact JSON publication contract evidence for `#8138`
+  and `#8148`.
+- `ed3273640` adds Objective-C type support profile evidence for `#8138` and
+  `#8146`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

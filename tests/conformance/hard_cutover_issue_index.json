@@ -281,6 +281,108 @@
         "docs/issues/hard_cutover_8132_8150_evidence.md",
         "tests/conformance/hard_cutover_issue_index.json"
       ]
+    },
+    {
+      "ref": "ebe18944b",
+      "summary": "HC move method resolution owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/dispatch/method_cache.cpp",
+        "native/objc3c/src/runtime/dispatch/method_cache.h"
+      ]
+    },
+    {
+      "ref": "99cab5b8a",
+      "summary": "HC split frontend C API runner option owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_options.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_option_values.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_options.cpp"
+      ]
+    },
+    {
+      "ref": "6063e4f32",
+      "summary": "HC clarify README support onboarding",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "README.md"
+      ]
+    },
+    {
+      "ref": "4653e8d07",
+      "summary": "HC split property support owner modules",
+      "issues": [
+        "#8138",
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_property_accessor_profiles.h",
+        "native/objc3c/src/support/objc3_property_ownership_profiles.h",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "c1c990e16",
+      "summary": "HC split JSON schema validation owner",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/io/json/json_schema_validation.h"
+      ]
+    },
+    {
+      "ref": "b1f1ba7a7",
+      "summary": "HC split frontend C API runner command owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_object_inspection_command.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_read_command.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_repro_command.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_shell_quote.cpp"
+      ]
+    },
+    {
+      "ref": "b0e6a33a5",
+      "summary": "HC split artifact JSON publication contract",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp",
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.h"
+      ]
+    },
+    {
+      "ref": "ed3273640",
+      "summary": "HC split ObjC type support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_objc_reference_type_profiles.h",
+        "native/objc3c/src/support/objc3_objc_type_surface_profiles.h",
+        "native/objc3c/src/support/objc3_type_spelling_consistency.cpp"
+      ]
     }
   ],
   "global_policy": {

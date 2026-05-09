@@ -26,7 +26,8 @@
       "anchor": "#8133",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
-        "6a9b0b23f"
+        "6a9b0b23f",
+        "ebe18944b"
       ]
     },
     {
@@ -75,7 +76,10 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "ffb2a715d",
-        "25bde4f7f"
+        "25bde4f7f",
+        "4653e8d07",
+        "b0e6a33a5",
+        "ed3273640"
       ]
     },
     {
@@ -90,7 +94,9 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "c64fe1597",
-        "31da18e08"
+        "31da18e08",
+        "99cab5b8a",
+        "b1f1ba7a7"
       ]
     },
     {
@@ -101,21 +107,27 @@
         "c64fe1597",
         "f0ba25851",
         "31da18e08",
-        "25bde4f7f"
+        "25bde4f7f",
+        "99cab5b8a",
+        "b1f1ba7a7"
       ]
     },
     {
       "issue": "#8142",
       "anchor": "#8142",
       "status_for_tracker": "evidence-ready",
-      "primary_refresh_commits": []
+      "primary_refresh_commits": [
+        "99cab5b8a",
+        "b1f1ba7a7"
+      ]
     },
     {
       "issue": "#8143",
       "anchor": "#8143",
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
-        "6a9b0b23f"
+        "6a9b0b23f",
+        "ebe18944b"
       ]
     },
     {
@@ -126,7 +138,8 @@
         "645e9c25f",
         "239871c25",
         "f35a96292",
-        "5788dcf91"
+        "5788dcf91",
+        "4653e8d07"
       ]
     },
     {
@@ -136,7 +149,8 @@
       "primary_refresh_commits": [
         "c64fe1597",
         "8dead58b3",
-        "f0ba25851"
+        "f0ba25851",
+        "6063e4f32"
       ]
     },
     {
@@ -145,7 +159,8 @@
       "status_for_tracker": "evidence-ready",
       "primary_refresh_commits": [
         "c64fe1597",
-        "7e743549d"
+        "7e743549d",
+        "ed3273640"
       ]
     },
     {
@@ -165,7 +180,9 @@
       "primary_refresh_commits": [
         "ffb2a715d",
         "db4fe91cf",
-        "25bde4f7f"
+        "25bde4f7f",
+        "c1c990e16",
+        "b0e6a33a5"
       ]
     },
     {
@@ -182,7 +199,8 @@
         "645e9c25f",
         "239871c25",
         "f35a96292",
-        "5788dcf91"
+        "5788dcf91",
+        "4653e8d07"
       ]
     }
   ]
