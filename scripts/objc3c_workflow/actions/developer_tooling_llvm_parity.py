@@ -4,31 +4,14 @@ from __future__ import annotations
 
 import sys
 
-from objc3c_tooling.json_io import load_json_object as load_json
-
 from ..commands import run
 from ..environment import ROOT
 from .developer_tooling_paths import HOSTED_LLVM_CAPABILITIES_SUMMARY, LIBRARY_CLI_PARITY_PY
-
-
-def _hosted_summary() -> dict[str, object]:
-    return (
-        load_json(HOSTED_LLVM_CAPABILITIES_SUMMARY)
-        if HOSTED_LLVM_CAPABILITIES_SUMMARY.is_file()
-        else {}
-    )
-
-
-def _summary_section(summary: dict[str, object], key: str) -> dict[str, object]:
-    value = summary.get(key)
-    return value if isinstance(value, dict) else {}
+from .hosted_llvm_summary import hosted_llc_object_emission_available
 
 
 def action_test_capability_routed_source_parity(_: list[str]) -> int:
-    summary = _hosted_summary()
-    llc = _summary_section(summary, "llc")
-    llc_features = _summary_section(summary, "llc_features")
-    if not bool(llc.get("found")) or not bool(llc_features.get("supports_filetype_obj")):
+    if not hosted_llc_object_emission_available():
         print(
             "Skipping live source parity: hosted runner does not provide "
             "llc --filetype=obj capability."

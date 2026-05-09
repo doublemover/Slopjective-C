@@ -15,6 +15,7 @@ PUBLIC_TEST_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-compile-wrapper-self-audit": test_orchestration.action_test_compile_wrapper_self_audit,
     "test-llvm-capability-routing": test_orchestration.action_test_llvm_capability_routing,
     "test-execution-smoke": test_orchestration.action_test_execution_smoke,
+    "test-hosted-execution-smoke": test_orchestration.action_test_hosted_execution_smoke,
     "test-execution-replay": test_orchestration.action_test_execution_replay,
     "test-execution-replay-focused": test_orchestration.action_test_execution_replay_focused,
     "test-fixture-matrix": test_orchestration.action_test_fixture_matrix,

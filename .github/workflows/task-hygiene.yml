@@ -64,13 +64,5 @@ jobs:
       - name: Verify capability-routed source parity when llc is available
         run: npm run objc3c -- test-capability-routed-source-parity
 
-      - name: Run native execution smoke when llc is available
-        shell: pwsh
-        run: |
-          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
-          $summary = Get-Content $summaryPath | ConvertFrom-Json
-          if (-not $summary.llc.found -or -not $summary.llc_features.supports_filetype_obj) {
-            Write-Host "Skipping execution smoke: hosted runner does not provide llc --filetype=obj capability."
-            exit 0
-          }
-          npm run objc3c -- test-execution-smoke
+      - name: Run hosted native execution smoke when llc is available
+        run: npm run objc3c -- test-hosted-execution-smoke

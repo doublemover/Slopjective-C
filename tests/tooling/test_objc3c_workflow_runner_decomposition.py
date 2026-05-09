@@ -24,6 +24,12 @@ from scripts.objc3c_workflow.arguments import (
 from scripts.objc3c_workflow.command_result_completion import completed_action
 from scripts.objc3c_workflow.path_bootstrap import WORKFLOW_IMPORT_ROOTS
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
+from scripts.objc3c_workflow.registry_schema_index import (
+    ACTION_REGISTRY_SCHEMA_ID,
+    WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
+    capability_truth_schema_ids,
+)
+from scripts.objc3c_workflow.reports import emit_json, write_json_report
 
 
 def test_workflow_argument_parser_models_public_requests() -> None:
@@ -51,10 +57,42 @@ def test_workflow_argument_parser_reports_usage_without_dispatching() -> None:
 def test_action_payloads_keep_single_public_package_bridge() -> None:
     payload = list_actions_payload()
 
+    assert payload["schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert payload["package_bridge_count"] == 1
     assert payload["public_action_count"] == payload["action_count"]
     assert payload["internal_action_count"] == 0
     assert describe_action_payload("lint")["runner_path"] == payload["runner_path"]
+
+
+def test_action_registry_payload_publishes_schema_index_and_capability_truth() -> None:
+    payload = list_actions_payload()
+    schema_index = payload["schema_index"]
+    lint_payload = describe_action_payload("lint")
+
+    assert schema_index["schema_id"] == WORKFLOW_SCHEMA_INDEX_SCHEMA_ID
+    assert set(schema_index["capability_truth_schema_ids"]) == set(capability_truth_schema_ids())
+    indexed_schema_ids = {entry["schema_id"] for entry in schema_index["schemas"]}
+    assert {
+        "objc3c-capability-matrix-v1",
+        "objc3c-capability-evidence-map-v1",
+        ACTION_REGISTRY_SCHEMA_ID,
+    }.issubset(indexed_schema_ids)
+    assert payload["capability_truth"]["machine_readable"] is True
+    assert payload["capability_truth"]["action_payload_schema_ref"] == (
+        f"{ACTION_REGISTRY_SCHEMA_ID}#/$defs/action"
+    )
+    assert lint_payload["payload_schema_ref"] == f"{ACTION_REGISTRY_SCHEMA_ID}#/$defs/action"
+    assert lint_payload["registry_schema_id"] == ACTION_REGISTRY_SCHEMA_ID
+    assert lint_payload["capability_truth"]["schema_ids"] == capability_truth_schema_ids()
+
+
+def test_workflow_report_json_helpers_emit_canonical_json(tmp_path, capsys) -> None:
+    assert emit_json({"b": 2, "a": 1}) == 0
+    assert capsys.readouterr().out == '{\n  "b": 2,\n  "a": 1\n}\n'
+
+    report_path = write_json_report(tmp_path / "report.json", {"b": 2, "a": 1})
+
+    assert report_path.read_text(encoding="utf-8") == '{\n  "b": 2,\n  "a": 1\n}\n'
 
 
 def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None:

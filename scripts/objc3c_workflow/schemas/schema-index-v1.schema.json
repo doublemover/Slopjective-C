@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.local/schemas/workflow-schema-index-v1.schema.json",
+  "title": "objc3c workflow schema index",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema_id",
+    "schema_path",
+    "owner_surface",
+    "capability_truth_schema_ids",
+    "schemas"
+  ],
+  "properties": {
+    "schema_version": { "const": "objc3c-workflow-schema-index-v1" },
+    "schema_id": { "const": "objc3c-workflow-schema-index-v1" },
+    "schema_path": {
+      "const": "scripts/objc3c_workflow/schemas/schema-index-v1.schema.json"
+    },
+    "owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+    "capability_truth_schema_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 2
+    },
+    "schemas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "schema_id",
+          "schema_path",
+          "payload_surface",
+          "owner_surface",
+          "capability_truth_scope",
+          "public_contract"
+        ],
+        "properties": {
+          "schema_id": { "type": "string", "minLength": 1 },
+          "schema_path": { "type": "string", "minLength": 1 },
+          "payload_surface": { "type": "string", "minLength": 1 },
+          "owner_surface": { "type": "string", "minLength": 1 },
+          "capability_truth_scope": { "type": "string", "minLength": 1 },
+          "public_contract": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}

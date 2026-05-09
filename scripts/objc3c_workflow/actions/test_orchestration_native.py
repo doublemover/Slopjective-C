@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 
 from ..commands import pwsh_file, run
+from .hosted_llvm_summary import hosted_llc_object_emission_available
 from .test_orchestration_paths import (
     BEHAVIOR_MATRIX_PY,
     COMPILE_WRAPPER_SELF_AUDIT_PY,
@@ -27,6 +28,16 @@ def action_test_recovery(rest: list[str]) -> int:
 
 def action_test_execution_smoke(rest: list[str]) -> int:
     return pwsh_file(SMOKE_PS1, *rest)
+
+
+def action_test_hosted_execution_smoke(_: list[str]) -> int:
+    if not hosted_llc_object_emission_available():
+        print(
+            "Skipping execution smoke: hosted runner does not provide "
+            "llc --filetype=obj capability."
+        )
+        return 0
+    return pwsh_file(SMOKE_PS1)
 
 
 def action_test_execution_replay(rest: list[str]) -> int:

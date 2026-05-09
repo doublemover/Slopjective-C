@@ -15,6 +15,7 @@ from .test_orchestration_native import (
     action_test_execution_replay_focused,
     action_test_execution_smoke,
     action_test_fixture_matrix,
+    action_test_hosted_execution_smoke,
     action_test_llvm_capability_routing,
     action_test_negative_expectations,
     action_test_recovery,

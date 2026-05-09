@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
+from scripts.objc3c_shared.json_io import render_json, write_json_file
+
 
 def emit_json(payload: object) -> int:
-    json.dump(payload, sys.stdout, indent=2)
-    sys.stdout.write("\n")
+    sys.stdout.write(render_json(payload))
     return 0
 
 
 def write_json_report(path: Path, payload: dict[str, Any]) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(path, payload)
     return path

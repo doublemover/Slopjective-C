@@ -12,6 +12,12 @@ from .public_bridge import (
     WORKFLOW_BRIDGE_SCRIPT,
     public_action_invocation,
 )
+from .registry_schema_index import (
+    ACTION_PAYLOAD_SCHEMA_REF,
+    ACTION_REGISTRY_SCHEMA_ID,
+    ACTION_REGISTRY_SCHEMA_PATH,
+    capability_truth_schema_ids,
+)
 
 
 def action_category(action: str) -> str:
@@ -32,7 +38,35 @@ def public_action_fields(action: str) -> dict[str, object]:
     }
 
 
+def action_schema_fields() -> dict[str, object]:
+    return {
+        "payload_schema_ref": ACTION_PAYLOAD_SCHEMA_REF,
+        "registry_schema_id": ACTION_REGISTRY_SCHEMA_ID,
+        "registry_schema_path": ACTION_REGISTRY_SCHEMA_PATH,
+    }
+
+
+def action_capability_truth_fields(action: str) -> dict[str, object]:
+    return {
+        "capability_truth": {
+            "scope": "workflow-action",
+            "action": action,
+            "machine_readable": True,
+            "owner_surface": "scripts/objc3c_workflow/action_payload_fields.py",
+            "schema_ids": capability_truth_schema_ids(),
+        },
+    }
+
+
+def shared_action_payload_fields(action: str) -> dict[str, object]:
+    return {
+        **public_action_fields(action),
+        **action_schema_fields(),
+        **action_capability_truth_fields(action),
+    }
+
+
 def build_action_payload(spec: ActionSpec) -> dict[str, object]:
     payload = asdict(spec)
-    payload.update(public_action_fields(spec.action))
+    payload.update(shared_action_payload_fields(spec.action))
     return payload
