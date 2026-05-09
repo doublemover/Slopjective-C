@@ -43,7 +43,14 @@ from scripts.objc3c_workflow.action_handlers_runtime_validation import (
     RUNTIME_VALIDATION_ACTION_HANDLERS,
 )
 from scripts.objc3c_workflow.action_payload_builder import build_action_payload as owned_build_action_payload
+from scripts.objc3c_workflow.action_payload_description import (
+    describe_action_payload as owned_describe_action_payload,
+)
+from scripts.objc3c_workflow.action_payload_enrichment import enrich_action_payload
 from scripts.objc3c_workflow.action_payload_fields import build_action_payload
+from scripts.objc3c_workflow.action_payload_listing import (
+    list_actions_payload as owned_list_actions_payload,
+)
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
 from scripts.objc3c_workflow.action_catalog_distribution_credibility import (
     DISTRIBUTION_CREDIBILITY_ACTION_SPECS,
@@ -119,6 +126,11 @@ def test_action_payloads_keep_single_public_package_bridge() -> None:
 
     assert action_audience is owned_action_audience
     assert build_action_payload is owned_build_action_payload
+    assert list_actions_payload is owned_list_actions_payload
+    assert describe_action_payload is owned_describe_action_payload
+    assert describe_action_payload("lint") == enrich_action_payload(
+        catalog_action_spec("lint")
+    )
     assert payload["schema_id"] == ACTION_REGISTRY_SCHEMA_ID
     assert payload["package_bridge_count"] == 1
     assert payload["public_action_count"] == payload["action_count"]
