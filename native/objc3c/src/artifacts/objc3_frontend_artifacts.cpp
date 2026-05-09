@@ -27,6 +27,7 @@
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_object_inspection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
@@ -11786,34 +11787,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           member_table_payload_complete;
     }
   }
-  ir_frontend_metadata.runtime_metadata_object_inspection_contract_id =
-      runtime_metadata_object_inspection.contract_id;
-  ir_frontend_metadata.runtime_metadata_object_inspection_publication_contract_id =
-      runtime_metadata_object_inspection.publication_contract_id;
-  ir_frontend_metadata.runtime_metadata_object_inspection_matrix_published =
-      runtime_metadata_object_inspection.matrix_published;
-  ir_frontend_metadata.runtime_metadata_object_inspection_fail_closed =
-      runtime_metadata_object_inspection.fail_closed;
-  ir_frontend_metadata.runtime_metadata_object_inspection_uses_llvm_readobj =
-      runtime_metadata_object_inspection.uses_llvm_readobj;
-  ir_frontend_metadata.runtime_metadata_object_inspection_uses_llvm_objdump =
-      runtime_metadata_object_inspection.uses_llvm_objdump;
-  ir_frontend_metadata.runtime_metadata_object_inspection_matrix_row_count =
-      runtime_metadata_object_inspection.matrix_row_count;
-  ir_frontend_metadata.runtime_metadata_object_inspection_fixture_path =
-      runtime_metadata_object_inspection.fixture_path;
-  ir_frontend_metadata.runtime_metadata_object_inspection_emit_prefix =
-      runtime_metadata_object_inspection.emit_prefix;
-  ir_frontend_metadata.runtime_metadata_object_inspection_object_relative_path =
-      runtime_metadata_object_inspection.object_relative_path;
-  ir_frontend_metadata.runtime_metadata_object_inspection_section_inventory_row_key =
-      runtime_metadata_object_inspection.section_inventory_row_key;
-  ir_frontend_metadata.runtime_metadata_object_inspection_section_inventory_command =
-      runtime_metadata_object_inspection.section_inventory_command;
-  ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_row_key =
-      runtime_metadata_object_inspection.symbol_inventory_row_key;
-  ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_command =
-      runtime_metadata_object_inspection.symbol_inventory_command;
+  objc3::artifacts::frontend::ApplyObjc3FrontendObjectInspectionMetadata(
+      ir_frontend_metadata, runtime_metadata_object_inspection);
   objc3::artifacts::frontend::ApplyObjc3FrontendDebugProjectionMetadata(
       ir_frontend_metadata, executable_metadata_debug_projection);
   objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeSupportLibraryMetadata(
