@@ -84,10 +84,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/task_state.cpp
   concurrency/task_state.h
   concurrency/task_state_store.h
+  dispatch/dispatch_abort_diagnostics.cpp
+  dispatch/dispatch_abort_diagnostics.h
   dispatch/builtin_methods.cpp
   dispatch/builtin_methods.h
   dispatch/builtin_method_lookup.cpp
   dispatch/builtin_method_lookup.h
+  dispatch/dispatch_checked_entrypoint.cpp
+  dispatch/dispatch_checked_entrypoint.h
   dispatch/dispatch_result_state.cpp
   dispatch/dispatch_result_state.h
   dispatch/dispatch_snapshot_contracts.h
