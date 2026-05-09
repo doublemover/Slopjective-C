@@ -2,6 +2,13 @@
   "contract_id": "objc3c.runtime.performance.artifact.surface.v1",
   "schema_version": 1,
   "surface_kind": "runtime-performance-counter-and-regression-artifacts",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
+  "artifact_boundary": {
+    "support_authority": false,
+    "primary_axis": "runtime performance artifact before behavior support",
+    "generated_rule": "benchmark summaries, integration summaries, runnable end-to-end summaries, packet roots, counter snapshots, and tmp artifacts are generated/provenance-only evidence",
+    "retired_surface_rule": "artifact rows that mention fallback, shim, compatibility, old-mode, unsupported, unresolved dispatch, strict dispatch, or alternate acceptance semantics map to canonical_rejection"
+  },
   "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
   "report_root": "tmp/reports/runtime-performance",
   "artifact_root": "tmp/artifacts/runtime-performance",

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before hot-path workload, acceptance case, report packet, or counter snapshot",
+    "positive_rule": "runtime performance rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
+    "provenance_rule": "benchmark summaries, integration summaries, runnable summaries, packet roots, counter snapshots, and tmp package artifacts are provenance-only and never define native behavior support",
+    "retired_surface_rule": "fallback, shim, compatibility, old-mode, unsupported, unresolved dispatch, strict-dispatch, and alternate acceptance path claims are canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json"
+    }
+  ]
+}

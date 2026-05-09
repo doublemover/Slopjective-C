@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "support_boundary": "parser ownership is provenance-only for runtime performance because workloads start from already-authored native fixtures and acceptance cases",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "fixture:tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "fixture:tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+    "fixture:tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "fixture:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+    "fixture:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "parser fallback flags, legacy spellings, old-mode syntax, and compatibility parser lanes remain parser rejection evidence and cannot be inferred from runtime timing rows"
+}

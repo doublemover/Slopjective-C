@@ -3,6 +3,13 @@
   "schema_version": 1,
   "surface_kind": "runtime-hot-path-and-bottleneck-boundary",
   "runbook": "docs/runbooks/objc3c_runtime_performance.md",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before runtime performance hot-path family",
+    "support_authority": "runtime performance source rows are acceptance, probe, timing, and provenance evidence only until a behavior owner split claims the phase",
+    "artifact_rule": "runtime-performance tmp reports, packet roots, runnable packages, and counter snapshots cannot define canonical support",
+    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, and alternate acceptance evidence is canonical rejection, strict-error, or provenance-only evidence"
+  },
   "runtime_library_paths": [
     "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",

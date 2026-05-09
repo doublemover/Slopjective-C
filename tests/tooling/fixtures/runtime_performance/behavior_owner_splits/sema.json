@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "support_boundary": "semantic ownership covers object model, property, ARC, and storage fixture provenance that runtime performance workloads consume; counters do not widen semantic support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "workloads:reflection-query",
+    "workloads:ownership-helpers",
+    "workloads:storage-ownership-reflection",
+    "fixture:tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "fixture:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+    "fixture:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+    "measured_fields:reflectable_property_count",
+    "measured_fields:ownership_runtime_hook_profile"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported ownership claims, compatibility shim gates, and semantic recovery positives stay semantic diagnostics or canonical rejection evidence"
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "support_boundary": "e2e ownership covers whole runtime-performance workflows, integration summaries, and runnable end-to-end summaries only after phase owners assign behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "exact_live_commands:validate-runtime-performance",
+    "exact_live_commands:validate-runnable-runtime-performance",
+    "summary_reports:tmp/reports/runtime-performance/integration-summary.json",
+    "summary_reports:tmp/reports/runtime-performance/runnable-end-to-end-summary.json",
+    "packet_roots:tmp/reports/runtime-performance/startup-installation",
+    "packet_roots:tmp/reports/runtime-performance/dispatch-cache",
+    "packet_roots:tmp/reports/runtime-performance/reflection-query",
+    "packet_roots:tmp/reports/runtime-performance/ownership-helpers",
+    "packet_roots:tmp/reports/runtime-performance/storage-ownership-reflection"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "integration summaries and runnable workflow artifacts are e2e provenance only; they do not create compatibility, fallback, or alternate acceptance support"
+}

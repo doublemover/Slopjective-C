@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "support_boundary": "IR ownership covers emitted module, runnable package, and acceptance fixture provenance; runtime-performance reports and packet roots are generated artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "workloads:startup-installation",
+    "workloads:reflection-query",
+    "artifact_roots:tmp/pkg/objc3c-native-runnable-toolchain",
+    "summary_reports:tmp/reports/runtime-performance/runnable-end-to-end-summary.json",
+    "required_packet_fields:counter_snapshot",
+    "required_packet_fields:summary"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "runnable package artifacts, counter snapshots, and report packets cannot convert fallback or compatibility outputs into canonical IR support"
+}
