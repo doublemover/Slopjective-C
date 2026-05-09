@@ -28,7 +28,12 @@ extern "C" {
  * - objc3c_frontend_version.h owns export macros, version values, and ABI gates.
  * - objc3c_frontend_context.h owns the opaque context lifecycle.
  * - objc3c_frontend_options.h owns borrowed compile input/output options.
- * - objc3c_frontend_result.h owns compile result storage and status values.
+ * - objc3c_frontend_result.h aggregates compile result storage, lifetime,
+ *   artifact selectors, and error payload accessors.
+ * - objc3c_frontend_result_types.h owns result storage and status values.
+ * - objc3c_frontend_result_lifecycle.h owns result-owned payload destruction.
+ * - objc3c_frontend_result_artifacts.h owns artifact selector accessors.
+ * - objc3c_frontend_result_error.h owns error payload accessors.
  * - objc3c_frontend_diagnostic.h owns stage summaries and severity values.
  * - objc3c_frontend_artifact.h owns artifact path selectors.
  * - objc3c_frontend_string.h owns string/view lifetime rules.

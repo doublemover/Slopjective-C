@@ -1,4 +1,6 @@
-#include "libobjc3c_frontend/c_api.h"
+#include "libobjc3c_frontend/c_api_result_artifacts.h"
+
+#include "libobjc3c_frontend/c_api_string.h"
 
 extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
 objc3c_frontend_c_result_artifact_path(

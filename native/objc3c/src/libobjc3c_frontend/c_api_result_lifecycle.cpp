@@ -1,4 +1,4 @@
-#include "libobjc3c_frontend/c_api.h"
+#include "libobjc3c_frontend/c_api_result_lifecycle.h"
 
 #include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
 

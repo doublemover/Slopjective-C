@@ -32,7 +32,10 @@
  * - c_api_version.h owns ABI/version probes.
  * - c_api_lifecycle.h owns context lifecycle entrypoints.
  * - c_api_compile.h owns compile/error entrypoints.
- * - c_api_result.h owns result-owned payload accessors.
+ * - c_api_result.h aggregates the C-only result surface.
+ * - c_api_result_lifecycle.h owns C-only result-owned payload destruction.
+ * - c_api_result_artifacts.h owns C-only artifact selector accessors.
+ * - c_api_result_error.h owns C-only error payload accessors.
  * - c_api_string.h owns standalone string lifetime helpers.
  * - c_api_stage_summary.h owns stage summary predicates.
  *

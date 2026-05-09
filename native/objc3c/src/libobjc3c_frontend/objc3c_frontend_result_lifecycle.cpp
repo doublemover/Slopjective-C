@@ -1,4 +1,4 @@
-#include "libobjc3c_frontend/objc3c_frontend_result.h"
+#include "libobjc3c_frontend/objc3c_frontend_result_lifecycle.h"
 
 #include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
 

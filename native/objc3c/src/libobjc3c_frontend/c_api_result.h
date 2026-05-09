@@ -1,13 +1,9 @@
 #ifndef OBJC3C_LIBOBJC3C_FRONTEND_C_API_RESULT_H_
 #define OBJC3C_LIBOBJC3C_FRONTEND_C_API_RESULT_H_
 
-#include <stdint.h>
-
-#include "c_api_types.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "c_api_result_artifacts.h"
+#include "c_api_result_error.h"
+#include "c_api_result_lifecycle.h"
 
 /*
  * Ownership/accessor surface for C-only embedders.
@@ -22,28 +18,10 @@ extern "C" {
  *   manufacture fallback values: pointer accessors return NULL, views return
  *   {NULL, 0}, and boolean predicates return 0.
  */
-OBJC3C_FRONTEND_API void objc3c_frontend_c_result_destroy(
-    objc3c_frontend_c_compile_result_t *result);
-OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
-objc3c_frontend_c_result_artifact_path(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t
-objc3c_frontend_c_result_artifact_path_view(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_result_has_artifact(
-    const objc3c_frontend_c_compile_result_t *result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind);
-OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
-objc3c_frontend_c_result_error_message(
-    const objc3c_frontend_c_compile_result_t *result);
-OBJC3C_FRONTEND_API objc3c_frontend_c_string_view_t
-objc3c_frontend_c_result_error_message_view(
-    const objc3c_frontend_c_compile_result_t *result);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+/*
+ * Aggregate C-only result surface. Lifetime, artifact selectors, and error
+ * payload accessors each have a narrow owner header; embedders may include this
+ * header to use the whole C result API.
+ */
 
 #endif  // OBJC3C_LIBOBJC3C_FRONTEND_C_API_RESULT_H_

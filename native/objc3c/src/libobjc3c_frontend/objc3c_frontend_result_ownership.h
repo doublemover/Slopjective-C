@@ -6,7 +6,7 @@
  */
 #include <string>
 
-#include "libobjc3c_frontend/objc3c_frontend_result.h"
+#include "libobjc3c_frontend/objc3c_frontend_result_types.h"
 
 namespace objc3c::frontend {
 
