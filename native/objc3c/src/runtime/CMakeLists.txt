@@ -138,6 +138,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   images/registration_snapshots.h
   images/registration_state_publish.cpp
   images/registration_state_publish.h
+  images/registration_table_record.cpp
+  images/registration_table_record.h
+  images/registration_table_shape.cpp
+  images/registration_table_shape.h
   images/registration_table_walk.cpp
   images/registration_table_walk.h
   memory/arc.cpp

@@ -6,12 +6,12 @@
 namespace objc3c::runtime {
 
 struct RegisteredImageMetadata;
-struct RuntimeState;
 
-bool TryWalkRegistrationTableUnlocked(
-    RuntimeState &state,
+void PublishRegistrationTableRecord(
+    RegisteredImageMetadata &record,
     const objc3_runtime_registration_table *registration_table,
     const objc3_runtime_image_descriptor *image,
-    RegisteredImageMetadata &record);
+    const RuntimeRegistrationTableDescriptorCounts &counts,
+    bool linker_anchor_matches_discovery_root);
 
 }  // namespace objc3c::runtime
