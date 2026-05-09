@@ -251,7 +251,35 @@
         "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
         "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
       ],
-      "retired_disposition": "runtime probe metadata anchors current storage/reflection/public ABI owners and keeps unsupported dispatch outcomes strict-error only"
+      "retired_disposition": "runtime probe metadata is resolved through behavior-first phase indexes before any storage, reflection, public ABI, dispatch, registration, or object-model row is cited as support; unsupported dispatch, fallback, shim, old-mode, compatibility-positive, sidecar-only, helper-only, placeholder-object, generated-report-only, alternate acceptance, and retired-source lane semantics remain strict-error, canonical rejection, or provenance-only evidence"
+    },
+    {
+      "family": "runtime_tooling_probe_metadata_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/runtime/behavior_owner_splits",
+      "acceptance_area": "runtime_storage_reflection_public_abi",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "index_evidence": [
+        "tests/tooling/runtime/behavior_owner_splits/index.json",
+        "tests/tooling/runtime/behavior_owner_splits/sema.json",
+        "tests/tooling/runtime/behavior_owner_splits/lowering.json",
+        "tests/tooling/runtime/behavior_owner_splits/ir.json",
+        "tests/tooling/runtime/behavior_owner_splits/runtime.json",
+        "tests/tooling/runtime/behavior_owner_splits/e2e.json",
+        "tests/tooling/runtime/behavior_owner_splits/canonical_rejection.json"
+      ],
+      "retired_disposition": "runtime tooling probes, helper support tests, public ABI snapshots, registration replay packets, generated reports, architecture proof packets, and workflow labels are resolved through behavior-first phase indexes before any probe row is cited as support; fallback dispatch, shim behavior, old-mode behavior, compatibility-positive runtime behavior, alternate acceptance paths, retired-source lane names, unsupported dispatch outcomes, helper-only success, sidecar-only evidence, placeholder artifacts, generated-report-only proof, and public ABI widening remain strict-error, canonical rejection, or provenance-only evidence"
     },
     {
       "family": "e2e_behavior",
@@ -811,6 +839,13 @@
     "tests/tooling/fixtures/native/owner_splits/runtime.json",
     "tests/tooling/fixtures/native/owner_splits/e2e.json",
     "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
+    "tests/tooling/runtime/behavior_owner_splits/index.json",
+    "tests/tooling/runtime/behavior_owner_splits/sema.json",
+    "tests/tooling/runtime/behavior_owner_splits/lowering.json",
+    "tests/tooling/runtime/behavior_owner_splits/ir.json",
+    "tests/tooling/runtime/behavior_owner_splits/runtime.json",
+    "tests/tooling/runtime/behavior_owner_splits/e2e.json",
+    "tests/tooling/runtime/behavior_owner_splits/canonical_rejection.json",
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/index.json",
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/sema.json",

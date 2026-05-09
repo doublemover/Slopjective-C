@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-tooling-probe-metadata-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_family": "tests/tooling/runtime",
+  "support_boundary": "runtime ownership covers live runtime probes for dispatch, selector lookup, object model, storage, reflection, ARC/block helpers, registration, bootstrap, actors, tasks, continuations, and cleanup only when probes are tied to canonical runtime fixtures",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/tooling/runtime/runtime_library_probe.cpp",
+    "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+    "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+    "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+    "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
+    "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+    "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+    "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "fallback dispatch behavior, shim runtime behavior, old-mode runtime behavior, public ABI widening, unsupported dispatch outcomes, and helper-only runtime success remain strict-error, canonical rejection, or provenance-only evidence"
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-tooling-probe-metadata-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_family": "tests/tooling/runtime",
+  "support_boundary": "e2e ownership covers runnable runtime acceptance probes, deterministic reset/replay, multi-image registration, packaged samples, cross-module runtime packaging, and architecture proof routing only after lower phase owners claim behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+    "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+    "tests/tooling/runtime/deterministic_reset_replay_probe.cpp",
+    "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+    "tests/tooling/runtime/archive_static_link_bootstrap_replay_probe.cpp",
+    "tests/tooling/runtime/cross_module_runtime_packaging_probe.cpp",
+    "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp",
+    "README:proof-runtime-architecture",
+    "README:validate-runtime-architecture"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "alternate acceptance path names, report-only architecture packets, helper-only checks, generated-report-only proof, and wrapper command success are provenance-only unless canonical behavior owners claim support"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-tooling-probe-metadata-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_family": "tests/tooling/runtime",
+  "support_boundary": "lowering ownership covers runtime probe metadata that depends on emitted dispatch calls, synthesized accessors, async/task/actor runtime hooks, bridge packaging, and executable object coupling before runtime support is claimed",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "README:compile and artifact publication",
+    "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+    "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+    "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+    "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+    "tests/tooling/runtime/dispatch_lookup_runtime_probe.cpp",
+    "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "fallback lowering, compatibility shim lowering, helper-only lowering success, generated-report-only lowering evidence, and alternate acceptance path lowering claims are strict-error, canonical rejection, or provenance-only evidence"
+}
