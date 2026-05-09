@@ -1,22 +1,4 @@
-add_library(objc3c_config INTERFACE)
-target_link_libraries(objc3c_config INTERFACE
-  objc3c_build_defaults
-)
-
-add_library(objc3c_pipeline_results INTERFACE)
-target_link_libraries(objc3c_pipeline_results INTERFACE
-  objc3c_build_defaults
-)
-
-add_library(objc3c_sema_model INTERFACE)
-target_link_libraries(objc3c_sema_model INTERFACE
-  objc3c_build_defaults
-)
-
-add_library(objc3c_lower_model INTERFACE)
-target_link_libraries(objc3c_lower_model INTERFACE
-  objc3c_build_defaults
-)
+add_subdirectory(config)
 
 # Dependency-direction authority is defined in `ARCHITECTURE.md` and checked
 # by `scripts/check_objc3c_dependency_boundaries.py`. The hard-cutover graph uses
