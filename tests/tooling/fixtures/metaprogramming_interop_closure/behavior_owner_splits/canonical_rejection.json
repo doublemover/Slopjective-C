@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "interop_policy": "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json",
+  "support_boundary": "metaprogramming and interop rows that mention compatibility, shim, fallback, old-mode, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, report-only, or generated-report-only evidence are non-positive unless canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "hard_cutover_source_owner_contract:report_only_allowed=false",
+    "hard_cutover_source_owner_contract:fallback_claims_allowed=false",
+    "hard_cutover_source_owner_contract:generated_report_claims_allowed=false",
+    "authoritative_interop_surface_keys:runtime_mixed_image_compatibility_interop_semantics_surface",
+    "authoritative_interop_surface_keys:runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "current_gaps:integration surfaces for runnable interop are still marked stale-or-missing relative to the acceptance report",
+    "explicit_non_goals:public runtime ABI widening for macro host execution or package loader helpers",
+    "explicit_non_goals:claiming unsupported property-behavior combinations as runtime complete",
+    "explicit_non_goals:claiming unsupported foreign loader topologies or unsupported bridge ecosystems as live",
+    "*compatibility*",
+    "*fallback*",
+    "*shim*",
+    "*old_mode*",
+    "*old-mode*",
+    "*legacy*",
+    "*unsupported*",
+    "*report-only*",
+    "*stale*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported, public-ABI-widening, stale-acceptance, report-only, generated-report-only, and foreign-baseline support claims are canonical rejection, strict-error, or provenance-only evidence"
+}

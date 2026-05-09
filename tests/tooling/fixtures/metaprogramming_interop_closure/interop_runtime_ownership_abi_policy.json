@@ -5,6 +5,13 @@
   "issue": "M323-B003",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
   "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
+  "compatibility_boundary_policy": {
+    "primary_axis": "behavior owner before interop compatibility label",
+    "support_authority": "mixed-image and C/C++/Swift compatibility rows are narrow packaged-proof provenance unless parser, sema, lowering, IR, runtime, and e2e owners claim behavior",
+    "positive_support_from_label": false,
+    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public package-loader ABI widening, and broader cross-language semantics map to canonical_rejection or provenance-only evidence"
+  },
   "canonical_surfaces": [
     "runtime_cross_module_package_interop_source_surface",
     "runtime_textual_binary_interface_parity_source_surface",

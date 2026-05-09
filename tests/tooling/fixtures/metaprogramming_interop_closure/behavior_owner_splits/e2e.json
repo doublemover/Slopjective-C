@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "support_boundary": "e2e ownership covers public workflows, runnable metaprogramming and interop conformance/e2e summaries, packaged smoke/replay steps, and operator-visible package proof only after phase owners assign behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "public_workflows:validate-metaprogramming-conformance",
+    "public_workflows:validate-runnable-metaprogramming",
+    "public_workflows:validate-interop-conformance",
+    "public_workflows:validate-runnable-interop",
+    "report_paths:tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",
+    "report_paths:tmp/reports/runtime/runnable-interop-conformance/summary.json",
+    "report_paths:tmp/reports/runtime/runnable-metaprogramming-e2e/summary.json",
+    "report_paths:tmp/reports/runtime/runnable-interop-e2e/summary.json",
+    "required_step_actions:packaged-execution-smoke",
+    "required_step_actions:packaged-execution-replay"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "report-only, generated-report-only, stale-or-missing acceptance, package proof without coupled artifacts, and public workflow wrappers are e2e provenance or canonical rejection evidence"
+}

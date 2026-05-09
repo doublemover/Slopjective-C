@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "support_boundary": "lowering ownership covers macro host cache lowering, property behavior materialization, mixed-image bridge emission, and runtime-import artifact preservation before runtime proof may cite behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:metaprogramming_lowering_owner",
+    "source_owner_contracts:property_behavior_owner",
+    "source_owner_contracts:interop_runtime_owner",
+    "authoritative_metaprogramming_surface_keys:runtime_metaprogramming_lowering_host_cache_surface",
+    "authoritative_interop_surface_keys:runtime_mixed_image_package_lowering_bridge_emission_surface",
+    "authoritative_surfaces:executable_synthesized_accessor_property_lowering_surface",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "fallback lowering, compatibility bridge emission, stale runtime-import lowering, and generated artifact-only lowering claims remain canonical rejection or provenance-only evidence"
+}

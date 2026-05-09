@@ -5,6 +5,13 @@
   "issue": "M323-A001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
   "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before metaprogramming/interop source-owner contract",
+    "support_authority": "metaprogramming and interop closure rows are source, acceptance, package, probe, and provenance evidence only until a behavior owner split claims the phase",
+    "generated_report_rule": "runtime reports, runnable conformance/e2e summaries, package artifacts, runtime-import artifacts, cache snapshots, and generated bridge payloads cannot define canonical support",
+    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public ABI widening, stale acceptance, and report-only evidence is canonical rejection, strict-error, or provenance-only evidence"
+  },
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "report_only_allowed": false,
@@ -15,6 +22,14 @@
     "metaprogramming_runtime_owner": {
       "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/metaprogramming_runtime_semantic_model.json",
       "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "metaprogramming claims require semantic, lowering, IR/provenance, and runtime owner assignment; unsupported macro topologies remain fail-closed evidence",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py"
@@ -28,6 +43,14 @@
       "supporting_contracts": [
         "tests/tooling/fixtures/metaprogramming_interop_closure/property_behavior_macro_runtime_materialization_implementation_contract.json"
       ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "property behavior support requires semantic legality, lowering helper selection, runtime materialization, and packaged evidence; unsupported combinations and storage fallback claims stay rejection evidence",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
       "check_implementation_anchors": [],
       "report_only_allowed": false,
@@ -39,6 +62,15 @@
       "supporting_contracts": [
         "tests/tooling/fixtures/metaprogramming_interop_closure/interop_bridge_cross_module_artifact_implementation_contract.json"
       ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "mixed-image and C/C++/Swift bridge compatibility names are narrow packaged-proof provenance until runtime/e2e owners claim support; broader compatibility remains canonical rejection",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_live_interop_runtime.py",
@@ -51,6 +83,13 @@
     "metaprogramming_lowering_owner": {
       "source_contract": "tests/tooling/fixtures/metaprogramming_interop_closure/lowering_runtime_artifact_contract.json",
       "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "lowering/runtime artifact rows bind host-cache and runtime-import provenance; generated reports and cache snapshots cannot create support",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py"
@@ -64,6 +103,13 @@
       "supporting_contracts": [
         "tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json"
       ],
+      "behavior_owner_phases": [
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "packaged proof is runtime/e2e evidence only when package artifacts, bridge payloads, and probes stay coupled; report-only or stale acceptance remains rejection/provenance",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_executable_proof_summary.py",
       "check_implementation_anchors": [
         "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py"
