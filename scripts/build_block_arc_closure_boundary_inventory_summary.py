@@ -5,6 +5,11 @@ from objc3c_tooling.json_io import write_json_file
 import json
 from pathlib import Path
 from typing import Any
+from runtime_closure_owner_contracts import (
+    load_runtime_closure_owner_contract,
+    runtime_closure_owner_checks,
+    runtime_closure_owner_summary,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json"
@@ -25,6 +30,7 @@ def count_literal(path: Path, needle: str) -> int:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
+    owner_contract = load_runtime_closure_owner_contract(ROOT, contract)
     runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
     doc_text = DOC_PATH.read_text(encoding="utf-8")
 
@@ -35,7 +41,7 @@ def main() -> int:
 
     checks = {
         "runbook_link_matches": contract["runbook"] == "docs/runbooks/objc3c_block_arc_closure.md",
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_block_arc_closure_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_block_arc_closure_boundary_inventory_summary.py",
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
@@ -47,7 +53,8 @@ def main() -> int:
         "docs_publish_block_arc_unified_boundary": "This is the authoritative block/ARC unified source boundary." in doc_text,
         "docs_publish_block_arc_runtime_abi_boundary": "This is the authoritative live runtime ABI boundary for `objc3c.runtime.blockarc.runtimeabisurface.v1`." in doc_text,
         "docs_publish_arc_automation_extension_constraint": "Downstream block lowering, byref forwarding, ownership transfer, and ARC" in doc_text,
-        "non_goals_keep_public_abi_narrow": "no-public-runtime-abi-widening" in contract["explicit_non_goals"]
+        "non_goals_keep_public_abi_narrow": "no-public-runtime-abi-widening" in contract["explicit_non_goals"],
+        **runtime_closure_owner_checks(ROOT, contract, owner_contract),
     }
 
     measured_inventory = {
@@ -80,6 +87,7 @@ def main() -> int:
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
+        "owner_contract": runtime_closure_owner_summary(owner_contract),
         "current_gap_ids": [gap["gap_id"] for gap in contract["current_closure_gaps"]],
         "successor_milestones": [entry["milestone"] for entry in contract["successor_map"]],
         "checks": checks,
@@ -95,6 +103,8 @@ def main() -> int:
         f"- Authoritative code paths: `{measured_inventory['authoritative_code_path_count']}`\n"
         f"- Authoritative probes: `{measured_inventory['authoritative_probe_count']}`\n"
         f"- Authoritative fixtures: `{measured_inventory['authoritative_fixture_count']}`\n"
+        f"- Owner roles: `{summary['owner_contract']['owner_role_count']}`\n"
+        f"- Report-only allowed: `{summary['owner_contract']['report_only_allowed']}`\n"
         f"- Current gaps: `{', '.join(summary['current_gap_ids'])}`\n"
         f"- Successor milestones: `{', '.join(summary['successor_milestones'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
