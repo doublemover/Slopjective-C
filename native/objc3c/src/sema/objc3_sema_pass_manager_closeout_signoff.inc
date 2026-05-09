@@ -326,9 +326,14 @@
       result.parity_surface.deterministic_autoreleasepool_scope_handoff &&
       result.parity_surface.deterministic_atomic_memory_order_mapping &&
       result.parity_surface.deterministic_vector_type_lowering;
+  const bool closeout_parity_validation_ready =
+      result.parity_surface.ready &&
+      result.parity_surface.deterministic_parity_validation_record &&
+      IsReadyObjc3SemaParityValidationRecord(
+          result.parity_surface.parity_validation_record);
   result.closeout_signoff_record = BuildObjc3SemaCloseoutSignoffRecord(
       input,
-      result.parity_surface.ready,
+      closeout_parity_validation_ready,
       closeout_parser_sema_ready,
       closeout_pass_manager_publication_ready,
       closeout_type_metadata_publication_ready,

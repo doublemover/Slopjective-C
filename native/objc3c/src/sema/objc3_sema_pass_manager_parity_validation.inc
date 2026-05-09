@@ -1165,8 +1165,163 @@
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
   result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;
+  const bool parity_parser_sema_contract_ready =
+      result.parity_surface.deterministic_parser_sema_conformance_matrix &&
+      result.parity_surface.deterministic_parser_sema_conformance_corpus &&
+      result.parity_surface.deterministic_parser_sema_performance_quality_guardrails &&
+      result.parity_surface.deterministic_parser_sema_cross_lane_integration_sync &&
+      result.parity_surface.deterministic_parser_sema_docs_runbook_sync &&
+      result.parity_surface.deterministic_parser_sema_release_candidate_replay_dry_run &&
+      result.parity_surface.deterministic_parser_sema_advanced_core_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_conformance_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_integration_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_performance_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_core_shard2 &&
+      result.parity_surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
+      result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
+      result.parity_surface.deterministic_parser_sema_integration_closeout_signoff &&
+      result.parity_surface.parser_sema_conformance_matrix.deterministic &&
+      result.parity_surface.parser_sema_conformance_corpus.deterministic &&
+      result.parity_surface.parser_sema_performance_quality_guardrails
+          .deterministic &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .deterministic &&
+      result.parity_surface.parser_sema_docs_runbook_sync.deterministic &&
+      result.parity_surface.parser_sema_release_candidate_replay_dry_run
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_core_shard1.deterministic &&
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_diagnostics_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_conformance_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_integration_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_core_shard2.deterministic &&
+      result.parity_surface.parser_sema_advanced_contract_rejection_shard2
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_diagnostics_shard2
+          .deterministic &&
+      result.parity_surface.parser_sema_integration_closeout_signoff
+          .deterministic;
+  const bool parity_publication_records_ready =
+      result.parity_surface.deterministic_pass_manager_publication_record &&
+      IsReadyObjc3SemaPassManagerPublicationRecord(
+          result.parity_surface.pass_manager_publication_record) &&
+      result.parity_surface.deterministic_type_metadata_publication_record &&
+      IsReadyObjc3SemaTypeMetadataPublicationRecord(
+          result.parity_surface.type_metadata_publication_record);
+  const bool parity_diagnostics_publication_ready =
+      result.parity_surface.diagnostics_accounting_consistent &&
+      result.parity_surface.diagnostics_bus_publish_consistent &&
+      result.parity_surface.diagnostics_canonicalized &&
+      result.parity_surface.diagnostics_hardening_satisfied &&
+      result.parity_surface.diagnostics_after_pass_monotonic &&
+      result.parity_surface.deterministic_semantic_diagnostics;
+  const bool parity_pass_flow_recovery_ready =
+      result.parity_surface.pass_flow_recovery_replay_contract_satisfied &&
+      !result.parity_surface.pass_flow_recovery_replay_key.empty() &&
+      result.parity_surface.pass_flow_recovery_replay_key_deterministic &&
+      result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied;
+  const bool parity_type_metadata_cardinality_ready =
+      result.parity_surface.deterministic_type_metadata_handoff &&
+      result.parity_surface.globals_total ==
+          result.parity_surface.type_metadata_global_entries &&
+      result.parity_surface.functions_total ==
+          result.parity_surface.type_metadata_function_entries &&
+      result.parity_surface.interfaces_total ==
+          result.parity_surface.type_metadata_interface_entries &&
+      result.parity_surface.implementations_total ==
+          result.parity_surface.type_metadata_implementation_entries;
+  const bool parity_typed_semantic_handoffs_ready =
+      result.parity_surface.deterministic_interface_implementation_handoff &&
+      result.parity_surface.deterministic_protocol_category_composition_handoff &&
+      result.parity_surface.deterministic_class_protocol_category_linking_handoff &&
+      result.parity_surface.deterministic_selector_normalization_handoff &&
+      result.parity_surface.deterministic_property_attribute_handoff &&
+      result.parity_surface.deterministic_type_annotation_surface_handoff &&
+      result.parity_surface
+          .deterministic_lightweight_generic_constraint_handoff &&
+      result.parity_surface
+          .deterministic_nullability_flow_warning_precision_handoff &&
+      result.parity_surface.deterministic_protocol_qualified_object_type_handoff &&
+      result.parity_surface.deterministic_variance_bridge_cast_handoff &&
+      result.parity_surface.deterministic_generic_metadata_abi_handoff &&
+      result.parity_surface.deterministic_module_import_graph_handoff &&
+      result.parity_surface.deterministic_namespace_collision_shadowing_handoff &&
+      result.parity_surface.deterministic_public_private_api_partition_handoff &&
+      result.parity_surface
+          .deterministic_incremental_module_cache_invalidation_handoff &&
+      result.parity_surface.deterministic_cross_module_conformance_handoff &&
+      result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.deterministic_unwind_cleanup_handoff &&
+      result.parity_surface.deterministic_async_continuation_handoff &&
+      result.parity_surface.deterministic_actor_isolation_sendability_handoff &&
+      result.parity_surface.deterministic_task_runtime_cancellation_handoff &&
+      result.parity_surface
+          .deterministic_concurrency_replay_race_guard_handoff &&
+      result.parity_surface.deterministic_unsafe_pointer_extension_handoff &&
+      result.parity_surface
+          .deterministic_inline_asm_intrinsic_governance_handoff &&
+      result.parity_surface.deterministic_ns_error_bridging_handoff &&
+      result.parity_surface.deterministic_error_diagnostics_recovery_handoff &&
+      result.parity_surface.deterministic_result_like_lowering_handoff &&
+      result.parity_surface
+          .deterministic_await_lowering_suspension_state_lowering_handoff &&
+      result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
+      result.parity_surface.deterministic_method_lookup_override_conflict_handoff &&
+      result.parity_surface
+          .deterministic_property_synthesis_ivar_binding_handoff &&
+      result.parity_surface
+          .deterministic_id_class_sel_object_pointer_type_checking_handoff &&
+      result.parity_surface.deterministic_block_literal_capture_semantics_handoff &&
+      result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff &&
+      result.parity_surface.deterministic_block_storage_escape_handoff &&
+      result.parity_surface.deterministic_block_copy_dispose_handoff &&
+      result.parity_surface.deterministic_block_determinism_perf_baseline_handoff &&
+      result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
+      result.parity_surface.deterministic_dispatch_abi_marshalling_handoff &&
+      result.parity_surface
+          .deterministic_nil_receiver_semantics_foldability_handoff &&
+      result.parity_surface.deterministic_super_dispatch_method_family_handoff &&
+      result.parity_surface.deterministic_runtime_link_host_link_handoff &&
+      result.parity_surface.deterministic_retain_release_operation_handoff &&
+      result.parity_surface.deterministic_weak_unowned_semantics_handoff &&
+      result.parity_surface.deterministic_arc_diagnostics_fixit_handoff &&
+      result.parity_surface.deterministic_autoreleasepool_scope_handoff;
+  const bool parity_mapping_summaries_ready =
+      result.parity_surface.deterministic_atomic_memory_order_mapping &&
+      result.parity_surface.deterministic_vector_type_lowering &&
+      result.parity_surface.atomic_memory_order_mapping.deterministic &&
+      result.parity_surface.vector_type_lowering.deterministic;
+  result.parity_validation_record = BuildObjc3SemaParityValidationRecord(
+      input,
+      result.executed,
+      parity_parser_sema_contract_ready,
+      IsReadyObjc3SemaPassFlowSummary(
+          result.parity_surface.sema_pass_flow_summary),
+      parity_publication_records_ready,
+      parity_diagnostics_publication_ready,
+      parity_pass_flow_recovery_ready,
+      parity_type_metadata_cardinality_ready,
+      parity_typed_semantic_handoffs_ready,
+      parity_mapping_summaries_ready);
+  result.deterministic_parity_validation_record =
+      IsReadyObjc3SemaParityValidationRecord(result.parity_validation_record);
+  result.parity_surface.parity_validation_record =
+      result.parity_validation_record;
+  result.parity_surface.deterministic_parity_validation_record =
+      result.deterministic_parity_validation_record;
   result.parity_surface.ready =
       result.executed &&
+      result.parity_surface.deterministic_parity_validation_record &&
+      IsReadyObjc3SemaParityValidationRecord(
+          result.parity_surface.parity_validation_record) &&
       result.parity_surface.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.deterministic_parser_sema_conformance_corpus &&
       result.parity_surface.deterministic_parser_sema_performance_quality_guardrails &&
