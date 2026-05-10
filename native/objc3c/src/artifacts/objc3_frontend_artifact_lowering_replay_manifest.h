@@ -81,4 +81,37 @@ void WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
     const Objc3BlockDeterminismPerfBaselineLoweringContract
         &block_determinism_perf_baseline_lowering_contract);
 
+void WriteObjc3FrontendTypeAndModuleReplayManifestEntries(
+    std::ostream &manifest,
+    const std::string &lightweight_generic_constraint_lowering_replay_key,
+    const Objc3LightweightGenericConstraintLoweringContract
+        &lightweight_generic_constraint_lowering_contract,
+    const std::string &nullability_flow_warning_precision_lowering_replay_key,
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract
+        &nullability_flow_warning_precision_lowering_contract,
+    const std::string &protocol_qualified_object_type_lowering_replay_key,
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract
+        &protocol_qualified_object_type_lowering_contract,
+    const std::string &variance_bridge_cast_lowering_replay_key,
+    const Objc3VarianceBridgeCastLoweringContract
+        &variance_bridge_cast_lowering_contract,
+    const std::string &generic_metadata_abi_lowering_replay_key,
+    const Objc3GenericMetadataAbiLoweringContract
+        &generic_metadata_abi_lowering_contract,
+    const std::string &module_import_graph_lowering_replay_key,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract,
+    const std::string &namespace_collision_shadowing_lowering_replay_key,
+    const Objc3NamespaceCollisionShadowingLoweringContract
+        &namespace_collision_shadowing_lowering_contract,
+    const std::string &public_private_api_partition_lowering_replay_key,
+    const Objc3PublicPrivateApiPartitionLoweringContract
+        &public_private_api_partition_lowering_contract,
+    const std::string &incremental_module_cache_invalidation_lowering_replay_key,
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract
+        &incremental_module_cache_invalidation_lowering_contract,
+    const std::string &cross_module_conformance_lowering_replay_key,
+    const Objc3CrossModuleConformanceLoweringContract
+        &cross_module_conformance_lowering_contract);
+
 }  // namespace objc3::artifacts::frontend

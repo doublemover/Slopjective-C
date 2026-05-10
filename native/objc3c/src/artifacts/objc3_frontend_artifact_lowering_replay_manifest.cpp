@@ -156,4 +156,77 @@ void WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
         block_determinism_perf_baseline_lowering_contract.deterministic}});
 }
 
+void WriteObjc3FrontendTypeAndModuleReplayManifestEntries(
+    std::ostream &manifest,
+    const std::string &lightweight_generic_constraint_lowering_replay_key,
+    const Objc3LightweightGenericConstraintLoweringContract
+        &lightweight_generic_constraint_lowering_contract,
+    const std::string &nullability_flow_warning_precision_lowering_replay_key,
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract
+        &nullability_flow_warning_precision_lowering_contract,
+    const std::string &protocol_qualified_object_type_lowering_replay_key,
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract
+        &protocol_qualified_object_type_lowering_contract,
+    const std::string &variance_bridge_cast_lowering_replay_key,
+    const Objc3VarianceBridgeCastLoweringContract
+        &variance_bridge_cast_lowering_contract,
+    const std::string &generic_metadata_abi_lowering_replay_key,
+    const Objc3GenericMetadataAbiLoweringContract
+        &generic_metadata_abi_lowering_contract,
+    const std::string &module_import_graph_lowering_replay_key,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract,
+    const std::string &namespace_collision_shadowing_lowering_replay_key,
+    const Objc3NamespaceCollisionShadowingLoweringContract
+        &namespace_collision_shadowing_lowering_contract,
+    const std::string &public_private_api_partition_lowering_replay_key,
+    const Objc3PublicPrivateApiPartitionLoweringContract
+        &public_private_api_partition_lowering_contract,
+    const std::string &incremental_module_cache_invalidation_lowering_replay_key,
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract
+        &incremental_module_cache_invalidation_lowering_contract,
+    const std::string &cross_module_conformance_lowering_replay_key,
+    const Objc3CrossModuleConformanceLoweringContract
+        &cross_module_conformance_lowering_contract) {
+  WriteLoweringReplayManifestEntries(
+      manifest,
+      {{"lowering_lightweight_generic_constraint",
+        lightweight_generic_constraint_lowering_replay_key,
+        kObjc3LightweightGenericsConstraintLoweringLaneContract,
+        lightweight_generic_constraint_lowering_contract.deterministic},
+       {"lowering_nullability_flow_warning_precision",
+        nullability_flow_warning_precision_lowering_replay_key,
+        kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract,
+        nullability_flow_warning_precision_lowering_contract.deterministic},
+       {"lowering_protocol_qualified_object_type",
+        protocol_qualified_object_type_lowering_replay_key,
+        kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract,
+        protocol_qualified_object_type_lowering_contract.deterministic},
+       {"lowering_variance_bridge_cast", variance_bridge_cast_lowering_replay_key,
+        kObjc3VarianceBridgeCastLoweringLaneContract,
+        variance_bridge_cast_lowering_contract.deterministic},
+       {"lowering_generic_metadata_abi", generic_metadata_abi_lowering_replay_key,
+        kObjc3GenericMetadataAbiLoweringLaneContract,
+        generic_metadata_abi_lowering_contract.deterministic},
+       {"lowering_module_import_graph", module_import_graph_lowering_replay_key,
+        kObjc3ModuleImportGraphLoweringLaneContract,
+        module_import_graph_lowering_contract.deterministic},
+       {"lowering_namespace_collision_shadowing",
+        namespace_collision_shadowing_lowering_replay_key,
+        kObjc3NamespaceCollisionShadowingLoweringLaneContract,
+        namespace_collision_shadowing_lowering_contract.deterministic},
+       {"lowering_public_private_api_partition",
+        public_private_api_partition_lowering_replay_key,
+        kObjc3PublicPrivateApiPartitionLoweringLaneContract,
+        public_private_api_partition_lowering_contract.deterministic},
+       {"lowering_incremental_module_cache_invalidation",
+        incremental_module_cache_invalidation_lowering_replay_key,
+        kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract,
+        incremental_module_cache_invalidation_lowering_contract.deterministic},
+       {"lowering_cross_module_conformance",
+        cross_module_conformance_lowering_replay_key,
+        kObjc3CrossModuleConformanceLoweringLaneContract,
+        cross_module_conformance_lowering_contract.deterministic}});
+}
+
 }  // namespace objc3::artifacts::frontend
