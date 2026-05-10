@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-dashboard-blockers-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers"
+  ],
+  "support_boundary": "lowering ownership is non-positive for this dashboard-blocker family. The family contains dashboard blocker policy fixtures, report fixtures, and a runbook only, with no checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/**/*-lowering.expect.txt",
+    "tooling_fixture_family:full_envelope_claimability_dashboard_blockers",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-dashboard-blocker-contracts",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering dashboard rows, shim lowering dashboard rows, fallback lowering dashboard rows, compatibility lowering dashboard rows, migration-only lowering rows, generated-only lowering rows, report-only lowering rows, and dashboard-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-dashboard-blockers-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/policy.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/policy_missing_dashboard_projection.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/distribution.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/performance.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/public-conformance.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/release-foundation.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/release-operations.json",
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/runbook.md"
+  ],
+  "split_policy": {
+    "primary_axis": "dashboard-blocker claimability behavior before fixture directory label, report path, summary path, generated artifact path, contract id label, rollout class label, public claim class label, dashboard field label, release blocker label, source report label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "full-envelope claimability dashboard-blocker positives are limited to hand-authored checked-in contracts for required report contract coverage, stable/candidate/preview rollout class policy, source-owned dashboard/public summary decision fields, dashboard release-blocker projection, performance-claim-not-ready release blocker evaluation, and production-strength claim blocking when dashboard/public summaries remain preview-only or candidate-scoped",
+    "canonical_rejection_rule": "production-strength public claims for preview-only or candidate-scoped summaries, claimability support inferred from report presence alone, generated-report-only release readiness, report-only production strength, missing-dashboard-projection acceptance, missing-required-report acceptance, manually edited dashboard status, old-mode rows, shim rows, fallback rows, compatibility rows, migration-only rows, and generated-only rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing dashboard_release_blocker_projection, missing required reports, missing required report contract ids, missing dashboard summary fields, missing public summary fields, missing source-owned decision fields, performance report claim_ready=false, release_status=blocked, dashboard release blocker not projected into public summary, report-only publication, generated tmp output promoted as source truth, and unsupported production-strength claims own fail-closed strict-error evidence",
+    "provenance_rule": "JSON policy contracts, runbook paths, report fixture paths, report contract ids, report status labels, required report names, rollout class labels, dashboard summary paths, public summary paths, required field names, source-owned decision field names, release blocker ids, blocking value labels, public claim class labels, and owner-split routing rows remain provenance unless an owner split claims the dashboard-blocker behavior boundary",
+    "retired_surface_rule": "old-mode dashboard blocker rows, shim dashboard blocker rows, fallback dashboard blocker rows, compatibility dashboard blocker rows, migration-only rows, generated-only rows, report-only rows, manual-only dashboard rows, unsupported production-strength positives, runner-only success, workflow-label-only success, wrapper-only dashboard checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "dashboard_blocker_provenance",
+      "path": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/behavior_owner_splits/dashboard_blocker_provenance.json"
+    }
+  ]
+}
