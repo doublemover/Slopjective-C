@@ -238,8 +238,9 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_runtime_object_realization_manifest.cpp
   objc3_frontend_artifact_runtime_release_manifest.cpp
   objc3_frontend_artifact_runtime_release_manifest.h
-  objc3_frontend_artifact_runtime_state_manifest.cpp
   objc3_frontend_artifact_runtime_state_manifest.h
+  objc3_frontend_artifact_runtime_state_publication_manifest.cpp
+  objc3_frontend_artifact_runtime_state_publication_manifest.h
   objc3_frontend_artifact_runtime_import_plan.cpp
   objc3_frontend_artifact_runtime_import_plan.h
   objc3_frontend_artifact_runtime_registration_plan.cpp

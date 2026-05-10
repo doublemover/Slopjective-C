@@ -1,4 +1,4 @@
-#include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
+#include "artifacts/objc3_frontend_artifact_runtime_state_publication_manifest.h"
 
 #include <ostream>
 
