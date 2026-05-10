@@ -205,6 +205,8 @@ add_library(objc3c_pipeline STATIC
   objc3_ir_emission_core_feature_keys.cpp
   objc3_ir_emission_core_feature_implementation_surface.cpp
   objc3_ir_emission_core_feature_readiness.cpp
+  objc3_ir_emission_core_feature_surface_advanced_failure_reasons.cpp
+  objc3_ir_emission_core_feature_surface_base_failure_reasons.cpp
   objc3_ir_emission_core_feature_surface_evidence.cpp
   objc3_ir_emission_core_feature_surface_failure_reasons.cpp
   objc3_ir_emission_core_feature_surface_readiness_publication.cpp
