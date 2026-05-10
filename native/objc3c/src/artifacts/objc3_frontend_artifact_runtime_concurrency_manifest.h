@@ -3,6 +3,7 @@
 #include <iosfwd>
 #include <string>
 
+struct Objc3RuntimeBootstrapApiSummary;
 struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
 
@@ -31,5 +32,9 @@ void WriteRuntimeUnifiedConcurrencyLoweringMetadataSurface(
         &runtime_translation_unit_registration_manifest,
     const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
         &runtime_registration_descriptor_frontend_closure);
+
+void WriteRuntimeUnifiedConcurrencyRuntimeAbiSurface(
+    std::ostream &manifest,
+    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api);
 
 }  // namespace objc3::artifacts::frontend
