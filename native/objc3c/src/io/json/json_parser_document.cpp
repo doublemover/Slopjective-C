@@ -2,11 +2,9 @@
 
 #include <utility>
 
-#include "io/json/json_parser_array_container.h"
 #include "io/json/json_parser_completion.h"
 #include "io/json/json_parser_cursor.h"
-#include "io/json/json_parser_object_container.h"
-#include "io/json/json_parser_scalar_value.h"
+#include "io/json/json_parser_value_dispatch.h"
 #include "io/json/json_parser_value_delegate.h"
 
 namespace objc3::io::json {
@@ -26,18 +24,7 @@ class Parser : public JsonParserValueDelegate {
 
  private:
   bool ParseValue(JsonValue &out) override {
-    cursor_.SkipWhitespace();
-    if (cursor_.AtEnd()) {
-      return cursor_.Fail("unexpected end of JSON input");
-    }
-    const char ch = cursor_.Peek();
-    if (ch == '{') {
-      return ParseJsonObjectContainer(cursor_, *this, out);
-    }
-    if (ch == '[') {
-      return ParseJsonArrayContainer(cursor_, *this, out);
-    }
-    return ParseJsonScalarValue(cursor_, out);
+    return DispatchJsonParserValue(cursor_, *this, out);
   }
 
   JsonParserCursor cursor_;
