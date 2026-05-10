@@ -1,5 +1,7 @@
 #include "io/json/json_string_escape.h"
 
+#include "io/json/json_string_escape_classification.h"
+
 namespace objc3::io::json {
 namespace {
 
@@ -8,38 +10,19 @@ void EmitEscapedJsonString(std::string_view value, EmitText emit_text,
                            EmitChar emit_char) {
   constexpr char kHex[] = "0123456789abcdef";
   for (const unsigned char c : value) {
-    switch (c) {
-      case '"':
-        emit_text("\\\"");
-        break;
-      case '\\':
-        emit_text("\\\\");
-        break;
-      case '\b':
-        emit_text("\\b");
-        break;
-      case '\f':
-        emit_text("\\f");
-        break;
-      case '\n':
-        emit_text("\\n");
-        break;
-      case '\r':
-        emit_text("\\r");
-        break;
-      case '\t':
-        emit_text("\\t");
-        break;
-      default:
-        if (c < 0x20u) {
-          emit_text("\\u00");
-          emit_char(kHex[(c >> 4u) & 0x0fu]);
-          emit_char(kHex[c & 0x0fu]);
-        } else {
-          emit_char(static_cast<char>(c));
-        }
-        break;
+    const JsonStringEscapeClassification escape =
+        ClassifyJsonStringEscape(c);
+    if (escape.short_escape != nullptr) {
+      emit_text(escape.short_escape);
+      continue;
     }
+    if (escape.unicode_control_escape) {
+      emit_text("\\u00");
+      emit_char(kHex[(c >> 4u) & 0x0fu]);
+      emit_char(kHex[c & 0x0fu]);
+      continue;
+    }
+    emit_char(static_cast<char>(c));
   }
 }
 
@@ -63,4 +46,3 @@ void WriteJsonStringContent(std::ostream &out, std::string_view value) {
 }
 
 }  // namespace objc3::io::json
-

@@ -193,6 +193,7 @@ add_library(objc3c_json STATIC
   json/json_schema_value_type_mismatch_validation.cpp
   json/json_schema_value_type_validation.cpp
   json/json_string_escape.cpp
+  json/json_string_escape_classification.cpp
   json/json_string_array_writer.cpp
   json/json_value.cpp
   json/json_value_container.cpp
