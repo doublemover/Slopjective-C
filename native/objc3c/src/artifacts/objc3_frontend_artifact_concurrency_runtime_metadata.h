@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "lower/contracts/concurrency_actor_contracts.h"
-#include "lower/contracts/concurrency_task_lowering_contracts.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 

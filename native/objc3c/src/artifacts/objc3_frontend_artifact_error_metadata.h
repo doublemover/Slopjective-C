@@ -2,10 +2,7 @@
 
 #include <string>
 
-#include "artifacts/evidence/error_handling_replay_evidence.h"
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "lower/contracts/error_handling_result_bridging_contracts.h"
-#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 
