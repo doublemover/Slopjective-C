@@ -34,7 +34,7 @@
   "explicit_non_goals": [
     "no-unresolved-dispatch-success-claim-in-c002",
     "no-direct-dispatch-entrypoint-materialization",
-    "no-milestone-local-compile-driver",
+    "no-closure-local-compile-driver",
     "no-proof-without-coupled-manifest-and-provenance"
   ]
 }

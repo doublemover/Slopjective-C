@@ -1,6 +1,0 @@
-// Canonical parser rejection fixture: removed compatibility mode flags never select a positive old mode.
-module RemovedCompatibilityModeFlagRejected;
-
-fn main() -> i32 {
-  return 0;
-}

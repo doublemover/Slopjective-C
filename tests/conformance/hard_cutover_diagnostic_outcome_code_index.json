@@ -28,18 +28,18 @@
       "owner_boundary": "legacy literal spellings are parser/e2e rejections"
     },
     {
-      "code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+      "code": "O3C001",
       "outcome": "parser_rejection",
-      "retired_surface": "removed compatibility mode flag",
+      "retired_surface": "removed retired mode flag",
       "owning_issues": [
         "#8134",
         "#8144",
         "#8150"
       ],
       "fixtures": [
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3"
       ],
-      "owner_boundary": "compatibility mode flags are removed parser surfaces"
+      "owner_boundary": "retired-mode flags are removed parser surfaces"
     },
     {
       "code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",

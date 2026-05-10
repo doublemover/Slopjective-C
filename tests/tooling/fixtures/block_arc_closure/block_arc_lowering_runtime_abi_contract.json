@@ -18,7 +18,7 @@
     "primary_axis": "behavior owner before compile artifact, manifest, runtime-registration descriptor, lowering helper row, ARC helper row, private ABI snapshot, generated report, or runnable report",
     "support_authority": "block/ARC lowering and runtime ABI support requires lowering, IR, or runtime owner assignment over canonical fixtures and probes",
     "positive_support_from_artifact": false,
-    "retired_surface_rule": "generated reports, descriptor-only rows, manifest-only rows, private-snapshot-only rows, evidence-log rows, retired route lowering, gate lowering, old-mode lowering, proof-only helper rows, stack-only byref rows, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "generated reports, descriptor-only rows, manifest-only rows, private-snapshot-only rows, evidence-log rows, retired route lowering, gate lowering, old-mode lowering, evidence-only helper rows, stack-only byref rows, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "compile_manifest_surface_keys": [
     "runtime_block_arc_unified_source_surface",

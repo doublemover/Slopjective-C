@@ -116,7 +116,7 @@ def assert_cli_exposes_ir_object_backend_flag_and_enum() -> None:
         header,
         [
             "enum class Objc3CompatMode",
-            "migration_assist",
+            "retired_mode_assist",
         ],
     )
 
@@ -145,10 +145,10 @@ def assert_cli_exposes_ir_object_backend_flag_and_enum() -> None:
         source,
         [
             "--objc3-language-version",
-            "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist]",
+            "[--objc3-retired-mode <canonical|legacy>] [--objc3-retired-mode-assist]",
             "ParseCompatMode",
             'flag == "-fobjc-version" || flag == "--objc3-language-version"',
-            "options.migration_assist = true;",
+            "options.retired_mode_assist = true;",
         ],
     )
 

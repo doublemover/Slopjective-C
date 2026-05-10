@@ -140,7 +140,7 @@
       "expected_diagnostic_code": "O3C002"
     },
     {
-      "path": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+      "path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
       "behavior_family": "negative",
@@ -148,7 +148,7 @@
       "retired_surface_tags": [
         "old-mode"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+      "expected_diagnostic_code": "O3C001"
     },
     {
       "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",

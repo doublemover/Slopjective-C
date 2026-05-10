@@ -48,7 +48,7 @@
         "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
         "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
         "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "generated_fixture_authority": false,

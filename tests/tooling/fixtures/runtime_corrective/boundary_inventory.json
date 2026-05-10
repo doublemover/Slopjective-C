@@ -148,7 +148,7 @@
         "e2e",
         "canonical_rejection"
       ],
-      "support_boundary": "executable proof is e2e/runtime evidence only when compile artifacts and linked probes are coupled; milestone-local harness forks and sidecar-only proof stay rejected",
+      "support_boundary": "executable proof is e2e/runtime evidence only when compile artifacts and linked probes are coupled; closure-local harness forks and sidecar-only proof stay rejected",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_executable_proof_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_closeout_gate.py"

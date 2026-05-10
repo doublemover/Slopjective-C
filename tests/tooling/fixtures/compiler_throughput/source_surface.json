@@ -84,7 +84,7 @@
     "native/objc3c/src/pipeline"
   ],
   "explicit_non_goals": [
-    "no milestone-local throughput harness",
+    "no closure-local throughput harness",
     "no spreadsheet-only performance proof",
     "no duplicate runner-only truth model"
   ]

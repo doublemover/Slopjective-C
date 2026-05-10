@@ -26,5 +26,5 @@
     "anti_fabrication:no-task-issue-or-milestone-creation"
   ],
   "canonical_anchor": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy",
-  "retired_surface_rule": "W2 drift rows, invalid UTF-8 rows, missing lane validation, stale intake order, stale closeout order, missing freshness evidence, missing provenance linkage, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only dispatch checks, old-mode dispatch rows, gate dispatch rows, retired route dispatch rows, compatibility dispatch rows, migration-only dispatch rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "W2 drift rows, invalid UTF-8 rows, missing lane validation, stale intake order, stale closeout order, missing freshness evidence, missing provenance linkage, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only dispatch checks, old-mode dispatch rows, gate dispatch rows, retired route dispatch rows, retired dispatch rows, migration-only dispatch rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

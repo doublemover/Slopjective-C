@@ -18,5 +18,5 @@
     "proof_rules:runtime-claims-must-link-real-compiled-module-objects-into-native-runtime-probes"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "generated reports, required report paths, milestone-local harness forks, sidecar-only proof, replay text alone, catalog-only closeout claims, unlinked probes, generated-only rows, evidence-log rows, migration-only rows, runner-only rows, package-only rows, gate/retired-route execution, old-mode execution, compatibility wording, and alternate acceptance paths are e2e provenance, canonical rejection, strict-error, or absent-support evidence only"
+  "retired_surface_rule": "generated reports, required report paths, closure-local harness forks, sidecar-only proof, replay text alone, catalog-only closeout claims, unlinked probes, generated-only rows, evidence-log rows, migration-only rows, runner-only rows, package-only rows, gate/retired-route execution, old-mode execution, compatibility wording, and alternate acceptance paths are e2e provenance, canonical rejection, strict-error, or absent-support evidence only"
 }

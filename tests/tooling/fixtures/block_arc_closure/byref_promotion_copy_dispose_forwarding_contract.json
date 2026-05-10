@@ -13,10 +13,10 @@
     "block_arc_provenance"
   ],
   "byref_boundary_policy": {
-    "primary_axis": "behavior owner before byref promotion/copy/dispose/forwarding row, private helper snapshot, proof-only helper row, stack-only byref row, generated report, or runnable proof label",
+    "primary_axis": "behavior owner before byref promotion/copy/dispose/forwarding row, private helper snapshot, evidence-only helper row, stack-only byref row, generated report, or runnable proof label",
     "support_authority": "byref forwarding support requires lowering and runtime owner assignment over canonical fixtures and probes",
     "positive_support_from_snapshot": false,
-    "retired_surface_rule": "proof-only promotion helper rows, stack-only byref success, source-only sidecar ownership, private-snapshot-only rows, retired route byref helper rows, gate byref rows, old-mode byref rows, and evidence-log proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "evidence-only promotion helper rows, stack-only byref success, source-only sidecar ownership, private-snapshot-only rows, retired route byref helper rows, gate byref rows, old-mode byref rows, and evidence-log proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "authoritative_runtime_symbols": [
@@ -53,7 +53,7 @@
   ],
   "claim_narrowing_constraints": [
     "no-stack-only-byref-success-claim",
-    "no-proof-only-promotion-helper-claim",
+    "no-evidence-only-promotion-helper-claim",
     "no-public-runtime-abi-widening"
   ]
 }

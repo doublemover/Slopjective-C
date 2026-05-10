@@ -61,7 +61,7 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
 
     assert seen_surfaces == {
         "legacy-literal-aliases",
-        "removed-compatibility-mode-flag",
+        "removed-retired-mode-flag",
         "removed-parser-retired-route-flag",
         "removed-compatibility-gate",
         "removed-runtime-dispatch-retired-route-flag",

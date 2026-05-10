@@ -313,10 +313,10 @@ inline constexpr const char
         "objc_tooling_legacy_canonical_migration_semantics";
 inline constexpr const char
     *kObjc3ToolingLegacyCanonicalMigrationSemanticsSemanticModel =
-        "tooling-now-publishes-one-deterministic-compatibility-packet-over-the-live-canonical-mode-legacy-literal-diagnostics-and-feature-specific-fixit-baseline";
+        "tooling-now-publishes-one-deterministic-retired-mode-packet-over-the-live-canonical-mode-legacy-literal-diagnostics-and-feature-specific-fixit-baseline";
 inline constexpr const char
     *kObjc3ToolingLegacyCanonicalMigrationSemanticsLanguageProfileModel =
-        "legacy-mode-keeps-inventory-only-while-canonical-mode-fails-closed-on-legacy-yes-no-null-literals-with-o3s216-and-preserves-the-canonical-literal-happy-path";
+        "retired-mode-keeps-inventory-only-while-canonical-mode-fails-closed-on-legacy-yes-no-null-literals-with-o3s216-and-preserves-the-canonical-literal-happy-path";
 inline constexpr const char
     *kObjc3InteropForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."

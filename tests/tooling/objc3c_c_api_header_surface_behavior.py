@@ -137,9 +137,9 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
     assert_excludes_all(
         surface.options_header,
         [
-            "OBJC3C_FRONTEND_COMPATIBILITY_MODE",
-            "uint8_t compatibility_mode;",
-            "uint8_t migration_assist;",
+            "OBJC3C_FRONTEND_RETIRED_MODE",
+            "uint8_t retired_mode;",
+            "uint8_t retired_mode_assist;",
         ],
     )
     assert_regex_absent(r"const char \*.*path", surface.options_header)

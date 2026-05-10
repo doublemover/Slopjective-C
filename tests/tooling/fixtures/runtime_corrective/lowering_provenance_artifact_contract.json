@@ -40,7 +40,7 @@
     "linked-runtime-probe-proof-must-consume-the-same-emitted-object-bundle"
   ],
   "explicit_non_goals": [
-    "no-duplicate-milestone-local-proof-bundle-format",
+    "no-duplicate-closure-local-proof-bundle-format",
     "no-sidecar-only-lowering-proof",
     "no-proof-from-emitted-ir-without-object-and-manifest-coupling",
     "no-publication-claim-without-truthfulness-envelope"

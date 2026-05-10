@@ -110,7 +110,7 @@ Field notes:
 - `return_bool_pointer_declarator_unsupported.objc3` is a compile-stage negative expecting semantic return pointer-declarator diagnostics (`O3S206`).
 - `sel_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
-- `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a legacy compatibility fixture.
+- `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a retired-mode support fixture.
 
 ## id-alias parser fixture note
 

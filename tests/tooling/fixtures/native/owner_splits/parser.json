@@ -40,7 +40,7 @@
     "tests/native/parser/positive/canonical_module_main.objc3",
     "tests/native/parser/positive/objc_property_surface.objc3",
     "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
-    "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+    "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
     "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
   ],
   "retired_surface_rule": "old-mode literals and removed parser mode or retired route flags are parser rejections, never positive recovery fixtures"

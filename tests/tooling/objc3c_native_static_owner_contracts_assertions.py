@@ -20,5 +20,5 @@ def assert_same_paths(actual: Iterable[Path], expected: Iterable[Path]) -> None:
     assert set(actual) == set(expected)
 
 
-def assert_header_excludes_include_shards(header_path: Path, header_text: str) -> None:
+def assert_header_excludes_inc_units(header_path: Path, header_text: str) -> None:
     assert ".inc" not in header_text, repo_relative(header_path)

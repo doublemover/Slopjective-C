@@ -42,7 +42,7 @@
   "explicit_non_goals": [
     "no-proof-from-replay-text-alone",
     "no-proof-from-manifests-without-emitted-object-and-linked-probe",
-    "no-milestone-local-proof-theater",
+    "no-closure-local-proof-theater",
     "no-claim-that-compatibility-gates-alone-prove-native-output-truth"
   ]
 }

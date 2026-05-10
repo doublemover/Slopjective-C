@@ -72,9 +72,9 @@ HARD_CUTOVER_CONTRACTS = {
         "rejection",
         "O3C002",
     ),
-    "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3": (
+    "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3": (
         "rejection",
-        "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+        "O3C001",
     ),
     "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3": (
         "rejection",

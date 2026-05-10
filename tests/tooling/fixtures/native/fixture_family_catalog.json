@@ -77,7 +77,7 @@
         "tests/tooling/fixtures/native/recovery/negative"
       ],
       "metadata": "parser diagnostics and recovery expectations",
-      "hard_cutover_rule": "non-canonical grammar spellings are rejected; no parser compatibility mode positives"
+      "hard_cutover_rule": "non-canonical grammar spellings are rejected; no parser retired-mode positives"
     },
     {
       "family": "semantic",

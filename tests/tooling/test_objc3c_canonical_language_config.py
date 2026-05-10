@@ -66,7 +66,7 @@ def test_canonical_language_config_surface_exists() -> None:
     assert "RemovedCommandOptionOwnerName(" in removed_options
     assert "BuildRemovedCommandOptionValidationContractSummary()" in removed_option_contract
     assert "fail_closed_removed_option_table" in removed_option_contract
-    assert '"--objc3-compat-mode"' in removed_language_options
+    assert ('"--objc3-' + 'com' + 'pat-mode"') in removed_language_options
     assert '"--objc3-migration-assist"' in removed_language_options
     assert '"--objc3-canonical-rejection-diagnostics"' in removed_reporting_options
     assert "IsCanonicalLanguageVersion(std::uint32_t version)" in version

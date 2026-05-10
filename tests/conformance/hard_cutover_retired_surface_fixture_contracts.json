@@ -66,20 +66,20 @@
       ]
     },
     {
-      "surface_family": "removed_compatibility_mode_flag",
-      "historical_positive_surface": "Objective-C 2 compatibility mode flag acceptance",
+      "surface_family": "removed_retired_mode_flag",
+      "historical_positive_surface": "retired Objective-C mode flag acceptance",
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "parser_rejection",
-      "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
-      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+      "diagnostic_owner": "O3C001",
+      "negative_detector_pattern_id": "O3C001",
       "canonical_fixture_family": "parser/negative",
       "retired_tags": [
         "old-mode"
       ],
       "fixtures": [
         {
-          "path": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-          "sidecar": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.meta.json",
+          "path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/removed_retired_mode_flag_rejected.meta.json",
           "fixture_kind": "rejection",
           "expected_stage": "parse",
           "strict_rejection_name": true,

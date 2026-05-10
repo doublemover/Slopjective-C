@@ -56,12 +56,12 @@
         "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
         "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
         "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "diagnostic_codes": [
         "O3C002",
-        "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+        "O3C001",
         "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
       ],
       "support_boundary": "legacy literals and removed parser flags are compile/parse rejections, never old-mode support"

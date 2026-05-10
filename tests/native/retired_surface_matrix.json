@@ -18,11 +18,11 @@
       "diagnostic_code": "O3C002"
     },
     {
-      "surface": "removed-compatibility-mode-flag",
+      "surface": "removed-retired-mode-flag",
       "retired_tag": "old-mode",
-      "fixture_path": "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+      "fixture_path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
       "expected_stage": "parse",
-      "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+      "diagnostic_code": "O3C001"
     },
     {
       "surface": "removed-parser-retired-route-flag",

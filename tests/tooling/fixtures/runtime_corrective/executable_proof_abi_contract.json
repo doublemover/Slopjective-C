@@ -66,6 +66,6 @@
     "no-full-object-model-closure-claim",
     "no-public-runtime-abi-widening",
     "no-sidecar-only-proof",
-    "no-milestone-local-acceptance-harness-fork"
+    "no-closure-local-acceptance-harness-fork"
   ]
 }

@@ -15,5 +15,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "retired route lowering, gate bridge lowering, compatibility bridge emission, stale runtime-import lowering, generated artifact-only lowering, and module-replay-only lowering claims remain canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "retired route lowering, gate bridge lowering, retired bridge emission, stale runtime-import lowering, generated artifact-only lowering, and module-replay-only lowering claims remain canonical rejection, strict-error, or provenance-only evidence"
 }

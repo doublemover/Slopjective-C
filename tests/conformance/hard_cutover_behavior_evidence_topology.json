@@ -23,7 +23,7 @@
       ],
       "strict_or_rejection_evidence": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "owner_index_area": "parser_lexer_ast",

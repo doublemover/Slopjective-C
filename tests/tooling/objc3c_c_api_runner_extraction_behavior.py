@@ -73,12 +73,12 @@ def assert_summary_and_cli_contract(source: str) -> None:
     assert_source_excludes(
         source,
         [
-            "--objc3-compat-mode <canonical|legacy>",
-            "invalid --objc3-compat-mode (expected canonical|legacy): ",
-            '\\"compatibility_mode\\": \\"',
-            '\\"migration_assist\\": ',
-            "compile_options.compatibility_mode = options.compatibility_mode;",
-            "compile_options.migration_assist = options.migration_assist ? 1u : 0u;",
+            "--objc3-retired-mode <canonical|legacy>",
+            "invalid --objc3-retired-mode (expected canonical|legacy): ",
+            '\\"retired_mode\\": \\"',
+            '\\"retired_mode_assist\\": ',
+            "compile_options.retired_mode = options.retired_mode;",
+            "compile_options.retired_mode_assist = options.retired_mode_assist ? 1u : 0u;",
         ],
     )
 

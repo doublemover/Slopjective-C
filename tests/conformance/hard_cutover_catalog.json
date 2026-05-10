@@ -50,7 +50,7 @@
       "owned_fixture_root": "tests/conformance/parser",
       "native_behavior_fixtures": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "behavior_focus": "grammar acceptance, grammar rejection, mode spelling, and source span stability",

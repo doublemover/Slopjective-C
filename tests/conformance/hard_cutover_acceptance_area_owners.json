@@ -37,7 +37,7 @@
       ],
       "behavior_fixtures": [
         "tests/native/parser/positive/canonical_module_main.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "retired_surface_disposition": "old-mode literal aliases and parser retired route flags are parser rejections"
@@ -179,7 +179,7 @@
         "docs/objc3c-native/src/library-api.md",
         "docs/support/evidence_map.json"
       ],
-      "retired_surface_disposition": "public C API ownership is strict contract evidence, not a compatibility wrapper"
+      "retired_surface_disposition": "public C API ownership is strict contract evidence, not a retired owner-boundary adapter"
     },
     {
       "area": "pipeline_artifacts_config_json",
@@ -274,7 +274,7 @@
         "docs/issues/hard_cutover_8132_8150_evidence.json",
         "docs/issues/hard_cutover_8132_8150_evidence.md"
       ],
-      "retired_surface_disposition": "docs and support matrices reject retired adapter, alternate acceptance path, compatibility-mode, and retired-source lane support claims"
+      "retired_surface_disposition": "docs and support matrices reject retired adapter, alternate acceptance path, retired-mode, and retired-source lane support claims"
     }
   ]
 }

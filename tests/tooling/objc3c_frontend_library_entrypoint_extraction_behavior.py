@@ -51,13 +51,13 @@ def assert_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
         source,
         [
             "libobjc3c_frontend compile entrypoints are scaffolded only",
-            "NormalizeCompatibilityMode(options.compatibility_mode)",
+            "NormalizeRetiredMode(options.retired_mode)",
             (
-                "ValidateSupportedCompatibilityMode("
-                "options->compatibility_mode, compatibility_mode_error)"
+                "ValidateRejectedRetiredMode("
+                "options->retired_mode, retired_mode_error)"
             ),
-            "unsupported compile_options.compatibility_mode:",
-            "OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY",
+            "unsupported compile_options.retired_mode:",
+            "OBJC3C_FRONTEND_RETIRED_MODE_OLD",
         ],
     )
 

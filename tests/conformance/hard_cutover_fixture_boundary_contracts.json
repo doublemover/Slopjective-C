@@ -136,7 +136,7 @@
       "positive_support": false,
       "evidence": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
         "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
         "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",

@@ -64,13 +64,13 @@
       ]
     },
     {
-      "surface": "removed compatibility mode flag",
+      "surface": "removed retired mode flag",
       "status": "rejected",
       "evidence": [
-        "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3"
       ],
       "diagnostic_codes": [
-        "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
+        "O3C001"
       ]
     },
     {

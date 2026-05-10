@@ -21,8 +21,8 @@
       "boundary": "parser and e2e rejection evidence"
     },
     {
-      "pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
-      "surface": "removed compatibility mode flag",
+      "pattern_id": "O3C001",
+      "surface": "removed retired mode flag",
       "boundary": "parser rejection evidence"
     },
     {
@@ -52,7 +52,7 @@
     }
   ],
   "confirmed_rejections": [
-    "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
+    "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
     "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
     "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
     "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",

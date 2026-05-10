@@ -10,7 +10,7 @@
     "negative/legacy_null_literal_alias_rejected.meta.json",
     "negative/legacy_yes_literal_alias_rejected.meta.json",
     "negative/legacy_no_literal_alias_rejected.meta.json",
-    "negative/removed_compatibility_mode_flag_rejected.meta.json",
+    "negative/removed_retired_mode_flag_rejected.meta.json",
     "negative/removed_parser_retired_route_flag_rejected.meta.json",
     "negative/*.meta.json:boundary.behavior_contract=canonical-rejection",
     "negative/*.meta.json:boundary.retired_positive_surface=true",

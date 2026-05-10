@@ -11,7 +11,7 @@
     "primary_axis": "behavior phase before object identity, property synthesis, ivar binding/layout, runtime metadata, dispatch/object inspection, loader workload, generated report, compile artifact, private query snapshot, public command surface, or closure/provenance row",
     "support_authority": "object-model closure rows are source, workload, runtime query, artifact, acceptance, command, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
     "generated_report_rule": "generated reports, compile manifests, runtime-registration descriptors, private query snapshots, dispatch/object inspection dumps, property/ivar layout snapshots, workflow labels, and packaged proof summaries cannot define canonical support",
-    "retired_surface_rule": "unresolved dispatch retired route, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, gate, retired route, old-mode, migration-only, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, and milestone-local alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "retired_surface_rule": "unresolved dispatch retired route, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, gate, retired route, old-mode, migration-only, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, and closure-local alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
     "evidence_boundary_rule": "object identity, property synthesis, ivar binding/layout, runtime metadata registration, dispatch/object inspection, cross-module loader replay, generated compile artifacts, private query snapshots, public workflows, and closure/provenance rows are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
   },
   "hard_cutover_source_owner_contract": {
@@ -234,7 +234,7 @@
     "no-claim-that-unresolved-dispatch-miss-retired-route-is-part-of-supported-object-model-closure",
     "no-source-only-or-probe-local-reflection-truth-outside-runtime-owned-query-state",
     "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-query-snapshots-dispatch-inspection-dumps-property-layout-snapshots-workflow-labels-or-closure-provenance-rows",
-    "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"
+    "no-closure-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"
   ],
   "successor_map": [
     {

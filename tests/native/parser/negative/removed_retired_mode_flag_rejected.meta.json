@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "removed_compatibility_mode_flag_rejected.objc3",
+  "fixture": "removed_retired_mode_flag_rejected.objc3",
   "origin": "hand-authored",
   "owner_phase": "parser",
   "diagnostic_owner_contract": {
@@ -27,10 +27,10 @@
   },
   "expected": {
     "stage": "parse",
-    "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+    "diagnostic_code": "O3C001",
     "required_tokens": [
-      "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
-      "Objective-C 2 compatibility mode is removed"
+      "O3C001",
+      "Retired mode flags are rejected"
     ]
   },
   "execution": {

@@ -33,4 +33,4 @@ policy behind broad aggregate files.
 - Unsupported feature claims can evolve independently from source-site
   discovery and diagnostic formatting.
 - Further semantic pass shard extraction should move real helpers and exported
-  builders, not add compatibility wrappers over the aggregate pass file.
+  builders instead of routing ownership through the aggregate pass file.

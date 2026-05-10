@@ -64,7 +64,7 @@ issues `#48` through `#79`, grouped by `E.3.1` through `E.3.6`.
 - Done criteria:
   - Required feature macros are emitted with deterministic canonical values.
   - `FTM-50-*` tests pass for core, strict, and strict-system profile runs
-    without enabling retired permissive or compatibility modes.
+    without enabling retired permissive or retired modes.
 
 ### Issue #51: Strictness selection controls
 

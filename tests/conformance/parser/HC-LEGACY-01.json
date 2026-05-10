@@ -1,6 +1,6 @@
 {
   "id": "HC-LEGACY-01",
-  "title": "Reject retired ObjC 2 compatibility mode spelling",
+  "title": "Reject retired ObjC 2 retired mode spelling",
   "feature": "hard-cutover language mode rejection",
   "bucket": "parser",
   "profile": "core",
@@ -14,13 +14,13 @@
     "parse": "reject",
     "diagnostics": [
       {
-        "code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
+        "code": "O3C001",
         "severity": "error",
         "span": {
           "start": { "line": 1, "column": 16 },
           "end": { "line": 1, "column": 34 }
         },
-        "message": "Objective-C 2 compatibility mode is removed in the Objective-C 3.0 hard cutover; use canonical Objective-C 3 mode",
+        "message": "Retired Objective-C mode is removed in the Objective-C 3.0 hard cutover; use canonical Objective-C 3 mode",
         "fixits": [
           {
             "range": {

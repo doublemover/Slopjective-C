@@ -46,7 +46,7 @@ OWNER_CMAKE_CONTRACTS = {
     ),
 }
 
-INCLUDE_SHARD_AGGREGATORS = {
+INC_UNIT_AGGREGATORS = {
     SRC_ROOT / "parse" / "objc3_parser_core.cpp": "objc3_parser_core_",
     SRC_ROOT / "sema" / "objc3_semantic_passes.cpp": "objc3_semantic_passes_",
     SRC_ROOT / "sema" / "objc3_sema_pass_manager.cpp": "objc3_sema_pass_manager_",
@@ -67,12 +67,12 @@ def owner_cmake_contracts() -> dict[Path, tuple[str, ...]]:
     return OWNER_CMAKE_CONTRACTS
 
 
-def include_shards() -> list[Path]:
+def inc_units() -> list[Path]:
     return sorted(SRC_ROOT.glob("**/*.inc"))
 
 
-def include_shard_aggregators() -> dict[Path, str]:
-    return INCLUDE_SHARD_AGGREGATORS
+def inc_unit_aggregators() -> dict[Path, str]:
+    return INC_UNIT_AGGREGATORS
 
 
 def header_paths() -> list[Path]:

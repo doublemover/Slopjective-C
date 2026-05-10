@@ -43,8 +43,8 @@
     "*unlinked-probe*",
     "*replay-text-alone*",
     "*catalog-only*",
-    "*milestone-local*"
+    "*closure-local*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, gate, retired route, compatibility, unsupported, unresolved-dispatch, strict-error, sidecar-only, generated-evidence-log, evidence-log, migration-only, runner-only, package-only, cache-only, counter-only, unlinked-probe, replay-text-only, catalog-only, milestone-local, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, gate, retired route, compatibility, unsupported, unresolved-dispatch, strict-error, sidecar-only, generated-evidence-log, evidence-log, migration-only, runner-only, package-only, cache-only, counter-only, unlinked-probe, replay-text-only, catalog-only, closure-local, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

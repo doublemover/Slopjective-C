@@ -71,7 +71,7 @@
     "tmp/reports/objc3c-public-workflow/test-full.json"
   ],
   "explicit_non_goals": [
-    "no-milestone-local-acceptance-runner",
+    "no-closure-local-acceptance-runner",
     "no-claim-without-runtime-acceptance-suite",
     "no-final-closeout-claim-from-catalog-check-alone",
     "no-probe-inventory-detached-from-the-shared-harness"

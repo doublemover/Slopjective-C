@@ -244,9 +244,8 @@
     // same raw dynamic receiver spellings for runtime method-family accounting.
     // dispatch lowering ABI freeze anchor: parser continues to hand
     // selector text through as lowered cstring material only. Selector-handle
-    // lookup and canonical runtime-dispatch cutover stay in lane-C lowering,
-    // with the compatibility bridge remaining the default call target until
-    // 
+    // lookup and canonical runtime-dispatch cutover stay in lane-C lowering;
+    // non-canonical dispatch entrypoints remain absent until lowering owns them.
     // runtime call ABI generation anchor: parser still does not pick
     // the runtime entrypoint itself. Lowering now cuts normalized instance and
     // runtime ARC helper API surface anchor: parser-owned ARC and
@@ -260,12 +259,11 @@
     // and ownership spelling still does not promise any source-level debug
     // surface; lane-D owns the private runtime snapshot hooks above these same
     // source packets.
-    // class sends over to objc3_runtime_dispatch_i32 while deferred
-    // super/dynamic/direct handling stays on the compatibility bridge until
-    // 
+    // class sends over to objc3_runtime_dispatch_i32 while reserved
+    // super/dynamic/direct handling stays fail-closed at the owner boundary.
     // live-dispatch cutover anchor: lowering now moves normalized
     // dynamic sends onto objc3_runtime_dispatch_i32 too, removing the last
-    // live-path compatibility-bridge dependency while keeping reserved direct
+    // live-path retired-route dependency while keeping reserved direct
     // dispatch fail closed in IR lowering.
     // lookup/dispatch runtime freeze anchor: parser still does not
     // own selector interning, metadata-backed lookup tables, method caches, or
