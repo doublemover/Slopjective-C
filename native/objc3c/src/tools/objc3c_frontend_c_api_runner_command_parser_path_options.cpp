@@ -1,6 +1,6 @@
 #include "tools/objc3c_frontend_c_api_runner_command_parser_options.h"
 
-#include <filesystem>
+#include "tools/objc3c_frontend_c_api_runner_command_parser_path_options_internal.h"
 
 FrontendCApiRunnerCommandOptionParseResult
 ParseFrontendCApiRunnerPathStringOption(const std::string &arg,
@@ -8,25 +8,31 @@ ParseFrontendCApiRunnerPathStringOption(const std::string &arg,
                                         char **argv,
                                         int &index,
                                         FrontendCApiRunnerOptions &options) {
-  if (arg == "--out-dir" && index + 1 < argc) {
-    options.out_dir = std::filesystem::path(argv[++index]);
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  const FrontendCApiRunnerCommandOptionParseResult output_result =
+      ParseFrontendCApiRunnerOutputPathStringOption(arg,
+                                                    argc,
+                                                    argv,
+                                                    index,
+                                                    options);
+  if (output_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return output_result;
   }
-  if (arg == "--emit-prefix" && index + 1 < argc) {
-    options.emit_prefix = argv[++index];
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+
+  const FrontendCApiRunnerCommandOptionParseResult toolchain_result =
+      ParseFrontendCApiRunnerToolchainPathStringOption(arg,
+                                                       argc,
+                                                       argv,
+                                                       index,
+                                                       options);
+  if (toolchain_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return toolchain_result;
   }
-  if (arg == "--clang" && index + 1 < argc) {
-    options.clang_path = std::filesystem::path(argv[++index]);
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
-  }
-  if (arg == "--llc" && index + 1 < argc) {
-    options.llc_path = std::filesystem::path(argv[++index]);
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
-  }
-  if (arg == "--summary-out" && index + 1 < argc) {
-    options.summary_out = std::filesystem::path(argv[++index]);
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
-  }
-  return FrontendCApiRunnerCommandOptionParseResult::kNotHandled;
+
+  return ParseFrontendCApiRunnerSummaryOutputPathStringOption(arg,
+                                                             argc,
+                                                             argv,
+                                                             index,
+                                                             options);
 }
