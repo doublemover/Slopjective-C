@@ -1,9 +1,23 @@
 #include "tools/objc3c_frontend_c_api_runner_command_parser.h"
 
-#include "diagnostics/modes/objc3_removed_mode_options.h"
-#include "tools/objc3c_frontend_c_api_runner_dump_options.h"
-#include "tools/objc3c_frontend_c_api_runner_option_values.h"
+#include <filesystem>
+
+#include "tools/objc3c_frontend_c_api_runner_command_parser_options.h"
 #include "tools/objc3c_frontend_c_api_runner_usage.h"
+
+namespace {
+
+bool FrontendCApiRunnerOptionParseFailed(
+    FrontendCApiRunnerCommandOptionParseResult result) {
+  return result == FrontendCApiRunnerCommandOptionParseResult::kError;
+}
+
+bool FrontendCApiRunnerOptionWasHandled(
+    FrontendCApiRunnerCommandOptionParseResult result) {
+  return result == FrontendCApiRunnerCommandOptionParseResult::kHandled;
+}
+
+}  // namespace
 
 bool ParseFrontendCApiRunnerOptions(int argc,
                                     char **argv,
@@ -19,60 +33,59 @@ bool ParseFrontendCApiRunnerOptions(int argc,
 
   for (int i = 2; i < argc; ++i) {
     const std::string arg = argv[i];
-    if (arg == "--out-dir" && i + 1 < argc) {
-      options.out_dir = std::filesystem::path(argv[++i]);
-    } else if (arg == "--emit-prefix" && i + 1 < argc) {
-      options.emit_prefix = argv[++i];
-    } else if (arg == "--clang" && i + 1 < argc) {
-      options.clang_path = std::filesystem::path(argv[++i]);
-    } else if (arg == "--llc" && i + 1 < argc) {
-      options.llc_path = std::filesystem::path(argv[++i]);
-    } else if (arg == "--summary-out" && i + 1 < argc) {
-      options.summary_out = std::filesystem::path(argv[++i]);
-    } else if (arg == "--objc3-max-message-args" && i + 1 < argc) {
-      if (!ParseFrontendCApiRunnerMaxMessageSendArgs(
-              argv[++i], options.max_message_send_args, error)) {
-        return false;
-      }
-    } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
-      if (!ParseFrontendCApiRunnerRuntimeDispatchSymbol(
-              argv[++i], options.runtime_dispatch_symbol, error)) {
-        return false;
-      }
-    } else if (arg == "--objc3-bootstrap-registration-order-ordinal" &&
-               i + 1 < argc) {
-      if (!ParseFrontendCApiRunnerRegistrationOrderOrdinal(
-              argv[++i],
-              options.translation_unit_registration_order_ordinal,
-              error)) {
-        return false;
-      }
-    } else if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(
-                   arg, error)) {
-      return false;
-    } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
-      const std::string backend = argv[++i];
-      if (!ParseFrontendCApiRunnerIrObjectBackend(backend,
-                                                  options.ir_object_backend)) {
-        error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " +
-                backend;
-        return false;
-      }
-    } else if (arg == "--no-emit-manifest") {
-      options.emit_manifest = false;
-    } else if (arg == "--no-emit-ir") {
-      options.emit_ir = false;
-    } else if (arg == "--no-emit-object") {
-      options.emit_object = false;
-    } else if (ApplyFrontendCApiRunnerDumpOption(arg, options)) {
+    const FrontendCApiRunnerCommandOptionParseResult path_string_result =
+        ParseFrontendCApiRunnerPathStringOption(arg, argc, argv, i, options);
+    if (FrontendCApiRunnerOptionWasHandled(path_string_result)) {
       continue;
-    } else if (arg == "--help" || arg == "-h") {
-      error = FrontendCApiRunnerUsage();
-      return false;
-    } else {
-      error = "unknown arg: " + arg;
+    }
+
+    const FrontendCApiRunnerCommandOptionParseResult numeric_runtime_result =
+        ParseFrontendCApiRunnerNumericRuntimeOption(
+            arg,
+            argc,
+            argv,
+            i,
+            options,
+            error);
+    if (FrontendCApiRunnerOptionParseFailed(numeric_runtime_result)) {
       return false;
     }
+    if (FrontendCApiRunnerOptionWasHandled(numeric_runtime_result)) {
+      continue;
+    }
+
+    const FrontendCApiRunnerCommandOptionParseResult removed_mode_result =
+        ParseFrontendCApiRunnerRemovedModeOption(arg, error);
+    if (FrontendCApiRunnerOptionParseFailed(removed_mode_result)) {
+      return false;
+    }
+
+    const FrontendCApiRunnerCommandOptionParseResult backend_result =
+        ParseFrontendCApiRunnerBackendSelectionOption(
+            arg,
+            argc,
+            argv,
+            i,
+            options,
+            error);
+    if (FrontendCApiRunnerOptionParseFailed(backend_result)) {
+      return false;
+    }
+    if (FrontendCApiRunnerOptionWasHandled(backend_result)) {
+      continue;
+    }
+
+    const FrontendCApiRunnerCommandOptionParseResult dump_help_result =
+        ParseFrontendCApiRunnerEmissionDumpHelpOption(arg, options, error);
+    if (FrontendCApiRunnerOptionParseFailed(dump_help_result)) {
+      return false;
+    }
+    if (FrontendCApiRunnerOptionWasHandled(dump_help_result)) {
+      continue;
+    }
+
+    error = "unknown arg: " + arg;
+    return false;
   }
 
   return true;
