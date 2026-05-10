@@ -6,169 +6,18 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $defaultOutDir = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native"
+$compileArgumentsScript = Join-Path $repoRoot "scripts/objc3c_native_compile_arguments.ps1"
 $runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
+if (!(Test-Path -LiteralPath $compileArgumentsScript -PathType Leaf)) {
+  Write-Error "native compile argument helper missing at $compileArgumentsScript"
+  exit 2
+}
 if (!(Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
   Write-Error "runtime launch contract helper missing at $runtimeLaunchContractScript"
   exit 2
 }
+. $compileArgumentsScript
 . $runtimeLaunchContractScript
-
-function Show-UsageAndExit {
-  Write-Error "usage: objc3c_native_compile.ps1 <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--use-cache]"
-  exit 2
-}
-
-function Parse-WrapperArguments {
-  param([string[]]$RawArgs)
-
-  if ($RawArgs.Count -lt 1) {
-    Show-UsageAndExit
-  }
-
-  $useCache = $false
-  $compileArgs = New-Object System.Collections.Generic.List[string]
-  $outDir = $null
-  $emitPrefix = "module"
-  $wrapperFlagCounts = @{
-    "--use-cache" = 0
-    "--out-dir" = 0
-  }
-
-  for ($i = 0; $i -lt $RawArgs.Count; $i++) {
-    $token = $RawArgs[$i]
-    if ($token -eq "--use-cache") {
-      $wrapperFlagCounts["--use-cache"] = [int]$wrapperFlagCounts["--use-cache"] + 1
-      if ([int]$wrapperFlagCounts["--use-cache"] -gt 1) {
-        Write-Error "--use-cache can be provided at most once"
-        exit 2
-      }
-      $useCache = $true
-      continue
-    }
-    if ($token.StartsWith("--use-cache=", [System.StringComparison]::OrdinalIgnoreCase)) {
-      $wrapperFlagCounts["--use-cache"] = [int]$wrapperFlagCounts["--use-cache"] + 1
-      if ([int]$wrapperFlagCounts["--use-cache"] -gt 1) {
-        Write-Error "--use-cache can be provided at most once"
-        exit 2
-      }
-      $rawBoolean = $token.Substring("--use-cache=".Length).Trim().ToLowerInvariant()
-      if (@("1", "true", "yes", "on") -contains $rawBoolean) {
-        $useCache = $true
-        continue
-      }
-      if (@("0", "false", "no", "off") -contains $rawBoolean) {
-        $useCache = $false
-        continue
-      }
-      Write-Error "invalid --use-cache value '$rawBoolean' (expected true/false style token)"
-      exit 2
-    }
-
-    if ($token -eq "--out-dir") {
-      $wrapperFlagCounts["--out-dir"] = [int]$wrapperFlagCounts["--out-dir"] + 1
-      if ([int]$wrapperFlagCounts["--out-dir"] -gt 1) {
-        Write-Error "--out-dir can be provided at most once"
-        exit 2
-      }
-      if (($i + 1) -ge $RawArgs.Count) {
-        Write-Error "missing value for --out-dir"
-        exit 2
-      }
-      $i++
-      $value = $RawArgs[$i]
-      if ([string]::IsNullOrWhiteSpace($value)) {
-        Write-Error "empty value for --out-dir"
-        exit 2
-      }
-      $compileArgs.Add("--out-dir")
-      $compileArgs.Add($value)
-      $outDir = $value
-      continue
-    }
-
-    if ($token.StartsWith("--out-dir=", [System.StringComparison]::Ordinal)) {
-      $wrapperFlagCounts["--out-dir"] = [int]$wrapperFlagCounts["--out-dir"] + 1
-      if ([int]$wrapperFlagCounts["--out-dir"] -gt 1) {
-        Write-Error "--out-dir can be provided at most once"
-        exit 2
-      }
-      $value = $token.Substring("--out-dir=".Length)
-      if ([string]::IsNullOrWhiteSpace($value)) {
-        Write-Error "empty value for --out-dir"
-        exit 2
-      }
-      $compileArgs.Add("--out-dir")
-      $compileArgs.Add($value)
-      $outDir = $value
-      continue
-    }
-
-    if ($token.StartsWith("--emit-prefix=", [System.StringComparison]::Ordinal)) {
-      $value = $token.Substring("--emit-prefix=".Length)
-      if ([string]::IsNullOrWhiteSpace($value)) {
-        Write-Error "empty value for --emit-prefix"
-        exit 2
-      }
-      $emitPrefix = $value
-      $compileArgs.Add($token)
-      continue
-    }
-
-    if ($token -eq "--emit-prefix") {
-      if (($i + 1) -ge $RawArgs.Count) {
-        Write-Error "missing value for --emit-prefix"
-        exit 2
-      }
-      $i++
-      $value = $RawArgs[$i]
-      if ([string]::IsNullOrWhiteSpace($value)) {
-        Write-Error "empty value for --emit-prefix"
-        exit 2
-      }
-      $emitPrefix = $value
-      $compileArgs.Add("--emit-prefix")
-      $compileArgs.Add($value)
-      continue
-    }
-
-    $compileArgs.Add($token)
-  }
-
-  if ($compileArgs.Count -lt 1) {
-    Show-UsageAndExit
-  }
-
-  if ([string]::IsNullOrWhiteSpace($outDir)) {
-    $outDir = $defaultOutDir
-    $compileArgs.Add("--out-dir")
-    $compileArgs.Add($outDir)
-  }
-
-  return [pscustomobject]@{
-    use_cache = $useCache
-    compile_args = $compileArgs.ToArray()
-    out_dir = $outDir
-    emit_prefix = $emitPrefix
-  }
-}
-
-function Get-ArgsWithoutOutDir {
-  param([string[]]$CompileArgs)
-
-  $result = New-Object System.Collections.Generic.List[string]
-  for ($i = 0; $i -lt $CompileArgs.Count; $i++) {
-    $token = $CompileArgs[$i]
-    if ($token -eq "--out-dir") {
-      if (($i + 1) -ge $CompileArgs.Count) {
-        break
-      }
-      $i++
-      continue
-    }
-    $result.Add($token)
-  }
-  return $result.ToArray()
-}
 
 function Get-Sha256HexFromBytes {
   param([byte[]]$Bytes)
@@ -2662,7 +2511,7 @@ function Assert-FrontendIntegrationCloseout {
   }
 }
 
-$parsed = Parse-WrapperArguments -RawArgs $args
+$parsed = Parse-Objc3cNativeCompileArguments -RawArgs $args -DefaultOutDir $defaultOutDir
 $exe = Resolve-NativeCompilerExecutablePath -RepoRoot $repoRoot
 $buildResult = $null
 $buildResult = Ensure-NativeCompilerAvailable -RepoRoot $repoRoot -BuildResult $buildResult
@@ -2693,7 +2542,7 @@ Assert-FrontendConformanceCorpus `
   -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
 Assert-FrontendIntegrationCloseout -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 
-$argsWithoutOutDir = @(Get-ArgsWithoutOutDir -CompileArgs $effectiveCompileArgs)
+$argsWithoutOutDir = @(Get-Objc3cNativeCompileArgsWithoutOutDir -CompileArgs $effectiveCompileArgs)
 $inputPath = $null
 if ($argsWithoutOutDir.Count -gt 0) {
   $inputCandidate = $argsWithoutOutDir[0]
