@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <iosfwd>
+#include <string>
 #include <vector>
 
 #include "ast/objc3_ast.h"
@@ -17,6 +19,14 @@ void AppendObjc3FrontendArtifactManifestPipelineStages(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options,
     const Objc3FrontendArtifactBundle &bundle);
+
+void AppendObjc3FrontendArtifactManifestLoweringHeader(
+    std::ostream &manifest,
+    const Objc3FrontendOptions &options,
+    std::size_t vector_signature_functions,
+    const std::string &property_synthesis_ivar_binding_replay_key,
+    const Objc3PropertySynthesisIvarBindingContract
+        &property_synthesis_ivar_binding_contract);
 
 void AppendObjc3FrontendArtifactManifestRecordArrays(
     std::ostream &manifest,

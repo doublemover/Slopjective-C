@@ -7,6 +7,8 @@
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_artifacts.h"
 #include "artifacts/objc3_frontend_parser_diagnostic_artifacts.h"
+#include "lower/contracts/object_model_lowering_contracts.h"
+#include "lower/core/lowering_simd_vector_ops.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -112,6 +114,33 @@ void AppendObjc3FrontendArtifactManifestPipelineStages(
   manifest << "        \"semantic\": {\"diagnostics\":"
            << bundle.stage_diagnostics.semantic.size() << "}\n";
   manifest << "      },\n";
+}
+
+void AppendObjc3FrontendArtifactManifestLoweringHeader(
+    std::ostream &manifest,
+    const Objc3FrontendOptions &options,
+    std::size_t vector_signature_functions,
+    const std::string &property_synthesis_ivar_binding_replay_key,
+    const Objc3PropertySynthesisIvarBindingContract
+        &property_synthesis_ivar_binding_contract) {
+  manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\""
+           << options.lowering.runtime_dispatch_symbol
+           << "\",\"runtime_dispatch_arg_slots\":"
+           << options.lowering.max_message_send_args
+           << ",\"selector_global_ordering\":\"lexicographic\"},\n";
+  manifest << "  \"lowering_vector_abi\":{\"replay_key\":\""
+           << Objc3SimdVectorTypeLoweringReplayKey()
+           << "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract
+           << "\",\"vector_signature_functions\":" << vector_signature_functions
+           << "},\n";
+  manifest << "  \"lowering_property_synthesis_ivar_binding\":{\"replay_key\":\""
+           << property_synthesis_ivar_binding_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3PropertySynthesisIvarBindingLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (property_synthesis_ivar_binding_contract.deterministic ? "true"
+                                                                      : "false")
+           << "},\n";
 }
 
 void AppendObjc3FrontendArtifactManifestRecordArrays(

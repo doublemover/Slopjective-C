@@ -6117,18 +6117,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"scalar_param_bool\":" << scalar_param_bool << "}}\n";
   manifest << "    }\n";
   manifest << "  },\n";
-  manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol
-           << "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args
-           << ",\"selector_global_ordering\":\"lexicographic\"},\n";
-  manifest << "  \"lowering_vector_abi\":{\"replay_key\":\"" << Objc3SimdVectorTypeLoweringReplayKey()
-           << "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract
-           << "\",\"vector_signature_functions\":" << vector_signature_functions << "},\n";
-  manifest << "  \"lowering_property_synthesis_ivar_binding\":{\"replay_key\":\""
-           << property_synthesis_ivar_binding_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3PropertySynthesisIvarBindingLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
-           << "},\n";
+  objc3::artifacts::frontend::
+      AppendObjc3FrontendArtifactManifestLoweringHeader(
+          manifest, options, vector_signature_functions,
+          property_synthesis_ivar_binding_replay_key,
+          property_synthesis_ivar_binding_contract);
   objc3::artifacts::frontend::WriteObjc3FrontendRuntimeManifestSurfaces(
       manifest, runtime_translation_unit_registration_manifest,
       runtime_metadata_source_records, executable_metadata_source_graph,
