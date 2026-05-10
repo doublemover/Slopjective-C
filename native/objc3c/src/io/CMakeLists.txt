@@ -94,6 +94,8 @@ add_library(objc3c_json STATIC
   json/json_schema_pattern_regex_contract_validation.cpp
   json/json_schema_path_helpers.cpp
   json/json_schema_ref_contract_validation.cpp
+  json/json_schema_ref_preflight_delegation_validation.cpp
+  json/json_schema_ref_preflight_lookup_validation.cpp
   json/json_schema_ref_preflight_validation.cpp
   json/json_schema_required_contract_array_shape_validation.cpp
   json/json_schema_required_contract_entry_validation.cpp

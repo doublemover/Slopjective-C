@@ -1,8 +1,7 @@
 #include "io/json/json_schema_ref_preflight_validation.h"
 
-#include "io/json/json_pointer.h"
-#include "io/json/json_schema_errors.h"
-#include "io/json/json_schema_validation.h"
+#include "io/json/json_schema_ref_preflight_delegation_validation.h"
+#include "io/json/json_schema_ref_preflight_lookup_validation.h"
 
 namespace objc3::io::json {
 
@@ -12,28 +11,18 @@ bool ValidateJsonSchemaRefPreflight(const JsonValue &schema_root,
                                     const std::string &instance_path,
                                     const std::string &schema_path,
                                     JsonSchemaResult &result) {
-  const JsonValue *ref = schema.Find("$ref");
-  if (ref == nullptr) {
+  const JsonSchemaRefPreflightLookup lookup =
+      ValidateJsonSchemaRefPreflightLookup(schema_root, schema, schema_path,
+                                           result);
+  if (lookup.continue_current_schema) {
     return true;
   }
-  if (!ref->IsString()) {
-    AddJsonSchemaContractError(
-        result, "invalid_ref", JsonSchemaKeywordPath(schema_path, "$ref"),
-        "$ref must be a local JSON pointer string");
+  if (lookup.resolved_schema == nullptr || lookup.ref_keyword == nullptr) {
     return false;
   }
-
-  const JsonValue *resolved =
-      ResolveLocalJsonPointerRef(schema_root, ref->AsString());
-  if (resolved == nullptr) {
-    AddJsonSchemaContractError(
-        result, "unresolved_ref", JsonSchemaKeywordPath(schema_path, "$ref"),
-        "unresolved schema reference " + ref->AsString());
-    return false;
-  }
-
-  ValidateJsonSchemaNode(schema_root, *resolved, payload, instance_path,
-                         ref->AsString(), result);
+  ValidateJsonSchemaResolvedRefPreflight(
+      schema_root, *lookup.resolved_schema, payload, instance_path,
+      lookup.ref_keyword->AsString(), result);
   return false;
 }
 
