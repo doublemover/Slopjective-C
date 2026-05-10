@@ -2,12 +2,8 @@
 
 #include <sstream>
 
-#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_artifacts.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_compile_profile.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_contract_source.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_dump_commands.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_public_surfaces.h"
+#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_context.h"
+#include "tools/objc3c_frontend_c_api_runner_playground_repro_json_sections.h"
 
 void WriteFrontendCApiRunnerPlaygroundReproJson(
     std::ostream &out,
@@ -15,37 +11,25 @@ void WriteFrontendCApiRunnerPlaygroundReproJson(
     const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &summary_path_text) {
-  const FrontendCApiRunnerArtifactPathView paths =
-      BuildFrontendCApiRunnerArtifactPathView(result, summary_path_text);
-  const std::string child_indent = indent + "  ";
-  const std::string grandchild_indent = child_indent + "  ";
+  const FrontendCApiRunnerPlaygroundReproContext context =
+      BuildFrontendCApiRunnerPlaygroundReproContext(
+          indent,
+          result,
+          summary_path_text);
 
   out << "{\n";
-  WriteFrontendCApiRunnerPlaygroundReproContractSourceJsonRows(
+  WriteFrontendCApiRunnerPlaygroundReproContractSourceProfileSections(
       out,
-      child_indent,
+      context,
       options,
-      result,
-      paths);
-  WriteFrontendCApiRunnerPlaygroundReproArtifactPathJsonRows(
+      result);
+  WriteFrontendCApiRunnerPlaygroundReproPublicSurfaceSection(
       out,
-      child_indent,
-      grandchild_indent,
-      paths);
-  WriteFrontendCApiRunnerPlaygroundReproCompileProfileJsonRows(
+      context);
+  WriteFrontendCApiRunnerPlaygroundReproDumpCommandSection(
       out,
-      child_indent,
-      grandchild_indent,
+      context,
       options);
-  WriteFrontendCApiRunnerPlaygroundReproPublicSurfaceJsonRows(
-      out,
-      child_indent);
-  WriteFrontendCApiRunnerPlaygroundReproDumpCommandJsonRows(
-      out,
-      child_indent,
-      grandchild_indent,
-      options,
-      paths);
   out << indent << "}";
 }
 
