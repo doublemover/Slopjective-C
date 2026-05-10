@@ -4,17 +4,27 @@
 
 namespace objc3::io::json {
 
-bool ValidateJsonSchemaArrayItemsKeyword(
-    const JsonValue &items,
+JsonSchemaArrayItemsKeywordValidation
+ValidateJsonSchemaArrayItemsKeyword(
+    const JsonValue &schema,
+    const JsonValue &payload,
     const std::string &schema_path,
     JsonSchemaResult &result) {
-  if (!items.IsObject()) {
+  const JsonValue *items = schema.Find("items");
+  if (items == nullptr || !payload.IsArray()) {
+    return {};
+  }
+  if (!items->IsObject()) {
     AddJsonSchemaContractError(result, "invalid_items",
                                JsonSchemaKeywordPath(schema_path, "items"),
                                "items must be a schema object");
-    return false;
+    JsonSchemaArrayItemsKeywordValidation invalid;
+    invalid.valid = false;
+    return invalid;
   }
-  return true;
+  JsonSchemaArrayItemsKeywordValidation valid;
+  valid.value = items;
+  return valid;
 }
 
 }  // namespace objc3::io::json

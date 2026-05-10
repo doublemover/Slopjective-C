@@ -11,14 +11,17 @@ bool ValidateJsonSchemaArrayItems(const JsonValue &schema_root,
                                   const std::string &instance_path,
                                   const std::string &schema_path,
                                   JsonSchemaResult &result) {
-  const JsonValue *items = schema.Find("items");
-  if (items != nullptr && payload.IsArray()) {
-    if (!ValidateJsonSchemaArrayItemsKeyword(*items, schema_path, result)) {
-      return false;
-    }
-    ValidateJsonSchemaArrayItemElements(schema_root, *items, payload,
-                                        instance_path, schema_path, result);
+  const JsonSchemaArrayItemsKeywordValidation items =
+      ValidateJsonSchemaArrayItemsKeyword(schema, payload, schema_path,
+                                          result);
+  if (!items.valid) {
+    return false;
   }
+  if (items.value == nullptr) {
+    return true;
+  }
+  ValidateJsonSchemaArrayItemElements(schema_root, *items.value, payload,
+                                      instance_path, schema_path, result);
   return true;
 }
 
