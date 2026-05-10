@@ -140,6 +140,8 @@ target_link_libraries(objc3c_artifacts_reports PUBLIC
 add_library(objc3c_artifacts STATIC
   objc3_frontend_actor_semantic_json.cpp
   objc3_frontend_actor_semantic_artifacts.h
+  objc3_frontend_artifact_assembly.cpp
+  objc3_frontend_artifact_assembly.h
   objc3_frontend_artifact_block_manifest_surfaces.cpp
   objc3_frontend_artifact_block_manifest_surfaces.h
   objc3_frontend_artifact_arc_ownership_metadata.cpp
@@ -224,6 +226,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_lowering_replay_manifest.h
   objc3_frontend_artifact_manifest_header.cpp
   objc3_frontend_artifact_manifest_header.h
+  objc3_frontend_artifact_manifest_assembly.cpp
   objc3_frontend_artifact_manifest_pipeline.cpp
   objc3_frontend_artifact_manifest_pipeline.h
   objc3_frontend_artifact_manifest_replay_tail.cpp
