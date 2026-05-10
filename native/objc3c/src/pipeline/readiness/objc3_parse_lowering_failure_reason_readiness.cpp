@@ -424,6 +424,131 @@ const char *FindTypedSemaLoweringAlignmentFailureReason(
   return nullptr;
 }
 
+const char *FindLoweringToolchainCloseoutFailureReason(
+    const Objc3ParseLoweringReadinessSurface &surface,
+    const Objc3ParseLoweringConformancePerformanceReadinessRecord
+        &conformance_performance_readiness,
+    const Objc3ToolchainRuntimeGaOperationsCloseoutReadinessRecord
+        &toolchain_runtime_ga_operations_closeout_readiness) {
+  if (!surface.lowering_boundary_ready) {
+    return "lowering boundary is not ready";
+  }
+
+  if (!surface.parse_lowering_conformance_matrix_consistent) {
+    return "parse-lowering conformance matrix is inconsistent";
+  }
+
+  if (!surface.parse_lowering_conformance_corpus_consistent) {
+    return "parse-lowering conformance corpus is inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_performance_quality_guardrails_consistent) {
+    return "toolchain/runtime GA operations performance quality guardrails are inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_performance_quality_guardrails_ready) {
+    return "toolchain/runtime GA operations performance quality guardrails are not ready";
+  }
+
+  if (!surface.parse_lowering_performance_quality_guardrails_consistent) {
+    return "parse-lowering performance/quality guardrails are inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_cross_lane_integration_consistent) {
+    return "toolchain/runtime GA operations cross-lane integration is inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_cross_lane_integration_ready) {
+    return "toolchain/runtime GA operations cross-lane integration is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.docs_runbook_sync_consistent) {
+    return "toolchain/runtime GA operations docs and runbook synchronization is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.docs_runbook_sync_ready) {
+    return "toolchain/runtime GA operations docs and runbook synchronization is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_consistent) {
+    return "toolchain/runtime GA operations advanced core workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_ready) {
+    return "toolchain/runtime GA operations advanced core workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_edge_compatibility_consistent) {
+    return "toolchain/runtime GA operations advanced edge compatibility workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_edge_compatibility_ready) {
+    return "toolchain/runtime GA operations advanced edge compatibility workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_diagnostics_consistent) {
+    return "toolchain/runtime GA operations advanced diagnostics workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_diagnostics_ready) {
+    return "toolchain/runtime GA operations advanced diagnostics workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_conformance_consistent) {
+    return "toolchain/runtime GA operations advanced conformance workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_conformance_ready) {
+    return "toolchain/runtime GA operations advanced conformance workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_integration_consistent) {
+    return "toolchain/runtime GA operations advanced integration workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_integration_ready) {
+    return "toolchain/runtime GA operations advanced integration workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_performance_consistent) {
+    return "toolchain/runtime GA operations advanced performance workpack is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_performance_ready) {
+    return "toolchain/runtime GA operations advanced performance workpack is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_shard2_consistent) {
+    return "toolchain/runtime GA operations advanced core workpack (shard 2) is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_shard2_ready) {
+    return "toolchain/runtime GA operations advanced core workpack (shard 2) is not ready";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.integration_closeout_signoff_consistent) {
+    return "toolchain/runtime GA operations integration closeout and sign-off is inconsistent";
+  }
+
+  if (!toolchain_runtime_ga_operations_closeout_readiness.integration_closeout_signoff_ready) {
+    return "toolchain/runtime GA operations integration closeout and sign-off is not ready";
+  }
+
+  if (!surface.long_tail_grammar_integration_closeout_consistent) {
+    return "long-tail grammar integration closeout is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_gate_signoff_ready) {
+    return "long-tail grammar gate sign-off is not ready";
+  }
+
+  return nullptr;
+}
+
 }  // namespace
 
 Objc3ParseLoweringFailureReasonReadinessRecord
@@ -784,147 +909,12 @@ BuildObjc3ParseLoweringFailureReasonReadiness(
     return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
-  if (!surface.lowering_boundary_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure("lowering boundary is not ready");
-  }
-
-  if (!surface.parse_lowering_conformance_matrix_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse-lowering conformance matrix is inconsistent");
-  }
-
-  if (!surface.parse_lowering_conformance_corpus_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse-lowering conformance corpus is inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_performance_quality_guardrails_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations performance quality guardrails are inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_performance_quality_guardrails_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations performance quality guardrails are not ready");
-  }
-
-  if (!surface.parse_lowering_performance_quality_guardrails_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse-lowering performance/quality guardrails are inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_cross_lane_integration_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations cross-lane integration is inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_cross_lane_integration_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations cross-lane integration is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.docs_runbook_sync_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations docs and runbook synchronization is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.docs_runbook_sync_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations docs and runbook synchronization is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced core workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced core workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_edge_compatibility_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced edge compatibility workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_edge_compatibility_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced edge compatibility workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_diagnostics_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced diagnostics workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_diagnostics_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced diagnostics workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_conformance_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced conformance workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_conformance_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced conformance workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_integration_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced integration workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_integration_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced integration workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_performance_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced performance workpack is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_performance_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced performance workpack is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_shard2_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced core workpack (shard 2) is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.advanced_core_shard2_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations advanced core workpack (shard 2) is not ready");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.integration_closeout_signoff_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations integration closeout and sign-off is inconsistent");
-  }
-
-  if (!toolchain_runtime_ga_operations_closeout_readiness.integration_closeout_signoff_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations integration closeout and sign-off is not ready");
-  }
-
-  if (!surface.long_tail_grammar_integration_closeout_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar integration closeout is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_gate_signoff_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar gate sign-off is not ready");
+  if (const char *failure_reason =
+          FindLoweringToolchainCloseoutFailureReason(
+              surface,
+              conformance_performance_readiness,
+              toolchain_runtime_ga_operations_closeout_readiness)) {
+    return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
   return Objc3ParseLoweringFailureReasonReadinessFailure("parse-lowering readiness failed");
