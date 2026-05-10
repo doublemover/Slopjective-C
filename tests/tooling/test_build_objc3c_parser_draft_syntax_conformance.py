@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import subprocess
-import sys
-from pathlib import Path
+from build_objc3c_parser_draft_syntax_conformance_artifacts import (
+    assert_parser_draft_syntax_conformance_artifacts_are_current,
+)
+from build_objc3c_parser_draft_syntax_conformance_runner import (
+    run_parser_draft_syntax_conformance_check,
+)
 
-ROOT = Path(__file__).resolve().parents[2]
+
+def parser_draft_syntax_conformance_report_is_current() -> None:
+    completed = run_parser_draft_syntax_conformance_check()
+    assert_parser_draft_syntax_conformance_artifacts_are_current(completed)
 
 
-def test_parser_draft_syntax_conformance_report_is_current() -> None:
-    completed = subprocess.run(
-        [sys.executable, "scripts/build_objc3c_parser_draft_syntax_conformance.py", "--check"],
-        cwd=ROOT,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stdout + completed.stderr
+test_parser_draft_syntax_conformance_report_is_current = (
+    parser_draft_syntax_conformance_report_is_current
+)
