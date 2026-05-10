@@ -40,7 +40,11 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.cpp
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
+  runtime_import_preservation_evidence.cpp
+  runtime_import_preservation_packaging.cpp
   runtime_import_preservation.cpp
+  runtime_import_preservation_readiness.cpp
+  runtime_import_preservation_serialized_metadata.cpp
   runtime_import_record_parsing.cpp
   runtime_import_type_system_preservation.cpp
   frontend_pipeline_defaults.h
@@ -61,6 +65,7 @@ add_library(objc3c_pipeline STATIC
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
   runtime_import_packaging_peer_artifacts.h
+  runtime_import_preservation_owners.h
   runtime_import_record_parsing.h
   runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
