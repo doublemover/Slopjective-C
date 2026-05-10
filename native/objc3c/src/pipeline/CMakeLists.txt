@@ -85,6 +85,8 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.cpp
   readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.cpp
   runtime_import_frontend_closure_boundary.cpp
+  objc3_runtime_import_surface_cross_module_readiness.cpp
+  objc3_runtime_import_surface_packaging_readiness.cpp
   runtime_import_json_helpers.cpp
   runtime_import_json_helpers_accessors.cpp
   runtime_import_json_helpers_parser_values.cpp
