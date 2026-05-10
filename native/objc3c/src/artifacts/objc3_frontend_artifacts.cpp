@@ -109,7 +109,6 @@
 #include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 #include "pipeline/objc3_runtime_import_surface.h"
-#include "sema/objc3_semantic_passes.h"
 #include "support/objc3_identifier_safe_suffix.h"
 #include "support/objc3_runtime_metadata_record_set.h"
 #include "support/objc3_value_type_names.h"
