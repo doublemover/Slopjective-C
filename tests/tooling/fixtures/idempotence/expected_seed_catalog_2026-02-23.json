@@ -162,7 +162,7 @@
     },
     {
       "task_id": "SPT-0004",
-      "task_key": "docs/reference/legacy_spec_anchor_index.md",
+      "task_key": "docs/reference/legacy_spec_anchor_index.md:3",
       "source_line_hash": "361504232b7789c8bde94f1d812ba0dca0e2a970732e0a6aa2a0740faaf6a14d",
       "title": "[SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker",
       "path": "docs/reference/legacy_spec_anchor_index.md",
@@ -213,7 +213,7 @@
     },
     {
       "task_id": "SPT-0005",
-      "task_key": "docs/reference/legacy_spec_anchor_index.md",
+      "task_key": "docs/reference/legacy_spec_anchor_index.md:4",
       "source_line_hash": "66ae2658985e2991fa135c0e02f8257b20b3579eba82b0110b1f2c13d01437ac",
       "title": "[SPT-0005][Lane B] Link dependency to Issue #111 and A-03 for traceability",
       "path": "docs/reference/legacy_spec_anchor_index.md",
