@@ -45,6 +45,7 @@ target_link_libraries(objc3c_sema_contracts INTERFACE
 )
 target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_handoff_contract.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_conformance_records.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_sema_handoff_scaffold.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_closeout_readiness_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_canonical_literal_contract.h
