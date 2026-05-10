@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import display_path
-from objc3c_tooling.public_runner import public_workflow_command
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 from objc3c_tooling.public_workflow_output import extract_line_value
 

@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
-from objc3c_tooling.public_runner import (
+from scripts.objc3c_workflow.public_command_api import (
     public_workflow_action_payload,
     public_workflow_command,
     public_workflow_package_bridge_payload,

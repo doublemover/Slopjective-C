@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.public_runner import public_workflow_has_action_identifiers
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any

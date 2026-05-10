@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
-from objc3c_tooling.public_runner import public_workflow_action_names
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 from objc3c_tooling.subprocesses import python_script_command
 from package_ecosystem_contracts import (
     require_package_ecosystem_blocker_metadata,

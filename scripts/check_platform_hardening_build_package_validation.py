@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.public_runner import public_workflow_command
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import python_script_command, run_capture
 from platform_hardening_contracts import (
     BUILD_PACKAGE_VALIDATION_CONTRACT_PATH,

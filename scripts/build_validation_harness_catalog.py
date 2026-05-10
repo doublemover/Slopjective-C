@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
-from objc3c_tooling.public_runner import public_workflow_list_command
+from scripts.objc3c_workflow.public_command_api import public_workflow_list_command
 from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]

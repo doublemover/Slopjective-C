@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
-from objc3c_tooling.public_runner import (
+from scripts.objc3c_workflow.public_command_api import (
     public_workflow_action_payload,
     public_workflow_command,
     public_workflow_has_actions,

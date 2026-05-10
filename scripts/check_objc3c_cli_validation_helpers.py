@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 
 from objc3c_tooling.cli import add_check_argument
-from objc3c_tooling.public_runner import load_public_workflow_runner
+from scripts.objc3c_workflow.public_command_api import load_public_workflow_runner
 from objc3c_tooling.validation import contains_all
 
 

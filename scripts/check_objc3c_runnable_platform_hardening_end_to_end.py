@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
-from objc3c_tooling.public_runner import public_workflow_command
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_completed
 from platform_hardening_contracts import (
     PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH,

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
-from objc3c_tooling.public_runner import public_workflow_action_names
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/boundary_inventory.json"

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.public_runner import public_workflow_list_payload
+from scripts.objc3c_workflow.public_command_api import public_workflow_list_payload
 from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]

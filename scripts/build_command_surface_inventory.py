@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
-from objc3c_tooling.public_runner import public_workflow_action_names
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 from scripts.objc3c_workflow.actions.command_facades_inventory import (
     command_facade_inventory_contract,
     package_bridge_names_from_scripts,

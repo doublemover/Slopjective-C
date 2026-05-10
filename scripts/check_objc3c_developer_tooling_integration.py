@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.public_runner import public_workflow_command
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import python_script_command, run_timed
 
 

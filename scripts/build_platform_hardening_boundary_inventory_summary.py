@@ -18,7 +18,7 @@ from platform_hardening_contracts import (
     write_markdown_summary,
 )
 from objc3c_tooling.paths import resolve_repo_path
-from objc3c_tooling.public_runner import public_workflow_action_names
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 def main() -> int:

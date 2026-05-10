@@ -90,7 +90,7 @@ from objc3c_runtime_acceptance.runtime_contract_storage_reflection import (
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
 )
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.public_runner import public_workflow_command_tuple
+from scripts.objc3c_workflow.public_command_api import public_workflow_command_tuple
 from objc3c_tooling.subprocesses import python_script_command_tuple
 
 
