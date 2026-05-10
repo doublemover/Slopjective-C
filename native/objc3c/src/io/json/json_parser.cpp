@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "io/json/json_parser_array_container.h"
+#include "io/json/json_parser_completion.h"
 #include "io/json/json_parser_cursor.h"
 #include "io/json/json_parser_object_container.h"
 #include "io/json/json_parser_scalar_value.h"
@@ -20,12 +21,7 @@ class Parser : public JsonParserValueDelegate {
     if (!ParseValue(value)) {
       return {JsonValue::Null(), cursor_.error()};
     }
-    cursor_.SkipWhitespace();
-    if (!cursor_.AtEnd()) {
-      cursor_.Fail("unexpected trailing JSON content");
-      return {JsonValue::Null(), cursor_.error()};
-    }
-    return {std::move(value), std::nullopt};
+    return CompleteJsonParse(cursor_, std::move(value));
   }
 
  private:
