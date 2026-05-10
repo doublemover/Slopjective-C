@@ -315,6 +315,8 @@ add_library(objc3c_runtime_abi_cross_module STATIC
   objc3_cross_module_runtime_link_plan_document_artifacts.h
   objc3_cross_module_runtime_link_plan_document_counts.cpp
   objc3_cross_module_runtime_link_plan_document_counts.h
+  objc3_cross_module_runtime_link_plan_document_counts_storage.cpp
+  objc3_cross_module_runtime_link_plan_document_counts_storage.h
   objc3_cross_module_runtime_link_plan_document.cpp
   objc3_cross_module_runtime_link_plan_document.h
   objc3_cross_module_runtime_link_plan_document_header.cpp
