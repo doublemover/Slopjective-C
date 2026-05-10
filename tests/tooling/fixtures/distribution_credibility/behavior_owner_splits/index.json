@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-distribution-credibility-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/distribution_credibility/artifact_surface.json",
+    "tests/tooling/fixtures/distribution_credibility/install_release_doc_surface.json",
+    "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
+    "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
+    "tests/tooling/fixtures/distribution_credibility/schema_surface.json",
+    "tests/tooling/fixtures/distribution_credibility/source_surface.json",
+    "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
+    "tests/tooling/fixtures/distribution_credibility/workflow_surface.json"
+  ],
+  "split_policy": {
+    "primary_axis": "distribution-credibility behavior before fixture directory label, generated artifact path, tmp report path, schema path, script anchor, public action label, package bridge label, trust signal label, status label, operator state label, incident label, release drill label, documentation label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "distribution-credibility positives are limited to hand-authored checked-in contracts for trust-signal state resolution, live release-drill evidence attachment, operator ready/degraded/blocked state policy, install/release documentation consistency, generated dashboard and trust-report publication through owned actions, required report contracts, and upstream release-foundation/package-channel/release-operations/release-evidence drill inputs",
+    "canonical_rejection_rule": "hosted trust services, manual trust badges, manual smoke screenshots, operator-authored trust badges, parallel release sources of truth, alternate package build paths, report-only trust evidence, report-only release readiness, dashboard-only or trust-report-only drill substitutes, wrapper-only publication, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing upstream reports, missing release manifest lineage fields, failed required trust signals, checked-in source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing release evidence index, stale trust-report inputs promoted to ready, dashboard/trust-report artifacts generated without source/schema/dashboard/release-drill/release-evidence owner contracts, missing required owner contract modules, wrapper-only publication, report-only publication, and generated/report rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, primary doc paths, release doc paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source labels, machine-owned output roots, report paths, artifact paths, trust signal ids, upstream surface labels, status labels, state labels, incident ids, drill step labels, required report contract ids, release manifest field names, owner contract roles, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode distribution credibility rows, shim distribution credibility rows, fallback distribution credibility rows, compatibility distribution credibility rows, migration-only rows, generated-only rows, report-only rows, manual-only trust rows, hosted trust positives, manual badge positives, parallel release truth positives, alternate package build positives, runner-only success, workflow-label-only success, wrapper-only credibility checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "distribution_credibility_provenance",
+      "path": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/distribution_credibility_provenance.json"
+    }
+  ]
+}

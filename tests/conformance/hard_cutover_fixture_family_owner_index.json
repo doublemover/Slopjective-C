@@ -1224,6 +1224,40 @@
       "retired_disposition": "package ecosystem owner contracts, runbook paths, stdlib workspace paths, package surface paths, application architecture fixture paths, release/package channel runbook paths, schema paths, owner split module paths, workflow implementation anchors, validation implementation anchors, generated artifact roots, generated report roots, report slot names, workspace ids, materialize action labels, validation action labels, package source labels, registry layer labels, generated output paths, required action labels, successor milestone labels, blocker labels, non-goal labels, forbidden dependency source labels, retired acceptance labels, and owner-split routing rows are resolved through behavior-first phase indexes and package ecosystem provenance before any package row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in package/workspace source authority, package authoring from stdlib/showcase/application surfaces, deterministic provenance-bearing local locks, offline mirrors derived from the current lock graph, local registry metadata generated from lock and mirror evidence, public objc3c package workflow replay, and release-operation integration that consumes package ecosystem artifacts as generated local evidence, while hosted package registry services, hosted registry availability, package-manager parity, network-backed dependency resolution, implicit network fetches, unpinned hosted registry references, system package manager publication, manual sidecar manifests, manual package manifests outside checked-in contracts and generated artifacts, tmp-only source authority, second compiler payloads, second package layouts, second install workflows, retired source/surface acceptance, wrapper-only publication, report-only publication, missing checked-in package source contracts, absent public package workflow actions, generated package evidence outside package ecosystem artifact roots, hosted registry claims without local package evidence, artifacts without schemas, package publication actions without owner contracts, missing dependency provenance, ambiguous package identity, unstable lock ordering or digest input sets, public workflow replay failure, workspace sources missing from checked-in package surfaces, absent lock replay paths, mirror indexes not derived from the current lock graph, network access during offline mirror validation, unlocked package identities in publication metadata, hand-authored registry indexes, release/update metadata drift from package ecosystem evidence, mirror/local registry package-id drift, old-mode package rows, shim package rows, fallback package rows, compatibility package rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only package checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "distribution_credibility_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "distribution_credibility_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/distribution_credibility/behavior_owner_splits/distribution_credibility_provenance.json"
+      ],
+      "retired_disposition": "distribution credibility owner contracts, runbook paths, primary doc paths, release doc paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source labels, machine-owned output roots, report paths, artifact paths, trust signal ids, upstream surface labels, status labels, state labels, incident ids, drill step labels, required report contract ids, release manifest field names, owner contract roles, non-goal labels, degraded condition labels, blocking condition labels, and owner-split routing rows are resolved through behavior-first phase indexes and distribution credibility provenance before any distribution row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in trust-signal state resolution over live release artifacts, operator ready/degraded/blocked policy, release-drill attachment to package-channel, release-operations, and release-evidence outputs, install/release documentation consistency, generated dashboard and trust-report publication through owned actions, required report contracts, and fail-closed integration through upstream release governance actions, while hosted trust services, manual trust badges, manual smoke screenshots, operator-authored trust badges, parallel release sources of truth, alternate package build paths, report-only trust evidence, report-only release readiness, dashboard-only or trust-report-only drill substitutes, wrapper-only publication, missing upstream reports, missing release manifest lineage fields, failed required trust signals, checked-in source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing release evidence index, stale trust-report inputs promoted to ready, trust-report artifacts missing owner contract inputs, missing required owner contract modules, old-mode distribution rows, shim distribution rows, fallback distribution rows, compatibility distribution rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only credibility checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "platform_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits",
