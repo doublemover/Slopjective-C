@@ -1121,21 +1121,4 @@
               .canonical_type_form_performance_quality_guardrails_key.empty() &&
 #include "sema/objc3_semantic_passes_body_validation_core_blocks.inc"
 #include "sema/objc3_semantic_passes_body_validation_core_message_dispatch.inc"
-         handoff.nil_receiver_semantics_foldability_summary.deterministic &&
-         handoff.nil_receiver_semantics_foldability_summary.message_send_sites ==
-             nil_receiver_semantics_foldability_summary.message_send_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
-             nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites ==
-             nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
-             nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites ==
-             nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
-             nil_receiver_semantics_foldability_summary.non_nil_receiver_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites ==
-             nil_receiver_semantics_foldability_summary.contract_violation_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
-             handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
-         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
+#include "sema/objc3_semantic_passes_body_validation_core_runtime_arc.inc"
