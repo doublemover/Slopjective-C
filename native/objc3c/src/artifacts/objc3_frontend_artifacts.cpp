@@ -56,6 +56,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_startup_bootstrap_invariant_manifest_fields.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 #include "artifacts/objc3_frontend_artifact_semantic_lowering_plan.h"
@@ -2790,101 +2791,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                    .registration_descriptor_frontend_closure_replay_key)
            << "\",\"runtime_bootstrap_lowering_failure_reason\":\""
            << EscapeJsonString(runtime_bootstrap_lowering.failure_reason)
-           << "\""
-           << ",\"runtime_startup_bootstrap_invariant_contract_id\":\""
-           << runtime_startup_bootstrap_invariants.contract_id
-           << "\",\"runtime_startup_bootstrap_invariant_duplicate_registration_policy\":\""
-           << runtime_startup_bootstrap_invariants
-                  .duplicate_registration_policy
-           << "\",\"runtime_startup_bootstrap_invariant_realization_order_policy\":\""
-           << runtime_startup_bootstrap_invariants.realization_order_policy
-           << "\",\"runtime_startup_bootstrap_invariant_failure_mode\":\""
-           << runtime_startup_bootstrap_invariants.failure_mode
-           << "\",\"runtime_startup_bootstrap_invariant_image_local_initialization_scope\":\""
-           << runtime_startup_bootstrap_invariants
-                  .image_local_initialization_scope
-           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_uniqueness_policy\":\""
-           << runtime_startup_bootstrap_invariants
-                  .constructor_root_uniqueness_policy
-           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_consumption_model\":\""
-           << runtime_startup_bootstrap_invariants
-                  .constructor_root_consumption_model
-           << "\",\"runtime_startup_bootstrap_invariant_startup_execution_mode\":\""
-           << runtime_startup_bootstrap_invariants.startup_execution_mode
-           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_symbol\":\""
-           << runtime_startup_bootstrap_invariants.constructor_root_symbol
-           << "\",\"runtime_startup_bootstrap_invariant_registration_entrypoint_symbol\":\""
-           << runtime_startup_bootstrap_invariants
-                  .registration_entrypoint_symbol
-           << "\",\"runtime_startup_bootstrap_invariant_manifest_authority_model\":\""
-           << runtime_startup_bootstrap_invariants.manifest_authority_model
-           << "\",\"runtime_startup_bootstrap_invariant_translation_unit_identity_model\":\""
-           << runtime_startup_bootstrap_invariants
-                  .translation_unit_identity_model
-           << "\",\"runtime_startup_bootstrap_invariant_fail_closed\":"
-           << (runtime_startup_bootstrap_invariants.fail_closed ? "true"
-                                                                : "false")
-           << ",\"runtime_startup_bootstrap_invariant_registration_manifest_contract_ready\":"
-           << (runtime_startup_bootstrap_invariants
-                       .registration_manifest_contract_ready
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_duplicate_registration_semantics_frozen\":"
-           << (runtime_startup_bootstrap_invariants
-                       .duplicate_registration_semantics_frozen
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_realization_order_semantics_frozen\":"
-           << (runtime_startup_bootstrap_invariants
-                       .realization_order_semantics_frozen
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_failure_mode_semantics_frozen\":"
-           << (runtime_startup_bootstrap_invariants
-                       .failure_mode_semantics_frozen
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_image_local_initialization_scope_frozen\":"
-           << (runtime_startup_bootstrap_invariants
-                       .image_local_initialization_scope_frozen
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_constructor_root_uniqueness_frozen\":"
-           << (runtime_startup_bootstrap_invariants
-                       .constructor_root_uniqueness_frozen
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_startup_execution_not_yet_landed\":"
-           << (runtime_startup_bootstrap_invariants
-                       .startup_execution_not_yet_landed
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_live_duplicate_registration_enforcement_not_yet_landed\":"
-           << (runtime_startup_bootstrap_invariants
-                       .live_duplicate_registration_enforcement_not_yet_landed
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_image_local_realization_not_yet_landed\":"
-           << (runtime_startup_bootstrap_invariants
-                       .image_local_realization_not_yet_landed
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_ready_for_bootstrap_implementation\":"
-           << (runtime_startup_bootstrap_invariants
-                       .ready_for_bootstrap_implementation
-                   ? "true"
-                   : "false")
-           << ",\"runtime_startup_bootstrap_invariant_registration_manifest_replay_key\":\""
-           << EscapeJsonString(
-                  runtime_startup_bootstrap_invariants
-                      .registration_manifest_replay_key)
-           << "\",\"runtime_startup_bootstrap_invariant_replay_key\":\""
-           << EscapeJsonString(runtime_startup_bootstrap_invariants.replay_key)
-           << "\",\"runtime_startup_bootstrap_invariant_failure_reason\":\""
-           << EscapeJsonString(
-                  runtime_startup_bootstrap_invariants.failure_reason)
-           << "\""
-           << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
+           << "\"";
+  objc3::artifacts::frontend::
+      WriteRuntimeStartupBootstrapInvariantManifestFields(
+          manifest, runtime_startup_bootstrap_invariants);
+  manifest << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << ",\"property_synthesis_sites\":"
            << property_synthesis_ivar_binding_summary.property_synthesis_sites
