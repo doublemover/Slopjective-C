@@ -26,6 +26,9 @@ add_library(objc3c_lower STATIC
   contracts/ownership_runtime_lowering_contracts.cpp
   contracts/runtime_metadata_emission_contracts.cpp
   contracts/lowering_summary_surfaces.cpp
+  contracts/lowering_summary_ownership_concurrency_surfaces.cpp
+  contracts/lowering_summary_runtime_object_surfaces.cpp
+  contracts/lowering_summary_tooling_capability_surfaces.cpp
   contracts/object_model_lowering_contracts.cpp
   contracts/runtime_dispatch_abi_contracts.cpp
   contracts/runtime_dispatch_boundary_contracts.cpp
