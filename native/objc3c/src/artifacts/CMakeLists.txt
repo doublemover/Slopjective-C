@@ -199,6 +199,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_runtime_block_manifest.h
   objc3_frontend_artifact_runtime_concurrency_manifest.cpp
   objc3_frontend_artifact_runtime_concurrency_manifest.h
+  objc3_frontend_artifact_runtime_import_output.cpp
+  objc3_frontend_artifact_runtime_import_output.h
   objc3_frontend_artifact_runtime_metadata_contract_metadata.cpp
   objc3_frontend_artifact_runtime_metadata_contract_metadata.h
   objc3_frontend_artifact_runtime_metadata_plan.cpp
