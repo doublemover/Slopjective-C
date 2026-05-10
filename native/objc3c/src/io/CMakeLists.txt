@@ -309,8 +309,14 @@ add_library(objc3c_runtime_abi_cross_module STATIC
   objc3_cross_module_imported_modules_document.cpp
   objc3_cross_module_imported_modules_document.h
   objc3_cross_module_runtime_link_plan_artifact.cpp
+  objc3_cross_module_runtime_link_plan_document_artifacts.cpp
+  objc3_cross_module_runtime_link_plan_document_artifacts.h
+  objc3_cross_module_runtime_link_plan_document_counts.cpp
+  objc3_cross_module_runtime_link_plan_document_counts.h
   objc3_cross_module_runtime_link_plan_document.cpp
   objc3_cross_module_runtime_link_plan_document.h
+  objc3_cross_module_runtime_link_plan_document_header.cpp
+  objc3_cross_module_runtime_link_plan_document_header.h
   objc3_cross_module_runtime_link_plan_inputs.cpp
   objc3_cross_module_runtime_link_plan_inputs.h
   objc3_cross_module_runtime_link_plan_ordering.cpp
