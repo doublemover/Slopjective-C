@@ -6,6 +6,7 @@
 #include "parse/objc3_parser_core_objc_method_declarations.inc"
 #include "parse/objc3_parser_core_objc_property_declarations.inc"
 #include "parse/objc3_parser_core_objc_container_helpers.inc"
+#include "parse/objc3_parser_core_objc_interface_protocol_declarations.inc"
 #include "parse/objc3_parser_core_objc_declarations_containers.inc"
 #include "parse/objc3_parser_core_objc_declarations_functions.inc"
 #include "parse/objc3_parser_core_objc_declarations_parameter_types.inc"
