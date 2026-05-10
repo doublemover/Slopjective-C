@@ -12,6 +12,7 @@ from .checksums import optional_file_sha256_hex
 from .checksums import replay_key_counter
 from .checksums import sha256_text_hex
 from .compile_backends import DIRECT_COMPILE_BACKEND
+from .compile_truth_dispatch import runtime_dispatch_truth_from_outputs
 from .paths import NATIVE_EXE
 from .paths import RUNTIME_LIB
 from .progress_format import repo_display_path
@@ -38,23 +39,11 @@ def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") 
         registration_manifest_path.read_text(encoding="utf-8")
     )
     ll_text = ll_path.read_text(encoding="utf-8")
-    lowering = manifest.get("lowering", {})
     property_synthesis = manifest.get("lowering_property_synthesis_ivar_binding", {})
-    runtime_dispatch_symbol = ""
-    if isinstance(lowering, dict):
-        runtime_dispatch_symbol = str(lowering.get("runtime_dispatch_symbol", ""))
-    if runtime_dispatch_symbol == "":
-        runtime_dispatch_symbol = str(
-            manifest.get("runtime_support_library_link_wiring_runtime_dispatch_symbol", "")
-        )
-    if runtime_dispatch_symbol == "":
-        runtime_dispatch_symbol = str(
-            manifest.get("runtime_link_host_link_runtime_dispatch_symbol", "")
-        )
-    if runtime_dispatch_symbol == "":
-        raise RuntimeError(
-            "compile output truthfulness check could not resolve the runtime dispatch symbol"
-        )
+    runtime_dispatch_truth = runtime_dispatch_truth_from_outputs(
+        manifest=manifest,
+        ll_text=ll_text,
+    )
 
     property_descriptor_count_expected = int(
         registration_manifest.get("property_descriptor_count", 0)
@@ -69,13 +58,6 @@ def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") 
             "property_synthesis_sites",
         )
 
-    escaped_dispatch_symbol = re.escape(runtime_dispatch_symbol)
-    dispatch_declaration_count = len(
-        re.findall(r"(?m)declare i32 @" + escaped_dispatch_symbol + r"\(", ll_text)
-    )
-    dispatch_call_count = len(
-        re.findall(r"(?m)call i32 @" + escaped_dispatch_symbol + r"\(", ll_text)
-    )
     property_descriptor_definition_count = len(
         re.findall(r"(?m)^@__objc3_meta_property_[0-9]+ = ", ll_text)
     )
@@ -130,18 +112,14 @@ def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") 
         )
     )
     truthful = (
-        dispatch_declaration_count >= 1
+        runtime_dispatch_truth.declaration_present
         and property_descriptor_section_present
         and ivar_descriptor_section_present
         and property_descriptor_counts_match
         and ivar_descriptor_counts_match
         and synthesized_property_surface_matches
     )
-    failures: list[str] = []
-    if dispatch_declaration_count < 1:
-        failures.append(
-            f"missing LLVM declaration for runtime dispatch symbol '{runtime_dispatch_symbol}'"
-        )
+    failures = runtime_dispatch_truth.failures()
     if not property_descriptor_section_present:
         failures.append("missing property descriptor aggregate section in emitted LLVM IR")
     if not ivar_descriptor_section_present:
@@ -174,9 +152,7 @@ def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") 
         "verification_model": (
             "direct-runtime-acceptance-cross-checks-manifest-and-runtime-registration-claims-against-emitted-llvm-ir"
         ),
-        "runtime_dispatch_symbol": runtime_dispatch_symbol,
-        "runtime_dispatch_declaration_count": dispatch_declaration_count,
-        "runtime_dispatch_call_count": dispatch_call_count,
+        **runtime_dispatch_truth.payload_fields(),
         "property_descriptor_count_expected": property_descriptor_count_expected,
         "property_descriptor_definition_count": property_descriptor_definition_count,
         "property_descriptor_section_present": property_descriptor_section_present,
