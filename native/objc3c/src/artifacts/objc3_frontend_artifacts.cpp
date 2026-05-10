@@ -6600,39 +6600,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ir_frontend_metadata, bundle.runtime_bootstrap_lowering_summary,
       bundle.runtime_registration_descriptor_frontend_closure_summary,
       bundle.runtime_translation_unit_registration_manifest_summary);
-  {
-    const bool typed_handoff_ready =
-        IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
-            executable_metadata_typed_lowering_handoff);
-    if (typed_handoff_ready) {
-      const auto &source_graph =
-          executable_metadata_typed_lowering_handoff.source_graph;
-      objc3::artifacts::frontend::
-          ApplyObjc3FrontendRuntimeMetadataClassMetaclassBundles(
-              ir_frontend_metadata, source_graph,
-              runtime_metadata_section_publication);
-
-      // protocol/category data emission anchor: the typed lowering
-      // handoff now expands one combined category graph node into explicit
-      // interface/implementation record bundles so the emitted descriptor count
-      // matches the runtime-export/scaffold record inventory exactly.
-      const bool protocol_category_payload_complete =
-          objc3::artifacts::frontend::
-              ApplyObjc3FrontendRuntimeMetadataProtocolCategoryBundles(
-                  ir_frontend_metadata, source_graph,
-                  runtime_metadata_section_publication);
-
-      // member-table data emission anchor: the typed lowering
-      // handoff now also projects real owner-scoped method tables plus real
-      // property/ivar descriptor payload records without reopening the earlier
-      // class/protocol/category descriptor bundle shapes from C002/C003.
-      objc3::artifacts::frontend::
-          ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
-              ir_frontend_metadata, source_graph,
-              runtime_metadata_section_publication,
-              protocol_category_payload_complete);
-    }
-  }
+  objc3::artifacts::frontend::
+      ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
+          ir_frontend_metadata, executable_metadata_typed_lowering_handoff,
+          runtime_metadata_section_publication);
   objc3::artifacts::frontend::ApplyObjc3FrontendObjectInspectionMetadata(
       ir_frontend_metadata, runtime_metadata_object_inspection);
   objc3::artifacts::frontend::ApplyObjc3FrontendDebugProjectionMetadata(

@@ -10,6 +10,33 @@
 
 namespace objc3::artifacts::frontend {
 
+void ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
+    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff,
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        &runtime_metadata_section_publication) {
+  if (!IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
+          executable_metadata_typed_lowering_handoff)) {
+    return;
+  }
+
+  const auto &source_graph =
+      executable_metadata_typed_lowering_handoff.source_graph;
+  ApplyObjc3FrontendRuntimeMetadataClassMetaclassBundles(
+      ir_frontend_metadata, source_graph, runtime_metadata_section_publication);
+
+  // Keep protocol/category success as the gate for the member-table projection:
+  // member payload records depend on the same owner identities.
+  const bool protocol_category_payload_complete =
+      ApplyObjc3FrontendRuntimeMetadataProtocolCategoryBundles(
+          ir_frontend_metadata, source_graph,
+          runtime_metadata_section_publication);
+  ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
+      ir_frontend_metadata, source_graph, runtime_metadata_section_publication,
+      protocol_category_payload_complete);
+}
+
 void ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
     Objc3IRFrontendMetadata &ir_frontend_metadata,
     const Objc3ExecutableMetadataSourceGraph &source_graph,

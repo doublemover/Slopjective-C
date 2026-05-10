@@ -26,6 +26,13 @@ void ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
         &runtime_metadata_section_publication,
     bool protocol_category_payload_complete);
 
+void ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
+    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff,
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        &runtime_metadata_section_publication);
+
 [[nodiscard]] bool BuildObjc3FrontendRuntimeMetadataPropertyBundles(
     const Objc3ExecutableMetadataSourceGraph &source_graph,
     std::vector<Objc3IRRuntimeMetadataPropertyBundle> &property_bundles);
