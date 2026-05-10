@@ -23,55 +23,32 @@ std::size_t CountSelectorPieces(const std::string &selector) {
   return colons == 0 ? 1 : colons;
 }
 
-void AccumulateMessageSendSelectorLoweringExpr(
-    const Expr *expr, Objc3MessageSendSelectorLoweringContract &contract,
-    std::unordered_set<std::string> &selector_literals) {
+template <typename Visitor>
+void WalkMessageSendLoweringExpr(const Expr *expr, Visitor &visitor) {
   if (expr == nullptr) {
     return;
   }
   switch (expr->kind) {
     case Expr::Kind::MessageSend: {
-      ++contract.message_send_sites;
-      ++contract.receiver_expression_sites;
-      if (expr->args.empty()) {
-        ++contract.unary_selector_sites;
-      } else {
-        ++contract.keyword_selector_sites;
-      }
-      contract.argument_expression_sites += expr->args.size();
-      const std::size_t selector_pieces = CountSelectorPieces(expr->selector);
-      contract.selector_piece_sites += selector_pieces;
-      if (selector_pieces == 0u) {
-        contract.deterministic = false;
-      } else {
-        selector_literals.insert(expr->selector);
-      }
-      AccumulateMessageSendSelectorLoweringExpr(
-          expr->receiver.get(), contract, selector_literals);
+      visitor(*expr);
+      WalkMessageSendLoweringExpr(expr->receiver.get(), visitor);
       for (const auto &arg : expr->args) {
-        AccumulateMessageSendSelectorLoweringExpr(arg.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringExpr(arg.get(), visitor);
       }
       return;
     }
     case Expr::Kind::Binary:
-      AccumulateMessageSendSelectorLoweringExpr(expr->left.get(), contract,
-                                                selector_literals);
-      AccumulateMessageSendSelectorLoweringExpr(expr->right.get(), contract,
-                                                selector_literals);
+      WalkMessageSendLoweringExpr(expr->left.get(), visitor);
+      WalkMessageSendLoweringExpr(expr->right.get(), visitor);
       return;
     case Expr::Kind::Conditional:
-      AccumulateMessageSendSelectorLoweringExpr(expr->left.get(), contract,
-                                                selector_literals);
-      AccumulateMessageSendSelectorLoweringExpr(expr->right.get(), contract,
-                                                selector_literals);
-      AccumulateMessageSendSelectorLoweringExpr(expr->third.get(), contract,
-                                                selector_literals);
+      WalkMessageSendLoweringExpr(expr->left.get(), visitor);
+      WalkMessageSendLoweringExpr(expr->right.get(), visitor);
+      WalkMessageSendLoweringExpr(expr->third.get(), visitor);
       return;
     case Expr::Kind::Call:
       for (const auto &arg : expr->args) {
-        AccumulateMessageSendSelectorLoweringExpr(arg.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringExpr(arg.get(), visitor);
       }
       return;
     default:
@@ -79,60 +56,50 @@ void AccumulateMessageSendSelectorLoweringExpr(
   }
 }
 
-void AccumulateMessageSendSelectorLoweringForClause(
-    const ForClause &clause,
-    Objc3MessageSendSelectorLoweringContract &contract,
-    std::unordered_set<std::string> &selector_literals) {
+template <typename Visitor>
+void WalkMessageSendLoweringForClause(
+    const ForClause &clause, Visitor &visitor) {
   if (clause.value != nullptr) {
-    AccumulateMessageSendSelectorLoweringExpr(clause.value.get(), contract,
-                                              selector_literals);
+    WalkMessageSendLoweringExpr(clause.value.get(), visitor);
   }
 }
 
-void AccumulateMessageSendSelectorLoweringStmt(
-    const Stmt *stmt, Objc3MessageSendSelectorLoweringContract &contract,
-    std::unordered_set<std::string> &selector_literals) {
+template <typename Visitor>
+void WalkMessageSendLoweringStmt(const Stmt *stmt, Visitor &visitor) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
     case Stmt::Kind::Let:
       if (stmt->let_stmt != nullptr) {
-        AccumulateMessageSendSelectorLoweringExpr(
-            stmt->let_stmt->value.get(), contract, selector_literals);
+        WalkMessageSendLoweringExpr(stmt->let_stmt->value.get(), visitor);
       }
       return;
     case Stmt::Kind::Assign:
       if (stmt->assign_stmt != nullptr) {
-        AccumulateMessageSendSelectorLoweringExpr(
-            stmt->assign_stmt->value.get(), contract, selector_literals);
+        WalkMessageSendLoweringExpr(stmt->assign_stmt->value.get(), visitor);
       }
       return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        AccumulateMessageSendSelectorLoweringExpr(
-            stmt->return_stmt->value.get(), contract, selector_literals);
+        WalkMessageSendLoweringExpr(stmt->return_stmt->value.get(), visitor);
       }
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        AccumulateMessageSendSelectorLoweringExpr(
-            stmt->expr_stmt->value.get(), contract, selector_literals);
+        WalkMessageSendLoweringExpr(stmt->expr_stmt->value.get(), visitor);
       }
       return;
     case Stmt::Kind::If:
       if (stmt->if_stmt == nullptr) {
         return;
       }
-      AccumulateMessageSendSelectorLoweringExpr(
-          stmt->if_stmt->condition.get(), contract, selector_literals);
+      WalkMessageSendLoweringExpr(stmt->if_stmt->condition.get(), visitor);
       for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        AccumulateMessageSendSelectorLoweringStmt(then_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(then_stmt.get(), visitor);
       }
       for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        AccumulateMessageSendSelectorLoweringStmt(else_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(else_stmt.get(), visitor);
       }
       return;
     case Stmt::Kind::DoWhile:
@@ -140,37 +107,31 @@ void AccumulateMessageSendSelectorLoweringStmt(
         return;
       }
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
-      AccumulateMessageSendSelectorLoweringExpr(
-          stmt->do_while_stmt->condition.get(), contract, selector_literals);
+      WalkMessageSendLoweringExpr(stmt->do_while_stmt->condition.get(),
+                                  visitor);
       return;
     case Stmt::Kind::For:
       if (stmt->for_stmt == nullptr) {
         return;
       }
-      AccumulateMessageSendSelectorLoweringForClause(
-          stmt->for_stmt->init, contract, selector_literals);
-      AccumulateMessageSendSelectorLoweringExpr(
-          stmt->for_stmt->condition.get(), contract, selector_literals);
-      AccumulateMessageSendSelectorLoweringForClause(
-          stmt->for_stmt->step, contract, selector_literals);
+      WalkMessageSendLoweringForClause(stmt->for_stmt->init, visitor);
+      WalkMessageSendLoweringExpr(stmt->for_stmt->condition.get(), visitor);
+      WalkMessageSendLoweringForClause(stmt->for_stmt->step, visitor);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt == nullptr) {
         return;
       }
-      AccumulateMessageSendSelectorLoweringExpr(
-          stmt->switch_stmt->condition.get(), contract, selector_literals);
+      WalkMessageSendLoweringExpr(stmt->switch_stmt->condition.get(),
+                                  visitor);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &case_stmt : switch_case.body) {
-          AccumulateMessageSendSelectorLoweringStmt(case_stmt.get(), contract,
-                                                    selector_literals);
+          WalkMessageSendLoweringStmt(case_stmt.get(), visitor);
         }
       }
       return;
@@ -178,11 +139,9 @@ void AccumulateMessageSendSelectorLoweringStmt(
       if (stmt->while_stmt == nullptr) {
         return;
       }
-      AccumulateMessageSendSelectorLoweringExpr(
-          stmt->while_stmt->condition.get(), contract, selector_literals);
+      WalkMessageSendLoweringExpr(stmt->while_stmt->condition.get(), visitor);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
       return;
     case Stmt::Kind::Block:
@@ -191,14 +150,56 @@ void AccumulateMessageSendSelectorLoweringStmt(
         return;
       }
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract,
-                                                  selector_literals);
+        WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
       return;
+  }
+}
+
+template <typename Visitor>
+void WalkMessageSendLoweringProgram(
+    const Objc3Program &program, Visitor &visitor) {
+  for (const auto &global : program.globals) {
+    WalkMessageSendLoweringExpr(global.value.get(), visitor);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      WalkMessageSendLoweringStmt(stmt.get(), visitor);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (!method_decl.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method_decl.body) {
+        WalkMessageSendLoweringStmt(stmt.get(), visitor);
+      }
+    }
+  }
+}
+
+void AccumulateMessageSendSelectorLoweringSite(
+    const Expr &expr, Objc3MessageSendSelectorLoweringContract &contract,
+    std::unordered_set<std::string> &selector_literals) {
+  ++contract.message_send_sites;
+  ++contract.receiver_expression_sites;
+  if (expr.args.empty()) {
+    ++contract.unary_selector_sites;
+  } else {
+    ++contract.keyword_selector_sites;
+  }
+  contract.argument_expression_sites += expr.args.size();
+  const std::size_t selector_pieces = CountSelectorPieces(expr.selector);
+  contract.selector_piece_sites += selector_pieces;
+  if (selector_pieces == 0u) {
+    contract.deterministic = false;
+  } else {
+    selector_literals.insert(expr.selector);
   }
 }
 
@@ -351,186 +352,22 @@ void AccumulateDispatchSurfaceClassificationExpr(
   }
 }
 
-void AccumulateDispatchAbiMarshallingExpr(
-    const Expr *expr, std::size_t runtime_dispatch_arg_slots,
+void AccumulateDispatchAbiMarshallingSite(
+    const Expr &expr, std::size_t runtime_dispatch_arg_slots,
     Objc3DispatchAbiMarshallingContract &contract) {
-  if (expr == nullptr) {
-    return;
+  ++contract.message_send_sites;
+  ++contract.receiver_slots_marshaled;
+  ++contract.selector_slots_marshaled;
+  const std::size_t actual_args = expr.args.size();
+  const std::size_t marshalled_args =
+      std::min(actual_args, runtime_dispatch_arg_slots);
+  contract.argument_value_slots_marshaled += marshalled_args;
+  if (actual_args > runtime_dispatch_arg_slots) {
+    contract.deterministic = false;
   }
-  switch (expr->kind) {
-    case Expr::Kind::MessageSend: {
-      ++contract.message_send_sites;
-      ++contract.receiver_slots_marshaled;
-      ++contract.selector_slots_marshaled;
-      const std::size_t actual_args = expr->args.size();
-      const std::size_t marshalled_args =
-          std::min(actual_args, runtime_dispatch_arg_slots);
-      contract.argument_value_slots_marshaled += marshalled_args;
-      if (actual_args > runtime_dispatch_arg_slots) {
-        contract.deterministic = false;
-      }
-      contract.argument_padding_slots_marshaled +=
-          (runtime_dispatch_arg_slots - marshalled_args);
-      contract.argument_total_slots_marshaled += runtime_dispatch_arg_slots;
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->receiver.get(), runtime_dispatch_arg_slots, contract);
-      for (const auto &arg : expr->args) {
-        AccumulateDispatchAbiMarshallingExpr(
-            arg.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    }
-    case Expr::Kind::Binary:
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->left.get(), runtime_dispatch_arg_slots, contract);
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->right.get(), runtime_dispatch_arg_slots, contract);
-      return;
-    case Expr::Kind::Conditional:
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->left.get(), runtime_dispatch_arg_slots, contract);
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->right.get(), runtime_dispatch_arg_slots, contract);
-      AccumulateDispatchAbiMarshallingExpr(
-          expr->third.get(), runtime_dispatch_arg_slots, contract);
-      return;
-    case Expr::Kind::Call:
-      for (const auto &arg : expr->args) {
-        AccumulateDispatchAbiMarshallingExpr(
-            arg.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    default:
-      return;
-  }
-}
-
-void AccumulateDispatchAbiMarshallingForClause(
-    const ForClause &clause, std::size_t runtime_dispatch_arg_slots,
-    Objc3DispatchAbiMarshallingContract &contract) {
-  if (clause.value != nullptr) {
-    AccumulateDispatchAbiMarshallingExpr(
-        clause.value.get(), runtime_dispatch_arg_slots, contract);
-  }
-}
-
-void AccumulateDispatchAbiMarshallingStmt(
-    const Stmt *stmt, std::size_t runtime_dispatch_arg_slots,
-    Objc3DispatchAbiMarshallingContract &contract) {
-  if (stmt == nullptr) {
-    return;
-  }
-  switch (stmt->kind) {
-    case Stmt::Kind::Let:
-      if (stmt->let_stmt != nullptr) {
-        AccumulateDispatchAbiMarshallingExpr(
-            stmt->let_stmt->value.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::Assign:
-      if (stmt->assign_stmt != nullptr) {
-        AccumulateDispatchAbiMarshallingExpr(
-            stmt->assign_stmt->value.get(), runtime_dispatch_arg_slots,
-            contract);
-      }
-      return;
-    case Stmt::Kind::Return:
-      if (stmt->return_stmt != nullptr) {
-        AccumulateDispatchAbiMarshallingExpr(
-            stmt->return_stmt->value.get(), runtime_dispatch_arg_slots,
-            contract);
-      }
-      return;
-    case Stmt::Kind::Expr:
-      if (stmt->expr_stmt != nullptr) {
-        AccumulateDispatchAbiMarshallingExpr(
-            stmt->expr_stmt->value.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::If:
-      if (stmt->if_stmt == nullptr) {
-        return;
-      }
-      AccumulateDispatchAbiMarshallingExpr(
-          stmt->if_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
-      for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            then_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            else_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::DoWhile:
-      if (stmt->do_while_stmt == nullptr) {
-        return;
-      }
-      for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            body_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      AccumulateDispatchAbiMarshallingExpr(
-          stmt->do_while_stmt->condition.get(), runtime_dispatch_arg_slots,
-          contract);
-      return;
-    case Stmt::Kind::For:
-      if (stmt->for_stmt == nullptr) {
-        return;
-      }
-      AccumulateDispatchAbiMarshallingForClause(
-          stmt->for_stmt->init, runtime_dispatch_arg_slots, contract);
-      AccumulateDispatchAbiMarshallingExpr(
-          stmt->for_stmt->condition.get(), runtime_dispatch_arg_slots,
-          contract);
-      AccumulateDispatchAbiMarshallingForClause(
-          stmt->for_stmt->step, runtime_dispatch_arg_slots, contract);
-      for (const auto &body_stmt : stmt->for_stmt->body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            body_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::Switch:
-      if (stmt->switch_stmt == nullptr) {
-        return;
-      }
-      AccumulateDispatchAbiMarshallingExpr(
-          stmt->switch_stmt->condition.get(), runtime_dispatch_arg_slots,
-          contract);
-      for (const auto &switch_case : stmt->switch_stmt->cases) {
-        for (const auto &case_stmt : switch_case.body) {
-          AccumulateDispatchAbiMarshallingStmt(
-              case_stmt.get(), runtime_dispatch_arg_slots, contract);
-        }
-      }
-      return;
-    case Stmt::Kind::While:
-      if (stmt->while_stmt == nullptr) {
-        return;
-      }
-      AccumulateDispatchAbiMarshallingExpr(
-          stmt->while_stmt->condition.get(), runtime_dispatch_arg_slots,
-          contract);
-      for (const auto &body_stmt : stmt->while_stmt->body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            body_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::Block:
-    case Stmt::Kind::Defer:
-      if (stmt->block_stmt == nullptr) {
-        return;
-      }
-      for (const auto &body_stmt : stmt->block_stmt->body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            body_stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-      return;
-    case Stmt::Kind::Break:
-    case Stmt::Kind::Continue:
-    case Stmt::Kind::Empty:
-      return;
-  }
+  contract.argument_padding_slots_marshaled +=
+      (runtime_dispatch_arg_slots - marshalled_args);
+  contract.argument_total_slots_marshaled += runtime_dispatch_arg_slots;
 }
 
 void AccumulateIdClassSelObjectPointerTypecheckSite(
@@ -734,28 +571,11 @@ Objc3MessageSendSelectorLoweringContract
 BuildMessageSendSelectorLoweringContract(const Objc3Program &program) {
   Objc3MessageSendSelectorLoweringContract contract;
   std::unordered_set<std::string> selector_literals;
-
-  for (const auto &global : program.globals) {
-    AccumulateMessageSendSelectorLoweringExpr(global.value.get(), contract,
+  auto accumulate_message_send = [&](const Expr &expr) {
+    AccumulateMessageSendSelectorLoweringSite(expr, contract,
                                               selector_literals);
-  }
-  for (const auto &function : program.functions) {
-    for (const auto &stmt : function.body) {
-      AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract,
-                                                selector_literals);
-    }
-  }
-  for (const auto &implementation_decl : program.implementations) {
-    for (const auto &method_decl : implementation_decl.methods) {
-      if (!method_decl.has_body) {
-        continue;
-      }
-      for (const auto &stmt : method_decl.body) {
-        AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract,
-                                                  selector_literals);
-      }
-    }
-  }
+  };
+  WalkMessageSendLoweringProgram(program, accumulate_message_send);
 
   contract.selector_literal_entries = selector_literals.size();
   for (const auto &selector : selector_literals) {
@@ -768,28 +588,11 @@ Objc3DispatchAbiMarshallingContract BuildDispatchAbiMarshallingContract(
     const Objc3Program &program, std::size_t runtime_dispatch_arg_slots) {
   Objc3DispatchAbiMarshallingContract contract;
   contract.runtime_dispatch_arg_slots = runtime_dispatch_arg_slots;
-
-  for (const auto &global : program.globals) {
-    AccumulateDispatchAbiMarshallingExpr(global.value.get(),
-                                         runtime_dispatch_arg_slots, contract);
-  }
-  for (const auto &function : program.functions) {
-    for (const auto &stmt : function.body) {
-      AccumulateDispatchAbiMarshallingStmt(stmt.get(),
-                                           runtime_dispatch_arg_slots, contract);
-    }
-  }
-  for (const auto &implementation_decl : program.implementations) {
-    for (const auto &method_decl : implementation_decl.methods) {
-      if (!method_decl.has_body) {
-        continue;
-      }
-      for (const auto &stmt : method_decl.body) {
-        AccumulateDispatchAbiMarshallingStmt(
-            stmt.get(), runtime_dispatch_arg_slots, contract);
-      }
-    }
-  }
+  auto accumulate_message_send = [&](const Expr &expr) {
+    AccumulateDispatchAbiMarshallingSite(expr, runtime_dispatch_arg_slots,
+                                         contract);
+  };
+  WalkMessageSendLoweringProgram(program, accumulate_message_send);
 
   contract.total_marshaled_slots = contract.receiver_slots_marshaled +
                                    contract.selector_slots_marshaled +
