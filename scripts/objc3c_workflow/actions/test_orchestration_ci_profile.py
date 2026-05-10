@@ -7,7 +7,7 @@ from .application_surfaces import (
     STDLIB_FOUNDATION_INTEGRATION_PY,
     STDLIB_PROGRAM_INTEGRATION_PY,
 )
-from .developer_tooling import (
+from .developer_tooling_paths import (
     BONUS_EXPERIENCE_INTEGRATION_PY,
     DEVELOPER_TOOLING_INTEGRATION_PY,
 )
