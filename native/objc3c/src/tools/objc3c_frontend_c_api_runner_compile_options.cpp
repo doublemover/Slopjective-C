@@ -1,5 +1,7 @@
 #include "tools/objc3c_frontend_c_api_runner_compile_options.h"
 
+#include "tools/objc3c_frontend_c_api_runner_compile_options_fields.h"
+
 FrontendCApiRunnerCompileInvocation::FrontendCApiRunnerCompileInvocation(
     const FrontendCApiRunnerOptions &options)
     : input_path_text_(options.input_path.string()),
@@ -17,33 +19,12 @@ FrontendCApiRunnerCompileInvocation::compile_options() const {
 
 void FrontendCApiRunnerCompileInvocation::RefreshBorrowedPointers() {
   compile_options_ = {};
-  compile_options_.input_path = input_path_text_.c_str();
-  compile_options_.out_dir = out_dir_text_.c_str();
-  compile_options_.emit_prefix = runner_options_.emit_prefix.c_str();
-  compile_options_.clang_path =
-      runner_options_.emit_object &&
-              runner_options_.ir_object_backend ==
-                  OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG
-          ? clang_path_text_.c_str()
-          : nullptr;
-  compile_options_.llc_path =
-      runner_options_.emit_object &&
-              runner_options_.ir_object_backend ==
-                  OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
-          ? llc_path_text_.c_str()
-          : nullptr;
-  compile_options_.runtime_dispatch_symbol =
-      runner_options_.runtime_dispatch_symbol.empty()
-          ? nullptr
-          : runner_options_.runtime_dispatch_symbol.c_str();
-  compile_options_.max_message_send_args =
-      runner_options_.max_message_send_args;
-  compile_options_.translation_unit_registration_order_ordinal =
-      runner_options_.translation_unit_registration_order_ordinal;
-  compile_options_.emit_manifest = runner_options_.emit_manifest ? 1u : 0u;
-  compile_options_.emit_ir = runner_options_.emit_ir ? 1u : 0u;
-  compile_options_.emit_object = runner_options_.emit_object ? 1u : 0u;
-  compile_options_.ir_object_backend = runner_options_.ir_object_backend;
-  compile_options_.language_version =
-      OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3;
+  ApplyFrontendCApiRunnerCompilePathInputOptions(
+      compile_options_, runner_options_, input_path_text_, out_dir_text_);
+  ApplyFrontendCApiRunnerCompileBackendToolchainOptions(
+      compile_options_, runner_options_, clang_path_text_, llc_path_text_);
+  ApplyFrontendCApiRunnerCompileRuntimeOptions(compile_options_,
+                                              runner_options_);
+  ApplyFrontendCApiRunnerCompileEmissionOptions(compile_options_,
+                                               runner_options_);
 }
