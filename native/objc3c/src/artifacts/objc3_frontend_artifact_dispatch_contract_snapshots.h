@@ -3,16 +3,7 @@
 #include <cstddef>
 #include <string>
 
-struct Objc3DispatchAbiMarshallingContract;
-struct Objc3DispatchDispatchControlLoweringContract;
-struct Objc3DispatchSurfaceClassificationContract;
-struct Objc3IdClassSelObjectPointerTypecheckContract;
-struct Objc3MessageSendSelectorLoweringContract;
-struct Objc3NilReceiverSemanticsFoldabilityContract;
-struct Objc3PropertySynthesisIvarBindingContract;
-struct Objc3RuntimeDispatchLoweringAbiContract;
-struct Objc3RuntimeLinkHostLinkContract;
-struct Objc3SuperDispatchMethodFamilyContract;
+#include "pipeline/frontend_dispatch_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

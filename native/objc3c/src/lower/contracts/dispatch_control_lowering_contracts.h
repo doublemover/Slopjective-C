@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 
+#include "pipeline/frontend_dispatch_contract_records.h"
+
 // Dispatch-control lowering owns direct-call candidates, final/sealed dispatch
 // intent, and the replayable interface-preservation contract built from it.
 inline constexpr const char *kObjc3DispatchDispatchControlLoweringContractId =
@@ -36,23 +38,3 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel =
         "missing-or-drifted-dispatch-intent-preservation-packets-disable-cross-module-dispatch-preservation-claims";
-
-struct Objc3DispatchDispatchControlLoweringContract {
-  std::size_t direct_call_candidate_sites = 0;
-  std::size_t direct_members_defaulted_sites = 0;
-  std::size_t dynamic_opt_out_sites = 0;
-  std::size_t final_container_sites = 0;
-  std::size_t sealed_container_sites = 0;
-  std::size_t override_legality_sites = 0;
-  std::size_t metadata_preserved_callable_sites = 0;
-  std::size_t metadata_preserved_container_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
-bool IsValidObjc3DispatchDispatchControlLoweringContract(
-    const Objc3DispatchDispatchControlLoweringContract &contract);
-std::string Objc3DispatchDispatchControlLoweringReplayKey(
-    const Objc3DispatchDispatchControlLoweringContract &contract);
-std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary();
