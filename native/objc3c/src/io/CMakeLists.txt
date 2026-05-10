@@ -29,6 +29,7 @@ add_library(objc3c_json STATIC
   json/json_parser_number_fraction_digits_token.cpp
   json/json_parser_number_fraction_token.cpp
   json/json_parser_number_mantissa_integer_token.cpp
+  json/json_parser_number_mantissa_integer_zero_token.cpp
   json/json_parser_number_mantissa_token.cpp
   json/json_parser_number_token.cpp
   json/json_parser_number_sign_token.cpp

@@ -1,42 +1,19 @@
 #include "io/json/json_parser_number_mantissa_integer_token.h"
 
-#include <string>
-#include <utility>
-
 #include "io/json/json_parser_number_digit_run_token.h"
+#include "io/json/json_parser_number_mantissa_integer_zero_token.h"
 
 namespace objc3::io::json {
-namespace {
-
-bool IsDigit(char ch) {
-  return ch >= '0' && ch <= '9';
-}
-
-bool Consume(char expected, std::string_view text, std::size_t &cursor) {
-  if (cursor < text.size() && text[cursor] == expected) {
-    ++cursor;
-    return true;
-  }
-  return false;
-}
-
-bool FailNumberMantissaInteger(std::optional<JsonError> &error,
-                               std::size_t cursor,
-                               std::string message) {
-  error = JsonError{std::move(message), cursor};
-  return false;
-}
-
-}  // namespace
 
 bool ParseJsonNumberMantissaIntegerToken(std::string_view text,
                                          std::size_t &cursor,
                                          std::optional<JsonError> &error) {
-  if (Consume('0', text, cursor)) {
-    if (cursor < text.size() && IsDigit(text[cursor])) {
-      return FailNumberMantissaInteger(error, cursor,
-                                       "JSON number has leading zero");
-    }
+  bool matched_zero = false;
+  if (!ParseJsonNumberMantissaIntegerZeroToken(text, cursor, error,
+                                               matched_zero)) {
+    return false;
+  }
+  if (matched_zero) {
     return true;
   }
   return ParseJsonNumberDigitRunToken(text, cursor, error);
