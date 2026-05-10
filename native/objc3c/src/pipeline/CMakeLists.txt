@@ -210,6 +210,7 @@ add_library(objc3c_pipeline STATIC
   objc3_runtime_import_surface.h
   objc3_typed_sema_to_lowering_contract_surface_advanced_keys.h
   objc3_typed_sema_to_lowering_contract_surface_core.h
+  objc3_typed_sema_to_lowering_contract_surface_handoff_key.h
   objc3_typed_sema_to_lowering_contract_surface.h
   runtime_import_frontend_closure_boundary.h
   objc3_ir_emission_completeness_scaffold.cpp
