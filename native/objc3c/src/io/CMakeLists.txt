@@ -34,6 +34,7 @@ add_library(objc3c_json STATIC
   json/json_parser_scalar_value.cpp
   json/json_parser_string_escape_diagnostics.cpp
   json/json_parser_string_escape_token.cpp
+  json/json_parser_string_token_character.cpp
   json/json_parser_string_token.cpp
   json/json_parser_string_unicode_escape_token.cpp
   json/json_parser_unicode_code_unit.cpp

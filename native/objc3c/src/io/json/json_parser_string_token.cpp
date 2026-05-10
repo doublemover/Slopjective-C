@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "io/json/json_parser_string_escape_token.h"
+#include "io/json/json_parser_string_token_character.h"
 
 namespace objc3::io::json {
 namespace {
@@ -30,15 +30,7 @@ bool ParseJsonStringToken(std::string_view text,
     if (ch == '"') {
       return true;
     }
-    if (ch < 0x20u) {
-      return FailStringToken(error, cursor,
-                             "unescaped control character in JSON string");
-    }
-    if (ch != '\\') {
-      out.push_back(static_cast<char>(ch));
-      continue;
-    }
-    if (!ParseJsonStringEscapeToken(text, cursor, error, out)) {
+    if (!AppendJsonStringTokenCharacter(ch, text, cursor, error, out)) {
       return false;
     }
   }
