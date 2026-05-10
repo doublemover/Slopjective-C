@@ -68,35 +68,4 @@
               handoff.method_lookup_override_conflict_summary.override_lookup_sites &&
           handoff.method_lookup_override_conflict_summary.override_conflicts <=
               handoff.method_lookup_override_conflict_summary.override_lookup_hits &&
-          handoff.property_synthesis_ivar_binding_summary.deterministic &&
-          handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites ==
-              property_synthesis_ivar_binding_summary.property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings ==
-              property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings &&
-          handoff.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
-              property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings &&
-          handoff.property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites ==
-              property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites ==
-              property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
-              property_synthesis_ivar_binding_summary.ivar_binding_sites &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_resolved ==
-              property_synthesis_ivar_binding_summary.ivar_binding_resolved &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_missing ==
-              property_synthesis_ivar_binding_summary.ivar_binding_missing &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
-              property_synthesis_ivar_binding_summary.ivar_binding_conflicts &&
-          handoff.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings +
-                  handoff.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
-              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites ==
-              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites <=
-              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
-              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
-          handoff.property_synthesis_ivar_binding_summary.ivar_binding_resolved +
-                  handoff.property_synthesis_ivar_binding_summary.ivar_binding_missing +
-                  handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
-              handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_property_ivar_access.inc"
