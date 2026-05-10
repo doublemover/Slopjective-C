@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$compileIoModule = Join-Path $PSScriptRoot "objc3c_native_compile_io.psm1"
+if (!(Test-Path -LiteralPath $compileIoModule -PathType Leaf)) {
+  Write-Error "native compile IO helper missing at $compileIoModule"
+  exit 2
+}
+Import-Module $compileIoModule -Force -DisableNameChecking
+
 function Invoke-BuildNativeCompiler {
   param([string]$RepoRoot)
 

@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$compileToolchainModule = Join-Path $PSScriptRoot "objc3c_native_compile_toolchain.psm1"
+if (!(Test-Path -LiteralPath $compileToolchainModule -PathType Leaf)) {
+  Write-Error "native compile toolchain helper missing at $compileToolchainModule"
+  exit 2
+}
+Import-Module $compileToolchainModule -Force -DisableNameChecking
+
 function Assert-FrontendConformanceMatrix {
   param(
     [string]$RepoRoot,

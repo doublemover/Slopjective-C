@@ -1,6 +1,19 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$compileIoModule = Join-Path $PSScriptRoot "objc3c_native_compile_io.psm1"
+$compileToolchainModule = Join-Path $PSScriptRoot "objc3c_native_compile_toolchain.psm1"
+if (!(Test-Path -LiteralPath $compileIoModule -PathType Leaf)) {
+  Write-Error "native compile IO helper missing at $compileIoModule"
+  exit 2
+}
+if (!(Test-Path -LiteralPath $compileToolchainModule -PathType Leaf)) {
+  Write-Error "native compile toolchain helper missing at $compileToolchainModule"
+  exit 2
+}
+Import-Module $compileIoModule -Force -DisableNameChecking
+Import-Module $compileToolchainModule -Force -DisableNameChecking
+
 function Assert-FrontendModuleScaffold {
   param(
     [string]$RepoRoot,
