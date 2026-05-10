@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .behavior_fixture_support import (
+from .constants import (
     EXPECTED_STAGES,
     FIXTURE_KINDS,
     FIXTURE_ROOT,
@@ -9,16 +9,16 @@ from .behavior_fixture_support import (
     REQUIRED_TREE,
     RETIRED_SURFACE_TAGS,
     STRICT_KINDS,
-    BehaviorFixture,
-    BehaviorFixtureCatalog,
+)
+from .loading import (
     fixture_path_for_metadata,
     iter_required_behavior_directories,
     load_behavior_fixture_catalog,
     load_behavior_fixtures,
-    load_manifest_fixture_entries,
-    load_manifest_fixture_paths,
-    validate_behavior_fixture,
 )
+from .manifest import load_manifest_fixture_entries, load_manifest_fixture_paths
+from .models import BehaviorFixture, BehaviorFixtureCatalog
+from .validation import validate_behavior_fixture
 
 
 __all__ = [
