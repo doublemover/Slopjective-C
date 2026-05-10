@@ -417,6 +417,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_registration_json.cpp
   objc3_frontend_tooling_source_json.cpp
   objc3_frontend_tooling_source_artifacts.h
+  ../support/objc3_frontend_dispatch_metadata_ir_application.cpp
   ../support/objc3_frontend_type_system_contract_adapters.cpp
   objc3_frontend_type_system_contract_artifacts.cpp
   objc3_frontend_type_system_contract_artifacts.h
