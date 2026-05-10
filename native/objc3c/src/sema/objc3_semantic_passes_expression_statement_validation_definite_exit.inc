@@ -17,15 +17,7 @@ static bool StatementDefinitelyExitsScope(const Stmt *stmt) {
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
       return true;
-    case Stmt::Kind::Block:
-      return stmt->block_stmt != nullptr &&
-             StatementListDefinitelyExitsScope(stmt->block_stmt->body);
-    case Stmt::Kind::Defer:
-      return false;
-    case Stmt::Kind::If:
-      return stmt->if_stmt != nullptr &&
-             StatementListDefinitelyExitsScope(stmt->if_stmt->then_body) &&
-             StatementListDefinitelyExitsScope(stmt->if_stmt->else_body);
+#include "sema/objc3_semantic_passes_expression_statement_validation_definite_exit_structured_cases.inc"
     case Stmt::Kind::Assign:
     case Stmt::Kind::Let:
     case Stmt::Kind::DoWhile:
