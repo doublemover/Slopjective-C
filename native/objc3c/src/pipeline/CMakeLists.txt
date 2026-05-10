@@ -60,6 +60,7 @@ add_library(objc3c_pipeline STATIC
   frontend_ownership_source_closure_helpers_stmt_sites.cpp
   frontend_ownership_source_completion_helpers.cpp
   frontend_phase_publication_helpers.cpp
+  frontend_phase_publication_semantic_taxonomy_adoption.cpp
   frontend_phase_publication_semantic_taxonomy.cpp
   frontend_phase_publication_tooling_summaries.cpp
   frontend_pipeline_pragma_contracts.cpp
