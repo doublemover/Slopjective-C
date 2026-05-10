@@ -93,6 +93,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_emitter.cpp
   objc3_ir_emitter_block_value_services.cpp
   objc3_ir_emitter_expression_services.cpp
+  objc3_ir_emitter_module_services.cpp
   objc3_ir_emitter_runtime_session.cpp
   objc3_ir_emitter_service_contexts.cpp
   objc3_ir_emitter_state_initialization.cpp
