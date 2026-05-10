@@ -642,6 +642,87 @@ const char *FindParseArtifactDiagnosticHandoffFailureReason(
   return nullptr;
 }
 
+const char *FindParserDiagnosticGrammarHardeningFailureReason(
+    const Objc3ParseLoweringReadinessSurface &surface) {
+  if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent) {
+    return "parser diagnostic grammar hooks edge-case compatibility is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready) {
+    return "parser diagnostic grammar hooks edge-case compatibility is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent) {
+    return "parser diagnostic grammar hooks edge-case expansion is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready) {
+    return "parser diagnostic grammar hooks edge-case robustness is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_consistent) {
+    return "parser diagnostic grammar hooks diagnostics hardening is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready) {
+    return "parser diagnostic grammar hooks diagnostics hardening is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent) {
+    return "parser diagnostic grammar hooks recovery/determinism hardening is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready) {
+    return "parser diagnostic grammar hooks recovery/determinism hardening is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent) {
+    return "parser diagnostic grammar hooks conformance matrix is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready) {
+    return "parser diagnostic grammar hooks conformance matrix is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent) {
+    return "parser diagnostic grammar hooks conformance corpus is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_ready) {
+    return "parser diagnostic grammar hooks conformance corpus is not ready";
+  }
+
+  if (!surface.parse_artifact_edge_case_robustness_consistent) {
+    return "parse artifact edge-case robustness is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {
+    return "long-tail grammar edge-case compatibility is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_edge_case_compatibility_ready) {
+    return "long-tail grammar edge-case compatibility is not ready";
+  }
+
+  if (!surface.long_tail_grammar_edge_case_expansion_consistent) {
+    return "long-tail grammar edge-case expansion is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_edge_case_robustness_ready) {
+    return "long-tail grammar edge-case robustness is not ready";
+  }
+
+  if (!surface.long_tail_grammar_diagnostics_hardening_consistent) {
+    return "long-tail grammar diagnostics hardening is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_diagnostics_hardening_ready) {
+    return "long-tail grammar diagnostics hardening is not ready";
+  }
+
+  return nullptr;
+}
+
 }  // namespace
 
 Objc3ParseLoweringFailureReasonReadinessRecord
@@ -705,99 +786,9 @@ BuildObjc3ParseLoweringFailureReasonReadiness(
     return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
-  if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks edge-case compatibility is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks edge-case compatibility is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks edge-case expansion is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks edge-case robustness is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks diagnostics hardening is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks diagnostics hardening is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks recovery/determinism hardening is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks recovery/determinism hardening is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks conformance matrix is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks conformance matrix is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks conformance corpus is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks conformance corpus is not ready");
-  }
-
-  if (!surface.parse_artifact_edge_case_robustness_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact edge-case robustness is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar edge-case compatibility is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_edge_case_compatibility_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar edge-case compatibility is not ready");
-  }
-
-  if (!surface.long_tail_grammar_edge_case_expansion_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar edge-case expansion is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_edge_case_robustness_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar edge-case robustness is not ready");
-  }
-
-  if (!surface.long_tail_grammar_diagnostics_hardening_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar diagnostics hardening is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_diagnostics_hardening_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar diagnostics hardening is not ready");
+  if (const char *failure_reason =
+          FindParserDiagnosticGrammarHardeningFailureReason(surface)) {
+    return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
   if (!IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
