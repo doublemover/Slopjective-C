@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "IR ownership for recovery negative is fail-closed routing only. This family has rejected Objective-C 3 sources and no paired IR expectation files; therefore negative fixtures are evidence that invalid inputs must not produce positive IR truth. Generated IR reports, report-only summaries, runner-only success, and directory labels are not IR support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3",
+    "absent:tests/tooling/fixtures/native/recovery/negative/*-ir.expect.txt",
+    "ir_boundary:reject-before-ir",
+    "ir_boundary:no-positive-ir-from-rejected-source",
+    "diagnostic_code:O3L*",
+    "diagnostic_code:O3P*",
+    "diagnostic_code:O3S*"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, report-only IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, runner-only IR claims, and directory-label-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

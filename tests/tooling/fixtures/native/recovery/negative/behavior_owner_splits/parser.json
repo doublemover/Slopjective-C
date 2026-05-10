@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "parser ownership covers lexer and parser rejection fixtures in recovery negative: O3L* and O3P* diagnostics, invalid or unterminated block comments, invalid numeric literal spelling, missing operands, missing semicolons, missing parentheses, missing colons, malformed assignment/update/compound-assignment tokenization, malformed loop/switch/conditional shape, malformed message selector syntax, duplicate or misplaced qualifiers, invalid extern/pure declaration syntax, invalid alias suffix syntax, invalid draft syntax attributes, and container/ivar layout parser cycles. These fixtures are negative evidence only and do not define positive parser support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "diagnostic_code:O3L*",
+    "diagnostic_code:O3P*",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*parser*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_block_comment_lexer_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*literal_parser*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_misplaced_qualifier*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_duplicate_*qualifier.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_extern*missing_fn_keyword.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser/negative",
+  "retired_surface_rule": "old-mode parser recovery, shim parser recovery, fallback parser recovery, compatibility parser recovery, generated-only parser rows, report-only parser rows, migration-only parser rows, wrapper-only parser rows, and parser claims derived only from directory labels are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

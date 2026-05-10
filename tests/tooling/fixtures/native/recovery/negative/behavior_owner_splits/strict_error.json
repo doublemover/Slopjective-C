@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "strict-error ownership covers recovery negative diagnostics that must fail closed when surfaced through native/e2e acceptance: lexer/parser diagnostic codes, semantic diagnostic codes, too-many-message-args, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, generated/report-only rows promoted as support, and old-mode/shim/fallback/compat rows promoted as support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "diagnostic_code:O3L*",
+    "diagnostic_code:O3P*",
+    "diagnostic_code:O3S*",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_too_many_args.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*unsupported*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*nullability*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*generic*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_pure_definition_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*conservative_reject.objc3",
+    "*fallback-as-positive*",
+    "*fallback_as_positive*",
+    "*shim-as-positive*",
+    "*shim_as_positive*",
+    "*old-mode-as-positive*",
+    "*old_mode_as_positive*",
+    "*compat-as-positive*",
+    "*compat_as_positive*",
+    "*generated-as-support*",
+    "*generated_as_support*",
+    "*report-as-support*",
+    "*report_as_support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "diagnostic failures, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, and report-as-support claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

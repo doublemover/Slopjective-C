@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "runtime ownership covers only strict-error or fail-closed runtime-dispatch residues in recovery negative: too-many-message-args, message receiver or argument function-value rejection, nil receiver and nil-bound identifier semantic rejection, unknown typed object or protocol-qualified message rejection, unsupported runtime dispatch claims, and any runtime row that must not be promoted from parser/sema rejection into runtime support. General parser and sema rejection fixtures are not runtime positives.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_too_many_args.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_receiver_function.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_arg_function.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_nil_receiver_function_argument.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_nil_bound_identifier_reassigned_function.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
+    "runtime_boundary:strict-dispatch-rejection",
+    "runtime_boundary:no-positive-runtime-from-rejected-source",
+    "diagnostic_code:O3S208"
+  ],
+  "canonical_anchor": "tests/native/runtime/dispatch",
+  "retired_surface_rule": "old-mode runtime recovery, compatibility runtime recovery, shim runtime recovery, fallback runtime recovery, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, wrapper-only runtime rows, unsupported runtime dispatch, runner-only runtime claims, and directory-label-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

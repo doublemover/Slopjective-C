@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "sema ownership covers semantic rejection fixtures in recovery negative: O3S* diagnostics, function-call arity mismatch, bool/i32 mismatch, assignment target failures, compound assignment target and RHS type failures, undefined symbols, unknown assignment targets, divide-by-zero global initializers, return type and missing-return failures, unsupported nullability/generic/pointer suffixes, alias signature violations, protocol/generic/nullability conflicts, pure/extern semantic violations, cross-module duplicate module contracts, effects/ownership async-throws rejection, nil receiver semantic failures, message receiver/argument function-value failures, too-many-message-args rejection, and conservative switch/loop/conditional return-path rejections. These fixtures are negative evidence only and do not define positive sema support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "diagnostic_code:O3S*",
+    "tests/tooling/fixtures/native/recovery/negative/neg_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*type_mismatch*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*unknown*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*unsupported*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*nullability*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*generic*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_pure_definition_*.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*conservative_reject.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_too_many_args.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema/errors",
+  "retired_surface_rule": "old-mode sema recovery, compatibility sema recovery, shim sema recovery, fallback sema recovery, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, wrapper-only semantic rows, and directory-label-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

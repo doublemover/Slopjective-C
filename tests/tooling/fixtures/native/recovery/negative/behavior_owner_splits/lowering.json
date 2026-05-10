@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "lowering ownership for recovery negative is fail-closed routing only. Parser and sema rejected source must not be cited as lowering support; lowering may only cite this family as evidence that malformed, semantically invalid, unsupported, or conservative-reject inputs do not enter canonical lowering. No recovery negative fixture, generated report, runner result, or directory label defines positive lowering behavior.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3",
+    "lowering_boundary:reject-before-lowering",
+    "lowering_boundary:no-positive-ir-from-rejected-source",
+    "diagnostic_code:O3L*",
+    "diagnostic_code:O3P*",
+    "diagnostic_code:O3S*",
+    "tests/tooling/fixtures/native/recovery/negative/negative_message_too_many_args.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_*conservative_reject.objc3"
+  ],
+  "canonical_anchor": "tests/native/lowering/errors",
+  "retired_surface_rule": "old-mode lowering recovery, shim lowering recovery, fallback lowering recovery, compatibility lowering recovery, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, wrapper-only lowering rows, runner-only lowering claims, and directory-label-only lowering claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
