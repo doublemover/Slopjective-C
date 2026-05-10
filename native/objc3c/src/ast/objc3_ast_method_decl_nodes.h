@@ -6,236 +6,26 @@
 #include <vector>
 
 #include "ast/objc3_ast_core.h"
-#include "ast/objc3_ast_method_decl_nodes.h"
 #include "token/objc3_token_contract.h"
 
-struct Objc3PropertyAttributeDecl {
-  std::string name;
-  std::string value;
-  bool has_value = false;
-  unsigned line = 1;
-  unsigned column = 1;
+enum class Objc3ProtocolRequirementKind {
+  NotApplicable,
+  Required,
+  Optional,
 };
 
-struct Objc3PropertyDecl {
-  std::string name;
-  ValueType type = ValueType::Unknown;
-  bool vector_spelling = false;
-  std::string vector_base_spelling;
-  unsigned vector_lane_count = 1;
-  bool id_spelling = false;
-  bool class_spelling = false;
-  bool sel_spelling = false;
-  bool instancetype_spelling = false;
-  bool object_pointer_type_spelling = false;
-  std::string object_pointer_type_name;
-  std::string typecheck_family_symbol;
-  bool has_generic_suffix = false;
-  bool generic_suffix_terminated = true;
-  std::string generic_suffix_text;
-  unsigned generic_line = 1;
-  unsigned generic_column = 1;
-  bool lightweight_generic_constraint_profile_is_normalized = false;
-  std::string lightweight_generic_constraint_profile;
-  bool nullability_flow_profile_is_normalized = false;
-  std::string nullability_flow_profile;
-  bool protocol_qualified_object_type_profile_is_normalized = false;
-  std::string protocol_qualified_object_type_profile;
-  bool variance_bridge_cast_profile_is_normalized = false;
-  std::string variance_bridge_cast_profile;
-  bool generic_metadata_abi_profile_is_normalized = false;
-  std::string generic_metadata_abi_profile;
-  bool module_import_graph_profile_is_normalized = false;
-  std::string module_import_graph_profile;
-  bool namespace_collision_shadowing_profile_is_normalized = false;
-  std::string namespace_collision_shadowing_profile;
-  bool public_private_api_partition_profile_is_normalized = false;
-  std::string public_private_api_partition_profile;
-  bool incremental_module_cache_invalidation_profile_is_normalized = false;
-  std::string incremental_module_cache_invalidation_profile;
-  bool cross_module_conformance_profile_is_normalized = false;
-  std::string cross_module_conformance_profile;
-  bool has_pointer_declarator = false;
-  unsigned pointer_declarator_depth = 0;
-  std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
-  std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;
-  bool has_ownership_qualifier = false;
-  std::string ownership_qualifier_spelling;
-  std::string ownership_qualifier_symbol;
-  std::vector<Objc3SemaTokenMetadata> ownership_qualifier_tokens;
-  bool ownership_insert_retain = false;
-  bool ownership_insert_release = false;
-  bool ownership_insert_autorelease = false;
-  std::string ownership_operation_profile;
-  std::vector<Objc3PropertyAttributeDecl> attributes;
-  bool is_readonly = false;
-  bool is_readwrite = false;
-  bool is_atomic = false;
-  bool is_nonatomic = false;
-  bool is_copy = false;
-  bool is_retain = false;
-  bool is_strong = false;
-  bool is_weak = false;
-  bool is_unowned = false;
-  bool is_unsafe_unretained = false;
-  bool is_assign = false;
-  bool is_nullable = false;
-  bool is_nonnull = false;
-  bool is_null_resettable = false;
-  bool is_class = false;
-  bool is_direct = false;
-  bool has_weak_unowned_conflict = false;
-  bool ownership_is_weak_reference = false;
-  bool ownership_is_unowned_reference = false;
-  bool ownership_is_unowned_safe_reference = false;
-  std::string ownership_lifetime_profile;
-  std::string ownership_runtime_hook_profile;
-  bool ownership_arc_diagnostic_candidate = false;
-  bool ownership_arc_fixit_available = false;
-  std::string ownership_arc_diagnostic_profile;
-  std::string ownership_arc_fixit_hint;
-  bool has_getter = false;
-  bool has_setter = false;
-  std::string getter_selector;
-  std::string setter_selector;
-  Objc3ProtocolRequirementKind protocol_requirement_kind =
-      Objc3ProtocolRequirementKind::NotApplicable;
-  std::string scope_owner_symbol;
-  std::string scope_path_symbol;
-  std::string property_synthesis_symbol;
-  std::string ivar_binding_symbol;
-  // synthesized accessor/property lowering anchor: lane-C consumes
-  // the effective accessor selectors plus synthesized binding identity below
-  // to materialize executable getter/setter bodies without reopening property
-  // parsing or sema ownership/layout derivation.
-  // runtime property/layout consumption freeze anchor: lane-D must
-  // consume the same emitted binding and layout identities below rather than
-  // rederiving property storage or allocator state from source.
-  // instance-allocation-layout-runtime anchor: the same emitted
-  // binding and layout identities must also be sufficient for true
-  // per-instance allocation and slot storage without rederiving layout from
-  // source.
-  // property-metadata-reflection anchor: private runtime reflection
-  // helpers must likewise surface property/accessor/layout facts from these
-  // same emitted identities rather than rediscovering them from source.
-  // property-ivar-execution gate anchor: lane-E freezes the
-  // executable claim over these same binding, accessor, and layout identities
-  // before broader runnable sample expansion is allowed.
-  // runnable property-ivar execution-matrix anchor: these same
-  // emitted identities must now survive one live integrated storage,
-  // synthesized-accessor, and reflection proof.
-  std::string executable_synthesized_binding_kind;
-  std::string executable_synthesized_binding_symbol;
-  std::string property_attribute_profile;
-  bool property_behavior_declared = false;
-  std::string property_behavior_name;
-  std::string effective_getter_selector;
-  bool effective_setter_available = false;
-  std::string effective_setter_selector;
-  std::string accessor_ownership_profile;
-  std::string executable_ivar_layout_symbol;
-  std::size_t executable_ivar_layout_slot_index = 0;
-  std::size_t executable_ivar_layout_size_bytes = 0;
-  std::size_t executable_ivar_layout_alignment_bytes = 0;
-  std::size_t executable_ivar_layout_offset_bytes = 0;
-  std::size_t executable_ivar_layout_padding_bytes = 0;
-  std::size_t executable_ivar_layout_inherited_slot_count = 0;
-  std::size_t executable_ivar_layout_inherited_size_bytes = 0;
-  std::size_t executable_ivar_layout_owner_size_bytes = 0;
-  std::size_t executable_ivar_init_order_index = 0;
-  std::size_t executable_ivar_destroy_order_index = 0;
-  bool executable_ivar_layout_valid = false;
-  std::string executable_ivar_layout_replay_key;
-  unsigned line = 1;
-  unsigned column = 1;
-};
+struct Objc3MethodDecl {
+  struct SelectorPiece {
+    std::string keyword;
+    std::string parameter_name;
+    bool has_parameter = false;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
 
-struct Objc3ProtocolDecl {
-  std::string name;
-  std::string scope_owner_symbol;
-  std::vector<std::string> scope_path_lexicographic;
-  std::vector<std::string> inherited_protocols;
-  std::vector<std::string> inherited_protocols_lexicographic;
-  std::string semantic_link_symbol;
-  std::vector<std::string> method_lookup_symbols_lexicographic;
-  std::vector<std::string> override_lookup_symbols_lexicographic;
-  std::vector<std::string> conflict_lookup_symbols_lexicographic;
-  std::vector<Objc3PropertyDecl> properties;
-  std::vector<Objc3MethodDecl> methods;
-  bool is_forward_declaration = false;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-struct Objc3GenericParamDecl {
-  std::string name;
-  std::string variance_spelling;
-  bool has_constraint = false;
-  std::string constraint_type_name;
-  bool has_constraint_generic_suffix = false;
-  bool constraint_generic_suffix_terminated = true;
-  std::string constraint_generic_suffix_text;
-  unsigned line = 1;
-  unsigned column = 1;
-  unsigned constraint_line = 1;
-  unsigned constraint_column = 1;
-};
-
-struct Objc3InterfaceDecl {
-  std::string name;
-  std::string super_name;
-  std::string category_name;
-  bool has_category = false;
-  bool is_actor = false;
-  std::string scope_owner_symbol;
-  std::vector<std::string> scope_path_lexicographic;
-  std::vector<std::string> adopted_protocols;
-  std::vector<std::string> adopted_protocols_lexicographic;
-  std::vector<Objc3GenericParamDecl> generic_params;
-  std::string semantic_link_symbol;
-  std::string semantic_link_super_symbol;
-  std::string semantic_link_category_symbol;
-  std::vector<std::string> property_synthesis_symbols_lexicographic;
-  std::vector<std::string> ivar_binding_symbols_lexicographic;
-  std::vector<std::string> method_lookup_symbols_lexicographic;
-  std::vector<std::string> override_lookup_symbols_lexicographic;
-  std::vector<std::string> conflict_lookup_symbols_lexicographic;
-  bool prefixed_dispatch_control_attributes_declared = false;
-  bool objc_direct_members_declared = false;
-  bool objc_final_declared = false;
-  bool objc_sealed_declared = false;
-  bool objc_derive_declared = false;
-  std::string objc_derive_name;
-  std::vector<Objc3PropertyDecl> properties;
-  std::vector<Objc3MethodDecl> methods;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-struct Objc3ImplementationDecl {
-  std::string name;
-  std::string category_name;
-  bool has_category = false;
-  std::string scope_owner_symbol;
-  std::vector<std::string> scope_path_lexicographic;
-  std::string semantic_link_symbol;
-  std::string semantic_link_interface_symbol;
-  std::string semantic_link_category_symbol;
-  std::vector<std::string> property_synthesis_symbols_lexicographic;
-  std::vector<std::string> ivar_binding_symbols_lexicographic;
-  std::vector<std::string> method_lookup_symbols_lexicographic;
-  std::vector<std::string> override_lookup_symbols_lexicographic;
-  std::vector<std::string> conflict_lookup_symbols_lexicographic;
-  std::vector<Objc3PropertyDecl> properties;
-  std::vector<Objc3MethodDecl> methods;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-struct FunctionDecl {
-  std::string name;
-  std::string scope_owner_symbol;
-  std::vector<std::string> scope_path_lexicographic;
+  std::string selector;
+  std::vector<SelectorPiece> selector_pieces;
+  bool selector_is_normalized = false;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;
@@ -294,6 +84,11 @@ struct FunctionDecl {
   bool return_ownership_arc_fixit_available = false;
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
+  std::string scope_owner_symbol;
+  std::string scope_path_symbol;
+  std::string method_lookup_symbol;
+  std::string override_lookup_symbol;
+  std::string conflict_lookup_symbol;
   bool async_declared = false;
   bool objc_nonisolated_declared = false;
   bool executor_affinity_declared = false;
@@ -487,82 +282,11 @@ struct FunctionDecl {
   std::size_t inline_asm_intrinsic_gate_blocked_sites = 0;
   std::size_t inline_asm_intrinsic_contract_violation_sites = 0;
   std::string inline_asm_intrinsic_governance_profile;
-  bool is_prototype = false;
-  bool is_pure = false;
+  Objc3ProtocolRequirementKind protocol_requirement_kind =
+      Objc3ProtocolRequirementKind::NotApplicable;
+  bool is_class_method = false;
+  bool has_body = false;
   std::vector<std::unique_ptr<Stmt>> body;
   unsigned line = 1;
   unsigned column = 1;
-};
-
-struct GlobalDecl {
-  std::string name;
-  std::string scope_owner_symbol;
-  std::vector<std::string> scope_path_lexicographic;
-  std::string semantic_link_symbol;
-  std::unique_ptr<Expr> value;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-struct Objc3DraftSyntaxSurfaceSummary {
-  std::size_t block_literal_sites = 0;
-  std::size_t block_explicit_capture_list_sites = 0;
-  std::size_t block_explicit_capture_byref_sites = 0;
-  std::size_t block_byref_capture_sites = 0;
-  std::size_t block_heap_escape_candidate_sites = 0;
-  std::size_t try_expression_sites = 0;
-  std::size_t throw_statement_sites = 0;
-  std::size_t do_catch_sites = 0;
-  std::size_t error_catch_clause_sites = 0;
-  std::size_t error_catch_binding_sites = 0;
-  std::size_t error_catch_all_sites = 0;
-  std::size_t error_bridge_payload_sites = 0;
-  std::size_t error_foreign_boundary_annotation_sites = 0;
-  std::size_t error_nested_cleanup_marker_sites = 0;
-  std::size_t throws_callable_sites = 0;
-  std::size_t async_callable_sites = 0;
-  std::size_t await_expression_sites = 0;
-  std::size_t actor_interface_sites = 0;
-  std::size_t actor_nonisolated_callable_sites = 0;
-  std::size_t actor_isolation_marker_sites = 0;
-  std::size_t actor_sendable_annotation_sites = 0;
-  std::size_t task_runtime_construct_sites = 0;
-  std::size_t task_cancellation_check_sites = 0;
-  std::size_t task_suspension_point_sites = 0;
-  std::size_t macro_attribute_sites = 0;
-  std::size_t macro_package_sites = 0;
-  std::size_t macro_provenance_sites = 0;
-  std::size_t macro_cache_key_sites = 0;
-  std::size_t macro_sandbox_policy_sites = 0;
-  std::size_t property_behavior_sites = 0;
-  std::size_t property_attribute_sites = 0;
-  std::size_t property_accessor_selector_sites = 0;
-  std::size_t property_synthesis_metadata_sites = 0;
-  std::size_t property_reflection_input_sites = 0;
-  std::size_t property_ownership_nullability_sites = 0;
-  std::size_t interop_attribute_sites = 0;
-  std::size_t interop_import_module_sites = 0;
-  std::size_t interop_swift_annotation_sites = 0;
-  std::size_t interop_cxx_annotation_sites = 0;
-  std::size_t interop_header_import_sites = 0;
-  std::size_t interop_header_export_sites = 0;
-  std::size_t interop_abi_alignment_sites = 0;
-  std::size_t interop_foreign_type_sites = 0;
-  std::size_t interop_mixed_image_sites = 0;
-  std::size_t interop_package_entry_sites = 0;
-  std::size_t interop_error_bridge_sites = 0;
-  std::size_t draft_syntax_surface_sites = 0;
-  bool normalized = false;
-  std::string replay_key;
-};
-
-struct Objc3Program {
-  std::string module_name = "objc3_module";
-  std::vector<GlobalDecl> globals;
-  std::vector<Objc3ProtocolDecl> protocols;
-  std::vector<Objc3InterfaceDecl> interfaces;
-  std::vector<Objc3ImplementationDecl> implementations;
-  std::vector<FunctionDecl> functions;
-  Objc3DraftSyntaxSurfaceSummary draft_syntax_surface_summary;
-  std::vector<std::string> diagnostics;
 };

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_method_decl_nodes.h"
 
 bool Objc3MethodDeclHasRuntimeBody(const Objc3MethodDecl &method);
 bool Objc3MethodDeclRequiresRuntimeDispatch(const Objc3MethodDecl &method);

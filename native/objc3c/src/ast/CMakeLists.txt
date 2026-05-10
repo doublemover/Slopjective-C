@@ -24,6 +24,7 @@ target_link_libraries(objc3c_ast_declarations INTERFACE
 )
 target_sources(objc3c_ast_declarations INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_declarations.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_method_decl_nodes.h
 )
 
 add_library(objc3c_ast_ordering STATIC
