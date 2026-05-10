@@ -1,9 +1,8 @@
 #pragma once
 
-#include "ir/objc3_ir_block_lowering.h"
-#include "ir/objc3_ir_compile_time_proof_analysis.h"
-#include "ir/objc3_ir_value_materialization.h"
-
+struct Objc3IRBlockLoweringContext;
+struct Objc3IRCompileTimeProofAnalysisContext;
+struct Objc3IRValueMaterializationContext;
 struct Objc3IREmitterServiceContextCallbacks;
 struct Objc3IREmitterServiceContextState;
 

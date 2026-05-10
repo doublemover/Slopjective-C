@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ir/objc3_ir_emitter_service_contexts.h"
-#include "ir/objc3_ir_expression_call_orchestration.h"
+struct Objc3IRExpressionCallEmissionOptions;
+struct Objc3IREmitterServiceContextCallbacks;
+struct Objc3IREmitterServiceContextState;
 
 Objc3IRExpressionCallEmissionOptions
 BuildObjc3IREmitterExpressionCallEmissionOptions(

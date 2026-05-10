@@ -4,7 +4,9 @@
 
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_emitter_block_value_services.h"
+#include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_emitter_statement_services.h"
+#include "ir/objc3_ir_expression_call_orchestration.h"
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_statement_orchestration.h"
 #include "ir/objc3_ir_value_materialization.h"

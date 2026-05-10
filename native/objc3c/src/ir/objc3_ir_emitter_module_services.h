@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ir/objc3_ir_function_orchestration.h"
-#include "ir/objc3_ir_module_body_orchestration.h"
-#include "ir/objc3_ir_module_metadata_publication.h"
-
+struct Objc3IRFunctionOrchestrationOptions;
+struct Objc3IRModuleBodyOrchestrationCallbacks;
+struct Objc3IRModuleBodyOrchestrationOptions;
+struct Objc3IRModuleMetadataPublicationOptions;
 struct Objc3IREmitterServiceContextCallbacks;
 struct Objc3IREmitterServiceContextState;
 

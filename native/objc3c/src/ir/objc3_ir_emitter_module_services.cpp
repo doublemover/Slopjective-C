@@ -6,6 +6,9 @@
 #include "ir/objc3_ir_emitter_block_value_services.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_emitter_statement_services.h"
+#include "ir/objc3_ir_function_orchestration.h"
+#include "ir/objc3_ir_module_body_orchestration.h"
+#include "ir/objc3_ir_module_metadata_publication.h"
 
 Objc3IRFunctionOrchestrationOptions
 BuildObjc3IREmitterFunctionOrchestrationOptions(
