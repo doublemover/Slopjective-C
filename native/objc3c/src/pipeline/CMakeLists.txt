@@ -26,6 +26,10 @@ add_library(objc3c_pipeline STATIC
   frontend_executable_metadata_source_graph_helpers_topology_implementation_category.cpp
   frontend_executable_metadata_source_graph_helpers_topology_records.cpp
   frontend_executable_metadata_source_graph_readiness.cpp
+  frontend_executable_metadata_source_graph_readiness_counts.cpp
+  frontend_executable_metadata_source_graph_readiness_edges.cpp
+  frontend_executable_metadata_source_graph_readiness_ordering.cpp
+  frontend_executable_metadata_source_graph_readiness_publication.cpp
   frontend_concurrency_source_closure_helpers.cpp
   frontend_dispatch_source_completion_helpers.cpp
   frontend_interop_source_completion_helpers.cpp
@@ -121,6 +125,7 @@ add_library(objc3c_pipeline STATIC
   frontend_executable_metadata_source_graph_helpers.h
   frontend_executable_metadata_source_graph_helpers_owners.h
   frontend_executable_metadata_source_graph_readiness.h
+  frontend_executable_metadata_source_graph_readiness_owners.h
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
