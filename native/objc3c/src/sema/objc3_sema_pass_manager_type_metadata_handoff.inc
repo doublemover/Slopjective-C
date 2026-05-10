@@ -219,10 +219,7 @@
 #include "sema/objc3_sema_pass_manager_type_metadata_handoff_blocks.inc"
 #include "sema/objc3_sema_pass_manager_type_metadata_handoff_message_dispatch.inc"
 #include "sema/objc3_sema_pass_manager_type_metadata_handoff_arc.inc"
-  result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
-  result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
-  result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
-  result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
+#include "sema/objc3_sema_pass_manager_type_metadata_handoff_type_system.inc"
   result.type_metadata_publication_record =
       BuildObjc3SemaTypeMetadataPublicationRecord(
           input,
