@@ -246,6 +246,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_dispatch_semantic_artifact_json.cpp
   objc3_frontend_dispatch_semantic_artifacts.cpp
   objc3_frontend_dispatch_semantic_artifacts.h
+  objc3_frontend_error_semantic_json.cpp
   objc3_frontend_error_semantic_artifacts.cpp
   objc3_frontend_error_semantic_artifacts.h
   objc3_frontend_interop_interface_preservation.cpp
