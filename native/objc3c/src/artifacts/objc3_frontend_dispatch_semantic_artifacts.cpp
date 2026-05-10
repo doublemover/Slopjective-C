@@ -160,15 +160,16 @@ void WalkMessageSendLoweringStmt(const Stmt *stmt, Visitor &visitor) {
   }
 }
 
-template <typename Visitor>
-void WalkMessageSendLoweringProgram(
-    const Objc3Program &program, Visitor &visitor) {
+template <typename ExprRootVisitor, typename StmtRootVisitor>
+void WalkProgramExecutableRoots(const Objc3Program &program,
+                                ExprRootVisitor &expr_root_visitor,
+                                StmtRootVisitor &stmt_root_visitor) {
   for (const auto &global : program.globals) {
-    WalkMessageSendLoweringExpr(global.value.get(), visitor);
+    expr_root_visitor(global.value.get());
   }
   for (const auto &function : program.functions) {
     for (const auto &stmt : function.body) {
-      WalkMessageSendLoweringStmt(stmt.get(), visitor);
+      stmt_root_visitor(stmt.get());
     }
   }
   for (const auto &implementation_decl : program.implementations) {
@@ -177,10 +178,22 @@ void WalkMessageSendLoweringProgram(
         continue;
       }
       for (const auto &stmt : method_decl.body) {
-        WalkMessageSendLoweringStmt(stmt.get(), visitor);
+        stmt_root_visitor(stmt.get());
       }
     }
   }
+}
+
+template <typename Visitor>
+void WalkMessageSendLoweringProgram(
+    const Objc3Program &program, Visitor &visitor) {
+  auto walk_expr = [&](const Expr *expr) {
+    WalkMessageSendLoweringExpr(expr, visitor);
+  };
+  auto walk_stmt = [&](const Stmt *stmt) {
+    WalkMessageSendLoweringStmt(stmt, visitor);
+  };
+  WalkProgramExecutableRoots(program, walk_expr, walk_stmt);
 }
 
 void AccumulateMessageSendSelectorLoweringSite(
@@ -546,24 +559,13 @@ BuildPropertySynthesisIvarBindingContract(
 Objc3DispatchSurfaceClassificationContract
 BuildDispatchSurfaceClassificationContract(const Objc3Program &program) {
   Objc3DispatchSurfaceClassificationContract contract;
-  for (const auto &global : program.globals) {
-    AccumulateDispatchSurfaceClassificationExpr(global.value.get(), contract);
-  }
-  for (const auto &function : program.functions) {
-    for (const auto &stmt : function.body) {
-      AccumulateDispatchSurfaceClassificationStmt(stmt.get(), contract);
-    }
-  }
-  for (const auto &implementation_decl : program.implementations) {
-    for (const auto &method_decl : implementation_decl.methods) {
-      if (!method_decl.has_body) {
-        continue;
-      }
-      for (const auto &stmt : method_decl.body) {
-        AccumulateDispatchSurfaceClassificationStmt(stmt.get(), contract);
-      }
-    }
-  }
+  auto accumulate_expr = [&](const Expr *expr) {
+    AccumulateDispatchSurfaceClassificationExpr(expr, contract);
+  };
+  auto accumulate_stmt = [&](const Stmt *stmt) {
+    AccumulateDispatchSurfaceClassificationStmt(stmt, contract);
+  };
+  WalkProgramExecutableRoots(program, accumulate_expr, accumulate_stmt);
   return contract;
 }
 
