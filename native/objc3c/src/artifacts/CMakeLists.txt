@@ -211,6 +211,9 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_runtime_metadata_contract_metadata.cpp
   objc3_frontend_artifact_runtime_metadata_contract_metadata.h
   objc3_frontend_artifact_runtime_metadata_class_metaclass_bundles.cpp
+  objc3_frontend_artifact_runtime_metadata_member_ivar_bundles.cpp
+  objc3_frontend_artifact_runtime_metadata_member_method_bundles.cpp
+  objc3_frontend_artifact_runtime_metadata_member_property_bundles.cpp
   objc3_frontend_artifact_runtime_metadata_protocol_category_bundles.cpp
   objc3_frontend_artifact_runtime_metadata_plan.cpp
   objc3_frontend_artifact_runtime_metadata_plan.h
@@ -243,6 +246,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_type_system_metadata.h
   objc3_frontend_artifacts.cpp
   objc3_frontend_artifacts.h
+  objc3_frontend_artifacts_runtime_manifest_surfaces.cpp
+  objc3_frontend_artifacts_runtime_manifest_surfaces.h
   objc3_frontend_concurrency_lowering_json.cpp
   objc3_frontend_concurrency_semantic_artifacts.cpp
   objc3_frontend_concurrency_semantic_artifacts.h
