@@ -152,7 +152,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_debug_projection_metadata.h
   objc3_frontend_artifact_dispatch_accessor_abi_manifest.cpp
   objc3_frontend_artifact_dispatch_accessor_abi_manifest.h
-  objc3_frontend_artifact_dispatch_accessor_manifest.cpp
+  objc3_frontend_artifact_dispatch_accessor_lowering_manifest.cpp
+  objc3_frontend_artifact_dispatch_accessor_lowering_manifest.h
   objc3_frontend_artifact_dispatch_accessor_manifest.h
   objc3_frontend_artifact_dispatch_metadata.cpp
   objc3_frontend_artifact_dispatch_metadata.h

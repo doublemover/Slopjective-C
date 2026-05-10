@@ -1,4 +1,4 @@
-#include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_accessor_lowering_manifest.h"
 
 #include <ostream>
 
@@ -8,7 +8,6 @@
 #include "lower/contracts/message_send_selector_lowering_contracts.h"
 #include "lower/contracts/object_model_lowering_contracts.h"
 #include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
-#include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 #include "lower/contracts/runtime_dispatch_abi_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
