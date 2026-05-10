@@ -12,14 +12,12 @@ bool ValidateFrontendCApiResultOwnedArtifactPaths(
       BuildFrontendCApiRunnerCArtifactRequirements(options, status);
   for (const FrontendCApiRunnerCArtifactRequirement &requirement :
        requirements) {
-    const FrontendCApiRunnerResultArtifactPathProbe path_probe =
-        ProbeFrontendCApiResultOwnedArtifactPath(result, requirement);
-    const bool has_artifact = ProbeFrontendCApiResultOwnedArtifactAvailability(
-        result,
-        requirement.artifact_kind);
+    const FrontendCApiRunnerResultArtifactSnapshot snapshot =
+        CaptureFrontendCApiRunnerResultArtifactSnapshot(
+            result,
+            requirement.artifact_kind);
     if (!ValidateFrontendCApiResultOwnedArtifactRequirementContract(
-            path_probe.path,
-            has_artifact,
+            snapshot,
             requirement,
             reason)) {
       return false;
