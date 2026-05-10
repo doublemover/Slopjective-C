@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-planning-checkboxes-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/planning_checkboxes/disallowed/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/disallowed/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/b.md",
+    "tests/tooling/fixtures/planning_checkboxes/section_mismatch/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/section_mismatch/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/plan.md"
+  ],
+  "support_boundary": "strict-error ownership covers fail-closed planning-checkbox policy violations: unchecked rows without policy exceptions, policy entries whose section does not match the markdown heading, unused policy entries after all checklist rows are completed, and mixed JSON/markdown fixtures where one allowed document does not authorize another document's unchecked implementation row. Promoting those rows through old-mode, shim, fallback, compatibility, migration, generated-only, or report-only support is strict-error evidence.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "strict_error:unchecked-row-without-policy-exception",
+    "strict_error:policy-section-mismatch",
+    "strict_error:unused-policy-entry",
+    "strict_error:mixed-directory-unallowed-unchecked-row",
+    "scenario:disallowed",
+    "scenario:section_mismatch",
+    "scenario:unused_policy_entry",
+    "scenario:json_mixed:disallowed_document=b.md",
+    "policy_value:allowed_unchecked_sections=[]",
+    "policy_value:section=Runbook Fixture > 1. Historical Checklist",
+    "policy_value:section=Unused Fixture > 1. Historical Checklist",
+    "*fallback-as-positive*",
+    "*shim-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*migration-as-support*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/planning_checkboxes",
+  "retired_surface_rule": "unchecked rows without matching policy, mismatched policy sections, unused policy entries, mixed directory failures, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, stale-policy-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

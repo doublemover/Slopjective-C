@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-planning-checkboxes-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/planning_checkboxes"
+  ],
+  "support_boundary": "parser ownership is non-positive for this planning-checkbox family. Markdown headings, checklist syntax, JSON policy keys, fixture directory names, and path labels are tooling hygiene inputs; they do not define Objective-C 3 parser support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:planning_checkboxes",
+    "markdown_surface:heading",
+    "markdown_surface:checklist-row",
+    "json_key:allowed_unchecked_sections",
+    "compiler_phase_boundary:no-parser-positive-truth-from-planning-checkbox-fixtures",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser planning rows, shim parser planning rows, fallback parser planning rows, compatibility parser planning rows, migration-only parser rows, generated-only parser rows, report-only parser rows, markdown-only parser claims, and JSON-policy-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
