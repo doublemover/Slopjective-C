@@ -1,11 +1,11 @@
 #include "libobjc3c_frontend/frontend_compile_pipeline.h"
 
 #include "io/objc3_manifest_artifacts.h"
+#include "libobjc3c_frontend/frontend_lowering_boundary.h"
 #include "libobjc3c_frontend/objc3c_frontend_basic_artifacts.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
 #include "libobjc3c_frontend/objc3c_frontend_context_state.h"
 #include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
-#include "lower/objc3_lowering_contract.h"
 
 namespace objc3c::frontend {
 
@@ -35,16 +35,13 @@ bool PrepareFrontendCompileRun(
   ClearFrontendContextResultPaths(context);
 
   Objc3FrontendOptions frontend_options = BuildFrontendPipelineOptions(options);
-  Objc3LoweringContract normalized_lowering;
   std::string lowering_error;
-  if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering,
-                                         normalized_lowering,
-                                         lowering_error)) {
+  if (!TryNormalizeFrontendLoweringBoundary(frontend_options,
+                                            lowering_error)) {
     SetCompileRunError(context, result, OBJC3C_FRONTEND_STATUS_USAGE_ERROR, 2,
                        lowering_error);
     return false;
   }
-  frontend_options.lowering = normalized_lowering;
 
   run.product =
       CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);

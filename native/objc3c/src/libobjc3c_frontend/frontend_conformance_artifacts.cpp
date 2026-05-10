@@ -2,9 +2,8 @@
 
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
+#include "libobjc3c_frontend/frontend_conformance_publication_boundary.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_publication.h"
-#include "lower/objc3_lowering_contract.h"
-#include "pipeline/results/report_dto.h"
 
 namespace objc3c::frontend {
 
@@ -28,7 +27,7 @@ bool PublishFrontendConformanceReportArtifacts(
     return true;
   }
 
-  if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
+  if (!IsFrontendConformanceReportLoweringSummaryReady(
           product.artifact_bundle
               .versioned_conformance_report_lowering_summary)) {
     SetFrontendPublicationError(
@@ -47,6 +46,8 @@ bool PublishFrontendConformanceReportArtifacts(
   const std::filesystem::path conformance_report_out =
       BuildVersionedConformanceReportArtifactPath(artifact_plan.out_dir,
                                                   artifact_plan.emit_prefix);
+  const std::string conformance_report_artifact_filename =
+      conformance_report_out.filename().string();
   if (!WriteFrontendTextArtifactOrError(
           context, result, conformance_report_out,
           product.artifact_bundle.versioned_conformance_report_artifact_json)) {
@@ -89,8 +90,7 @@ bool PublishFrontendConformanceReportArtifacts(
            .advanced_feature_targeted_profile_ids =
                BuildObjc3ReleaseTargetedProfileIds(),
            .report_artifact_relative_path =
-               artifact_plan.emit_prefix +
-               kObjc3VersionedConformanceReportLoweringArtifactSuffix},
+               conformance_report_artifact_filename},
           conformance_publication_artifact_json,
           conformance_publication_error)) {
     SetFrontendPublicationError(context, result,
@@ -111,9 +111,7 @@ bool PublishFrontendConformanceReportArtifacts(
   std::string advanced_feature_gate_error;
   if (!TryBuildObjc3AdvancedFeatureGateArtifact(
           {.surface_kind = "frontend-c-api",
-           .report_artifact_path =
-               artifact_plan.emit_prefix +
-               kObjc3VersionedConformanceReportLoweringArtifactSuffix,
+           .report_artifact_path = conformance_report_artifact_filename,
            .publication_artifact_path =
                conformance_publication_out.filename().string(),
            .validation_artifact_path =
@@ -151,9 +149,7 @@ bool PublishFrontendConformanceReportArtifacts(
   std::string release_candidate_matrix_error;
   if (!TryBuildObjc3ReleaseCandidateMatrixArtifact(
           {.surface_kind = "frontend-c-api",
-           .report_artifact_path =
-               artifact_plan.emit_prefix +
-               kObjc3VersionedConformanceReportLoweringArtifactSuffix,
+           .report_artifact_path = conformance_report_artifact_filename,
            .publication_artifact_path =
                conformance_publication_out.filename().string(),
            .advanced_feature_gate_artifact_path =

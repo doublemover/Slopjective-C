@@ -14,9 +14,11 @@ add_library(objc3c_frontend STATIC
   frontend_compile_entrypoints.cpp
   frontend_compile_pipeline.cpp
   frontend_conformance_artifacts.cpp
+  frontend_conformance_publication_boundary.cpp
   frontend_ir_artifact_publication.cpp
   frontend_ir_object_emission.cpp
   frontend_ir_object_status.cpp
+  frontend_lowering_boundary.cpp
   frontend_runtime_registration_artifact_inputs.cpp
   frontend_runtime_registration_descriptor_inputs.cpp
   frontend_runtime_registration_manifest_inputs.cpp
