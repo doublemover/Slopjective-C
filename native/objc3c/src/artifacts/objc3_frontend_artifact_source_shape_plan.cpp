@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 
-#include "sema/objc3_semantic_constant_evaluator.h"
+#include "ast/objc3_ast_constant_evaluator.h"
 
 namespace {
 
@@ -59,8 +59,8 @@ BuildObjc3FrontendArtifactSourceShapePlan(
       }
     }
   }
-  if (!ResolveGlobalInitializerValues(program.globals,
-                                      plan.resolved_global_values) ||
+  if (!ResolveObjc3GlobalInitializerValues(program.globals,
+                                           plan.resolved_global_values) ||
       plan.resolved_global_values.size() != program.globals.size()) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,

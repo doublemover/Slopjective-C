@@ -804,7 +804,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
   }
   std::vector<int> global_initializer_values;
-  if (ResolveGlobalInitializerValues(ast.globals, global_initializer_values)) {
+  if (ResolveObjc3GlobalInitializerValues(ast.globals,
+                                          global_initializer_values)) {
     const std::size_t count = std::min(ast.globals.size(), global_initializer_values.size());
     for (std::size_t i = 0; i < count; ++i) {
       const std::string &name = ast.globals[i].name;

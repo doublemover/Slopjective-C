@@ -23,6 +23,7 @@ target_link_libraries(objc3c_ast_declarations INTERFACE
   objc3c_ast_core
 )
 target_sources(objc3c_ast_declarations INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_constant_evaluator.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_container_decl_nodes.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_declarations.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_function_decl_nodes.h
@@ -65,6 +66,7 @@ target_link_libraries(objc3c_ast_blocks PUBLIC
 )
 
 add_library(objc3c_ast STATIC
+  objc3_ast_constant_evaluator.cpp
   objc3_ast_callable_type_surface.cpp
   objc3_ast_function_signature_surface.cpp
   objc3_ast_method_signature_surface.cpp

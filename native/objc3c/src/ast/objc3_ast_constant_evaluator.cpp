@@ -1,6 +1,6 @@
-#include "sema/objc3_semantic_constant_evaluator.h"
+#include "ast/objc3_ast_constant_evaluator.h"
 
-bool EvaluateSemanticConstExpr(
+bool EvaluateObjc3ConstExpr(
     const Expr *expr, int &value,
     const std::unordered_map<std::string, int> *resolved_globals) {
   if (expr == nullptr) {
@@ -35,16 +35,15 @@ bool EvaluateSemanticConstExpr(
       return false;
     }
     int cond_value = 0;
-    if (!EvaluateSemanticConstExpr(expr->left.get(), cond_value,
-                                   resolved_globals)) {
+    if (!EvaluateObjc3ConstExpr(expr->left.get(), cond_value,
+                                resolved_globals)) {
       return false;
     }
     if (cond_value != 0) {
-      return EvaluateSemanticConstExpr(expr->right.get(), value,
-                                       resolved_globals);
+      return EvaluateObjc3ConstExpr(expr->right.get(), value,
+                                    resolved_globals);
     }
-    return EvaluateSemanticConstExpr(expr->third.get(), value,
-                                     resolved_globals);
+    return EvaluateObjc3ConstExpr(expr->third.get(), value, resolved_globals);
   }
   if (expr->kind != Expr::Kind::Binary || expr->left == nullptr ||
       expr->right == nullptr) {
@@ -52,8 +51,8 @@ bool EvaluateSemanticConstExpr(
   }
   int lhs = 0;
   int rhs = 0;
-  if (!EvaluateSemanticConstExpr(expr->left.get(), lhs, resolved_globals) ||
-      !EvaluateSemanticConstExpr(expr->right.get(), rhs, resolved_globals)) {
+  if (!EvaluateObjc3ConstExpr(expr->left.get(), lhs, resolved_globals) ||
+      !EvaluateObjc3ConstExpr(expr->right.get(), rhs, resolved_globals)) {
     return false;
   }
   if (expr->op == "+") {
@@ -136,15 +135,15 @@ bool EvaluateSemanticConstExpr(
   return false;
 }
 
-bool ResolveGlobalInitializerValues(
-    const std::vector<Objc3ParsedGlobalDecl> &globals, std::vector<int> &values) {
+bool ResolveObjc3GlobalInitializerValues(const std::vector<GlobalDecl> &globals,
+                                         std::vector<int> &values) {
   values.clear();
   values.reserve(globals.size());
   std::unordered_map<std::string, int> resolved_globals;
   for (const auto &global : globals) {
     int value = 0;
-    if (!EvaluateSemanticConstExpr(global.value.get(), value,
-                                   &resolved_globals)) {
+    if (!EvaluateObjc3ConstExpr(global.value.get(), value,
+                                &resolved_globals)) {
       return false;
     }
     values.push_back(value);

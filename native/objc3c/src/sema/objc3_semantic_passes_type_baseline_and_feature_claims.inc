@@ -1,7 +1,7 @@
 #include "sema/objc3_semantic_passes.h"
+#include "ast/objc3_ast_constant_evaluator.h"
 #include "sema/objc3_semantic_collection_helpers.h"
 #include "sema/objc3_semantic_context.h"
-#include "sema/objc3_semantic_constant_evaluator.h"
 #include "sema/objc3_semantic_feature_claims.h"
 #include "sema/objc3_semantic_generic_argument_relations.h"
 #include "sema/objc3_semantic_interop_surface_helpers.h"

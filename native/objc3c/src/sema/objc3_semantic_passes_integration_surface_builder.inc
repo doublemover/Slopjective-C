@@ -73,8 +73,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       surface.globals.emplace(global.name, ValueType::I32);
     }
     int value = 0;
-    if (!EvaluateSemanticConstExpr(global.value.get(), value,
-                                   &resolved_global_values)) {
+    if (!EvaluateObjc3ConstExpr(global.value.get(), value,
+                                &resolved_global_values)) {
       diagnostics.push_back(
           MakeDiag(global.line, global.column, "O3S210", "global initializer must be constant expression"));
     } else if (!duplicate_global) {

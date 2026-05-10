@@ -3,16 +3,15 @@
 #include <cstddef>
 #include <sstream>
 
+#include "ast/objc3_ast_constant_evaluator.h"
 #include "ir/objc3_ir_c_string.h"
-
-bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals,
-                                    std::vector<int> &values);
 
 bool EmitObjc3IRStaticData(
     const Objc3IRStaticDataEmissionOptions &options, std::ostringstream &out,
     std::string &error) {
   std::vector<int> resolved_global_values;
-  if (!ResolveGlobalInitializerValues(options.globals, resolved_global_values) ||
+  if (!ResolveObjc3GlobalInitializerValues(options.globals,
+                                           resolved_global_values) ||
       resolved_global_values.size() != options.globals.size()) {
     error = "global initializer failed const evaluation";
     return false;
