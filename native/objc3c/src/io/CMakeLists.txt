@@ -61,6 +61,7 @@ add_library(objc3c_json STATIC
   json/json_schema_enum_duplicates_contract_validation.cpp
   json/json_schema_errors.cpp
   json/json_schema_node_contract_guard_validation.cpp
+  json/json_schema_node_contract_phase_sequence_validation.cpp
   json/json_schema_node_contract_validation.cpp
   json/json_schema_node_preflight_guard_validation.cpp
   json/json_schema_node_preflight_validation.cpp
