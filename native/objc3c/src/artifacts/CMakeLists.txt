@@ -298,6 +298,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_metadata_source_graph_artifacts.cpp
   objc3_frontend_runtime_metadata_section_artifacts.cpp
   objc3_frontend_runtime_metadata_section_artifacts.h
+  objc3_frontend_runtime_metadata_section_json.cpp
   objc3_frontend_runtime_registration_artifacts.cpp
   objc3_frontend_runtime_registration_artifacts.h
   objc3_frontend_runtime_registration_json.cpp
