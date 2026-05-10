@@ -1,12 +1,8 @@
 #pragma once
 
-#include <cstddef>
 #include <string>
-#include <vector>
 
-#include "lower/objc3_lowering_contract.h"
-#include "pipeline/results/report_dto.h"
-#include "token/objc3_token_contract.h"
+struct Objc3VersionedConformanceReportLoweringSummary;
 
 namespace objc3::artifacts::frontend {
 

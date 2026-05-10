@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "artifacts/objc3_frontend_runtime_capability_contracts.h"
+#include "artifacts/reports/report_dto.h"
 #include "io/objc3_json.h"
-#include "lower/objc3_lowering_contract.h"
-#include "token/objc3_token_contract.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -45,19 +45,19 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
   constexpr OptionalFeatureEntry kEntries[] = {
       {"throws", "not-claimed",
        "runtime-backed throws/error propagation is not part of the runnable native surface yet",
-       kObjc3UnsupportedFeatureClaimThrows},
+       kArtifactUnsupportedFeatureClaimThrows},
       {"async-await", "not-claimed",
        "async/await lowering and runtime scheduling are not part of the runnable native surface yet",
-       kObjc3UnsupportedFeatureClaimAsyncAwait},
+       kArtifactUnsupportedFeatureClaimAsyncAwait},
       {"actors", "not-claimed",
        "actor isolation and actor runtime support are not part of the runnable native surface yet",
-       kObjc3UnsupportedFeatureClaimActors},
+       kArtifactUnsupportedFeatureClaimActors},
       {"blocks", "not-claimed",
        "blocks are still tracked as unsupported in the public conformance claim surface",
-       kObjc3UnsupportedFeatureClaimBlocks},
+       kArtifactUnsupportedFeatureClaimBlocks},
       {"arc", "not-claimed",
        "ARC remains unsupported in the public conformance claim surface until the full runnable ARC contract closes",
-       kObjc3UnsupportedFeatureClaimArc},
+       kArtifactUnsupportedFeatureClaimArc},
   };
   constexpr std::size_t kEntryCount = sizeof(kEntries) / sizeof(kEntries[0]);
   std::ostringstream out;
@@ -77,11 +77,11 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
 
 std::string BuildRuntimeCapabilityVersionsJson() {
   std::ostringstream out;
-  out << "{\"frontend\":\"" << kObjc3RuntimeCapabilityToolchainVersion
-      << "\",\"runtime\":\"" << kObjc3RuntimeCapabilityToolchainVersion
-      << "\",\"stdlib\":\"" << kObjc3RuntimeCapabilityToolchainVersion
+  out << "{\"frontend\":\"" << kArtifactRuntimeCapabilityToolchainVersion
+      << "\",\"runtime\":\"" << kArtifactRuntimeCapabilityToolchainVersion
+      << "\",\"stdlib\":\"" << kArtifactRuntimeCapabilityToolchainVersion
       << "\",\"module_format\":\""
-      << kObjc3RuntimeCapabilityModuleFormatVersion << "\"}";
+      << kArtifactRuntimeCapabilityModuleFormatVersion << "\"}";
   return out.str();
 }
 
@@ -122,24 +122,25 @@ std::string BuildRuntimeCapabilityReportJson(
   std::ostringstream out;
   out << "{"
       << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingContractId)
+      << EscapeJsonString(kArtifactRuntimeCapabilityReportingContractId)
       << "\",\"schema_id\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingSchemaId)
+      << EscapeJsonString(kArtifactRuntimeCapabilityReportingSchemaId)
       << "\",\"source_contract_id\":\"" << EscapeJsonString(summary.contract_id)
       << "\",\"frontend_surface_path\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingSurfacePath)
+      << EscapeJsonString(kArtifactRuntimeCapabilityReportingSurfacePath)
       << "\",\"source_frontend_surface_path\":\""
       << EscapeJsonString(summary.frontend_surface_path)
       << "\",\"profile_model\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingProfileModel)
+      << EscapeJsonString(kArtifactRuntimeCapabilityReportingProfileModel)
       << "\",\"optional_feature_model\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingOptionalFeatureModel)
+      << EscapeJsonString(
+             kArtifactRuntimeCapabilityReportingOptionalFeatureModel)
       << "\",\"version_model\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityReportingVersionModel)
+      << EscapeJsonString(kArtifactRuntimeCapabilityReportingVersionModel)
       << "\",\"strictness_mode\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityStrictnessMode)
+      << EscapeJsonString(kArtifactRuntimeCapabilityStrictnessMode)
       << "\",\"concurrency_mode\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityConcurrencyMode)
+      << EscapeJsonString(kArtifactRuntimeCapabilityConcurrencyMode)
       << "\",\"claimed_profile_ids\":"
       << BuildStringArrayJson(claimed_profile_ids)
       << ",\"not_claimed_profile_ids\":"
@@ -155,11 +156,11 @@ std::string BuildRuntimeCapabilityReportJson(
       << BuildRuntimeCapabilityOptionalFeaturesJson()
       << ",\"versions\":" << BuildRuntimeCapabilityVersionsJson()
       << ",\"public_schema_id\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityPublicSchemaId)
+      << EscapeJsonString(kArtifactRuntimeCapabilityPublicSchemaId)
       << "\",\"replay_generated_at\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityGeneratedAtReplayValue)
+      << EscapeJsonString(kArtifactRuntimeCapabilityGeneratedAtReplayValue)
       << "\",\"ready\":"
-      << (IsReadyObjc3VersionedConformanceReportLoweringSummary(summary)
+      << (objc3::artifacts::reports::IsReady(summary)
               ? "true"
               : "false")
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
@@ -172,27 +173,27 @@ std::string BuildPublicConformanceReportJson(
   std::ostringstream out;
   out << "{"
       << "\"schema_id\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityPublicSchemaId)
+      << EscapeJsonString(kArtifactRuntimeCapabilityPublicSchemaId)
       << "\",\"generated_at\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityGeneratedAtReplayValue)
+      << EscapeJsonString(kArtifactRuntimeCapabilityGeneratedAtReplayValue)
       << "\",\"toolchain\":{\"name\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityToolchainName)
+      << EscapeJsonString(kArtifactRuntimeCapabilityToolchainName)
       << "\",\"vendor\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityToolchainVendor)
+      << EscapeJsonString(kArtifactRuntimeCapabilityToolchainVendor)
       << "\",\"version\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityToolchainVersion)
+      << EscapeJsonString(kArtifactRuntimeCapabilityToolchainVersion)
       << "\",\"target_triple\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityTargetTriple)
+      << EscapeJsonString(kArtifactRuntimeCapabilityTargetTriple)
       << "\"},\"language\":{\"language_family\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityLanguageFamily)
+      << EscapeJsonString(kArtifactRuntimeCapabilityLanguageFamily)
       << "\",\"language_version\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityLanguageVersion)
+      << EscapeJsonString(kArtifactRuntimeCapabilityLanguageVersion)
       << "\",\"spec_revision\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilitySpecRevision)
+      << EscapeJsonString(kArtifactRuntimeCapabilitySpecRevision)
       << "\"},\"mode\":{\"strictness\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityStrictnessMode)
+      << EscapeJsonString(kArtifactRuntimeCapabilityStrictnessMode)
       << "\",\"concurrency\":\""
-      << EscapeJsonString(kObjc3RuntimeCapabilityConcurrencyMode)
+      << EscapeJsonString(kArtifactRuntimeCapabilityConcurrencyMode)
       << "\",\"compatibility\":\""
       << EscapeJsonString(summary.effective_language_profile)
       << "\",\"canonical_literal_rejection_diagnostics\":"
