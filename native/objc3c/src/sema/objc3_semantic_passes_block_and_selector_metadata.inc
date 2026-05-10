@@ -1,3 +1,5 @@
+#include "sema/objc3_semantic_passes_message_selector_form_helpers.inc"
+
 static Objc3BlockStorageEscapeSiteMetadata BuildBlockStorageEscapeSiteMetadata(const Expr &expr) {
   auto build_block_storage_escape_profile = [](std::size_t mutable_capture_count,
                                                std::size_t byref_slot_count,
