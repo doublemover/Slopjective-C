@@ -3979,6 +3979,65 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       Objc3RuntimeDispatchTableReflectionRecordLoweringFields
           runtime_dispatch_table_reflection_record_lowering_fields{
               message_send_selector_lowering_contract.message_send_sites};
+  const bool dispatch_accessor_deterministic_handoff =
+      property_synthesis_ivar_binding_contract.deterministic &&
+      dispatch_surface_classification_contract.deterministic &&
+      message_send_selector_lowering_contract.deterministic &&
+      runtime_link_host_link_contract.deterministic;
+  objc3::artifacts::frontend::
+      Objc3DispatchAndSynthesizedAccessorLoweringFields
+          dispatch_and_synthesized_accessor_lowering_fields;
+  dispatch_and_synthesized_accessor_lowering_fields.runtime_dispatch_symbol =
+      runtime_link_host_link_contract.runtime_dispatch_symbol;
+  dispatch_and_synthesized_accessor_lowering_fields.runtime_dispatch_arg_slots =
+      runtime_link_host_link_contract.runtime_dispatch_arg_slots;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .runtime_dispatch_declaration_parameter_count =
+      runtime_link_host_link_contract
+          .runtime_dispatch_declaration_parameter_count;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .runtime_dispatch_symbol_matches_lowering =
+      runtime_link_host_link_contract.runtime_dispatch_symbol ==
+          options.lowering.runtime_dispatch_symbol &&
+      runtime_link_host_link_contract.runtime_dispatch_symbol ==
+          runtime_support_library_link_wiring.runtime_dispatch_symbol;
+  dispatch_and_synthesized_accessor_lowering_fields.live_runtime_dispatch_sites =
+      dispatch_surface_classification_contract.instance_dispatch_sites +
+      dispatch_surface_classification_contract.class_dispatch_sites +
+      dispatch_surface_classification_contract.super_dispatch_sites +
+      dispatch_surface_classification_contract.dynamic_dispatch_sites;
+  dispatch_and_synthesized_accessor_lowering_fields.direct_dispatch_sites =
+      dispatch_surface_classification_contract.direct_dispatch_sites;
+  dispatch_and_synthesized_accessor_lowering_fields.message_send_sites =
+      message_send_selector_lowering_contract.message_send_sites;
+  dispatch_and_synthesized_accessor_lowering_fields.property_synthesis_sites =
+      property_synthesis_ivar_binding_contract.property_synthesis_sites;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .property_synthesis_explicit_ivar_bindings =
+      property_synthesis_ivar_binding_contract
+          .property_synthesis_explicit_ivar_bindings;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .property_synthesis_default_ivar_bindings =
+      property_synthesis_ivar_binding_contract
+          .property_synthesis_default_ivar_bindings;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .interface_owned_property_synthesis_sites =
+      property_synthesis_ivar_binding_contract
+          .interface_owned_property_synthesis_sites;
+  dispatch_and_synthesized_accessor_lowering_fields
+      .implementation_property_redeclaration_sites =
+      property_synthesis_ivar_binding_contract
+          .implementation_property_redeclaration_sites;
+  dispatch_and_synthesized_accessor_lowering_fields.ivar_binding_resolved =
+      property_synthesis_ivar_binding_contract.ivar_binding_resolved;
+  dispatch_and_synthesized_accessor_lowering_fields.deterministic_handoff =
+      dispatch_accessor_deterministic_handoff;
+  objc3::artifacts::frontend::Objc3DispatchAccessorRuntimeAbiFields
+      dispatch_accessor_runtime_abi_fields;
+  dispatch_accessor_runtime_abi_fields.runtime_dispatch_symbol =
+      runtime_link_host_link_contract.runtime_dispatch_symbol;
+  dispatch_accessor_runtime_abi_fields.deterministic =
+      dispatch_accessor_deterministic_handoff;
   const objc3::artifacts::frontend::Objc3StorageAccessorRuntimeAbiFields
       storage_accessor_runtime_abi_fields{
           property_synthesis_ivar_binding_contract.deterministic &&
@@ -3986,13 +4045,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   objc3::artifacts::frontend::WriteObjc3FrontendRuntimeManifestSurfaces(
       manifest, runtime_translation_unit_registration_manifest,
       runtime_metadata_source_records, executable_metadata_source_graph,
-      runtime_link_host_link_contract, options,
-      runtime_support_library_link_wiring,
-      dispatch_surface_classification_contract,
-      message_send_selector_lowering_contract,
+      dispatch_and_synthesized_accessor_lowering_fields,
+      dispatch_accessor_runtime_abi_fields,
       runtime_dispatch_table_reflection_record_lowering_fields,
       storage_accessor_runtime_abi_fields,
-      property_synthesis_ivar_binding_contract,
       runtime_metadata_section_publication, runtime_bootstrap_api,
       runtime_bootstrap_semantics,
       runtime_registration_descriptor_frontend_closure,

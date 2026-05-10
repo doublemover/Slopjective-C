@@ -4,6 +4,7 @@
 #include <string>
 
 #include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest_contracts.h"
 #include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest.h"
 #include "artifacts/objc3_frontend_artifact_property_atomicity_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_block_manifest.h"
@@ -30,20 +31,14 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
         &runtime_translation_unit_registration_manifest,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
     const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph,
-    const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract,
-    const Objc3FrontendOptions &options,
-    const Objc3RuntimeSupportLibraryLinkWiringSummary
-        &runtime_support_library_link_wiring,
-    const Objc3DispatchSurfaceClassificationContract
-        &dispatch_surface_classification_contract,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract,
+    const Objc3DispatchAndSynthesizedAccessorLoweringFields
+        &dispatch_and_synthesized_accessor_lowering_fields,
+    const Objc3DispatchAccessorRuntimeAbiFields
+        &dispatch_accessor_runtime_abi_fields,
     const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
         &runtime_dispatch_table_reflection_record_lowering_fields,
     const Objc3StorageAccessorRuntimeAbiFields
         &storage_accessor_runtime_abi_fields,
-    const Objc3PropertySynthesisIvarBindingContract
-        &property_synthesis_ivar_binding_contract,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication,
     const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api,
@@ -71,18 +66,11 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
   WriteDispatchAndSynthesizedAccessorLoweringSurface(
       manifest, runtime_state_publication_emit_prefix,
       runtime_translation_unit_registration_manifest,
-      runtime_link_host_link_contract, options,
-      runtime_support_library_link_wiring,
-      dispatch_surface_classification_contract,
-      message_send_selector_lowering_contract,
-      property_synthesis_ivar_binding_contract,
+      dispatch_and_synthesized_accessor_lowering_fields,
       accessor_storage_lowering_metadata_summary,
       runtime_metadata_section_publication);
   WriteDispatchAccessorRuntimeAbiSurface(
-      manifest, runtime_link_host_link_contract,
-      property_synthesis_ivar_binding_contract,
-      dispatch_surface_classification_contract,
-      message_send_selector_lowering_contract);
+      manifest, dispatch_accessor_runtime_abi_fields);
   WriteStorageAccessorRuntimeAbiSurface(
       manifest, runtime_bootstrap_api, storage_accessor_runtime_abi_fields);
   WriteRuntimeStatePublicationSurface(
