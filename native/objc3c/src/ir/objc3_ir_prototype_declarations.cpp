@@ -6,6 +6,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ast/objc3_ast_contracts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/block_runtime_helper_contracts.h"
 #include "lower/contracts/concurrency_actor_contracts.h"

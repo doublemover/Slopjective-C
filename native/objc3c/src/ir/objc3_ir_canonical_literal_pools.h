@@ -4,8 +4,8 @@
 #include <string>
 
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_frontend_metadata.h"
 
+struct Objc3IRFrontendMetadata;
 struct Objc3Program;
 
 struct Objc3IRCanonicalLiteralPools {

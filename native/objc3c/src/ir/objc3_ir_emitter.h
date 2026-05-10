@@ -2,8 +2,7 @@
 
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
-
+struct Objc3IRFrontendMetadata;
 struct Objc3LoweringContract;
 struct Objc3Program;
 

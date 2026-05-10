@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <sstream>
 
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "lower/contracts/executable_property_layout_contracts.h"
 #include "lower/contracts/ownership_runtime_semantics_contracts.h"

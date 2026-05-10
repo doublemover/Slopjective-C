@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_emitter_pipeline.h"
 #include "ir/objc3_ir_emitter_state_initialization.h"
 

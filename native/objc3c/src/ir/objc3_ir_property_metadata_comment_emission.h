@@ -3,8 +3,9 @@
 #include <cstddef>
 #include <iosfwd>
 
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "lower/objc3_lowering_contract.h"
+
+struct Objc3IRFrontendMetadata;
 
 struct Objc3IRPropertyMetadataCommentEmissionOptions {
   const Objc3IRFrontendMetadata &frontend_metadata;

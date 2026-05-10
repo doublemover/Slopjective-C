@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ir/objc3_ir_entry_point_emission.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_module_emission_surface.h"

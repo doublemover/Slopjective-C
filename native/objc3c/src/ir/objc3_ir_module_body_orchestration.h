@@ -11,7 +11,6 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_function_orchestration.h"
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_method_definition_plan.h"
@@ -19,6 +18,7 @@
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "lower/objc3_lowering_contract.h"
 
+struct Objc3IRFrontendMetadata;
 struct Objc3IRSyntheticMethodEmissionStats;
 
 struct Objc3IRModuleBodyOrchestrationOptions {
