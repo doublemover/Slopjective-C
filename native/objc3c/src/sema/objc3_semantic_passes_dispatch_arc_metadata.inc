@@ -1,6 +1,3 @@
-  return sites;
-}
-
 static Objc3AutoreleasePoolScopeSummary BuildAutoreleasePoolScopeSummaryFromSites(
     const std::vector<Objc3AutoreleasePoolScopeSiteMetadata> &sites) {
   Objc3AutoreleasePoolScopeSummary summary;

@@ -1220,3 +1220,5 @@ BuildAutoreleasePoolScopeSiteMetadataLexicographic(const Objc3Program &ast) {
     CollectAutoreleasePoolScopeSiteMetadataFromStatements(fn.body, sites);
   }
   std::sort(sites.begin(), sites.end(), IsAutoreleasePoolScopeSiteMetadataLess);
+  return sites;
+}
