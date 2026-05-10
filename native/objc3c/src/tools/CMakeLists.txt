@@ -58,6 +58,8 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_public_result_ownership.cpp
   objc3c_frontend_c_api_runner_read_command.cpp
   objc3c_frontend_c_api_runner_result_contract.cpp
+  objc3c_frontend_c_api_runner_result_contract_artifacts.cpp
+  objc3c_frontend_c_api_runner_result_contract_status.cpp
   objc3c_frontend_c_api_runner_result_lifetime.cpp
   objc3c_frontend_c_api_runner_repro_command.cpp
   objc3c_frontend_c_api_runner_runtime_inspector_json.cpp
