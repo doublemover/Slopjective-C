@@ -2,8 +2,8 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
-#include "lower/contracts/executable_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -18,7 +18,7 @@ void WriteExecutableIvarLayoutEmissionSurface(
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication) {
   manifest << "  \"executable_ivar_layout_emission_surface\":{\"contract_id\":\""
-           << kObjc3ExecutableIvarLayoutEmissionContractId
+           << kExecutableAccessorLayoutIvarEmissionContractId
            << "\",\"compile_manifest_artifact\":\""
            << runtime_state_publication_emit_prefix << ".manifest.json"
            << "\",\"registration_manifest_artifact\":\""
@@ -29,17 +29,17 @@ void WriteExecutableIvarLayoutEmissionSurface(
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << kExecutableAccessorLayoutPropertyLoweringContractId
            << "\",\"descriptor_model\":\""
-           << kObjc3ExecutableIvarLayoutDescriptorModel
+           << kExecutableAccessorLayoutIvarDescriptorModel
            << "\",\"offset_global_model\":\""
-           << kObjc3ExecutableIvarOffsetGlobalModel
+           << kExecutableAccessorLayoutIvarOffsetGlobalModel
            << "\",\"layout_table_model\":\""
-           << kObjc3ExecutableIvarLayoutTableModel
+           << kExecutableAccessorLayoutIvarLayoutTableModel
            << "\",\"scope_model\":\""
-           << kObjc3ExecutableIvarLayoutEmissionScopeModel
+           << kExecutableAccessorLayoutIvarEmissionScopeModel
            << "\",\"fail_closed_model\":\""
-           << kObjc3ExecutableIvarLayoutEmissionFailClosedModel
+           << kExecutableAccessorLayoutIvarEmissionFailClosedModel
            << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
            << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
            << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""

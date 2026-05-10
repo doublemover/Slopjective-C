@@ -182,6 +182,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_error_metadata.cpp
   objc3_frontend_artifact_error_metadata.h
   objc3_frontend_artifact_executable_accessor_layout_manifest.h
+  objc3_frontend_artifact_executable_accessor_layout_manifest_contracts.h
   objc3_frontend_artifact_executable_ivar_layout_manifest.cpp
   objc3_frontend_artifact_executable_ivar_layout_manifest.h
   objc3_frontend_artifact_executable_metadata_manifest_surfaces.cpp

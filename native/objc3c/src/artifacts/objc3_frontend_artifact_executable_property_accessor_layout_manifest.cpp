@@ -2,9 +2,9 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/executable_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -19,7 +19,7 @@ void WriteExecutablePropertyAccessorLayoutLoweringSurface(
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication) {
   manifest << "  \"executable_property_accessor_layout_lowering_surface\":{\"contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << kExecutableAccessorLayoutPropertyLoweringContractId
            << "\",\"compile_manifest_artifact\":\""
            << runtime_state_publication_emit_prefix << ".manifest.json"
            << "\",\"registration_manifest_artifact\":\""
@@ -32,17 +32,17 @@ void WriteExecutablePropertyAccessorLayoutLoweringSurface(
            << "\",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""
            << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
            << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
-           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << kExecutableAccessorLayoutDispatchAndSynthesizedAccessorLoweringSurfaceContractId
            << "\",\"property_table_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel
+           << kExecutableAccessorLayoutPropertyTableModel
            << "\",\"ivar_layout_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel
+           << kExecutableAccessorLayoutIvarLayoutModel
            << "\",\"accessor_binding_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel
+           << kExecutableAccessorLayoutAccessorBindingModel
            << "\",\"scope_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel
+           << kExecutableAccessorLayoutScopeModel
            << "\",\"fail_closed_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel
+           << kExecutableAccessorLayoutFailClosedModel
            << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
            << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
            << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
