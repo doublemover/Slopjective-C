@@ -142,6 +142,7 @@ target_link_libraries(objc3c_sema_static_scalar_analysis PUBLIC
 
 add_library(objc3c_semantic_passes_core STATIC
   objc3_pure_contract.cpp
+  objc3_semantic_cpp_interop_model_summary.cpp
   objc3_semantic_concurrency_model_summaries.cpp
   objc3_semantic_constant_evaluator.cpp
   objc3_semantic_control_flow_model_summary.cpp
