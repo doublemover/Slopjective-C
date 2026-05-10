@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-conformance-corpus-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/parser_conformance_corpus"
+  ],
+  "support_boundary": "lowering ownership is non-positive for this parser-conformance corpus. The family contains source fixtures and parser expectations only, with no checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/parser_conformance_corpus/**/*-lowering.expect.txt",
+    "tooling_fixture_family:parser_conformance_corpus",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-parser-corpus",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering rows, shim lowering rows, fallback lowering rows, compatibility lowering rows, migration-only lowering rows, generated-only lowering rows, report-only lowering rows, and parser-corpus-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

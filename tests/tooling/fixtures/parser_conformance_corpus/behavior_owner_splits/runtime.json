@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-conformance-corpus-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/parser_conformance_corpus"
+  ],
+  "support_boundary": "runtime ownership is non-positive for this parser-conformance corpus. Function bodies with return statements are parser fixtures here and do not define runtime execution, ABI, dispatch, object model, or package behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:parser_conformance_corpus",
+    "source_term:return",
+    "source_term:main",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-parser-corpus",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime rows, shim runtime rows, fallback runtime rows, compatibility runtime rows, migration-only runtime rows, generated-only runtime rows, report-only runtime rows, parser-corpus-only runtime claims, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
