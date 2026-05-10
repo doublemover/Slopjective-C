@@ -61,6 +61,11 @@ add_library(objc3c_parse STATIC
   objc3_parser_assignment_statement_nodes.cpp
   objc3_parser_block_literal_source.cpp
   ../parser/frontend/objc3_parser_type_projection.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_concurrency.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_core.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_error.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_unsafe.cpp
+  ../parser/frontend/objc3_parser_type_projection_property.cpp
   objc3_parser_core.cpp
   objc3_parser_core_inline_asm_finalizers.cpp
   objc3_parser_cstyle_type_classifier.cpp
