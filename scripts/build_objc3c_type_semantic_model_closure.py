@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 from typing import Any
 
 from objc3c_tooling.cli import add_check_argument
-from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.validation import contains_all
 from objc3c_type_semantic_model_closure.compiler import run_compiler
+from objc3c_type_semantic_model_closure.conformance import compile_conformance_checks
 from objc3c_type_semantic_model_closure.cross_module import compile_cross_module_generic_contract_summary
 from objc3c_type_semantic_model_closure.cross_module import compile_cross_module_nullability_contract_summary
 from objc3c_type_semantic_model_closure.cross_module import compile_cross_module_protocol_contract_summary
@@ -22,121 +20,37 @@ from objc3c_type_semantic_model_closure.positive import compile_generic_variance
 from objc3c_type_semantic_model_closure.positive import compile_nested_generic_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_positive_summary
 from objc3c_type_semantic_model_closure.positive import compile_protocol_generic_positive_summary
+from objc3c_type_semantic_model_closure.paths import COMPILER
+from objc3c_type_semantic_model_closure.paths import CONTRACT_ID
+from objc3c_type_semantic_model_closure.paths import GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import GENERIC_VARIANCE_POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import IR_EMITTER
+from objc3c_type_semantic_model_closure.paths import ISSUE
+from objc3c_type_semantic_model_closure.paths import JSON_OUT
+from objc3c_type_semantic_model_closure.paths import LOWERING_CONTRACT
+from objc3c_type_semantic_model_closure.paths import MD_OUT
+from objc3c_type_semantic_model_closure.paths import NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import NESTED_GENERIC_POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_POSITIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import ROOT
+from objc3c_type_semantic_model_closure.paths import SOURCE_TRUTH_PATHS
+from objc3c_type_semantic_model_closure.paths import TMP_ROOT
+from objc3c_type_semantic_model_closure.paths import TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE
+from objc3c_type_semantic_model_closure.paths import rel
 from objc3c_type_semantic_model_closure.reporting import SUMMARY_FIELDS
 from objc3c_type_semantic_model_closure.reporting import expected_report_outputs
 from objc3c_type_semantic_model_closure.reporting import write_outputs
-
-ROOT = Path(__file__).resolve().parents[1]
-REPORT_DIR = ROOT / "reports" / "claimability" / "type-semantic-model-closure"
-JSON_OUT = REPORT_DIR / "type_semantic_model_closure_summary.json"
-MD_OUT = REPORT_DIR / "type_semantic_model_closure_summary.md"
-TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "type-semantic-model-closure"
-
-CONTRACT_ID = "objc3c.semantic.type-semantic-model-closure.v1"
-ISSUE = "#8013"
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
-POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_model_closure_positive.objc3"
-NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
-GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"
-PROTOCOL_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_protocol_generic_positive.objc3"
-NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
-NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
-PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
-PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_property_nullability_conflict.objc3"
-UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_unknown_protocol_composition.objc3"
-PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_qualified_unknown_message.objc3"
-TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_typed_object_receiver_unknown_message.objc3"
-GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_constraint_violation.objc3"
-GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_substitution_unknown_message.objc3"
-NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nested_generic_constraint_violation.objc3"
-GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_invariant_assignment.objc3"
-PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_generic_unknown_protocol.objc3"
-SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
-SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
-CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
-CONFORMANCE_NESTED_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-12.json"
-CONFORMANCE_GENERIC_VARIANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-13.json"
-CONFORMANCE_PROTOCOL_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-15.json"
-CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-17.json"
-CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-18.json"
-CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-02.json"
-CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
-CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
-CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-05.json"
-CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-06.json"
-CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-07.json"
-CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-08.json"
-CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-09.json"
-CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-10.json"
-CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-11.json"
-CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-14.json"
-CONFORMANCE_PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-16.json"
-STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
-SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
-SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
-FRONTEND_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
-RUNTIME_IMPORT_SURFACE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_runtime_import_surface.cpp"
-RUNTIME_IMPORT_SURFACE_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_runtime_import_surface.h"
-LOWERING_CONTRACT = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.cpp"
-IR_EMITTER = ROOT / "native" / "objc3c" / "src" / "ir" / "objc3_ir_emitter.cpp"
-
-STATIC_FIELD_TOKENS = [
-    "object_pointer_semantic_sites",
-    "protocol_composition_semantic_sites",
-    "generic_suffix_semantic_sites",
-    "nullability_suffix_semantic_sites",
-    "invalid_generic_suffix_semantic_sites",
-    "invalid_nullability_suffix_semantic_sites",
-    "invalid_protocol_composition_semantic_sites",
-    "canonical_type_entries",
-    "canonical_object_type_entries",
-    "canonical_protocol_qualified_entries",
-    "canonical_nullable_entries",
-    "canonical_implicitly_unwrapped_entries",
-    "canonical_invalid_type_entries",
-]
-
-SEMANTIC_PASS_TOKENS = [
-    "BuildTypeSystemTypeSemanticModelSummary",
-    "type_annotation_surface_summary.object_pointer_type_sites",
-    "protocol_qualified_object_type_summary.protocol_composition_sites",
-    "type_annotation_surface_summary.generic_suffix_sites",
-    "generic_metadata_abi_summary.generic_metadata_abi_sites",
-    "type_annotation_surface_summary.nullability_suffix_sites",
-    "nullability_flow_warning_precision_summary.nullability_flow_sites",
-    "type_annotation_surface_summary.invalid_generic_suffix_sites",
-    "type_annotation_surface_summary.invalid_nullability_suffix_sites",
-    "protocol_qualified_object_type_summary.contract_violation_sites",
-    "param_canonical_types",
-    "return_canonical_type",
-    "canonical_type",
-    "IsUnsafeNullableToNonnullFlow",
-    "IsCompatibleCanonicalSemanticType",
-    "ValidateProtocolCompositionIdentifierBindings",
-    "ResolveProtocolQualifiedMessageRequirement",
-    "ResolveConcreteOwnerPropertyAccessor",
-    "MakeSemanticTypeFromPropertyInfo",
-    "object_pointer_type_name",
-    "Objc3InterfaceGenericDefinition",
-    "BuildInterfaceGenericDefinitions",
-    "ValidateInterfaceGenericSpecializations",
-    "AreGenericSpecializationsVarianceAssignmentCompatible",
-    "ValidateProtocolQualifiedGenericArgument",
-    "SubstituteGenericReceiverType",
-    "ExtractGenericArgumentSpecialization",
-    "generic_parameter_variance_source_order",
-    "generic_arguments_source_order",
-    "SupportsPointerParamTypeDeclarator",
-    "optional_methods_by_key",
-]
-
-
-def rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8-sig")
+from objc3c_type_semantic_model_closure.static_presence import compile_static_presence
 
 
 def build_summary() -> dict[str, Any]:
@@ -266,93 +180,7 @@ def build_summary() -> dict[str, Any]:
         ),
     }
 
-    sema_contract_text = read(SEMA_CONTRACT)
-    semantic_passes_text = read(SEMANTIC_PASSES)
-    artifacts_text = read(FRONTEND_ARTIFACTS)
-    runtime_import_surface_text = read(RUNTIME_IMPORT_SURFACE)
-    runtime_import_surface_header_text = read(RUNTIME_IMPORT_SURFACE_HEADER)
-    lowering_text = read(LOWERING_CONTRACT)
-    ir_text = read(IR_EMITTER)
-    manifest_text = read(SEMANTIC_MANIFEST)
-    readme_text = read(SEMANTIC_README)
-    stress_manifest_text = read(STRESS_MANIFEST)
-    conformance_positive = load_json(CONFORMANCE_POSITIVE)
-    conformance_nested_generic_positive = load_json(CONFORMANCE_NESTED_GENERIC_POSITIVE)
-    conformance_generic_variance_positive = load_json(CONFORMANCE_GENERIC_VARIANCE_POSITIVE)
-    conformance_protocol_generic_positive = load_json(CONFORMANCE_PROTOCOL_GENERIC_POSITIVE)
-    conformance_cross_module_generic_positive = load_json(CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE)
-    conformance_cross_module_protocol_positive = load_json(CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE)
-    conformance_negative = load_json(CONFORMANCE_NEGATIVE)
-    conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
-    conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
-    conformance_protocol_property_nullability_negative = load_json(CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE)
-    conformance_unknown_protocol_composition_negative = load_json(CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE)
-    conformance_protocol_qualified_unknown_message_negative = load_json(CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE)
-    conformance_typed_object_receiver_unknown_message_negative = load_json(CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE)
-    conformance_generic_constraint_violation_negative = load_json(CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
-    conformance_generic_substitution_unknown_message_negative = load_json(CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE)
-    conformance_nested_generic_constraint_violation_negative = load_json(CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
-    conformance_generic_invariant_assignment_negative = load_json(CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE)
-    conformance_protocol_generic_unknown_protocol_negative = load_json(CONFORMANCE_PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE)
-
-    static_presence = {
-        "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
-        "semantic_pass_sources_and_replay_key": contains_all(semantic_passes_text, STATIC_FIELD_TOKENS + SEMANTIC_PASS_TOKENS + REPLAY_KEY_SEGMENTS),
-        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name", "generic_parameter_variance_source_order"]),
-        "runtime_import_surface_generic_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_generic_contract_preservation", "PopulateImportedTypeSystemGenericContractPreservation", "type_system_generic_contract_preservation_present", "type_system_protocol_qualified_generic_argument_count"]),
-        "runtime_import_surface_nullability_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_nullability_contract_preservation", "PopulateImportedTypeSystemNullabilityContractPreservation", "type_system_nullability_contract_preservation_present", "type_system_unspecified_nullability_entry_count"]),
-        "runtime_import_surface_protocol_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_protocol_contract_preservation", "PopulateImportedTypeSystemProtocolContractPreservation", "type_system_protocol_contract_preservation_present", "type_system_protocol_required_method_count"]),
-        "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
-        "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
-    }
-
-    source_truth_paths = [
-        POSITIVE_FIXTURE,
-        NESTED_GENERIC_POSITIVE_FIXTURE,
-        GENERIC_VARIANCE_POSITIVE_FIXTURE,
-        PROTOCOL_GENERIC_POSITIVE_FIXTURE,
-        NEGATIVE_FIXTURE,
-        NULLABILITY_NEGATIVE_FIXTURE,
-        PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
-        PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE,
-        UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE,
-        PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
-        TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
-        GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
-        GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
-        NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
-        GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE,
-        PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE,
-        CONFORMANCE_POSITIVE,
-        CONFORMANCE_NESTED_GENERIC_POSITIVE,
-        CONFORMANCE_GENERIC_VARIANCE_POSITIVE,
-        CONFORMANCE_PROTOCOL_GENERIC_POSITIVE,
-        CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE,
-        CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE,
-        CONFORMANCE_NEGATIVE,
-        CONFORMANCE_NULLABILITY_NEGATIVE,
-        CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
-        CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE,
-        CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE,
-        CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE,
-        CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE,
-        CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
-        CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE,
-        CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
-        CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE,
-        CONFORMANCE_PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE,
-        SEMANTIC_MANIFEST,
-        SEMANTIC_README,
-        STRESS_MANIFEST,
-        SEMA_CONTRACT,
-        SEMANTIC_PASSES,
-        FRONTEND_ARTIFACTS,
-        RUNTIME_IMPORT_SURFACE,
-        RUNTIME_IMPORT_SURFACE_HEADER,
-        LOWERING_CONTRACT,
-        IR_EMITTER,
-    ]
-    no_tmp_source_truth = all(not rel(path).startswith("tmp/") for path in source_truth_paths)
+    static_presence = compile_static_presence()
 
     negative_checks = compile_negative_summary(
         negative_run=negative_run,
@@ -369,82 +197,7 @@ def build_summary() -> dict[str, Any]:
         protocol_generic_unknown_protocol_negative_run=protocol_generic_unknown_protocol_negative_run,
     )
 
-    conformance_checks = {
-        "semantic_manifest_indexes_typ_8013_01": "TYP-8013-01.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_02": "TYP-8013-02.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_03": "TYP-8013-03.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_04": "TYP-8013-04.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_05": "TYP-8013-05.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_06": "TYP-8013-06.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_07": "TYP-8013-07.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_08": "TYP-8013-08.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_09": "TYP-8013-09.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_10": "TYP-8013-10.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_11": "TYP-8013-11.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_12": "TYP-8013-12.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_13": "TYP-8013-13.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_14": "TYP-8013-14.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_15": "TYP-8013-15.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_16": "TYP-8013-16.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_17": "TYP-8013-17.json" in manifest_text,
-        "semantic_manifest_indexes_typ_8013_18": "TYP-8013-18.json" in manifest_text,
-        "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
-        "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_protocol_property_nullability_negative_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_unknown_protocol_composition_negative_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_protocol_qualified_unknown_message_negative_fixture": rel(PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_generic_invariant_assignment_negative_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE) in readme_text,
-        "semantic_readme_mentions_protocol_generic_unknown_protocol_negative_fixture": rel(PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE) in readme_text,
-        "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
-        "nested_generic_positive_conformance_references_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in conformance_nested_generic_positive.get("references", []),
-        "generic_variance_positive_conformance_references_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_generic_variance_positive.get("references", []),
-        "protocol_generic_positive_conformance_references_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in conformance_protocol_generic_positive.get("references", []),
-        "cross_module_generic_positive_conformance_references_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
-        "cross_module_generic_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
-        "cross_module_generic_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_generic_positive.get("references", []),
-        "cross_module_protocol_positive_conformance_references_provider_fixture": rel(POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
-        "cross_module_protocol_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
-        "cross_module_protocol_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_protocol_positive.get("references", []),
-        "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
-        "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
-        "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
-        "protocol_property_nullability_negative_conformance_references_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_property_nullability_negative.get("references", []),
-        "unknown_protocol_composition_negative_conformance_references_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE) in conformance_unknown_protocol_composition_negative.get("references", []),
-        "protocol_qualified_unknown_message_negative_conformance_references_fixture": rel(PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_protocol_qualified_unknown_message_negative.get("references", []),
-        "typed_object_receiver_unknown_message_negative_conformance_references_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_typed_object_receiver_unknown_message_negative.get("references", []),
-        "generic_constraint_violation_negative_conformance_references_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_generic_constraint_violation_negative.get("references", []),
-        "generic_substitution_unknown_message_negative_conformance_references_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_generic_substitution_unknown_message_negative.get("references", []),
-        "nested_generic_constraint_violation_negative_conformance_references_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_nested_generic_constraint_violation_negative.get("references", []),
-        "generic_invariant_assignment_negative_conformance_references_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE) in conformance_generic_invariant_assignment_negative.get("references", []),
-        "protocol_generic_unknown_protocol_negative_conformance_references_fixture": rel(PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE) in conformance_protocol_generic_unknown_protocol_negative.get("references", []),
-        "negative_conformance_expects_o3s206_location": conformance_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 7, "column": 21}],
-        "nullability_negative_conformance_expects_o3s227_location": conformance_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S227", "line": 9, "column": 23}],
-        "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
-        "protocol_property_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_property_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
-        "unknown_protocol_composition_negative_conformance_expects_o3s206_location": conformance_unknown_protocol_composition_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 4, "column": 21}],
-        "protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location": conformance_protocol_qualified_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],
-        "typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location": conformance_typed_object_receiver_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],
-        "generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 29, "column": 50}],
-        "generic_substitution_unknown_message_negative_conformance_expects_o3s216_location": conformance_generic_substitution_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 23, "column": 18}],
-        "nested_generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_nested_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 33, "column": 12}],
-        "generic_invariant_assignment_negative_conformance_expects_o3s206_location": conformance_generic_invariant_assignment_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 30, "column": 26}],
-        "protocol_generic_unknown_protocol_negative_conformance_expects_o3s206_location": conformance_protocol_generic_unknown_protocol_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 10, "column": 12}],
-        "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
-        "stress_manifest_compiles_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
-        "stress_manifest_compiles_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in stress_manifest_text,
-        "stress_manifest_compiles_protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
-        "no_tmp_source_truth": no_tmp_source_truth,
-    }
+    conformance_checks = compile_conformance_checks()
 
     checks = {
         **positive_checks,
@@ -475,7 +228,7 @@ def build_summary() -> dict[str, Any]:
         "status": status,
         "checks": checks,
         "static_presence": static_presence,
-        "source_truth_paths": [rel(path) for path in source_truth_paths],
+        "source_truth_paths": [rel(path) for path in SOURCE_TRUTH_PATHS],
         "positive_fixture": rel(POSITIVE_FIXTURE),
         "nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE),
         "generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
