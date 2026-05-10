@@ -208,6 +208,7 @@ add_library(objc3c_pipeline STATIC
   objc3_ownership_aware_lowering_behavior_scaffold_owners.h
   objc3_parse_lowering_readiness_surface.h
   objc3_runtime_import_surface.h
+  objc3_typed_sema_to_lowering_contract_surface_advanced_keys.h
   objc3_typed_sema_to_lowering_contract_surface_core.h
   objc3_typed_sema_to_lowering_contract_surface.h
   runtime_import_frontend_closure_boundary.h
