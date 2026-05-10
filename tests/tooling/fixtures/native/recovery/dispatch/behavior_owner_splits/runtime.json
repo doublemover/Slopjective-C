@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-dispatch-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.meta.json"
+  ],
+  "support_boundary": "runtime ownership covers recovery dispatch runtime behavior only for hand-authored dispatch source rows whose runtime entrypoint, selector arity, and receiver dispatch semantics are claimed by a canonical runtime owner. The message_send_six_args source is runtime dispatch evidence; the native compile-args sidecar records configurable arity provenance and is not positive runtime truth by itself. Parser draft and container layout fixtures are not runtime positives from this owner split.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.meta.json",
+    "runtime_surface:message-send-runtime-dispatch",
+    "runtime_surface:six-argument-keyword-selector",
+    "runtime_surface:receiver-dispatch-entrypoint",
+    "provenance_coupling:native_compile_args=--objc3-max-message-args"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime dispatch, compatibility runtime dispatch, shim runtime dispatch, fallback runtime dispatch, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, unsupported dispatch arity, and sidecar-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

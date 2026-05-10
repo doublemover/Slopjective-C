@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-dispatch-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.meta.json"
+  ],
+  "support_boundary": "IR ownership requires canonical IR output evidence or an upstream IR owner claim. This recovery dispatch family has hand-authored source rows and a compile-args sidecar, but no checked-in IR expectation in this directory; therefore source inventory, dispatch labels, and sidecar metadata are provenance for IR routing rather than positive IR truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.meta.json",
+    "absent:tests/tooling/fixtures/native/recovery/dispatch/*-ir.expect.txt",
+    "provenance_coupling:native_compile_args=--objc3-max-message-args"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, report-only IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, and IR claims derived only from source inventory or compile-args sidecars are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
