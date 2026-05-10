@@ -2,8 +2,7 @@
 
 #include <sstream>
 
-#include "tools/objc3c_frontend_c_api_runner_observability_json_context.h"
-#include "tools/objc3c_frontend_c_api_runner_observability_json_sections.h"
+#include "tools/objc3c_frontend_c_api_runner_observability_json_writer.h"
 
 void WriteFrontendCApiRunnerObservabilityJson(
     std::ostream &out,
@@ -14,14 +13,14 @@ void WriteFrontendCApiRunnerObservabilityJson(
     const std::string &result_error_message,
     const std::string &runtime_metadata_binary_path_text) {
   const FrontendCApiRunnerObservabilityContext context =
-      BuildFrontendCApiRunnerObservabilityContext(
+      BuildFrontendCApiRunnerObservabilityWriterContext(
           indent,
           summary_path_text,
           result,
           result_error_message,
           runtime_metadata_binary_path_text);
   out << "{\n";
-  WriteFrontendCApiRunnerObservabilitySections(out, status, context);
+  WriteFrontendCApiRunnerObservabilityJsonSectionRows(out, status, context);
   out << indent << "}";
 }
 
