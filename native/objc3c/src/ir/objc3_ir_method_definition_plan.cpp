@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_symbol_model.h"
 #include "ir/objc3_ir_type_model.h"
 
