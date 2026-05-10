@@ -15,9 +15,12 @@ add_library(objc3c_json STATIC
   json/json_schema_array_validation.cpp
   json/json_schema_all_of_composition_contract_validation.cpp
   json/json_schema_all_of_validation.cpp
+  json/json_schema_annotation_comment_contract_validation.cpp
   json/json_schema_annotation_contract_validation.cpp
   json/json_schema_annotation_descriptive_contract_validation.cpp
+  json/json_schema_annotation_id_contract_validation.cpp
   json/json_schema_annotation_metadata_contract_validation.cpp
+  json/json_schema_annotation_schema_contract_validation.cpp
   json/json_schema_any_of_composition_contract_validation.cpp
   json/json_schema_any_of_validation.cpp
   json/json_schema_applicator_additional_properties_contract_validation.cpp
