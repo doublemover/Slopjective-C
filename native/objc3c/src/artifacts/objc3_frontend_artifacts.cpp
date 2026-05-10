@@ -43,6 +43,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_typed_bundles.h"
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
@@ -6731,51 +6732,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           runtime_bootstrap_legality_semantics,
           runtime_bootstrap_failure_restart_semantics, runtime_bootstrap_api,
           runtime_bootstrap_semantics);
-  manifest << "  \"runtime_object_model_realization_source_surface\":{\"contract_id\":\""
-           << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
-           << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
-           << "\",\"registration_manifest_artifact\":\""
-           << runtime_translation_unit_registration_manifest
-                  .manifest_artifact_relative_path
-           << "\",\"registration_descriptor_artifact\":\""
-           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
-           << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
-           << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
-           << "\",\"executable_realization_records_contract_id\":\""
-           << kObjc3ExecutableRealizationRecordsContractId
-           << "\",\"runtime_class_realization_contract_id\":\""
-           << kObjc3RuntimeClassRealizationContractId
-           << "\",\"runtime_metaclass_graph_contract_id\":\""
-           << kObjc3RuntimeMetaclassGraphRootClassContractId
-           << "\",\"runtime_category_attachment_protocol_conformance_contract_id\":\""
-           << kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId
-           << "\",\"canonical_runnable_object_support_contract_id\":\""
-           << kObjc3RuntimeCanonicalRunnableObjectSampleSupportContractId
-           << "\",\"runtime_support_library_archive_relative_path\":\""
-           << runtime_translation_unit_registration_manifest
-                  .runtime_support_library_archive_relative_path
-           << "\",\"public_header_path\":\""
-           << runtime_bootstrap_api.public_header_path
-           << "\",\"internal_header_path\":\""
-           << kObjc3RuntimeBootstrapInternalHeaderPath
-           << "\",\"registration_entrypoint_symbol\":\""
-           << runtime_translation_unit_registration_manifest
-                  .registration_entrypoint_symbol
-
-           << "\",\"selector_lookup_symbol\":\""
-           << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
-           << "\",\"runtime_dispatch_symbol\":\""
-           << kObjc3RuntimeSupportLibraryDispatchI32Symbol
-           << "\",\"realized_class_graph_snapshot_symbol\":\"objc3_runtime_copy_realized_class_graph_state_for_testing\""
-           << ",\"realized_class_entry_snapshot_symbol\":\"objc3_runtime_copy_realized_class_entry_for_testing\""
-           << ",\"protocol_conformance_query_symbol\":\"objc3_runtime_copy_protocol_conformance_query_for_testing\""
-           << ",\"requires_coupled_registration_manifest\":true"
-           << ",\"requires_real_compile_output\":true"
-           << ",\"requires_linked_runtime_probe\":true"
-           << "},\n";
+  objc3::artifacts::frontend::
+      WriteRuntimeObjectModelRealizationSourceSurface(
+          manifest, runtime_state_publication_emit_prefix,
+          runtime_translation_unit_registration_manifest,
+          runtime_registration_descriptor_frontend_closure,
+          runtime_bootstrap_api);
   manifest << "  \"runtime_property_ivar_storage_accessor_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
