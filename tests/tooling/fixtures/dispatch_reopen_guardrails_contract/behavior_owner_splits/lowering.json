@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract"
+  ],
+  "support_boundary": "lowering ownership is non-positive for this dispatch-reopen guardrails family. The family contains markdown dispatch governance fixtures only, with no checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/dispatch_reopen_guardrails_contract/**/*-lowering.expect.txt",
+    "tooling_fixture_family:dispatch_reopen_guardrails_contract",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-dispatch-reopen-fixtures",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering dispatch rows, shim lowering dispatch rows, fallback lowering dispatch rows, compatibility lowering dispatch rows, migration-only lowering rows, generated-only lowering rows, report-only lowering rows, and dispatch-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
