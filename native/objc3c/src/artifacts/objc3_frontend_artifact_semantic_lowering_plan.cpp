@@ -23,7 +23,7 @@ BuildObjc3FrontendArtifactSemanticLoweringPlan(
   Objc3FrontendArtifactSemanticLoweringPlan plan;
 
   plan.dispatch_dispatch_control_lowering_contract =
-      objc3::artifacts::frontend::BuildDispatchDispatchControlLoweringContract(
+      objc3::artifacts::frontend::BuildDispatchDispatchControlLoweringSnapshot(
           pipeline_result.dispatch_dispatch_intent_semantic_model_summary,
           pipeline_result.dispatch_dispatch_intent_legality_summary,
           pipeline_result.dispatch_dispatch_intent_compatibility_summary);

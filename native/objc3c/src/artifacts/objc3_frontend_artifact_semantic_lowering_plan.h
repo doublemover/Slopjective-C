@@ -6,11 +6,6 @@
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
-#include "lower/contracts/concurrency_actor_contracts.h"
-#include "lower/contracts/concurrency_continuation_runtime_contracts.h"
-#include "lower/contracts/concurrency_task_lowering_contracts.h"
-#include "lower/contracts/dispatch_control_lowering_contracts.h"
-#include "lower/contracts/ownership_system_extension_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactSemanticLoweringPlan {

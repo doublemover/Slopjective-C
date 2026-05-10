@@ -3,19 +3,9 @@
 #include <cstddef>
 #include <string>
 
+#include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
-
-struct Objc3DispatchAbiMarshallingContract;
-struct Objc3DispatchDispatchControlLoweringContract;
-struct Objc3DispatchSurfaceClassificationContract;
-struct Objc3IdClassSelObjectPointerTypecheckContract;
-struct Objc3MessageSendSelectorLoweringContract;
-struct Objc3NilReceiverSemanticsFoldabilityContract;
-struct Objc3PropertySynthesisIvarBindingContract;
-struct Objc3RuntimeDispatchLoweringAbiContract;
-struct Objc3RuntimeLinkHostLinkContract;
-struct Objc3SuperDispatchMethodFamilyContract;
 
 namespace objc3::artifacts::frontend {
 
@@ -34,6 +24,13 @@ namespace objc3::artifacts::frontend {
     const Objc3DispatchDispatchIntentCompatibilitySummary &compatibility_summary,
     const Objc3DispatchDispatchControlLoweringContract &contract,
     const std::string &replay_key);
+
+[[nodiscard]] Objc3DispatchDispatchControlLoweringContract
+BuildDispatchDispatchControlLoweringSnapshot(
+    const Objc3DispatchDispatchIntentSemanticModelSummary &semantic_summary,
+    const Objc3DispatchDispatchIntentLegalitySummary &legality_summary,
+    const Objc3DispatchDispatchIntentCompatibilitySummary
+        &compatibility_summary);
 
 [[nodiscard]] Objc3DispatchSurfaceClassificationContract
 BuildDispatchSurfaceClassificationContract(const Objc3Program &program);
