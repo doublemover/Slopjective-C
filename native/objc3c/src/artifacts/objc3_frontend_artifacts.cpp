@@ -6771,108 +6771,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           runtime_translation_unit_registration_manifest,
           executable_accessor_layout_lowering_summary,
           runtime_metadata_section_publication);
-  manifest << "  \"executable_ivar_layout_emission_surface\":{\"contract_id\":\""
-           << kObjc3ExecutableIvarLayoutEmissionContractId
-           << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
-           << "\",\"registration_manifest_artifact\":\""
-           << runtime_translation_unit_registration_manifest
-                  .manifest_artifact_relative_path
-           << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
-           << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
-           << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
-           << "\",\"descriptor_model\":\""
-           << kObjc3ExecutableIvarLayoutDescriptorModel
-           << "\",\"offset_global_model\":\""
-           << kObjc3ExecutableIvarOffsetGlobalModel
-           << "\",\"layout_table_model\":\""
-           << kObjc3ExecutableIvarLayoutTableModel
-           << "\",\"scope_model\":\""
-           << kObjc3ExecutableIvarLayoutEmissionScopeModel
-           << "\",\"fail_closed_model\":\""
-           << kObjc3ExecutableIvarLayoutEmissionFailClosedModel
-           << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
-           << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
-           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
-           << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3\""
-           << ",\"tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3\""
-           << ",\"tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3\"]"
-           << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/property_layout_runtime_probe.cpp\""
-           << ",\"tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp\"]"
-           << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
-           << ",\"no-milestone-specific-scaffolding\""
-           << ",\"no-runtime-layout-rederivation\"]"
-           << ",\"offset_global_entries\":"
-           << executable_accessor_layout_lowering_summary.ivar_layout_entries
-           << ",\"layout_table_entries\":"
-           << executable_accessor_layout_lowering_summary.ivar_layout_owner_entries
-           << ",\"layout_owner_entries\":"
-           << executable_accessor_layout_lowering_summary.ivar_layout_owner_entries
-           << ",\"ivar_descriptor_entries\":"
-           << runtime_metadata_section_publication.ivar_descriptor_count
-           << ",\"requires_coupled_registration_manifest\":true"
-           << ",\"requires_real_compile_output\":true"
-           << ",\"requires_linked_runtime_probe\":true"
-           << "},\n";
-  manifest << "  \"executable_synthesized_accessor_property_lowering_surface\":{\"contract_id\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
-           << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
-           << "\",\"registration_manifest_artifact\":\""
-           << runtime_translation_unit_registration_manifest
-                  .manifest_artifact_relative_path
-           << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
-           << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
-           << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
-           << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
-           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
-           << "\",\"source_model\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel
-           << "\",\"storage_model\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel
-           << "\",\"property_descriptor_model\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
-           << "\",\"fail_closed_model\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
-           << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
-           << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
-           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
-           << ",\"runtime_source_path\":\"native/objc3c/src/runtime/objc3_runtime.cpp\""
-           << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3\""
-           << ",\"tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3\""
-           << ",\"tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3\""
-           << ",\"tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3\""
-           << ",\"tests/tooling/fixtures/native/arc_property_interaction_positive.objc3\"]"
-           << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/synthesized_accessor_probe.cpp\""
-           << ",\"tests/tooling/runtime/property_layout_runtime_probe.cpp\""
-           << ",\"tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp\""
-           << ",\"tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp\""
-           << ",\"tests/tooling/runtime/arc_debug_instrumentation_probe.cpp\"]"
-           << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
-           << ",\"no-milestone-specific-scaffolding\""
-           << ",\"hard-cut-storage-global-body-proof\"]"
-           << ",\"implementation_owned_property_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .implementation_owned_property_entries
-           << ",\"synthesized_getter_entries\":"
-           << executable_accessor_layout_lowering_summary.synthesized_getter_entries
-           << ",\"synthesized_setter_entries\":"
-           << executable_accessor_layout_lowering_summary.synthesized_setter_entries
-           << ",\"synthesized_accessor_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .synthesized_accessor_entries
-           << ",\"property_descriptor_entries\":"
-           << runtime_metadata_section_publication.property_descriptor_count
-           << ",\"requires_coupled_registration_manifest\":true"
-           << ",\"requires_real_compile_output\":true"
-           << ",\"requires_linked_runtime_probe\":true"
-           << "},\n";
+  objc3::artifacts::frontend::WriteExecutableIvarLayoutEmissionSurface(
+      manifest, runtime_state_publication_emit_prefix,
+      runtime_translation_unit_registration_manifest,
+      executable_accessor_layout_lowering_summary,
+      runtime_metadata_section_publication);
+  objc3::artifacts::frontend::
+      WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
+          manifest, runtime_state_publication_emit_prefix,
+          runtime_translation_unit_registration_manifest,
+          executable_accessor_layout_lowering_summary,
+          runtime_metadata_section_publication);
   manifest << "  \"runtime_property_atomicity_synthesis_reflection_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
