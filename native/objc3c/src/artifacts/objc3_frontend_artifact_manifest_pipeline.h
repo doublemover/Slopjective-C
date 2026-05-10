@@ -20,6 +20,10 @@ void AppendObjc3FrontendArtifactManifestPipelineStages(
     const Objc3FrontendOptions &options,
     const Objc3FrontendArtifactBundle &bundle);
 
+void AppendObjc3FrontendArtifactManifestSemaPassDiagnostics(
+    std::ostream &manifest,
+    const Objc3FrontendPipelineResult &pipeline_result);
+
 void AppendObjc3FrontendArtifactManifestLoweringHeader(
     std::ostream &manifest,
     const Objc3FrontendOptions &options,
