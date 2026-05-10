@@ -156,6 +156,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_ir_emission_completion.h
   objc3_frontend_artifact_lowering_contracts.cpp
   objc3_frontend_artifact_lowering_contracts.h
+  objc3_frontend_artifact_lowering_replay_manifest.cpp
+  objc3_frontend_artifact_lowering_replay_manifest.h
   objc3_frontend_artifact_metaprogramming_metadata.cpp
   objc3_frontend_artifact_metaprogramming_metadata.h
   objc3_frontend_artifact_metadata_mode.cpp

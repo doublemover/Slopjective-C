@@ -29,6 +29,7 @@
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ir_emission_completion.h"
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
+#include "artifacts/objc3_frontend_artifact_lowering_replay_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
@@ -6864,249 +6865,142 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   objc3::artifacts::frontend::
       WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
           manifest, runtime_bootstrap_api);
-  manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
-           << id_class_sel_object_pointer_typecheck_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_dispatch_surface_classification\":{\"replay_key\":\""
-           << dispatch_surface_classification_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3DispatchSurfaceClassificationContractId
-           << "\",\"deterministic_handoff\":"
-           << (dispatch_surface_classification_contract.deterministic ? "true"
-                                                                     : "false")
-           << "},\n";
-  manifest << "  \"lowering_message_send_selector_lowering\":{\"replay_key\":\""
-           << message_send_selector_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3MessageSendSelectorLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_dispatch_abi_marshalling\":{\"replay_key\":\""
-           << dispatch_abi_marshalling_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3DispatchAbiMarshallingLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_nil_receiver_semantics_foldability\":{\"replay_key\":\""
-           << nil_receiver_semantics_foldability_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3NilReceiverSemanticsFoldabilityLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_control_flow_control_flow_safety\":{\"replay_key\":\""
-           << control_flow_control_flow_safety_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3ControlFlowControlFlowSafetyLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (control_flow_control_flow_safety_lowering_contract.deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_super_dispatch_method_family\":{\"replay_key\":\""
-           << super_dispatch_method_family_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3SuperDispatchMethodFamilyLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_runtime_link_host_link\":{\"replay_key\":\""
-           << runtime_link_host_link_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3RuntimeLinkHostLinkLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (runtime_link_host_link_contract.deterministic ? "true" : "false")
-           << "},\n";
+  objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
+      manifest,
+      {{"lowering_id_class_sel_object_pointer_typecheck",
+        id_class_sel_object_pointer_typecheck_replay_key,
+        kObjc3IdClassSelObjectPointerTypecheckLaneContract,
+        id_class_sel_object_pointer_typecheck_contract.deterministic},
+       {"lowering_dispatch_surface_classification",
+        dispatch_surface_classification_replay_key,
+        kObjc3DispatchSurfaceClassificationContractId,
+        dispatch_surface_classification_contract.deterministic},
+       {"lowering_message_send_selector_lowering",
+        message_send_selector_lowering_replay_key,
+        kObjc3MessageSendSelectorLoweringLaneContract,
+        message_send_selector_lowering_contract.deterministic},
+       {"lowering_dispatch_abi_marshalling", dispatch_abi_marshalling_replay_key,
+        kObjc3DispatchAbiMarshallingLaneContract,
+        dispatch_abi_marshalling_contract.deterministic},
+       {"lowering_nil_receiver_semantics_foldability",
+        nil_receiver_semantics_foldability_replay_key,
+        kObjc3NilReceiverSemanticsFoldabilityLaneContract,
+        nil_receiver_semantics_foldability_contract.deterministic},
+       {"lowering_control_flow_control_flow_safety",
+        control_flow_control_flow_safety_lowering_replay_key,
+        kObjc3ControlFlowControlFlowSafetyLoweringLaneContract,
+        control_flow_control_flow_safety_lowering_contract.deterministic},
+       {"lowering_super_dispatch_method_family",
+        super_dispatch_method_family_replay_key,
+        kObjc3SuperDispatchMethodFamilyLaneContract,
+        super_dispatch_method_family_contract.deterministic},
+       {"lowering_runtime_link_host_link", runtime_link_host_link_replay_key,
+        kObjc3RuntimeLinkHostLinkLaneContract,
+        runtime_link_host_link_contract.deterministic}});
   manifest << "  \"runtime_link_host_link_runtime_dispatch_symbol\":\""
            << runtime_link_host_link_contract.runtime_dispatch_symbol
            << "\",\n";
   manifest << "  \"runtime_support_library_link_wiring_runtime_dispatch_symbol\":\""
            << runtime_support_library_link_wiring.runtime_dispatch_symbol
            << "\",\n";
-  manifest << "  \"lowering_ownership_qualifier\":{\"replay_key\":\""
-           << ownership_qualifier_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3OwnershipQualifierLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_retain_release_operation\":{\"replay_key\":\""
-           << retain_release_operation_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3RetainReleaseOperationLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (retain_release_operation_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_autoreleasepool_scope\":{\"replay_key\":\""
-           << autoreleasepool_scope_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3AutoreleasePoolScopeLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (autoreleasepool_scope_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_weak_unowned_semantics\":{\"replay_key\":\""
-           << weak_unowned_semantics_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3WeakUnownedSemanticsLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_arc_diagnostics_fixit\":{\"replay_key\":\""
-           << arc_diagnostics_fixit_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3ArcDiagnosticsFixitLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_block_literal_capture\":{\"replay_key\":\""
-           << block_literal_capture_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3BlockLiteralCaptureLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_block_abi_invoke_trampoline\":{\"replay_key\":\""
-           << block_abi_invoke_trampoline_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3BlockAbiInvokeTrampolineLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_block_storage_escape\":{\"replay_key\":\""
-           << block_storage_escape_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3BlockStorageEscapeLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (block_storage_escape_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_block_copy_dispose\":{\"replay_key\":\""
-           << block_copy_dispose_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3BlockCopyDisposeLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (block_copy_dispose_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_block_determinism_perf_baseline\":{\"replay_key\":\""
-           << block_determinism_perf_baseline_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3BlockDeterminismPerfBaselineLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (block_determinism_perf_baseline_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_lightweight_generic_constraint\":{\"replay_key\":\""
-           << lightweight_generic_constraint_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3LightweightGenericsConstraintLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (lightweight_generic_constraint_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_nullability_flow_warning_precision\":{\"replay_key\":\""
-           << nullability_flow_warning_precision_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (nullability_flow_warning_precision_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_protocol_qualified_object_type\":{\"replay_key\":\""
-           << protocol_qualified_object_type_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_variance_bridge_cast\":{\"replay_key\":\""
-           << variance_bridge_cast_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3VarianceBridgeCastLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_generic_metadata_abi\":{\"replay_key\":\""
-           << generic_metadata_abi_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3GenericMetadataAbiLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_module_import_graph\":{\"replay_key\":\""
-           << module_import_graph_lowering_replay_key
-           << "\",\"lane_contract\":\"" << kObjc3ModuleImportGraphLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_namespace_collision_shadowing\":{\"replay_key\":\""
-           << namespace_collision_shadowing_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3NamespaceCollisionShadowingLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (namespace_collision_shadowing_lowering_contract.deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_public_private_api_partition\":{\"replay_key\":\""
-           << public_private_api_partition_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3PublicPrivateApiPartitionLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (public_private_api_partition_lowering_contract.deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_incremental_module_cache_invalidation\":{\"replay_key\":\""
-           << incremental_module_cache_invalidation_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (incremental_module_cache_invalidation_lowering_contract
-                       .deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_cross_module_conformance\":{\"replay_key\":\""
-           << cross_module_conformance_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3CrossModuleConformanceLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (cross_module_conformance_lowering_contract.deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_throws_propagation\":{\"replay_key\":\""
-           << throws_propagation_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3ThrowsPropagationLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (throws_propagation_lowering_contract.deterministic
-                   ? "true"
-                   : "false")
-           << "},\n";
-  manifest << "  \"lowering_result_like\":{\"replay_key\":\""
-           << result_like_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3ResultLikeLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (result_like_lowering_contract.deterministic ? "true" : "false")
-           << "},\n";
-  manifest << "  \"lowering_ns_error_bridging\":{\"replay_key\":\""
-           << ns_error_bridging_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3NSErrorBridgingLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (ns_error_bridging_lowering_contract.deterministic ? "true"
-                                                                 : "false")
-           << "},\n";
-  manifest << "  \"lowering_unwind_cleanup\":{\"replay_key\":\""
-           << unwind_cleanup_lowering_replay_key
-           << "\",\"lane_contract\":\""
-           << kObjc3UnwindCleanupLoweringLaneContract
-           << "\",\"deterministic_handoff\":"
-           << (unwind_cleanup_lowering_contract.deterministic ? "true"
-                                                              : "false")
-           << "},\n";
-  manifest
-      << "  \"lowering_error_handling_throws_abi_propagation\":{\"replay_key\":\""
-      << error_handling_throws_abi_propagation_lowering_replay_key
-      << "\",\"contract_id\":\""
-      << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
-      << "\",\"deterministic_handoff\":"
-      << (deterministic_error_handling_throws_abi_propagation_lowering ? "true"
-                                                              : "false")
-      << "},\n";
-  manifest
-      << "  \"lowering_error_handling_result_and_bridging_artifact_replay\":{\"replay_key\":\""
-      << error_handling_result_and_bridging_artifact_replay_summary.replay_key
-      << "\",\"contract_id\":\""
-      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId
-      << "\",\"deterministic_handoff\":"
-      << (error_handling_result_and_bridging_artifact_replay_summary.deterministic
-              ? "true"
-              : "false")
-      << "},\n";
+  objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
+      manifest,
+      {{"lowering_ownership_qualifier", ownership_qualifier_lowering_replay_key,
+        kObjc3OwnershipQualifierLoweringLaneContract,
+        ownership_qualifier_lowering_contract.deterministic},
+       {"lowering_retain_release_operation",
+        retain_release_operation_lowering_replay_key,
+        kObjc3RetainReleaseOperationLoweringLaneContract,
+        retain_release_operation_lowering_contract.deterministic},
+       {"lowering_autoreleasepool_scope",
+        autoreleasepool_scope_lowering_replay_key,
+        kObjc3AutoreleasePoolScopeLoweringLaneContract,
+        autoreleasepool_scope_lowering_contract.deterministic},
+       {"lowering_weak_unowned_semantics",
+        weak_unowned_semantics_lowering_replay_key,
+        kObjc3WeakUnownedSemanticsLoweringLaneContract,
+        weak_unowned_semantics_lowering_contract.deterministic},
+       {"lowering_arc_diagnostics_fixit",
+        arc_diagnostics_fixit_lowering_replay_key,
+        kObjc3ArcDiagnosticsFixitLoweringLaneContract,
+        arc_diagnostics_fixit_lowering_contract.deterministic},
+       {"lowering_block_literal_capture",
+        block_literal_capture_lowering_replay_key,
+        kObjc3BlockLiteralCaptureLoweringLaneContract,
+        block_literal_capture_lowering_contract.deterministic},
+       {"lowering_block_abi_invoke_trampoline",
+        block_abi_invoke_trampoline_lowering_replay_key,
+        kObjc3BlockAbiInvokeTrampolineLoweringLaneContract,
+        block_abi_invoke_trampoline_lowering_contract.deterministic},
+       {"lowering_block_storage_escape", block_storage_escape_lowering_replay_key,
+        kObjc3BlockStorageEscapeLoweringLaneContract,
+        block_storage_escape_lowering_contract.deterministic},
+       {"lowering_block_copy_dispose", block_copy_dispose_lowering_replay_key,
+        kObjc3BlockCopyDisposeLoweringLaneContract,
+        block_copy_dispose_lowering_contract.deterministic},
+       {"lowering_block_determinism_perf_baseline",
+        block_determinism_perf_baseline_lowering_replay_key,
+        kObjc3BlockDeterminismPerfBaselineLoweringLaneContract,
+        block_determinism_perf_baseline_lowering_contract.deterministic},
+       {"lowering_lightweight_generic_constraint",
+        lightweight_generic_constraint_lowering_replay_key,
+        kObjc3LightweightGenericsConstraintLoweringLaneContract,
+        lightweight_generic_constraint_lowering_contract.deterministic},
+       {"lowering_nullability_flow_warning_precision",
+        nullability_flow_warning_precision_lowering_replay_key,
+        kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract,
+        nullability_flow_warning_precision_lowering_contract.deterministic},
+       {"lowering_protocol_qualified_object_type",
+        protocol_qualified_object_type_lowering_replay_key,
+        kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract,
+        protocol_qualified_object_type_lowering_contract.deterministic},
+       {"lowering_variance_bridge_cast", variance_bridge_cast_lowering_replay_key,
+        kObjc3VarianceBridgeCastLoweringLaneContract,
+        variance_bridge_cast_lowering_contract.deterministic},
+       {"lowering_generic_metadata_abi", generic_metadata_abi_lowering_replay_key,
+        kObjc3GenericMetadataAbiLoweringLaneContract,
+        generic_metadata_abi_lowering_contract.deterministic},
+       {"lowering_module_import_graph", module_import_graph_lowering_replay_key,
+        kObjc3ModuleImportGraphLoweringLaneContract,
+        module_import_graph_lowering_contract.deterministic},
+       {"lowering_namespace_collision_shadowing",
+        namespace_collision_shadowing_lowering_replay_key,
+        kObjc3NamespaceCollisionShadowingLoweringLaneContract,
+        namespace_collision_shadowing_lowering_contract.deterministic},
+       {"lowering_public_private_api_partition",
+        public_private_api_partition_lowering_replay_key,
+        kObjc3PublicPrivateApiPartitionLoweringLaneContract,
+        public_private_api_partition_lowering_contract.deterministic},
+       {"lowering_incremental_module_cache_invalidation",
+        incremental_module_cache_invalidation_lowering_replay_key,
+        kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract,
+        incremental_module_cache_invalidation_lowering_contract.deterministic},
+       {"lowering_cross_module_conformance",
+        cross_module_conformance_lowering_replay_key,
+        kObjc3CrossModuleConformanceLoweringLaneContract,
+        cross_module_conformance_lowering_contract.deterministic},
+       {"lowering_throws_propagation", throws_propagation_lowering_replay_key,
+        kObjc3ThrowsPropagationLoweringLaneContract,
+        throws_propagation_lowering_contract.deterministic},
+       {"lowering_result_like", result_like_lowering_replay_key,
+        kObjc3ResultLikeLoweringLaneContract,
+        result_like_lowering_contract.deterministic},
+       {"lowering_ns_error_bridging", ns_error_bridging_lowering_replay_key,
+        kObjc3NSErrorBridgingLoweringLaneContract,
+        ns_error_bridging_lowering_contract.deterministic},
+       {"lowering_unwind_cleanup", unwind_cleanup_lowering_replay_key,
+        kObjc3UnwindCleanupLoweringLaneContract,
+        unwind_cleanup_lowering_contract.deterministic},
+       {"lowering_error_handling_throws_abi_propagation",
+        error_handling_throws_abi_propagation_lowering_replay_key,
+        kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId,
+        deterministic_error_handling_throws_abi_propagation_lowering,
+        "contract_id"},
+       {"lowering_error_handling_result_and_bridging_artifact_replay",
+        error_handling_result_and_bridging_artifact_replay_summary.replay_key,
+        kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId,
+        error_handling_result_and_bridging_artifact_replay_summary.deterministic,
+        "contract_id"}});
   manifest << "  \"semantic_canonical_type_metadata\":";
   objc3::artifacts::json::WriteSemanticTypeMetadataHandoffManifestObject(
       manifest, type_metadata_handoff);
