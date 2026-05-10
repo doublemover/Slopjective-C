@@ -1,7 +1,7 @@
 #include "io/json/json_schema_value_type_validation.h"
 
-#include "io/json/json_schema_type.h"
-#include "io/json/json_schema_value_type_mismatch_validation.h"
+#include "io/json/json_schema_value_type_keyword_validation.h"
+#include "io/json/json_schema_value_type_match_validation.h"
 
 namespace objc3::io::json {
 
@@ -10,16 +10,12 @@ bool ValidateJsonSchemaValueTypeKeyword(const JsonValue &schema,
                                         const std::string &instance_path,
                                         const std::string &schema_path,
                                         JsonSchemaResult &result) {
-  if (const JsonValue *schema_type = schema.Find("type");
-      schema_type != nullptr) {
-    if (!JsonSchemaMatchesType(*schema_type, payload)) {
-      AddJsonSchemaValueTypeMismatchError(*schema_type, payload,
-                                          instance_path, schema_path, result);
-      return false;
-    }
+  const JsonValue *schema_type = FindJsonSchemaValueTypeKeyword(schema);
+  if (schema_type == nullptr) {
+    return true;
   }
-
-  return true;
+  return ValidateJsonSchemaValueTypeMatch(*schema_type, payload, instance_path,
+                                          schema_path, result);
 }
 
 }  // namespace objc3::io::json

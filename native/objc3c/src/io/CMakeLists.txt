@@ -171,6 +171,8 @@ add_library(objc3c_json STATIC
   json/json_schema_value_literal_enum_match_validation.cpp
   json/json_schema_value_literal_enum_validation.cpp
   json/json_schema_value_literal_validation.cpp
+  json/json_schema_value_type_keyword_validation.cpp
+  json/json_schema_value_type_match_validation.cpp
   json/json_schema_value_type_mismatch_validation.cpp
   json/json_schema_value_type_validation.cpp
   json/json_string_escape.cpp
