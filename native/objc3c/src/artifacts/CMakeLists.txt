@@ -427,6 +427,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_descriptor_artifacts.h
   objc3_frontend_runtime_descriptor_json.cpp
   objc3_frontend_source_closure_json.cpp
+  objc3_frontend_source_closure_ownership_json.cpp
   objc3_frontend_source_closure_artifacts.h
   objc3_frontend_runtime_ingest_binary_artifacts.cpp
   objc3_frontend_runtime_ingest_binary_artifacts.h
