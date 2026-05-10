@@ -133,6 +133,8 @@ add_library(objc3c_json STATIC
   json/json_schema_scalar_string_dispatch_validation.cpp
   json/json_schema_scalar_validation.cpp
   json/json_schema_string_constraint_length_validation.cpp
+  json/json_schema_string_constraint_max_length_keyword_validation.cpp
+  json/json_schema_string_constraint_max_length_payload_validation.cpp
   json/json_schema_string_constraint_max_length_validation.cpp
   json/json_schema_string_constraint_min_length_keyword_validation.cpp
   json/json_schema_string_constraint_min_length_payload_validation.cpp
