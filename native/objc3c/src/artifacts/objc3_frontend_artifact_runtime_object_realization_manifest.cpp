@@ -2,10 +2,9 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/message_send_selector_lowering_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 
@@ -33,13 +32,13 @@ void WriteRuntimeObjectModelRealizationSourceSurface(
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"executable_realization_records_contract_id\":\""
-           << kObjc3ExecutableRealizationRecordsContractId
+           << kRuntimeObjectExecutableRealizationRecordsContractId
            << "\",\"runtime_class_realization_contract_id\":\""
-           << kObjc3RuntimeClassRealizationContractId
+           << kRuntimeObjectClassRealizationContractId
            << "\",\"runtime_metaclass_graph_contract_id\":\""
-           << kObjc3RuntimeMetaclassGraphRootClassContractId
+           << kRuntimeObjectMetaclassGraphRootClassContractId
            << "\",\"runtime_category_attachment_protocol_conformance_contract_id\":\""
-           << kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId
+           << kRuntimeObjectCategoryAttachmentProtocolConformanceContractId
            << "\",\"canonical_runnable_object_support_contract_id\":\""
            << kObjc3RuntimeCanonicalRunnableObjectSampleSupportContractId
            << "\",\"runtime_support_library_archive_relative_path\":\""

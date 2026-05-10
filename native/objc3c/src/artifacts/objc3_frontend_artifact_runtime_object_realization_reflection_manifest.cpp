@@ -2,10 +2,9 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/message_send_selector_lowering_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 
@@ -35,11 +34,11 @@ void WriteRuntimeRealizationLoweringReflectionArtifactSurface(
            << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
            << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\"objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1\""
            << ",\"executable_realization_records_contract_id\":\""
-           << kObjc3ExecutableRealizationRecordsContractId
+           << kRuntimeObjectExecutableRealizationRecordsContractId
            << "\",\"property_metadata_reflection_contract_id\":\""
-           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << kRuntimeObjectPropertyMetadataReflectionContractId
            << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
-           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << kRuntimeObjectBackedObjectOwnershipAttributeSurfaceContractId
            << "\",\"runtime_support_library_archive_relative_path\":\""
            << runtime_translation_unit_registration_manifest
                   .runtime_support_library_archive_relative_path
@@ -70,8 +69,8 @@ void WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
         &runtime_registration_descriptor_frontend_closure,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract) {
+    const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
+        &runtime_dispatch_table_reflection_record_lowering_fields) {
   manifest << "  \"runtime_dispatch_table_reflection_record_lowering_surface\":{\"contract_id\":\""
            << kObjc3RuntimeDispatchTableReflectionRecordLoweringSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
@@ -92,7 +91,7 @@ void WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
            << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\"objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1\""
            << ",\"method_dispatch_and_selector_thunk_lowering_contract_id\":\"objc3c.method.dispatch.selector.thunk.lowering.v1\""
            << ",\"executable_realization_records_contract_id\":\""
-           << kObjc3ExecutableRealizationRecordsContractId
+           << kRuntimeObjectExecutableRealizationRecordsContractId
            << "\",\"runtime_support_library_archive_relative_path\":\""
            << runtime_translation_unit_registration_manifest
                   .runtime_support_library_archive_relative_path
@@ -115,7 +114,8 @@ void WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
            << "\",\"ivar_aggregate_symbol\":\""
            << runtime_metadata_section_publication.ivar_aggregate_symbol
            << "\",\"message_send_sites\":"
-           << message_send_selector_lowering_contract.message_send_sites
+           << runtime_dispatch_table_reflection_record_lowering_fields
+                  .message_send_sites
            << ",\"class_descriptor_count\":"
            << runtime_metadata_section_publication.class_descriptor_count
            << ",\"protocol_descriptor_count\":"

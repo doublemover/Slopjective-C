@@ -10,6 +10,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_concurrency_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_object_manifest.h"
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_artifact_runtime_release_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest.h"
@@ -36,6 +37,8 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
         &dispatch_surface_classification_contract,
     const Objc3MessageSendSelectorLoweringContract
         &message_send_selector_lowering_contract,
+    const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
+        &runtime_dispatch_table_reflection_record_lowering_fields,
     const Objc3PropertySynthesisIvarBindingContract
         &property_synthesis_ivar_binding_contract,
     const Objc3RuntimeMetadataSectionPublicationSummary
@@ -156,7 +159,7 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
       runtime_translation_unit_registration_manifest,
       runtime_registration_descriptor_frontend_closure,
       runtime_metadata_section_publication,
-      message_send_selector_lowering_contract);
+      runtime_dispatch_table_reflection_record_lowering_fields);
   WriteRuntimeObjectModelAbiQuerySurface(
       manifest, runtime_state_publication_emit_prefix,
       runtime_translation_unit_registration_manifest,

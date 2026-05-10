@@ -2,6 +2,8 @@
 
 #include <iosfwd>
 
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
+
 struct Objc3DispatchSurfaceClassificationContract;
 struct Objc3ExecutableMetadataSourceGraph;
 struct Objc3FrontendOptions;
@@ -36,6 +38,8 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
         &dispatch_surface_classification_contract,
     const Objc3MessageSendSelectorLoweringContract
         &message_send_selector_lowering_contract,
+    const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
+        &runtime_dispatch_table_reflection_record_lowering_fields,
     const Objc3PropertySynthesisIvarBindingContract
         &property_synthesis_ivar_binding_contract,
     const Objc3RuntimeMetadataSectionPublicationSummary

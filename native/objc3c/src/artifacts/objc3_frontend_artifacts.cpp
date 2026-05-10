@@ -3975,6 +3975,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           manifest, options, vector_signature_functions,
           property_synthesis_ivar_binding_replay_key,
           property_synthesis_ivar_binding_contract);
+  const objc3::artifacts::frontend::
+      Objc3RuntimeDispatchTableReflectionRecordLoweringFields
+          runtime_dispatch_table_reflection_record_lowering_fields{
+              message_send_selector_lowering_contract.message_send_sites};
   objc3::artifacts::frontend::WriteObjc3FrontendRuntimeManifestSurfaces(
       manifest, runtime_translation_unit_registration_manifest,
       runtime_metadata_source_records, executable_metadata_source_graph,
@@ -3982,6 +3986,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_support_library_link_wiring,
       dispatch_surface_classification_contract,
       message_send_selector_lowering_contract,
+      runtime_dispatch_table_reflection_record_lowering_fields,
       property_synthesis_ivar_binding_contract,
       runtime_metadata_section_publication, runtime_bootstrap_api,
       runtime_bootstrap_semantics,

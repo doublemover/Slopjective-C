@@ -4,8 +4,6 @@
 
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/message_send_selector_lowering_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 

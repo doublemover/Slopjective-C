@@ -2,9 +2,8 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
-#include "lower/contracts/runtime_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -34,9 +33,9 @@ void WriteRuntimeReflectionQuerySurface(
            << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
            << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
            << ",\"property_metadata_reflection_contract_id\":\""
-           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << kRuntimeObjectPropertyMetadataReflectionContractId
            << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
-           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << kRuntimeObjectBackedObjectOwnershipAttributeSurfaceContractId
            << "\",\"public_header_path\":\""
            << runtime_bootstrap_api.public_header_path
            << "\",\"internal_header_path\":\""

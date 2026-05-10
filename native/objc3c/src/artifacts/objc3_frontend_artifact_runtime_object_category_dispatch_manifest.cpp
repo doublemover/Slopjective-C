@@ -2,10 +2,9 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/message_send_selector_lowering_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 
@@ -33,7 +32,7 @@ void WriteRuntimeCategoryAttachmentMergedDispatchSurface(
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"runtime_category_attachment_protocol_conformance_contract_id\":\""
-           << kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId
+           << kRuntimeObjectCategoryAttachmentProtocolConformanceContractId
            << "\",\"runtime_realization_lookup_semantics_surface_contract_id\":\""
            << kObjc3RuntimeRealizationLookupSemanticsSurfaceContractId
            << "\",\"runtime_class_metaclass_protocol_realization_surface_contract_id\":\""

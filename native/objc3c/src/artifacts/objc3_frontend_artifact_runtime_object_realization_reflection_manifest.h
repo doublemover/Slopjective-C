@@ -3,7 +3,8 @@
 #include <iosfwd>
 #include <string>
 
-struct Objc3MessageSendSelectorLoweringContract;
+#include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
+
 struct Objc3RuntimeMetadataSectionPublicationSummary;
 struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
@@ -27,7 +28,7 @@ void WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
         &runtime_registration_descriptor_frontend_closure,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract);
+    const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
+        &runtime_dispatch_table_reflection_record_lowering_fields);
 
 }  // namespace objc3::artifacts::frontend
