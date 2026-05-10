@@ -12,6 +12,7 @@
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_block_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
+#include "artifacts/objc3_frontend_artifact_bundle_outputs.h"
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_conformance_report_plan.h"
@@ -48,7 +49,6 @@
 #include "artifacts/objc3_frontend_artifact_ownership_release_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
-#include "artifacts/objc3_frontend_artifact_runtime_import_output.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
@@ -86,7 +86,6 @@
 #include "artifacts/objc3_frontend_tooling_source_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_semantic_artifacts.h"
-#include "artifacts/reports/frontend_conformance_report_contracts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "ir/objc3_ir_emitter.h"
 #include "io/objc3_json.h"
@@ -4982,7 +4981,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
-  objc3::artifacts::frontend::PopulateObjc3FrontendRuntimeImportArtifactOutputs(
+  objc3::artifacts::frontend::PopulateObjc3FrontendArtifactBundleOutputs(
       bundle, program, runtime_aware_import_module_frontend_closure,
       runtime_metadata_source_records, type_metadata_handoff,
       type_system_optional_keypath_lowering_contract,
@@ -5008,29 +5007,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_block_ownership_artifact_preservation_summary,
       runtime_storage_reflection_artifact_preservation_summary,
       serialized_runtime_metadata_artifact_reuse,
-      serialized_runtime_metadata_reuse_records);
-  objc3::artifacts::reports::
-      PopulateObjc3FrontendVersionedConformanceReportOutput(
-          bundle, versioned_conformance_report_lowering, options,
-          pipeline_result, frontend_compatibility_strictness_claim_semantics,
-          tooling_feature_aware_conformance_report_emission_summary,
-          tooling_corpus_sharding_release_evidence_packaging_summary);
-  objc3::artifacts::frontend::PopulateObjc3FrontendArtifactBundleSummaryOutputs(
-      bundle, runtime_aware_import_module_frontend_closure,
-      versioned_conformance_report_lowering,
+      serialized_runtime_metadata_reuse_records,
+      versioned_conformance_report_lowering, options, pipeline_result,
+      frontend_compatibility_strictness_claim_semantics,
+      tooling_feature_aware_conformance_report_emission_summary,
+      tooling_corpus_sharding_release_evidence_packaging_summary,
       runtime_registration_descriptor_image_root_source_surface,
       runtime_registration_descriptor_frontend_closure,
-      runtime_block_ownership_artifact_preservation_summary,
-      runtime_storage_reflection_artifact_preservation_summary,
       runtime_translation_unit_registration_manifest,
       runtime_bootstrap_legality_semantics,
       runtime_bootstrap_legality_failure_contract,
       runtime_bootstrap_failure_restart_semantics,
-      frontend_compatibility_strictness_claim_semantics,
       tooling_legacy_canonical_migration_semantics_summary,
       tooling_machine_readable_conformance_report_contract_summary,
-      tooling_feature_aware_conformance_report_emission_summary,
-      tooling_corpus_sharding_release_evidence_packaging_summary,
       runtime_bootstrap_api, runtime_bootstrap_semantics,
       runtime_bootstrap_lowering);
 
