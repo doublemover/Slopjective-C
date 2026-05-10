@@ -11,15 +11,39 @@ from typing import Any, Sequence
 from objc3c_tooling.json_io import load_json_any as load_json, write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-
-import publish_objc3c_planning_issues as publisher  # noqa: E402
+try:
+    import publish_objc3c_planning_issues as publisher
+    from planning_publication_drift_contracts import (
+        PlanningPublicationDriftInputs,
+        PlanningPublicationDriftPaths,
+        append_failure,
+        build_drift_report,
+        compare_publication_references,
+        compare_report_contract,
+        publication_snapshot,
+        render_markdown_report,
+        repo_relative_path,
+        success_status_line,
+    )
+except ModuleNotFoundError:
+    from scripts import publish_objc3c_planning_issues as publisher
+    from scripts.planning_publication_drift_contracts import (
+        PlanningPublicationDriftInputs,
+        PlanningPublicationDriftPaths,
+        append_failure,
+        build_drift_report,
+        compare_publication_references,
+        compare_report_contract,
+        publication_snapshot,
+        render_markdown_report,
+        repo_relative_path,
+        success_status_line,
+    )
 
 DEFAULT_PAYLOAD = ROOT / "reports" / "planning" / "objc3c_3_next_40_github_payloads.json"
 DEFAULT_PUBLICATION_REPORT = ROOT / "reports" / "planning" / "objc3c_3_next_40_publication_report.json"
 DEFAULT_MARKDOWN_REPORT = ROOT / "reports" / "planning" / "objc3c_3_next_40_publication_report.md"
 DEFAULT_DRIFT_REPORT = ROOT / "reports" / "planning" / "objc3c_3_next_40_publication_drift_report.json"
-DRIFT_CONTRACT_ID = "objc3c.planning.github-publication-drift-report.v1"
 
 
 class DriftAuditError(RuntimeError):
@@ -38,175 +62,8 @@ def require_dict(value: Any, name: str) -> dict[str, Any]:
     return value
 
 
-def issue_ref(number: Any) -> str:
-    return f"#{number}" if isinstance(number, int) else "-"
-
-
-def publication_snapshot(report: dict[str, Any]) -> dict[str, Any]:
-    failures = report.get("failures", [])
-    failure_count = len(failures) if isinstance(failures, list) else failures
-    return {
-        "repository": report["repository"],
-        "updatedAtUtc": report["updatedAtUtc"],
-        "milestoneCount": report["milestoneCount"],
-        "issueCount": report["issueCount"],
-        "dependencyCount": report["dependencyCount"],
-        "failures": failure_count,
-        "milestones": report["milestones"],
-        "issues": report["issues"],
-        "dependencies": report["dependencies"],
-    }
-
-
-def render_markdown_report(report: dict[str, Any]) -> str:
-    failures = report.get("failures", [])
-    failure_count = len(failures) if isinstance(failures, list) else failures
-    lines = [
-        "# Objective-C 3.0 Publication Report",
-        "",
-        f"Repository: `{report['repository']}`",
-        f"Started: `{report['startedAtUtc']}`",
-        f"Updated: `{report['updatedAtUtc']}`",
-        "",
-        f"Milestones created/reused: {report['milestoneCount']}",
-        f"Issues created/reused: {report['issueCount']}",
-        f"Dependencies created/recorded: {report['dependencyCount']}",
-        f"Failures: {failure_count}",
-        "",
-        "## Milestones",
-        "",
-        "| Draft ID | GitHub Number | Title | URL |",
-        "| --- | ---: | --- | --- |",
-    ]
-    for draft_id in sorted(report["milestones"]):
-        milestone = report["milestones"][draft_id]
-        lines.append(
-            f"| {draft_id} | {milestone['number']} | {milestone['title']} | {milestone['html_url']} |"
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Issues",
-            "",
-            "| Draft ID | GitHub Issue | Title | URL |",
-            "| --- | ---: | --- | --- |",
-        ]
-    )
-    for draft_id in sorted(report["issues"]):
-        issue = report["issues"][draft_id]
-        lines.append(
-            f"| {draft_id} | #{issue['number']} | {issue['title']} | {issue['html_url']} |"
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Dependencies",
-            "",
-            "| Blocked Draft ID | Blocked Issue | Blocker Draft ID | Blocker Issue | Status |",
-            "| --- | ---: | --- | ---: | --- |",
-        ]
-    )
-    for dependency in report["dependencies"]:
-        lines.append(
-            f"| {dependency['blocked']} | {issue_ref(dependency.get('blocked_number'))} | "
-            f"{dependency['blocker']} | {issue_ref(dependency.get('blocker_number'))} | "
-            f"{dependency.get('status', '-')} |"
-        )
-
-    lines.extend(["", "## Failures", ""])
-    if isinstance(failures, list) and failures:
-        for failure in failures:
-            lines.append(f"- {failure}")
-    elif failures:
-        lines.append(f"- {failures}")
-    else:
-        lines.append("- none")
-    lines.append("")
-    return "\n".join(lines)
-
-
 def expected_issue_labels(issue: dict[str, Any], issue_id: str, payload: dict[str, Any]) -> set[str]:
     return set(publisher.issue_labels(issue, issue_id, payload))
-
-
-def append_failure(failures: list[dict[str, Any]], code: str, detail: str, **extra: Any) -> None:
-    failures.append({"code": code, "detail": detail, **extra})
-
-
-def compare_publication_references(
-    payload: dict[str, Any],
-    report: dict[str, Any],
-    markdown_path: Path,
-    failures: list[dict[str, Any]],
-) -> None:
-    expected_snapshot = publication_snapshot(report)
-    if payload.get("published") != expected_snapshot:
-        append_failure(
-            failures,
-            "payload-published-reference-drift",
-            "payload.published does not match the durable JSON publication report",
-        )
-
-    expected_markdown = render_markdown_report(report)
-    if not markdown_path.is_file():
-        append_failure(failures, "markdown-report-missing", f"missing markdown publication report: {markdown_path}")
-    elif markdown_path.read_text(encoding="utf-8") != expected_markdown:
-        append_failure(
-            failures,
-            "markdown-report-drift",
-            "markdown publication report does not match the durable JSON publication report",
-            path=markdown_path.relative_to(ROOT).as_posix() if publisher.is_under(markdown_path, ROOT) else str(markdown_path),
-        )
-
-
-def compare_report_contract(payload: dict[str, Any], report: dict[str, Any], failures: list[dict[str, Any]]) -> None:
-    if report.get("repository") != payload.get("repository"):
-        append_failure(failures, "repository-mismatch", "payload and report repository values differ")
-    if report.get("milestoneCount") != len(payload["milestones"]):
-        append_failure(failures, "milestone-count-drift", "report milestoneCount does not match payload milestone count")
-    if report.get("issueCount") != len(payload["issues"]):
-        append_failure(failures, "issue-count-drift", "report issueCount does not match payload issue count")
-    if report.get("dependencyCount") != len(payload.get("dependencies", [])):
-        append_failure(failures, "dependency-count-drift", "report dependencyCount does not match payload dependency count")
-
-    milestone_ids = {milestone["id"] for milestone in payload["milestones"]}
-    issue_ids = {issue["id"] for issue in payload["issues"]}
-    if set(report["milestones"]) != milestone_ids:
-        append_failure(failures, "milestone-id-drift", "report milestone IDs do not match payload milestone IDs")
-    if set(report["issues"]) != issue_ids:
-        append_failure(failures, "issue-id-drift", "report issue IDs do not match payload issue IDs")
-
-    milestone_numbers = [record.get("number") for record in report["milestones"].values()]
-    issue_numbers = [record.get("number") for record in report["issues"].values()]
-    if len(milestone_numbers) != len(set(milestone_numbers)):
-        append_failure(failures, "duplicate-milestone-number", "report contains duplicate GitHub milestone numbers")
-    if len(issue_numbers) != len(set(issue_numbers)):
-        append_failure(failures, "duplicate-issue-number", "report contains duplicate GitHub issue numbers")
-
-    expected_dependencies = publisher.build_dependency_report(payload, report["issues"])
-    observed_by_pair = {
-        (dependency.get("blocked"), dependency.get("blocker")): dependency
-        for dependency in report.get("dependencies", [])
-    }
-    for expected in expected_dependencies:
-        key = (expected["blocked"], expected["blocker"])
-        observed = observed_by_pair.get(key)
-        if observed is None:
-            append_failure(failures, "dependency-missing", "report is missing dependency mapping", blocked=key[0], blocker=key[1])
-            continue
-        for field in ("blocked_number", "blocker_number", "resolved"):
-            if observed.get(field) != expected.get(field):
-                append_failure(
-                    failures,
-                    "dependency-number-drift",
-                    f"dependency field {field} drifted",
-                    blocked=key[0],
-                    blocker=key[1],
-                    expected=expected.get(field),
-                    observed=observed.get(field),
-                )
 
 
 def fetch_live_issue(repo: str, number: int) -> dict[str, Any]:
@@ -284,33 +141,6 @@ def compare_live_github(
     return {"enabled": True, "checked_milestones": checked_milestones, "checked_issues": checked_issues}
 
 
-def build_drift_report(
-    payload_path: Path,
-    publication_report_path: Path,
-    markdown_path: Path,
-    payload: dict[str, Any],
-    report: dict[str, Any],
-    failures: list[dict[str, Any]],
-    live_summary: dict[str, Any],
-) -> dict[str, Any]:
-    return {
-        "contract_id": DRIFT_CONTRACT_ID,
-        "repository": payload["repository"],
-        "source_updated_at_utc": report["updatedAtUtc"],
-        "payload_path": payload_path.relative_to(ROOT).as_posix() if publisher.is_under(payload_path, ROOT) else str(payload_path),
-        "publication_report_path": publication_report_path.relative_to(ROOT).as_posix()
-        if publisher.is_under(publication_report_path, ROOT)
-        else str(publication_report_path),
-        "markdown_report_path": markdown_path.relative_to(ROOT).as_posix() if publisher.is_under(markdown_path, ROOT) else str(markdown_path),
-        "milestone_count": len(payload["milestones"]),
-        "issue_count": len(payload["issues"]),
-        "dependency_count": len(payload.get("dependencies", [])),
-        "live": live_summary,
-        "failure_count": len(failures),
-        "failures": failures,
-    }
-
-
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--payload", type=Path, default=DEFAULT_PAYLOAD)
@@ -347,19 +177,37 @@ def main(argv: Sequence[str]) -> int:
             markdown_path.write_text(render_markdown_report(report), encoding="utf-8", newline="\n")
 
         failures: list[dict[str, Any]] = []
-        compare_report_contract(payload, report, failures)
-        compare_publication_references(payload, report, markdown_path, failures)
+        compare_report_contract(
+            payload=payload,
+            report=report,
+            expected_dependencies=publisher.build_dependency_report(payload, report["issues"]),
+            failures=failures,
+        )
+        compare_publication_references(
+            payload=payload,
+            report=report,
+            markdown_text=markdown_path.read_text(encoding="utf-8")
+            if markdown_path.is_file()
+            else None,
+            markdown_display_path=str(markdown_path),
+            markdown_report_path=repo_relative_path(markdown_path, ROOT),
+            failures=failures,
+        )
         live_summary = {"enabled": False, "checked_milestones": 0, "checked_issues": 0}
         if args.live:
             live_summary = compare_live_github(payload, report, failures, args.limit_live)
         drift_report = build_drift_report(
-            payload_path,
-            publication_report_path,
-            markdown_path,
-            payload,
-            report,
-            failures,
-            live_summary,
+            PlanningPublicationDriftInputs(
+                paths=PlanningPublicationDriftPaths(
+                    payload_path=repo_relative_path(payload_path, ROOT),
+                    publication_report_path=repo_relative_path(publication_report_path, ROOT),
+                    markdown_report_path=repo_relative_path(markdown_path, ROOT),
+                ),
+                payload=payload,
+                report=report,
+                failures=failures,
+                live_summary=live_summary,
+            )
         )
 
         rendered = json.dumps(drift_report, indent=2) + "\n"
@@ -377,11 +225,7 @@ def main(argv: Sequence[str]) -> int:
             for failure in failures[:10]:
                 print(f"- {failure['code']}: {failure['detail']}", file=sys.stderr)
             return 1
-        print(
-            "planning-publication-drift-audit: OK "
-            f"milestones={len(payload['milestones'])} issues={len(payload['issues'])} "
-            f"dependencies={len(payload.get('dependencies', []))} live_issues={live_summary['checked_issues']}"
-        )
+        print(success_status_line(payload, live_summary))
         return 0
     except (DriftAuditError, publisher.PublicationError, FileNotFoundError, json.JSONDecodeError) as exc:
         print(f"planning-publication-drift-audit: ERROR {exc}", file=sys.stderr)
