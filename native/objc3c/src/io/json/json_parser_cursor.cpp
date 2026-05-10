@@ -45,14 +45,6 @@ bool JsonParserCursor::Consume(char expected) {
   return false;
 }
 
-bool JsonParserCursor::ConsumeLiteral(std::string_view literal) {
-  if (text_.substr(cursor_, literal.size()) != literal) {
-    return false;
-  }
-  cursor_ += literal.size();
-  return true;
-}
-
 bool JsonParserCursor::ParseString(std::string &out) {
   return ParseJsonStringToken(text_, cursor_, error_, out);
 }
