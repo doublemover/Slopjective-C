@@ -18,6 +18,7 @@
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_error_metadata.h"
+#include "artifacts/objc3_frontend_artifact_executable_metadata_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
@@ -217,26 +218,7 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildConcurrencyConcurrencyReplayRaceGuardLoweringContract;
 using objc3::artifacts::frontend::
-    BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataRuntimeIngestPackagingContractSummaryJson;
-using objc3::artifacts::frontend::
-    BuildRuntimeMetadataSourceToSectionMatrixSummaryJson;
-using objc3::artifacts::frontend::BuildExecutableMetadataSourceGraphJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataSemanticConsistencyBoundaryJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataSemanticValidationSurfaceJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataLoweringHandoffSurfaceJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataTypedLoweringHandoffJson;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataDebugProjectionRowDescriptor;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataDebugProjectionReplayKey;
-using objc3::artifacts::frontend::
-    BuildExecutableMetadataDebugProjectionSummaryJson;
+    WriteExecutableRuntimeMetadataManifestSurfaces;
 using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
 using objc3::artifacts::frontend::
@@ -4587,61 +4569,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // and release tooling consume one canonical schema.
            << ",\"objc_runtime_capability_report\":"
            << BuildRuntimeCapabilityReportJson(
-                  versioned_conformance_report_lowering)
-           << ",\"objc_executable_metadata_source_graph\":"
-           << BuildExecutableMetadataSourceGraphJson(
-                  executable_metadata_source_graph)
-           // source-to-section matrix anchor: lane-A must publish one
-           // canonical node-to-emitted-section matrix that preserves the A001
-           // inventory and explicitly marks interface/implementation/metaclass/
-           // method rows as no-standalone-emission-yet until later work.
-           << ",\"objc_runtime_metadata_source_to_section_matrix\":"
-           << BuildRuntimeMetadataSourceToSectionMatrixSummaryJson(
-                  runtime_metadata_source_to_section_matrix)
-           << ",\"objc_executable_metadata_semantic_consistency_boundary\":"
-           << BuildExecutableMetadataSemanticConsistencyBoundaryJson(
-                  executable_metadata_semantic_consistency_boundary)
-           << ",\"objc_executable_metadata_semantic_validation_surface\":"
-           << BuildExecutableMetadataSemanticValidationSurfaceJson(
-                  executable_metadata_semantic_validation_surface)
-           // lowering-handoff anchor: metadata graph lowering
-           // handoff freeze must publish as a first-class semantic surface so
-           // typed handoff and parse/lowering projections consume one schema.
-           << ",\"objc_executable_metadata_lowering_handoff_surface\":"
-           << BuildExecutableMetadataLoweringHandoffSurfaceJson(
-                  executable_metadata_lowering_handoff_surface)
-           // typed-lowering anchor: the lowering-ready packet must
-           // publish the ordered metadata graph payload itself rather than a
-           // count-only summary so downstream lowering can consume one schema.
-           << ",\"objc_executable_metadata_typed_lowering_handoff\":"
-           << BuildExecutableMetadataTypedLoweringHandoffJson(
-                  executable_metadata_typed_lowering_handoff)
-           // debug-projection anchor: lane-C must publish one
-           // canonical metadata inspection matrix across manifest and IR-facing
-           // surfaces before runtime section emission lands.
-           << ",\"objc_executable_metadata_debug_projection\":"
-           << BuildExecutableMetadataDebugProjectionSummaryJson(
-                  executable_metadata_debug_projection)
-           // runtime-ingest packaging anchor: lane-D must freeze one
-           // canonical manifest transport boundary over the typed handoff and
-           // debug-projection packets before section emission and startup
-           // registration land.
-           << ",\"objc_executable_metadata_runtime_ingest_packaging_contract\":"
-           << BuildExecutableMetadataRuntimeIngestPackagingContractSummaryJson(
-                  executable_metadata_runtime_ingest_packaging_contract)
-           // binary-boundary anchor: lane-D must materialize a real
-           // runtime-facing binary envelope over the frozen D001/C002/C003
-           // packets so later section-emission/bootstrap work consumes one
-           // deterministic artifact boundary instead of reparsing manifest JSON.
-           // semantic-closure gate anchor: lane-E freezes the
-           // aggregate the existing boundary here so the section
-           // emission consumes one synchronized metadata closure proof.
-           // corpus-sync anchor: integrated corpus probes must
-           // observe these synchronized metadata surfaces through the real
-           // frontend runner path rather than mock packets.
-           << ",\"objc_executable_metadata_runtime_ingest_binary_boundary\":"
-           << BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
-                  executable_metadata_runtime_ingest_binary_boundary)
+                  versioned_conformance_report_lowering);
+  WriteExecutableRuntimeMetadataManifestSurfaces(
+      manifest, executable_metadata_source_graph,
+      runtime_metadata_source_to_section_matrix,
+      executable_metadata_semantic_consistency_boundary,
+      executable_metadata_semantic_validation_surface,
+      executable_metadata_lowering_handoff_surface,
+      executable_metadata_typed_lowering_handoff,
+      executable_metadata_debug_projection,
+      executable_metadata_runtime_ingest_packaging_contract,
+      executable_metadata_runtime_ingest_binary_boundary);
+  manifest
            // translation-unit registration surface anchor: lane-A
            // freezes one manifest-published preregistration contract over the
            // runtime metadata binary, linker-retention sidecars, constructor
