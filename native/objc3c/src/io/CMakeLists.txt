@@ -75,7 +75,9 @@ add_library(objc3c_json STATIC
   json/json_schema_object_required_keyword_validation.cpp
   json/json_schema_object_required_validation.cpp
   json/json_schema_object_validation.cpp
+  json/json_schema_pattern_keyword_contract_validation.cpp
   json/json_schema_pattern_contract_validation.cpp
+  json/json_schema_pattern_regex_contract_validation.cpp
   json/json_schema_path_helpers.cpp
   json/json_schema_ref_contract_validation.cpp
   json/json_schema_ref_preflight_validation.cpp
