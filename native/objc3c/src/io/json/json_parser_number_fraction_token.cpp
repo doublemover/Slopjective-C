@@ -1,9 +1,7 @@
-#include "io/json/json_parser_number_mantissa_token.h"
+#include "io/json/json_parser_number_fraction_token.h"
 
 #include <string>
 #include <utility>
-
-#include "io/json/json_parser_number_fraction_token.h"
 
 namespace objc3::io::json {
 namespace {
@@ -28,7 +26,7 @@ bool ConsumeDigits(std::string_view text, std::size_t &cursor) {
   return cursor > start;
 }
 
-bool FailNumberMantissa(std::optional<JsonError> &error,
+bool FailNumberFraction(std::optional<JsonError> &error,
                         std::size_t cursor,
                         std::string message) {
   error = JsonError{std::move(message), cursor};
@@ -37,20 +35,17 @@ bool FailNumberMantissa(std::optional<JsonError> &error,
 
 }  // namespace
 
-bool ParseJsonNumberMantissaToken(std::string_view text,
+bool ParseJsonNumberFractionToken(std::string_view text,
                                   std::size_t &cursor,
                                   std::optional<JsonError> &error) {
-  if (Consume('-', text, cursor) && cursor >= text.size()) {
-    return FailNumberMantissa(error, cursor, "incomplete JSON number");
+  if (!Consume('.', text, cursor)) {
+    return true;
   }
-  if (Consume('0', text, cursor)) {
-    if (cursor < text.size() && IsDigit(text[cursor])) {
-      return FailNumberMantissa(error, cursor, "JSON number has leading zero");
-    }
-  } else if (!ConsumeDigits(text, cursor)) {
-    return FailNumberMantissa(error, cursor, "expected JSON number digits");
+  if (!ConsumeDigits(text, cursor)) {
+    return FailNumberFraction(error, cursor,
+                              "expected JSON number fraction digits");
   }
-  return ParseJsonNumberFractionToken(text, cursor, error);
+  return true;
 }
 
 }  // namespace objc3::io::json
