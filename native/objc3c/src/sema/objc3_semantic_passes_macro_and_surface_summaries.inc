@@ -148,12 +148,4 @@ BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
   return summary;
 }
 
-static Objc3ProtocolQualifiedObjectTypeSummary
-BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
-    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
-  Objc3ProtocolQualifiedObjectTypeSummary summary;
-  summary.protocol_qualified_object_type_sites = type_annotation_summary.generic_suffix_sites;
-  summary.protocol_composition_sites = type_annotation_summary.generic_suffix_sites;
-  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
-  summary.terminated_protocol_composition_sites =
-      type_annotation_summary.generic_suffix_sites - type_annotation_summary.invalid_generic_suffix_sites;
+#include "sema/objc3_semantic_passes_protocol_qualified_object_summary_builders.inc"
