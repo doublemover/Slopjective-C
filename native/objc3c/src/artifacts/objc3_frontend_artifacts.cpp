@@ -54,6 +54,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
+#include "artifacts/objc3_frontend_artifact_semantic_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_semantic_summary_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_source_closure_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
@@ -569,82 +570,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &ownership_capture_list_retainable_family_legality_completion_summary =
           pipeline_result
               .ownership_capture_list_retainable_family_legality_completion_summary;
+  const Objc3FrontendArtifactSemanticLoweringPlan semantic_lowering_plan =
+      BuildObjc3FrontendArtifactSemanticLoweringPlan(program, pipeline_result);
+  if (!semantic_lowering_plan.post_pipeline_failure.empty()) {
+    record_post_pipeline_failure(
+        semantic_lowering_plan.post_pipeline_failure.code.c_str(),
+        semantic_lowering_plan.post_pipeline_failure.message);
+  }
   const Objc3DispatchDispatchControlLoweringContract
-      dispatch_dispatch_control_lowering_contract =
-          BuildDispatchDispatchControlLoweringContract(
-              dispatch_dispatch_intent_semantic_model_summary,
-              dispatch_dispatch_intent_legality_summary,
-              dispatch_dispatch_intent_compatibility_summary);
-  if (!IsValidObjc3DispatchDispatchControlLoweringContract(
-          dispatch_dispatch_control_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid dispatch-control lowering contract");
-  }
-  const std::string dispatch_dispatch_control_lowering_replay_key =
-      Objc3DispatchDispatchControlLoweringReplayKey(
-          dispatch_dispatch_control_lowering_contract);
+      &dispatch_dispatch_control_lowering_contract =
+          semantic_lowering_plan.dispatch_dispatch_control_lowering_contract;
+  const std::string &dispatch_dispatch_control_lowering_replay_key =
+      semantic_lowering_plan.dispatch_dispatch_control_lowering_replay_key;
   const Objc3MetaprogrammingExpansionLoweringContract
-      metaprogramming_expansion_lowering_contract = BuildMetaprogrammingExpansionLoweringContract(
-          metaprogramming_property_behavior_source_completion_summary,
-          metaprogramming_derive_expansion_inventory_summary,
-          metaprogramming_macro_safety_sandbox_determinism_summary,
-          metaprogramming_property_behavior_legality_compatibility_summary);
-  if (!IsValidObjc3MetaprogrammingExpansionLoweringContract(
-          metaprogramming_expansion_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 10 expansion lowering contract");
-  }
-  const std::string metaprogramming_expansion_lowering_replay_key =
-      Objc3MetaprogrammingExpansionLoweringReplayKey(
-          metaprogramming_expansion_lowering_contract);
+      &metaprogramming_expansion_lowering_contract =
+          semantic_lowering_plan.metaprogramming_expansion_lowering_contract;
+  const std::string &metaprogramming_expansion_lowering_replay_key =
+      semantic_lowering_plan.metaprogramming_expansion_lowering_replay_key;
   const std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
-      metaprogramming_derived_method_bundles =
-          BuildMetaprogrammingDerivedMethodBundles(program);
+      &metaprogramming_derived_method_bundles =
+          semantic_lowering_plan.metaprogramming_derived_method_bundles;
   const std::vector<Objc3IRMetaprogrammingMacroArtifactBundle>
-      metaprogramming_macro_artifact_bundles =
-          BuildMetaprogrammingMacroArtifactBundles(program);
+      &metaprogramming_macro_artifact_bundles =
+          semantic_lowering_plan.metaprogramming_macro_artifact_bundles;
   const std::vector<Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle>
-      metaprogramming_property_behavior_artifact_bundles =
-          BuildMetaprogrammingPropertyBehaviorArtifactBundles(program);
+      &metaprogramming_property_behavior_artifact_bundles =
+          semantic_lowering_plan.metaprogramming_property_behavior_artifact_bundles;
   const Objc3MetaprogrammingSynthesizedArtifactEmissionContract
-      metaprogramming_synthesized_artifact_emission_contract =
-          BuildMetaprogrammingSynthesizedArtifactEmissionContract(
-              metaprogramming_expansion_lowering_contract,
-              metaprogramming_derived_method_bundles,
-              metaprogramming_macro_artifact_bundles,
-              metaprogramming_property_behavior_artifact_bundles);
-  if (!IsValidObjc3MetaprogrammingSynthesizedArtifactEmissionContract(
-          metaprogramming_synthesized_artifact_emission_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 10 synthesized artifact emission contract");
-  }
-  const std::string metaprogramming_synthesized_artifact_emission_replay_key =
-      Objc3MetaprogrammingSynthesizedArtifactEmissionReplayKey(
-          metaprogramming_synthesized_artifact_emission_contract);
+      &metaprogramming_synthesized_artifact_emission_contract =
+          semantic_lowering_plan
+              .metaprogramming_synthesized_artifact_emission_contract;
+  const std::string &metaprogramming_synthesized_artifact_emission_replay_key =
+      semantic_lowering_plan
+          .metaprogramming_synthesized_artifact_emission_replay_key;
   const Objc3OwnershipSystemExtensionLoweringContract
-      ownership_system_extension_lowering_contract =
-          BuildOwnershipSystemExtensionLoweringContract(
-              ownership_system_extension_semantic_model_summary,
-              ownership_resource_move_use_after_move_semantics_summary,
-              ownership_borrowed_pointer_escape_analysis_summary,
-              ownership_capture_list_retainable_family_legality_completion_summary);
-  if (!IsValidObjc3OwnershipSystemExtensionLoweringContract(
-          ownership_system_extension_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid system-extension lowering contract");
-  }
-  const std::string ownership_system_extension_lowering_replay_key =
-      Objc3OwnershipSystemExtensionLoweringReplayKey(
-          ownership_system_extension_lowering_contract);
-  const std::string ownership_borrowed_retainable_abi_completion_replay_key =
-      BuildOwnershipBorrowedRetainableAbiCompletionReplayKey(
-          ownership_system_extension_lowering_contract,
-          ownership_system_extension_source_closure_summary,
-          ownership_retainable_c_family_source_completion_summary);
+      &ownership_system_extension_lowering_contract =
+          semantic_lowering_plan.ownership_system_extension_lowering_contract;
+  const std::string &ownership_system_extension_lowering_replay_key =
+      semantic_lowering_plan.ownership_system_extension_lowering_replay_key;
+  const std::string &ownership_borrowed_retainable_abi_completion_replay_key =
+      semantic_lowering_plan
+          .ownership_borrowed_retainable_abi_completion_replay_key;
   const Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
       &concurrency_structured_task_cancellation_semantic_summary =
           pipeline_result.concurrency_structured_task_cancellation_semantic_summary;
@@ -661,91 +627,48 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &concurrency_async_diagnostics_compatibility_summary =
           pipeline_result.concurrency_async_diagnostics_compatibility_summary;
   const Objc3AsyncContinuationLoweringContract
-      concurrency_async_continuation_lowering_contract =
-          BuildConcurrencyAsyncContinuationLoweringContract(
-              concurrency_async_effect_suspension_semantic_model_summary,
-              concurrency_async_diagnostics_compatibility_summary);
+      &concurrency_async_continuation_lowering_contract =
+          semantic_lowering_plan
+              .concurrency_async_continuation_lowering_contract;
   const Objc3AwaitLoweringSuspensionStateLoweringContract
-      concurrency_await_lowering_suspension_state_lowering_contract =
-          BuildConcurrencyAwaitLoweringSuspensionStateLoweringContract(
-              concurrency_await_suspension_resume_semantic_summary);
-  if (!IsValidObjc3AsyncContinuationLoweringContract(
-          concurrency_async_continuation_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid async continuation lowering contract");
-  }
-  if (!IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
-          concurrency_await_lowering_suspension_state_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid await suspension lowering contract");
-  }
-  const std::string concurrency_async_continuation_lowering_replay_key =
-      Objc3AsyncContinuationLoweringReplayKey(
-          concurrency_async_continuation_lowering_contract);
-  const std::string concurrency_await_lowering_suspension_state_lowering_replay_key =
-      Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
-          concurrency_await_lowering_suspension_state_lowering_contract);
+      &concurrency_await_lowering_suspension_state_lowering_contract =
+          semantic_lowering_plan
+              .concurrency_await_lowering_suspension_state_lowering_contract;
+  const std::string &concurrency_async_continuation_lowering_replay_key =
+      semantic_lowering_plan.concurrency_async_continuation_lowering_replay_key;
+  const std::string
+      &concurrency_await_lowering_suspension_state_lowering_replay_key =
+          semantic_lowering_plan
+              .concurrency_await_lowering_suspension_state_lowering_replay_key;
   const Objc3ActorIsolationSendabilityLoweringContract
-      concurrency_actor_isolation_sendability_lowering_contract =
-          BuildConcurrencyActorIsolationSendabilityLoweringContract(
-              concurrency_executor_hop_affinity_compatibility_summary);
-  if (!IsValidObjc3ActorIsolationSendabilityLoweringContract(
-          concurrency_actor_isolation_sendability_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid actor isolation sendability lowering contract");
-  }
-  const std::string concurrency_actor_isolation_sendability_lowering_replay_key =
-      Objc3ActorIsolationSendabilityLoweringReplayKey(
-          concurrency_actor_isolation_sendability_lowering_contract);
+      &concurrency_actor_isolation_sendability_lowering_contract =
+          semantic_lowering_plan
+              .concurrency_actor_isolation_sendability_lowering_contract;
+  const std::string
+      &concurrency_actor_isolation_sendability_lowering_replay_key =
+          semantic_lowering_plan
+              .concurrency_actor_isolation_sendability_lowering_replay_key;
   const Objc3ActorLoweringMetadataContract
-      concurrency_actor_lowering_metadata_contract =
-          BuildConcurrencyActorLoweringMetadataContract(
-              concurrency_actor_member_isolation_source_closure_summary,
-              concurrency_actor_isolation_sendability_enforcement_summary,
-              concurrency_actor_race_hazard_escape_diagnostics_summary);
-  if (!IsValidObjc3ActorLoweringMetadataContract(
-          concurrency_actor_lowering_metadata_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid actor lowering metadata contract");
-  }
-  const std::string concurrency_actor_lowering_metadata_replay_key =
-      Objc3ActorLoweringMetadataReplayKey(
-          concurrency_actor_lowering_metadata_contract);
+      &concurrency_actor_lowering_metadata_contract =
+          semantic_lowering_plan.concurrency_actor_lowering_metadata_contract;
+  const std::string &concurrency_actor_lowering_metadata_replay_key =
+      semantic_lowering_plan.concurrency_actor_lowering_metadata_replay_key;
   const Objc3TaskRuntimeInteropCancellationLoweringContract
-      concurrency_task_runtime_interop_cancellation_lowering_contract =
-          BuildConcurrencyTaskRuntimeInteropCancellationLoweringContract(
-              concurrency_task_executor_cancellation_semantic_model_summary,
-              concurrency_structured_task_cancellation_semantic_summary,
-              concurrency_executor_hop_affinity_compatibility_summary);
-  if (!IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
-          concurrency_task_runtime_interop_cancellation_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid task runtime interop cancellation lowering contract");
-  }
-  const std::string concurrency_task_runtime_interop_cancellation_lowering_replay_key =
-      Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
-          concurrency_task_runtime_interop_cancellation_lowering_contract);
+      &concurrency_task_runtime_interop_cancellation_lowering_contract =
+          semantic_lowering_plan
+              .concurrency_task_runtime_interop_cancellation_lowering_contract;
+  const std::string
+      &concurrency_task_runtime_interop_cancellation_lowering_replay_key =
+          semantic_lowering_plan
+              .concurrency_task_runtime_interop_cancellation_lowering_replay_key;
   const Objc3ConcurrencyReplayRaceGuardLoweringContract
-      concurrency_concurrency_replay_race_guard_lowering_contract =
-          BuildConcurrencyConcurrencyReplayRaceGuardLoweringContract(
-              concurrency_task_executor_cancellation_semantic_model_summary,
-              concurrency_structured_task_cancellation_semantic_summary,
-              concurrency_executor_hop_affinity_compatibility_summary,
-              concurrency_actor_isolation_sendability_lowering_contract);
-  if (!IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
-          concurrency_concurrency_replay_race_guard_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid concurrency replay race guard lowering contract");
-  }
-  const std::string concurrency_concurrency_replay_race_guard_lowering_replay_key =
-      Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
-          concurrency_concurrency_replay_race_guard_lowering_contract);
+      &concurrency_concurrency_replay_race_guard_lowering_contract =
+          semantic_lowering_plan
+              .concurrency_concurrency_replay_race_guard_lowering_contract;
+  const std::string
+      &concurrency_concurrency_replay_race_guard_lowering_replay_key =
+          semantic_lowering_plan
+              .concurrency_concurrency_replay_race_guard_lowering_replay_key;
   const Objc3ErrorHandlingTryDoCatchSemanticSummary
       &error_handling_try_do_catch_semantic_summary =
           pipeline_result.error_handling_try_do_catch_semantic_summary;
