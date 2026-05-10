@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "io/json/json_parser_number_fraction_token.h"
+#include "io/json/json_parser_number_sign_token.h"
 
 namespace objc3::io::json {
 namespace {
@@ -40,8 +41,8 @@ bool FailNumberMantissa(std::optional<JsonError> &error,
 bool ParseJsonNumberMantissaToken(std::string_view text,
                                   std::size_t &cursor,
                                   std::optional<JsonError> &error) {
-  if (Consume('-', text, cursor) && cursor >= text.size()) {
-    return FailNumberMantissa(error, cursor, "incomplete JSON number");
+  if (!ParseJsonNumberSignToken(text, cursor, error)) {
+    return false;
   }
   if (Consume('0', text, cursor)) {
     if (cursor < text.size() && IsDigit(text[cursor])) {
