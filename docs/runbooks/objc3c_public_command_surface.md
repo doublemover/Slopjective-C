@@ -216,7 +216,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Use the operator commands above for normal public workflows.
 - Treat this file as a generated machine-facing appendix for exact command mapping, not as the reader-facing project introduction.
 - Maintainer commands are intentionally narrower wrappers for repo hygiene, markdown upkeep, release-evidence checks, and dependency/capability audits.
-- Canonical user-facing commands use `npm run objc3c -- <action>` and route through the single `package.json` bridge.
+- Canonical user-facing command names come from `package.json` and route through `npm run objc3c -- <action>`.
 - Canonical checked-in doc outputs are `site/index.md`, `docs/objc3c-native.md`, and `docs/runbooks/objc3c_public_command_surface.md`; edit their source roots instead of the generated files.
 - `native/objc3c/`, `scripts/`, and `tests/` are the live implementation roots; `tmp/` and `artifacts/` are output roots, not naming roots.
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.

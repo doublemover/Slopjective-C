@@ -31,6 +31,8 @@ They describe the live native frontend, not historical milestone closeouts.
 
 Do not move machine-owned packet inventories, transient output paths, or archived
 milestone closeout material into these fragments.
+The user-facing package entrypoints come from `package.json`; fragments should
+name those package-owned routes instead of introducing parallel command names.
 
 ## Live Code Paths For Documentation Work
 

@@ -114,6 +114,7 @@ Later docs work should edit these live paths directly:
   - `docs/runbooks/objc3c_maintainer_workflows.md`
 - documentation guardrails:
   - `npm run objc3c -- check-documentation-surface`
+  - `scripts/check_documentation_surface.py`
 
 Reader-facing downstream work should keep one rule in mind: route from a user
 question to a checked-in example first, then to the comparison or canonicalization

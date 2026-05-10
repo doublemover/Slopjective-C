@@ -50,7 +50,7 @@ Use these roots directly when cleaning or renaming repo surfaces:
   - `artifacts/`
   - the generated repo-superclean owner artifact is selected by the checked-in build contract
 
-Do not add milestone-specific wrappers, sidecar support-status files, or
+Do not add milestone-specific wrappers, sidecar compatibility files, or
 parallel owner copies when changing these surfaces.
 
 Contributor-facing entrypoint:

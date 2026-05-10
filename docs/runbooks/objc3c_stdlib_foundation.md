@@ -81,6 +81,8 @@ and identifier-safe implementation module declarations.
 - `stdlib/program_surface.json`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
+- `scripts/check_objc3c_stdlib_foundation_integration.py`
+- `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
 
 ## Exact Live Artifact And Output Paths
 

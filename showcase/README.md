@@ -115,6 +115,8 @@ Build and artifact entrypoints:
 - `npm run objc3c -- validate-showcase`
 - `npm run objc3c -- validate-runnable-showcase`
 - `npm run objc3c -- package-runnable-toolchain`
+- implementation checker: `scripts/check_showcase_surface.py`
+- showcase artifact root: `tmp/artifacts/showcase/`
 
 Runtime-backed shared commands used by the showcase surface:
 

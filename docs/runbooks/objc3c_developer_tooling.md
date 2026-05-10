@@ -41,13 +41,16 @@ anchors for those actions, not separate current-facing commands.
 - native tooling target wiring:
   - `native/objc3c/CMakeLists.txt`
 - native build/publish surface:
+  - `scripts/build_objc3c_native.ps1`
   - `npm run objc3c -- build-native-binaries`
   - published binary: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - public command and workflow surface:
   - package bridge: `npm run objc3c -- <action>`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - runtime inspection and debug-state implementation:
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/{classes,dispatch,images,selectors,state,public}/`
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/artifacts/`
@@ -55,6 +58,8 @@ anchors for those actions, not separate current-facing commands.
   - `native/objc3c/src/lower/contracts/`
   - `native/objc3c/src/ir/`
 - live validation and parity paths:
+  - `scripts/check_objc3c_library_cli_parity.py`
+  - `scripts/check_objc3c_runtime_acceptance.py`
   - `npm run objc3c -- test-capability-routed-source-parity`
   - `npm run objc3c -- test-runtime-acceptance-fast`
   - `npm run objc3c -- check-repo-superclean-surface`
@@ -88,8 +93,10 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `artifacts/lib/objc3_runtime.lib`
 - build-emitted owner artifact:
   - generated repo-superclean owner artifact selected by the checked-in build contract
+  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - default compile/explain output root:
   - generated native compilation artifact root
+  - `tmp/artifacts/compilation/objc3c-native/`
 - runtime/debug report roots:
   - runtime reports
   - public-workflow reports
@@ -97,12 +104,17 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - playground reports
 - developer-tooling dump artifacts:
   - compile observability summary
+  - `tmp/reports/objc3c-public-workflow/compile-observability.json`
   - compile observability payload
   - runtime inspector summary
+  - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
   - runtime inspector payload
   - capability explorer payload
+  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
+  - `capability_demo_compatibility`
   - runtime inspector benchmark payload
   - compile-stage trace summary
+  - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
   - compile-stage trace payload
 
 ## Exact Live Commands
@@ -112,6 +124,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run objc3c -- build-native-contracts`
 - compile one source through the public compiler path:
   - `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3`
+- inspect one source through the raw runner binary when debugging runner-only issues:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3`
 - materialize a runnable workspace with editor/debug drill references:
   - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:

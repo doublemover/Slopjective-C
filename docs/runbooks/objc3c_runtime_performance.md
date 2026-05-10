@@ -100,6 +100,8 @@ Disallowed optimization moves:
 
 - runtime library:
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/classes/`
   - `native/objc3c/src/runtime/dispatch/`
   - `native/objc3c/src/runtime/images/`
@@ -107,6 +109,10 @@ Disallowed optimization moves:
   - `native/objc3c/src/runtime/state/`
   - `native/objc3c/src/runtime/ARCHITECTURE.md`
 - compile/build/runtime harness:
+  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `scripts/benchmark_objc3c_runtime_performance.py`
+  - `scripts/check_objc3c_runtime_performance_integration.py`
+  - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
   - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- benchmark-runtime-performance`
   - `npm run objc3c -- validate-runtime-performance`

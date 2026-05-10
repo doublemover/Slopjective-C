@@ -48,6 +48,7 @@ Use this page in three passes:
 | see the tutorial build run and verify flow               | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)                     |
 | follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
 | map ObjC2 patterns to canonical ObjC3 examples          | [ObjC2 pattern conversion notes](../docs/tutorials/objc2_to_objc3_migration.md)                 |
+<!-- Documentation-surface anchor: [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md) -->
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
 | evaluate adoption, support, and claim boundaries         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
 | find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |

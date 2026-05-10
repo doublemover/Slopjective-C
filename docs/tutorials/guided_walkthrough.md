@@ -98,6 +98,9 @@ Use `npm run objc3c -- validate-getting-started` when you want the public integr
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `npm run objc3c -- validate-getting-started`
   - `npm run objc3c -- check-showcase-surface`
+  - `scripts/check_getting_started_surface.py`
+  - `scripts/check_getting_started_integration.py`
+  - `scripts/check_showcase_surface.py`
 
 ## Explicit Non-Goals
 

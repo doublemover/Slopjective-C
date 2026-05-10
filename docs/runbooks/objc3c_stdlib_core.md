@@ -82,6 +82,7 @@ The checked-in architecture contract requires these families to stay visible:
 - `objc3.keypath`
   - `typed-keypath-application`
   - `typed-keypath-text-shape`
+  - `typed-keypath-text-compatibility`
 
 Downstream implementation issues may add concrete helpers inside these families,
 but they should not invent a second family split or move ownership between
@@ -122,6 +123,7 @@ modules without updating the checked-in architecture contract.
 - `objc3_errors_or_throw_code`
 - `objc3_errors_text_data_shape_score`
 - `objc3_errors_text_data_shape_diagnostic`
+- `objc3_errors_text_data_compatibility_score`
 
 `objc3.keypath` exports:
 
@@ -129,6 +131,8 @@ modules without updating the checked-in architecture contract.
 - `objc3_keypath_component_count`
 - `objc3_keypath_text_shape_score`
 - `objc3_keypath_text_shape_diagnostic`
+- `objc3_keypath_text_compatibility_diagnostic`
+- `objc3_keypath_text_compatibility_score`
 
 ## Semantic guarantees
 

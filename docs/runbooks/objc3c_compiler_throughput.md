@@ -168,6 +168,8 @@ Disallowed optimization moves:
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
+  - `scripts/check_objc3c_native_perf_budget.ps1`
+  - `scripts/check_objc3c_compiler_throughput_integration.py`
   - `npm run objc3c -- compile-objc3c`
   - `npm run objc3c -- build-native-binaries`
   - package bridge: `npm run objc3c -- <action>`

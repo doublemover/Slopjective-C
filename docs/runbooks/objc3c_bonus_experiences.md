@@ -36,6 +36,7 @@ real implementation exists.
 
 - public command and package surface:
   - package bridge: `npm run objc3c -- <action>`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime tooling entrypoints:
@@ -44,6 +45,8 @@ real implementation exists.
   - `native/objc3c/src/runtime/{classes,dispatch,images,selectors,state}/`
   - `native/objc3c/src/artifacts/`
 - native build and package wiring:
+  - `scripts/build_objc3c_native.ps1`
+  - `scripts/package_objc3c_runnable_toolchain.ps1`
   - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- package-runnable-toolchain`
 - showcase and tutorial roots:
@@ -60,6 +63,8 @@ real implementation exists.
   - `npm run objc3c -- validate-developer-tooling`
   - `npm run objc3c -- validate-bonus-experiences`
 - current showcase/tutorial validation paths:
+  - `scripts/check_showcase_integration.py`
+  - `scripts/check_getting_started_integration.py`
   - `npm run objc3c -- validate-showcase`
   - `npm run objc3c -- validate-runnable-showcase`
   - `npm run objc3c -- validate-getting-started`
@@ -96,17 +101,17 @@ real implementation exists.
 - playground/repro artifact roots:
   - playground artifacts
   - playground reports
-  - showcase artifacts
+  - showcase artifacts: `tmp/artifacts/showcase/`
 - runtime inspector and stage-trace report roots:
   - compile observability output
   - runtime inspector output
   - compile-stage trace output
-  - developer-tooling integration summary
+  - developer-tooling integration summary: `tmp/reports/developer-tooling/integration-summary.json`
 - showcase/tutorial validation report roots:
   - project-template artifacts
   - project-template reports
   - showcase reports
-  - tutorial reports
+  - tutorial reports: `tmp/reports/tutorials/`
 - staged package manifest within a runnable package root:
   - `artifacts/package/objc3c-runnable-toolchain-package.json`
 

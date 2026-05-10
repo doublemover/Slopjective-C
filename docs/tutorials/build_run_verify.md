@@ -106,6 +106,9 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
   - `npm run objc3c -- <action>`
 - bounded tutorial validation:
   - `npm run objc3c -- validate-getting-started`
+  - `scripts/check_getting_started_surface.py`
+  - `scripts/check_getting_started_integration.py`
+  - `scripts.objc3c_workflow`
 - machine-owned outputs:
   - `tmp/artifacts/showcase/`
   - `tmp/reports/showcase/`

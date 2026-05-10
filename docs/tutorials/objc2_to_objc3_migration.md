@@ -144,6 +144,7 @@ That keeps canonicalization teaching tied to the same examples the repo already 
 - command truth and documentation guardrails:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `npm run objc3c -- check-documentation-surface`
+  - `scripts/check_documentation_surface.py`
 
 ## Explicit Non-Goals
 

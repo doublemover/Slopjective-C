@@ -58,10 +58,13 @@ The only current claim classes allowed from this surface are:
 
 - public command and package surface:
   - package bridge: `npm run objc3c -- <action>`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime and build roots:
   - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
+  - `scripts/build_objc3c_native.ps1`
+  - `scripts/package_objc3c_runnable_toolchain.ps1`
   - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- compile-objc3c`
   - `npm run objc3c -- package-runnable-toolchain`
@@ -76,16 +79,16 @@ The only current claim classes allowed from this surface are:
   - `tests/tooling/fixtures/performance/objc3/`
   - `tests/tooling/fixtures/performance/baselines/`
 
-## Live Artifact And Output Families
+## Exact Live Artifact And Output Paths
 
 - native binaries and runtime library:
   - `artifacts/bin/objc3c-native.exe`
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
 - machine-owned benchmark roots:
-  - performance artifacts
-  - performance reports
-  - runnable-toolchain package staging
+  - performance artifacts: `tmp/artifacts/performance/`
+  - performance reports: `tmp/reports/performance/`
+  - runnable-toolchain package staging: `tmp/pkg/objc3c-native-runnable-toolchain/`
 - build-owned owner artifact:
   - generated repo-superclean owner artifact selected by the checked-in build contract
 

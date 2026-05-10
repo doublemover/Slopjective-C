@@ -71,6 +71,11 @@ of inventing a second examples tree inside `stdlib/`.
 - `showcase/auroraBoard/main.objc3`
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
+- `scripts/check_stdlib_surface.py`
+- `scripts/check_documentation_surface.py`
+- `scripts/check_showcase_surface.py`
+- `scripts/check_showcase_integration.py`
+- `scripts/check_getting_started_integration.py`
 
 ## Exact Capability Demo Paths
 
