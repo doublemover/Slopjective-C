@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
 #include "lower/contracts/concurrency_actor_contracts.h"
 #include "lower/contracts/concurrency_continuation_runtime_contracts.h"
@@ -15,6 +16,8 @@
 struct Objc3FrontendArtifactSemanticLoweringPlan {
   Objc3DispatchDispatchControlLoweringContract
       dispatch_dispatch_control_lowering_contract;
+  objc3::artifacts::frontend::Objc3DispatchControlLoweringSnapshot
+      dispatch_dispatch_control_lowering_snapshot;
   std::string dispatch_dispatch_control_lowering_replay_key;
 
   Objc3MetaprogrammingExpansionLoweringContract

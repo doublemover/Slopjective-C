@@ -3,37 +3,29 @@
 #include <iosfwd>
 #include <string>
 
-struct Objc3DispatchAbiMarshallingContract;
-struct Objc3DispatchSurfaceClassificationContract;
-struct Objc3MessageSendSelectorLoweringContract;
-struct Objc3NilReceiverSemanticsFoldabilityContract;
-struct Objc3RuntimeDispatchLoweringAbiContract;
-struct Objc3RuntimeLinkHostLinkContract;
-struct Objc3SuperDispatchMethodFamilyContract;
+#include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 
 namespace objc3::artifacts::frontend {
 
 void WriteDispatchRuntimeAbiManifestSurfaces(
     std::ostream &manifest,
-    const Objc3DispatchSurfaceClassificationContract
-        &dispatch_surface_classification_contract,
+    const Objc3DispatchSurfaceClassificationSnapshot
+        &dispatch_surface_classification,
     const std::string &dispatch_surface_classification_replay_key,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract,
+    const Objc3MessageSendSelectorLoweringSnapshot
+        &message_send_selector_lowering,
     const std::string &message_send_selector_lowering_replay_key,
-    const Objc3DispatchAbiMarshallingContract
-        &dispatch_abi_marshalling_contract,
+    const Objc3DispatchAbiMarshallingSnapshot &dispatch_abi_marshalling,
     const std::string &dispatch_abi_marshalling_replay_key,
-    const Objc3NilReceiverSemanticsFoldabilityContract
-        &nil_receiver_semantics_foldability_contract,
+    const Objc3NilReceiverSemanticsFoldabilitySnapshot
+        &nil_receiver_semantics_foldability,
     const std::string &nil_receiver_semantics_foldability_replay_key,
-    const Objc3SuperDispatchMethodFamilyContract
-        &super_dispatch_method_family_contract,
+    const Objc3SuperDispatchMethodFamilySnapshot &super_dispatch_method_family,
     const std::string &super_dispatch_method_family_replay_key,
-    const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract,
+    const Objc3RuntimeLinkHostLinkSnapshot &runtime_link_host_link,
     const std::string &runtime_link_host_link_replay_key,
-    const Objc3RuntimeDispatchLoweringAbiContract
-        &runtime_dispatch_lowering_abi_contract,
+    const Objc3RuntimeDispatchLoweringAbiSnapshot
+        &runtime_dispatch_lowering_abi,
     const std::string &runtime_dispatch_lowering_abi_replay_key);
 
 }  // namespace objc3::artifacts::frontend

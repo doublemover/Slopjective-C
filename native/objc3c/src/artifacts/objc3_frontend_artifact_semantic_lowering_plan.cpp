@@ -36,6 +36,9 @@ BuildObjc3FrontendArtifactSemanticLoweringPlan(
   plan.dispatch_dispatch_control_lowering_replay_key =
       Objc3DispatchDispatchControlLoweringReplayKey(
           plan.dispatch_dispatch_control_lowering_contract);
+  plan.dispatch_dispatch_control_lowering_snapshot =
+      objc3::artifacts::frontend::BuildDispatchControlLoweringSnapshot(
+          plan.dispatch_dispatch_control_lowering_contract);
 
   plan.metaprogramming_expansion_lowering_contract =
       objc3::artifacts::frontend::BuildMetaprogrammingExpansionLoweringContract(

@@ -3,9 +3,19 @@
 #include <cstddef>
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_dispatch_contract_types.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
+
+struct Objc3DispatchAbiMarshallingContract;
+struct Objc3DispatchDispatchControlLoweringContract;
+struct Objc3DispatchSurfaceClassificationContract;
+struct Objc3IdClassSelObjectPointerTypecheckContract;
+struct Objc3MessageSendSelectorLoweringContract;
+struct Objc3NilReceiverSemanticsFoldabilityContract;
+struct Objc3PropertySynthesisIvarBindingContract;
+struct Objc3RuntimeDispatchLoweringAbiContract;
+struct Objc3RuntimeLinkHostLinkContract;
+struct Objc3SuperDispatchMethodFamilyContract;
 
 namespace objc3::artifacts::frontend {
 

@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_dispatch_contract_types.h"
+#include "lower/contracts/dispatch_control_lowering_contracts.h"
 #include "io/objc3_json.h"
 
 namespace objc3::artifacts::frontend {

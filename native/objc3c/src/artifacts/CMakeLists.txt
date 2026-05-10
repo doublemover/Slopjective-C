@@ -173,7 +173,6 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_dispatch_contract_constants.h
   objc3_frontend_artifact_dispatch_contract_snapshots.cpp
   objc3_frontend_artifact_dispatch_contract_snapshots.h
-  objc3_frontend_artifact_dispatch_contract_types.h
   objc3_frontend_artifact_dispatch_manifest_surfaces.cpp
   objc3_frontend_artifact_dispatch_manifest_surfaces.h
   objc3_frontend_artifact_dispatch_metadata_application.cpp
