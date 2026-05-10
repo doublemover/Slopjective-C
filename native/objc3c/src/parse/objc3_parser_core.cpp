@@ -4,6 +4,7 @@
 #include "parse/objc3_parser_core_callable_finalizers.inc"
 #include "parse/objc3_parser_core_surface_finalizers.inc"
 #include "parse/objc3_parser_core_objc_declarations_containers.inc"
+#include "parse/objc3_parser_core_objc_declarations_functions.inc"
 #include "parse/objc3_parser_core_objc_declarations.inc"
 #include "parse/objc3_parser_core_method_parameters.inc"
 #include "parse/objc3_parser_core_statements.inc"
