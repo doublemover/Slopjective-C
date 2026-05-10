@@ -21,6 +21,7 @@
 #include "ir/objc3_ir_frontend_metadata_runtime_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_support.h"
 #include "ir/objc3_ir_frontend_metadata_semantic_surface.h"
+#include "ir/objc3_ir_frontend_metadata_task_runtime_support.h"
 #include "ir/objc3_ir_frontend_metadata_type_system.h"
 // Historical extraction contract marker:
 // #include "parse/objc3_parser_contract.h"
@@ -41,7 +42,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendDispatchSupportMetadata,
                                  Objc3IRFrontendInteropMetadata,
                                  Objc3IRFrontendMetaprogrammingMetadata,
-                                 Objc3IRFrontendOwnershipSupportMetadata {
+                                 Objc3IRFrontendOwnershipSupportMetadata,
+                                 Objc3IRFrontendTaskRuntimeSupportMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -91,35 +93,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
-  std::string lowering_task_runtime_interop_cancellation_replay_key;
-  std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
-  std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =
-      0;
-  std::size_t
-      task_runtime_interop_cancellation_lowering_cancellation_probe_sites = 0;
-  std::size_t
-      task_runtime_interop_cancellation_lowering_cancellation_handler_sites = 0;
-  std::size_t task_runtime_interop_cancellation_lowering_runtime_resume_sites =
-      0;
-  std::size_t task_runtime_interop_cancellation_lowering_runtime_cancel_sites =
-      0;
-  std::size_t task_runtime_interop_cancellation_lowering_normalized_sites = 0;
-  std::size_t task_runtime_interop_cancellation_lowering_guard_blocked_sites =
-      0;
-  std::size_t
-      task_runtime_interop_cancellation_lowering_contract_violation_sites = 0;
-  bool deterministic_task_runtime_interop_cancellation_lowering_handoff =
-      false;
-  std::string lowering_concurrency_replay_race_guard_replay_key;
-  std::size_t concurrency_replay_race_guard_lowering_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_replay_proof_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_race_guard_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_task_handoff_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_actor_isolation_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_deterministic_schedule_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_guard_blocked_sites = 0;
-  std::size_t concurrency_replay_race_guard_lowering_contract_violation_sites = 0;
-  bool deterministic_concurrency_replay_race_guard_lowering_handoff = false;
   std::string lowering_unsafe_pointer_extension_replay_key;
   std::size_t unsafe_pointer_extension_lowering_sites = 0;
   std::size_t unsafe_pointer_extension_lowering_unsafe_keyword_sites = 0;
