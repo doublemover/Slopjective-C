@@ -84,6 +84,7 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.cpp
   readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.cpp
   readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.cpp
+  runtime_import_frontend_closure_boundary.cpp
   runtime_import_json_helpers.cpp
   runtime_import_json_helpers_accessors.cpp
   runtime_import_json_helpers_parser_values.cpp
@@ -156,6 +157,7 @@ add_library(objc3c_pipeline STATIC
   objc3_runtime_import_surface.h
   objc3_typed_sema_to_lowering_contract_surface_core.h
   objc3_typed_sema_to_lowering_contract_surface.h
+  runtime_import_frontend_closure_boundary.h
   objc3_ir_emission_completeness_scaffold.cpp
   objc3_ir_emission_core_feature_keys.cpp
   objc3_ir_emission_core_feature_implementation_surface.cpp
