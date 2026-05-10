@@ -229,4 +229,46 @@ void WriteObjc3FrontendTypeAndModuleReplayManifestEntries(
         cross_module_conformance_lowering_contract.deterministic}});
 }
 
+void WriteObjc3FrontendErrorReplayManifestEntries(
+    std::ostream &manifest,
+    const std::string &throws_propagation_lowering_replay_key,
+    const Objc3ThrowsPropagationLoweringContract
+        &throws_propagation_lowering_contract,
+    const std::string &result_like_lowering_replay_key,
+    const Objc3ResultLikeLoweringContract &result_like_lowering_contract,
+    const std::string &ns_error_bridging_lowering_replay_key,
+    const Objc3NSErrorBridgingLoweringContract
+        &ns_error_bridging_lowering_contract,
+    const std::string &unwind_cleanup_lowering_replay_key,
+    const Objc3UnwindCleanupLoweringContract &unwind_cleanup_lowering_contract,
+    const std::string &error_handling_throws_abi_propagation_lowering_replay_key,
+    bool deterministic_error_handling_throws_abi_propagation_lowering,
+    const Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary
+        &error_handling_result_and_bridging_artifact_replay_summary) {
+  WriteLoweringReplayManifestEntries(
+      manifest,
+      {{"lowering_throws_propagation", throws_propagation_lowering_replay_key,
+        kObjc3ThrowsPropagationLoweringLaneContract,
+        throws_propagation_lowering_contract.deterministic},
+       {"lowering_result_like", result_like_lowering_replay_key,
+        kObjc3ResultLikeLoweringLaneContract,
+        result_like_lowering_contract.deterministic},
+       {"lowering_ns_error_bridging", ns_error_bridging_lowering_replay_key,
+        kObjc3NSErrorBridgingLoweringLaneContract,
+        ns_error_bridging_lowering_contract.deterministic},
+       {"lowering_unwind_cleanup", unwind_cleanup_lowering_replay_key,
+        kObjc3UnwindCleanupLoweringLaneContract,
+        unwind_cleanup_lowering_contract.deterministic},
+       {"lowering_error_handling_throws_abi_propagation",
+        error_handling_throws_abi_propagation_lowering_replay_key,
+        kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId,
+        deterministic_error_handling_throws_abi_propagation_lowering,
+        "contract_id"},
+       {"lowering_error_handling_result_and_bridging_artifact_replay",
+        error_handling_result_and_bridging_artifact_replay_summary.replay_key,
+        kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId,
+        error_handling_result_and_bridging_artifact_replay_summary.deterministic,
+        "contract_id"}});
+}
+
 }  // namespace objc3::artifacts::frontend

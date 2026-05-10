@@ -6202,30 +6202,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           incremental_module_cache_invalidation_lowering_contract,
           cross_module_conformance_lowering_replay_key,
           cross_module_conformance_lowering_contract);
-  objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
-      manifest,
-      {{"lowering_throws_propagation", throws_propagation_lowering_replay_key,
-        kObjc3ThrowsPropagationLoweringLaneContract,
-        throws_propagation_lowering_contract.deterministic},
-       {"lowering_result_like", result_like_lowering_replay_key,
-        kObjc3ResultLikeLoweringLaneContract,
-        result_like_lowering_contract.deterministic},
-       {"lowering_ns_error_bridging", ns_error_bridging_lowering_replay_key,
-        kObjc3NSErrorBridgingLoweringLaneContract,
-        ns_error_bridging_lowering_contract.deterministic},
-       {"lowering_unwind_cleanup", unwind_cleanup_lowering_replay_key,
-        kObjc3UnwindCleanupLoweringLaneContract,
-        unwind_cleanup_lowering_contract.deterministic},
-       {"lowering_error_handling_throws_abi_propagation",
-        error_handling_throws_abi_propagation_lowering_replay_key,
-        kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId,
-        deterministic_error_handling_throws_abi_propagation_lowering,
-        "contract_id"},
-       {"lowering_error_handling_result_and_bridging_artifact_replay",
-        error_handling_result_and_bridging_artifact_replay_summary.replay_key,
-        kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId,
-        error_handling_result_and_bridging_artifact_replay_summary.deterministic,
-        "contract_id"}});
+  objc3::artifacts::frontend::WriteObjc3FrontendErrorReplayManifestEntries(
+      manifest, throws_propagation_lowering_replay_key,
+      throws_propagation_lowering_contract, result_like_lowering_replay_key,
+      result_like_lowering_contract, ns_error_bridging_lowering_replay_key,
+      ns_error_bridging_lowering_contract, unwind_cleanup_lowering_replay_key,
+      unwind_cleanup_lowering_contract,
+      error_handling_throws_abi_propagation_lowering_replay_key,
+      deterministic_error_handling_throws_abi_propagation_lowering,
+      error_handling_result_and_bridging_artifact_replay_summary);
   objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestRecordArrays(
       manifest, program, resolved_global_values, manifest_functions,
       type_metadata_handoff, runtime_metadata_source_records);
