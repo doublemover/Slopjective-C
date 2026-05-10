@@ -92,6 +92,8 @@ add_library(objc3c_json STATIC
   json/json_schema_runtime_field_validation.cpp
   json/json_schema_runtime_node_dispatch_validation.cpp
   json/json_schema_runtime_node_validation.cpp
+  json/json_schema_scalar_numeric_dispatch_validation.cpp
+  json/json_schema_scalar_string_dispatch_validation.cpp
   json/json_schema_scalar_validation.cpp
   json/json_schema_string_constraint_length_validation.cpp
   json/json_schema_string_constraint_pattern_validation.cpp
