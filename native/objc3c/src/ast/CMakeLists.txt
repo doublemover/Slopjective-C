@@ -23,6 +23,7 @@ target_link_libraries(objc3c_ast_declarations INTERFACE
   objc3c_ast_core
 )
 target_sources(objc3c_ast_declarations INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_container_decl_nodes.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_declarations.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_function_decl_nodes.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_ast_method_decl_nodes.h
