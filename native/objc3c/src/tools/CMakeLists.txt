@@ -43,6 +43,9 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_compile_options_runtime.cpp
   objc3c_frontend_c_api_runner_compile_session.cpp
   objc3c_frontend_c_api_runner_compile_session_run.cpp
+  objc3c_frontend_c_api_runner_compile_session_run_context.cpp
+  objc3c_frontend_c_api_runner_compile_session_run_snapshots.cpp
+  objc3c_frontend_c_api_runner_compile_session_run_publication.cpp
   objc3c_frontend_c_api_runner_context.cpp
   objc3c_frontend_c_api_runner_diagnostic_totals.cpp
   objc3c_frontend_c_api_runner_dump_actions.cpp
