@@ -93,7 +93,6 @@
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_semantic_artifacts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
-#include "ir/objc3_ir_emitter.h"
 #include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
