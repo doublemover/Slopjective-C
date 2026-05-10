@@ -163,6 +163,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_dispatch_metadata.h
   objc3_frontend_artifact_dispatch_runtime_manifest_surfaces.cpp
   objc3_frontend_artifact_dispatch_runtime_manifest_surfaces.h
+  objc3_frontend_artifact_error_handling_manifest_surfaces.cpp
+  objc3_frontend_artifact_error_handling_manifest_surfaces.h
   objc3_frontend_artifact_error_lowering_plan.cpp
   objc3_frontend_artifact_error_lowering_plan.h
   objc3_frontend_artifact_error_metadata.cpp
