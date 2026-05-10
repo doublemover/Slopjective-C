@@ -1,28 +1,33 @@
 #include "io/json/json_string_escape.h"
 
-#include "io/json/json_string_escape_classification.h"
+#include <ostream>
+#include <string>
+
+#include "io/json/json_string_escape_emission.h"
 
 namespace objc3::io::json {
 namespace {
 
-template <typename EmitText, typename EmitChar>
-void EmitEscapedJsonString(std::string_view value, EmitText emit_text,
-                           EmitChar emit_char) {
-  constexpr char kHex[] = "0123456789abcdef";
+void AppendEscapedText(void *context, std::string_view text) {
+  static_cast<std::string *>(context)->append(text);
+}
+
+void AppendEscapedChar(void *context, char ch) {
+  static_cast<std::string *>(context)->push_back(ch);
+}
+
+void WriteEscapedText(void *context, std::string_view text) {
+  *static_cast<std::ostream *>(context) << text;
+}
+
+void WriteEscapedChar(void *context, char ch) {
+  *static_cast<std::ostream *>(context) << ch;
+}
+
+void EmitEscapedJsonString(std::string_view value,
+                           const JsonStringEscapeEmitter &emitter) {
   for (const unsigned char c : value) {
-    const JsonStringEscapeClassification escape =
-        ClassifyJsonStringEscape(c);
-    if (escape.short_escape != nullptr) {
-      emit_text(escape.short_escape);
-      continue;
-    }
-    if (escape.unicode_control_escape) {
-      emit_text("\\u00");
-      emit_char(kHex[(c >> 4u) & 0x0fu]);
-      emit_char(kHex[c & 0x0fu]);
-      continue;
-    }
-    emit_char(static_cast<char>(c));
+    EmitEscapedJsonStringByte(c, emitter);
   }
 }
 
@@ -31,18 +36,20 @@ void EmitEscapedJsonString(std::string_view value, EmitText emit_text,
 std::string EscapeJsonStringContent(std::string_view value) {
   std::string escaped;
   escaped.reserve(value.size());
-  EmitEscapedJsonString(
-      value,
-      [&escaped](std::string_view text) { escaped.append(text); },
-      [&escaped](char ch) { escaped.push_back(ch); });
+  EmitEscapedJsonString(value, JsonStringEscapeEmitter{
+                                   &escaped,
+                                   AppendEscapedText,
+                                   AppendEscapedChar,
+                               });
   return escaped;
 }
 
 void WriteJsonStringContent(std::ostream &out, std::string_view value) {
-  EmitEscapedJsonString(
-      value,
-      [&out](std::string_view text) { out << text; },
-      [&out](char ch) { out << ch; });
+  EmitEscapedJsonString(value, JsonStringEscapeEmitter{
+                                   &out,
+                                   WriteEscapedText,
+                                   WriteEscapedChar,
+                               });
 }
 
 }  // namespace objc3::io::json
