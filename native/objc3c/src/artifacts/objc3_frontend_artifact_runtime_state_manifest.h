@@ -32,4 +32,14 @@ void WriteRuntimeBootstrapRegistrationSourceSurface(
     const Objc3RuntimeBootstrapLegalitySemanticsSummary
         &runtime_bootstrap_legality_semantics);
 
+void WriteRuntimeBootstrapLoweringRegistrationArtifactSurface(
+    std::ostream &manifest,
+    const std::string &runtime_state_publication_emit_prefix,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &runtime_translation_unit_registration_manifest,
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+        &runtime_registration_descriptor_frontend_closure,
+    const Objc3RuntimeBootstrapLoweringSummary &runtime_bootstrap_lowering,
+    const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics);
+
 }  // namespace objc3::artifacts::frontend
