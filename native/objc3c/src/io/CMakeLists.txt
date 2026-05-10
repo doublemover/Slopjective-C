@@ -48,6 +48,8 @@ add_library(objc3c_json STATIC
   json/json_schema_applicator_subschema_contract_validation.cpp
   json/json_schema_applicator_subschema_items_contract_validation.cpp
   json/json_schema_assertion_contract_validation.cpp
+  json/json_schema_composition_all_of_dispatch_validation.cpp
+  json/json_schema_composition_any_of_dispatch_validation.cpp
   json/json_schema_composition_contract_validation.cpp
   json/json_schema_composition_validation.cpp
   json/json_schema_enum_array_contract_validation.cpp
