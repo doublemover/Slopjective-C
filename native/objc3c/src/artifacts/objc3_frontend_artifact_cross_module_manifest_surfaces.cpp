@@ -2,7 +2,7 @@
 
 #include <ostream>
 
-#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "artifacts/objc3_frontend_module_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 
 namespace objc3::artifacts::frontend {

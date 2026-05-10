@@ -1,8 +1,13 @@
 #include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 
-#include "lower/contracts/runtime_bootstrap_image_root_contracts.h"
-
 namespace objc3::artifacts::frontend {
+namespace {
+
+inline constexpr const char
+    *kArtifactRuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId =
+        "objc3c.runtime.registration.descriptor.and.image.root.lowering.v1";
+
+}  // namespace
 
 void ApplyObjc3FrontendRuntimeBootstrapMetadata(
     Objc3IRFrontendMetadata &ir_frontend_metadata,
@@ -53,7 +58,7 @@ void ApplyObjc3FrontendRuntimeBootstrapMetadata(
       runtime_bootstrap_lowering.image_local_initialization_landed;
   ir_frontend_metadata
       .runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id =
-      kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId;
+      kArtifactRuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId;
   ir_frontend_metadata.runtime_bootstrap_registration_descriptor_identifier =
       runtime_registration_descriptor_frontend_closure
           .registration_descriptor_identifier;

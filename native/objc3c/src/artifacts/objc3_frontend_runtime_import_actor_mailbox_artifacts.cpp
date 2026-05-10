@@ -2,8 +2,8 @@
 
 #include <sstream>
 
+#include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/concurrency_actor_contracts.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

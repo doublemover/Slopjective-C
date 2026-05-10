@@ -3,10 +3,57 @@
 #include <cstddef>
 
 #include "artifacts/identity/artifact_identity.h"
-#include "lower/contracts/runtime_bootstrap_link_discovery_contracts.h"
-#include "lower/contracts/runtime_metadata_source_record_contracts.h"
 
 namespace objc3::artifacts::frontend {
+namespace {
+
+inline constexpr const char *kArtifactRuntimeClassMetaclassEmissionContractId =
+    "objc3c.runtime.class.metaclass.data.emission.v1";
+inline constexpr const char *kArtifactRuntimeClassMetaclassEmissionPayloadModel =
+    "class-source-record-descriptor-bundles-with-inline-metaclass-records-and-final-sealed-flags";
+inline constexpr const char *kArtifactRuntimeClassMetaclassEmissionNameModel =
+    "shared-class-name-cstring-per-bundle";
+inline constexpr const char *kArtifactRuntimeClassMetaclassEmissionSuperLinkModel =
+    "nullable-super-source-record-bundle-pointer";
+inline constexpr const char
+    *kArtifactRuntimeClassMetaclassEmissionMethodListReferenceModel =
+        "count-plus-owner-identity-pointer-method-list-ref";
+inline constexpr const char *kArtifactRuntimeProtocolCategoryEmissionContractId =
+    "objc3c.runtime.protocol.category.data.emission.v1";
+inline constexpr const char *kArtifactRuntimeProtocolEmissionPayloadModel =
+    "protocol-descriptor-bundles-with-inherited-protocol-ref-lists";
+inline constexpr const char *kArtifactRuntimeCategoryEmissionPayloadModel =
+    "category-descriptor-bundles-with-attachment-and-protocol-ref-lists";
+inline constexpr const char *kArtifactRuntimeProtocolReferenceModel =
+    "count-plus-descriptor-pointer-protocol-ref-lists";
+inline constexpr const char *kArtifactRuntimeCategoryAttachmentModel =
+    "count-plus-owner-identity-pointer-attachment-lists";
+inline constexpr const char *kArtifactRuntimeMemberTableEmissionContractId =
+    "objc3c.runtime.member.table.emission.v1";
+inline constexpr const char *kArtifactRuntimeMethodListEmissionPayloadModel =
+    "owner-scoped-method-table-globals-with-inline-entry-records-and-direct-final-flags";
+inline constexpr const char *kArtifactRuntimeMethodListEmissionGroupingModel =
+    "declaration-owner-plus-class-kind-lexicographic";
+inline constexpr const char
+    *kArtifactRuntimePropertyDescriptorEmissionPayloadModel =
+        "property-descriptor-records-with-accessor-binding-and-sema-ivar-layout-fields";
+inline constexpr const char *kArtifactRuntimeIvarDescriptorEmissionPayloadModel =
+    "ivar-descriptor-records-with-property-binding-layout-replay-key-and-offset-global";
+inline constexpr const char *kArtifactRuntimeArchiveStaticLinkDiscoveryContractId =
+    "objc3c.runtime.metadata.archive.and.static.link.discovery.v1";
+inline constexpr const char *kArtifactRuntimeArchiveStaticLinkAnchorSeedModel =
+    "module-and-metadata-replay-plus-translation-unit-identity";
+inline constexpr const char
+    *kArtifactRuntimeArchiveStaticLinkTranslationUnitIdentityModel =
+        "input-path-plus-parse-and-lowering-replay";
+inline constexpr const char *kArtifactRuntimeArchiveStaticLinkMergeModel =
+    "deduplicated-driver-flag-fan-in";
+inline constexpr const char *kArtifactRuntimeMergedLinkerResponseArtifactSuffix =
+    ".merged.runtime-metadata-linker-options.rsp";
+inline constexpr const char *kArtifactRuntimeMergedDiscoveryArtifactSuffix =
+    ".merged.runtime-metadata-discovery.json";
+
+}  // namespace
 
 void ApplyObjc3FrontendRuntimeMetadataContractMetadata(
     Objc3IRFrontendMetadata &ir_frontend_metadata,
@@ -233,16 +280,16 @@ void ApplyObjc3FrontendRuntimeMetadataContractMetadata(
   const auto &source_graph =
       executable_metadata_typed_lowering_handoff.source_graph;
   ir_frontend_metadata.runtime_metadata_class_metaclass_emission_contract_id =
-      kObjc3RuntimeClassMetaclassEmissionContractId;
+      kArtifactRuntimeClassMetaclassEmissionContractId;
   ir_frontend_metadata.runtime_metadata_class_metaclass_payload_model =
-      kObjc3RuntimeClassMetaclassEmissionPayloadModel;
+      kArtifactRuntimeClassMetaclassEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_class_metaclass_name_model =
-      kObjc3RuntimeClassMetaclassEmissionNameModel;
+      kArtifactRuntimeClassMetaclassEmissionNameModel;
   ir_frontend_metadata.runtime_metadata_class_metaclass_super_link_model =
-      kObjc3RuntimeClassMetaclassEmissionSuperLinkModel;
+      kArtifactRuntimeClassMetaclassEmissionSuperLinkModel;
   ir_frontend_metadata
       .runtime_metadata_class_metaclass_method_list_reference_model =
-      kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel;
+      kArtifactRuntimeClassMetaclassEmissionMethodListReferenceModel;
   ir_frontend_metadata.executable_class_metaclass_source_closure_contract_id =
       source_graph.class_metaclass_source_closure_contract_id;
   ir_frontend_metadata.executable_class_metaclass_parent_identity_model =
@@ -339,47 +386,47 @@ void ApplyObjc3FrontendRuntimeMetadataContractMetadata(
       protocol_category_conformance_identity_edge_count;
 
   ir_frontend_metadata.runtime_metadata_protocol_category_emission_contract_id =
-      kObjc3RuntimeProtocolCategoryEmissionContractId;
+      kArtifactRuntimeProtocolCategoryEmissionContractId;
   ir_frontend_metadata.runtime_metadata_protocol_emission_payload_model =
-      kObjc3RuntimeProtocolEmissionPayloadModel;
+      kArtifactRuntimeProtocolEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_category_emission_payload_model =
-      kObjc3RuntimeCategoryEmissionPayloadModel;
+      kArtifactRuntimeCategoryEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_protocol_reference_model =
-      kObjc3RuntimeProtocolReferenceModel;
+      kArtifactRuntimeProtocolReferenceModel;
   ir_frontend_metadata.runtime_metadata_category_attachment_model =
-      kObjc3RuntimeCategoryAttachmentModel;
+      kArtifactRuntimeCategoryAttachmentModel;
   ir_frontend_metadata.runtime_metadata_protocol_category_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
 
   ir_frontend_metadata.runtime_metadata_member_table_emission_contract_id =
-      kObjc3RuntimeMemberTableEmissionContractId;
+      kArtifactRuntimeMemberTableEmissionContractId;
   ir_frontend_metadata.runtime_metadata_method_list_emission_payload_model =
-      kObjc3RuntimeMethodListEmissionPayloadModel;
+      kArtifactRuntimeMethodListEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_method_list_grouping_model =
-      kObjc3RuntimeMethodListEmissionGroupingModel;
+      kArtifactRuntimeMethodListEmissionGroupingModel;
   ir_frontend_metadata
       .runtime_metadata_property_descriptor_emission_payload_model =
-      kObjc3RuntimePropertyDescriptorEmissionPayloadModel;
+      kArtifactRuntimePropertyDescriptorEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_ivar_descriptor_emission_payload_model =
-      kObjc3RuntimeIvarDescriptorEmissionPayloadModel;
+      kArtifactRuntimeIvarDescriptorEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_member_table_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
 
   ir_frontend_metadata.runtime_metadata_archive_static_link_discovery_contract_id =
-      kObjc3RuntimeArchiveStaticLinkDiscoveryContractId;
+      kArtifactRuntimeArchiveStaticLinkDiscoveryContractId;
   ir_frontend_metadata.runtime_metadata_archive_static_link_anchor_seed_model =
-      kObjc3RuntimeArchiveStaticLinkAnchorSeedModel;
+      kArtifactRuntimeArchiveStaticLinkAnchorSeedModel;
   ir_frontend_metadata
       .runtime_metadata_archive_static_link_translation_unit_identity_model =
-      kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel;
+      kArtifactRuntimeArchiveStaticLinkTranslationUnitIdentityModel;
   ir_frontend_metadata.runtime_metadata_archive_static_link_merge_model =
-      kObjc3RuntimeArchiveStaticLinkMergeModel;
+      kArtifactRuntimeArchiveStaticLinkMergeModel;
   ir_frontend_metadata
       .runtime_metadata_archive_static_link_response_artifact_suffix =
-      kObjc3RuntimeMergedLinkerResponseArtifactSuffix;
+      kArtifactRuntimeMergedLinkerResponseArtifactSuffix;
   ir_frontend_metadata
       .runtime_metadata_archive_static_link_discovery_artifact_suffix =
-      kObjc3RuntimeMergedDiscoveryArtifactSuffix;
+      kArtifactRuntimeMergedDiscoveryArtifactSuffix;
   ir_frontend_metadata.runtime_metadata_archive_static_link_discovery_ready =
       true;
   ir_frontend_metadata
