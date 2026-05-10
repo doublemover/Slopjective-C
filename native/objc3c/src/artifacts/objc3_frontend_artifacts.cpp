@@ -397,8 +397,6 @@ using objc3::artifacts::reports::
 using objc3::artifacts::reports::
     BuildToolingMachineReadableConformanceReportContractSummaryJson;
 using objc3::artifacts::reports::
-    BuildVersionedConformanceReportArtifactJson;
-using objc3::artifacts::reports::
     BuildVersionedConformanceReportLoweringSummary;
 using objc3::artifacts::reports::
     BuildVersionedConformanceReportLoweringSummaryJson;
@@ -6356,15 +6354,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_storage_reflection_artifact_preservation_summary,
       serialized_runtime_metadata_artifact_reuse,
       serialized_runtime_metadata_reuse_records);
-  if (IsReadyObjc3VersionedConformanceReportLoweringSummary(
-          versioned_conformance_report_lowering)) {
-    bundle.versioned_conformance_report_artifact_json =
-        BuildVersionedConformanceReportArtifactJson(
-            versioned_conformance_report_lowering, options, pipeline_result,
-            frontend_compatibility_strictness_claim_semantics,
-            tooling_feature_aware_conformance_report_emission_summary,
-            tooling_corpus_sharding_release_evidence_packaging_summary);
-  }
+  objc3::artifacts::reports::
+      PopulateObjc3FrontendVersionedConformanceReportOutput(
+          bundle, versioned_conformance_report_lowering, options,
+          pipeline_result, frontend_compatibility_strictness_claim_semantics,
+          tooling_feature_aware_conformance_report_emission_summary,
+          tooling_corpus_sharding_release_evidence_packaging_summary);
   bundle.runtime_aware_import_module_frontend_closure_summary =
       runtime_aware_import_module_frontend_closure;
   bundle.versioned_conformance_report_lowering_summary =

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
+#include "artifacts/objc3_frontend_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_truth_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_capability_artifacts.h"
@@ -770,6 +771,27 @@ std::string BuildVersionedConformanceReportArtifactJson(
       ::objc3::artifacts::frontend::BuildPublicConformanceReportJson(summary),
       BuildToolingAdvancedFeatureReportingJson(feature_summary),
       BuildToolingAdvancedFeatureReleaseEvidenceJson(packaging_summary));
+}
+
+void PopulateObjc3FrontendVersionedConformanceReportOutput(
+    Objc3FrontendArtifactBundle &bundle,
+    const Objc3VersionedConformanceReportLoweringSummary &summary,
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result,
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+        &semantic_summary,
+    const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
+        &feature_summary,
+    const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
+        &packaging_summary) {
+  if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(summary)) {
+    return;
+  }
+
+  bundle.versioned_conformance_report_artifact_json =
+      BuildVersionedConformanceReportArtifactJson(
+          summary, options, pipeline_result, semantic_summary, feature_summary,
+          packaging_summary);
 }
 
 }  // namespace objc3::artifacts::reports

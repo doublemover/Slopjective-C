@@ -4,6 +4,8 @@
 
 #include "pipeline/objc3_frontend_types.h"
 
+struct Objc3FrontendArtifactBundle;
+
 namespace objc3::artifacts::reports {
 
 std::string BuildFrontendCompatibilityStrictnessClaimSemanticsReplayKey(
@@ -73,6 +75,18 @@ std::string BuildToolingAdvancedFeatureReleaseEvidenceJson(
     const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary &summary);
 
 std::string BuildVersionedConformanceReportArtifactJson(
+    const Objc3VersionedConformanceReportLoweringSummary &summary,
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result,
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+        &semantic_summary,
+    const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
+        &feature_summary,
+    const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
+        &packaging_summary);
+
+void PopulateObjc3FrontendVersionedConformanceReportOutput(
+    Objc3FrontendArtifactBundle &bundle,
     const Objc3VersionedConformanceReportLoweringSummary &summary,
     const Objc3FrontendOptions &options,
     const Objc3FrontendPipelineResult &pipeline_result,
