@@ -1,8 +1,9 @@
 #include "io/json/json_parser_scalar_value.h"
 
-#include <string>
 #include <string_view>
 #include <utility>
+
+#include "io/json/json_parser_scalar_delegates.h"
 
 namespace objc3::io::json {
 namespace {
@@ -23,12 +24,7 @@ bool ParseLiteral(JsonParserCursor &cursor,
 bool ParseJsonScalarValue(JsonParserCursor &cursor, JsonValue &out) {
   const char ch = cursor.Peek();
   if (ch == '"') {
-    std::string value;
-    if (!cursor.ParseString(value)) {
-      return false;
-    }
-    out = JsonValue::String(std::move(value));
-    return true;
+    return ParseJsonStringScalarValue(cursor, out);
   }
   if (ch == 't') {
     return ParseLiteral(cursor, "true", JsonValue::Bool(true), out);
@@ -40,7 +36,7 @@ bool ParseJsonScalarValue(JsonParserCursor &cursor, JsonValue &out) {
     return ParseLiteral(cursor, "null", JsonValue::Null(), out);
   }
   if (ch == '-' || JsonParserCursor::IsDigit(ch)) {
-    return cursor.ParseNumber(out);
+    return ParseJsonNumberScalarValue(cursor, out);
   }
   return cursor.Fail("unexpected JSON token");
 }
