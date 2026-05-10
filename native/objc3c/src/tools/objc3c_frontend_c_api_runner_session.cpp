@@ -31,8 +31,8 @@ int RunFrontendCApiRunnerSession(const FrontendCApiRunnerOptions &options) {
     return 2;
   }
 
-  if (!compile_session.last_error.empty()) {
-    std::cerr << compile_session.last_error << "\n";
+  if (!compile_session.error_snapshot.last_error.empty()) {
+    std::cerr << compile_session.error_snapshot.last_error << "\n";
   }
   return compile_session.exit_code;
 }

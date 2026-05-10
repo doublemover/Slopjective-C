@@ -7,14 +7,12 @@ bool ValidateFrontendCApiResultAccessors(
     const FrontendCApiRunnerOptions &options,
     objc3c_frontend_c_status_t status,
     const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const FrontendCApiRunnerStringSnapshot &result_error_message,
+    const FrontendCApiRunnerResultErrorSnapshot &error_snapshot,
     std::string &reason) {
   if (!ValidateFrontendCApiResultStatusAndErrorAccessors(
           status,
           result,
-          last_error,
-          result_error_message,
+          error_snapshot,
           reason)) {
     return false;
   }

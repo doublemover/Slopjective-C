@@ -28,8 +28,8 @@ bool BuildFrontendCApiRunnerSessionSummary(
       summary.artifact_paths,
       compile_session.status,
       compile_session.result,
-      compile_session.last_error,
-      compile_session.result_error_message_snapshot,
+      compile_session.error_snapshot.last_error,
+      compile_session.error_snapshot.result_error_message,
       output_contract);
   error.clear();
   return true;

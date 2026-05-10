@@ -5,8 +5,7 @@
 bool ValidateFrontendCApiResultStatusAndErrorAccessors(
     objc3c_frontend_c_status_t status,
     const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const FrontendCApiRunnerStringSnapshot &result_error_message,
+    const FrontendCApiRunnerResultErrorSnapshot &error_snapshot,
     std::string &reason) {
   const bool ok_status = status == OBJC3C_FRONTEND_STATUS_OK;
   if (!ValidateFrontendCApiResultStatusSuccessConsistency(
@@ -18,20 +17,20 @@ bool ValidateFrontendCApiResultStatusAndErrorAccessors(
   }
   if (!ValidateFrontendCApiResultErrorMessagePresenceRules(
           ok_status,
-          last_error,
-          result_error_message,
+          error_snapshot.last_error,
+          error_snapshot.result_error_message,
           reason)) {
     return false;
   }
   if (!ValidateFrontendCApiResultLatestErrorAccessorSnapshot(
           result,
-          result_error_message,
+          error_snapshot.result_error_message,
           reason)) {
     return false;
   }
   if (!ValidateFrontendCApiResultContextResultErrorParity(
-          last_error,
-          result_error_message,
+          error_snapshot.last_error,
+          error_snapshot.result_error_message,
           reason)) {
     return false;
   }
