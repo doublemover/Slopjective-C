@@ -1,5 +1,3 @@
-#include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
-
 #include <algorithm>
 #include <cstddef>
 

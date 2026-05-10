@@ -37,6 +37,7 @@ add_library(objc3c_pipeline STATIC
   frontend_error_handling_source_closure_helpers.cpp
   frontend_interop_source_closure_helpers.cpp
   frontend_interop_source_completion_helpers.cpp
+  frontend_lowering_contract_builders.cpp
   frontend_pipeline_orchestration.cpp
   frontend_pipeline_orchestration_protocol_symbols.cpp
   frontend_pipeline_orchestration_runtime_export.cpp
