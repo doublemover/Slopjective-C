@@ -1,0 +1,47 @@
+  const auto &block_storage_summary =
+      surface.block_storage_escape_semantics_summary;
+  record.block_storage_escape_ready =
+      deterministic_block_storage_escape_handoff &&
+      block_storage_summary.block_literal_sites ==
+          surface.block_storage_escape_sites_total &&
+      block_storage_summary.mutable_capture_count_total ==
+          surface.block_storage_escape_mutable_capture_count_total &&
+      block_storage_summary.byref_slot_count_total ==
+          surface.block_storage_escape_byref_slot_count_total &&
+      block_storage_summary.parameter_entries_total ==
+          surface.block_storage_escape_parameter_entries_total &&
+      block_storage_summary.capture_entries_total ==
+          surface.block_storage_escape_capture_entries_total &&
+      block_storage_summary.body_statement_entries_total ==
+          surface.block_storage_escape_body_statement_entries_total &&
+      block_storage_summary.requires_byref_cells_sites ==
+          surface.block_storage_escape_requires_byref_cells_sites_total &&
+      block_storage_summary.escape_analysis_enabled_sites ==
+          surface.block_storage_escape_escape_analysis_enabled_sites_total &&
+      block_storage_summary.escape_to_heap_sites ==
+          surface.block_storage_escape_escape_to_heap_sites_total &&
+      block_storage_summary.escape_profile_normalized_sites ==
+          surface.block_storage_escape_escape_profile_normalized_sites_total &&
+      block_storage_summary.byref_layout_symbolized_sites ==
+          surface.block_storage_escape_byref_layout_symbolized_sites_total &&
+      block_storage_summary.contract_violation_sites ==
+          surface.block_storage_escape_contract_violation_sites_total &&
+      block_storage_summary.requires_byref_cells_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.escape_analysis_enabled_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.escape_to_heap_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.escape_profile_normalized_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.byref_layout_symbolized_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.contract_violation_sites <=
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.mutable_capture_count_total <=
+          block_storage_summary.capture_entries_total &&
+      block_storage_summary.byref_slot_count_total <=
+          block_storage_summary.mutable_capture_count_total &&
+      block_storage_summary.escape_analysis_enabled_sites ==
+          block_storage_summary.block_literal_sites &&
+      block_storage_summary.deterministic;
