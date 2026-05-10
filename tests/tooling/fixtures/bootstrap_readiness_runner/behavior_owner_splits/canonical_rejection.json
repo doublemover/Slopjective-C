@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-runner-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness_runner/blocked_issues",
+    "tests/tooling/fixtures/bootstrap_readiness_runner/*/open_blockers.json"
+  ],
+  "support_boundary": "canonical rejection owns bootstrap-readiness-runner rows that look like support but are open-issue-erasing, empty-open-blocker-only, generated-only, report-only, migration-only, old-mode, shim, fallback, compatibility, wrapper-only, runner-only, workflow-label-only, or directory-label-only. The blocked_issues fixture cannot be cited as positive zero-readiness just because its open_blockers report is empty.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "rejection:blocked_issues-treated-as-zero-open-readiness",
+    "rejection:open_blocker_count-zero-erases-issues-array",
+    "rejection:empty-open-blockers-only-support",
+    "issue_number:1149",
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*",
+    "*compatibility*",
+    "*compat*",
+    "*migration-only*",
+    "*migration_only*",
+    "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*",
+    "*wrapper-only*",
+    "*wrapper_only*",
+    "*runner-only*",
+    "*runner_only*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "open issue evidence erased by empty blocker reports, old-mode runner rows, shim runner rows, fallback runner rows, compatibility runner rows, migration-only rows, report-only rows, generated-only rows, wrapper-only rows, runner-only rows, workflow-label-only rows, and alternate acceptance runner claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

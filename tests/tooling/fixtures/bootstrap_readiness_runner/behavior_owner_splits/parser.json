@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-runner-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness_runner"
+  ],
+  "support_boundary": "parser ownership is non-positive for bootstrap-readiness-runner fixtures because this family contains JSON runner snapshots, not hand-authored Objective-C 3 parser fixtures.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/bootstrap_readiness_runner/**/*.objc3",
+    "tooling_fixture_family:bootstrap_readiness_runner",
+    "compiler_phase_boundary:no-parser-positive-truth-from-bootstrap-readiness-runner",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser readiness-runner rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only parser rows, report-only parser rows, and runner-snapshot parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

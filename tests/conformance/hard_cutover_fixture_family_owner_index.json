@@ -1702,6 +1702,40 @@
       "retired_disposition": "bootstrap readiness fixture snapshots, accepted readiness scenarios, canonical blockers snapshot outputs, legacy blocker array payloads, malformed JSON rows, hard-fail open-blocker metadata rows, expected JSON/markdown reports, expected stderr and exit-code files, readiness state labels, intake recommendation labels, and blocker-count labels are resolved through behavior-first phase indexes and bootstrap readiness provenance before any readiness row is cited as support; parser, sema, lowering, IR, and runtime positives must point back to canonical compiler behavior owners, while legacy/compatibility payload rows, malformed rows, hard-fail rows, old-mode bootstrap, compatibility bootstrap, shim bootstrap, fallback bootstrap, generated-only bootstrap rows, report-only bootstrap rows, migration-only bootstrap rows, wrapper-only rows, runner-only success, workflow-label-only success, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "bootstrap_readiness_runner_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "bootstrap_readiness_runner_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/bootstrap_readiness_runner/behavior_owner_splits/bootstrap_readiness_runner_provenance.json"
+      ],
+      "retired_disposition": "bootstrap readiness runner scenario snapshots, zero_open catalog/issues/milestones/open_blockers files, blocked_issues catalog/issues/milestones/open_blockers files, generated timestamp labels, source labels, issue number labels, issue title text, empty catalog task arrays, empty milestone arrays, open_blocker_count labels, open_blockers arrays, fixture directory labels, and owner-split routing rows are resolved through behavior-first phase indexes and bootstrap readiness runner provenance before any runner row is cited as support; parser, sema, lowering, IR, and runtime positives are non-positive for this family and e2e/tooling positives are limited to the hand-authored zero_open all-empty runner input set plus blocked_issues issue 1149 blocking-input handling, while blocked_issues treated as zero-open readiness, empty open_blockers reports used to erase open issue evidence, open_blocker_count used as the only readiness dimension, missing scenario JSON, old-mode readiness-runner rows, shim rows, fallback rows, compatibility rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only runner checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "activation_triggers_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits",
