@@ -253,6 +253,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_parser_diagnostic_artifacts.h
   objc3_runtime_bootstrap_contract_artifact_builders.cpp
   objc3_runtime_bootstrap_contract_artifact_builders.h
+  objc3_frontend_runtime_bootstrap_api_artifacts.cpp
   objc3_frontend_runtime_bootstrap_artifacts.cpp
   objc3_frontend_runtime_bootstrap_artifacts.h
   objc3_frontend_runtime_bootstrap_legality_failure_artifacts.cpp
