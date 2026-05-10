@@ -1,7 +1,6 @@
 #include "artifacts/objc3_frontend_artifacts.h"
 
 #include "artifacts/objc3_frontend_artifacts_runtime_manifest_surfaces.h"
-#include "artifacts/objc3_runtime_state_publication_paths.h"
 
 #include <cctype>
 #include <cstdint>
@@ -16,11 +15,9 @@
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
-#include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_error_metadata.h"
-#include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
@@ -38,22 +35,15 @@
 #include "artifacts/objc3_frontend_artifact_ownership_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
-#include "artifacts/objc3_frontend_artifact_property_atomicity_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_block_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_concurrency_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_output.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
-#include "artifacts/objc3_frontend_artifact_runtime_object_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_release_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
-#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_metadata.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
@@ -232,8 +222,6 @@ using objc3::artifacts::frontend::
     BuildExecutableMetadataRuntimeIngestPackagingContractSummaryJson;
 using objc3::artifacts::frontend::
     BuildRuntimeMetadataSourceToSectionMatrixSummaryJson;
-using objc3::artifacts::frontend::BuildAccessorStorageLoweringMetadataSummary;
-using objc3::artifacts::frontend::BuildExecutableAccessorLayoutLoweringSummary;
 using objc3::artifacts::frontend::BuildExecutableMetadataSourceGraphJson;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataSemanticConsistencyBoundaryJson;
@@ -249,9 +237,6 @@ using objc3::artifacts::frontend::
     BuildExecutableMetadataDebugProjectionReplayKey;
 using objc3::artifacts::frontend::
     BuildExecutableMetadataDebugProjectionSummaryJson;
-using objc3::artifacts::frontend::Objc3AccessorStorageLoweringMetadataSummary;
-using objc3::artifacts::frontend::
-    Objc3ExecutableAccessorLayoutLoweringSummary;
 using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
 using objc3::artifacts::frontend::
