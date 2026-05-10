@@ -52,13 +52,13 @@ Byref promotion, copy/dispose, and forwarding implementation:
 
 Lowering and runtime ABI contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-block-arc`
+- the block/ARC compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-block-arc`
 - the four required block/ARC surfaces are `runtime_block_arc_unified_source_surface`, `runtime_ownership_transfer_capture_family_source_surface`, `runtime_block_arc_lowering_helper_surface`, and `runtime_block_arc_runtime_abi_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone is `npm run objc3c -- validate-block-arc-conformance` and `npm run objc3c -- validate-runnable-block-arc`
+- the block/ARC public command surface is `npm run objc3c -- validate-block-arc-conformance` and `npm run objc3c -- validate-runnable-block-arc`
 - the public workflow surface remains `validate-block-arc-conformance` and `validate-runnable-block-arc`
 - block and ARC closure still relies on private runtime-owned helper and snapshot surfaces; the public runtime header is not widened by this milestone
 

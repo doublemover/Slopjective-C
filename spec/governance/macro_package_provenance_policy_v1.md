@@ -167,7 +167,7 @@ Governance rules:
 
 1. digest-changing mutations require explicit review rationale,
 2. CI and release MUST reject implicit regeneration,
-3. lockfile merges are resolved by deterministic regeneration, not manual edits.
+3. lockfile merges are resolved by deterministic regeneration, not direct lockfile rewrites.
 
 ### 5.5 Version transition rules
 

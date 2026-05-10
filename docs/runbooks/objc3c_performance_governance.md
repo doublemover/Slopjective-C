@@ -80,7 +80,7 @@ Only these checked-in sources may feed the public performance report:
 - checked-in public command and maintainer workflow surfaces
 - action-catalog-owned deterministic report builders
 
-No spreadsheet-only, screenshot-only, or hand-edited sidecar performance report
+No spreadsheet-only, screenshot-only, or operator-maintained sidecar performance summary
 is allowed.
 
 ## Public Claim And Waiver Policy

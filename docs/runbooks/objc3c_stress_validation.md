@@ -40,7 +40,7 @@ The current truthful stress-validation shape is:
 
 ## Differential And Fuzz Safety Policy
 
-The checked-in safety policy for this milestone lives at:
+The checked-in stress safety policy lives at:
 
 - `tests/tooling/fixtures/stress/safety_policy.json`
 
@@ -98,7 +98,7 @@ Downstream work must preserve these rules:
 
 ## Exact Live Artifact And Output Paths
 
-- build-owned source-of-truth artifact:
+- build-owned owner artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - checked-in stress source summary:
   - `tmp/reports/stress/source-surface-summary.json`

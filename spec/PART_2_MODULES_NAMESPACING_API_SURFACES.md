@@ -36,7 +36,7 @@ A module import shall:
 ### 2.2.2 `#import` and mixed-mode code (non-normative) {#part-2-2-2}
 
 `#import` remains a supported import form for existing Objective-C headers.
-However, toolchains are encouraged to treat `@import` as the semantic source of truth for:
+However, toolchains are encouraged to treat `@import` as the semantic owner for:
 
 - nullability defaults,
 - availability,

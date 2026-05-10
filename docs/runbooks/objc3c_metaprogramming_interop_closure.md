@@ -52,18 +52,18 @@ Current closure constraints:
 - import/export, runtime package loading, bridge generation, mixed-image interop, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
 - interop claims must pass through ABI, ownership, error, and async behavior on the real packaged toolchain; comparison-only narratives do not count
 - packaged cross-module interop proof is anchored to the runnable interop e2e provider and consumer fixtures, packaged probe executables, and packaged execution smoke and replay steps
-- public runtime ABI widening for interop/package-loading helpers remains out of scope for this milestone
+- public runtime ABI widening for interop/package-loading helpers remains out of scope for this closure surface
 
 ## Lowering and Runtime Artifact Surface
 
-- the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
-- the canonical metaprogramming surfaces for this milestone are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
-- the canonical interop surfaces for this milestone are the published `runtime_*interop*` and package-loader bridge surfaces
+- the metaprogramming/interop compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
+- the metaprogramming owner surfaces are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
+- the interop owner surfaces are the published `runtime_*interop*` and package-loader bridge surfaces
 - release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth
 
 ## Executable Proof and ABI Surface
 
-- the public command surface for this milestone is `npm run objc3c -- validate-metaprogramming-conformance`, `npm run objc3c -- validate-runnable-metaprogramming`, `npm run objc3c -- validate-interop-conformance`, and `npm run objc3c -- validate-runnable-interop`
+- the metaprogramming/interop public command surface is `npm run objc3c -- validate-metaprogramming-conformance`, `npm run objc3c -- validate-runnable-metaprogramming`, `npm run objc3c -- validate-interop-conformance`, and `npm run objc3c -- validate-runnable-interop`
 - the public workflow surface remains `validate-metaprogramming-conformance`, `validate-runnable-metaprogramming`, `validate-interop-conformance`, and `validate-runnable-interop`
 - private runtime-owned helper and snapshot boundaries continue to define the live executable proof surface; the public runtime header is not widened by this milestone
 

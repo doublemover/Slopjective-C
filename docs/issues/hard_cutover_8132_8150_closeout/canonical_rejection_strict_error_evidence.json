@@ -21,7 +21,7 @@
     "payloads.md:runtime dispatch retired route is strict-error behavior",
     "payloads.md:old-mode and parser retired route flags are explicit rejection fixtures",
     "payloads.md:retired adapter gates and unsupported feature claims are semantic rejection evidence",
-    "payloads.md:direct helper commands and evidence-log/allowlist surfaces are retired from public claims",
+    "payloads.md:direct helper commands and legacy exception-list/generated-evidence ledger names are confined to rejection or absence evidence",
     "*retired-route*",
     "*gate*",
     "*compatibility*",

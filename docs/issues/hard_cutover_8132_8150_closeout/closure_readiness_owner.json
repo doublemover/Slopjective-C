@@ -20,14 +20,14 @@
     "branch_evidence_policy.unsupported_evidence[]",
     "issue_payloads[].status_for_tracker",
     "issue_payloads[].status_for_tracker=evidence-ready",
-    "issue_payloads[].status_for_tracker=local-capability-truth-indexed",
+    "issue_payloads[].status_for_tracker=capability-boundary-indexed",
     "issue_payloads[].status_for_tracker=local-evidence-indexed-remote-deferred",
     "current_docs_only_closeout_refresh",
     "payloads.md:not remote completion claims and do not assert remote closure",
     "payloads.md:Validation, gh, push, and issue edits were intentionally not run",
     "payloads.md:remote-deferred status",
     "payloads.md:Remaining closure gates:",
-    "payloads.md:Validation, push, GitHub issue edits, and remote closeout remain outside this local-only payload"
+    "payloads.md:Validation, push, GitHub issue edits, and remote closeout remain outside this branch-committed payload"
   ],
   "canonical_anchor": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
   "retired_surface_rule": "closure readiness never converts local evidence-ready labels, docs-only refreshes, generated summaries, evidence-log rows, validation-not-run state, GitHub-not-called state, push-not-performed state, remote-deferred state, gate claims, retired route claims, compatibility claims, or old-mode claims into remote closure"

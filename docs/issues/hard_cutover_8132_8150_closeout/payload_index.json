@@ -2121,7 +2121,7 @@
     {
       "issue": "#8145",
       "anchor": "#8145",
-      "status_for_tracker": "local-capability-truth-indexed",
+      "status_for_tracker": "capability-boundary-indexed",
       "primary_refresh_commits": [
         "c64fe1597",
         "8dead58b3",

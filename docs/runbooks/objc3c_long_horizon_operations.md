@@ -185,7 +185,7 @@ The generator replays the long-horizon policy summaries and live package,
 canonical-application, performance-governance, conformance, stress,
 external-validation, and public-conformance integration checks before writing
 the artifact. Generated evidence is temporary output; the checked-in contracts
-and scripts remain the source of truth.
+and scripts remain the owner inputs.
 
 ## Public Workflow Integration
 

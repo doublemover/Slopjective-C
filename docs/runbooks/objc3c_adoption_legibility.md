@@ -144,7 +144,7 @@ It generates:
 The generator replays the boundary inventory, public claim policy, comparison
 semantics, adoption replay semantics, and artifact contract summaries before
 writing artifacts. Generated evidence is temporary output; checked-in contracts,
-docs, and action-catalog-owned implementations remain the source of truth.
+docs, and action-catalog-owned implementations remain the owner inputs.
 
 ## Public Workflow Integration
 

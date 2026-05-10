@@ -35,7 +35,7 @@ remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
-implementation commit lists are local source evidence only. The current covered
+implementation commit lists are branch source evidence only. The current covered
 source head is `2a2d9759a` (`HC extract final readiness core keys`).
 The current docs-only closeout refresh folded into these payloads is
 `b4dad7b30` (`docs: refresh hard-cutover evidence through core keys`).
@@ -143,7 +143,7 @@ The local longest-file scan identified `native/objc3c/src/artifacts/objc3_fronte
 `native/objc3c/src/ir/objc3_ir_emitter.cpp`, and
 `native/objc3c/src/sema/objc3_sema_pass_manager_contract_flow.cpp` as the top
 monoliths. That scan is planning evidence only. Artifact, sema, IR, pipeline,
-and test slices named in these payloads are committed local evidence only, not
+and test slices named in these payloads are branch-committed evidence only, not
 validation, push, GitHub issue edits, or remote closure.
 
 The same local refresh document now also folds in the follow-up committed owner
@@ -174,7 +174,7 @@ commits that landed after the first docs commit.
 | `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime retired route remains removed or strict-error behavior. |
 | `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe`, `9cf3601b5`, `4307f5156` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch retired route stays strict-error evidence. |
 | `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe`, `c8060c3e3`, `531b53843`, `6d6fa804d` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
-| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; validation, push, and remote issue updates remain deferred. |
+| `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support boundaries, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; validation, push, and remote issue updates remain deferred. |
 
 ## Follow-up Local Owner Refresh
 
@@ -184,8 +184,8 @@ commits that landed after the first docs commit.
 | `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac`, `df0106f0a`, `a4e529621`, `5eb5ea497`, `9ad72ee8a`, `1afa7c1ae` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, image registration API owners, method class-chain resolution owners, dispatch status helpers, runtime public ABI records, and property/storage reflection snapshot ownership; retired route dispatch remains strict-error evidence. |
 | `#8139`, `#8140`, `#8141`, `#8143` | `c1cf8f7b6`, `937878ddd`, `03ffe9df8`, `6acb1d390`, `e6269dc67`, `5eb5ea497`, `f4af3437c` | Public frontend/API evidence now includes tightened frontend C API contracts, consolidated result accessors, native driver CLI ownership, C API runner source-test expectations, runtime public ABI records, driver CLI split owner tests, and tooling split expectations without adding compatibility wrappers. |
 | `#8138`, `#8148` | `328bd8fe9`, `3bfc42ea5`, `34bb8547b`, `68865ee06`, `545e4159f`, `6017b3968`, `018f6aa84`, `a23c7d97a`, `e1842acf8`, `7b914509f`, `9f897ba25`, `78dbcb9c3`, `54e81ff4a`, `d0ba8050e`, `c2b6b5209`, `e03ec059c`, `a61477b96`, `647e47739` | IO/JSON/schema/artifact evidence now includes JSON value writers, telemetry command constraints, schema retired-term guidance, schema contract-table ownership, IO string/process owners, schema validation owners, developer tooling dump/playground owners, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/input/ordering, artifact-claim metadata, and pipeline handoff. |
-| `#8135`, `#8138`, `#8145`, `#8148`, `#8150` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e`, `8457e4728`, `720c366a5`, `f38134a38`, `110c07879` | Diagnostic/config/capability truth evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, and schema guidance that keeps retired compatibility terms out of public support claims. |
-| `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390`, `e7deeeda7`, `8457e4728`, `1678e0323`, `5153e749d`, `91e73f01f`, `f56e1af4f` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application/release/tooling specs, native driver public-workflow command owners, public command budget contracts, validation timing report owners, source-hygiene residue guardrails, and public docs command-surface alignment while keeping public command truth at `npm run objc3c -- <action>`. |
+| `#8135`, `#8138`, `#8145`, `#8148`, `#8150` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e`, `8457e4728`, `720c366a5`, `f38134a38`, `110c07879` | Diagnostic/config/capability boundary evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, and schema guidance that keeps retired compatibility terms out of public support claims. |
+| `#8142`, `#8149`, `#8150` | `3bfc42ea5`, `7af7e36a6`, `26cf43410`, `29ecc147b`, `6acb1d390`, `e7deeeda7`, `8457e4728`, `1678e0323`, `5153e749d`, `91e73f01f`, `f56e1af4f` | Workflow/control-plane evidence now includes telemetry command evidence constraints, workflow handler registries, workflow catalog core/application/release/tooling specs, native driver public-workflow command owners, public command budget contracts, validation timing report owners, source-hygiene residue guardrails, and public docs command-surface alignment while keeping public command boundary at `npm run objc3c -- <action>`. |
 | `#8144`, `#8145`, `#8150` | `d63a55535`, `3fc0f3dd7`, `9b53ca57b`, `9debafbeb`, `5487641c4`, `0ab5fb9ae`, `03ffe9df8`, `4dcbbb24c`, `e6269dc67`, `f4af3437c`, `1678e0323`, `f4bf6228e` | Fixture and retired-surface evidence now includes static hard-cut expectations, positive-residue wording cleanup, fixture boundary indexes, runtime dispatch sidecars, retired-positive conformance policies, parser owner-path replacement, tooling split expectations, fixture boundary residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors. |
 
 ## Post-`f4bf6228e` Local Owner Refresh
@@ -233,7 +233,7 @@ commits that landed after the first docs commit.
 | `#8133`, `#8143`, `#8144`, `#8145`, `#8150` | `34411837b` | Runtime strict-error fixture renames refresh conformance indexes and retired-surface matrices while preserving strict-error classification for unsupported dispatch. |
 | `#8138`, `#8142`, `#8149` | `c36b89616` | LLVM developer-tooling owner splits refresh internal tooling workflow evidence under the public command boundary. |
 | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `b4f3a295f` | Runtime image registration table record, shape, and walk owners refresh runtime image registration and public runtime contract evidence. |
-| `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed retired route behavior remains rejection or strict-error evidence. |
+| `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed retired route rows remain rejection or strict-error evidence. |
 
 ## Post-`98d10a61c` Local Owner Refresh
 
@@ -372,7 +372,7 @@ method-resolution, builtin-lookup, class graph snapshot, dispatch state
 snapshot, protocol conformance snapshot/query, and image registration API
 ownership commits, plus method class-chain resolution and dispatch status helper
 splits, runtime public ABI records, and property/storage reflection snapshot ownership.
-Runtime retired route behavior is represented as strict-error fixture evidence.
+Runtime retired route entries map to strict-error fixture evidence.
 
 Evidence: `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
 `tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3`,
@@ -445,7 +445,7 @@ strict-error evidence when unavailable.
 
 Pipeline, IO, artifact, and config owner split evidence is indexed from
 pipeline classification, IO/artifact support, artifact publication, config
-diagnostics, pipeline/IO artifact contracts, config truth-table commits, JSON
+diagnostics, pipeline/IO artifact contracts, config classification-table commits, JSON
 value/container writers, IO string/process owners, schema validation owners,
 artifact adapters, conformance claim validation input owners, dashboard
 renderers, runtime registration manifest artifact owners, and pipeline result
@@ -500,7 +500,7 @@ Evidence: `docs/support/capability_matrix.json`,
 `docs/support/evidence_map.json`, commits `a51cac68d`, `d8bbebb2b`,
 `c18135fcc`, `232997ba4`, `fb443536f`, `99f6692d5`.
 
-Retired-surface state: C API evidence is strict contract truth, not a
+Retired-surface state: C API evidence is strict contract evidence, not a
 compatibility wrapper.
 
 ## #8142
@@ -518,7 +518,7 @@ commits `b3401be67`, `d86f03a25`, `72b62d7ed`, `d5668d12e`, `5c025aa97`,
 `3c4d6c973`, `6fef331c2`, `a612ccede`, `72919dc66`, `37e788a6b`,
 `5ed60a087`.
 
-Retired-surface state: public command truth is `npm run objc3c -- <action>`.
+Retired-surface state: public command boundary is `npm run objc3c -- <action>`.
 
 ## #8143
 
@@ -555,13 +555,13 @@ Evidence: `tests/native/README.md`, `tests/native/retired_surface_matrix.json`,
 `aee256872`, `e5b988129`, `99b93ccb2`, `e99c7d740`, `67aa58ad9`,
 `16e517982`, `e157ebe20`, `e02bde405`, `645e9c25f`.
 
-Retired-surface state: all retired behavior is rejection, strict-error, or
+Retired-surface state: all retired rows are rejection, strict-error, or
 absent from support.
 
 ## #8145
 
-Capability truth evidence is indexed from capability docs, command bridge docs,
-schema truth docs, evidence-map tie-ins, support truth, and diagnostic catalog
+Capability boundary evidence is indexed from capability docs, command bridge docs,
+schema owner docs, evidence-map tie-ins, support boundaries, and diagnostic catalog
 table commits, plus diagnostic/config owner collapse, schema retired-term
 guidance, canonical config tooling expectations, public/native docs ownership,
 spec hard-cutover prose, prose planning overlays, and compiler throughput
@@ -611,7 +611,7 @@ Retired-surface state: unsupported feature claims stay strict diagnostics.
 JSON/schema infrastructure evidence is indexed from native JSON helpers,
 artifact JSON writers, manifest writers, schema infrastructure, artifact
 registry owners, capability evidence schemas, evidence-map docs, schema id
-normalization, config truth tables, JSON value/container writers, schema
+normalization, config classification tables, JSON value/container writers, schema
 validation owner splits, schema retired-term guidance, conformance claim
 validation input owners, runtime registration manifest artifact owners, artifact
 adapters, dashboard renderers, artifact-claim metadata, config tooling
@@ -629,7 +629,7 @@ retired route support.
 ## #8149
 
 Source-hygiene and command-surface evidence is indexed from command hygiene,
-source root coverage, allowlist retirement, guardrail scanning, and workflow
+source root coverage, legacy exception-list retirement, guardrail scanning, and workflow
 hygiene owner commits, plus telemetry command constraints, workflow handler
 registries, workflow catalog core/application specs, and native driver public
 workflow command owners, release catalog specs, and public docs command-surface
@@ -644,20 +644,20 @@ Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
 `058acec90`, `f00e2e871`, `6d0a19f84`, `f49c6f38f`.
 
-Retired-surface state: direct helper commands and evidence-log/allowlist surfaces
-are retired from public claims.
+Retired-surface state: direct helper commands and legacy exception-list/generated
+evidence ledger names are confined to rejection or absence evidence.
 
 ## #8150
 
-Local closeout evidence is branch-committed and indexed through source commit
+Branch closeout evidence is branch-committed and indexed through source commit
 `2a2d9759a`, with docs-only closeout synchronization through `b4dad7b30`.
-That local-only evidence includes the follow-up committed owner wave through
+That branch-committed evidence includes the follow-up owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, the latest local implementation slices through `2a2d9759a`, and
+`98d10a61c`, the latest branch implementation slices through `2a2d9759a`, and
 the docs-only evidence refresh through `b4dad7b30`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
@@ -669,6 +669,6 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `16e517982`, `e5b988129`, `a87b2c92e`, `709148d75`, `016683b19`,
 `645e9c25f`, `b4dad7b30`.
 
-Remaining closure gates: this payload is current only as local source
+Remaining closure gates: this payload is current only as branch-committed source
 architecture evidence through the committed head named above. Validation, push,
-GitHub issue edits, and remote closeout remain outside this local-only payload.
+GitHub issue edits, and remote closeout remain outside this branch-committed payload.

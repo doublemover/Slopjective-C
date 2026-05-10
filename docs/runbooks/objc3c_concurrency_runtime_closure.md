@@ -56,17 +56,17 @@ Actor isolation, sendability, and hop semantics:
 
 - actor isolation entry, nonisolated entry, executor hops, replay proof, race guard, executor binding, and mailbox ownership remain supported only through the private actor helper cluster and runtime snapshots
 - sendability and isolation enforcement claims must stay bounded by the current lowering contracts, actor probes, and cross-module replay proof
-- broader interop and public actor runtime ABI claims remain out of scope for this milestone
+- broader interop and public actor runtime ABI claims remain out of scope for this closure surface
 
 Lowering and runtime artifact contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-concurrency`
-- the canonical concurrency surfaces for this milestone are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
+- the concurrency compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-concurrency`
+- the concurrency owner surfaces are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone is `npm run objc3c -- validate-concurrency-conformance` and `npm run objc3c -- validate-runnable-concurrency`
+- the concurrency public command surface is `npm run objc3c -- validate-concurrency-conformance` and `npm run objc3c -- validate-runnable-concurrency`
 - the public workflow surface remains `validate-concurrency-conformance` and `validate-runnable-concurrency`
 - concurrency closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 

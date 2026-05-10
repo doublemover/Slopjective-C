@@ -97,7 +97,7 @@ Machine-owned governance artifact contract:
   - `tmp/artifacts/governance-sustainability/extension-review-publication.json`
 
 The checked-in contracts under `tests/tooling/fixtures/governance_sustainability/`
-are the source of truth. Files under `tmp/reports/` and `tmp/artifacts/` are
+are the owner inputs. Files under `tmp/reports/` and `tmp/artifacts/` are
 replayable outputs only and must never become implementation inputs.
 
 Replayable governance enforcement:

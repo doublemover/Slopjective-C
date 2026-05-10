@@ -49,7 +49,7 @@ surfaces, not from a hosted registry:
 - release, update, package-channel, and application-architecture workflows
   already provide package pressure from real user-shaped workspaces.
 
-That means this milestone must build local package semantics first:
+That means the package-ecosystem owner surface must build local package semantics first:
 
 - deterministic dependency resolution and lock behavior
 - local workspace and package-authoring workflow
@@ -75,7 +75,7 @@ Not supported in this boundary:
 - a hosted package registry service
 - network-backed dependency resolution
 - system package manager publication
-- manual package manifests that bypass the `npm run objc3c -- <action>` bridge
+- package manifests that bypass the `npm run objc3c -- <action>` bridge
 - a second compiler payload, package layout, or install workflow
 
 ## Dependency Resolution And Lock Policy

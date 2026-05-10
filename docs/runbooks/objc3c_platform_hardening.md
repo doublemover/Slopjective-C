@@ -214,7 +214,7 @@ No unsupported host may be described as:
 
 ## Machine-Owned Artifact Contract
 
-The canonical generated support-matrix surface for this milestone is:
+The platform-hardening generated support-matrix surface is:
 
 - `tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`
 
@@ -228,7 +228,7 @@ The checked-in schema and contract surfaces for that artifact are:
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-The generated summary/report family for this milestone lives under:
+The generated summary family for platform hardening lives under:
 
 - `tmp/reports/platform-hardening/`
 
@@ -237,7 +237,7 @@ inventing a second matrix format.
 
 ## Build And Package Validation Surface
 
-The live build/package validation path for this milestone must stay on the same
+The live build/package validation path for platform hardening must stay on the same
 public build/package surfaces users run:
 
 - `npm run objc3c -- build-platform-support-matrix`
@@ -274,7 +274,7 @@ verifies that the published support boundary still resolves to exactly:
 
 ## Toolchain Replay And Support Evidence
 
-Toolchain-range evidence for this milestone must come from replayable host
+Toolchain-range evidence for platform hardening must come from replayable host
 probes plus the checked-in release/update support outputs.
 
 The replay surface for this slice is:
@@ -289,7 +289,7 @@ can actually claim and keeps broader toolchain-range rhetoric fail-closed.
 
 ## Runnable Install-Matrix Integration
 
-The runnable install-matrix proof for this milestone is the composition of:
+The runnable install-matrix proof for platform hardening is the composition of:
 
 - support-matrix generation
 - build/package validation on the checked-in host tier

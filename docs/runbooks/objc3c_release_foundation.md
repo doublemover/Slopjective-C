@@ -22,7 +22,7 @@ The release surface is composed of:
 
 - the staged runnable package root under `tmp/pkg/`
 - the runnable package manifest emitted inside that package root
-- the checked-in repo-superclean source-of-truth artifact emitted by
+- the checked-in repo-superclean owner artifact emitted by
   `npm run objc3c -- build-native-binaries`
 - the release-evidence index produced by `npm run objc3c -- check-release-evidence`
 - the machine-generated release manifest, SBOM, and attestation artifacts
@@ -43,8 +43,8 @@ The trusted release boundary is repo-relative and machine-generated:
 - machine-owned outputs under `tmp/reports/release-foundation/`,
   `tmp/artifacts/release-foundation/`, and `tmp/pkg/`
 
-No claim may depend on hand-edited release notes, spreadsheet-only digests, or
-manual checksum tables.
+No claim may depend on ad hoc release notes, spreadsheet-only digests, or
+operator-maintained checksum tables.
 
 Artifact authenticity envelope ownership:
 
@@ -57,7 +57,7 @@ matrix and evidence-map backing.
 
 ## Reproducibility Boundary
 
-Reproducibility for this milestone means:
+Reproducibility for this release-foundation surface means:
 
 - the runnable package can be staged repeatedly from the same repo state
 - the selected release payload produces the same sorted file-digest set across
@@ -75,7 +75,7 @@ Release provenance publication must emit:
 - a release manifest with the selected payload entries and normalized digests
 - an SBOM-style component inventory over the selected payload
 - an attestation document that binds the release manifest, SBOM, package
-  manifest, repo-superclean source-of-truth artifact, and release-evidence
+  manifest, repo-superclean owner artifact, and release-evidence
   index together
 
 These artifacts must remain machine-owned outputs.

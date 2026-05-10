@@ -86,7 +86,7 @@ The full-envelope release gate is explicit and machine-resolved:
 - `preview` rollout may publish exploratory or experimental guidance, but it is
   never treated as production-strength
 
-The canonical release blockers for this milestone are:
+The full-envelope release blockers are:
 
 - a required integration report is missing or not `PASS`
 - public conformance reporting is `blocked`
@@ -110,7 +110,7 @@ and release-blocker summary both converge.
 
 ## Stability Regression And Rollout Implementation
 
-The canonical rollout-readiness summary for this milestone must be derived from:
+The rollout-readiness summary for this full-envelope surface must be derived from:
 
 - the full-envelope support matrix summary
 - the production-strength claim policy summary
@@ -128,7 +128,7 @@ The derived rollout summary must make these decisions explicit:
 
 ## Dashboard And Claim Publication Surface
 
-The machine-owned envelope claim outputs for this milestone must stay under:
+The machine-owned envelope claim outputs must stay under:
 
 - `tmp/reports/full-envelope-claimability/`
 - `tmp/artifacts/full-envelope-claimability/`
@@ -172,7 +172,7 @@ soak or external-validation truth surface.
 
 ## Release-Candidate Evidence Packaging
 
-The full-envelope evidence package for this milestone must terminate in the live:
+The full-envelope evidence package must terminate in the live:
 
 - release-foundation manifest, SBOM, and attestation
 - release-operations update manifest, support-window report, and channel catalog

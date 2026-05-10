@@ -51,7 +51,8 @@ is deliberately changed.
 
 ## Review Policy
 
-- Manual edits to `docs/objc3c-native.md` are unsupported.
+- Direct changes to `docs/objc3c-native.md` must match source-section updates
+  and regeneration evidence.
 - Changes must be reviewed by the primary owner for each touched fragment.
 - Cross-fragment changes require at least one reviewer from `compiler/docs`.
 - PR description must include regeneration command and check output status.

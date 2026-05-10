@@ -79,7 +79,7 @@ repo surfaces:
 
 Explicit non-goals for naming cleanup:
 
-- inventing second source-of-truth directories,
+- inventing duplicate owner directories,
 - promoting `tmp/` or `artifacts/` paths into canonical doc inputs,
 - reintroducing milestone-coded, stage-coded, or retired alias names as
   first-class command surfaces.

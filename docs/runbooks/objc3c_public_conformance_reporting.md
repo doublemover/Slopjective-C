@@ -116,7 +116,7 @@ Checked-in schema anchors:
 The public report may widen fields later, but it must stay schema-shaped and
 traceable to registry-backed checked-in contracts. This runbook must not copy
 public-conformance JSON Schema fragments or treat generated public reports as
-support truth outside the capability matrix and evidence map.
+support boundaries outside the capability matrix and evidence map.
 
 ## Explicit Non-Goals
 

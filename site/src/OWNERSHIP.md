@@ -25,7 +25,8 @@ This file defines source ownership for generated `site/index.md`.
 
 ## Review Policy
 
-- Manual edits to `site/index.md` are unsupported.
+- Direct changes to `site/index.md` must match owner-input updates and
+  regeneration evidence.
 - Contract or policy changes in `site/src/*` require `compiler/docs` review.
 - Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
@@ -56,4 +57,4 @@ Treat these as the live documentation-generation surfaces:
   - `docs/runbooks/objc3c_public_command_surface.md`
 
 `tmp/reports/` and `tmp/artifacts/` remain generated evidence outputs, not
-canonical documentation sources.
+documentation owner inputs.

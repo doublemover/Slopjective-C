@@ -20,8 +20,8 @@ checked into the repo:
     - `npm run objc3c -- check-public-command-contract`
     - `npm run objc3c -- check-public-command-budget`
 
-Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
-`tmp/artifacts/` as canonical documentation.
+Refresh generated checked-in outputs from their owner inputs. Do not treat
+`tmp/reports/` or `tmp/artifacts/` as documentation owner inputs.
 Helper paths behind these entries are implementation details for action-catalog
 actions, not an additional public command surface.
 
@@ -48,10 +48,10 @@ Use these roots directly when cleaning or renaming repo surfaces:
 - machine-owned outputs only:
   - `tmp/`
   - `artifacts/`
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` is the build-emitted source-of-truth artifact for the repo superclean surface
+  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` is the build-emitted owner artifact for the repo superclean surface
 
 Do not add milestone-specific wrappers, sidecar support-status files, or
-parallel source-of-truth copies when changing these surfaces.
+parallel owner copies when changing these surfaces.
 
 Contributor-facing entrypoint:
 

@@ -134,8 +134,7 @@ This is the authoritative bootstrap registration source audit boundary. It
 freezes the emitted registration descriptor artifact, image-root identity,
 registration entrypoint, constructor root, translation-unit identity key, and
 registration order ordinal as one coupled compile output instead of leaving
-downstream work to reconstruct that source of truth from separate manifest
-fragments.
+downstream work to reconstruct the boundary from separate manifest fragments.
 
 ## Bootstrap Lowering And Registration Artifact Surface
 
@@ -377,7 +376,7 @@ This is the authoritative cross-module preservation boundary for metaprogramming
 artifacts. It freezes the provider runtime-import packet and the consumer
 cross-module runtime link plan together so derived methods, macro/property
 artifacts, and host-cache preservation state survives separate compilation without
-being reconstructed from local-only manifest state.
+being reconstructed from unpublished manifest state.
 
 ## Metaprogramming Runtime ABI And Cache Surface
 
@@ -476,8 +475,8 @@ This is the authoritative compile-coupled source boundary for async functions,
 task groups, executors, actors, and sendability before lowering and runtime ABI
 closure. It freezes the live source and semantic packets together with the
 private continuation/task/actor helper inventory so later concurrency work has
-one emitted source of truth instead of rederiving boundaries from sidecars,
-stale milestone notes, or probe-local assumptions.
+one emitted owner artifact instead of rederiving boundaries from sidecars,
+stale planning notes, or probe-local assumptions.
 
 ## Async/Task/Actor Normalization Completion Surface
 
@@ -551,7 +550,7 @@ execution has already landed.
 This is the authoritative lowering-and-metadata boundary for the unified
 concurrency slice. It freezes the live async/task/actor lowering packets and
 their emitted metadata contracts before runtime ABI and runnable execution
-closure, so later runtime issues must consume one emitted source of truth
+closure, so later runtime issues must consume one emitted owner artifact
 instead of reconstructing lowering state from sidecars or probe-local notes.
 
 ## Error Execution And Cleanup Source Surface

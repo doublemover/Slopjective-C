@@ -21,13 +21,13 @@ maintainer-only workflow map.
 
 ## Repo Boundary
 
-Treat these as the canonical roots for normal contribution work:
+Treat these as the owner roots for normal contribution work:
 
 - implementation roots:
   - `native/objc3c/`
   - `scripts/`
   - `tests/`
-- canonical doc inputs:
+- doc owner inputs:
   - `README.md`
   - `CONTRIBUTING.md`
   - `docs/tutorials/README.md`
@@ -48,8 +48,9 @@ Treat these as the canonical roots for normal contribution work:
   - `tmp/`
   - `artifacts/`
 
-Do not hand-edit generated outputs. Do not treat `tmp/`, `artifacts/`, or
-archived redirect material as primary contributor guidance.
+Refresh generated checked-in outputs from their owner inputs. Do not treat
+`tmp/`, `artifacts/`, or archived redirect material as primary contributor
+guidance.
 
 ## Branches and Commits
 

@@ -74,7 +74,7 @@ implemented:
   `objc3c-frontend-c-api-runner`
 - runtime-side inspection comes from exported testing/debug ABI snapshots that
   are emitted from the real runtime implementation
-- build-owned source-of-truth metadata comes from
+- build-owned owner metadata comes from
   `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 
 Downstream issues must extend these exact surfaces before inventing new ones.
@@ -86,7 +86,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - runtime library:
   - `artifacts/lib/objc3_runtime.lib`
-- build-emitted source-of-truth artifact:
+- build-emitted owner artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - default compile/explain output root:
   - `tmp/artifacts/compilation/objc3c-native/`
@@ -206,15 +206,15 @@ formatter or declaration-breakpoint debug surface.
 Diagnostics, formatting, and symbol resolution must stay coupled to the live
 frontend runner output model.
 
-- diagnostics source of truth:
+- diagnostics owner outputs:
   - the frontend runner summary JSON
   - the emitted diagnostics JSON with real line, column, severity, code, and
     message entries
-- symbol resolution source of truth:
+- symbol resolution owner outputs:
   - the emitted manifest declaration records for globals, functions,
     interfaces, implementations, protocols, and categories
   - declaration coordinates published by the real compile output
-- formatting source of truth:
+- formatting owner output:
   - machine-owned formatter output must be generated from the canonical
     formatter helper and reflected through the combined developer-tooling
     surface
@@ -285,7 +285,7 @@ statement debugger.
 The checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
 scattering separate editor-only payloads across ad hoc scripts.
 
-The canonical generated surface must group:
+The generated developer-tooling surface must group:
 
 - diagnostics summary and per-diagnostic entries
 - language-server capability publication and unpublished-status metadata
@@ -330,8 +330,8 @@ The npm entrypoints route to the same action family:
 ## Explicit Non-Goals
 
 - no release-scope debug launcher
-- no ad hoc LLVM-only inspection path treated as source of truth
+- no ad hoc LLVM-only inspection path treated as owner evidence
 - no duplicate command surface outside the `package.json` bridge:
   `npm run objc3c -- <action>`
 - no hand-authored report snapshots under checked-in doc roots
-- no new parallel source-of-truth copy for runtime inspection semantics
+- no new parallel owner copy for runtime inspection semantics

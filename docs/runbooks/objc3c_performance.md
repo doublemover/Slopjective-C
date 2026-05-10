@@ -86,7 +86,7 @@ The only current claim classes allowed from this surface are:
   - `tmp/artifacts/performance/`
   - `tmp/reports/performance/`
   - `tmp/pkg/objc3c-native-runnable-toolchain/`
-- build-owned source-of-truth artifact:
+- build-owned owner artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 
 ## Exact Live Commands

@@ -36,7 +36,7 @@ can drift from the runnable package.
 
 ## Supported Platforms
 
-The supported platform surface for this milestone is intentionally narrow and
+The supported packaging-channel platform surface is intentionally narrow and
 tiered:
 
 - `Tier 1`
@@ -52,7 +52,7 @@ Supported channel matrix for `windows-x64`:
 - local installer image
 - offline air-gapped bootstrap bundle
 
-Non-goals for this milestone:
+Packaging-channel non-goals:
 
 - no Homebrew, apt, winget, Chocolatey, Scoop, or MSI publication claim
 - no daemonized updater
@@ -69,12 +69,12 @@ The trusted packaging-channel boundary is:
 - machine-owned outputs under `tmp/artifacts/package-channels/`,
   `tmp/reports/package-channels/`, and `tmp/pkg/`
 
-No packaging-channel claim may depend on manual zip assembly, a hand-edited
-installer manifest, or an external registry snapshot.
+No packaging-channel claim may depend on ad hoc zip assembly, a checked-in
+installer manifest rewrite, or an external registry snapshot.
 
 ## Installer Behavior Policy
 
-Installer and bootstrap flows in this milestone must follow these rules:
+Installer and bootstrap flows in this packaging-channel surface must follow these rules:
 
 - installation is local-root only and must not claim a system-wide install
 - install, bootstrap, and rollback logic must be machine-generated from the
@@ -97,7 +97,7 @@ Compatibility rules:
 
 ## Workflow Surface
 
-The live packaging-channel workflow for this milestone must expose:
+The live packaging-channel workflow must expose:
 
 - a source-surface check
 - a schema-surface check

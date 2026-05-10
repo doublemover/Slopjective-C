@@ -240,7 +240,7 @@ When such incompleteness crosses a module/public boundary, diagnostics shall fol
 
 Nullability completeness across separate compilation shall be represented and reconstructed as follows:
 
-- The semantic source of truth is the nullability-related [D Table A](#d-3-1) entries (qualifiers, nonnull-by-default regions, optional spellings).
+- The semantic owner surface is the nullability-related [D Table A](#d-3-1) entries (qualifiers, nonnull-by-default regions, optional spellings).
 - Module metadata and textual interfaces shall preserve those entries so importers can recompute effective nullability and completeness deterministically.
 - Interface emission shall preserve canonical nonnull-region spellings ([B.2](#b-2), [B.7](#b-7)) and shall not rewrite nullability-incomplete declarations into complete ones.
 - If source uses `id?`/`Class?` (or `!` variants), emitted interfaces may canonicalize to qualifier spellings, but importers shall observe equivalent effective nullability.

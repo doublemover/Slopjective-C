@@ -54,7 +54,7 @@ That means this area starts from real runnable surfaces, but it still needs:
 
 ## Canonical Semantics
 
-Authoritative checked-in contracts for this milestone live under:
+Authoritative checked-in application/testing contracts live under:
 
 - `tests/tooling/fixtures/application_architecture_testing/`
 
@@ -67,7 +67,7 @@ The live meaning is:
 - canonical application architecture is not a second example taxonomy; it is a
   layering model that unifies the checked-in showcase and stdlib surfaces into a
   copyable project shape
-- machine-owned evidence for this milestone publishes under one shared report
+- machine-owned application/testing evidence publishes under one shared report
   root and one shared schema/contract pair
 
 Schema and registry ownership:

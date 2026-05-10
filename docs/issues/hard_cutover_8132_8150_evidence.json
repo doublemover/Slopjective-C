@@ -27,7 +27,7 @@
     "latest_source_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "local_longest_file_scan": {
-    "status": "local scan observation only; not validation, push, GitHub issue edit, or remote closure evidence",
+    "status": "checkout scan observation only; not validation, push, GitHub issue edit, or remote closure evidence",
     "identified_top_monoliths": [
       "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
       "native/objc3c/src/ir/objc3_ir_emitter.cpp",
@@ -73,7 +73,7 @@
           "8ecc143fc",
           "cca1addfb"
         ],
-        "owner_boundary": "capability projection policy, evidence-map command policy, workflow schema indexing, and JSON schema contract hardening are committed schema/support truth evidence"
+        "owner_boundary": "capability projection policy, evidence-map command policy, workflow schema indexing, and JSON schema contract hardening are committed schema/support boundary evidence"
       },
       {
         "issues": [
@@ -2160,7 +2160,7 @@
           "a16fd3725",
           "c8060c3e3"
         ],
-        "owner_boundary": "fixture contracts, workflow, source hygiene, control-plane, and generated-report boundary evidence remain branch-committed evidence; validation and remote closeout stay deferred until allowed"
+        "owner_boundary": "fixture contracts, workflow, source hygiene, control-plane, and generated-evidence boundary evidence remain branch-committed evidence; validation and remote closeout stay deferred until allowed"
       }
     ]
   },
@@ -2326,7 +2326,7 @@
           "1678e0323",
           "f4bf6228e"
         ],
-        "owner_boundary": "fixture boundaries, runtime dispatch sidecars, retired-positive conformance policy, parser owner paths, tooling expectations, fixture residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors keep positives canonical and retired behavior rejected, strict-error, or absent"
+        "owner_boundary": "fixture boundaries, runtime dispatch sidecars, retired-positive conformance policy, parser owner paths, tooling expectations, fixture residue contracts, C API runner source-test expectations, driver CLI split owner tests, source-hygiene residue guardrails, and runtime fixture owner anchors keep positives canonical while retired rows stay rejected, strict-error, or absent"
       }
     ]
   },
@@ -2365,7 +2365,7 @@
           "2555e1c4f",
           "1a3da4057"
         ],
-        "owner_boundary": "conformance runtime probe metadata and fixture runtime split anchors refresh behavior evidence while keeping positives canonical and retired behavior rejected, strict-error, or absent"
+        "owner_boundary": "conformance runtime probe metadata and fixture runtime split anchors refresh behavior evidence while keeping positives canonical and retired rows rejected, strict-error, or absent"
       },
       {
         "issues": [
@@ -2617,7 +2617,7 @@
         "commits": [
           "6efdaf8f9"
         ],
-        "owner_boundary": "runtime dispatch lowering contracts refresh lowering and deep handoff evidence while retired route behavior remains rejection or strict-error evidence"
+        "owner_boundary": "runtime dispatch lowering contracts refresh lowering and deep handoff evidence while retired route rows remain rejection or strict-error evidence"
       }
     ]
   },
@@ -2689,7 +2689,7 @@
     {
       "issue": "#8133",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Strict typed runtime dispatch has local result-owner, selector/keypath/cache/state, and dispatch-wrapper evidence; retired route behavior is strict-error fixture evidence.",
+      "closeout_summary": "Strict typed runtime dispatch has local result-owner, selector/keypath/cache/state, and dispatch-wrapper evidence; retired route entries map to strict-error fixture evidence.",
       "local_commits": [
         "d8552e07a",
         "d53083a92",
@@ -2842,7 +2842,7 @@
     {
       "issue": "#8141",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Public C API result/string/diagnostic/artifact ownership evidence is indexed as internal contract truth, not a compatibility wrapper.",
+      "closeout_summary": "Public C API result/string/diagnostic/artifact ownership evidence is indexed as internal contract evidence, not a compatibility wrapper.",
       "local_commits": [
         "a51cac68d",
         "d8bbebb2b",
@@ -2928,8 +2928,8 @@
     },
     {
       "issue": "#8145",
-      "status_for_tracker": "local-capability-truth-indexed",
-      "closeout_summary": "Capability truth docs and evidence maps are indexed as local source evidence and explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, compatibility-mode claims, validation completion, pushed state, and remote closure.",
+      "status_for_tracker": "capability-boundary-indexed",
+      "closeout_summary": "Capability boundary docs and evidence maps are indexed as branch source evidence and explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, compatibility-mode claims, validation completion, pushed state, and remote closure.",
       "local_commits": [
         "cb19d16ed",
         "6d7c78009",
@@ -3024,7 +3024,7 @@
     {
       "issue": "#8149",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Source-hygiene and command-surface guardrail evidence is indexed with allowlist/evidence-log surfaces retired.",
+      "closeout_summary": "Source-hygiene and command-surface guardrail evidence is indexed with legacy exception-list and generated-evidence ledger names confined to rejection or absence evidence.",
       "local_commits": [
         "606775842",
         "fd675f294",
@@ -3043,7 +3043,7 @@
     {
       "issue": "#8150",
       "status_for_tracker": "local-evidence-indexed-remote-deferred",
-      "closeout_summary": "Local closeout evidence is indexed from committed hard-cutover branch surfaces through source head 2a2d9759a, with docs-only synchronization through b4dad7b30, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
+      "closeout_summary": "Branch closeout evidence is indexed from committed hard-cutover branch surfaces through source head 2a2d9759a, with docs-only synchronization through b4dad7b30, but remote issue closure, push, and validation are intentionally deferred by worker constraints.",
       "local_commits": [
         "4c0285b0d",
         "16e517982",

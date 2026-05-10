@@ -21,9 +21,9 @@ The canonical public version shape is semantic versioning:
 - `minor`: additive release within one major line
 - `patch`: non-breaking repair release within one minor line
 
-Version claims in this milestone are contract-driven and machine-published. No
-version claim may depend on a hand-edited changelog row or a manually assembled
-release page.
+Version claims in this release-operations surface are contract-driven and
+machine-published. No version claim may depend on an ad hoc changelog row or an
+operator-assembled release page.
 
 ## Support Windows
 
@@ -55,7 +55,7 @@ canonical payload remains the runnable toolchain package and its release-
 foundation evidence. Packaging channels remain the installable transport.
 
 Do not introduce a second update payload, a parallel installer tree, or a
-package-manager-only support source of truth.
+package-manager-only support owner surface.
 
 Current platform support-tier boundary:
 
@@ -67,7 +67,7 @@ Current platform support-tier boundary:
 
 ## Support And Warning Policy
 
-Support publication for this milestone must emit:
+Support publication for release operations must emit:
 
 - a machine-owned update manifest with channel, version, and artifact pointers
 - a machine-owned upgrade-support report with support-window, upgrade-path, and
@@ -90,7 +90,7 @@ as:
 
 ## Release-Operations Workflow
 
-The live workflow for this milestone must expose:
+The live release-operations workflow must expose:
 
 - a source-surface check
 - a schema-surface check
@@ -127,5 +127,5 @@ the source and artifact contracts, not in a retired command bridge.
 - no background updater or scheduler
 - no package-manager upgrade semantics
 - no cross-platform support claim beyond the checked-in `windows-x64` channel set
-- no manual support spreadsheet or hand-authored release-operation digest
+- no operator-maintained support spreadsheet or release-operation digest
 - no retired adapter or evidence-log support claim

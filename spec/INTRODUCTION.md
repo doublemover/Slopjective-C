@@ -78,13 +78,13 @@ Each part is a separate Markdown file. The system-programming chapter ([Part 8](
 
 ## 6. Capability status and expected iteration {#intro-6}
 
-This is a working draft. The current support source of truth is
+This is a working draft. The current support boundary is
 `docs/support/capability_matrix.md`; each implemented capability must link
 executable evidence. Spec sections may describe future language shape, but
 public support claims only count when the capability matrix marks the surface
 implemented.
 
-The current command source of truth is the single `package.json` bridge:
+The current command boundary is the single `package.json` bridge:
 `npm run objc3c -- <action>`. Actions are owned by
 `scripts/objc3c_workflow/action_catalog.py`; local spec prose must not advertise
 retired command surfaces or direct helper commands as public workflow surface.

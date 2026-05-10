@@ -31,7 +31,7 @@ Today it has:
 - integrated workflow surfaces for performance, conformance, stress,
   external-validation, packaging, release operations, and distribution
   credibility,
-- support truth routed through the schema-backed capability matrix and evidence
+- support boundaries routed through the schema-backed capability matrix and evidence
   map.
 
 Current public support states:
@@ -42,7 +42,7 @@ Current public support states:
 | Native module decomposition, public C runtime result APIs, workflow bridge, and JSON/schema helpers | `internal` | Owner and evidence surfaces, not language support claims. |
 | Full object-model runtime realization and property/ivar/reflection closure | `reserved` | Unclaimed until implemented matrix rows link executable evidence. |
 | Blocks, full ARC automation, `throws`, async/task/actor runtime closure, metaprogramming/property behavior runtime closure, and broader interop | `reserved` unless narrower rows say otherwise | Unavailable as public support outside exact implemented rows. |
-| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and evidence-log completion | retired wording, not a support state | Negative evidence or source-hygiene inventory only. |
+| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and generated-evidence completion | retired wording, not a support state | Rejection, absence, or source-hygiene inventory only. |
 
 ## Runnable Subset
 
@@ -117,8 +117,8 @@ Documentation boundary:
 - runnable examples: `showcase/`
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
 - operator runbooks: `docs/runbooks/`
-- support truth: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
-- hard-cutover capability truth: `docs/support/hard_cutover_capability_truth.md`
+- support boundaries: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
+- hard-cutover capability boundaries: `docs/support/hard_cutover_capability_truth.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
 If you are new to the repo, stay out of `tmp/` and archived redirect material until you actually need them.
@@ -159,7 +159,7 @@ Explicit non-goals for cleanup work:
 - describing old source modes, registry facades, adapter layers, or direct helper
   commands as supported public paths,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
-- hand-editing generated outputs instead of their canonical inputs.
+- changing generated checked-in outputs without updating their owner inputs.
 
 ## Repository Layout
 

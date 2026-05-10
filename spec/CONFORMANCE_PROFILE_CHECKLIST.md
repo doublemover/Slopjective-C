@@ -610,7 +610,7 @@ Current truthful support:
 
 ## M264 versioning and conformance truth gate (implementation note)
 
-The lane-E gate for this milestone freezes one integrated truth boundary:
+The lane-E gate freezes one integrated evidence boundary:
 
 - claimed profile remains `core`
 - retired compatibility selection remains fail-closed

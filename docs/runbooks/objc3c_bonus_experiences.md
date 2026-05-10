@@ -91,7 +91,7 @@ real implementation exists.
   - `artifacts/bin/objc3c-native.exe`
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
-- build-emitted source-of-truth artifact:
+- build-emitted owner artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - playground/repro artifact roots:
   - `tmp/artifacts/playground/`
@@ -176,7 +176,7 @@ mock JSON, or hand-written walkthrough output as authoritative.
 
 - no release-scope playground shell
 - no sidecar web service or hidden local daemon
-- no synthetic runtime-inspector payloads treated as source of truth
+- no synthetic runtime-inspector payloads treated as owner evidence
 - no duplicate example/template inventory outside checked-in showcase/tutorial
   roots
 - no hand-authored report snapshots under checked-in doc roots

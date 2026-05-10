@@ -48,17 +48,17 @@ Throws ABI and helper semantics implementation:
 
 - helper semantics remain supported only through runtime-owned thrown-error store/load, status bridge, NSError bridge, catch-match, and bridge-state snapshot helpers
 - executable claims must stay grounded in the live runtime probes and packaged runnable error path rather than deleted milestone scripts or sidecar notes
-- any broader public ABI or foreign-runtime error model is out of scope for this milestone
+- any broader public ABI or foreign-runtime error model is out of scope for this closure surface
 
 Lowering and runtime artifact contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
-- the canonical error surfaces for this milestone are `runtime_error_execution_cleanup_source_surface`, `runtime_catch_filter_finalization_source_surface`, `runtime_error_propagation_cleanup_semantics_surface`, `runtime_bridging_filter_unwind_diagnostics_surface`, `runtime_error_lowering_unwind_bridge_helper_surface`, `runtime_error_runtime_abi_cleanup_surface`, and `runtime_error_propagation_catch_cleanup_runtime_implementation_surface`
+- the error compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
+- the error owner surfaces are `runtime_error_execution_cleanup_source_surface`, `runtime_catch_filter_finalization_source_surface`, `runtime_error_propagation_cleanup_semantics_surface`, `runtime_bridging_filter_unwind_diagnostics_surface`, `runtime_error_lowering_unwind_bridge_helper_surface`, `runtime_error_runtime_abi_cleanup_surface`, and `runtime_error_propagation_catch_cleanup_runtime_implementation_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone is `npm run objc3c -- validate-error-conformance` and `npm run objc3c -- validate-runnable-error`
+- the error public command surface is `npm run objc3c -- validate-error-conformance` and `npm run objc3c -- validate-runnable-error`
 - the public workflow surface remains `validate-error-conformance` and `validate-runnable-error`
 - error closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 

@@ -18,7 +18,7 @@ prove absence or traceability.
 | Semantic rejection | rejection | sema errors and acceptance-area owner index | retired adapter and unsupported-feature claims are diagnostics |
 | Lowering or link strict error | strict-error | lowering/IR strict-error fixtures | runtime retired route lowering remains removed or unresolved, not supported |
 | Runtime strict error | strict-error | runtime dispatch/error fixtures | runtime dispatch retired route and unresolved symbols are strict errors |
-| Negative execution | negative-execution | e2e negative execution fixtures | retired behavior remains rejected at runnable boundaries |
+| Negative execution | negative-execution | e2e negative execution fixtures | retired rows remain rejected at runnable boundaries |
 | Generated provenance only | provenance-only | generated manifest and objc3c contract artifacts | generated artifacts do not define behavior support |
 | Positive residue false positive | audit-disposition | positive residue audit | lexical hits are identifiers or inventory labels, not support claims |
 | Issue closeout only | closeout-index | docs/issues evidence and payload indexes | issue docs summarize traceability; they do not create support |

@@ -55,8 +55,8 @@ Use this page in three passes:
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
 | verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
 | inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
-| inspect hard-cutover support boundaries                  | [hard-cutover capability truth](../docs/support/hard_cutover_capability_truth.md)                |
-| inspect machine-readable capability truth                | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), and [schema registry](../scripts/objc3c_shared/schema_registry.py) |
+| inspect hard-cutover support boundaries                  | [hard-cutover capability boundaries](../docs/support/hard_cutover_capability_truth.md)           |
+| inspect machine-readable capability boundaries           | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), and [schema registry](../scripts/objc3c_shared/schema_registry.py) |
 | inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
 ## Reader Promises <a id="toc-reader-promises"></a>

@@ -182,7 +182,7 @@ infrastructure.
 
 ## Security Response And Disclosure Policy
 
-The checked-in response and disclosure policy for this milestone is intentionally
+The checked-in response and disclosure policy for security hardening is intentionally
 narrow and fail-closed.
 
 Security response states:
@@ -236,7 +236,7 @@ Generated security posture and advisory outputs must stay under:
 - `tmp/reports/security-hardening/`
 - `tmp/artifacts/security-hardening/`
 
-Canonical generated artifacts for this milestone are:
+Generated security-hardening artifacts are:
 
 - a machine-owned security posture JSON
 - a machine-owned security advisory index JSON
@@ -254,11 +254,11 @@ Security posture and advisory schemas are registry-backed owner surfaces, not
 local runbook schema definitions. The runbook must not copy their JSON shape or
 promote generated security reports into support claims.
 
-The canonical supply-chain audit summary for this milestone is:
+The supply-chain audit summary for security hardening is:
 
 - `tmp/reports/security-hardening/supply-chain-audit-summary.json`
 
-Checked-in source-of-truth must stay under:
+Checked-in security owner inputs must stay under:
 
 - `docs/runbooks/`
 - `tests/tooling/fixtures/`

@@ -10,8 +10,9 @@ This runbook defines the checked-in distribution-credibility surface for objc3c:
 - credibility claims that terminate in existing release-foundation, packaging-channel,
   release-operations, and release-evidence outputs
 
-This milestone does not add a second release pipeline, a hosted trust service, or
-manual release-status bookkeeping outside the checked-in public workflow surface.
+This distribution-credibility surface does not add a second release pipeline, a
+hosted trust service, or release-status bookkeeping outside the checked-in public
+workflow surface.
 
 ## Architecture
 
@@ -31,7 +32,7 @@ derived from a checked-in contract and executable artifact, it is out of scope.
 
 ## Trust Signals
 
-The machine-owned trust story for this milestone is limited to:
+The machine-owned distribution trust story is limited to:
 
 - release payload provenance and reproducibility
 - install and rollback smoke over the packaged channels
@@ -39,13 +40,13 @@ The machine-owned trust story for this milestone is limited to:
 - release-evidence gate coverage over the published conformance artifacts
 - explicit recovery and operator drill guidance for the live package surfaces
 
-Trust signals are additive summaries, not a new source of truth. The canonical
+Trust signals are additive summaries, not a new owner surface. The canonical
 artifact lineage remains the shipped runnable package, its package channels, and
 their attached release-operation metadata.
 
 ## Install Docs And Trust Report Inputs
 
-The user-facing install and release-document inputs for this milestone are:
+The user-facing install and release-document inputs for distribution credibility are:
 
 - `README.md` for the top-level product description
 - `docs/tutorials/getting_started.md` for first-run operator expectations
@@ -94,7 +95,7 @@ Credibility publication is operator-gated:
 - `degraded`: one or more non-fatal trust signals regressed and require explicit caution
 - `blocked`: a release drill, install smoke, rollback proof, or release-operation proof failed
 
-Incidents for this milestone are limited to:
+Incidents for distribution credibility are limited to:
 
 - install failure on a published package channel
 - rollback failure on the live installer or offline bundle path
@@ -118,12 +119,12 @@ The drill model is intentionally narrow:
 - summarize the result as a machine-owned trust signal set
 - require a reproducibility audit over the released payload metadata before claiming `ready`
 
-No drill may depend on manual screenshots, hand-edited operator notes, or a second
+No drill may depend on ad hoc screenshots, operator-maintained notes, or a second
 package assembly path.
 
 ## Workflow Surface
 
-The live workflow for this milestone must expose:
+The live distribution-credibility workflow must expose:
 
 - a source-surface check
 - a schema-surface check
@@ -152,5 +153,5 @@ operator actions all match the checked-in contract surfaces.
 
 - no hosted status page
 - no new update service or release transport
-- no hand-written trust badges or manually edited release summaries
+- no operator-maintained trust badges or release summaries
 - no package-manager-specific release-credibility path

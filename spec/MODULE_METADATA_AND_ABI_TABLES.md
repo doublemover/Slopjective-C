@@ -2986,61 +2986,61 @@ explicit lane-B contract-freeze metadata continuity so CI matrix simplification/
 deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B015`
 explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C001`
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C001`
 explicit lane-C contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C002`
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C002`
 explicit lane-C contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
 
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C003`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C003`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C004`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C004`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C005`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C005`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C006`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C006`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C007`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C007`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C008`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C008`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C009`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C009`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C010`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C010`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C011`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C011`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C012`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C012`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C013`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C013`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C014`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C014`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C015`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C015`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C016`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C016`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C017`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C017`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
-deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C018`
-explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+deterministic lane-C Documentation generation owner contract-freeze anchors for `M230-C018`
+explicit lane-C contract-freeze metadata continuity so Documentation generation owner drift fails closed
 
 deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D001`
 explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
@@ -5312,7 +5312,7 @@ Deterministic lane-B object-format anchors for `M253-B003` shall preserve:
   `llvm.used-appending-global+coff-timestamp-normalization`,
   `llvm.used-appending-global+elf-stable-sections`, and
   `llvm.used-appending-global+mach-o-data-segment-sections`,
-- logical metadata ABI section names remaining the source-of-truth surface,
+- logical metadata ABI section names remaining the owner surface,
 - emitted section spellings being lowering-derived host-format materialization,
 - evidence path
   `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`.
