@@ -9,10 +9,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.paths import repo_rel
 from scripts.objc3c_workflow.public_command_api import public_workflow_action_count
 
-ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability"
 BUDGET_INVENTORY_PATH = FIXTURE_ROOT / "budget_inventory.json"
 POLICY_PATH = FIXTURE_ROOT / "sustainable_progress_policy.json"
