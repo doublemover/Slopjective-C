@@ -1,14 +1,5 @@
 #pragma once
 
-#include <iosfwd>
-
-struct Objc3IRFrontendMetadata;
-
-void EmitObjc3IRBlockLoweringCounterNodes(
-    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
-
-void EmitObjc3IRTypeModuleLoweringCounterNodes(
-    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
-
-void EmitObjc3IRModuleGovernanceLoweringCounterNodes(
-    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_block.h"
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_type_module.h"
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_module_governance.h"
