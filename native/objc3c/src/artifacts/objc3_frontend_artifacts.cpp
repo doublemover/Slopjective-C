@@ -41,6 +41,7 @@
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_module_metadata.h"
 #include "artifacts/objc3_frontend_artifact_object_dispatch_metadata.h"
+#include "artifacts/objc3_frontend_artifact_ownership_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_ownership_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_release_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
@@ -238,6 +239,7 @@ using objc3::artifacts::frontend::WriteDispatchManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
 using objc3::artifacts::frontend::WriteInteropManifestSurfaces;
 using objc3::artifacts::frontend::WriteMetaprogrammingManifestSurfaces;
+using objc3::artifacts::frontend::WriteOwnershipManifestSurfaces;
 using objc3::artifacts::frontend::WriteSourceClosureManifestSurfaces;
 using objc3::artifacts::frontend::WriteToolingManifestSurfaces;
 using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
@@ -4981,40 +4983,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       concurrency_task_group_cancellation_source_closure_summary,
       concurrency_async_effect_suspension_semantic_model_summary,
       concurrency_task_executor_cancellation_semantic_model_summary);
+  WriteOwnershipManifestSurfaces(
+      manifest, ownership_system_extension_semantic_model_summary,
+      effects_ownership_semantic_model_summary,
+      cross_module_semantic_contracts_diagnostics_summary,
+      ownership_resource_move_use_after_move_semantics_summary,
+      ownership_borrowed_pointer_escape_analysis_summary,
+      ownership_capture_list_retainable_family_legality_completion_summary,
+      ownership_system_extension_lowering_contract,
+      ownership_system_extension_source_closure_summary,
+      ownership_retainable_c_family_source_completion_summary,
+      ownership_system_extension_lowering_replay_key,
+      ownership_borrowed_retainable_abi_completion_replay_key);
   manifest
-           << ",\"objc_ownership_system_extension_semantic_model\":"
-           << BuildOwnershipSystemExtensionSemanticModelSummaryJson(
-                  ownership_system_extension_semantic_model_summary)
-           << ",\"objc_effects_ownership_semantic_model\":"
-           << BuildEffectsOwnershipSemanticModelSummaryJson(
-                  effects_ownership_semantic_model_summary)
-           << ",\"objc_cross_module_semantic_contracts_and_diagnostics\":"
-           << BuildCrossModuleSemanticContractsDiagnosticsSummaryJson(
-                  cross_module_semantic_contracts_diagnostics_summary)
-           << ",\"objc_ownership_resource_move_and_use_after_move_semantics\":"
-           << BuildOwnershipResourceMoveUseAfterMoveSemanticsSummaryJson(
-                  ownership_resource_move_use_after_move_semantics_summary)
-           << ",\"objc_ownership_borrowed_pointer_escape_analysis\":"
-           << BuildOwnershipBorrowedPointerEscapeAnalysisSummaryJson(
-                  ownership_borrowed_pointer_escape_analysis_summary)
-           << ",\"objc_ownership_capture_list_and_retainable_family_legality_completion\":"
-           << BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummaryJson(
-                  ownership_capture_list_retainable_family_legality_completion_summary)
-           << ",\"objc_ownership_system_extension_lowering_contract\":"
-           << BuildOwnershipSystemExtensionLoweringContractJson(
-                  ownership_system_extension_semantic_model_summary,
-                  ownership_resource_move_use_after_move_semantics_summary,
-                  ownership_borrowed_pointer_escape_analysis_summary,
-                  ownership_capture_list_retainable_family_legality_completion_summary,
-                  ownership_system_extension_lowering_contract,
-                  ownership_system_extension_lowering_replay_key)
-           << ",\"objc_ownership_borrowed_pointer_and_retainable_family_abi_completion\":"
-           << BuildOwnershipBorrowedRetainableAbiCompletionJson(
-                  ownership_system_extension_lowering_contract,
-                  ownership_system_extension_source_closure_summary,
-                  ownership_retainable_c_family_source_completion_summary,
-                  ownership_system_extension_lowering_replay_key,
-                  ownership_borrowed_retainable_abi_completion_replay_key)
             << ",\"objc_concurrency_structured_task_and_cancellation_semantics\":"
             << BuildConcurrencyStructuredTaskCancellationSemanticSummaryJson(
                    concurrency_structured_task_cancellation_semantic_summary)

@@ -216,6 +216,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_object_dispatch_metadata.h
   objc3_frontend_artifact_object_inspection_metadata.cpp
   objc3_frontend_artifact_object_inspection_metadata.h
+  objc3_frontend_artifact_ownership_manifest_surfaces.cpp
+  objc3_frontend_artifact_ownership_manifest_surfaces.h
   objc3_frontend_artifact_ownership_metadata.cpp
   objc3_frontend_artifact_ownership_metadata.h
   objc3_frontend_artifact_ownership_release_manifest_surfaces.cpp
