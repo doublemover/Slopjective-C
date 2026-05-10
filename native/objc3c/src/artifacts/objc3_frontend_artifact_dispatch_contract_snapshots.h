@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string>
 
-#include "pipeline/frontend_dispatch_contract_records.h"
+#include "support/frontend_dispatch_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

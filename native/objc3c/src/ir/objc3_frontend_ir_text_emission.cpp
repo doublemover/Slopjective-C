@@ -1,4 +1,4 @@
-#include "pipeline/frontend_ir_text_emission.h"
+#include "support/frontend_ir_text_emission.h"
 
 #include "ir/objc3_ir_emitter.h"
 

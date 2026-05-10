@@ -10,7 +10,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "diag/objc3_diag_format.h"
-#include "pipeline/frontend_ir_text_emission.h"
+#include "support/frontend_ir_text_emission.h"
 
 namespace objc3::artifacts::frontend {
 

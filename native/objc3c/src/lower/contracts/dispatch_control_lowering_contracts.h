@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string>
 
-#include "pipeline/frontend_dispatch_contract_records.h"
+#include "support/frontend_dispatch_contract_records.h"
 
 // Dispatch-control lowering owns direct-call candidates, final/sealed dispatch
 // intent, and the replayable interface-preservation contract built from it.
