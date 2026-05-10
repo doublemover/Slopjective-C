@@ -64,6 +64,10 @@ add_library(objc3c_pipeline STATIC
   frontend_runtime_metadata_boundary_helpers_record_state.cpp
   frontend_runtime_metadata_boundary_helpers_semantic_state.cpp
   frontend_runtime_metadata_boundary_helpers_source_ownership.cpp
+  frontend_runtime_metadata_source_record_helpers.cpp
+  frontend_runtime_metadata_source_record_helpers_declarations.cpp
+  frontend_runtime_metadata_source_record_helpers_members.cpp
+  frontend_runtime_metadata_source_record_helpers_ordering.cpp
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
   readiness/objc3_final_readiness_gate_advanced_keys.cpp
@@ -118,6 +122,8 @@ add_library(objc3c_pipeline STATIC
   frontend_runtime_export_enforcement_helpers_owners.h
   frontend_runtime_metadata_boundary_helpers.h
   frontend_runtime_metadata_boundary_helpers_owners.h
+  frontend_runtime_metadata_source_record_helpers.h
+  frontend_runtime_metadata_source_record_helpers_owners.h
   frontend_executable_metadata_semantic_surface_helpers.h
   frontend_executable_metadata_semantic_surface_helpers_owners.h
   frontend_executable_metadata_handoff_owners.h
