@@ -32,6 +32,7 @@
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
 #include "artifacts/objc3_frontend_artifact_lowering_replay_manifest.h"
 #include "artifacts/objc3_frontend_artifact_manifest_header.h"
+#include "artifacts/objc3_frontend_artifact_manifest_pipeline.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
@@ -75,7 +76,6 @@
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_module_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
-#include "artifacts/objc3_frontend_parser_diagnostic_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_bootstrap_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_capability_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_descriptor_artifacts.h"
@@ -192,10 +192,8 @@ using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceJson;
 using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceReplayKey;
 using objc3::artifacts::frontend::
     BuildObjc3FrontendArtifactInitialPostPipelineFailure;
-using objc3::artifacts::frontend::BuildObjc3ParserDiagnosticCodeCoverage;
 using objc3::artifacts::frontend::BuildPublicConformanceReportJson;
 using objc3::artifacts::frontend::BuildRuntimeCapabilityReportJson;
-using objc3::artifacts::frontend::Objc3ParserDiagnosticCodeCoverage;
 using objc3::artifacts::frontend::
     BuildConcurrencyActorIsolationSendabilityEnforcementSummaryJson;
 using objc3::artifacts::frontend::
@@ -1392,74 +1390,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   std::ostringstream manifest;
   objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestHeader(
       manifest, input_path, program, pipeline_result, options);
-  manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";
-  manifest << "    \"pipeline\": {\n";
-  manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")
-           << ",\n";
-  manifest << "      \"stages\": {\n";
-  const Objc3ParserDiagnosticCodeCoverage parser_diag_code_coverage =
-      BuildObjc3ParserDiagnosticCodeCoverage(bundle.stage_diagnostics.parser);
-  manifest << "        \"lexer\": {\"diagnostics\":" << bundle.stage_diagnostics.lexer.size() << "},\n";
-  manifest << "        \"parser\": {\"diagnostics\":" << bundle.stage_diagnostics.parser.size()
-           << ",\"token_count\":" << pipeline_result.parser_contract_snapshot.token_count
-           << ",\"top_level_declarations\":" << pipeline_result.parser_contract_snapshot.top_level_declaration_count
-           << ",\"globals\":" << pipeline_result.parser_contract_snapshot.global_decl_count
-           << ",\"protocols\":" << pipeline_result.parser_contract_snapshot.protocol_decl_count
-           << ",\"protocol_properties\":"
-           << pipeline_result.parser_contract_snapshot.protocol_property_decl_count
-           << ",\"protocol_methods\":"
-           << pipeline_result.parser_contract_snapshot.protocol_method_decl_count
-           << ",\"interfaces\":" << pipeline_result.parser_contract_snapshot.interface_decl_count
-           << ",\"interface_properties\":"
-           << pipeline_result.parser_contract_snapshot.interface_property_decl_count
-           << ",\"interface_methods\":"
-           << pipeline_result.parser_contract_snapshot.interface_method_decl_count
-           << ",\"interface_categories\":"
-           << pipeline_result.parser_contract_snapshot.interface_category_decl_count
-           << ",\"implementations\":" << pipeline_result.parser_contract_snapshot.implementation_decl_count
-           << ",\"implementation_properties\":"
-           << pipeline_result.parser_contract_snapshot.implementation_property_decl_count
-           << ",\"implementation_methods\":"
-           << pipeline_result.parser_contract_snapshot.implementation_method_decl_count
-           << ",\"implementation_categories\":"
-           << pipeline_result.parser_contract_snapshot.implementation_category_decl_count
-           << ",\"functions\":" << pipeline_result.parser_contract_snapshot.function_decl_count
-           << ",\"function_prototypes\":"
-           << pipeline_result.parser_contract_snapshot.function_prototype_count
-           << ",\"function_pure\":"
-           << pipeline_result.parser_contract_snapshot.function_pure_count
-           << ",\"draft_syntax_surface_count\":"
-           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_count
-           << ",\"draft_syntax_surface_fingerprint\":"
-           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_fingerprint
-           << ",\"draft_syntax_surface_handoff_key\":\""
-           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_handoff_key
-           << "\",\"draft_syntax_surface_deterministic\":"
-           << (pipeline_result.parser_contract_snapshot.draft_syntax_surface_handoff_deterministic ? "true" : "false")
-           << ",\"long_tail_grammar_constructs\":"
-
-           << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count
-           << ",\"long_tail_grammar_covered_constructs\":"
-           << pipeline_result.parser_contract_snapshot.long_tail_grammar_covered_construct_count
-           << ",\"long_tail_grammar_fingerprint\":"
-           << pipeline_result.parser_contract_snapshot.long_tail_grammar_fingerprint
-           << ",\"long_tail_grammar_handoff_key\":\""
-           << pipeline_result.parser_contract_snapshot.long_tail_grammar_handoff_key
-           << "\",\"long_tail_grammar_deterministic\":"
-           << (pipeline_result.parser_contract_snapshot.long_tail_grammar_handoff_deterministic ? "true" : "false")
-           << ",\"diagnostic_code_count\":"
-           << parser_diag_code_coverage.unique_code_count
-           << ",\"diagnostic_code_fingerprint\":"
-           << parser_diag_code_coverage.unique_code_fingerprint
-           << ",\"diagnostic_code_surface_deterministic\":"
-           << (parser_diag_code_coverage.deterministic_surface ? "true" : "false")
-           << ",\"deterministic_handoff\":"
-           << (pipeline_result.parser_contract_snapshot.deterministic_handoff ? "true" : "false")
-           << ",\"recovery_replay_ready\":"
-           << (pipeline_result.parser_contract_snapshot.parser_recovery_replay_ready ? "true" : "false") << "},\n";
-  manifest << "        \"semantic\": {\"diagnostics\":" << bundle.stage_diagnostics.semantic.size()
-           << "}\n";
-  manifest << "      },\n";
+  objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestPipelineStages(
+      manifest, pipeline_result, options, bundle);
   manifest << "      \"parse_lowering_readiness\": {\"ready_for_lowering\": "
            << (bundle.parse_lowering_readiness_surface.ready_for_lowering ? "true" : "false")
            << ",\"parser_contract_snapshot_present\": "

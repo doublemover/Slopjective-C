@@ -173,6 +173,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_lowering_replay_manifest.h
   objc3_frontend_artifact_manifest_header.cpp
   objc3_frontend_artifact_manifest_header.h
+  objc3_frontend_artifact_manifest_pipeline.cpp
+  objc3_frontend_artifact_manifest_pipeline.h
   objc3_frontend_artifact_metaprogramming_metadata.cpp
   objc3_frontend_artifact_metaprogramming_metadata.h
   objc3_frontend_artifact_metadata_mode.cpp
