@@ -308,6 +308,8 @@ target_link_libraries(objc3c_runtime_abi_release_artifacts PUBLIC
 add_library(objc3c_runtime_abi_cross_module STATIC
   objc3_cross_module_imported_modules_document.cpp
   objc3_cross_module_imported_modules_document.h
+  objc3_cross_module_imported_modules_document_records.cpp
+  objc3_cross_module_imported_modules_document_records.h
   objc3_cross_module_runtime_link_plan_artifact.cpp
   objc3_cross_module_runtime_link_plan_document_artifacts.cpp
   objc3_cross_module_runtime_link_plan_document_artifacts.h
