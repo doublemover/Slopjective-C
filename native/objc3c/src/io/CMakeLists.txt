@@ -98,7 +98,9 @@ add_library(objc3c_json STATIC
   json/json_schema_object_properties_traversal_validation.cpp
   json/json_schema_object_properties_validation.cpp
   json/json_schema_object_required_entry_validation.cpp
+  json/json_schema_object_required_entry_type_validation.cpp
   json/json_schema_object_required_keyword_validation.cpp
+  json/json_schema_object_required_missing_property_validation.cpp
   json/json_schema_object_required_validation.cpp
   json/json_schema_object_validation.cpp
   json/json_schema_pattern_keyword_contract_validation.cpp

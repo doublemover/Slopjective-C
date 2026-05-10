@@ -2,7 +2,8 @@
 
 #include <cstddef>
 
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_object_required_entry_type_validation.h"
+#include "io/json/json_schema_object_required_missing_property_validation.h"
 
 namespace objc3::io::json {
 
@@ -13,20 +14,12 @@ void ValidateJsonSchemaObjectRequiredEntries(
   const JsonValue::Array &required_entries = required.AsArray();
   for (std::size_t i = 0; i < required_entries.size(); ++i) {
     const JsonValue &entry = required_entries[i];
-    if (!entry.IsString()) {
-      AddJsonSchemaContractError(
-          result, "invalid_required_entry",
-          JsonSchemaArrayElementPath(schema_path, "required", i),
-          "required entries must be strings");
+    if (!ValidateJsonSchemaObjectRequiredEntryType(entry, i, schema_path,
+                                                   result)) {
       continue;
     }
-    if (payload.Find(entry.AsString()) == nullptr) {
-      AddJsonSchemaPayloadError(
-          result, "missing_required",
-          JsonInstancePropertyPath(instance_path, entry.AsString()),
-          JsonSchemaArrayElementPath(schema_path, "required", i),
-          "missing required property " + entry.AsString());
-    }
+    ValidateJsonSchemaObjectMissingRequiredProperty(
+        payload, entry.AsString(), i, instance_path, schema_path, result);
   }
 }
 
