@@ -12,121 +12,16 @@ namespace {
 
 #include "parse/objc3_parser_inline_asm_intrinsic_site_collection.inc"
 
-Objc3InlineAsmIntrinsicGovernanceProfile
-BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
-    std::size_t inline_asm_sites,
-    std::size_t intrinsic_sites,
-    std::size_t governed_intrinsic_sites,
-    std::size_t privileged_intrinsic_sites) {
-  Objc3InlineAsmIntrinsicGovernanceProfile profile;
-  profile.inline_asm_sites = inline_asm_sites;
-  profile.intrinsic_sites = intrinsic_sites;
-  profile.governed_intrinsic_sites = governed_intrinsic_sites;
-  profile.privileged_intrinsic_sites = privileged_intrinsic_sites;
-  profile.inline_asm_intrinsic_sites =
-      profile.inline_asm_sites + profile.intrinsic_sites;
-  profile.gate_blocked_sites = profile.privileged_intrinsic_sites;
-  if (profile.gate_blocked_sites > profile.inline_asm_intrinsic_sites) {
-    profile.normalized_sites = 0u;
-  } else {
-    profile.normalized_sites =
-        profile.inline_asm_intrinsic_sites - profile.gate_blocked_sites;
-  }
-
-  if (profile.inline_asm_sites > profile.inline_asm_intrinsic_sites ||
-      profile.intrinsic_sites > profile.inline_asm_intrinsic_sites ||
-      profile.governed_intrinsic_sites > profile.intrinsic_sites ||
-      profile.privileged_intrinsic_sites > profile.governed_intrinsic_sites ||
-      profile.normalized_sites > profile.inline_asm_intrinsic_sites ||
-      profile.gate_blocked_sites > profile.inline_asm_intrinsic_sites ||
-      profile.contract_violation_sites > profile.inline_asm_intrinsic_sites) {
-    profile.contract_violation_sites += 1u;
-  }
-  if (profile.normalized_sites + profile.gate_blocked_sites !=
-      profile.inline_asm_intrinsic_sites) {
-    profile.contract_violation_sites += 1u;
-  }
-
-  profile.deterministic_inline_asm_intrinsic_governance_handoff =
-      profile.contract_violation_sites == 0u;
-  return profile;
-}
+#include "parse/objc3_parser_inline_asm_intrinsic_profiles_site_count_profile_construction.inc"
 
 }  // namespace
 
-std::string BuildInlineAsmIntrinsicGovernanceProfile(
-    std::size_t inline_asm_intrinsic_sites,
-    std::size_t inline_asm_sites,
-    std::size_t intrinsic_sites,
-    std::size_t governed_intrinsic_sites,
-    std::size_t privileged_intrinsic_sites,
-    std::size_t normalized_sites,
-    std::size_t gate_blocked_sites,
-    std::size_t contract_violation_sites,
-    bool deterministic_inline_asm_intrinsic_governance_handoff) {
-  std::ostringstream out;
-  out << "inline-asm-intrinsic-governance:inline_asm_intrinsic_sites="
-      << inline_asm_intrinsic_sites
-      << ";inline_asm_sites=" << inline_asm_sites
-      << ";intrinsic_sites=" << intrinsic_sites
-      << ";governed_intrinsic_sites=" << governed_intrinsic_sites
-      << ";privileged_intrinsic_sites=" << privileged_intrinsic_sites
-      << ";normalized_sites=" << normalized_sites
-      << ";gate_blocked_sites=" << gate_blocked_sites
-      << ";contract_violation_sites=" << contract_violation_sites
-      << ";deterministic_inline_asm_intrinsic_governance_handoff="
-      << (deterministic_inline_asm_intrinsic_governance_handoff ? "true"
-                                                                : "false");
-  return out.str();
-}
+#include "parse/objc3_parser_inline_asm_intrinsic_profiles_string_serialization.inc"
 
-bool IsInlineAsmIntrinsicGovernanceProfileNormalized(
-    std::size_t inline_asm_intrinsic_sites,
-    std::size_t inline_asm_sites,
-    std::size_t intrinsic_sites,
-    std::size_t governed_intrinsic_sites,
-    std::size_t privileged_intrinsic_sites,
-    std::size_t normalized_sites,
-    std::size_t gate_blocked_sites,
-    std::size_t contract_violation_sites) {
-  if (inline_asm_sites > inline_asm_intrinsic_sites ||
-      intrinsic_sites > inline_asm_intrinsic_sites ||
-      governed_intrinsic_sites > intrinsic_sites ||
-      privileged_intrinsic_sites > governed_intrinsic_sites ||
-      normalized_sites > inline_asm_intrinsic_sites ||
-      gate_blocked_sites > inline_asm_intrinsic_sites ||
-      contract_violation_sites > inline_asm_intrinsic_sites) {
-    return false;
-  }
-  if (normalized_sites + gate_blocked_sites != inline_asm_intrinsic_sites) {
-    return false;
-  }
-  return contract_violation_sites == 0u;
-}
+#include "parse/objc3_parser_inline_asm_intrinsic_profiles_normalization_predicate.inc"
 
-Objc3InlineAsmIntrinsicGovernanceProfile
-BuildInlineAsmIntrinsicGovernanceProfileFromFunction(const FunctionDecl &fn) {
-  const Objc3InlineAsmIntrinsicSiteCounts counts =
-      CountInlineAsmIntrinsicSitesInBody(fn.body);
-  return BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
-      counts.inline_asm_sites,
-      counts.intrinsic_sites,
-      counts.governed_intrinsic_sites,
-      counts.privileged_intrinsic_sites);
-}
+#include "parse/objc3_parser_inline_asm_intrinsic_profiles_function_profile_construction.inc"
 
-Objc3InlineAsmIntrinsicGovernanceProfile
-BuildInlineAsmIntrinsicGovernanceProfileFromOpaqueBody(
-    const Objc3MethodDecl &method) {
-  Objc3InlineAsmIntrinsicSiteCounts counts;
-  Objc3ProfileSymbolWalker walker{
-      &CollectInlineAsmIntrinsicProfileSymbol, &counts};
-  WalkObjc3ProfileSymbolsInOpaqueMethodBody(method, walker);
-  return BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
-      counts.inline_asm_sites,
-      counts.intrinsic_sites,
-      counts.governed_intrinsic_sites,
-      counts.privileged_intrinsic_sites);
-}
+#include "parse/objc3_parser_inline_asm_intrinsic_profiles_opaque_method_profile_construction.inc"
 
 }  // namespace objc3c::parse
