@@ -53,6 +53,10 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation_serialized_metadata.cpp
   runtime_import_record_parsing.cpp
   runtime_import_type_system_preservation.cpp
+  runtime_import_type_system_preservation_generic.cpp
+  runtime_import_type_system_preservation_nullability.cpp
+  runtime_import_type_system_preservation_optional_keypath.cpp
+  runtime_import_type_system_preservation_protocol.cpp
   frontend_pipeline_defaults.h
   frontend_pipeline_result_contract.h
   frontend_pipeline_result_handoff.h

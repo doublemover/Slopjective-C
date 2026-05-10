@@ -41,6 +41,26 @@ bool PopulateImportedRuntimeArtifactEvidence(
     Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error);
 
+bool PopulateImportedTypeSystemOptionalKeypathSurfaceEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedTypeSystemGenericContractEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedTypeSystemNullabilityContractEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedTypeSystemProtocolContractEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
 bool PopulateSerializedRuntimeMetadataReuse(
     const RuntimeImportJsonValue::Object &root,
     Objc3ImportedRuntimeModuleSurface &surface,
