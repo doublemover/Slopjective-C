@@ -1,22 +1,15 @@
 #pragma once
 
+#include "artifacts/objc3_frontend_artifact_storage_accessor_abi_manifest.h"
+
 #include <iosfwd>
 #include <string>
 
-struct Objc3PropertySynthesisIvarBindingContract;
 struct Objc3RuntimeBootstrapApiSummary;
-struct Objc3RuntimeLinkHostLinkContract;
 struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
 
 namespace objc3::artifacts::frontend {
-
-void WriteStorageAccessorRuntimeAbiSurface(
-    std::ostream &manifest,
-    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api,
-    const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract,
-    const Objc3PropertySynthesisIvarBindingContract
-        &property_synthesis_ivar_binding_contract);
 
 void WriteRuntimePropertyIvarStorageAccessorSourceSurface(
     std::ostream &manifest,
