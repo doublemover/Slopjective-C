@@ -5,6 +5,8 @@
 #include <string>
 #include <utility>
 
+#include "io/json/json_parser_string_token.h"
+
 namespace objc3::io::json {
 
 JsonParserCursor::JsonParserCursor(std::string_view text) : text_(text) {}
@@ -52,57 +54,7 @@ bool JsonParserCursor::ConsumeLiteral(std::string_view literal) {
 }
 
 bool JsonParserCursor::ParseString(std::string &out) {
-  if (!Consume('"')) {
-    return Fail("expected JSON string");
-  }
-  out.clear();
-  while (cursor_ < text_.size()) {
-    const unsigned char ch = static_cast<unsigned char>(text_[cursor_++]);
-    if (ch == '"') {
-      return true;
-    }
-    if (ch < 0x20u) {
-      return Fail("unescaped control character in JSON string");
-    }
-    if (ch != '\\') {
-      out.push_back(static_cast<char>(ch));
-      continue;
-    }
-    if (cursor_ >= text_.size()) {
-      return Fail("unterminated JSON string escape");
-    }
-    const char escaped = text_[cursor_++];
-    switch (escaped) {
-      case '"':
-      case '\\':
-      case '/':
-        out.push_back(escaped);
-        break;
-      case 'b':
-        out.push_back('\b');
-        break;
-      case 'f':
-        out.push_back('\f');
-        break;
-      case 'n':
-        out.push_back('\n');
-        break;
-      case 'r':
-        out.push_back('\r');
-        break;
-      case 't':
-        out.push_back('\t');
-        break;
-      case 'u':
-        if (!ParseUnicodeEscape(out)) {
-          return false;
-        }
-        break;
-      default:
-        return Fail("invalid JSON string escape");
-    }
-  }
-  return Fail("unterminated JSON string");
+  return ParseJsonStringToken(text_, cursor_, error_, out);
 }
 
 bool JsonParserCursor::ParseNumber(JsonValue &out) {
@@ -154,39 +106,6 @@ bool JsonParserCursor::ConsumeDigits() {
     ++cursor_;
   }
   return cursor_ > start;
-}
-
-bool JsonParserCursor::ParseUnicodeEscape(std::string &out) {
-  if (cursor_ + 4 > text_.size()) {
-    return Fail("short JSON unicode escape");
-  }
-  unsigned codepoint = 0;
-  for (int i = 0; i < 4; ++i) {
-    const char ch = text_[cursor_++];
-    codepoint <<= 4u;
-    if (ch >= '0' && ch <= '9') {
-      codepoint += static_cast<unsigned>(ch - '0');
-    } else if (ch >= 'a' && ch <= 'f') {
-      codepoint += static_cast<unsigned>(10 + ch - 'a');
-    } else if (ch >= 'A' && ch <= 'F') {
-      codepoint += static_cast<unsigned>(10 + ch - 'A');
-    } else {
-      return Fail("invalid JSON unicode escape");
-    }
-  }
-  if (codepoint <= 0x7fu) {
-    out.push_back(static_cast<char>(codepoint));
-    return true;
-  }
-  if (codepoint <= 0x7ffu) {
-    out.push_back(static_cast<char>(0xc0u | (codepoint >> 6u)));
-    out.push_back(static_cast<char>(0x80u | (codepoint & 0x3fu)));
-    return true;
-  }
-  out.push_back(static_cast<char>(0xe0u | (codepoint >> 12u)));
-  out.push_back(static_cast<char>(0x80u | ((codepoint >> 6u) & 0x3fu)));
-  out.push_back(static_cast<char>(0x80u | (codepoint & 0x3fu)));
-  return true;
 }
 
 }  // namespace objc3::io::json

@@ -28,7 +28,6 @@ class JsonParserCursor {
 
  private:
   bool ConsumeDigits();
-  bool ParseUnicodeEscape(std::string &out);
 
   std::string_view text_;
   std::size_t cursor_ = 0;
