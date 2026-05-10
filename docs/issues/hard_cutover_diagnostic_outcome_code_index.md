@@ -2,8 +2,8 @@
 
 This is the human-readable companion to
 `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`. It is local
-evidence only; no validation, GitHub edits, push, build, generator, formatter,
-lint, npm, cmake, or test command was run while preparing it.
+checked-in evidence only; no validation, GitHub edits, push, build, generator,
+formatter, lint, npm, cmake, or test command was run while preparing it.
 
 | Code | Outcome | Retired / Unsupported Surface | Issues |
 | --- | --- | --- | --- |
@@ -24,8 +24,8 @@ The `absent-support` row exists because retired-source lane support has no diagn
 surface to execute: it is absent from public support and positive fixture
 indexes.
 
-Latest diagnostic owner evidence is folded into
-`docs/issues/hard_cutover_latest_local_commit_refresh.md`, including diagnostic
+Latest diagnostic owner evidence is folded into the checked-in hard-cutover
+commit-refresh note, including diagnostic
 code, severity, core render/record, parse, removed-mode classifier, and catalog
 owner splits. Those commits refresh diagnostic ownership only; they do not add
-new compatibility diagnostics or positive retired-surface behavior.
+new retired-surface diagnostics or positive retired-surface behavior.

@@ -1,6 +1,6 @@
-# Hard-Cutover Local Closeout Payloads
+# Hard-Cutover Closeout Payloads
 
-These are branch-committed local closeout notes for `#8132`-`#8150`. They are
+These are branch-committed closeout notes for `#8132`-`#8150`. They are
 not remote completion claims and do not assert remote closure.
 Validation, `gh`, push, and issue edits were intentionally not run while
 preparing them. Historic `local` refresh labels in this file mean committed
@@ -11,12 +11,12 @@ evidence, or a substitute for deferred tracker operations.
 
 Closeout evidence is split by `evidence_owner_splits.json` into canonical
 accepted evidence, canonical rejection/strict-error evidence,
-provenance/report/generated evidence, and closure-readiness ownership. Accepted
+provenance/generated-output evidence, and closure-readiness ownership. Accepted
 evidence must point to committed branch source, docs, tests, or checked-in owner
 surfaces. Gate, retired route, compatibility, old-mode, unsupported,
 missing-upstream, alternate-acceptance, and retired-source-lane rows are
-rejection, strict-error, or absent-support evidence. Docs-only refreshes, local
-scans, generated summaries, tmp reports, evidence-log rows, validation-not-run,
+rejection, strict-error, or absent-support evidence. Docs-only refreshes, checkout
+scans, generated evidence summaries, generated evidence outputs, evidence-log rows, validation-not-run,
 GitHub-not-called, push-not-performed, and remote-deferred rows are provenance
 or closure-readiness state, not positive behavior or remote closeout.
 
@@ -28,14 +28,14 @@ clarifications, and JSON schema owner splits without changing the no-validation
 or no-GitHub status of these payloads.
 
 The latest docs/issues-only refresh is
-`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in 90 local
+`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in 90 branch
 owner commits after `abc203478` through `6d6fa804d`, grouped by issue
 acceptance owner, without changing the no-validation, no-GitHub, no-push,
 remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
-implementation commit lists are branch source evidence only. The current covered
+implementation commit lists are branch evidence boundary only. The current covered
 source head is `2a2d9759a` (`HC extract final readiness core keys`).
 The current docs-only closeout refresh folded into these payloads is
 `b4dad7b30` (`docs: refresh hard-cutover evidence through core keys`).
@@ -134,7 +134,7 @@ Earlier covered heads were `e8b4d5d45` (`HC split conformance behavior owners`),
 (`HC split frontend result API owners`). The
 baseline refresh through `98d10a61c` covered 186 committed owner/evidence
 commits after `9676679c2`, and later docs-only refreshes fold committed owner
-work forward to the current head. `tmp/` reports, generated summaries, and
+work forward to the current head. Generated output summaries and
 remote issue state are not closeout evidence here unless the relevant owner
 surface is checked in and the deferred validation or tracker operation actually
 ran.
@@ -260,50 +260,50 @@ commits that landed after the first docs commit.
 | `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `f6d6a6bd3` | Executable metadata semantic surface ownership refreshes local pipeline/frontend/runtime metadata evidence. |
 | `#8137`, `#8147`, `#8150` | `bd4731728` | IR function definition emission ownership refreshes local IR/deep handoff evidence. |
 | `#8135`, `#8136`, `#8147`, `#8150` | `e49583f8c` | Error lowering contract ownership refreshes local diagnostic/lowering evidence. |
-| `#8138`, `#8144`, `#8145`, `#8150` | `ced378fe3` | Compiler throughput behavior owner splits refresh local behavior/tooling evidence without asserting validation. |
+| `#8138`, `#8144`, `#8145`, `#8150` | `ced378fe3` | Compiler throughput behavior owner splits refresh branch-committed behavior/tooling evidence without asserting validation. |
 | `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `135708f41` | Executable metadata source graph ownership refreshes local pipeline/frontend metadata evidence. |
 | `#8136`, `#8138`, `#8147`, `#8150` | `415fb4e47` | Cross-module lowering contract ownership refreshes local artifact/lowering evidence. |
 | `#8137`, `#8138`, `#8147`, `#8150` | `0ffaace91` | IR module prelude/static data emission ownership refreshes local IR/artifact handoff evidence. |
 | `#8138`, `#8140`, `#8143`, `#8147`, `#8150` | `b5b2891c1` | Executable metadata graph readiness ownership refreshes local pipeline/frontend metadata evidence. |
 | `#8133`, `#8135`, `#8138`, `#8146`, `#8147`, `#8150` | `918aed5d4` | ID/class/selector typecheck ownership refreshes local semantic/artifact/type evidence. |
-| `#8138`, `#8143`, `#8144`, `#8145`, `#8149`, `#8150` | `4bbdc5c26` | Runtime performance behavior owner splits refresh local runtime/tooling/behavior evidence without asserting validation. |
+| `#8138`, `#8143`, `#8144`, `#8145`, `#8149`, `#8150` | `4bbdc5c26` | Runtime performance behavior owner splits refresh branch-committed runtime/tooling/behavior evidence without asserting validation. |
 | `#8136`, `#8137`, `#8147`, `#8150` | `9dde116dc` | Concurrency lowering contract ownership refreshes local lowering/deep handoff evidence. |
 | `#8138`, `#8142`, `#8145`, `#8149`, `#8150` | `ea5924980` | Final readiness failure-reason ownership refreshes local pipeline/workflow/capability evidence without asserting validation. |
 | `#8136`, `#8138`, `#8146`, `#8147`, `#8150` | `108edc450` | Metaprogramming lowering contract ownership refreshes local artifact/lowering evidence. |
 | `#8137`, `#8147`, `#8150` | `03a6c6aea` | IR direct-call emission ownership refreshes local IR/deep handoff evidence. |
-| `#8143`, `#8144`, `#8145`, `#8150` | `7ef7fd02a` | Runtime corrective behavior owner splits refresh local runtime behavior evidence without asserting validation. |
+| `#8143`, `#8144`, `#8145`, `#8150` | `7ef7fd02a` | Runtime corrective behavior owner splits refresh branch-committed runtime behavior evidence without asserting validation. |
 | `#8136`, `#8138`, `#8141`, `#8147`, `#8150` | `10abd536d` | Interop lowering contract ownership refreshes local artifact/lowering/API evidence. |
 | `#8133`, `#8138`, `#8146`, `#8147`, `#8150` | `dd3f50c2e` | Property synthesis object-model ownership refreshes local artifact/runtime/type evidence. |
-| `#8138`, `#8144`, `#8145`, `#8149`, `#8150` | `d463f1bb6` | Performance behavior owner splits refresh local workflow/tooling behavior evidence without asserting validation. |
+| `#8138`, `#8144`, `#8145`, `#8149`, `#8150` | `d463f1bb6` | Performance behavior owner splits refresh branch-committed workflow/tooling behavior evidence without asserting validation. |
 | `#8137`, `#8147`, `#8150` | `f9d7c7467` | IR message-send emission ownership refreshes local IR/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `64702b40d` | IR emission feature surface ownership refreshes local pipeline/IR feature evidence. |
 | `#8135`, `#8138`, `#8146`, `#8147`, `#8150` | `248820d9a` | Metaprogramming artifact emission ownership refreshes local semantic/artifact evidence. |
 | `#8135`, `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `ca7ec4cb2` | Lowering diagnostics surfacing ownership refreshes local lowering/pipeline diagnostic evidence. |
-| `#8138`, `#8143`, `#8144`, `#8145`, `#8150` | `f996dd674` | Metaprogramming/interop closure behavior owner splits refresh local fixture and behavior evidence without asserting validation. |
+| `#8138`, `#8143`, `#8144`, `#8145`, `#8150` | `f996dd674` | Metaprogramming/interop closure behavior owner splits refresh branch-committed fixture and behavior evidence without asserting validation. |
 | `#8138`, `#8141`, `#8146`, `#8147`, `#8150` | `5672756b4` | Interop preservation artifact ownership refreshes local semantic/artifact/API evidence. |
 | `#8135`, `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `881539432` | Diagnostics hardening readiness module ownership refreshes local lowering/pipeline diagnostic evidence. |
 | `#8136`, `#8138`, `#8146`, `#8147`, `#8150` | `5086bf939` | Accessor metadata lowering summary ownership refreshes local artifact/lowering/type evidence. |
-| `#8133`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `43d17c999` | Object-model closure behavior owner splits refresh local runtime/fixture behavior evidence without asserting validation. |
+| `#8133`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `43d17c999` | Object-model closure behavior owner splits refresh branch-committed runtime/fixture behavior evidence without asserting validation. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `43bc46be9` | Sema contract flow handoff ownership refreshes local semantic/lowering handoff evidence. |
 | `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `ccc8db449` | Lowering pass graph feature module ownership refreshes local lowering/pipeline feature evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `0a6dcae3f` | Sema parity publication ownership refreshes local semantic publication evidence. |
 | `#8137`, `#8147`, `#8150` | `bbe3185ed` | IR statement emission ownership refreshes local IR/deep handoff evidence. |
-| `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `e0a078d7e` | Public conformance reporting behavior owner splits refresh local workflow/fixture/schema/source evidence without asserting validation. |
+| `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `e0a078d7e` | Public conformance reporting behavior owner splits refresh branch-committed workflow/fixture/schema/source evidence without asserting validation. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `a9ab19c86` | Sema intermodule flow ownership refreshes local semantic/deep handoff evidence. |
 | `#8135`, `#8136`, `#8145`, `#8146`, `#8147`, `#8150` | `9b2b33d42` | Sema closeout readiness ownership refreshes local semantic/capability closeout evidence. |
 | `#8135`, `#8136`, `#8145`, `#8146`, `#8147`, `#8150` | `90812d527` | Sema closeout signoff ownership refreshes local semantic/capability closeout evidence. |
-| `#8140`, `#8141`, `#8144`, `#8145`, `#8150` | `d2c776808` | Frontend C API behavior owner splits refresh local public contract/fixture evidence without asserting validation. |
+| `#8140`, `#8141`, `#8144`, `#8145`, `#8150` | `d2c776808` | Frontend C API behavior owner splits refresh branch-committed public contract/fixture evidence without asserting validation. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `64f73e8b1` | Sema core summary ownership refreshes local semantic/deep handoff evidence. |
 | `#8136`, `#8147`, `#8150` | `69aaa347c` | Ownership-aware lowering scaffold ownership refreshes local lowering/pipeline evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `ba8b86d4c` | Sema type annotation readiness ownership refreshes local semantic/deep handoff evidence. |
 | `#8137`, `#8147`, `#8150` | `1c5747bb5` | IR expression emission ownership refreshes local IR/deep handoff evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `7240cad24` | Sema module ABI readiness ownership refreshes local semantic/ABI handoff evidence. |
 | `#8136`, `#8138`, `#8140`, `#8147`, `#8150` | `19ac96484` | Parse/lowering readiness surface ownership refreshes local pipeline/lowering readiness evidence. |
-| `#8133`, `#8136`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `85081c4d5` | Error runtime closure behavior owner splits refresh local runtime/lowering fixture evidence without asserting validation. |
+| `#8133`, `#8136`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `85081c4d5` | Error runtime closure behavior owner splits refresh branch-committed runtime/lowering fixture evidence without asserting validation. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `4915a9844` | Sema module boundary readiness ownership refreshes local semantic/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `2a512bc77` | Dispatch source completion helper ownership refreshes local pipeline/source-completion evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `9e36fd3fe` | Sema type boundary readiness ownership refreshes local semantic/deep handoff evidence. |
-| `#8136`, `#8137`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `db26492d6` | Block ARC closure behavior owner splits refresh local fixture/lowering/IR/runtime evidence without asserting validation. |
+| `#8136`, `#8137`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `db26492d6` | Block ARC closure behavior owner splits refresh branch-committed fixture/lowering/IR/runtime evidence without asserting validation. |
 | `#8137`, `#8147`, `#8150` | `a27682e36` | IR scope cleanup emission ownership refreshes local IR/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `22016d333` | Tooling source completion helper ownership refreshes local pipeline/tooling-source evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `4c5389c86` | Sema core parity publication ownership refreshes local semantic/deep handoff evidence. |
@@ -311,47 +311,47 @@ commits that landed after the first docs commit.
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `0e96b4cf0` | Sema module parity publication ownership refreshes local semantic/deep handoff evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `f9d44ba5b` | Sema concurrency parity publication ownership refreshes local semantic/deep handoff evidence. |
 | `#8137`, `#8138`, `#8147`, `#8150` | `f55dfb0f1` | IR runtime artifact emission ownership refreshes local IR/artifact/deep handoff evidence. |
-| `#8133`, `#8136`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `eb3b09ca3` | Concurrency runtime closure behavior owner splits refresh local runtime/lowering fixture evidence without asserting validation. |
+| `#8133`, `#8136`, `#8143`, `#8144`, `#8145`, `#8147`, `#8150` | `eb3b09ca3` | Concurrency runtime closure behavior owner splits refresh branch-committed runtime/lowering fixture evidence without asserting validation. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `4fce60223` | Ownership source completion helper ownership refreshes local pipeline/source-completion evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `d8410b588` | Sema unsafe error parity validator ownership refreshes local semantic/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `79e3ff570` | Interop source completion helper ownership refreshes local pipeline/source-completion evidence. |
-| `#8143`, `#8144`, `#8147`, `#8150` | `c8af0b997` | Runtime tooling probe behavior owner splits refresh local runtime/fixture/tooling evidence without asserting validation. |
+| `#8143`, `#8144`, `#8147`, `#8150` | `c8af0b997` | Runtime tooling probe behavior owner splits refresh branch-committed runtime/fixture/tooling evidence without asserting validation. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `5ea59e3b7` | Sema control binding parity validator ownership refreshes local semantic/deep handoff evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `4a6b21179` | Sema async block message parity validator ownership refreshes local semantic/deep handoff evidence. |
 | `#8137`, `#8143`, `#8147`, `#8150` | `e24b74c10` | IR runtime member metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8150` | `7942235c7` | Concurrency source closure helper ownership refreshes local pipeline/source-closure evidence. |
 | `#8135`, `#8136`, `#8146`, `#8147`, `#8150` | `47c0219d3` | Sema dispatch runtime ARC parity validator ownership refreshes local semantic/deep handoff evidence. |
-| `#8139`, `#8144`, `#8147`, `#8150` | `c5b0c6fc3` | Native execution metadata behavior owner splits refresh local native/fixture/metadata evidence without asserting validation. |
+| `#8139`, `#8144`, `#8147`, `#8150` | `c5b0c6fc3` | Native execution metadata behavior owner splits refresh branch-committed native/fixture/metadata evidence without asserting validation. |
 | `#8138`, `#8140`, `#8146`, `#8147`, `#8150` | `d51b5697b` | Type system source closure helper ownership refreshes local pipeline/frontend type/source-closure evidence. |
 | `#8137`, `#8143`, `#8147`, `#8150` | `c23bd7931` | IR runtime method list metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
 | `#8134`, `#8135`, `#8146`, `#8147`, `#8150` | `ed9da896f` | Parser sema contract readiness builder ownership refreshes local parser/semantic/frontend type/deep handoff evidence. |
 | `#8138`, `#8145`, `#8147`, `#8150` | `c38a808a1` | Final readiness gate implementation surface ownership refreshes local pipeline/capability/deep handoff evidence. |
-| `#8144`, `#8145`, `#8150` | `e4c33ba87` | Generated boundary provenance owner splits refresh local fixture/generated-boundary/capability evidence without asserting validation. |
+| `#8144`, `#8145`, `#8150` | `e4c33ba87` | Generated boundary provenance owner splits refresh branch-committed fixture/generated-boundary/capability evidence without asserting validation. |
 | `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `0a08675a4` | Frontend artifact metadata mode gate ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
 | `#8137`, `#8143`, `#8147`, `#8150` | `ce773db3b` | IR runtime object metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
 | `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `8a07c3be5` | Frontend artifact function manifest builder ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
-| `#8133`, `#8134`, `#8144`, `#8145`, `#8150` | `605f0da0e` | Retired surface matrix owner splits refresh local strict-error/parser-rejection/fixture/capability evidence without asserting validation. |
+| `#8133`, `#8134`, `#8144`, `#8145`, `#8150` | `605f0da0e` | Retired surface matrix owner splits refresh branch-committed strict-error/parser-rejection/fixture/capability evidence without asserting validation. |
 | `#8138`, `#8145`, `#8147`, `#8150` | `bdee53836` | Final readiness advanced key ownership refreshes local pipeline/capability/deep handoff evidence. |
-| `#8144`, `#8145`, `#8147`, `#8150` | `6ced5fcd0` | Phase owner contract provenance splits refresh local test/fixture/provenance/deep handoff evidence without asserting validation. |
+| `#8144`, `#8145`, `#8147`, `#8150` | `6ced5fcd0` | Phase owner contract provenance splits refresh branch-committed test/fixture/provenance/deep handoff evidence without asserting validation. |
 | `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `8313028a7` | Frontend artifact runtime metadata plan ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
 | `#8137`, `#8143`, `#8147`, `#8150` | `7f3a8c968` | IR protocol category metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
-| `#8134`, `#8144`, `#8145`, `#8150` | `e44d837ad` | Parser behavior owner metadata splits refresh local parser/fixture/rejection provenance/capability evidence without asserting validation. |
+| `#8134`, `#8144`, `#8145`, `#8150` | `e44d837ad` | Parser behavior owner metadata splits refresh branch-committed parser/fixture/rejection provenance/capability evidence without asserting validation. |
 | `#8138`, `#8145`, `#8147`, `#8150` | `2a2d9759a` | Final readiness core key ownership refreshes local pipeline/capability/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
-| `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
-| `#8144`, `#8150` | `e8b4d5d45` | Conformance behavior owner splits refresh local behavior-corpus ownership evidence without asserting a test run. |
-| `#8144`, `#8150` | `6e2076598` | Generated replay behavior owner splits refresh local generated-fixture ownership evidence without asserting a replay run. |
+| `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh branch-committed fixture-ownership evidence without asserting a test run. |
+| `#8144`, `#8150` | `e8b4d5d45` | Conformance behavior owner splits refresh branch-committed behavior-corpus ownership evidence without asserting a test run. |
+| `#8144`, `#8150` | `6e2076598` | Generated replay behavior owner splits refresh branch-committed generated-fixture ownership evidence without asserting a replay run. |
 
 ## Current Docs-Only Closeout Refresh
 
 | Issue Area | Local Commit | Closeout Meaning |
 | --- | --- | --- |
-| `#8132`-`#8150` | `b4dad7b30` | Evidence and closeout docs are synchronized through the current local branch head. The latest source implementation evidence remains `2a2d9759a`; validation, push, GitHub issue edits, and remote closure remain deferred. |
+| `#8132`-`#8150` | `b4dad7b30` | Evidence and closeout docs are synchronized through the current branch head. The latest source implementation evidence remains `2a2d9759a`; validation, push, GitHub issue edits, and remote closure remain deferred. |
 
 ## #8132
 
-Compiler architecture decomposition is indexed from local commits covering root
+Compiler architecture decomposition is indexed from branch commits covering root
 target topology, frontend/driver targets, AST ownership, IR/pipeline ownership,
 native ownership/schema surfaces, driver/C API runner owners, parser owner-path
 replacements, and tooling split expectation updates.
@@ -565,7 +565,7 @@ schema owner docs, evidence-map tie-ins, support boundaries, and diagnostic cata
 table commits, plus diagnostic/config owner collapse, schema retired-term
 guidance, canonical config tooling expectations, public/native docs ownership,
 spec hard-cutover prose, prose planning overlays, and compiler throughput
-behavior-owner evidence kept in the same local source-evidence lane.
+behavior-owner evidence kept in the same branch evidence lane.
 
 Evidence: `docs/support/capability_matrix.json`,
 `docs/support/capability_matrix.md`, `docs/support/evidence_map.json`,

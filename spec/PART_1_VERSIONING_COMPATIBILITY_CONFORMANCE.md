@@ -12,19 +12,20 @@ This part defines:
 - required feature-test and report mechanisms,
 - canonical diagnostics for rejected source forms.
 
-Public support truth lives in:
+Public support ownership lives in:
 
 - `docs/support/capability_matrix.md`
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 - `docs/support/evidence_map.md`
+- `docs/support/capability_claim_responsibility.md`
 - `scripts/objc3c_shared/schema_registry.py`
 
-Any local claim in this part is subordinate to those capability and evidence
+Any claim in this part is subordinate to those capability and evidence
 surfaces. The capability matrix and evidence map schemas are selected by shared
-registry ids, not by local schema fragments in this part.
+registry ids, not by schema fragments in this part.
 
-Public command truth lives in `package.json` and
+Public command ownership lives in `package.json` and
 `scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
 `npm run objc3c -- <action>`; direct helper commands and retired command
 surfaces are implementation details unless a public workflow document generated
@@ -56,7 +57,7 @@ Selecting Objective-C 3.0 shall:
 - enable Objective-C 3.0 default rules such as nonnull-by-default regions where
   those rules are implemented,
 - emit canonical diagnostics for rejected source forms,
-- report support through the capability matrix rather than through local status
+- report support through the capability matrix rather than through chapter status
   prose.
 
 ### 1.2.2 Translation-unit granularity {#part-1-2-2}
@@ -217,7 +218,7 @@ Objective-C 3.0 v1 uses these public support states:
 ### 1.5.2 Claiming support {#part-1-5-2}
 
 A conforming implementation claims support through a machine-readable matrix and
-human-readable evidence map. Local docs must not widen support beyond those
+human-readable evidence map. Local prose must not widen support beyond those
 files.
 
 Evidence map rows may cite source owners such as
@@ -225,8 +226,8 @@ Evidence map rows may cite source owners such as
 `native/objc3c/src/runtime/public/objc3_runtime_result.h`,
 `native/objc3c/src/io/json/`, or
 `native/objc3c/src/artifacts/json/`. Those owner rows keep command, runtime, and
-schema truth explicit without converting implementation surfaces into new
-language features.
+schema responsibility explicit without converting implementation surfaces into
+new language features.
 
 The machine-readable support contract is:
 
@@ -234,9 +235,10 @@ The machine-readable support contract is:
 - capability schema id: `objc3c-capability-matrix-v1`
 - evidence data: `docs/support/evidence_map.json`
 - evidence schema id: `objc3c-capability-evidence-map-v1`
+- claim responsibility: `docs/support/capability_claim_responsibility.md`
 - schema owner: `scripts/objc3c_shared/schema_registry.py`
 
-Docs, spec prose, and site pages must not introduce a local status state beyond
+Docs, spec prose, and site pages must not introduce a status state beyond
 `implemented`, `rejected`, `reserved`, or `internal`.
 
 ### 1.5.3 Diagnostic escalation rule {#part-1-5-3}
@@ -295,7 +297,7 @@ Objective-C 3.0 translation units and explicitly marked module boundaries.
 
 Headers that claim Objective-C 3.0 support use canonical spellings and published
 capability gates. A header must not require a reader to infer support from
-archived notes, private issue history, or local status comments.
+archived notes, private issue history, or file-level status comments.
 
 ## 1.8 Canonical diagnostics and fix-its {#part-1-8}
 

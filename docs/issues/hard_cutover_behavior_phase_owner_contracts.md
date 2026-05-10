@@ -2,7 +2,7 @@
 
 This is the human-readable companion to
 `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json`. It is
-local evidence only; no validation, GitHub edits, push, build, generator,
+checked-in branch evidence only; no validation, GitHub edits, push, build, generator,
 formatter, lint, npm, cmake, script, or test command was run while preparing it.
 
 The contract is intentionally behavior-first. Parser, sema, lowering, IR,

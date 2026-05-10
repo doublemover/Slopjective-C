@@ -112,7 +112,8 @@ publish:
 - the support-tier table reused from the platform-hardening surface
 
 Those fields must stay aligned with
-`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`.
+the platform support matrix artifact selected by the checked-in
+platform-hardening contract.
 
 Release operations do not rebuild upstream owner outputs while publishing. If
 the release manifest, package-channel summary, platform-support matrix, platform

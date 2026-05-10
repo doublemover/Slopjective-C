@@ -576,7 +576,7 @@ This is the authoritative error execution and cleanup source boundary. It
 freezes the live frontend-owned throws declarations, result-carrier profiles,
 NSError bridge markers, and reserved `try`/`throw`/`catch` parse boundary as
 one coupled compile surface instead of leaving later error-runtime work to
-reconstruct source truth from deleted milestone scripts or stale planning
+reconstruct source ownership from deleted milestone scripts or stale planning
 packets.
 
 ## Catch Filter And Finalization Source Surface

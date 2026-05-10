@@ -29,7 +29,7 @@
     "evidence_documents:tests/conformance/hard_cutover_issue_index.json",
     "payloads.md:Evidence:",
     "payloads.md:Retired-surface state:",
-    "payloads.md:committed local source/test evidence only"
+    "payloads.md:checked-in branch source/test evidence only"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
   "retired_surface_rule": "canonical accepted closeout evidence may cite committed rejection, strict-error, or absence evidence, but never turns gate, retired route, compatibility, old-mode, unsupported, generated-only, evidence-log, tmp-only, docs-only, local-scan-only, validation-not-run, GitHub-not-called, push-not-performed, or remote-deferred rows into positive behavior or remote closure support"

@@ -168,7 +168,7 @@ The diagnostic outcome code index in
 retired or unsupported behavior outcomes to the stable diagnostic or strict
 error codes that own their rejection evidence.
 
-Additional local commits folded into this evidence map after the first index
+Additional branch commits folded into this evidence map after the first index
 pass:
 
 - `645e9c25f` indexes issue evidence and retired-surface absence for `#8144`
@@ -252,10 +252,10 @@ pass:
   metadata contract IDs, sema feature-surface contracts, and artifact schema
   registry requirement evidence.
 
-Latest local owner refresh after the docs/issues outcome-index pass:
+Latest branch owner refresh after the docs/issues outcome-index pass:
 
 - `docs/issues/hard_cutover_latest_local_commit_refresh.md` folds in the 90
-  local owner commits after `abc203478` through `6d6fa804d` without running
+  branch owner commits after `abc203478` through `6d6fa804d` without running
   validation, GitHub commands, push, or remote issue edits.
 - Parser, AST, ObjC reference, and type-surface owner splits refresh `#8132`,
   `#8134`, `#8146`, and `#8147`.
@@ -275,7 +275,7 @@ Latest local owner refresh after the docs/issues outcome-index pass:
   canonical literal table, and runtime capability artifact commits are folded
   into the same branch-committed evidence map.
 
-Follow-up local owner refresh after `f66452822`:
+Follow-up branch owner refresh after `f66452822`:
 
 - `docs/issues/hard_cutover_latest_local_commit_refresh.md` now also folds in
   committed owner work after `f66452822` through `f4bf6228e` without running
@@ -322,7 +322,7 @@ Follow-up local owner refresh after `f66452822`:
   expectations, driver CLI split owner tests, source-hygiene cutover residue
   guardrails, and runtime fixture owner anchors.
 
-Post-`f4bf6228e` local owner refresh:
+Post-`f4bf6228e` branch owner refresh:
 
 - `docs/issues/hard_cutover_latest_local_commit_refresh.md` also folds in
   committed owner work after `f4bf6228e` through `89959f6cc` without running
@@ -340,7 +340,7 @@ Post-`f4bf6228e` local owner refresh:
   alternate acceptance path, retired adapter, retired-source lane, or public compatibility
   mode is introduced.
 
-Post-`89959f6cc` local owner refresh:
+Post-`89959f6cc` branch owner refresh:
 
 - Runtime workflow/test evidence is refreshed by runtime tooling README
   ownership and runtime runnable conformance, e2e, test-acceptance, and runtime
@@ -355,7 +355,7 @@ Post-`89959f6cc` local owner refresh:
 - These commits are committed branch evidence anchors only; validation, push,
   and remote issue edits remain deferred.
 
-Post-`e760e3450` local owner refresh:
+Post-`e760e3450` branch owner refresh:
 
 - Stress workflow, external validation, and public test orchestration evidence
   is refreshed by stress catalog/execution, external validation execution/
@@ -367,7 +367,7 @@ Post-`e760e3450` local owner refresh:
   create support for gate, retired route, migration, old-mode, or compatibility
   behavior.
 
-Post-`0350f4a4a` local owner refresh:
+Post-`0350f4a4a` branch owner refresh:
 
 - Stale monolith literal cleanup in CMake target topology and frontend type
   extraction tooling refreshes split-owner evidence for `#8132`, `#8134`,
@@ -378,7 +378,7 @@ Post-`0350f4a4a` local owner refresh:
   surface owner splits refresh application workflow evidence for `#8138`,
   `#8142`, `#8145`, `#8149`, and `#8150`.
 
-Post-`0d2111b18` local owner refresh:
+Post-`0d2111b18` branch owner refresh:
 
 - Runtime dispatch support evidence is refreshed by receiver identity, dispatch
   resolution state/target, method cache/class-chain snapshots, destroy-plan,
@@ -390,7 +390,7 @@ Post-`0d2111b18` local owner refresh:
 - Bonus tooling inspection/template owner splits refresh internal developer
   tooling workflow evidence for `#8138`, `#8142`, and `#8149`.
 
-Post-`2fb0664e0` local owner refresh:
+Post-`2fb0664e0` branch owner refresh:
 
 - Runtime strict-error fixture renames refresh conformance indexes,
   retired-surface matrices, and negative execution metadata for `#8133`,
@@ -403,7 +403,7 @@ Post-`2fb0664e0` local owner refresh:
 - Runtime dispatch lowering contract owners refresh lowering/deep handoff
   evidence for `#8136`, `#8137`, `#8147`, and `#8150`.
 
-Post-`98d10a61c` local owner refresh:
+Post-`98d10a61c` branch owner refresh:
 
 - Workflow, command, source-hygiene, schema, release, package, and public-test
   owner splits refresh internal control-plane evidence for `#8142`, `#8145`,
@@ -422,7 +422,7 @@ Post-`98d10a61c` local owner refresh:
 - The committed head folded into that docs-only map was `4fddfacb7`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
-Post-`4fddfacb7` local owner refresh:
+Post-`4fddfacb7` branch owner refresh:
 
 - Lowering, IR, interop, ownership, and block contract owner splits refresh
   compiler pipeline, deep handoff, artifact, and semantic ownership evidence
@@ -450,7 +450,7 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8137`, `#8147`, and `#8150`.
 - Error lowering contract ownership refreshes local diagnostic/lowering evidence
   for `#8135`, `#8136`, `#8147`, and `#8150`.
-- Compiler throughput behavior owner splits refresh local behavior/tooling
+- Compiler throughput behavior owner splits refresh branch-committed behavior/tooling
   evidence for `#8138`, `#8144`, `#8145`, and `#8150`.
 - Executable metadata source graph ownership refreshes local pipeline/frontend
   metadata evidence for `#8138`, `#8140`, `#8143`, `#8147`, and `#8150`.
@@ -462,7 +462,7 @@ Post-`4fddfacb7` local owner refresh:
   metadata evidence for `#8138`, `#8140`, `#8143`, `#8147`, and `#8150`.
 - ID/class/selector typecheck ownership refreshes local semantic/artifact/type
   evidence for `#8133`, `#8135`, `#8138`, `#8146`, `#8147`, and `#8150`.
-- Runtime performance behavior owner splits refresh local runtime/tooling/behavior
+- Runtime performance behavior owner splits refresh branch-committed runtime/tooling/behavior
   evidence for `#8138`, `#8143`, `#8144`, `#8145`, `#8149`, and `#8150`.
 - Concurrency lowering contract ownership refreshes local lowering/deep handoff
   evidence for `#8136`, `#8137`, `#8147`, and `#8150`.
@@ -472,13 +472,13 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8136`, `#8138`, `#8146`, `#8147`, and `#8150`.
 - IR direct-call emission ownership refreshes local IR/deep handoff evidence
   for `#8137`, `#8147`, and `#8150`.
-- Runtime corrective behavior owner splits refresh local runtime behavior
+- Runtime corrective behavior owner splits refresh branch-committed runtime behavior
   evidence for `#8143`, `#8144`, `#8145`, and `#8150`.
 - Interop lowering contract ownership refreshes local artifact/lowering/API
   evidence for `#8136`, `#8138`, `#8141`, `#8147`, and `#8150`.
 - Property synthesis object-model ownership refreshes local artifact/runtime/type
   evidence for `#8133`, `#8138`, `#8146`, `#8147`, and `#8150`.
-- Performance behavior owner splits refresh local workflow/tooling behavior
+- Performance behavior owner splits refresh branch-committed workflow/tooling behavior
   evidence for `#8138`, `#8144`, `#8145`, `#8149`, and `#8150`.
 - IR message-send emission ownership refreshes local IR/deep handoff evidence
   for `#8137`, `#8147`, and `#8150`.
@@ -489,7 +489,7 @@ Post-`4fddfacb7` local owner refresh:
 - Lowering diagnostics surfacing ownership refreshes local lowering/pipeline
   diagnostic evidence for `#8135`, `#8136`, `#8138`, `#8140`, `#8147`, and
   `#8150`.
-- Metaprogramming/interop closure behavior owner splits refresh local fixture
+- Metaprogramming/interop closure behavior owner splits refresh branch-committed fixture
   and behavior evidence for `#8138`, `#8143`, `#8144`, `#8145`, and `#8150`.
 - Interop preservation artifact ownership refreshes local semantic/artifact/API
   evidence for `#8138`, `#8141`, `#8146`, `#8147`, and `#8150`.
@@ -499,7 +499,7 @@ Post-`4fddfacb7` local owner refresh:
 - Accessor metadata lowering summary ownership refreshes local artifact,
   lowering, and typed metadata evidence for `#8136`, `#8138`, `#8146`,
   `#8147`, and `#8150`.
-- Object-model closure behavior owner splits refresh local runtime, fixture, and
+- Object-model closure behavior owner splits refresh branch-committed runtime, fixture, and
   behavior evidence for `#8133`, `#8143`, `#8144`, `#8145`, `#8147`, and
   `#8150`.
 - Sema contract flow handoff ownership refreshes local semantic, lowering, and
@@ -511,7 +511,7 @@ Post-`4fddfacb7` local owner refresh:
   evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
 - IR statement emission ownership refreshes local IR and deep handoff evidence
   for `#8137`, `#8147`, and `#8150`.
-- Public conformance reporting behavior owner splits refresh local workflow,
+- Public conformance reporting behavior owner splits refresh branch-committed workflow,
   fixture, schema, capability, and source-surface evidence for `#8142`,
   `#8144`, `#8145`, `#8148`, `#8149`, and `#8150`.
 - Sema intermodule flow ownership refreshes local semantic and deep handoff
@@ -522,7 +522,7 @@ Post-`4fddfacb7` local owner refresh:
 - Sema closeout signoff ownership refreshes local semantic, capability, and
   closeout-readiness evidence for `#8135`, `#8136`, `#8145`, `#8146`,
   `#8147`, and `#8150`.
-- Frontend C API behavior owner splits refresh local public contract, fixture,
+- Frontend C API behavior owner splits refresh branch-committed public contract, fixture,
   and capability evidence for `#8140`, `#8141`, `#8144`, `#8145`, and
   `#8150`.
 - Sema core summary ownership refreshes local semantic and deep handoff evidence
@@ -538,7 +538,7 @@ Post-`4fddfacb7` local owner refresh:
 - Parse/lowering readiness surface ownership refreshes local pipeline,
   lowering, and readiness evidence for `#8136`, `#8138`, `#8140`, `#8147`,
   and `#8150`.
-- Error runtime closure behavior owner splits refresh local runtime, lowering,
+- Error runtime closure behavior owner splits refresh branch-committed runtime, lowering,
   fixture, and capability evidence for `#8133`, `#8136`, `#8143`, `#8144`,
   `#8145`, `#8147`, and `#8150`.
 - Sema module boundary readiness ownership refreshes local semantic and deep
@@ -547,7 +547,7 @@ Post-`4fddfacb7` local owner refresh:
   source-completion evidence for `#8138`, `#8140`, `#8147`, and `#8150`.
 - Sema type boundary readiness ownership refreshes local semantic and deep
   handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
-- Block ARC closure behavior owner splits refresh local fixture, lowering, IR,
+- Block ARC closure behavior owner splits refresh branch-committed fixture, lowering, IR,
   and runtime evidence for `#8136`, `#8137`, `#8143`, `#8144`, `#8145`,
   `#8147`, and `#8150`.
 - IR scope cleanup emission ownership refreshes local IR and deep handoff
@@ -564,7 +564,7 @@ Post-`4fddfacb7` local owner refresh:
   deep handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
 - IR runtime artifact emission ownership refreshes local IR, artifact, and deep
   handoff evidence for `#8137`, `#8138`, `#8147`, and `#8150`.
-- Concurrency runtime closure behavior owner splits refresh local runtime,
+- Concurrency runtime closure behavior owner splits refresh branch-committed runtime,
   lowering, fixture, and capability evidence for `#8133`, `#8136`, `#8143`,
   `#8144`, `#8145`, `#8147`, and `#8150`.
 - Ownership source completion helper ownership refreshes local pipeline and
@@ -573,7 +573,7 @@ Post-`4fddfacb7` local owner refresh:
   deep handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
 - Interop source completion helper ownership refreshes local pipeline and
   source-completion evidence for `#8138`, `#8140`, `#8147`, and `#8150`.
-- Runtime tooling probe behavior owner splits refresh local runtime, fixture,
+- Runtime tooling probe behavior owner splits refresh branch-committed runtime, fixture,
   and tooling evidence for `#8143`, `#8144`, `#8147`, and `#8150`.
 - Sema control binding parity validator ownership refreshes local semantic and
   deep handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and `#8150`.
@@ -588,7 +588,7 @@ Post-`4fddfacb7` local owner refresh:
 - Sema dispatch runtime ARC parity validator ownership refreshes local semantic
   and deep handoff evidence for `#8135`, `#8136`, `#8146`, `#8147`, and
   `#8150`.
-- Native execution metadata behavior owner splits refresh local native, fixture,
+- Native execution metadata behavior owner splits refresh branch-committed native, fixture,
   and metadata evidence for `#8139`, `#8144`, `#8147`, and `#8150` without
   asserting validation.
 - Type system source closure helper ownership refreshes local pipeline,
@@ -603,7 +603,7 @@ Post-`4fddfacb7` local owner refresh:
 - Final readiness gate implementation surface ownership refreshes local
   pipeline, capability, and deep handoff evidence for `#8138`, `#8145`,
   `#8147`, and `#8150`.
-- Generated boundary provenance owner splits refresh local fixture,
+- Generated boundary provenance owner splits refresh branch-committed fixture,
   generated-boundary, and capability evidence for `#8144`, `#8145`, and
   `#8150` without asserting validation.
 - Frontend artifact metadata mode gate ownership refreshes local artifact,
@@ -615,12 +615,12 @@ Post-`4fddfacb7` local owner refresh:
 - Frontend artifact function manifest builder ownership refreshes local
   artifact, frontend, schema, and deep handoff evidence for `#8138`, `#8140`,
   `#8147`, `#8148`, and `#8150`.
-- Retired surface matrix owner splits refresh local strict-error,
+- Retired surface matrix owner splits refresh branch-committed strict-error,
   parser-rejection, fixture, and capability evidence for `#8133`, `#8134`,
   `#8144`, `#8145`, and `#8150` without asserting validation.
 - Final readiness advanced key ownership refreshes local pipeline, capability,
   and deep handoff evidence for `#8138`, `#8145`, `#8147`, and `#8150`.
-- Phase owner contract provenance splits refresh local test, fixture,
+- Phase owner contract provenance splits refresh branch-committed test, fixture,
   provenance, and deep handoff evidence for `#8144`, `#8145`, `#8147`, and
   `#8150` without asserting validation.
 - Frontend artifact runtime metadata plan ownership refreshes local artifact,
@@ -629,7 +629,7 @@ Post-`4fddfacb7` local owner refresh:
 - IR protocol category metadata emission ownership refreshes local IR, runtime
   metadata, and deep handoff evidence for `#8137`, `#8143`, `#8147`, and
   `#8150`.
-- Parser behavior owner metadata splits refresh local parser, fixture,
+- Parser behavior owner metadata splits refresh branch-committed parser, fixture,
   rejection provenance, and capability evidence for `#8134`, `#8144`,
   `#8145`, and `#8150` without asserting validation.
 - Final readiness core key ownership refreshes local pipeline, capability, and
@@ -642,11 +642,11 @@ Post-`4fddfacb7` local owner refresh:
   schema registration, and docs support-boundary alignment refresh command,
   acceptance, schema, capability, and closeout evidence for `#8141`, `#8142`,
   `#8144`, `#8145`, `#8148`, `#8149`, and `#8150`.
-- Stress fixture behavior owner splits refresh local fixture-ownership evidence
+- Stress fixture behavior owner splits refresh branch-committed fixture-ownership evidence
   for `#8144` and `#8150`.
-- Conformance behavior owner splits refresh local behavior-corpus ownership
+- Conformance behavior owner splits refresh branch-committed behavior-corpus ownership
   evidence for `#8144` and `#8150`.
-- Generated replay behavior owner splits refresh local generated-fixture
+- Generated replay behavior owner splits refresh branch-committed generated-fixture
   ownership evidence for `#8144` and `#8150`.
 - The latest committed source head folded into this docs-only map is `2a2d9759a`.
   The current docs-only closeout refresh folded into the map is `b4dad7b30`.
@@ -678,7 +678,7 @@ push, GitHub issue edits, or remote closure.
 | `#8142` | evidence-ready | Workflow command-surface evidence is indexed around `npm run objc3c -- <action>`; handler registries, catalog specs, release/tooling specs, release-governance owners, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, public command budget contracts, validation timing report owners, native driver public-workflow owners, and public docs command-surface alignment replace direct helpers, aliases, and registry facades. |
 | `#8143` | evidence-ready | Runtime acceptance split evidence is indexed across acceptance domains, class graph/metadata/cache/builtin lookup/class-chain/status, dispatch state/resolution, receiver identity, protocol conformance, public ABI, registration API/table/manifest owners, property/storage reflection snapshots, runtime probe metadata, runtime fixture anchors, runtime workflow test owners, strict-error fixture renames, and strict runtime behavior fixtures. |
 | `#8144` | evidence-ready | Behavior-first fixtures include canonical, retired-surface, absence, sidecar, residue-audit, fixture boundary residue, runtime probe metadata, strict-error fixture renames, C API runner source-test, driver CLI split owner tests, split-owner tooling checks, stress/test-orchestration workflow owners, source-hygiene cutover residue guardrails, runtime workflow/fixture anchors, positive lexical residue docs, and issue evidence maps. |
-| `#8145` | capability-boundary-indexed | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, release-governance credibility/security owners, conformance runtime-probe metadata, strict-error fixture naming, positive lexical residue docs, ecosystem/application surface owners, and evidence maps explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims. Implementation commit lists remain branch source evidence only, not validation or remote closure. |
+| `#8145` | capability-boundary-indexed | Capability docs, diagnostic/config owner splits, schema guidance, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, release-governance credibility/security owners, conformance runtime-probe metadata, strict-error fixture naming, positive lexical residue docs, ecosystem/application surface owners, and evidence maps explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims. Implementation commit lists remain branch evidence boundary only, not validation or remote closure. |
 | `#8146` | evidence-ready | Frontend type surfaces are indexed against canonical typed-flow, canonical literal, typed metadata handoff, tooling split evidence, and frontend type extraction cleanup. |
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |

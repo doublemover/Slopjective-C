@@ -122,7 +122,7 @@
         "support_claim_required_for_states",
         "support_claim_forbidden_for_states",
         "public_behavior_claim_namespace",
-        "no_alias_or_fallback_claim_sources",
+        "no_alias_or_retired_route_claim_sources",
         "owner_only_states",
         "consumer_rule"
       ],
@@ -147,8 +147,9 @@
           "type": "string",
           "const": "objc3c.behavior.*"
         },
-        "no_alias_or_fallback_claim_sources": {
+        "no_alias_or_retired_route_claim_sources": {
           "type": "array",
+          "description": "Inputs that may preserve rejection or provenance evidence but must not become support-claim sources.",
           "items": {
             "type": "string",
             "minLength": 1
@@ -216,7 +217,7 @@
     },
     "publicCommand": {
       "type": "string",
-      "description": "Optional public workflow command for replaying this evidence. Capability truth surfaces may only advertise the npm objc3c bridge.",
+      "description": "Optional public workflow command for replaying this evidence. Capability boundary surfaces may only advertise the npm objc3c bridge.",
       "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
     },
     "evidenceKind": {

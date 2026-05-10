@@ -1,8 +1,8 @@
-# Support Truth Contract
+# Support Boundary Contract
 
-This directory owns the public Objective-C 3.0 support truth. Other docs, spec
-chapters, site pages, runbooks, and generated reports may summarize support,
-but they must not widen it beyond these files.
+This directory owns the public Objective-C 3.0 support boundary. Other docs,
+spec chapters, site pages, runbooks, and generated evidence outputs may
+summarize support, but they must not widen it beyond these files.
 
 ## Canonical Files
 
@@ -13,11 +13,12 @@ but they must not widen it beyond these files.
 | `evidence_map.json` | Machine-readable flattened capability-to-evidence rows. |
 | `evidence_map.md` | Human-readable evidence table. |
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
+| `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated evidence outputs. |
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
-Issue closeout payloads are downstream evidence consumers, not new support
-truth. They must point back to committed branch surfaces in the files above and
-must describe implementation commit lists as local source evidence only. A
+Issue closeout payloads are downstream evidence consumers, not support owners.
+They must point back to committed branch surfaces in the files above and must
+describe implementation commit lists as checked-in branch evidence boundaries. A
 payload or issue evidence table is not validation evidence, pushed-state
 evidence, GitHub issue action, remote closure, or compatibility support.
 
@@ -41,14 +42,15 @@ ownership cannot drift between local copies and checked-in registry entries.
 
 `capability_matrix.json` also carries `projection_policy`. That object names
 the authoritative data files, schema sources, and human projections so consumers
-can distinguish source truth from reader-facing summaries.
+can distinguish owner data from reader-facing summaries.
 
 `capability_matrix.json` carries `claim_contract` as the state-to-claim rule.
 Only `implemented` rows with `support_claims` in `objc3c.behavior.*` can become
 public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and `internal`
-rows remain negative, unavailable, schema, workflow, report, or owner truth and
-must not be promoted by aliases, compatibility/retired-route wording, direct helper
-commands, registry facades, or generated reports.
+rows remain negative, unavailable, schema, workflow, owner-boundary, or
+evidence-boundary rows and must not be promoted by aliases,
+compatibility/retired-route wording, direct helper commands, registry facades,
+or generated evidence outputs.
 
 `evidence_map.json` carries `projection_contract`. That contract makes the
 evidence map a flattened projection of
@@ -67,7 +69,7 @@ validator rejects duplicate, missing, or extra evidence-map keys.
 - Use `owner_modules` for internal implementation boundaries that support a
   claim without becoming public command surface.
 - Update the markdown projections in this directory when the machine-readable
-  truth changes.
+  owner data changes.
 - Keep site/spec/runbook summaries subordinate to this directory.
 - Treat markdown projections as summaries of `capability_matrix.json` and
   `evidence_map.json`; they cannot introduce support claims on their own.
@@ -90,7 +92,7 @@ validator rejects duplicate, missing, or extra evidence-map keys.
   `internal` or `reserved` row into public behavior. Link the matrix row and
   evidence instead.
 - Closeout payloads may use only committed branch evidence, must label
-  implementation commit inventories as local source evidence, and must keep
+  implementation commit inventories as checked-in branch evidence, and must keep
   validation, push, and remote issue actions explicitly deferred unless those
   operations actually ran.
 
@@ -99,5 +101,5 @@ validator rejects duplicate, missing, or extra evidence-map keys.
 `scripts/validate_capability_docs.py` remains the stable public validator
 entrypoint. Its implementation is split under
 `scripts/capability_docs_validator/` so matrix shape, support-claim manifest
-truth, evidence-map projection keys, docs references, and CLI behavior have
+state rules, evidence-map projection keys, docs references, and CLI behavior have
 separate owners.

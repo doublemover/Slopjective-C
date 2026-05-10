@@ -1,18 +1,18 @@
 # objc3c Schema Registry
 
-Checked-in schemas are part of the hard-cutover support contract. Docs, spec,
-site pages, and report-producing tools should cite these files instead of
-restating local JSON shapes in prose.
+Checked-in schemas are part of the hard-cutover support boundary. Docs, spec,
+site pages, and evidence-producing tools should cite these files instead of
+restating JSON shapes in prose.
 
 Schema identifiers use `https://objc3c.dev/schemas/<file-name>`. Placeholder
-domains, product-host aliases, relative IDs, and local-only schema IDs are not
-canonical support truth.
+domains, product-host aliases, relative IDs, and checkout-scoped schema IDs are
+not canonical schema ownership.
 
-## Capability Truth Schemas
+## Capability Boundary Schemas
 
 | Schema | Owns |
 | ------ | ---- |
-| `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, and hard-cutover rules. |
+| `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, responsibility rules, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows, public-command evidence policy, and no-command ownership boundaries used by docs and release evidence maps. |
 
 ## Conformance Evidence Schemas
@@ -49,8 +49,8 @@ tables or examples.
 | `objc3c-full-envelope-dashboard-summary-v1.schema.json` | Full-envelope claimability dashboard summaries over support, conformance, release, performance, and trust evidence. |
 | `objc3c-developer-tooling-editor-surface-v1.schema.json` | Combined editor tooling surface summaries for diagnostics, navigation, formatting, debug, and unpublished capability metadata. |
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |
-| `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated truth, fixtures, and archive references without support-claim inflation. |
-| `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated reports, and active rejection findings. |
+| `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated evidence, fixtures, and archive references without support-claim inflation. |
+| `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated evidence outputs, and active rejection findings. |
 
 ## Workflow Registry Schemas
 
@@ -61,8 +61,8 @@ truth for the npm bridge and registry payloads, not local-host aliases.
 
 | Schema | Owns |
 | ------ | ---- |
-| `action-registry-v1.schema.json` | Public workflow action registry payloads and capability-truth fields exposed by `npm run objc3c -- --list-json`. |
-| `schema-index-v1.schema.json` | Machine-readable workflow schema index, registry owner surfaces, and capability truth schema IDs. |
+| `action-registry-v1.schema.json` | Public workflow action registry payloads and capability-boundary fields exposed by `npm run objc3c -- --list-json`. |
+| `schema-index-v1.schema.json` | Machine-readable workflow schema index, registry owner surfaces, and capability boundary schema IDs. |
 | `workflow-report-v1.schema.json` | Public workflow report shape emitted under `tmp/reports/objc3c-public-workflow/`. |
 
 The canonical data files are:
@@ -74,8 +74,9 @@ The human-readable projections are:
 
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
+- `docs/support/capability_claim_responsibility.md`
 
-Schema files under `schemas/` are the only schema source of truth. Support
+Schema files under `schemas/` are the schema owner inputs. Support
 directory JSON files consume these schemas through
 `scripts/objc3c_shared/schema_registry.py`; they must not carry local schema
 mirrors or copied schema fragments.
@@ -94,7 +95,7 @@ mirrors or copied schema fragments.
   and capability claims use upgrade, adoption, support, replay, and revert
   terminology.
 - Workflow registry schemas must use canonical `objc3c.dev` schema IDs; local
-  host or product-host aliases are not schema truth.
+  host or product-host aliases are not schema ownership.
 - Internal rows may identify implementation owners, schema owners, workflow
-  owners, or report owners without claiming public Objective-C 3.0 language
+  owners, or evidence-output owners without claiming public Objective-C 3.0 language
   behavior.

@@ -1,7 +1,7 @@
 # Capability Schema Examples
 
 These examples show the minimum shapes expected by the canonical capability
-truth schemas. They are illustrative; the checked-in truth remains
+schemas. They are illustrative; the checked-in owner data remains
 `docs/support/capability_matrix.json` and `docs/support/evidence_map.json`.
 The schema IDs are `objc3c-capability-matrix-v1` and
 `objc3c-capability-evidence-map-v1`, owned by
@@ -180,7 +180,7 @@ Rules shown by this policy:
     "retired mode labels",
     "workflow registry facades",
     "direct helper commands",
-    "generated reports without matching implemented rows",
+    "generated evidence outputs without matching implemented rows",
     "compatibility or retired route wording"
   ],
   "owner_only_states": [
@@ -188,7 +188,7 @@ Rules shown by this policy:
     "reserved",
     "internal"
   ],
-  "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, report, or owner truth only."
+  "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, owner-boundary, or evidence-boundary rows only."
 }
 ```
 
@@ -201,8 +201,8 @@ Rules shown by this contract:
   them.
 - Alias, compatibility, retired route, registry-facade, helper-command, and
   evidence-log wording cannot become public behavior support.
-- Owner-only rows can explain where truth lives without widening the supported
-  language surface.
+- Owner-only rows can identify claim responsibility without widening the
+  supported language surface.
 
 ## Anti-Examples
 
@@ -214,4 +214,4 @@ These are not valid support claims:
 - "retired-source lane accepts old syntax"
 - "run a direct helper script as the public command"
 - "implemented because a roadmap says it is planned"
-- "complete because a generated report says so without a matching implemented row"
+- "complete because a generated evidence output says so without a matching implemented row"

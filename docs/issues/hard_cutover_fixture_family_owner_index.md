@@ -2,8 +2,9 @@
 
 This is the human-readable companion to
 `tests/conformance/hard_cutover_fixture_family_owner_index.json`. It is local
-evidence only; no validation, GitHub edits, push, build, generator, formatter,
-lint, npm, cmake, or test command was run while preparing it.
+checked-in branch evidence only; no validation, GitHub edits, push, build,
+generator, formatter, lint, npm, cmake, or test command was run while preparing
+it.
 
 The index keeps fixture-family ownership separate from issue-number closeout:
 canonical behavior, retired-surface rejection, generated provenance, tooling
@@ -22,8 +23,8 @@ metadata, and issue payloads each have a bounded role.
 | E2E behavior | `tests/native/e2e` | `#8144`, `#8150` | runnable positives are canonical; legacy literals and unknown dispatch are negative execution evidence |
 | Generated boundary | `tests/fixtures/generated/manifest.json` | `#8138`, `#8144`, `#8148` | generated artifacts are provenance/schema evidence only |
 | Tooling native execution metadata | `tests/tooling/fixtures/native` | `#8143`, `#8144` | metadata mirrors positive/negative native behavior and cannot widen support |
-| Issue closeout evidence | `docs/issues` | `#8132`-`#8150` | local tracker payloads summarize committed evidence and point back to owner indexes |
-| Latest local owner refresh | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | `#8132`-`#8150` | docs/issues-only refresh of local owner commits after `abc203478`; validation, push, GitHub updates, and remote closure remain deferred |
+| Issue closeout evidence | `docs/issues` | `#8132`-`#8150` | tracker payloads summarize committed evidence and point back to owner indexes |
+| Latest branch owner refresh | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | `#8132`-`#8150` | docs/issues-only refresh of branch owner commits after `abc203478`; validation, push, GitHub updates, and remote closure remain deferred |
 
 Generated fixtures and issue payloads are deliberately not behavior authorities.
 They may prove provenance, schema shape, or closeout linkage, but canonical

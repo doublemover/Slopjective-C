@@ -27,9 +27,9 @@ They describe the live native frontend, not historical milestone closeouts.
 - `docs/objc3c-native.md`
   - implementation-facing narrative over the live native frontend/runtime surface
 - `docs/support/capability_matrix.md`
-  - current support truth with executable evidence links
+  - current support boundary with executable evidence links
 
-Do not move machine-owned packet inventories, `tmp/` evidence paths, or archived
+Do not move machine-owned packet inventories, transient output paths, or archived
 milestone closeout material into these fragments.
 
 ## Live Code Paths For Documentation Work
@@ -103,8 +103,9 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
   - command-budget check: `npm run objc3c -- check-public-command-budget`
 
-Generated proof and report outputs under `tmp/` are evidence, not canonical
-documentation sources.
+Generated proof and report outputs are transient artifacts, not canonical
+documentation sources. Capability claims stay owned by the capability matrix and
+evidence map.
 
 Explicit non-goals for this fragment tree:
 

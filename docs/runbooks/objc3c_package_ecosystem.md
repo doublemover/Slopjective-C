@@ -188,8 +188,8 @@ Helper implementations are action-catalog-owned and are not direct package
 commands.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
-local registry index, and publication metadata under
-`tmp/artifacts/package-ecosystem/`, and refuses to claim hosted registry support.
+local registry index, and publication metadata under the package-ecosystem
+output root, and refuses to claim hosted registry support.
 
 ## Public Workflow Integration
 

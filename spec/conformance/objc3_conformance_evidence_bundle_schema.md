@@ -3,7 +3,8 @@
 Scope: `v0.11-B01` (`#122`).
 Schema file: `schemas/objc3-conformance-evidence-bundle-v1.schema.json`.
 Registry owner: `scripts/objc3c_shared/schema_registry.py`.
-Sample payload: `reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json`.
+Sample payload owner: the conformance bundle example selected by the release
+evidence gate.
 
 ## Required top-level keys
 

@@ -176,10 +176,8 @@ The canonical evidence generator is:
 
 - `npm run objc3c -- validate-long-horizon-operations`
 
-It generates:
-
-- `tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json`
-- `tmp/reports/long-horizon-operations/evidence-summary.json`
+It writes transient long-horizon outputs for the evidence artifact and evidence
+summary.
 
 The generator replays the long-horizon policy summaries and live package,
 canonical-application, performance-governance, conformance, stress,
@@ -203,10 +201,8 @@ The public workflow validates the generated evidence artifact shape, claim
 audit, conversion evidence, revert channel coverage, and soak evidence family
 coverage.
 
-Support-window publication emits:
-
-- `tmp/artifacts/long-horizon-operations/support-window-publication.json`
-- `tmp/reports/long-horizon-operations/publication-summary.json`
+Support-window publication emits transient publication artifacts and summaries
+selected by the checked-in long-horizon contract.
 
 ## Closeout Gate
 

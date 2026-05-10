@@ -25,6 +25,7 @@
     },
     "projection_contract": {
       "type": "object",
+      "description": "Declares that the evidence map is a flattened projection of matrix evidence, not an independent claim owner.",
       "required": [
         "source",
         "owner",
@@ -64,6 +65,7 @@
     },
     "evidence_policy": {
       "type": "object",
+      "description": "Constrains command-bearing evidence to public npm-bridge replay and classifies no-command rows as owner or boundary evidence.",
       "required": [
         "public_command_surface",
         "command_required_for",

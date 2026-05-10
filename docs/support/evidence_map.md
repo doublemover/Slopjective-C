@@ -26,9 +26,11 @@ documentation boundaries; they do not create public workflow surface or widen a
 capability state.
 
 Rows that point to hard-cutover issue evidence or closeout payloads are local
-source-evidence boundaries only. Implementation commit lists in those docs do
-not prove validation, push state, GitHub issue edits, remote closure, or
-compatibility support.
+Rows that point to hard-cutover issue evidence or closeout payloads are
+checked-in branch evidence boundaries only. Implementation commit lists in those
+docs do not prove validation, push state, GitHub issue edits, remote closure, or
+compatibility support. `docs/support/capability_claim_responsibility.md` defines
+which surfaces may own claims and which surfaces only consume evidence.
 
 | Capability ID                                | Support claim                                      | Evidence kind | Path                                                                                                      | Command                                  |
 | -------------------------------------------- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -138,6 +140,7 @@ compatibility support.
 | `tooling.json.schema-registry`               |                                                    | test          | `tests/tooling/test_objc3c_shared_json_schema.py`                                                         |                                          |
 | `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/support/hard_cutover_capability_truth.md`                                                           |                                          |
 | `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/support/README.md`                                                                                  |                                          |
+| `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/support/capability_claim_responsibility.md`                                                         |                                          |
 | `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/issues/hard_cutover_8132_8150_evidence.md`                                                         |                                          |
 | `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`                                         |                                          |
 | `support.hard-cutover-capability-truth`      |                                                    | doc           | `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`                                                |                                          |

@@ -1,4 +1,4 @@
-# Hard-Cutover Capability Truth
+# Hard-Cutover Capability Boundary
 
 This file is the reader-facing boundary for hard-cutover support claims. It
 does not replace the machine-readable matrix; it explains how other docs must
@@ -10,6 +10,7 @@ Authoritative inputs:
 - `docs/support/evidence_map.json`
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
+- `docs/support/capability_claim_responsibility.md`
 - `scripts/objc3c_shared/schema_registry.py`
 
 Schema ownership is not mirrored under `docs/support`. Consumers validate the
@@ -24,16 +25,16 @@ that is absent from the authoritative data.
 Claim rule: only `implemented` rows with `support_claims` in
 `objc3c.behavior.*` are public Objective-C 3.0 behavior claims. Rejected,
 reserved, and internal rows are negative, unavailable, schema, workflow, report,
-or owner truth only; compatibility/retired-route wording and aliases cannot fill in a
-missing support claim.
+or owner/evidence boundaries only; compatibility/retired-route wording and
+aliases cannot fill in a missing support claim.
 
 Issue closeout payloads are support-boundary evidence only when they point back
 to committed branch surfaces listed by the capability matrix, evidence map, or
 hard-cutover issue evidence files. Implementation commit lists in those files
-are local source evidence only. They are not validation reports, pushed-state
-evidence, remote issue edits, release claims, or remote closure, and they do
-not close the gap left by deferred validation, push, or tracker operations.
-Source-head labels in those issue maps identify the latest committed local
+are checked-in branch evidence boundaries. They are not validation reports,
+pushed-state evidence, remote issue edits, release claims, or remote closure,
+and they do not close the gap left by deferred validation, push, or tracker
+operations. Source-head labels in those issue maps identify the committed
 implementation evidence covered by the docs; they do not upgrade capability
 state or imply validation, GitHub issue edits, push state, or remote closeout.
 
@@ -63,14 +64,14 @@ by linking back to the capability matrix and evidence map. A prose statement is
 not a support claim unless an `implemented` capability row carries the matching
 evidence.
 
-Source-hygiene hard-cutover reports are registry-owned negative-evidence
-surfaces:
+Source-hygiene hard-cutover report schemas describe registry-owned
+negative-evidence surfaces:
 
 - `schemas/source-hygiene-hard-cutover-report-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-They classify retired-surface residue and generated-report inventory; they do
-not define alternate old-surface support or create evidence-log claims.
+They classify retired-surface residue and generated evidence output inventory;
+they do not define alternate old-surface support or create evidence-log claims.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They

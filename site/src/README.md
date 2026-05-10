@@ -29,7 +29,8 @@ Generation input ownership is deterministic and ordered:
   `npm run objc3c -- <action>`.
 - Capability support boundary: `docs/support/capability_matrix.md`,
   `docs/support/capability_matrix.json`, `docs/support/evidence_map.md`, and
-  registry-owned schemas from `scripts/objc3c_shared/schema_registry.py`.
+  `docs/support/capability_claim_responsibility.md`, with registry-owned schemas
+  from `scripts/objc3c_shared/schema_registry.py`.
 
 ## Tone and Accessibility Rules
 

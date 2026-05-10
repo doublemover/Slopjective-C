@@ -91,10 +91,8 @@ Machine-owned governance artifact contract:
 
 - `tests/tooling/fixtures/governance_sustainability/artifact_contract.json`
 - `npm run objc3c -- validate-governance-sustainability`
-- canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
-- canonical publication artifacts:
-  - `tmp/artifacts/governance-sustainability/stewardship-publication.json`
-  - `tmp/artifacts/governance-sustainability/extension-review-publication.json`
+- generated evidence artifact selected by the checked-in governance contract
+- generated publication artifacts selected by the checked-in governance contract
 
 The checked-in contracts under `tests/tooling/fixtures/governance_sustainability/`
 are the owner inputs. Files under `tmp/reports/` and `tmp/artifacts/` are
@@ -106,10 +104,10 @@ Replayable governance enforcement:
 - public package command: `npm run objc3c -- publish-governance-sustainability`
 - helper implementations are action-registry anchors, not
   public command surface
-- canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
-- canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
-- canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
-- canonical publication summary: `tmp/reports/governance-sustainability/publication-summary.json`
+- generated enforcement summary selected by the checked-in governance contract
+- generated integration summary selected by the checked-in governance contract
+- generated evidence artifact selected by the checked-in governance contract
+- generated publication summary selected by the checked-in governance contract
 
 Long-horizon anti-regression reporting:
 
@@ -120,7 +118,7 @@ Long-horizon anti-regression reporting:
 Closeout gate:
 
 - `npm run objc3c -- validate-governance-sustainability`
-- canonical closeout summary: `tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json`
+- generated closeout gate output selected by the checked-in governance contract
 
 Current governance entry surfaces:
 
@@ -150,12 +148,12 @@ Explicit non-goals:
 - promising hosted community infrastructure or registry moderation services
 - widening public workflow surface before the policy and schema issues land
 
-Generated evidence:
+Generated output families:
 
-- `tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json`
-- `tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json`
-- `tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json`
-- `tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json`
-- `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
-- `tmp/reports/governance-sustainability/evidence-summary.json`
-- `tmp/reports/governance-sustainability/publication-summary.json`
+- budget inventory
+- sustainable-progress policy
+- artifact contract
+- extension-review workflow
+- integration
+- evidence summary
+- publication summary

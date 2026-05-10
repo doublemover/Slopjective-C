@@ -18,7 +18,7 @@ The gate requires these schema/data pairs:
 - `schemas/objc3-abi-2025Q4.schema.json`
   - `reports/conformance/manifests/objc3-abi-2025Q4.example.json`
 - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
-  - `reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json`
+  - conformance evidence bundle example selected by the release gate
 
 The schema paths above are registry-owned by
 `scripts/objc3c_shared/schema_registry.py`. This maintenance document records

@@ -2,8 +2,9 @@
 
 This is the human-readable companion to
 `tests/conformance/hard_cutover_behavior_outcome_owner_index.json`. It is local
-evidence only; no validation, GitHub edits, push, build, generator, formatter,
-lint, npm, cmake, or test command was run while preparing it.
+checked-in branch evidence only; no validation, GitHub edits, push, build,
+generator, formatter, lint, npm, cmake, or test command was run while preparing
+it.
 
 The index groups hard-cutover evidence by result: canonical support, rejection,
 strict error, generated provenance, residue-audit disposition, or issue
@@ -22,7 +23,7 @@ prove absence or traceability.
 | Generated provenance only | provenance-only | generated manifest and objc3c contract artifacts | generated artifacts do not define behavior support |
 | Positive residue false positive | audit-disposition | positive residue audit | lexical hits are identifiers or inventory labels, not support claims |
 | Issue closeout only | closeout-index | docs/issues evidence and payload indexes | issue docs summarize traceability; they do not create support |
-| Latest local owner refresh | closeout-index | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | post-outcome local commits refresh owner traceability only; validation and remote closure remain deferred |
+| Latest branch owner refresh | closeout-index | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | post-outcome branch commits refresh owner traceability only; validation and remote closure remain deferred |
 
 Outcome ownership is deliberately stricter than file ownership. A fixture may
 live under a broad behavior family, but the expected result determines whether

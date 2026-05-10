@@ -135,11 +135,8 @@ The canonical evidence workflow is:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
-It generates:
-
-- `tmp/artifacts/adoption-legibility/adoption-legibility-evidence.json`
-- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
-- `tmp/reports/adoption-legibility/evidence-summary.json`
+It writes transient adoption-legibility outputs for the evidence artifact,
+evaluator publication, and evidence summary.
 
 The generator replays the boundary inventory, public claim policy, comparison
 semantics, adoption replay semantics, and artifact contract summaries before

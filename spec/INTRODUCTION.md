@@ -79,14 +79,15 @@ Each part is a separate Markdown file. The system-programming chapter ([Part 8](
 ## 6. Capability status and expected iteration {#intro-6}
 
 This is a working draft. The current support boundary is
-`docs/support/capability_matrix.md`; each implemented capability must link
-executable evidence. Spec sections may describe future language shape, but
-public support claims only count when the capability matrix marks the surface
-implemented.
+`docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, and
+`docs/support/capability_claim_responsibility.md`; each implemented capability
+must link executable evidence. Spec sections may describe future language shape,
+but public support claims only count when the capability matrix marks the
+surface implemented and the evidence map carries the matching row.
 
 The current command boundary is the single `package.json` bridge:
 `npm run objc3c -- <action>`. Actions are owned by
-`scripts/objc3c_workflow/action_catalog.py`; local spec prose must not advertise
+`scripts/objc3c_workflow/action_catalog.py`; spec prose must not advertise
 retired command surfaces or direct helper commands as public workflow surface.
 
 The current implementation evidence boundary is split across native compiler

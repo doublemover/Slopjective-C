@@ -25,7 +25,7 @@
       "doc boundary rows",
       "diagnostic inventory rows that are not public replay commands"
     ],
-    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state. Hard-cutover issue evidence and payload rows identify local source-evidence boundaries only; their implementation commit lists do not prove validation, push state, GitHub issue edits, remote closure, or compatibility support."
+    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state. Hard-cutover issue evidence and payload rows identify checked-in branch evidence boundaries only; their implementation commit lists do not prove validation, push state, GitHub issue edits, remote closure, or compatibility support."
   },
   "rows": [
     {
@@ -580,6 +580,11 @@
       "capability_id": "support.hard-cutover-capability-truth",
       "evidence_kind": "doc",
       "path": "docs/support/README.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/capability_claim_responsibility.md"
     },
     {
       "capability_id": "support.hard-cutover-capability-truth",

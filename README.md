@@ -31,8 +31,8 @@ Today it has:
 - integrated workflow surfaces for performance, conformance, stress,
   external-validation, packaging, release operations, and distribution
   credibility,
-- support boundaries routed through the schema-backed capability matrix and evidence
-  map.
+- support boundaries routed through the schema-backed capability matrix,
+  evidence map, and capability-claim responsibility contract.
 
 Current public support states:
 
@@ -107,7 +107,7 @@ Use the shortest path that matches what you are trying to do.
 | inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
 | run exact public workflow actions                               | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                            |
-| evaluate support status and evidence                            | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence before relying on a support claim                                         |
+| evaluate support status and evidence                            | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence and [claim responsibility](docs/support/capability_claim_responsibility.md) before relying on a support claim |
 
 Documentation boundary:
 
@@ -117,7 +117,7 @@ Documentation boundary:
 - runnable examples: `showcase/`
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
 - operator runbooks: `docs/runbooks/`
-- support boundaries: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
+- support boundaries: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, `docs/support/capability_claim_responsibility.md`
 - hard-cutover capability boundaries: `docs/support/hard_cutover_capability_truth.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
@@ -172,7 +172,7 @@ Explicit non-goals for cleanup work:
 - `scripts/`: build, validation, packaging, and publication tooling
 - `tests/`: tooling, conformance, runtime, and stress coverage
 - `site/`: generated public overview output
-- `docs/support/`: capability matrix, schema, and evidence map
+- `docs/support/`: capability matrix, evidence map, schema examples, and claim responsibility
 
 ## Dependencies
 

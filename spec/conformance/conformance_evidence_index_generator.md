@@ -68,8 +68,8 @@ npm run objc3c -- check-release-evidence
 The implementation helper is `scripts/generate_conformance_evidence_index.py`.
 Its stable input/output contract remains:
 
-- output: `reports/conformance/evidence-index.v0.11.sample.json` or the
-  release-specific evidence index path,
+- output: the release-specific conformance evidence index selected by the
+  release tooling,
 - release label: `v0.11`,
 - generated timestamp: explicit RFC3339 UTC value or `SOURCE_DATE_EPOCH`.
 

@@ -33,8 +33,9 @@ This file defines source ownership for generated `site/index.md`.
 - Command examples must use the public npm action surface,
   `npm run objc3c -- <action>`, and must not introduce retired package-script
   names.
-- Capability status changes must cite `docs/support/capability_matrix.*` and
-  `docs/support/evidence_map.md`.
+- Capability status changes must cite `docs/support/capability_matrix.*`,
+  `docs/support/evidence_map.md`, and
+  `docs/support/capability_claim_responsibility.md`.
 
 ## Generated Surface Boundary
 
@@ -56,5 +57,5 @@ Treat these as the live documentation-generation surfaces:
   - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
-`tmp/reports/` and `tmp/artifacts/` remain generated evidence outputs, not
+Generated report and artifact directories remain transient output roots, not
 documentation owner inputs.

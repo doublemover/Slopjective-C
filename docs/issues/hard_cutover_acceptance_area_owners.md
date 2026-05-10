@@ -1,8 +1,8 @@
 # Hard-Cutover Acceptance Area Owners
 
 This is the human-readable companion to
-`tests/conformance/hard_cutover_acceptance_area_owners.json`. It is local
-evidence only; no validation, GitHub edits, push, build, or test run was
+`tests/conformance/hard_cutover_acceptance_area_owners.json`. It is checked-in
+branch evidence only; no validation, GitHub edits, push, build, or test run was
 performed while preparing it.
 
 | Area | Issues | Owner Evidence | Behavior / Retired-Surface Boundary |
@@ -15,12 +15,12 @@ performed while preparing it.
 | Pipeline, artifacts, config, JSON | `#8138`, `#8148` | pipeline stage contracts, artifact schema/publication contracts, feature-claim artifacts, contract-id registry, JSON validation/equivalence/pointer/type helpers, config feature-state query | schemas classify unsupported states without retired route support |
 | Workflow and hygiene | `#8142`, `#8149` | workflow action catalog, registry views, action integrity, request dispatch, command/validation docs | public command boundary is `npm run objc3c -- <action>` |
 | Canonical behavior fixtures | `#8144`, `#8150` | canonical manifest, retired surface matrix, retired-surface absence index, positive-residue audit | retired rows are rejection, strict-error, or absent; positives are canonical only |
-| Capability docs and stdlib truth | `#8145` | support matrix/evidence map, README support onboarding, stdlib runbooks and policy surfaces | docs reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims |
+| Capability docs and stdlib boundary | `#8145` | support matrix/evidence map, README support onboarding, stdlib runbooks and policy surfaces | docs reject retired adapters, alternate acceptance paths, retired-source lanes, and compatibility-mode support claims |
 
-## Latest Local Owner Refresh
+## Latest Branch Owner Refresh
 
 The latest docs/issues-only refresh for these ownership areas is
-`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in the local
+`docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in the branch
 owner wave after `abc203478` through `6d6fa804d` and keeps the same acceptance
 boundaries: new owner modules are evidence of canonical ownership, while
 retired modes, retired adapters, alternate acceptance paths, and retired-source lane support remain
