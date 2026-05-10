@@ -16,6 +16,6 @@ bool ExecuteFrontendCApiRunnerCompileContext(
   session.status = objc3c_frontend_c_compile_file(
       context.get(),
       compile_invocation.compile_options(),
-      &session.result);
+      session.compile_result.out_param());
   return true;
 }

@@ -11,7 +11,7 @@ bool PublishFrontendCApiRunnerCompileSessionResult(
   if (!ValidateFrontendCApiResultAccessors(
           options,
           session.status,
-          session.result,
+          session.compile_result.view(),
           session.error_snapshot,
           accessor_contract_error)) {
     error = "frontend C API accessor contract fail-closed: ";
@@ -20,7 +20,8 @@ bool PublishFrontendCApiRunnerCompileSessionResult(
   }
 
   session.exit_code =
-      FrontendCApiExitCodeFromStatus(session.status, session.result);
+      FrontendCApiExitCodeFromStatus(session.status,
+                                     session.compile_result.view());
   error.clear();
   return true;
 }

@@ -7,5 +7,5 @@ void CaptureFrontendCApiRunnerCompileResultSnapshots(
     FrontendCApiRunnerCompileSession &session) {
   session.error_snapshot =
       CaptureFrontendCApiRunnerResultErrorSnapshot(context.get(),
-                                                   session.result);
+                                                   session.compile_result.view());
 }

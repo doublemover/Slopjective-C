@@ -10,30 +10,32 @@ bool BuildFrontendCApiRunnerSessionResult(
     FrontendCApiRunnerSessionResult &session_result,
     std::string &error) {
   FrontendCApiRunnerOutputContract output_contract;
+  const objc3c_frontend_c_compile_result_t &compile_result =
+      compile_session.compile_result.view();
   if (!BuildFrontendCApiRunnerOutputContract(
           options,
           summary_path,
-          compile_session.result,
+          compile_result,
           output_contract,
           error)) {
     return false;
   }
 
-  session_result.compile_result = &compile_session.result;
+  session_result.compile_result = &compile_result;
   session_result.status = compile_session.status;
   session_result.output_contract = output_contract;
   session_result.artifact_paths = BuildFrontendCApiRunnerArtifactPathView(
-      compile_session.result,
+      compile_result,
       summary_path);
   session_result.public_result = BuildFrontendCApiRunnerPublicResultView(
       options,
       session_result.artifact_paths,
       compile_session.status,
-      compile_session.result,
+      compile_result,
       compile_session.error_snapshot);
   session_result.json = BuildFrontendCApiRunnerSummaryJson(
       options,
-      compile_session.result,
+      compile_result,
       compile_session.status,
       session_result.public_result,
       session_result.output_contract);
