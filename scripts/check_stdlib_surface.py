@@ -9,14 +9,12 @@ from pathlib import Path
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.paths import repo_rel
 from stdlib_surface.contracts import validate_document_headers
+from stdlib_surface.inventory import validate_inventory_and_policy
 
 from check_stdlib_surface_model import (
-    CanonicalModuleSurface,
-    PackageImportSurface,
     StdlibSurfaceDocuments,
     StdlibSurfacePaths,
     StdlibSurfaceReport,
-    parse_spec_canonical_modules,
     write_stdlib_surface_report,
 )
 
@@ -36,134 +34,28 @@ def main() -> int:
             return fail(f"{surface_input.missing_message}: {repo_rel(surface_input.path)}")
 
     documents = StdlibSurfaceDocuments.load(PATHS)
-    inventory = documents.inventory
-    stability_policy = documents.stability_policy
-    package_surface = documents.package_surface
     core_architecture = documents.core_architecture
     advanced_architecture = documents.advanced_architecture
     semantic_policy = documents.semantic_policy
     lowering_import_surface = documents.lowering_import_surface
     advanced_helper_package_surface = documents.advanced_helper_package_surface
     program_surface = documents.program_surface
-    spec_text = documents.spec_text
 
     document_header_error = validate_document_headers(documents)
     if document_header_error is not None:
         return fail(document_header_error)
 
-    canonical_modules = inventory.get("canonical_modules")
-    if not isinstance(canonical_modules, list) or not canonical_modules:
-        return fail("module inventory missing canonical_modules")
-
-    module_surfaces: list[CanonicalModuleSurface] = []
-    required_extra_fields = (
-        "implementation_module",
-        "workspace_root",
-        "source",
-        "smoke_source",
-        "manifest",
-    )
-    for entry in canonical_modules:
-        if not isinstance(entry, dict):
-            return fail("module inventory entry must be an object")
-        module = entry.get("module")
-        capability_id = entry.get("capability_id")
-        required_profile = entry.get("required_profile")
-        if not all(isinstance(value, str) and value for value in (module, capability_id, required_profile)):
-            return fail("module inventory entry is missing module/capability_id/required_profile")
-        for field in required_extra_fields:
-            value = entry.get(field)
-            if not isinstance(value, str) or not value:
-                return fail(f"module inventory entry {module} is missing {field}")
-        module_surfaces.append(
-            CanonicalModuleSurface(
-                module=module,
-                implementation_module=str(entry["implementation_module"]),
-                capability_id=capability_id,
-                required_profile=required_profile,
-                workspace_root=str(entry["workspace_root"]),
-                source=str(entry["source"]),
-                smoke_source=str(entry["smoke_source"]),
-                manifest=str(entry["manifest"]),
-            )
-        )
-
-    spec_rows = parse_spec_canonical_modules(spec_text)
-    spec_comparison_rows = [module_surface.to_spec_row() for module_surface in module_surfaces]
-    if spec_rows != spec_comparison_rows:
-        return fail("module inventory drifted from spec canonical module table")
-
-    layers = stability_policy.get("layers")
-    if not isinstance(layers, list) or not layers:
-        return fail("stability policy missing layers")
-    inventory_module_names = {module_surface.module for module_surface in module_surfaces}
-    covered_modules: set[str] = set()
-    for layer in layers:
-        if not isinstance(layer, dict):
-            return fail("stability policy layer must be an object")
-        layer_name = layer.get("name")
-        modules = layer.get("modules")
-        allowed_dependencies = layer.get("allowed_dependencies")
-        if not isinstance(layer_name, str) or not layer_name:
-            return fail("stability policy layer missing name")
-        if not isinstance(modules, list) or not modules:
-            return fail(f"stability policy layer {layer_name} missing modules")
-        if not isinstance(allowed_dependencies, list):
-            return fail(f"stability policy layer {layer_name} missing allowed_dependencies")
-        for module_name in modules:
-            if not isinstance(module_name, str) or not module_name:
-                return fail(f"stability policy layer {layer_name} published an invalid module")
-            if module_name not in inventory_module_names:
-                return fail(f"stability policy layer {layer_name} referenced unknown module {module_name}")
-            covered_modules.add(module_name)
-        for dependency in allowed_dependencies:
-            if not isinstance(dependency, str) or not dependency:
-                return fail(f"stability policy layer {layer_name} published an invalid dependency")
-            if dependency not in inventory_module_names:
-                return fail(
-                    f"stability policy layer {layer_name} referenced unknown dependency {dependency}"
-                )
-    if covered_modules != inventory_module_names:
-        return fail("stability policy module coverage drifted from module inventory")
-
-    family_ownership = stability_policy.get("family_ownership")
-    if not isinstance(family_ownership, dict) or not family_ownership:
-        return fail("stability policy missing family_ownership")
-    advanced_api_families = advanced_architecture.get("api_families")
-    if family_ownership != advanced_api_families:
-        return fail("stability policy family_ownership drifted from advanced architecture api_families")
-
-    profile_gates = stability_policy.get("profile_gates")
-    if not isinstance(profile_gates, dict) or not profile_gates:
-        return fail("stability policy missing profile_gates")
-    for module_surface in module_surfaces:
-        if profile_gates.get(module_surface.module) != module_surface.required_profile:
-            return fail(f"stability policy profile_gates drifted for {module_surface.module}")
-
-    breaking_change_rules = stability_policy.get("breaking_change_rules")
-    if not isinstance(breaking_change_rules, list) or len(breaking_change_rules) < 3:
-        return fail("stability policy missing breaking_change_rules")
-
-    module_imports = package_surface.get("module_imports")
-    if not isinstance(module_imports, list) or not module_imports:
-        return fail("package surface missing module_imports")
-    package_imports_by_module: dict[str, PackageImportSurface] = {}
-    for entry in module_imports:
-        if not isinstance(entry, dict):
-            return fail("package surface module_import entry must be an object")
-        canonical_module = entry.get("canonical_module")
-        implementation_module = entry.get("implementation_module")
-        source_declaration = entry.get("source_declaration")
-        if not all(
-            isinstance(value, str) and value
-            for value in (canonical_module, implementation_module, source_declaration)
-        ):
-            return fail("package surface module_import entry is malformed")
-        package_imports_by_module[str(canonical_module)] = PackageImportSurface(
-            canonical_module=str(canonical_module),
-            implementation_module=str(implementation_module),
-            source_declaration=str(source_declaration),
-        )
+    inventory_error, inventory_validation = validate_inventory_and_policy(documents)
+    if inventory_error is not None:
+        return fail(inventory_error)
+    if inventory_validation is None:
+        raise RuntimeError("stdlib surface inventory validation did not return a payload")
+    module_surfaces = inventory_validation.module_surfaces
+    layers = inventory_validation.layers
+    module_imports = inventory_validation.module_imports
+    package_imports_by_module = inventory_validation.package_imports_by_module
+    inventory_module_names = inventory_validation.inventory_module_names
+    advanced_api_families = inventory_validation.advanced_api_families
 
     for module_surface in module_surfaces:
         for path_key in ("workspace_root", "source", "smoke_source", "manifest"):
