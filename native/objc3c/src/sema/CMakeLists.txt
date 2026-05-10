@@ -145,6 +145,7 @@ add_library(objc3c_semantic_passes_core STATIC
   objc3_semantic_concurrency_model_summaries.cpp
   objc3_semantic_constant_evaluator.cpp
   objc3_semantic_control_flow_model_summary.cpp
+  objc3_semantic_dispatch_model_summaries.cpp
   objc3_semantic_effects_diagnostics_model_summaries.cpp
   objc3_semantic_passes.cpp
 )
