@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ir/objc3_ir_frontend_metadata.h"
+#include "ir/objc3_ir_frontend_metadata_publication_concurrency.h"
 
 struct Objc3RuntimeMetadataLayoutPolicy;
 struct Objc3IRRuntimeMetadataSymbols;
@@ -45,8 +46,6 @@ void EmitObjc3IRBlockArcMetadataNodes(
 
 void EmitObjc3IRErrorHandlingMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
-
-void EmitObjc3IRConcurrencyRuntimeMetadataNodes(std::ostringstream &out);
 
 void EmitObjc3IRTypeSymbolDispatchCounterNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
