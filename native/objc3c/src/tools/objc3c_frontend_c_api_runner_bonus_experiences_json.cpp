@@ -2,13 +2,13 @@
 
 #include <filesystem>
 
-#include "io/objc3_json.h"
 #include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
-#include "tools/objc3c_frontend_c_api_runner_commands.h"
+#include "tools/objc3c_frontend_c_api_runner_bonus_experiences_json_contract.h"
+#include "tools/objc3c_frontend_c_api_runner_bonus_experiences_json_playground.h"
+#include "tools/objc3c_frontend_c_api_runner_bonus_experiences_json_runtime_inspector.h"
+#include "tools/objc3c_frontend_c_api_runner_bonus_experiences_json_template_demo.h"
 
 namespace fs = std::filesystem;
-
-using objc3::io::EscapeJsonString;
 
 void WriteFrontendCApiRunnerBonusExperiencesJson(
     std::ostream &out,
@@ -34,100 +34,25 @@ void WriteFrontendCApiRunnerBonusExperiencesJson(
       fs::exists(fs::path("docs") / "tutorials" / "guided_walkthrough.md");
 
   out << "{\n";
-  out << child_indent << "\"contract_id\": "
-      << "\"objc3c.bonus.experiences.boundary.v1\",\n";
-  out << child_indent << "\"product_boundary_model\": "
-      << "\"public-runner compile inspect trace showcase and tutorial flows "
-         "define the current bonus experience product boundary\",\n";
-  out << child_indent << "\"runtime_boundary_model\": "
-      << "\"frontend-c-api summary artifacts and runtime inspection ABI "
-         "snapshots define the live runtime boundary for bonus experiences\",\n";
-  out << child_indent << "\"fail_closed_model\": "
-      << "\"no sidecar playground service visual shell or template catalog is "
-         "authoritative until it is implemented on the live public runner and "
-         "checked-in example roots\",\n";
-  out << child_indent << "\"playground\": {\n";
-  out << grandchild_indent << "\"available\": "
-      << (compile_surface_ready ? "true" : "false") << ",\n";
-  out << grandchild_indent << "\"source_path\": \""
-      << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
-  out << grandchild_indent << "\"summary_path\": \""
-      << EscapeJsonString(paths.summary) << "\",\n";
-  out << grandchild_indent << "\"artifact_roots\": [\n";
-  out << grandchild_indent << "  \"tmp/artifacts/playground\",\n";
-  out << grandchild_indent << "  \"tmp/reports/playground\",\n";
-  out << grandchild_indent << "  \"tmp/artifacts/showcase\"\n";
-  out << grandchild_indent << "],\n";
-  out << grandchild_indent << "\"public_actions\": [\n";
-  out << grandchild_indent << "  \"materialize-playground-workspace\",\n";
-  out << grandchild_indent << "  \"compile-objc3c\",\n";
-  out << grandchild_indent << "  \"inspect-playground-repro\",\n";
-  out << grandchild_indent << "  \"inspect-compile-observability\",\n";
-  out << grandchild_indent << "  \"trace-compile-stages\"\n";
-  out << grandchild_indent << "],\n";
-  out << grandchild_indent << "\"dump_commands\": {\n";
-  out << grandchild_indent << "  \"summary\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.summary))
-      << "\",\n";
-  out << grandchild_indent << "  \"diagnostics\": \""
-      << EscapeJsonString(
-             BuildFrontendCApiRunnerReadCommand(paths.diagnostics))
-      << "\",\n";
-  out << grandchild_indent << "  \"manifest\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.manifest))
-      << "\",\n";
-  out << grandchild_indent << "  \"repro_runner\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReproCommand(
-             options,
-             fs::path(paths.summary),
-             true))
-      << "\"\n";
-  out << grandchild_indent << "}\n";
-  out << child_indent << "},\n";
-  out << child_indent
-      << "\"runtime_inspector_and_capability_explorer\": {\n";
-  out << grandchild_indent << "\"available\": "
-      << (runtime_inspector_ready ? "true" : "false") << ",\n";
-  out << grandchild_indent << "\"object_path\": \""
-      << EscapeJsonString(paths.object) << "\",\n";
-  out << grandchild_indent << "\"runtime_metadata_binary_path\": \""
-      << EscapeJsonString(paths.runtime_metadata_binary) << "\",\n";
-  out << grandchild_indent << "\"public_actions\": [\n";
-  out << grandchild_indent << "  \"inspect-runtime-inspector\",\n";
-  out << grandchild_indent << "  \"inspect-capability-explorer\",\n";
-  out << grandchild_indent << "  \"benchmark-runtime-inspector\",\n";
-  out << grandchild_indent << "  \"trace-compile-stages\",\n";
-  out << grandchild_indent << "  \"validate-developer-tooling\"\n";
-  out << grandchild_indent << "],\n";
-  out << grandchild_indent << "\"capability_probe_action\": "
-      << "\"npm run objc3c -- inspect-capability-explorer\",\n";
-  out << grandchild_indent << "\"capability_summary_report_path\": "
-      << "\"tmp/reports/objc3c-public-workflow/capability-explorer.json\",\n";
-  out << grandchild_indent << "\"dump_commands\": {\n";
-  out << grandchild_indent << "  \"ir\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.ir))
-      << "\",\n";
-  out << grandchild_indent << "  \"object\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.object))
-      << "\"\n";
-  out << grandchild_indent << "}\n";
-  out << child_indent << "},\n";
-  out << child_indent << "\"template_and_demo_harness\": {\n";
-  out << grandchild_indent << "\"available\": "
-      << ((showcase_surface_ready && tutorial_surface_ready) ? "true"
-                                                             : "false")
-      << ",\n";
-  out << grandchild_indent << "\"source_roots\": [\n";
-  out << grandchild_indent << "  \"showcase/portfolio.json\",\n";
-  out << grandchild_indent << "  \"showcase/tutorial_walkthrough.json\",\n";
-  out << grandchild_indent << "  \"docs/tutorials/build_run_verify.md\",\n";
-  out << grandchild_indent << "  \"docs/tutorials/guided_walkthrough.md\"\n";
-  out << grandchild_indent << "],\n";
-  out << grandchild_indent << "\"public_actions\": [\n";
-  out << grandchild_indent << "  \"validate-showcase\",\n";
-  out << grandchild_indent << "  \"validate-runnable-showcase\",\n";
-  out << grandchild_indent << "  \"validate-getting-started\"\n";
-  out << grandchild_indent << "]\n";
-  out << child_indent << "}\n";
+  WriteFrontendCApiRunnerBonusExperiencesContractJsonRows(out, child_indent);
+  WriteFrontendCApiRunnerBonusExperiencesPlaygroundJsonRows(
+      out,
+      child_indent,
+      grandchild_indent,
+      options,
+      paths,
+      compile_surface_ready);
+  WriteFrontendCApiRunnerBonusExperiencesRuntimeInspectorJsonRows(
+      out,
+      child_indent,
+      grandchild_indent,
+      paths,
+      runtime_inspector_ready);
+  WriteFrontendCApiRunnerBonusExperiencesTemplateDemoJsonRows(
+      out,
+      child_indent,
+      grandchild_indent,
+      showcase_surface_ready,
+      tutorial_surface_ready);
   out << indent << "}";
 }
