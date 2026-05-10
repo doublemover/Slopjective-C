@@ -2,11 +2,12 @@
 
 #include <string>
 
-#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "lower/contracts/dispatch_control_lowering_contracts.h"
+struct Objc3DispatchDispatchControlLoweringContract;
+struct Objc3IRFrontendMetadata;
 
 namespace objc3::artifacts::frontend {
+
+struct Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary;
 
 void ApplyObjc3FrontendDispatchMetadata(
     Objc3IRFrontendMetadata &ir_frontend_metadata,

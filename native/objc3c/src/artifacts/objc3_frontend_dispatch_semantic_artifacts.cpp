@@ -5,7 +5,8 @@
 #include <string>
 #include <unordered_set>
 
-#include "lower/contracts/runtime_dispatch_strict_abi_call_contracts.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_contract_constants.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_contract_types.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -836,7 +837,7 @@ Objc3RuntimeLinkHostLinkContract BuildRuntimeLinkHostLinkContract(
       contract.runtime_dispatch_arg_slots + 2u;
   contract.runtime_dispatch_symbol = options.lowering.runtime_dispatch_symbol;
   contract.default_runtime_dispatch_symbol_binding =
-      contract.runtime_dispatch_symbol == kObjc3RuntimeDispatchSymbol;
+      contract.runtime_dispatch_symbol == kObjc3ArtifactRuntimeDispatchSymbol;
   contract.deterministic =
       dispatch_abi_marshalling_contract.deterministic &&
       nil_receiver_semantics_foldability_contract.deterministic;
@@ -860,11 +861,11 @@ Objc3RuntimeDispatchLoweringAbiContract BuildRuntimeDispatchLoweringAbiContract(
   contract.default_lowering_target_symbol =
       contract.canonical_runtime_dispatch_symbol;
   contract.default_lowering_target_model =
-      kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel;
+      kObjc3ArtifactRuntimeDispatchLiveCutoverDefaultTargetModel;
   contract.strict_dispatch_error_model =
-      kObjc3RuntimeDispatchLiveCutoverStrictDispatchModel;
+      kObjc3ArtifactRuntimeDispatchLiveCutoverStrictDispatchModel;
   contract.deferred_cases_model =
-      kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel;
+      kObjc3ArtifactRuntimeDispatchLiveCutoverDeferredCasesModel;
   contract.selector_lookup_symbol =
       runtime_bootstrap_api_summary.selector_lookup_symbol;
   contract.selector_handle_type =
