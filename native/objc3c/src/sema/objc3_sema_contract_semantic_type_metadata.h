@@ -1,79 +1,11 @@
-struct Objc3AutoreleasePoolScopeSiteMetadata {
-  std::string scope_symbol;
-  unsigned scope_depth = 0;
-  unsigned line = 1;
-  unsigned column = 1;
-};
+#pragma once
 
-struct Objc3AutoreleasePoolScopeSummary {
-  std::size_t scope_sites = 0;
-  std::size_t scope_symbolized_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  unsigned max_scope_depth = 0;
-  bool deterministic = true;
-};
+#include <cstddef>
+#include <string>
+#include <vector>
 
-enum class Objc3SemanticCanonicalTypeKind : std::uint8_t {
-  Unknown = 0,
-  Scalar = 1,
-  Function = 2,
-  Block = 3,
-  Object = 4,
-  ClassObject = 5,
-  Selector = 6,
-  ProtocolObject = 7,
-  Instancetype = 8,
-  ObjectPointer = 9,
-  ForeignObject = 10,
-  Vector = 11,
-};
-
-enum class Objc3SemanticCanonicalNullability : std::uint8_t {
-  Unspecified = 0,
-  Nullable = 1,
-  Nonnull = 2,
-  ImplicitlyUnwrapped = 3,
-  NullResettable = 4,
-  Inherited = 5,
-};
-
-enum class Objc3SemanticCanonicalOwnership : std::uint8_t {
-  Unspecified = 0,
-  Strong = 1,
-  Copy = 2,
-  Retain = 3,
-  Weak = 4,
-  Unowned = 5,
-  UnsafeUnretained = 6,
-  Assign = 7,
-};
-
-struct Objc3SemanticCanonicalType {
-  ValueType value_type = ValueType::Unknown;
-  Objc3SemanticCanonicalTypeKind kind =
-      Objc3SemanticCanonicalTypeKind::Unknown;
-  Objc3SemanticCanonicalNullability nullability =
-      Objc3SemanticCanonicalNullability::Unspecified;
-  Objc3SemanticCanonicalOwnership ownership =
-      Objc3SemanticCanonicalOwnership::Unspecified;
-  bool is_vector = false;
-  std::string vector_base_spelling;
-  unsigned vector_lane_count = 1;
-  bool has_pointer_declarator = false;
-  unsigned pointer_declarator_depth = 0;
-  std::string object_pointer_type_name;
-  bool has_protocol_composition = false;
-  std::vector<std::string> protocol_composition_lexicographic;
-  bool has_generic_suffix = false;
-  std::vector<std::string> generic_arguments_source_order;
-  std::vector<std::string> generic_arguments_lexicographic;
-  bool has_invalid_type_suffix = false;
-  bool deterministic = true;
-  std::string canonical_spelling;
-  std::string replay_key;
-};
-
-struct FunctionInfo {
+struct Objc3SemanticFunctionTypeMetadata {
+  std::string name;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
   std::vector<Objc3SemanticCanonicalType> param_canonical_types;
@@ -196,7 +128,8 @@ struct FunctionInfo {
   bool is_pure_annotation = false;
 };
 
-struct Objc3MethodInfo {
+struct Objc3SemanticMethodTypeMetadata {
+  std::string selector;
   std::string selector_normalized;
   std::size_t selector_piece_count = 0;
   std::size_t selector_parameter_piece_count = 0;
@@ -325,15 +258,12 @@ struct Objc3MethodInfo {
   std::size_t ns_error_bridging_normalized_sites = 0;
   std::size_t ns_error_bridge_boundary_sites = 0;
   std::size_t ns_error_bridging_contract_violation_sites = 0;
-  bool objc_direct_declared = false;
-  bool objc_final_declared = false;
-  bool objc_dynamic_declared = false;
-  bool effective_direct_dispatch = false;
   bool is_class_method = false;
   bool has_definition = false;
 };
 
-struct Objc3PropertyInfo {
+struct Objc3SemanticPropertyTypeMetadata {
+  std::string name;
   ValueType type = ValueType::Unknown;
   Objc3SemanticCanonicalType canonical_type;
   bool is_vector = false;
@@ -407,8 +337,6 @@ struct Objc3PropertyInfo {
   std::size_t executable_ivar_destroy_order_index = 0;
   bool executable_ivar_layout_valid = false;
   std::string executable_ivar_layout_replay_key;
-  unsigned line = 1;
-  unsigned column = 1;
   std::size_t invalid_attribute_entries = 0;
   std::size_t property_contract_violations = 0;
   bool has_unknown_attribute = false;
@@ -421,73 +349,42 @@ struct Objc3PropertyInfo {
   bool has_invalid_attribute_contract = false;
 };
 
-struct Objc3InterfaceInfo {
+struct Objc3SemanticInterfaceTypeMetadata {
+  std::string name;
   std::string super_name;
   std::vector<std::string> generic_parameter_names_source_order;
   std::vector<std::string> generic_parameter_variance_source_order;
   std::vector<std::string> adopted_protocols_lexicographic;
-  bool objc_direct_members_declared = false;
-  bool objc_final_declared = false;
-  bool objc_sealed_declared = false;
-  std::unordered_map<std::string, Objc3PropertyInfo> properties;
-  std::unordered_map<std::string, Objc3MethodInfo> methods;
+  std::vector<Objc3SemanticPropertyTypeMetadata> properties_lexicographic;
+  std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
-struct Objc3ImplementationInfo {
+struct Objc3SemanticImplementationTypeMetadata {
+  std::string name;
   bool has_matching_interface = false;
-  std::unordered_map<std::string, Objc3PropertyInfo> properties;
-  std::unordered_map<std::string, Objc3MethodInfo> methods;
+  std::vector<Objc3SemanticPropertyTypeMetadata> properties_lexicographic;
+  std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
-struct Objc3CategoryMergeInfo {
-  std::vector<std::string> category_owner_identities_in_merge_order;
-  std::unordered_map<std::string, Objc3PropertyInfo> merged_properties;
-  std::unordered_map<std::string, std::string>
-      merged_property_owner_identities;
-  std::unordered_map<std::string, Objc3MethodInfo> merged_methods;
-  std::unordered_map<std::string, std::string> merged_method_owner_identities;
-  bool deterministic = true;
-};
-
-struct Objc3InterfaceImplementationSummary {
-  std::size_t declared_interfaces = 0;
-  std::size_t resolved_interfaces = 0;
-  std::size_t declared_implementations = 0;
-  std::size_t resolved_implementations = 0;
-  std::size_t interface_method_symbols = 0;
-  std::size_t implementation_method_symbols = 0;
-  std::size_t linked_implementation_symbols = 0;
-  bool deterministic = true;
-};
-
-#include "sema/objc3_sema_contract_bootstrap_compatibility.h"
-
-struct Objc3SemanticIntegrationSurface {
-  std::unordered_map<std::string, ValueType> globals;
-  std::unordered_map<std::string, FunctionInfo> functions;
-  // diagnostic precision anchor: these maps model class containers
-  // only. Category containers are validated separately so valid
-  // class-plus-category programs do not collapse into duplicate class-owner
-  // diagnostics before runtime metadata conflict analysis runs.
-  // binary-boundary anchor: the executable metadata binary envelope
-  // must consume the canonical sema-owned class/category split without
-  // rebuilding container ownership from manifest-only heuristics.
-  std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
-  std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
-  std::unordered_map<std::string, Objc3InterfaceInfo> category_interfaces;
-  std::unordered_map<std::string, Objc3ImplementationInfo>
-      category_implementations;
-  std::unordered_map<std::string, Objc3CategoryMergeInfo>
-      category_merge_surfaces;
+// lowering-handoff anchor: this typed metadata handoff is the
+// canonical sema-to-lowering schema input for executable metadata graph
+// lowering freeze packets and must remain deterministic and replayable.
+// typed-lowering anchor: the concrete lowering-ready metadata graph
+// packet consumes this same deterministic sema metadata surface so the typed
+// handoff stays schema-stable between manifest publication and later lowering.
+// debug-projection anchor: the manifest/IR inspection matrix replays
+// this same typed sema surface so operators inspect one deterministic schema
+// before runtime section emission lands.
+// runtime-ingest packaging anchor: the manifest packaging boundary
+// must carry this same typed sema surface forward verbatim, so runtime ingest
+// packaging never invents a second schema between lane-C publication and
+// later section emission/startup registration.
+struct Objc3SemanticTypeMetadataHandoff {
+  std::vector<std::string> global_names_lexicographic;
+  std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;
+  std::vector<Objc3SemanticInterfaceTypeMetadata> interfaces_lexicographic;
+  std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
-  Objc3BootstrapLegalityFailureContractSummary
-      bootstrap_legality_failure_contract_summary;
-  Objc3BootstrapLegalitySemanticsSummary
-      bootstrap_legality_semantics_summary;
-  Objc3BootstrapFailureRestartSemanticsSummary
-      bootstrap_failure_restart_semantics_summary;
-  Objc3CompatibilityStrictnessClaimSemanticsSummary
-      compatibility_strictness_claim_semantics_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
@@ -540,7 +437,15 @@ struct Objc3SemanticIntegrationSurface {
   Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
   std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
-  bool built = false;
 };
 
-#include "sema/objc3_sema_contract_semantic_type_metadata.h"
+struct Objc3SemanticValidationOptions {
+  std::size_t max_message_send_args = 4;
+  bool allow_source_only_block_literals = false;
+  bool allow_source_only_defer_statements = false;
+  bool allow_source_only_error_runtime_surface = false;
+  bool arc_mode_enabled = false;
+};
+
+Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
+bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);
