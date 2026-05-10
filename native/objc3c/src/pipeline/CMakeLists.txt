@@ -75,6 +75,9 @@ add_library(objc3c_pipeline STATIC
   frontend_runtime_metadata_source_record_helpers_declarations.cpp
   frontend_runtime_metadata_source_record_helpers_members.cpp
   frontend_runtime_metadata_source_record_helpers_ordering.cpp
+  frontend_semantic_metadata_summary_helpers_nullability_generics.cpp
+  frontend_semantic_metadata_summary_helpers_protocol_category.cpp
+  frontend_semantic_metadata_summary_helpers_selector_property.cpp
   frontend_source_closure_replay_keys_concurrency.cpp
   frontend_source_closure_replay_keys_core.cpp
   frontend_source_closure_replay_keys_metaprogramming_interop.cpp
@@ -134,6 +137,7 @@ add_library(objc3c_pipeline STATIC
   frontend_interop_source_closure_helpers.h
   frontend_ownership_source_closure_helpers.h
   frontend_source_closure_replay_keys.h
+  frontend_semantic_metadata_summary_helpers.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
   frontend_pipeline_result_contract.h

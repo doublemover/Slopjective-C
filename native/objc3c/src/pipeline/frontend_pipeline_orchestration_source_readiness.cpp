@@ -12,6 +12,7 @@
 #include "pipeline/frontend_ownership_retainable_c_family_completion_helpers.h"
 #include "pipeline/frontend_ownership_source_closure_helpers.h"
 #include "pipeline/frontend_ownership_source_completion_helpers.h"
+#include "pipeline/frontend_semantic_metadata_summary_helpers.h"
 #include "pipeline/frontend_tooling_source_completion_helpers.h"
 #include "pipeline/frontend_type_system_source_closure_helpers.h"
 
