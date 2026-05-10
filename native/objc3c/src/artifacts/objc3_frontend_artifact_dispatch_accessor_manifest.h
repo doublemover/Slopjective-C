@@ -1,5 +1,7 @@
 #pragma once
 
+#include "artifacts/objc3_frontend_artifact_dispatch_accessor_abi_manifest.h"
+
 #include <iosfwd>
 #include <string>
 
@@ -35,15 +37,5 @@ void WriteDispatchAndSynthesizedAccessorLoweringSurface(
         &accessor_storage_lowering_metadata_summary,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication);
-
-void WriteDispatchAccessorRuntimeAbiSurface(
-    std::ostream &manifest,
-    const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract,
-    const Objc3PropertySynthesisIvarBindingContract
-        &property_synthesis_ivar_binding_contract,
-    const Objc3DispatchSurfaceClassificationContract
-        &dispatch_surface_classification_contract,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract);
 
 }  // namespace objc3::artifacts::frontend
