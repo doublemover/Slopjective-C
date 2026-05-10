@@ -7,11 +7,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .checksums import file_sha256_hex
 from .checksums import optional_file_sha256_hex
 from .checksums import replay_key_counter
-from .checksums import sha256_text_hex
 from .compile_backends import DIRECT_COMPILE_BACKEND
+from .compile_truth_artifacts import collect_compile_artifact_set
 from .compile_truth_dispatch import runtime_dispatch_truth_from_outputs
 from .paths import NATIVE_EXE
 from .paths import RUNTIME_LIB
@@ -188,33 +187,11 @@ def write_compile_output_provenance(
     registration_manifest_path = (
         compile_dir / f"{emit_prefix}.runtime-registration-manifest.json"
     )
-    artifact_entries: list[dict[str, Any]] = []
-    for artifact in sorted(compile_dir.iterdir(), key=lambda entry: entry.name):
-        if not artifact.is_file():
-            continue
-        if artifact.name in {
-            provenance_file_name,
-            f"{emit_prefix}.runtime-registration-manifest.json",
-        }:
-            continue
-        if not (
-            artifact.name.lower() == emit_prefix.lower()
-            or artifact.name.lower().startswith(f"{emit_prefix}.".lower())
-            or artifact.name.lower().startswith(f"{emit_prefix}-".lower())
-        ):
-            continue
-        artifact_entries.append(
-            {
-                "path": artifact.name,
-                "byte_count": artifact.stat().st_size,
-                "sha256": file_sha256_hex(artifact),
-            }
-        )
-    artifact_digest_lines = [
-        f"{entry['path']}|{entry['byte_count']}|{entry['sha256']}"
-        for entry in artifact_entries
-    ]
-    artifact_set_digest = sha256_text_hex("\n".join(artifact_digest_lines))
+    artifact_set = collect_compile_artifact_set(
+        compile_dir=compile_dir,
+        emit_prefix=emit_prefix,
+        provenance_file_name=provenance_file_name,
+    )
     driver_script = Path(__file__).resolve().with_name("fixture_compile_runner.py")
     payload = {
         "contract_id": COMPILE_PROVENANCE_CONTRACT_ID,
@@ -237,9 +214,7 @@ def write_compile_output_provenance(
             "artifact-set-digest-plus-per-file-sha256-over-real-emitted-compile-outputs"
         ),
         "compile_output_truthfulness": truthfulness,
-        "artifact_count": len(artifact_entries),
-        "artifact_set_digest_sha256": artifact_set_digest,
-        "emitted_artifacts": artifact_entries,
+        **artifact_set.provenance_payload_fields(),
     }
     provenance_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
@@ -264,9 +239,8 @@ def write_compile_output_provenance(
         registration_manifest["compile_output_truthfulness_ivar_descriptor_count"] = int(
             truthfulness["ivar_descriptor_definition_count"]
         )
-        registration_manifest["compile_output_artifact_count"] = len(artifact_entries)
-        registration_manifest["compile_output_artifact_set_digest_sha256"] = (
-            artifact_set_digest
+        registration_manifest.update(
+            artifact_set.registration_manifest_fields()
         )
         registration_manifest_path.write_text(
             json.dumps(registration_manifest, indent=2) + "\n",
