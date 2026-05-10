@@ -249,6 +249,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_ownership_lowering_plan.h
   objc3_frontend_artifact_preservation_plan.cpp
   objc3_frontend_artifact_preservation_plan.h
+  objc3_frontend_artifact_pre_tail_manifest_surfaces.cpp
+  objc3_frontend_artifact_pre_tail_manifest_surfaces.h
   objc3_frontend_artifact_property_atomicity_manifest.cpp
   objc3_frontend_artifact_property_atomicity_manifest.h
   objc3_frontend_artifact_runtime_bootstrap_manifest.cpp
