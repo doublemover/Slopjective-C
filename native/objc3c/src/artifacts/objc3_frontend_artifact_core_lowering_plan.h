@@ -7,6 +7,7 @@
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
+#include "lower/contracts/optional_keypath_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactCoreLoweringPlan {

@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
+
 namespace {
 
 using objc3::artifacts::frontend::BuildGenericMetadataAbiLoweringContract;

@@ -6,9 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "artifacts/objc3_frontend_runtime_import_type_contracts.h"
 #include "ast/objc3_ast_contracts.h"
 #include "io/objc3_json.h"
+#include "runtime/metadata/runtime_metadata_model.h"
+#include "sema/objc3_sema_contract_core.h"
+#include "sema/objc3_sema_contract_type_handoff.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -35,7 +37,7 @@ bool IsProtocolQualifiedGenericArgumentSpelling(const std::string &argument) {
 
 void AccumulateGenericContractInventory(
     const Objc3SemanticCanonicalType &type,
-    Objc3ArtifactTypeSystemGenericContractInventory &inventory) {
+    Objc3FrontendTypeSystemGenericContractInventory &inventory) {
   inventory.generic_argument_reference_count +=
       type.generic_arguments_source_order.size();
   for (const std::string &argument : type.generic_arguments_source_order) {
@@ -45,10 +47,10 @@ void AccumulateGenericContractInventory(
   }
 }
 
-Objc3ArtifactTypeSystemGenericContractInventory
+Objc3FrontendTypeSystemGenericContractInventory
 BuildTypeSystemGenericContractInventory(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
-  Objc3ArtifactTypeSystemGenericContractInventory inventory;
+  Objc3FrontendTypeSystemGenericContractInventory inventory;
   inventory.interface_count = handoff.interfaces_lexicographic.size();
   for (const Objc3SemanticInterfaceTypeMetadata &interface_metadata :
        handoff.interfaces_lexicographic) {
@@ -102,12 +104,12 @@ BuildTypeSystemGenericContractInventory(
 }
 
 std::string BuildTypeSystemGenericContractPreservationReplayKey(
-    const Objc3ArtifactTypeSystemGenericContractInventory &inventory,
+    const Objc3FrontendTypeSystemGenericContractInventory &inventory,
     const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
   std::ostringstream out;
-  out << kObjc3ArtifactTypeSystemGenericContractPreservationContractId
+  out << kObjc3FrontendTypeSystemGenericContractPreservationContractId
       << ";source_contract="
-      << kObjc3ArtifactTypeSystemTypeSemanticModelContractId
+      << kObjc3FrontendTypeSystemTypeSemanticModelContractId
       << ";type_semantic_replay=" << semantic_summary.replay_key
       << ";interfaces=" << inventory.interface_count
       << ";generic_interfaces=" << inventory.generic_interface_count
@@ -134,11 +136,11 @@ std::string Objc3ProtocolRequirementKindName(
   return "not-applicable";
 }
 
-Objc3ArtifactTypeSystemProtocolContractInventory
+Objc3FrontendTypeSystemProtocolContractInventory
 BuildTypeSystemProtocolContractInventory(
     const Objc3Program &program,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_records) {
-  Objc3ArtifactTypeSystemProtocolContractInventory inventory;
+  Objc3FrontendTypeSystemProtocolContractInventory inventory;
   inventory.protocol_decl_count = program.protocols.size();
   for (const Objc3ProtocolDecl &protocol : program.protocols) {
     if (protocol.is_forward_declaration) {
@@ -177,12 +179,12 @@ BuildTypeSystemProtocolContractInventory(
 }
 
 std::string BuildTypeSystemProtocolContractPreservationReplayKey(
-    const Objc3ArtifactTypeSystemProtocolContractInventory &inventory,
+    const Objc3FrontendTypeSystemProtocolContractInventory &inventory,
     const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
   std::ostringstream out;
-  out << kObjc3ArtifactTypeSystemProtocolContractPreservationContractId
+  out << kObjc3FrontendTypeSystemProtocolContractPreservationContractId
       << ";source_contract="
-      << kObjc3ArtifactTypeSystemTypeSemanticModelContractId
+      << kObjc3FrontendTypeSystemTypeSemanticModelContractId
       << ";type_semantic_replay=" << semantic_summary.replay_key
       << ";protocols=" << inventory.protocol_decl_count
       << ";forward_declarations="
@@ -202,7 +204,7 @@ std::string BuildTypeSystemProtocolContractPreservationReplayKey(
 std::string BuildTypeSystemGenericContractPreservationJson(
     const Objc3SemanticTypeMetadataHandoff &handoff,
     const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
-  const Objc3ArtifactTypeSystemGenericContractInventory inventory =
+  const Objc3FrontendTypeSystemGenericContractInventory inventory =
       BuildTypeSystemGenericContractInventory(handoff);
   const bool deterministic = IsDeterministicSemanticTypeMetadataHandoff(handoff);
   const bool ready =
@@ -215,9 +217,9 @@ std::string BuildTypeSystemGenericContractPreservationJson(
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemGenericContractPreservationContractId)
+             kObjc3FrontendTypeSystemGenericContractPreservationContractId)
       << "\",\"source_contract_id\":\""
-      << EscapeJsonString(kObjc3ArtifactTypeSystemTypeSemanticModelContractId)
+      << EscapeJsonString(kObjc3FrontendTypeSystemTypeSemanticModelContractId)
       << "\",\"preservation_model\":\"runtime-import-surface-preserves-interface-generic-parameter-variance-adoption-and-specialization-reference-facts\""
       << ",\"interface_count\":" << inventory.interface_count
       << ",\"generic_interface_count\":" << inventory.generic_interface_count
@@ -261,7 +263,7 @@ std::string BuildTypeSystemProtocolContractPreservationJson(
     const Objc3Program &program,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_records,
     const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
-  const Objc3ArtifactTypeSystemProtocolContractInventory inventory =
+  const Objc3FrontendTypeSystemProtocolContractInventory inventory =
       BuildTypeSystemProtocolContractInventory(program, runtime_records);
   const bool deterministic = runtime_records.deterministic;
   const bool ready =
@@ -286,9 +288,9 @@ std::string BuildTypeSystemProtocolContractPreservationJson(
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemProtocolContractPreservationContractId)
+             kObjc3FrontendTypeSystemProtocolContractPreservationContractId)
       << "\",\"source_contract_id\":\""
-      << EscapeJsonString(kObjc3ArtifactTypeSystemTypeSemanticModelContractId)
+      << EscapeJsonString(kObjc3FrontendTypeSystemTypeSemanticModelContractId)
       << "\",\"preservation_model\":\"runtime-import-surface-preserves-protocol-requirement-partitions-inheritance-and-conformance-edges\""
       << ",\"protocol_decl_count\":" << inventory.protocol_decl_count
       << ",\"protocol_forward_declaration_count\":"

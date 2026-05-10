@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "lower/contracts/optional_keypath_lowering_contracts.h"
+#include "lower/contracts/type_system_generic_lowering_contract_records.h"
+#include "sema/objc3_sema_contract_core.h"
+#include "sema/objc3_sema_pass_manager_contract_flow.h"
+
 namespace objc3::artifacts::frontend {
 
 Objc3TypeSystemOptionalKeypathLoweringContract

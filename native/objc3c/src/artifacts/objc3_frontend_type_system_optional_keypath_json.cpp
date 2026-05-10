@@ -3,9 +3,10 @@
 #include <sstream>
 #include <string>
 
-#include "artifacts/objc3_frontend_runtime_import_type_contracts.h"
 #include "io/objc3_json.h"
+#include "lower/contracts/optional_keypath_lowering_contracts.h"
 #include "runtime/metadata/property_metadata.h"
+#include "sema/objc3_sema_contract_core.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -32,24 +33,24 @@ std::string BuildTypeSystemOptionalKeypathLoweringContractJson(
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringContractId)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringContractId)
       << "\",\"surface_path\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringSurfacePath)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringSurfacePath)
       << "\",\"source_semantic_contract_id\":\""
       << EscapeJsonString(semantic_summary.contract_id)
       << "\",\"optional_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringOptionalModel)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringOptionalModel)
       << "\",\"typed_keypath_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringTypedKeypathModel)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringTypedKeypathModel)
       << "\",\"authority_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringAuthorityModel)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringAuthorityModel)
       << "\",\"fail_closed_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringFailClosedModel)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringFailClosedModel)
       << "\",\"optional_binding_sites\":"
       << contract.optional_binding_sites
       << ",\"optional_binding_clause_sites\":"
@@ -117,7 +118,7 @@ std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
   const bool diagnostic_fail_closed_ready = true;
   std::ostringstream replay_key;
   replay_key << "contract="
-             << kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperContractId
+             << kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperContractId
              << ";lowering_replay=" << lowering_replay_key
              << ";runtime_link_ready="
              << (runtime_link_wiring.ready_for_runtime_library_consumption
@@ -134,30 +135,31 @@ std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperContractId)
+             kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperContractId)
       << "\",\"source_lowering_contract_id\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathLoweringContractId)
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringContractId)
       << "\",\"runtime_link_wiring_contract_id\":\""
       << EscapeJsonString(kObjc3RuntimeSupportLibraryLinkWiringContractId)
       << "\",\"frontend_surface_path\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperSurfacePath)
+             kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperSurfacePath)
       << "\",\"optional_send_helper_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperOptionalModel)
+             kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperOptionalModel)
       << "\",\"typed_keypath_helper_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel)
+             kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel)
       << "\",\"diagnostic_fail_closed_model\":\""
       << EscapeJsonString(
-             kObjc3ArtifactTypeSystemOptionalKeypathRuntimeHelperDiagnosticModel)
+             kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperDiagnosticModel)
       << "\",\"public_lookup_selector_symbol\":\""
       << EscapeJsonString(kObjc3RuntimeSupportLibraryLookupSelectorSymbol)
       << "\",\"public_dispatch_i32_symbol\":\""
       << EscapeJsonString(kObjc3RuntimeSupportLibraryDispatchI32Symbol)
       << "\",\"keypath_descriptor_section\":\""
-      << EscapeJsonString(kObjc3ArtifactRuntimeKeypathDescriptorLogicalSection)
+      << EscapeJsonString(
+             kObjc3FrontendTypeSystemRuntimeKeypathDescriptorLogicalSection)
       << "\",\"keypath_descriptor_aggregate_symbol\":\"__objc3_sec_keypath_descriptors\""
       << ",\"runtime_library_archive_available\":"
       << (runtime_link_wiring.runtime_library_archive_available ? "true"

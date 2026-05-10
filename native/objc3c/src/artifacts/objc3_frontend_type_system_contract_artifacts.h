@@ -2,12 +2,20 @@
 
 #include <string>
 
-#include "ast/objc3_ast_declarations.h"
-#include "lower/contracts/optional_keypath_lowering_contracts.h"
-#include "lower/contracts/type_system_generic_lowering_contract_records.h"
-#include "runtime/metadata/runtime_metadata_model.h"
-#include "sema/objc3_sema_contract_core.h"
-#include "sema/objc3_sema_contract_type_handoff.h"
+#include "artifacts/objc3_frontend_type_system_contract_records.h"
+
+struct Objc3GenericMetadataAbiLoweringContract;
+struct Objc3LightweightGenericsConstraintLoweringContract;
+struct Objc3NullabilityFlowWarningPrecisionLoweringContract;
+struct Objc3Program;
+struct Objc3ProtocolQualifiedObjectTypeLoweringContract;
+struct Objc3RuntimeMetadataSourceRecordSet;
+struct Objc3RuntimeSupportLibraryLinkWiringSummary;
+struct Objc3SemanticTypeMetadataHandoff;
+struct Objc3SemaParityContractSurface;
+struct Objc3TypeSystemOptionalKeypathLoweringContract;
+struct Objc3TypeSystemTypeSemanticModelSummary;
+struct Objc3VarianceBridgeCastLoweringContract;
 
 namespace objc3::artifacts::frontend {
 
