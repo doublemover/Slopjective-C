@@ -49,6 +49,7 @@
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_type_system_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_type_system_metadata.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
@@ -225,6 +226,7 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     WriteExecutableRuntimeMetadataManifestSurfaces;
 using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
+using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
 using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
 using objc3::artifacts::frontend::
@@ -4853,104 +4855,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_copy_dispose_lowering_replay_key,
       block_determinism_perf_baseline_lowering_contract,
       block_determinism_perf_baseline_lowering_replay_key);
+  WriteTypeSystemManifestSurfaces(
+      manifest, lightweight_generic_constraint_lowering_contract,
+      lightweight_generic_constraint_lowering_replay_key,
+      nullability_flow_warning_precision_lowering_contract,
+      nullability_flow_warning_precision_lowering_replay_key,
+      protocol_qualified_object_type_lowering_contract,
+      protocol_qualified_object_type_lowering_replay_key,
+      variance_bridge_cast_lowering_contract,
+      variance_bridge_cast_lowering_replay_key,
+      generic_metadata_abi_lowering_contract,
+      generic_metadata_abi_lowering_replay_key);
   manifest
-           << ",\"objc_lightweight_generic_constraint_lowering_surface\":{\"generic_constraint_sites\":"
-           << lightweight_generic_constraint_lowering_contract.generic_constraint_sites
-           << ",\"generic_suffix_sites\":"
-           << lightweight_generic_constraint_lowering_contract.generic_suffix_sites
-           << ",\"object_pointer_type_sites\":"
-           << lightweight_generic_constraint_lowering_contract.object_pointer_type_sites
-           << ",\"terminated_generic_suffix_sites\":"
-           << lightweight_generic_constraint_lowering_contract.terminated_generic_suffix_sites
-           << ",\"pointer_declarator_sites\":"
-           << lightweight_generic_constraint_lowering_contract.pointer_declarator_sites
-           << ",\"normalized_constraint_sites\":"
-           << lightweight_generic_constraint_lowering_contract.normalized_constraint_sites
-           << ",\"contract_violation_sites\":"
-           << lightweight_generic_constraint_lowering_contract.contract_violation_sites
-           << ",\"replay_key\":\""
-           << lightweight_generic_constraint_lowering_replay_key
-           << "\",\"deterministic_handoff\":"
-           << (lightweight_generic_constraint_lowering_contract.deterministic ? "true" : "false")
-           << "}"
-           << ",\"objc_nullability_flow_warning_precision_lowering_surface\":{\"nullability_flow_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.nullability_flow_sites
-           << ",\"object_pointer_type_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.object_pointer_type_sites
-           << ",\"nullability_suffix_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.nullability_suffix_sites
-           << ",\"nullable_suffix_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.nullable_suffix_sites
-           << ",\"nonnull_suffix_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.nonnull_suffix_sites
-           << ",\"normalized_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.normalized_sites
-           << ",\"contract_violation_sites\":"
-           << nullability_flow_warning_precision_lowering_contract.contract_violation_sites
-           << ",\"replay_key\":\""
-           << nullability_flow_warning_precision_lowering_replay_key
-           << "\",\"deterministic_handoff\":"
-           << (nullability_flow_warning_precision_lowering_contract.deterministic ? "true" : "false")
-           << "}"
-           << ",\"objc_protocol_qualified_object_type_lowering_surface\":{\"protocol_qualified_object_type_sites\":"
-           << protocol_qualified_object_type_lowering_contract.protocol_qualified_object_type_sites
-           << ",\"protocol_composition_sites\":"
-           << protocol_qualified_object_type_lowering_contract.protocol_composition_sites
-           << ",\"object_pointer_type_sites\":"
-           << protocol_qualified_object_type_lowering_contract.object_pointer_type_sites
-           << ",\"terminated_protocol_composition_sites\":"
-           << protocol_qualified_object_type_lowering_contract.terminated_protocol_composition_sites
-           << ",\"pointer_declarator_sites\":"
-           << protocol_qualified_object_type_lowering_contract.pointer_declarator_sites
-           << ",\"normalized_protocol_composition_sites\":"
-           << protocol_qualified_object_type_lowering_contract.normalized_protocol_composition_sites
-           << ",\"contract_violation_sites\":"
-           << protocol_qualified_object_type_lowering_contract.contract_violation_sites
-           << ",\"replay_key\":\""
-           << protocol_qualified_object_type_lowering_replay_key
-           << "\",\"deterministic_handoff\":"
-           << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
-           << "}"
-           << ",\"objc_variance_bridge_cast_lowering_surface\":{\"variance_bridge_cast_sites\":"
-           << variance_bridge_cast_lowering_contract.variance_bridge_cast_sites
-           << ",\"protocol_composition_sites\":"
-           << variance_bridge_cast_lowering_contract.protocol_composition_sites
-           << ",\"ownership_qualifier_sites\":"
-           << variance_bridge_cast_lowering_contract.ownership_qualifier_sites
-           << ",\"object_pointer_type_sites\":"
-           << variance_bridge_cast_lowering_contract.object_pointer_type_sites
-           << ",\"pointer_declarator_sites\":"
-           << variance_bridge_cast_lowering_contract.pointer_declarator_sites
-           << ",\"normalized_sites\":"
-           << variance_bridge_cast_lowering_contract.normalized_sites
-           << ",\"contract_violation_sites\":"
-           << variance_bridge_cast_lowering_contract.contract_violation_sites
-           << ",\"replay_key\":\""
-           << variance_bridge_cast_lowering_replay_key
-           << "\",\"deterministic_handoff\":"
-           << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
-           << "}"
-           << ",\"objc_generic_metadata_abi_lowering_surface\":{\"generic_metadata_abi_sites\":"
-           << generic_metadata_abi_lowering_contract.generic_metadata_abi_sites
-           << ",\"generic_suffix_sites\":"
-           << generic_metadata_abi_lowering_contract.generic_suffix_sites
-           << ",\"protocol_composition_sites\":"
-           << generic_metadata_abi_lowering_contract.protocol_composition_sites
-           << ",\"ownership_qualifier_sites\":"
-           << generic_metadata_abi_lowering_contract.ownership_qualifier_sites
-           << ",\"object_pointer_type_sites\":"
-           << generic_metadata_abi_lowering_contract.object_pointer_type_sites
-           << ",\"pointer_declarator_sites\":"
-           << generic_metadata_abi_lowering_contract.pointer_declarator_sites
-           << ",\"normalized_sites\":"
-           << generic_metadata_abi_lowering_contract.normalized_sites
-           << ",\"contract_violation_sites\":"
-           << generic_metadata_abi_lowering_contract.contract_violation_sites
-           << ",\"replay_key\":\""
-           << generic_metadata_abi_lowering_replay_key
-             << "\",\"deterministic_handoff\":"
-             << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
-             << "}"
              << ",\"objc_type_system_optional_keypath_lowering_contract\":"
             << BuildTypeSystemOptionalKeypathLoweringContractJson(
                   type_system_optional_keypath_lowering_contract,
