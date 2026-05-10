@@ -4,6 +4,8 @@
 #include <string>
 #include <utility>
 
+#include "io/json/json_parser_cursor_error.h"
+
 namespace objc3::io::json {
 
 JsonParserCursor::JsonParserCursor(std::string_view text) : text_(text) {}
@@ -43,8 +45,7 @@ bool JsonParserCursor::Consume(char expected) {
 }
 
 bool JsonParserCursor::Fail(std::string message) {
-  error_ = JsonError{std::move(message), cursor_};
-  return false;
+  return ReportJsonParserCursorError(error_, cursor_, std::move(message));
 }
 
 }  // namespace objc3::io::json
