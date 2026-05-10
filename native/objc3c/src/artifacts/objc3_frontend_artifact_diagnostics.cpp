@@ -23,12 +23,8 @@ namespace {
 class PostPipelineFailureRecorder {
  public:
   void Record(const char *code, std::string message) {
-    if (failure_.present) {
-      return;
-    }
-    failure_.present = true;
-    failure_.code = code == nullptr ? "" : code;
-    failure_.message = std::move(message);
+    RecordObjc3FrontendArtifactPostPipelineFailure(failure_, code,
+                                                   std::move(message));
   }
 
   [[nodiscard]] const Objc3FrontendArtifactPostPipelineFailure &failure() const {
@@ -412,12 +408,23 @@ BuildObjc3FrontendArtifactInitialPostPipelineFailure(
   return recorder.failure();
 }
 
+void RecordObjc3FrontendArtifactPostPipelineFailure(
+    Objc3FrontendArtifactPostPipelineFailure &failure,
+    const char *code,
+    std::string message) {
+  if (failure.present) {
+    return;
+  }
+  failure.present = true;
+  failure.code = code == nullptr ? "" : code;
+  failure.message = std::move(message);
+}
+
 bool FinalizeObjc3FrontendPostPipelineFailure(
     Objc3FrontendArtifactBundle &bundle,
     const Objc3FrontendOptions &options,
-    const std::string &post_pipeline_failure_code,
-    const std::string &post_pipeline_failure_message) {
-  if (post_pipeline_failure_code.empty()) {
+    const Objc3FrontendArtifactPostPipelineFailure &failure) {
+  if (failure.empty()) {
     return false;
   }
 
@@ -426,8 +433,7 @@ bool FinalizeObjc3FrontendPostPipelineFailure(
   }
 
   bundle.post_pipeline_diagnostics = {
-      MakeDiag(1, 1, post_pipeline_failure_code,
-               post_pipeline_failure_message)};
+      MakeDiag(1, 1, failure.code, failure.message)};
   bundle.diagnostics = bundle.post_pipeline_diagnostics;
   return true;
 }

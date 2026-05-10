@@ -418,14 +418,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   const bool metadata_only_ir_emission_mode =
       Objc3FrontendArtifactMetadataOnlyIrEmissionMode(pipeline_result);
-  std::string post_pipeline_failure_code;
-  std::string post_pipeline_failure_message;
-  const auto record_post_pipeline_failure = [&](const char *code, std::string message) {
-    if (!post_pipeline_failure_code.empty()) {
-      return;
-    }
-    post_pipeline_failure_code = code == nullptr ? "" : code;
-    post_pipeline_failure_message = std::move(message);
+  Objc3FrontendArtifactPostPipelineFailure post_pipeline_failure;
+  const auto record_post_pipeline_failure = [&](const char *code,
+                                                std::string message) {
+    objc3::artifacts::frontend::RecordObjc3FrontendArtifactPostPipelineFailure(
+        post_pipeline_failure, code, std::move(message));
   };
 
   const Objc3IREmissionCoreFeatureImplementationSurface
@@ -1182,7 +1179,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           options,
           runtime_metadata_source_records,
           runtime_translation_unit_registration_manifest,
-          !post_pipeline_failure_code.empty());
+          !post_pipeline_failure.empty());
   for (const auto &failure : runtime_import_plan.post_pipeline_failures) {
     record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
@@ -6394,8 +6391,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
 
   if (objc3::artifacts::frontend::FinalizeObjc3FrontendPostPipelineFailure(
-          bundle, options, post_pipeline_failure_code,
-          post_pipeline_failure_message)) {
+          bundle, options, post_pipeline_failure)) {
     return bundle;
   }
 

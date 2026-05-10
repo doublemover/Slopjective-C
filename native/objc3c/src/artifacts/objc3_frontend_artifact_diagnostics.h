@@ -26,10 +26,14 @@ BuildObjc3FrontendArtifactInitialPostPipelineFailure(
         &ir_emission_core_feature_impl_surface,
     bool metadata_only_ir_emission_mode);
 
+void RecordObjc3FrontendArtifactPostPipelineFailure(
+    Objc3FrontendArtifactPostPipelineFailure &failure,
+    const char *code,
+    std::string message);
+
 bool FinalizeObjc3FrontendPostPipelineFailure(
     Objc3FrontendArtifactBundle &bundle,
     const Objc3FrontendOptions &options,
-    const std::string &post_pipeline_failure_code,
-    const std::string &post_pipeline_failure_message);
+    const Objc3FrontendArtifactPostPipelineFailure &failure);
 
 }  // namespace objc3::artifacts::frontend
