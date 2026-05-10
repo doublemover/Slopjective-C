@@ -5,6 +5,8 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 
 $script:ScriptsRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $script:ScriptsRoot "objc3c_native_execution_smoke_helpers.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "case_context.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "case_results.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "runtime_link.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "timings.psm1") -Force -DisableNameChecking
 
@@ -21,25 +23,27 @@ function Invoke-PositiveExecutionSmokeFixture {
   )
 
   $caseStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-  $fixtureRel = Get-RepoRelativePath -Path $Fixture.FullName -Root $Context.repo_root
-  Write-Output ("execution-smoke-progress: [{0}/{1}] START kind=positive fixture={2} elapsed={3:n3}s last={4}" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $SuiteStopwatch.Elapsed.TotalSeconds, $LastCompletedFixture.Value)
-  $expectation = Get-PositiveExpectation -FixturePath $Fixture.FullName
-  $caseDirName = Get-CaseDirectoryName `
-    -RunDir $Context.run_dir `
+  $case = New-ExecutionSmokeCaseContext -Fixture $Fixture -Context $Context -Kind "positive"
+  $fixtureRel = $case.fixture_rel
+  $caseDir = $case.case_dir
+  $compileDir = $case.compile_dir
+  $exePath = $case.exe_path
+  $compileLog = $case.compile_log
+  $linkLog = $case.link_log
+  Write-ExecutionSmokeProgressStart `
+    -FixtureIndex $FixtureIndex `
+    -TotalSelectedFixtures $TotalSelectedFixtures `
     -Kind "positive" `
-    -FixtureRelativePath $fixtureRel `
-    -FixtureBaseName $Fixture.BaseName
-  $caseDir = Join-Path $Context.run_dir $caseDirName
-  $compileDir = Join-Path $caseDir "compile"
-  $exePath = Join-Path $caseDir "module.exe"
-  $compileLog = Join-Path $caseDir "compile.log"
-  $linkLog = Join-Path $caseDir "link.log"
-  New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
+    -FixtureRel $fixtureRel `
+    -SuiteStopwatch $SuiteStopwatch `
+    -LastCompletedFixture $LastCompletedFixture
+  $expectation = Get-PositiveExpectation -FixturePath $Fixture.FullName
 
-  $nativeArgs = @($Fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $Context.llc_command)
-  if ($expectation.compile_args.Count -gt 0) {
-    $nativeArgs += @($expectation.compile_args)
-  }
+  $nativeArgs = Get-ExecutionSmokeNativeArgs `
+    -Fixture $Fixture `
+    -CompileArgs $expectation.compile_args `
+    -Context $Context `
+    -CompileDir $compileDir
   $compileStep = Invoke-TimedLoggedCommand -StageKey "positive_compile_seconds" -Command $Context.native_exe -Arguments $nativeArgs -LogPath $compileLog
   $compileExit = [int]$compileStep.exit_code
   if ($compileExit -ne 0) {
@@ -58,11 +62,7 @@ function Invoke-PositiveExecutionSmokeFixture {
   $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
 
   $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $Context.repo_root -EmitPrefix "module"
-  $runtimeLibrary = [pscustomobject]@{
-    path = $launchContract.runtime_library_path
-    relative_path = $launchContract.runtime_library_relative_path
-    source = $launchContract.runtime_library_source
-  }
+  $runtimeLibrary = Get-ExecutionSmokeRuntimeLibrary -LaunchContract $launchContract
   $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags)
   $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
   $linkStep = Invoke-TimedLoggedCommand -StageKey "positive_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
@@ -83,45 +83,38 @@ function Invoke-PositiveExecutionSmokeFixture {
     throw "execution smoke FAIL: unexpected run exit for $fixtureRel (expected=$expectedExit actual=$runExit)"
   }
 
-  $Results.Add([pscustomobject]@{
-    kind = "positive"
-    fixture = $fixtureRel
-    expectation = Get-RepoRelativePath -Path $expectation.expected_path -Root $Context.repo_root
-    meta = if (Test-Path -LiteralPath $expectation.meta_path -PathType Leaf) { Get-RepoRelativePath -Path $expectation.meta_path -Root $Context.repo_root } else { "" }
-    native_compile_args = @($expectation.compile_args)
-    requires_live_runtime_dispatch = $expectation.requires_live_runtime_dispatch
-    requires_live_runtime_dispatch_explicit = $expectation.requires_live_runtime_dispatch_explicit
-    runtime_dispatch_symbol = $expectation.runtime_dispatch_symbol
-    launch_integration_contract_id = $launchContract.launch_integration_contract_id
-    registration_manifest = $launchContract.registration_manifest_relative_path
-    runtime_library = $runtimeLibrary.relative_path
-    runtime_library_source = $runtimeLibrary.source
-    driver_linker_flags = @($launchContract.driver_linker_flags)
-    compile_exit = $compileExit
-    link_exit = $linkExit
-    run_exit = $runExit
-    expected_exit = $expectedExit
-    passed = $true
-    timing = [ordered]@{
-      compile_seconds = [double]$compileStep.duration_seconds
-      link_seconds = [double]$linkStep.duration_seconds
-      run_seconds = [double]$runStep.duration_seconds
-    }
-    out_dir = Get-RepoRelativePath -Path $caseDir -Root $Context.repo_root
-  })
+  $Results.Add((New-PositiveExecutionSmokeResult `
+    -FixtureRel $fixtureRel `
+    -Expectation $expectation `
+    -LaunchContract $launchContract `
+    -RuntimeLibrary $runtimeLibrary `
+    -CompileExit $compileExit `
+    -LinkExit $linkExit `
+    -RunExit $runExit `
+    -ExpectedExit $expectedExit `
+    -CompileStep $compileStep `
+    -LinkStep $linkStep `
+    -RunStep $runStep `
+    -CaseDir $caseDir `
+    -RepoRoot $Context.repo_root))
   $caseStopwatch.Stop()
-  $caseTiming = [ordered]@{
-    kind = "positive"
-    fixture = $fixtureRel
-    duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
-    compile_seconds = [double]$compileStep.duration_seconds
-    link_seconds = [double]$linkStep.duration_seconds
-    run_seconds = [double]$runStep.duration_seconds
-  }
+  $caseTiming = New-ExecutionSmokeCaseTiming `
+    -Kind "positive" `
+    -FixtureRel $fixtureRel `
+    -DurationSeconds $caseStopwatch.Elapsed.TotalSeconds `
+    -CompileStep $compileStep `
+    -LinkStep $linkStep `
+    -RunStep $runStep
   $CaseTimings.Add($caseTiming)
   $LastCompletedFixture.Value = $fixtureRel
   Write-Output "[PASS] positive $fixtureRel (run_exit=$runExit)"
-  Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=positive fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $SuiteStopwatch.Elapsed.TotalSeconds)
+  Write-ExecutionSmokeProgressDone `
+    -FixtureIndex $FixtureIndex `
+    -TotalSelectedFixtures $TotalSelectedFixtures `
+    -Kind "positive" `
+    -FixtureRel $fixtureRel `
+    -DurationSeconds $caseTiming.duration_seconds `
+    -SuiteStopwatch $SuiteStopwatch
 }
 
 function Invoke-NegativeExecutionSmokeFixture {
@@ -137,36 +130,32 @@ function Invoke-NegativeExecutionSmokeFixture {
   )
 
   $caseStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-  $fixtureRel = Get-RepoRelativePath -Path $Fixture.FullName -Root $Context.repo_root
-  Write-Output ("execution-smoke-progress: [{0}/{1}] START kind=negative fixture={2} elapsed={3:n3}s last={4}" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $SuiteStopwatch.Elapsed.TotalSeconds, $LastCompletedFixture.Value)
-  $spec = Get-NegativeExpectation -FixturePath $Fixture.FullName
-  $caseDirName = Get-CaseDirectoryName `
-    -RunDir $Context.run_dir `
+  $case = New-ExecutionSmokeCaseContext -Fixture $Fixture -Context $Context -Kind "negative"
+  $fixtureRel = $case.fixture_rel
+  $caseDir = $case.case_dir
+  $compileDir = $case.compile_dir
+  $exePath = $case.exe_path
+  $compileLog = $case.compile_log
+  $linkLog = $case.link_log
+  $runLog = $case.run_log
+  $zeroStep = [pscustomobject]@{ duration_seconds = 0.0 }
+  Write-ExecutionSmokeProgressStart `
+    -FixtureIndex $FixtureIndex `
+    -TotalSelectedFixtures $TotalSelectedFixtures `
     -Kind "negative" `
-    -FixtureRelativePath $fixtureRel `
-    -FixtureBaseName $Fixture.BaseName
-  $caseDir = Join-Path $Context.run_dir $caseDirName
-  $compileDir = Join-Path $caseDir "compile"
-  $exePath = Join-Path $caseDir "module.exe"
-  $compileLog = Join-Path $caseDir "compile.log"
-  $linkLog = Join-Path $caseDir "link.log"
-  $runLog = Join-Path $caseDir "run.log"
-  New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
+    -FixtureRel $fixtureRel `
+    -SuiteStopwatch $SuiteStopwatch `
+    -LastCompletedFixture $LastCompletedFixture
+  $spec = Get-NegativeExpectation -FixturePath $Fixture.FullName
 
-  $nativeArgs = @($Fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $Context.llc_command)
-  if ($spec.compile_args.Count -gt 0) {
-    $nativeArgs += @($spec.compile_args)
-  }
+  $nativeArgs = Get-ExecutionSmokeNativeArgs `
+    -Fixture $Fixture `
+    -CompileArgs $spec.compile_args `
+    -Context $Context `
+    -CompileDir $compileDir
   $compileStep = Invoke-TimedLoggedCommand -StageKey "negative_compile_seconds" -Command $Context.native_exe -Arguments $nativeArgs -LogPath $compileLog
   $compileExit = [int]$compileStep.exit_code
-  $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
-  $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
-    Get-Content -LiteralPath $compileDiagPath -Raw
-  } elseif (Test-Path -LiteralPath $compileLog -PathType Leaf) {
-    Get-Content -LiteralPath $compileLog -Raw
-  } else {
-    ""
-  }
+  $compileText = Get-ExecutionSmokeCompileText -CompileDir $compileDir -CompileLog $compileLog
 
   if ($spec.stage -eq "compile") {
     if ($compileExit -eq 0) {
@@ -176,41 +165,32 @@ function Invoke-NegativeExecutionSmokeFixture {
     if ($missingTokens.Count -gt 0) {
       throw "execution smoke FAIL: missing expected compile diagnostics for $fixtureRel (missing=$($missingTokens -join '|'))"
     }
-    $Results.Add([pscustomobject]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $Context.repo_root
-      stage = $spec.stage
-      native_compile_args = @($spec.compile_args)
-      requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
-      runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
-      compile_exit = $compileExit
-      link_exit = -1
-      run_exit = -1
-      required_link_tokens = $spec.required_link_tokens
-      missing_link_tokens = @()
-      passed = $true
-      timing = [ordered]@{
-        compile_seconds = [double]$compileStep.duration_seconds
-        link_seconds = 0.0
-        run_seconds = 0.0
-      }
-      out_dir = Get-RepoRelativePath -Path $caseDir -Root $Context.repo_root
-    })
+    $Results.Add((New-CompileNegativeExecutionSmokeResult `
+      -FixtureRel $fixtureRel `
+      -Spec $spec `
+      -CompileExit $compileExit `
+      -CompileStep $compileStep `
+      -CaseDir $caseDir `
+      -RepoRoot $Context.repo_root))
     $caseStopwatch.Stop()
-    $caseTiming = [ordered]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      stage = $spec.stage
-      duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
-      compile_seconds = [double]$compileStep.duration_seconds
-      link_seconds = 0.0
-      run_seconds = 0.0
-    }
+    $caseTiming = New-ExecutionSmokeCaseTiming `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -Stage $spec.stage `
+      -DurationSeconds $caseStopwatch.Elapsed.TotalSeconds `
+      -CompileStep $compileStep `
+      -LinkStep $zeroStep `
+      -RunStep $zeroStep
     $CaseTimings.Add($caseTiming)
     $LastCompletedFixture.Value = $fixtureRel
     Write-Output "[PASS] negative $fixtureRel (stage=compile compile_exit=$compileExit)"
-    Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $SuiteStopwatch.Elapsed.TotalSeconds)
+    Write-ExecutionSmokeProgressDone `
+      -FixtureIndex $FixtureIndex `
+      -TotalSelectedFixtures $TotalSelectedFixtures `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -DurationSeconds $caseTiming.duration_seconds `
+      -SuiteStopwatch $SuiteStopwatch
     return
   }
 
@@ -219,11 +199,7 @@ function Invoke-NegativeExecutionSmokeFixture {
   }
 
   $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $Context.repo_root -EmitPrefix "module"
-  $runtimeLibrary = [pscustomobject]@{
-    path = $launchContract.runtime_library_path
-    relative_path = $launchContract.runtime_library_relative_path
-    source = $launchContract.runtime_library_source
-  }
+  $runtimeLibrary = Get-ExecutionSmokeRuntimeLibrary -LaunchContract $launchContract
 
   if ($spec.requires_live_runtime_dispatch_explicit) {
     $llPath = Join-Path $compileDir "module.ll"
@@ -253,47 +229,39 @@ function Invoke-NegativeExecutionSmokeFixture {
       throw "execution smoke FAIL: missing expected link diagnostics for $fixtureRel (missing=$($missingTokens -join '|') diagnostics=$linkDiagnosticsRel)"
     }
 
-    $Results.Add([pscustomobject]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $Context.repo_root
-      stage = $spec.stage
-      native_compile_args = @($spec.compile_args)
-      requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
-      runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
-      launch_integration_contract_id = $launchContract.launch_integration_contract_id
-      registration_manifest = $launchContract.registration_manifest_relative_path
-      runtime_library = $runtimeLibrary.relative_path
-      runtime_library_source = $runtimeLibrary.source
-      driver_linker_flags = @($launchContract.driver_linker_flags)
-      compile_exit = $compileExit
-      link_exit = $linkExit
-      run_exit = -1
-      required_link_tokens = $spec.required_link_tokens
-      missing_link_tokens = @()
-      link_diagnostics = Get-RepoRelativePath -Path $linkDiagnosticsPath -Root $Context.repo_root
-      passed = $true
-      timing = [ordered]@{
-        compile_seconds = [double]$compileStep.duration_seconds
-        link_seconds = [double]$linkStep.duration_seconds
-        run_seconds = 0.0
-      }
-      out_dir = Get-RepoRelativePath -Path $caseDir -Root $Context.repo_root
-    })
+    $Results.Add((New-LinkedNegativeExecutionSmokeResult `
+      -FixtureRel $fixtureRel `
+      -Spec $spec `
+      -LaunchContract $launchContract `
+      -RuntimeLibrary $runtimeLibrary `
+      -CompileExit $compileExit `
+      -LinkExit $linkExit `
+      -RunExit -1 `
+      -CompileStep $compileStep `
+      -LinkStep $linkStep `
+      -RunStep $zeroStep `
+      -CaseDir $caseDir `
+      -RepoRoot $Context.repo_root `
+      -LinkDiagnosticsPath $linkDiagnosticsPath))
     $caseStopwatch.Stop()
-    $caseTiming = [ordered]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      stage = $spec.stage
-      duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
-      compile_seconds = [double]$compileStep.duration_seconds
-      link_seconds = [double]$linkStep.duration_seconds
-      run_seconds = 0.0
-    }
+    $caseTiming = New-ExecutionSmokeCaseTiming `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -Stage $spec.stage `
+      -DurationSeconds $caseStopwatch.Elapsed.TotalSeconds `
+      -CompileStep $compileStep `
+      -LinkStep $linkStep `
+      -RunStep $zeroStep
     $CaseTimings.Add($caseTiming)
     $LastCompletedFixture.Value = $fixtureRel
     Write-Output "[PASS] negative $fixtureRel (stage=link link_exit=$linkExit)"
-    Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $SuiteStopwatch.Elapsed.TotalSeconds)
+    Write-ExecutionSmokeProgressDone `
+      -FixtureIndex $FixtureIndex `
+      -TotalSelectedFixtures $TotalSelectedFixtures `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -DurationSeconds $caseTiming.duration_seconds `
+      -SuiteStopwatch $SuiteStopwatch
     return
   }
 
@@ -316,46 +284,38 @@ function Invoke-NegativeExecutionSmokeFixture {
       throw "execution smoke FAIL: missing expected run diagnostics for $fixtureRel (missing=$($missingTokens -join '|'))"
     }
 
-    $Results.Add([pscustomobject]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $Context.repo_root
-      stage = $spec.stage
-      native_compile_args = @($spec.compile_args)
-      requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
-      runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
-      launch_integration_contract_id = $launchContract.launch_integration_contract_id
-      registration_manifest = $launchContract.registration_manifest_relative_path
-      runtime_library = $runtimeLibrary.relative_path
-      runtime_library_source = $runtimeLibrary.source
-      driver_linker_flags = @($launchContract.driver_linker_flags)
-      compile_exit = $compileExit
-      link_exit = $linkExit
-      run_exit = $runExit
-      required_link_tokens = $spec.required_link_tokens
-      missing_link_tokens = @()
-      passed = $true
-      timing = [ordered]@{
-        compile_seconds = [double]$compileStep.duration_seconds
-        link_seconds = [double]$linkStep.duration_seconds
-        run_seconds = [double]$runStep.duration_seconds
-      }
-      out_dir = Get-RepoRelativePath -Path $caseDir -Root $Context.repo_root
-    })
+    $Results.Add((New-LinkedNegativeExecutionSmokeResult `
+      -FixtureRel $fixtureRel `
+      -Spec $spec `
+      -LaunchContract $launchContract `
+      -RuntimeLibrary $runtimeLibrary `
+      -CompileExit $compileExit `
+      -LinkExit $linkExit `
+      -RunExit $runExit `
+      -CompileStep $compileStep `
+      -LinkStep $linkStep `
+      -RunStep $runStep `
+      -CaseDir $caseDir `
+      -RepoRoot $Context.repo_root))
     $caseStopwatch.Stop()
-    $caseTiming = [ordered]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      stage = $spec.stage
-      duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
-      compile_seconds = [double]$compileStep.duration_seconds
-      link_seconds = [double]$linkStep.duration_seconds
-      run_seconds = [double]$runStep.duration_seconds
-    }
+    $caseTiming = New-ExecutionSmokeCaseTiming `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -Stage $spec.stage `
+      -DurationSeconds $caseStopwatch.Elapsed.TotalSeconds `
+      -CompileStep $compileStep `
+      -LinkStep $linkStep `
+      -RunStep $runStep
     $CaseTimings.Add($caseTiming)
     $LastCompletedFixture.Value = $fixtureRel
     Write-Output "[PASS] negative $fixtureRel (stage=run run_exit=$runExit)"
-    Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $FixtureIndex, $TotalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $SuiteStopwatch.Elapsed.TotalSeconds)
+    Write-ExecutionSmokeProgressDone `
+      -FixtureIndex $FixtureIndex `
+      -TotalSelectedFixtures $TotalSelectedFixtures `
+      -Kind "negative" `
+      -FixtureRel $fixtureRel `
+      -DurationSeconds $caseTiming.duration_seconds `
+      -SuiteStopwatch $SuiteStopwatch
     return
   }
 
