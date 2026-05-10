@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "io/json/json_parser_number_digit_run_token.h"
 #include "io/json/json_parser_number_fraction_token.h"
 #include "io/json/json_parser_number_sign_token.h"
 
@@ -19,14 +20,6 @@ bool Consume(char expected, std::string_view text, std::size_t &cursor) {
     return true;
   }
   return false;
-}
-
-bool ConsumeDigits(std::string_view text, std::size_t &cursor) {
-  const std::size_t start = cursor;
-  while (cursor < text.size() && IsDigit(text[cursor])) {
-    ++cursor;
-  }
-  return cursor > start;
 }
 
 bool FailNumberMantissa(std::optional<JsonError> &error,
@@ -48,8 +41,8 @@ bool ParseJsonNumberMantissaToken(std::string_view text,
     if (cursor < text.size() && IsDigit(text[cursor])) {
       return FailNumberMantissa(error, cursor, "JSON number has leading zero");
     }
-  } else if (!ConsumeDigits(text, cursor)) {
-    return FailNumberMantissa(error, cursor, "expected JSON number digits");
+  } else if (!ParseJsonNumberDigitRunToken(text, cursor, error)) {
+    return false;
   }
   return ParseJsonNumberFractionToken(text, cursor, error);
 }
