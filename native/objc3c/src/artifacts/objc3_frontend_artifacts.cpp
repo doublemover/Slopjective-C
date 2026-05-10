@@ -20,6 +20,7 @@
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
+#include "artifacts/objc3_frontend_artifact_core_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_cross_module_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
@@ -114,25 +115,16 @@ namespace {
 using objc3::io::EscapeJsonString;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentCompatibilitySummaryJson;
-using objc3::artifacts::frontend::BuildDispatchAbiMarshallingContract;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchControlLoweringContractJson;
 using objc3::artifacts::frontend::BuildDispatchDispatchControlLoweringContract;
 using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSemanticModelSummaryJson;
-using objc3::artifacts::frontend::BuildDispatchSurfaceClassificationContract;
 using objc3::artifacts::frontend::BuildDispatchDispatchIntentLegalitySummaryJson;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentSemanticModelSummaryJson;
-using objc3::artifacts::frontend::BuildIdClassSelObjectPointerTypecheckContract;
-using objc3::artifacts::frontend::BuildMessageSendSelectorLoweringContract;
-using objc3::artifacts::frontend::BuildNilReceiverSemanticsFoldabilityContract;
-using objc3::artifacts::frontend::BuildRuntimeDispatchLoweringAbiContract;
-using objc3::artifacts::frontend::BuildRuntimeLinkHostLinkContract;
-using objc3::artifacts::frontend::BuildSuperDispatchMethodFamilyContract;
 using objc3::artifacts::frontend::WriteDispatchRuntimeAbiManifestSurfaces;
 using objc3::artifacts::frontend::WriteOwnershipReleaseManifestSurfaces;
-using objc3::artifacts::frontend::BuildPropertySynthesisIvarBindingContract;
 using objc3::artifacts::frontend::
     BuildErrorHandlingErrorBridgeLegalitySummaryJson;
 using objc3::artifacts::frontend::
@@ -249,7 +241,6 @@ using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
 using objc3::artifacts::frontend::
     BuildTypeSystemNullabilityContractPreservationJson;
-using objc3::artifacts::frontend::BuildTypeSystemOptionalKeypathLoweringContract;
 using objc3::artifacts::frontend::
     BuildTypeSystemOptionalKeypathLoweringContractJson;
 using objc3::artifacts::frontend::
@@ -268,7 +259,6 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::BuildConcurrencyAsyncSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson;
-using objc3::artifacts::frontend::BuildControlFlowControlFlowSafetyLoweringContract;
 using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSafetyLoweringContractJson;
 using objc3::artifacts::frontend::
@@ -788,123 +778,80 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &tooling_corpus_sharding_release_evidence_packaging_summary =
           conformance_report_plan
               .tooling_corpus_sharding_release_evidence_packaging_summary;
-  const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
-      BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid property synthesis/ivar binding lowering contract");
+  const Objc3FrontendArtifactCoreLoweringPlan core_lowering_plan =
+      BuildObjc3FrontendArtifactCoreLoweringPlan(
+          program, pipeline_result, options,
+          type_system_type_semantic_model_summary,
+          control_flow_control_flow_semantic_model_summary,
+          runtime_bootstrap_api);
+  for (const auto &failure : core_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string property_synthesis_ivar_binding_replay_key =
-      Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
-  const Objc3PropertySynthesisIvarBindingSummary &property_synthesis_ivar_binding_summary =
-      pipeline_result.sema_parity_surface.property_synthesis_ivar_binding_summary;
+  const Objc3PropertySynthesisIvarBindingContract
+      &property_synthesis_ivar_binding_contract =
+          core_lowering_plan.property_synthesis_ivar_binding_contract;
+  const std::string &property_synthesis_ivar_binding_replay_key =
+      core_lowering_plan.property_synthesis_ivar_binding_replay_key;
+  const Objc3PropertySynthesisIvarBindingSummary
+      &property_synthesis_ivar_binding_summary =
+          core_lowering_plan.property_synthesis_ivar_binding_summary;
   // export-legality anchor: manifest sema surfaces must publish the
   // canonical sema property-synthesis/ivar-binding summary rather than the
   // lowering fail-closed contract used for later replay keys.
   const bool property_synthesis_ivar_binding_handoff_deterministic =
-      property_synthesis_ivar_binding_summary.deterministic &&
-      pipeline_result.sema_parity_surface
-          .deterministic_property_synthesis_ivar_binding_handoff;
-  const Objc3IdClassSelObjectPointerTypecheckContract id_class_sel_object_pointer_typecheck_contract =
-      BuildIdClassSelObjectPointerTypecheckContract(program);
-  if (!IsValidObjc3IdClassSelObjectPointerTypecheckContract(id_class_sel_object_pointer_typecheck_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid id/Class/SEL/object-pointer typecheck lowering contract");
-  }
-  const std::string id_class_sel_object_pointer_typecheck_replay_key =
-      Objc3IdClassSelObjectPointerTypecheckReplayKey(id_class_sel_object_pointer_typecheck_contract);
-  const Objc3DispatchSurfaceClassificationContract dispatch_surface_classification_contract =
-      BuildDispatchSurfaceClassificationContract(program);
-  if (!IsValidObjc3DispatchSurfaceClassificationContract(
-          dispatch_surface_classification_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid dispatch-surface classification contract");
-  }
-  const std::string dispatch_surface_classification_replay_key =
-      Objc3DispatchSurfaceClassificationReplayKey(
-          dispatch_surface_classification_contract);
-  const Objc3MessageSendSelectorLoweringContract message_send_selector_lowering_contract =
-      BuildMessageSendSelectorLoweringContract(program);
-  if (!IsValidObjc3MessageSendSelectorLoweringContract(message_send_selector_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid message-send selector lowering contract");
-  }
-  const std::string message_send_selector_lowering_replay_key =
-      Objc3MessageSendSelectorLoweringReplayKey(message_send_selector_lowering_contract);
-  const Objc3DispatchAbiMarshallingContract dispatch_abi_marshalling_contract =
-      BuildDispatchAbiMarshallingContract(program, options.lowering.max_message_send_args);
-  if (!IsValidObjc3DispatchAbiMarshallingContract(dispatch_abi_marshalling_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid dispatch ABI marshalling contract");
-  }
-  const std::string dispatch_abi_marshalling_replay_key =
-      Objc3DispatchAbiMarshallingReplayKey(dispatch_abi_marshalling_contract);
-  const Objc3NilReceiverSemanticsFoldabilityContract nil_receiver_semantics_foldability_contract =
-      BuildNilReceiverSemanticsFoldabilityContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3NilReceiverSemanticsFoldabilityContract(nil_receiver_semantics_foldability_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid nil-receiver semantics/foldability contract");
-  }
-  const std::string nil_receiver_semantics_foldability_replay_key =
-      Objc3NilReceiverSemanticsFoldabilityReplayKey(nil_receiver_semantics_foldability_contract);
+      core_lowering_plan.property_synthesis_ivar_binding_handoff_deterministic;
+  const Objc3IdClassSelObjectPointerTypecheckContract
+      &id_class_sel_object_pointer_typecheck_contract =
+          core_lowering_plan.id_class_sel_object_pointer_typecheck_contract;
+  const std::string &id_class_sel_object_pointer_typecheck_replay_key =
+      core_lowering_plan.id_class_sel_object_pointer_typecheck_replay_key;
+  const Objc3DispatchSurfaceClassificationContract
+      &dispatch_surface_classification_contract =
+          core_lowering_plan.dispatch_surface_classification_contract;
+  const std::string &dispatch_surface_classification_replay_key =
+      core_lowering_plan.dispatch_surface_classification_replay_key;
+  const Objc3MessageSendSelectorLoweringContract
+      &message_send_selector_lowering_contract =
+          core_lowering_plan.message_send_selector_lowering_contract;
+  const std::string &message_send_selector_lowering_replay_key =
+      core_lowering_plan.message_send_selector_lowering_replay_key;
+  const Objc3DispatchAbiMarshallingContract &dispatch_abi_marshalling_contract =
+      core_lowering_plan.dispatch_abi_marshalling_contract;
+  const std::string &dispatch_abi_marshalling_replay_key =
+      core_lowering_plan.dispatch_abi_marshalling_replay_key;
+  const Objc3NilReceiverSemanticsFoldabilityContract
+      &nil_receiver_semantics_foldability_contract =
+          core_lowering_plan.nil_receiver_semantics_foldability_contract;
+  const std::string &nil_receiver_semantics_foldability_replay_key =
+      core_lowering_plan.nil_receiver_semantics_foldability_replay_key;
   const Objc3TypeSystemOptionalKeypathLoweringContract
-      type_system_optional_keypath_lowering_contract =
-          BuildTypeSystemOptionalKeypathLoweringContract(
-              type_system_type_semantic_model_summary);
-  if (!IsValidObjc3TypeSystemOptionalKeypathLoweringContract(
-          type_system_optional_keypath_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 3 optional/key-path lowering contract");
-  }
-  const std::string type_system_optional_keypath_lowering_replay_key =
-      Objc3TypeSystemOptionalKeypathLoweringReplayKey(
-          type_system_optional_keypath_lowering_contract);
+      &type_system_optional_keypath_lowering_contract =
+          core_lowering_plan.type_system_optional_keypath_lowering_contract;
+  const std::string &type_system_optional_keypath_lowering_replay_key =
+      core_lowering_plan.type_system_optional_keypath_lowering_replay_key;
   const Objc3ControlFlowControlFlowSafetyLoweringContract
-      control_flow_control_flow_safety_lowering_contract =
-          BuildControlFlowControlFlowSafetyLoweringContract(
-              control_flow_control_flow_semantic_model_summary);
-  if (!IsValidObjc3ControlFlowControlFlowSafetyLoweringContract(
-          control_flow_control_flow_safety_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 5 control-flow safety lowering contract");
-  }
-  const std::string control_flow_control_flow_safety_lowering_replay_key =
-      Objc3ControlFlowControlFlowSafetyLoweringReplayKey(
-          control_flow_control_flow_safety_lowering_contract);
-  const Objc3SuperDispatchMethodFamilyContract super_dispatch_method_family_contract =
-      BuildSuperDispatchMethodFamilyContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3SuperDispatchMethodFamilyContract(super_dispatch_method_family_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid super-dispatch/method-family contract");
-  }
-  const std::string super_dispatch_method_family_replay_key =
-      Objc3SuperDispatchMethodFamilyReplayKey(super_dispatch_method_family_contract);
-  const Objc3RuntimeLinkHostLinkContract runtime_link_host_link_contract =
-      BuildRuntimeLinkHostLinkContract(
-          dispatch_abi_marshalling_contract,
-          nil_receiver_semantics_foldability_contract,
-          options);
-  if (!IsValidObjc3RuntimeLinkHostLinkContract(runtime_link_host_link_contract)) {
-    record_post_pipeline_failure("O3L300",
-                                 "LLVM IR emission failed: invalid runtime dispatch host-link contract");
-  }
-  const std::string runtime_link_host_link_replay_key =
-      Objc3RuntimeLinkHostLinkReplayKey(runtime_link_host_link_contract);
+      &control_flow_control_flow_safety_lowering_contract =
+          core_lowering_plan.control_flow_control_flow_safety_lowering_contract;
+  const std::string &control_flow_control_flow_safety_lowering_replay_key =
+      core_lowering_plan.control_flow_control_flow_safety_lowering_replay_key;
+  const Objc3SuperDispatchMethodFamilyContract
+      &super_dispatch_method_family_contract =
+          core_lowering_plan.super_dispatch_method_family_contract;
+  const std::string &super_dispatch_method_family_replay_key =
+      core_lowering_plan.super_dispatch_method_family_replay_key;
+  const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract =
+      core_lowering_plan.runtime_link_host_link_contract;
+  const std::string &runtime_link_host_link_replay_key =
+      core_lowering_plan.runtime_link_host_link_replay_key;
   // dispatch lowering ABI freeze anchor: lane-C now publishes the
   // canonical runtime-dispatch cutover boundary separately from the historical
   // dispatch-host-link packet so C002 can swap call emission over without
   // redefining the selector lookup/handle or argument-slot ABI ad hoc.
   const Objc3RuntimeDispatchLoweringAbiContract
-      runtime_dispatch_lowering_abi_contract =
-          BuildRuntimeDispatchLoweringAbiContract(
-              dispatch_abi_marshalling_contract, runtime_link_host_link_contract,
-              runtime_bootstrap_api);
-  if (!IsValidObjc3RuntimeDispatchLoweringAbiContract(
-          runtime_dispatch_lowering_abi_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid runtime dispatch lowering ABI contract");
-  }
-  const std::string runtime_dispatch_lowering_abi_replay_key =
-      Objc3RuntimeDispatchLoweringAbiReplayKey(
-          runtime_dispatch_lowering_abi_contract);
+      &runtime_dispatch_lowering_abi_contract =
+          core_lowering_plan.runtime_dispatch_lowering_abi_contract;
+  const std::string &runtime_dispatch_lowering_abi_replay_key =
+      core_lowering_plan.runtime_dispatch_lowering_abi_replay_key;
   const Objc3FrontendArtifactOwnershipAwareLoweringPlan
       ownership_aware_lowering_plan =
           BuildObjc3FrontendArtifactOwnershipAwareLoweringPlan(
