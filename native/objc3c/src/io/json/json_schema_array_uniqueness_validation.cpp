@@ -1,7 +1,7 @@
 #include "io/json/json_schema_array_uniqueness_validation.h"
 
-#include "io/json/json_schema_array_uniqueness_duplicates_validation.h"
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_array_uniqueness_duplicate_scan_validation.h"
+#include "io/json/json_schema_array_uniqueness_keyword_validation.h"
 
 namespace objc3::io::json {
 
@@ -10,21 +10,15 @@ bool ValidateJsonSchemaArrayUniqueness(const JsonValue &schema,
                                        const std::string &instance_path,
                                        const std::string &schema_path,
                                        JsonSchemaResult &result) {
-  const JsonValue *unique_items = schema.Find("uniqueItems");
-  if (unique_items != nullptr && payload.IsArray()) {
-    if (!unique_items->IsBool()) {
-      AddJsonSchemaContractError(
-          result, "invalid_unique_items",
-          JsonSchemaKeywordPath(schema_path, "uniqueItems"),
-          "uniqueItems must be a boolean");
-      return false;
-    }
-    if (!unique_items->AsBool()) {
-      return false;
-    }
-    ValidateJsonSchemaArrayUniqueItemDuplicates(
-        payload.AsArray(), instance_path,
-        JsonSchemaKeywordPath(schema_path, "uniqueItems"), result);
+  const JsonSchemaArrayUniquenessKeywordValidation unique_items =
+      ValidateJsonSchemaArrayUniqueItemsKeyword(schema, payload, schema_path,
+                                                result);
+  if (!unique_items.valid) {
+    return false;
+  }
+  if (unique_items.scan_duplicates) {
+    ValidateJsonSchemaArrayUniquenessDuplicateScan(
+        payload, instance_path, schema_path, result);
   }
   return true;
 }

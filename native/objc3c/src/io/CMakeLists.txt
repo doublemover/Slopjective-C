@@ -19,7 +19,9 @@ add_library(objc3c_json STATIC
   json/json_schema_array_items_keyword_validation.cpp
   json/json_schema_array_items_validation.cpp
   json/json_schema_array_post_constraint_dispatch_validation.cpp
+  json/json_schema_array_uniqueness_duplicate_scan_validation.cpp
   json/json_schema_array_uniqueness_duplicates_validation.cpp
+  json/json_schema_array_uniqueness_keyword_validation.cpp
   json/json_schema_array_uniqueness_validation.cpp
   json/json_schema_array_validation.cpp
   json/json_schema_all_of_candidate_validation.cpp
