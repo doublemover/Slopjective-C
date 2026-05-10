@@ -11,7 +11,6 @@ Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_frontend_contracts.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_frontend_artifacts.psm1") -Force
-Import-Module (Join-Path $PSScriptRoot "objc3c_native_legacy_direct_compile.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_superclean_surface.psm1") -Force
 
 $nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot
@@ -76,11 +75,6 @@ $buildFingerprintPath = $nativeBuildPaths.BuildFingerprint
 # - the wrapper can execute those contract-artifact families independently without
 #   silently re-triggering native binary compilation
 # - public command-surface exposure remains the responsibility of the shared command contract surface
-$runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
-$stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
-$stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
-$stagedRuntimeObj = Join-Path $tmpOutDir ("objc3_runtime.{0}.obj" -f $runSuffix)
-$stagedRuntimeLib = Join-Path $tmpOutDir ("objc3_runtime.{0}.lib" -f $runSuffix)
 
 function Write-BuildStep {
   param([Parameter(Mandatory = $true)][string]$Message)
@@ -99,16 +93,6 @@ $sharedSources = @(Get-Objc3cNativeFrontendSharedSources -Modules $frontendModul
 $runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
 $runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/public/objc3_runtime_api.h"
 $frontendArtifactPaths = Get-Objc3cNativeFrontendArtifactPaths -RepoRoot $repoRoot
-$frontendScaffoldPath = $frontendArtifactPaths.SourceGraph
-$frontendInvocationLockPath = $frontendArtifactPaths.InvocationLock
-$frontendCoreFeatureExpansionPath = $frontendArtifactPaths.CoreFeatureExpansion
-$frontendEdgeCompatPath = $frontendArtifactPaths.EdgeCompatibility
-$frontendEdgeRobustnessPath = $frontendArtifactPaths.EdgeRobustness
-$frontendDiagnosticsHardeningPath = $frontendArtifactPaths.DiagnosticsHardening
-$frontendRecoveryDeterminismHardeningPath = $frontendArtifactPaths.RecoveryDeterminismHardening
-$frontendConformanceMatrixPath = $frontendArtifactPaths.ConformanceMatrix
-$frontendConformanceCorpusPath = $frontendArtifactPaths.ConformanceCorpus
-$frontendIntegrationCloseoutPath = $frontendArtifactPaths.IntegrationCloseout
 $repoSupercleanSurfacePath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
 
 $nativeSources = @(
