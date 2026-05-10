@@ -10,9 +10,6 @@
 #include <vector>
 
 #include "artifacts/evidence/error_handling_replay_evidence.h"
-#include "artifacts/json/program_manifest_json.h"
-#include "artifacts/json/runtime_metadata_manifest_json.h"
-#include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
@@ -6282,38 +6279,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId,
         error_handling_result_and_bridging_artifact_replay_summary.deterministic,
         "contract_id"}});
-  manifest << "  \"semantic_canonical_type_metadata\":";
-  objc3::artifacts::json::WriteSemanticTypeMetadataHandoffManifestObject(
-      manifest, type_metadata_handoff);
-  manifest << ",\n";
-  manifest << "  \"globals\": ";
-  objc3::artifacts::json::WriteProgramGlobalsManifestArray(
-      manifest, program.globals, resolved_global_values);
-  manifest << ",\n";
-  manifest << "  \"functions\": ";
-  objc3::artifacts::json::WriteFunctionDeclarationsManifestArray(
-      manifest, manifest_functions);
-  manifest << ",\n";
-  manifest << "  \"interfaces\": ";
-  objc3::artifacts::json::WriteRuntimeMetadataInterfaceManifestArray(
-      manifest, runtime_metadata_source_records);
-  manifest << ",\n";
-  manifest << "  \"implementations\": ";
-  objc3::artifacts::json::WriteRuntimeMetadataImplementationManifestArray(
-      manifest, runtime_metadata_source_records);
-  manifest << ",\n";
-  manifest << "  \"protocols\": ";
-  objc3::artifacts::json::WriteRuntimeMetadataProtocolManifestArray(
-      manifest, runtime_metadata_source_records);
-  manifest << ",\n";
-  manifest << "  \"categories\": ";
-  objc3::artifacts::json::WriteRuntimeMetadataCategoryManifestArray(
-      manifest, runtime_metadata_source_records);
-  manifest << ",\n";
-  manifest << "  \"runtime_metadata_source_records\": ";
-  objc3::artifacts::json::WriteRuntimeMetadataSourceRecordSetManifestObject(
-      manifest, runtime_metadata_source_records);
-  manifest << "\n";
+  objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestRecordArrays(
+      manifest, program, resolved_global_values, manifest_functions,
+      type_metadata_handoff, runtime_metadata_source_records);
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;

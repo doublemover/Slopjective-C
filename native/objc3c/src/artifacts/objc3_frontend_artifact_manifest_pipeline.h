@@ -1,8 +1,12 @@
 #pragma once
 
 #include <iosfwd>
+#include <vector>
 
+#include "ast/objc3_ast.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "sema/objc3_semantic_passes.h"
+#include "support/objc3_runtime_metadata_record_set.h"
 
 struct Objc3FrontendArtifactBundle;
 
@@ -13,6 +17,14 @@ void AppendObjc3FrontendArtifactManifestPipelineStages(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options,
     const Objc3FrontendArtifactBundle &bundle);
+
+void AppendObjc3FrontendArtifactManifestRecordArrays(
+    std::ostream &manifest,
+    const Objc3Program &program,
+    const std::vector<int> &resolved_global_values,
+    const std::vector<const FunctionDecl *> &manifest_functions,
+    const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
 void PopulateObjc3FrontendArtifactBundleSummaryOutputs(
     Objc3FrontendArtifactBundle &bundle,
