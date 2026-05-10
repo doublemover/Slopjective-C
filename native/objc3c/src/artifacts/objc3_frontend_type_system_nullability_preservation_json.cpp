@@ -4,7 +4,6 @@
 #include <string>
 
 #include "io/objc3_json.h"
-#include "sema/objc3_sema_contract_core.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -12,7 +11,7 @@ namespace {
 using objc3::io::EscapeJsonString;
 
 std::string BuildTypeSystemNullabilityContractPreservationReplayKey(
-    const Objc3TypeSystemTypeSemanticModelSummary &summary) {
+    const Objc3FrontendTypeSystemSemanticModelRecord &summary) {
   std::ostringstream out;
   out << kObjc3FrontendTypeSystemNullabilityContractPreservationContractId
       << ";source_contract="
@@ -31,8 +30,8 @@ std::string BuildTypeSystemNullabilityContractPreservationReplayKey(
 
 }  // namespace
 
-std::string BuildTypeSystemNullabilityContractPreservationJson(
-    const Objc3TypeSystemTypeSemanticModelSummary &summary) {
+std::string RenderTypeSystemNullabilityContractPreservationJson(
+    const Objc3FrontendTypeSystemSemanticModelRecord &summary) {
   const std::string replay_key =
       BuildTypeSystemNullabilityContractPreservationReplayKey(summary);
   const bool nullability_count_consistent =

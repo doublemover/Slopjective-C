@@ -2,8 +2,6 @@
 
 #include <utility>
 
-#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
-
 namespace {
 
 using objc3::artifacts::frontend::BuildGenericMetadataAbiLoweringContract;
@@ -14,6 +12,26 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildProtocolQualifiedObjectTypeLoweringContract;
 using objc3::artifacts::frontend::BuildVarianceBridgeCastLoweringContract;
+using objc3::artifacts::frontend::
+    FrontendGenericMetadataAbiLoweringReplayKey;
+using objc3::artifacts::frontend::
+    FrontendLightweightGenericsConstraintLoweringReplayKey;
+using objc3::artifacts::frontend::
+    FrontendNullabilityFlowWarningPrecisionLoweringReplayKey;
+using objc3::artifacts::frontend::
+    FrontendProtocolQualifiedObjectTypeLoweringReplayKey;
+using objc3::artifacts::frontend::
+    FrontendVarianceBridgeCastLoweringReplayKey;
+using objc3::artifacts::frontend::
+    IsValidFrontendGenericMetadataAbiLoweringContract;
+using objc3::artifacts::frontend::
+    IsValidFrontendLightweightGenericsConstraintLoweringContract;
+using objc3::artifacts::frontend::
+    IsValidFrontendNullabilityFlowWarningPrecisionLoweringContract;
+using objc3::artifacts::frontend::
+    IsValidFrontendProtocolQualifiedObjectTypeLoweringContract;
+using objc3::artifacts::frontend::
+    IsValidFrontendVarianceBridgeCastLoweringContract;
 using objc3::artifacts::frontend::Objc3FrontendArtifactPostPipelineFailure;
 
 void AddPostPipelineFailure(
@@ -36,7 +54,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
   plan.lightweight_generic_constraint_lowering_contract =
       BuildLightweightGenericsConstraintLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
+  if (!IsValidFrontendLightweightGenericsConstraintLoweringContract(
           plan.lightweight_generic_constraint_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -45,12 +63,12 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "lowering contract");
   }
   plan.lightweight_generic_constraint_lowering_replay_key =
-      Objc3LightweightGenericsConstraintLoweringReplayKey(
+      FrontendLightweightGenericsConstraintLoweringReplayKey(
           plan.lightweight_generic_constraint_lowering_contract);
   plan.nullability_flow_warning_precision_lowering_contract =
       BuildNullabilityFlowWarningPrecisionLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
+  if (!IsValidFrontendNullabilityFlowWarningPrecisionLoweringContract(
           plan.nullability_flow_warning_precision_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -59,15 +77,15 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "lowering contract");
   }
   plan.nullability_flow_warning_precision_lowering_replay_key =
-      Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
+      FrontendNullabilityFlowWarningPrecisionLoweringReplayKey(
           plan.nullability_flow_warning_precision_lowering_contract);
   plan.protocol_qualified_object_type_lowering_contract =
       BuildProtocolQualifiedObjectTypeLoweringContract(
           pipeline_result.sema_parity_surface);
   plan.protocol_qualified_object_type_lowering_replay_key =
-      Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
+      FrontendProtocolQualifiedObjectTypeLoweringReplayKey(
           plan.protocol_qualified_object_type_lowering_contract);
-  if (!IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
+  if (!IsValidFrontendProtocolQualifiedObjectTypeLoweringContract(
           plan.protocol_qualified_object_type_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -79,7 +97,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
   plan.variance_bridge_cast_lowering_contract =
       BuildVarianceBridgeCastLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3VarianceBridgeCastLoweringContract(
+  if (!IsValidFrontendVarianceBridgeCastLoweringContract(
           plan.variance_bridge_cast_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -88,12 +106,12 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "contract");
   }
   plan.variance_bridge_cast_lowering_replay_key =
-      Objc3VarianceBridgeCastLoweringReplayKey(
+      FrontendVarianceBridgeCastLoweringReplayKey(
           plan.variance_bridge_cast_lowering_contract);
   plan.generic_metadata_abi_lowering_contract =
       BuildGenericMetadataAbiLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3GenericMetadataAbiLoweringContract(
+  if (!IsValidFrontendGenericMetadataAbiLoweringContract(
           plan.generic_metadata_abi_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -102,7 +120,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "contract");
   }
   plan.generic_metadata_abi_lowering_replay_key =
-      Objc3GenericMetadataAbiLoweringReplayKey(
+      FrontendGenericMetadataAbiLoweringReplayKey(
           plan.generic_metadata_abi_lowering_contract);
   return plan;
 }

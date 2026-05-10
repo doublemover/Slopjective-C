@@ -9,8 +9,6 @@
 #include "ast/objc3_ast_contracts.h"
 #include "io/objc3_json.h"
 #include "runtime/metadata/runtime_metadata_model.h"
-#include "sema/objc3_sema_contract_core.h"
-#include "sema/objc3_sema_contract_type_handoff.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -36,7 +34,7 @@ bool IsProtocolQualifiedGenericArgumentSpelling(const std::string &argument) {
 }
 
 void AccumulateGenericContractInventory(
-    const Objc3SemanticCanonicalType &type,
+    const Objc3FrontendTypeSystemCanonicalTypeRecord &type,
     Objc3FrontendTypeSystemGenericContractInventory &inventory) {
   inventory.generic_argument_reference_count +=
       type.generic_arguments_source_order.size();
@@ -49,10 +47,10 @@ void AccumulateGenericContractInventory(
 
 Objc3FrontendTypeSystemGenericContractInventory
 BuildTypeSystemGenericContractInventory(
-    const Objc3SemanticTypeMetadataHandoff &handoff) {
+    const Objc3FrontendTypeSystemSemanticMetadataRecord &handoff) {
   Objc3FrontendTypeSystemGenericContractInventory inventory;
   inventory.interface_count = handoff.interfaces_lexicographic.size();
-  for (const Objc3SemanticInterfaceTypeMetadata &interface_metadata :
+  for (const Objc3FrontendTypeSystemInterfaceRecord &interface_metadata :
        handoff.interfaces_lexicographic) {
     if (!interface_metadata.generic_parameter_names_source_order.empty()) {
       ++inventory.generic_interface_count;
@@ -61,40 +59,40 @@ BuildTypeSystemGenericContractInventory(
         interface_metadata.generic_parameter_names_source_order.size();
     inventory.generic_variance_annotation_count +=
         interface_metadata.generic_parameter_variance_source_order.size();
-    for (const Objc3SemanticPropertyTypeMetadata &property :
+    for (const Objc3FrontendTypeSystemPropertyRecord &property :
          interface_metadata.properties_lexicographic) {
       AccumulateGenericContractInventory(property.canonical_type, inventory);
     }
-    for (const Objc3SemanticMethodTypeMetadata &method :
+    for (const Objc3FrontendTypeSystemMethodRecord &method :
          interface_metadata.methods_lexicographic) {
       AccumulateGenericContractInventory(method.return_canonical_type,
                                          inventory);
-      for (const Objc3SemanticCanonicalType &param :
+      for (const Objc3FrontendTypeSystemCanonicalTypeRecord &param :
            method.param_canonical_types) {
         AccumulateGenericContractInventory(param, inventory);
       }
     }
   }
-  for (const Objc3SemanticFunctionTypeMetadata &function :
+  for (const Objc3FrontendTypeSystemFunctionRecord &function :
        handoff.functions_lexicographic) {
     AccumulateGenericContractInventory(function.return_canonical_type,
                                        inventory);
-    for (const Objc3SemanticCanonicalType &param :
+    for (const Objc3FrontendTypeSystemCanonicalTypeRecord &param :
          function.param_canonical_types) {
       AccumulateGenericContractInventory(param, inventory);
     }
   }
-  for (const Objc3SemanticImplementationTypeMetadata &implementation :
+  for (const Objc3FrontendTypeSystemImplementationRecord &implementation :
        handoff.implementations_lexicographic) {
-    for (const Objc3SemanticPropertyTypeMetadata &property :
+    for (const Objc3FrontendTypeSystemPropertyRecord &property :
          implementation.properties_lexicographic) {
       AccumulateGenericContractInventory(property.canonical_type, inventory);
     }
-    for (const Objc3SemanticMethodTypeMetadata &method :
+    for (const Objc3FrontendTypeSystemMethodRecord &method :
          implementation.methods_lexicographic) {
       AccumulateGenericContractInventory(method.return_canonical_type,
                                          inventory);
-      for (const Objc3SemanticCanonicalType &param :
+      for (const Objc3FrontendTypeSystemCanonicalTypeRecord &param :
            method.param_canonical_types) {
         AccumulateGenericContractInventory(param, inventory);
       }
@@ -105,7 +103,7 @@ BuildTypeSystemGenericContractInventory(
 
 std::string BuildTypeSystemGenericContractPreservationReplayKey(
     const Objc3FrontendTypeSystemGenericContractInventory &inventory,
-    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+    const Objc3FrontendTypeSystemSemanticModelRecord &semantic_summary) {
   std::ostringstream out;
   out << kObjc3FrontendTypeSystemGenericContractPreservationContractId
       << ";source_contract="
@@ -180,7 +178,7 @@ BuildTypeSystemProtocolContractInventory(
 
 std::string BuildTypeSystemProtocolContractPreservationReplayKey(
     const Objc3FrontendTypeSystemProtocolContractInventory &inventory,
-    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+    const Objc3FrontendTypeSystemSemanticModelRecord &semantic_summary) {
   std::ostringstream out;
   out << kObjc3FrontendTypeSystemProtocolContractPreservationContractId
       << ";source_contract="
@@ -201,12 +199,12 @@ std::string BuildTypeSystemProtocolContractPreservationReplayKey(
 
 }  // namespace
 
-std::string BuildTypeSystemGenericContractPreservationJson(
-    const Objc3SemanticTypeMetadataHandoff &handoff,
-    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+std::string RenderTypeSystemGenericContractPreservationJson(
+    const Objc3FrontendTypeSystemSemanticMetadataRecord &handoff,
+    const Objc3FrontendTypeSystemSemanticModelRecord &semantic_summary) {
   const Objc3FrontendTypeSystemGenericContractInventory inventory =
       BuildTypeSystemGenericContractInventory(handoff);
-  const bool deterministic = IsDeterministicSemanticTypeMetadataHandoff(handoff);
+  const bool deterministic = handoff.deterministic;
   const bool ready =
       deterministic && semantic_summary.ready_for_lowering_and_runtime &&
       semantic_summary.deterministic && !semantic_summary.replay_key.empty();
@@ -236,7 +234,7 @@ std::string BuildTypeSystemGenericContractPreservationJson(
       << EscapeJsonString(semantic_summary.replay_key)
       << "\",\"generic_contract_interfaces\":[";
   for (std::size_t i = 0; i < handoff.interfaces_lexicographic.size(); ++i) {
-    const Objc3SemanticInterfaceTypeMetadata &interface_metadata =
+    const Objc3FrontendTypeSystemInterfaceRecord &interface_metadata =
         handoff.interfaces_lexicographic[i];
     if (i != 0u) {
       out << ",";
@@ -259,10 +257,10 @@ std::string BuildTypeSystemGenericContractPreservationJson(
   return out.str();
 }
 
-std::string BuildTypeSystemProtocolContractPreservationJson(
+std::string RenderTypeSystemProtocolContractPreservationJson(
     const Objc3Program &program,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_records,
-    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+    const Objc3FrontendTypeSystemSemanticModelRecord &semantic_summary) {
   const Objc3FrontendTypeSystemProtocolContractInventory inventory =
       BuildTypeSystemProtocolContractInventory(program, runtime_records);
   const bool deterministic = runtime_records.deterministic;

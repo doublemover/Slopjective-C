@@ -3,25 +3,24 @@
 #include <ostream>
 
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
-#include "lower/contracts/type_system_generic_lowering_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 
 void WriteTypeSystemManifestSurfaces(
     std::ostream &manifest,
-    const Objc3LightweightGenericsConstraintLoweringContract
+    const Objc3FrontendLightweightGenericsConstraintLoweringContractRecord
         &lightweight_generic_constraint_lowering_contract,
     const std::string &lightweight_generic_constraint_lowering_replay_key,
-    const Objc3NullabilityFlowWarningPrecisionLoweringContract
+    const Objc3FrontendNullabilityFlowWarningPrecisionLoweringContractRecord
         &nullability_flow_warning_precision_lowering_contract,
     const std::string &nullability_flow_warning_precision_lowering_replay_key,
-    const Objc3ProtocolQualifiedObjectTypeLoweringContract
+    const Objc3FrontendProtocolQualifiedObjectTypeLoweringContractRecord
         &protocol_qualified_object_type_lowering_contract,
     const std::string &protocol_qualified_object_type_lowering_replay_key,
-    const Objc3VarianceBridgeCastLoweringContract
+    const Objc3FrontendVarianceBridgeCastLoweringContractRecord
         &variance_bridge_cast_lowering_contract,
     const std::string &variance_bridge_cast_lowering_replay_key,
-    const Objc3GenericMetadataAbiLoweringContract
+    const Objc3FrontendGenericMetadataAbiLoweringContractRecord
         &generic_metadata_abi_lowering_contract,
     const std::string &generic_metadata_abi_lowering_replay_key) {
   manifest

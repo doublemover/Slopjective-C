@@ -4,17 +4,16 @@
 #include <string>
 
 #include "io/objc3_json.h"
-#include "lower/contracts/optional_keypath_lowering_contracts.h"
 #include "runtime/metadata/property_metadata.h"
-#include "sema/objc3_sema_contract_core.h"
 
 namespace objc3::artifacts::frontend {
 
 using objc3::io::EscapeJsonString;
 
-std::string BuildTypeSystemOptionalKeypathLoweringContractJson(
-    const Objc3TypeSystemOptionalKeypathLoweringContract &contract,
-    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary,
+std::string RenderTypeSystemOptionalKeypathLoweringContractJson(
+    const Objc3FrontendTypeSystemOptionalKeypathLoweringContractRecord
+        &contract,
+    const Objc3FrontendTypeSystemSemanticModelRecord &semantic_summary,
     const std::string &semantic_summary_replay_key,
     const std::string &message_send_selector_lowering_replay_key,
     const std::string &dispatch_abi_marshalling_replay_key,
@@ -103,8 +102,9 @@ std::string BuildTypeSystemOptionalKeypathLoweringContractJson(
   return out.str();
 }
 
-std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
-    const Objc3TypeSystemOptionalKeypathLoweringContract &contract,
+std::string RenderTypeSystemOptionalKeypathRuntimeHelperContractJson(
+    const Objc3FrontendTypeSystemOptionalKeypathLoweringContractRecord
+        &contract,
     const Objc3RuntimeSupportLibraryLinkWiringSummary &runtime_link_wiring,
     const std::string &lowering_replay_key) {
   const bool optional_send_runtime_ready =
