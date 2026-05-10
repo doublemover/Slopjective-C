@@ -41,6 +41,7 @@
 #include "artifacts/objc3_frontend_artifact_pipeline_readiness_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
+#include "artifacts/objc3_frontend_artifact_property_atomicity_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_block_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_concurrency_manifest.h"
