@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "lower/objc3_lowering_contract.h"
+#include "ir/objc3_ir_frontend_metadata_block.h"
 #include "ir/objc3_ir_frontend_metadata_dispatch.h"
 #include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
 #include "ir/objc3_ir_frontend_metadata_ownership.h"
@@ -22,7 +23,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendPipelineReadinessMetadata,
                                  Objc3IRFrontendRuntimeMetadata,
                                  Objc3IRFrontendDispatchMetadata,
-                                 Objc3IRFrontendOwnershipMetadata {
+                                 Objc3IRFrontendOwnershipMetadata,
+                                 Objc3IRFrontendBlockMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -72,97 +74,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
-  std::string lowering_block_source_model_completion_replay_key;
-  std::size_t block_source_model_completion_block_literal_sites = 0;
-  std::size_t block_source_model_completion_signature_entries_total = 0;
-  std::size_t block_source_model_completion_explicit_typed_parameter_entries_total = 0;
-  std::size_t block_source_model_completion_implicit_parameter_entries_total = 0;
-  std::size_t block_source_model_completion_capture_inventory_entries_total = 0;
-  std::size_t block_source_model_completion_byvalue_readonly_capture_entries_total = 0;
-  std::size_t block_source_model_completion_invoke_surface_entries_total = 0;
-  std::size_t block_source_model_completion_non_normalized_sites = 0;
-  std::size_t block_source_model_completion_contract_violation_sites = 0;
-  bool deterministic_block_source_model_completion_handoff = false;
-  std::string lowering_block_source_storage_annotation_replay_key;
-  std::size_t block_source_storage_annotation_block_literal_sites = 0;
-  std::size_t block_source_storage_annotation_capture_entries_total = 0;
-  std::size_t block_source_storage_annotation_mutated_capture_entries_total = 0;
-  std::size_t block_source_storage_annotation_byref_capture_entries_total = 0;
-  std::size_t block_source_storage_annotation_copy_helper_intent_sites = 0;
-  std::size_t block_source_storage_annotation_dispose_helper_intent_sites = 0;
-  std::size_t block_source_storage_annotation_heap_candidate_sites = 0;
-  std::size_t block_source_storage_annotation_expression_sites = 0;
-  std::size_t block_source_storage_annotation_global_initializer_sites = 0;
-  std::size_t block_source_storage_annotation_binding_initializer_sites = 0;
-  std::size_t block_source_storage_annotation_assignment_value_sites = 0;
-  std::size_t block_source_storage_annotation_return_value_sites = 0;
-  std::size_t block_source_storage_annotation_call_argument_sites = 0;
-  std::size_t block_source_storage_annotation_message_argument_sites = 0;
-  std::size_t block_source_storage_annotation_non_normalized_sites = 0;
-  std::size_t block_source_storage_annotation_contract_violation_sites = 0;
-  bool deterministic_block_source_storage_annotation_handoff = false;
-  std::string lowering_block_literal_capture_replay_key;
-  std::size_t block_literal_capture_lowering_block_literal_sites = 0;
-  std::size_t block_literal_capture_lowering_block_parameter_entries = 0;
-  std::size_t block_literal_capture_lowering_block_capture_entries = 0;
-  std::size_t block_literal_capture_lowering_block_body_statement_entries = 0;
-  std::size_t block_literal_capture_lowering_block_empty_capture_sites = 0;
-  std::size_t block_literal_capture_lowering_block_nondeterministic_capture_sites = 0;
-  std::size_t block_literal_capture_lowering_block_non_normalized_sites = 0;
-  std::size_t block_literal_capture_lowering_contract_violation_sites = 0;
-  bool deterministic_block_literal_capture_lowering_handoff = false;
-  std::string lowering_block_abi_invoke_trampoline_replay_key;
-  std::size_t block_abi_invoke_trampoline_lowering_block_literal_sites = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_invoke_argument_slots_total = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_capture_word_count_total = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_parameter_entries_total = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_capture_entries_total = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_body_statement_entries_total = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_invoke_symbolized_sites = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_missing_invoke_sites = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_non_normalized_layout_sites = 0;
-  std::size_t block_abi_invoke_trampoline_lowering_contract_violation_sites = 0;
-  bool deterministic_block_abi_invoke_trampoline_lowering_handoff = false;
-  std::string lowering_block_storage_escape_replay_key;
-  std::size_t block_storage_escape_lowering_block_literal_sites = 0;
-  std::size_t block_storage_escape_lowering_mutable_capture_count_total = 0;
-  std::size_t block_storage_escape_lowering_byref_slot_count_total = 0;
-  std::size_t block_storage_escape_lowering_parameter_entries_total = 0;
-  std::size_t block_storage_escape_lowering_capture_entries_total = 0;
-  std::size_t block_storage_escape_lowering_body_statement_entries_total = 0;
-  std::size_t block_storage_escape_lowering_requires_byref_cells_sites = 0;
-  std::size_t block_storage_escape_lowering_escape_analysis_enabled_sites = 0;
-  std::size_t block_storage_escape_lowering_escape_to_heap_sites = 0;
-  std::size_t block_storage_escape_lowering_escape_profile_normalized_sites = 0;
-  std::size_t block_storage_escape_lowering_byref_layout_symbolized_sites = 0;
-  std::size_t block_storage_escape_lowering_contract_violation_sites = 0;
-  bool deterministic_block_storage_escape_lowering_handoff = false;
-  std::string lowering_block_copy_dispose_replay_key;
-  std::size_t block_copy_dispose_lowering_block_literal_sites = 0;
-  std::size_t block_copy_dispose_lowering_mutable_capture_count_total = 0;
-  std::size_t block_copy_dispose_lowering_byref_slot_count_total = 0;
-  std::size_t block_copy_dispose_lowering_parameter_entries_total = 0;
-  std::size_t block_copy_dispose_lowering_capture_entries_total = 0;
-  std::size_t block_copy_dispose_lowering_body_statement_entries_total = 0;
-  std::size_t block_copy_dispose_lowering_copy_helper_required_sites = 0;
-  std::size_t block_copy_dispose_lowering_dispose_helper_required_sites = 0;
-  std::size_t block_copy_dispose_lowering_profile_normalized_sites = 0;
-  std::size_t block_copy_dispose_lowering_copy_helper_symbolized_sites = 0;
-  std::size_t block_copy_dispose_lowering_dispose_helper_symbolized_sites = 0;
-  std::size_t block_copy_dispose_lowering_contract_violation_sites = 0;
-  bool deterministic_block_copy_dispose_lowering_handoff = false;
-  std::string lowering_block_determinism_perf_baseline_replay_key;
-  std::size_t block_determinism_perf_baseline_lowering_block_literal_sites = 0;
-  std::size_t block_determinism_perf_baseline_lowering_baseline_weight_total = 0;
-  std::size_t block_determinism_perf_baseline_lowering_parameter_entries_total = 0;
-  std::size_t block_determinism_perf_baseline_lowering_capture_entries_total = 0;
-  std::size_t block_determinism_perf_baseline_lowering_body_statement_entries_total = 0;
-  std::size_t block_determinism_perf_baseline_lowering_deterministic_capture_sites = 0;
-  std::size_t block_determinism_perf_baseline_lowering_heavy_tier_sites = 0;
-  std::size_t block_determinism_perf_baseline_lowering_normalized_profile_sites = 0;
-  std::size_t block_determinism_perf_baseline_lowering_contract_violation_sites = 0;
-  bool deterministic_block_determinism_perf_baseline_lowering_handoff = false;
   std::string lowering_lightweight_generic_constraint_replay_key;
   std::size_t lightweight_generic_constraint_lowering_generic_constraint_sites = 0;
   std::size_t lightweight_generic_constraint_lowering_generic_suffix_sites = 0;
