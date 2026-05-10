@@ -7,8 +7,15 @@
 
 namespace objc3::io::json {
 
-[[nodiscard]] bool ValidateJsonSchemaArrayContainsKeyword(
-    const JsonValue &contains,
+struct JsonSchemaArrayContainsKeywordValidation {
+  const JsonValue *value = nullptr;
+  bool valid = true;
+};
+
+[[nodiscard]] JsonSchemaArrayContainsKeywordValidation
+ValidateJsonSchemaArrayContainsKeyword(
+    const JsonValue &schema,
+    const JsonValue &payload,
     const std::string &schema_path,
     JsonSchemaResult &result);
 

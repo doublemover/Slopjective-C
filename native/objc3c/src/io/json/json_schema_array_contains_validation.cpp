@@ -11,15 +11,17 @@ bool ValidateJsonSchemaArrayContains(const JsonValue &schema_root,
                                      const std::string &instance_path,
                                      const std::string &schema_path,
                                      JsonSchemaResult &result) {
-  const JsonValue *contains = schema.Find("contains");
-  if (contains != nullptr && payload.IsArray()) {
-    if (!ValidateJsonSchemaArrayContainsKeyword(*contains, schema_path,
-                                                result)) {
-      return false;
-    }
-    ValidateJsonSchemaArrayContainsMatch(schema_root, *contains, payload,
-                                         instance_path, schema_path, result);
+  const JsonSchemaArrayContainsKeywordValidation contains =
+      ValidateJsonSchemaArrayContainsKeyword(schema, payload, schema_path,
+                                             result);
+  if (!contains.valid) {
+    return false;
   }
+  if (contains.value == nullptr) {
+    return true;
+  }
+  ValidateJsonSchemaArrayContainsMatch(schema_root, *contains.value, payload,
+                                       instance_path, schema_path, result);
   return true;
 }
 
