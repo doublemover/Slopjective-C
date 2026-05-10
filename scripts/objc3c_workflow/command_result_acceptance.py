@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from .command_result_diagnostics import (
+    extra_arguments_result_message,
+    unknown_action_result_message,
+)
 from .command_result_model import WorkflowCommandResult
 from .command_result_policy import (
     COMMAND_RESULT_ACCEPTED_EXIT_CODE,
     COMMAND_RESULT_REJECTED_EXIT_CODE,
-    extra_arguments_result_message,
-    unknown_action_result_message,
 )
 from .command_result_status import (
     STATUS_ACCEPTED,
