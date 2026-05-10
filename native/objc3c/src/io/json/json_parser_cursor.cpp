@@ -19,24 +19,12 @@ bool JsonParserCursor::AtEnd() const {
   return cursor_ >= text_.size();
 }
 
-char JsonParserCursor::Peek() const {
-  return text_[cursor_];
-}
-
 const std::optional<JsonError> &JsonParserCursor::error() const {
   return error_;
 }
 
 void JsonParserCursor::SkipWhitespace() {
   SkipJsonParserWhitespace(text_, cursor_);
-}
-
-bool JsonParserCursor::Consume(char expected) {
-  if (cursor_ < text_.size() && text_[cursor_] == expected) {
-    ++cursor_;
-    return true;
-  }
-  return false;
 }
 
 bool JsonParserCursor::Fail(std::string message) {
