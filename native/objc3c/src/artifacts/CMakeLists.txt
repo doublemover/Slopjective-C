@@ -71,6 +71,7 @@ target_link_libraries(objc3c_artifacts_interop PUBLIC
 add_library(objc3c_artifacts_frontend_runtime STATIC
   objc3_frontend_runtime_capability_artifacts.cpp
   objc3_frontend_runtime_capability_artifacts.h
+  objc3_frontend_runtime_import_artifact_reuse.cpp
   objc3_frontend_runtime_import_actor_mailbox_artifacts.cpp
   objc3_frontend_runtime_import_cross_module_semantic_preservation.cpp
   objc3_frontend_runtime_import_dispatch_preservation_artifacts.cpp
