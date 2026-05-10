@@ -4268,11 +4268,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       symbol_graph_scope_resolution_summary, function_manifest);
   manifest << "    }\n";
   manifest << "  },\n";
+  const objc3::artifacts::frontend::
+      Objc3FrontendArtifactManifestLoweringHeaderFields
+          manifest_lowering_header_fields{
+              vector_signature_functions,
+              property_synthesis_ivar_binding_replay_key,
+              property_synthesis_ivar_binding_contract.deterministic};
   objc3::artifacts::frontend::
       AppendObjc3FrontendArtifactManifestLoweringHeader(
-          manifest, options, vector_signature_functions,
-          property_synthesis_ivar_binding_replay_key,
-          property_synthesis_ivar_binding_contract);
+          manifest, options, manifest_lowering_header_fields);
   const objc3::artifacts::frontend::
       Objc3RuntimeDispatchTableReflectionRecordLoweringFields
           runtime_dispatch_table_reflection_record_lowering_fields{

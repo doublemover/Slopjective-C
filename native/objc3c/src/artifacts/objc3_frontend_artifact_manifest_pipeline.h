@@ -5,12 +5,13 @@
 #include <string>
 #include <vector>
 
+#include "artifacts/objc3_frontend_artifact_manifest_pipeline_contracts.h"
+
 struct FunctionDecl;
 struct Objc3FrontendArtifactBundle;
 struct Objc3FrontendOptions;
 struct Objc3FrontendPipelineResult;
 struct Objc3Program;
-struct Objc3PropertySynthesisIvarBindingContract;
 struct Objc3RuntimeMetadataSourceRecordSet;
 struct Objc3SemanticTypeMetadataHandoff;
 
@@ -29,10 +30,8 @@ void AppendObjc3FrontendArtifactManifestSemaPassDiagnostics(
 void AppendObjc3FrontendArtifactManifestLoweringHeader(
     std::ostream &manifest,
     const Objc3FrontendOptions &options,
-    std::size_t vector_signature_functions,
-    const std::string &property_synthesis_ivar_binding_replay_key,
-    const Objc3PropertySynthesisIvarBindingContract
-        &property_synthesis_ivar_binding_contract);
+    const Objc3FrontendArtifactManifestLoweringHeaderFields
+        &lowering_header_fields);
 
 void AppendObjc3FrontendArtifactManifestRecordArrays(
     std::ostream &manifest,
