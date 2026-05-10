@@ -7,8 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-from .artifact_registry_keys import ARTIFACT_REGISTRY_REUSE_MODEL
-from .artifact_registry_keys import ARTIFACT_REGISTRY_SUMMARY_CONTRACT_ID
+from .artifact_registry_evidence import ArtifactRegistryEvidence
 from .artifact_registry_keys import artifact_registry_key_digest
 from .artifact_registry_keys import build_artifact_registry_key_payload
 from .artifact_registry_keys import required_compile_artifacts
@@ -36,9 +35,10 @@ class ArtifactRegistryConfig:
 class RuntimeAcceptanceArtifactRegistry:
     def __init__(self, config: ArtifactRegistryConfig) -> None:
         self._config = config
-        self.entries: dict[str, dict[str, Any]] = {}
-        self.reuse_events: list[dict[str, Any]] = []
-        self.miss_events: list[dict[str, Any]] = []
+        self._evidence = ArtifactRegistryEvidence()
+        self.entries = self._evidence.entries
+        self.reuse_events = self._evidence.reuse_events
+        self.miss_events = self._evidence.miss_events
 
     def _current_case(self, progress: ArtifactRegistryProgress | None) -> str | None:
         if progress and progress.current_case:
@@ -112,15 +112,13 @@ class RuntimeAcceptanceArtifactRegistry:
         entry = self.entries.get(key)
         current_case = self._current_case(progress)
         if entry is None:
-            self.miss_events.append(
-                {
-                    "cache_key_sha256": key,
-                    "case": current_case,
-                    "fixture": key_payload["source_path"],
-                    "extra_args": key_payload["extra_args"],
-                    "reuse_policy": reuse_policy,
-                    "reason": "no-producer",
-                }
+            self._evidence.record_miss(
+                cache_key_sha256=key,
+                current_case=current_case,
+                fixture=key_payload["source_path"],
+                extra_args=key_payload["extra_args"],
+                reuse_policy=reuse_policy,
+                reason="no-producer",
             )
             return False
         producer_dir = self._config.root / str(entry["producer_dir"])
@@ -132,18 +130,17 @@ class RuntimeAcceptanceArtifactRegistry:
                 shutil.copy2(artifact, out_dir / artifact.name)
                 copied_artifacts.append(artifact.name)
         self.validate_artifacts(out_dir, emit_prefix)
-        event = {
-            "cache_key_sha256": key,
-            "producer_case": entry.get("producer_case"),
-            "consumer_case": current_case,
-            "fixture": key_payload["source_path"],
-            "extra_args": key_payload["extra_args"],
-            "producer_dir": entry["producer_dir"],
-            "consumer_dir": self._config.repo_display_path(out_dir),
-            "reuse_policy": reuse_policy,
-            "artifact_paths": copied_artifacts,
-        }
-        self.reuse_events.append(event)
+        self._evidence.record_reuse(
+            cache_key_sha256=key,
+            producer_case=entry.get("producer_case"),
+            consumer_case=current_case,
+            fixture=key_payload["source_path"],
+            extra_args=key_payload["extra_args"],
+            producer_dir=entry["producer_dir"],
+            consumer_dir=self._config.repo_display_path(out_dir),
+            reuse_policy=reuse_policy,
+            artifact_paths=copied_artifacts,
+        )
         if progress:
             progress.emit(
                 "ARTIFACT reuse "
@@ -176,30 +173,18 @@ class RuntimeAcceptanceArtifactRegistry:
             emit_prefix=emit_prefix,
         )
         producer_case = self._current_case(progress)
-        self.entries.setdefault(
-            key,
-            {
-                "cache_key_sha256": key,
-                "producer_case": producer_case,
-                "fixture": key_payload["source_path"],
-                "extra_args": key_payload["extra_args"],
-                "producer_dir": self._config.repo_display_path(out_dir),
-                "reuse_policy": reuse_policy,
-                "artifact_paths": artifact_paths,
-            },
+        self._evidence.register_entry(
+            cache_key_sha256=key,
+            producer_case=producer_case,
+            fixture=key_payload["source_path"],
+            extra_args=key_payload["extra_args"],
+            producer_dir=self._config.repo_display_path(out_dir),
+            reuse_policy=reuse_policy,
+            artifact_paths=artifact_paths,
         )
 
     def summary(self) -> dict[str, Any]:
-        return {
-            "contract_id": ARTIFACT_REGISTRY_SUMMARY_CONTRACT_ID,
-            "entry_count": len(self.entries),
-            "reuse_count": len(self.reuse_events),
-            "miss_count": len(self.miss_events),
-            "entries": list(self.entries.values()),
-            "reuse_events": self.reuse_events,
-            "miss_events": self.miss_events,
-            "reuse_model": ARTIFACT_REGISTRY_REUSE_MODEL,
-        }
+        return self._evidence.summary()
 
 
 __all__ = [
