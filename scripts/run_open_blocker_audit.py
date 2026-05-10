@@ -10,6 +10,9 @@ import textwrap
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from open_blocker_extraction.audit_contract import (
+    validate_contract_check_result as validate_contract_check_output,
+)
 from open_blocker_extraction.audit_payload import validate_extract_snapshot_payload
 from open_blocker_extraction.audit_scope import (
     DEFAULT_EXCLUDE_PATHS,
@@ -137,120 +140,6 @@ def summarize_command(result: CommandResult) -> dict[str, Any]:
         "stdout_bytes": len(result.stdout.encode("utf-8")),
         "stderr_bytes": len(result.stderr.encode("utf-8")),
     }
-
-
-def validate_contract_check_result(
-    result: CommandResult,
-    *,
-    summary_json_path: Path,
-    snapshot_json_path: Path,
-    extract_log_path: Path,
-) -> list[str]:
-    errors: list[str] = []
-
-    if result.exit_code != EXIT_OK:
-        errors.append(
-            "check_open_blocker_audit_contract returned unexpected exit code "
-            f"{result.exit_code}."
-        )
-        if not result.stderr.strip():
-            errors.append(
-                "check_open_blocker_audit_contract exited non-zero without stderr diagnostics."
-            )
-        return errors
-
-    if result.stderr:
-        errors.append(
-            "check_open_blocker_audit_contract emitted stderr despite exit code 0."
-        )
-
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        errors.append(
-            "check_open_blocker_audit_contract emitted invalid JSON: "
-            f"{exc.msg} at {exc.lineno}:{exc.colno}."
-        )
-        return errors
-
-    if not isinstance(payload, dict):
-        errors.append("check_open_blocker_audit_contract output root must be an object.")
-        return errors
-
-    if payload.get("mode") != CHECKER_MODE:
-        errors.append(
-            "check_open_blocker_audit_contract output mode drift: "
-            f"expected={CHECKER_MODE!r} observed={payload.get('mode')!r}."
-        )
-
-    contract = payload.get("contract")
-    if not isinstance(contract, dict):
-        errors.append("check_open_blocker_audit_contract output.contract must be an object.")
-    else:
-        expected_runner = f"{RUNNER_CONTRACT_ID}/{RUNNER_CONTRACT_VERSION}"
-        if contract.get("expected_runner") != expected_runner:
-            errors.append(
-                "check_open_blocker_audit_contract expected_runner drift: "
-                f"expected={expected_runner!r} observed={contract.get('expected_runner')!r}."
-            )
-        if contract.get("contract_id") != RUNNER_CONTRACT_ID:
-            errors.append(
-                "check_open_blocker_audit_contract contract_id drift: "
-                f"expected={RUNNER_CONTRACT_ID!r} observed={contract.get('contract_id')!r}."
-            )
-        if contract.get("contract_version") != RUNNER_CONTRACT_VERSION:
-            errors.append(
-                "check_open_blocker_audit_contract contract_version drift: "
-                f"expected={RUNNER_CONTRACT_VERSION!r} observed={contract.get('contract_version')!r}."
-            )
-
-    artifacts = payload.get("artifacts")
-    if not isinstance(artifacts, dict):
-        errors.append("check_open_blocker_audit_contract output.artifacts must be an object.")
-    else:
-        expected_summary = display_path(summary_json_path)
-        expected_snapshot = display_path(snapshot_json_path)
-        expected_extract_log = display_path(extract_log_path)
-        if artifacts.get("summary") != expected_summary:
-            errors.append(
-                "check_open_blocker_audit_contract output.artifacts.summary drift: "
-                f"expected={expected_summary!r} observed={artifacts.get('summary')!r}."
-            )
-        if artifacts.get("snapshot") != expected_snapshot:
-            errors.append(
-                "check_open_blocker_audit_contract output.artifacts.snapshot drift: "
-                f"expected={expected_snapshot!r} observed={artifacts.get('snapshot')!r}."
-            )
-        if artifacts.get("extract_log") != expected_extract_log:
-            errors.append(
-                "check_open_blocker_audit_contract output.artifacts.extract_log drift: "
-                f"expected={expected_extract_log!r} observed={artifacts.get('extract_log')!r}."
-            )
-
-    if payload.get("ok") is not True:
-        errors.append(
-            "check_open_blocker_audit_contract output.ok must be true when exit code is 0."
-        )
-    if payload.get("exit_code") != EXIT_OK:
-        errors.append(
-            "check_open_blocker_audit_contract output.exit_code drift: "
-            f"expected={EXIT_OK} observed={payload.get('exit_code')!r}."
-        )
-    if payload.get("finding_count") != 0:
-        errors.append(
-            "check_open_blocker_audit_contract output.finding_count drift: "
-            f"expected=0 observed={payload.get('finding_count')!r}."
-        )
-
-    findings = payload.get("findings")
-    if not isinstance(findings, list):
-        errors.append("check_open_blocker_audit_contract output.findings must be a list.")
-    elif findings:
-        errors.append(
-            "check_open_blocker_audit_contract output.findings must be empty on success."
-        )
-
-    return errors
 
 
 def build_runner_snapshot_payload(
@@ -781,11 +670,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         write_text(contract_check_stderr_path, contract_check_result.stderr)
 
-        contract_check_errors = validate_contract_check_result(
+        contract_check_errors = validate_contract_check_output(
             contract_check_result,
             summary_json_path=summary_json_path,
             snapshot_json_path=snapshot_json_path,
             extract_log_path=extract_log_path,
+            checker_mode=CHECKER_MODE,
+            runner_contract_id=RUNNER_CONTRACT_ID,
+            runner_contract_version=RUNNER_CONTRACT_VERSION,
+            exit_ok=EXIT_OK,
         )
         if contract_check_errors:
             errors.extend(contract_check_errors)
