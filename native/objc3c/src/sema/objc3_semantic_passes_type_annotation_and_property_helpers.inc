@@ -1,8 +1,3 @@
-    return "debugDescription";
-  }
-  return "";
-}
-
 static std::vector<std::string> ParseGenericArgumentSuffixTextSourceOrder(
     const std::string &suffix_text) {
   std::vector<std::string> arguments;
