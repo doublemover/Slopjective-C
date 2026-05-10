@@ -1,7 +1,5 @@
 #include "io/json/json_value.h"
 
-#include <utility>
-
 namespace objc3::io::json {
 namespace {
 
@@ -16,20 +14,6 @@ const JsonValue::Object &EmptyObject() {
 }
 
 }  // namespace
-
-JsonValue JsonValue::ArrayValue(Array value) {
-  JsonValue out;
-  out.kind_ = Kind::kArray;
-  out.array_value_ = std::move(value);
-  return out;
-}
-
-JsonValue JsonValue::ObjectValue(Object value) {
-  JsonValue out;
-  out.kind_ = Kind::kObject;
-  out.object_value_ = std::move(value);
-  return out;
-}
 
 bool JsonValue::IsArray() const {
   return kind_ == Kind::kArray;
