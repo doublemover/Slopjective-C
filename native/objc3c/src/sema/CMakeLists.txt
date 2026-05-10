@@ -83,6 +83,7 @@ add_library(objc3c_semantic_type_surface STATIC
   objc3_semantic_feature_claims.cpp
   objc3_semantic_generic_argument_relations.cpp
   objc3_semantic_pass_helpers.cpp
+  objc3_semantic_protocol_composition_parser.cpp
   objc3_semantic_signature_compatibility.cpp
   objc3_semantic_symbol_lookup.cpp
   objc3_semantic_type_factory.cpp

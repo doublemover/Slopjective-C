@@ -1242,40 +1242,11 @@ static Expr::DispatchSurfaceKind ResolveNormalizedMessageSendDispatchSurfaceKind
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context);
 
-struct ProtocolCompositionParseResult {
-  bool has_protocol_composition = false;
-  bool malformed_composition = false;
-  bool empty_composition = false;
-  std::vector<std::string> names_lexicographic;
-  std::vector<std::string> invalid_identifiers;
-  std::vector<std::string> duplicate_identifiers;
-
-  bool IsValid() const {
-    return !malformed_composition && !empty_composition && invalid_identifiers.empty() && duplicate_identifiers.empty();
-  }
-};
-
 struct ProtocolCompositionInfo {
   bool has_protocol_composition = false;
   std::vector<std::string> names_lexicographic;
   bool has_invalid_protocol_composition = false;
 };
-
-static std::string TrimAsciiWhitespace(const std::string &text) {
-  std::size_t start = 0;
-  while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start])) != 0) {
-    ++start;
-  }
-  if (start == text.size()) {
-    return "";
-  }
-
-  std::size_t end = text.size();
-  while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])) != 0) {
-    --end;
-  }
-  return text.substr(start, end - start);
-}
 
 static std::string NormalizeMetaprogrammingRawDeriveToken(std::string token) {
   token = TrimAsciiWhitespace(token);
