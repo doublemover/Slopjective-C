@@ -1,5 +1,7 @@
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 
+#include "ast/objc3_ast_declarations.h"
+
 namespace objc3c::artifacts {
 
 namespace {
@@ -20,8 +22,8 @@ std::size_t CountSubstringOccurrences(const std::string &text,
 
 bool HasRuntimeBearingExecutableSurface(
     const Objc3Program &program,
-    const Objc3MessageSendSelectorLoweringContract &message_send_contract) {
-  if (message_send_contract.message_send_sites > 0u) {
+    std::size_t message_send_sites) {
+  if (message_send_sites > 0u) {
     return true;
   }
   for (const auto &implementation : program.implementations) {
@@ -42,8 +44,8 @@ bool HasRuntimeBearingExecutableSurface(
 bool IsSuspiciousObjc3NativeIRTruthGap(
     const std::string &ir_text,
     const Objc3Program &program,
-    const Objc3MessageSendSelectorLoweringContract &message_send_contract) {
-  if (!HasRuntimeBearingExecutableSurface(program, message_send_contract)) {
+    std::size_t message_send_sites) {
+  if (!HasRuntimeBearingExecutableSurface(program, message_send_sites)) {
     return false;
   }
 

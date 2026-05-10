@@ -135,6 +135,7 @@ add_library(objc3c_pipeline STATIC
   frontend_control_flow_source_closure_helpers.h
   frontend_error_handling_source_closure_helpers.h
   frontend_interop_source_closure_helpers.h
+  frontend_ir_text_emission.h
   frontend_ownership_source_closure_helpers.h
   frontend_source_closure_replay_keys.h
   frontend_semantic_metadata_summary_helpers.h

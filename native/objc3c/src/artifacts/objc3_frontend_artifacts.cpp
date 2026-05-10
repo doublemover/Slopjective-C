@@ -4644,8 +4644,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           ir_emission_core_feature_impl_surface);
   if (!objc3::artifacts::frontend::CompleteObjc3FrontendArtifactIREmission(
           bundle, pipeline_result, options, program, ir_frontend_metadata,
-          runtime_dispatch_lowering_abi_contract,
-          message_send_selector_lowering_contract)) {
+          Objc3RuntimeDispatchLoweringAbiBoundarySummary(
+              runtime_dispatch_lowering_abi_contract),
+          message_send_selector_lowering_contract.message_send_sites)) {
     return bundle;
   }
 

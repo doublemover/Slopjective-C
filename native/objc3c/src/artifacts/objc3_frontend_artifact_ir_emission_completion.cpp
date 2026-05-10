@@ -10,7 +10,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "diag/objc3_diag_format.h"
-#include "ir/objc3_ir_emitter.h"
+#include "pipeline/frontend_ir_text_emission.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -70,16 +70,15 @@ bool CompleteObjc3FrontendArtifactIREmission(
     const Objc3FrontendOptions &options,
     const Objc3Program &program,
     const Objc3IRFrontendMetadata &ir_frontend_metadata,
-    const Objc3RuntimeDispatchLoweringAbiContract
-        &runtime_dispatch_lowering_abi_contract,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract) {
+    const std::string &runtime_dispatch_lowering_abi_boundary_summary,
+    std::size_t message_send_sites) {
   std::string ir_error;
   // Historical extraction contract marker:
   // EmitObjc3IRText(pipeline_result.program, options.lowering,
   // ir_frontend_metadata, bundle.ir_text, ir_error)
-  if (!EmitObjc3IRText(pipeline_result.program.ast, options.lowering,
-                       ir_frontend_metadata, bundle.ir_text, ir_error)) {
+  if (!EmitObjc3FrontendIRTextForArtifact(
+          pipeline_result.program.ast, options.lowering, ir_frontend_metadata,
+          bundle.ir_text, ir_error)) {
     bundle.post_pipeline_diagnostics = {
         MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
@@ -90,12 +89,11 @@ bool CompleteObjc3FrontendArtifactIREmission(
   }
   bundle.ir_text =
       std::string("; runtime_dispatch_lowering_abi_boundary = ") +
-      Objc3RuntimeDispatchLoweringAbiBoundarySummary(
-          runtime_dispatch_lowering_abi_contract) +
+      runtime_dispatch_lowering_abi_boundary_summary +
       "\n" + bundle.ir_text;
 
   if (objc3c::artifacts::IsSuspiciousObjc3NativeIRTruthGap(
-          bundle.ir_text, program, message_send_selector_lowering_contract)) {
+          bundle.ir_text, program, message_send_sites)) {
     bundle.post_pipeline_diagnostics = {
         MakeDiag(1, 1, "O3L330",
                  "LLVM IR emission failed: emitted native IR is suspiciously "

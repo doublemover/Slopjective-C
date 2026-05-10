@@ -1,9 +1,24 @@
 #pragma once
 
-#include "artifacts/objc3_frontend_artifacts.h"
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "lower/contracts/message_send_selector_lowering_contracts.h"
-#include "lower/contracts/runtime_dispatch_abi_contracts.h"
+#include <cstddef>
+#include <string>
+
+struct Objc3ExecutableMetadataDebugProjectionSummary;
+struct Objc3ExecutableMetadataTypedLoweringHandoff;
+struct Objc3FrontendArtifactBundle;
+struct Objc3FrontendOptions;
+struct Objc3FrontendPipelineResult;
+struct Objc3IREmissionCompletenessScaffold;
+struct Objc3IREmissionCoreFeatureImplementationSurface;
+struct Objc3IRFrontendMetadata;
+struct Objc3LoweringPipelinePassGraphCoreFeatureSurface;
+struct Objc3OwnershipAwareLoweringBehaviorScaffold;
+struct Objc3Program;
+struct Objc3RuntimeMetadataObjectInspectionHarnessSummary;
+struct Objc3RuntimeMetadataSectionPublicationSummary;
+struct Objc3RuntimeSupportLibraryContractSummary;
+struct Objc3RuntimeSupportLibraryCoreFeatureSummary;
+struct Objc3RuntimeSupportLibraryLinkWiringSummary;
 
 namespace objc3::artifacts::frontend {
 
@@ -38,9 +53,7 @@ bool CompleteObjc3FrontendArtifactIREmission(
     const Objc3FrontendOptions &options,
     const Objc3Program &program,
     const Objc3IRFrontendMetadata &ir_frontend_metadata,
-    const Objc3RuntimeDispatchLoweringAbiContract
-        &runtime_dispatch_lowering_abi_contract,
-    const Objc3MessageSendSelectorLoweringContract
-        &message_send_selector_lowering_contract);
+    const std::string &runtime_dispatch_lowering_abi_boundary_summary,
+    std::size_t message_send_sites);
 
 }  // namespace objc3::artifacts::frontend

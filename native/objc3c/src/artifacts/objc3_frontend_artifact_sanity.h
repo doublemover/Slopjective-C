@@ -1,14 +1,15 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
-#include "pipeline/objc3_frontend_types.h"
+struct Objc3Program;
 
 namespace objc3c::artifacts {
 
 bool IsSuspiciousObjc3NativeIRTruthGap(
     const std::string &ir_text,
     const Objc3Program &program,
-    const Objc3MessageSendSelectorLoweringContract &message_send_contract);
+    std::size_t message_send_sites);
 
 }  // namespace objc3c::artifacts

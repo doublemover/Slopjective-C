@@ -303,6 +303,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_emitter_state_initialization_function_state.cpp
   objc3_ir_emitter_state_initialization_static_models.cpp
   objc3_ir_emitter_statement_services.cpp
+  objc3_frontend_ir_text_emission.cpp
   objc3_ir_module_body_orchestration.cpp
 )
 objc3c_apply_build_defaults(objc3c_ir)
