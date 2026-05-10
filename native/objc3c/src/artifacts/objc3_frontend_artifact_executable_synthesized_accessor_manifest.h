@@ -1,8 +1,5 @@
 #pragma once
 
-#include "artifacts/objc3_frontend_artifact_executable_ivar_layout_manifest.h"
-#include "artifacts/objc3_frontend_artifact_executable_synthesized_accessor_manifest.h"
-
 #include <iosfwd>
 #include <string>
 
@@ -13,7 +10,7 @@ namespace objc3::artifacts::frontend {
 
 struct Objc3ExecutableAccessorLayoutLoweringSummary;
 
-void WriteExecutablePropertyAccessorLayoutLoweringSurface(
+void WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
     std::ostream &manifest,
     const std::string &runtime_state_publication_emit_prefix,
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary

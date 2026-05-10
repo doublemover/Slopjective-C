@@ -1,4 +1,4 @@
-#include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest.h"
+#include "artifacts/objc3_frontend_artifact_executable_synthesized_accessor_manifest.h"
 
 #include <ostream>
 
@@ -9,7 +9,7 @@
 
 namespace objc3::artifacts::frontend {
 
-void WriteExecutablePropertyAccessorLayoutLoweringSurface(
+void WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
     std::ostream &manifest,
     const std::string &runtime_state_publication_emit_prefix,
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary
@@ -18,8 +18,8 @@ void WriteExecutablePropertyAccessorLayoutLoweringSurface(
         &executable_accessor_layout_lowering_summary,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication) {
-  manifest << "  \"executable_property_accessor_layout_lowering_surface\":{\"contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+  manifest << "  \"executable_synthesized_accessor_property_lowering_surface\":{\"contract_id\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
            << "\",\"compile_manifest_artifact\":\""
            << runtime_state_publication_emit_prefix << ".manifest.json"
            << "\",\"registration_manifest_artifact\":\""
@@ -29,23 +29,22 @@ void WriteExecutablePropertyAccessorLayoutLoweringSurface(
            << runtime_state_publication_emit_prefix << ".obj"
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
-           << "\",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""
-           << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
+           << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
            << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
            << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
-           << "\",\"property_table_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel
-           << "\",\"ivar_layout_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel
-           << "\",\"accessor_binding_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel
-           << "\",\"scope_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel
+           << "\",\"source_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel
+           << "\",\"storage_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel
+           << "\",\"property_descriptor_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
            << "\",\"fail_closed_model\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
            << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
            << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
            << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
+           << ",\"runtime_source_path\":\"native/objc3c/src/runtime/objc3_runtime.cpp\""
            << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3\""
            << ",\"tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3\""
            << ",\"tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3\""
@@ -58,36 +57,19 @@ void WriteExecutablePropertyAccessorLayoutLoweringSurface(
            << ",\"tests/tooling/runtime/arc_debug_instrumentation_probe.cpp\"]"
            << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
            << ",\"no-milestone-specific-scaffolding\""
-           << ",\"no-layout-or-accessor-body-rederivation-outside-the-live-lowering-path\"]"
-           << ",\"property_metadata_entries\":"
-           << executable_accessor_layout_lowering_summary.property_metadata_entries
-           << ",\"ivar_metadata_entries\":"
-           << executable_accessor_layout_lowering_summary.ivar_metadata_entries
+           << ",\"hard-cut-storage-global-body-proof\"]"
+           << ",\"implementation_owned_property_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .implementation_owned_property_entries
+           << ",\"synthesized_getter_entries\":"
+           << executable_accessor_layout_lowering_summary.synthesized_getter_entries
+           << ",\"synthesized_setter_entries\":"
+           << executable_accessor_layout_lowering_summary.synthesized_setter_entries
+           << ",\"synthesized_accessor_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .synthesized_accessor_entries
            << ",\"property_descriptor_entries\":"
            << runtime_metadata_section_publication.property_descriptor_count
-           << ",\"ivar_descriptor_entries\":"
-           << runtime_metadata_section_publication.ivar_descriptor_count
-           << ",\"property_attribute_profile_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .property_attribute_profile_entries
-           << ",\"accessor_ownership_profile_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .accessor_ownership_profile_entries
-           << ",\"synthesized_binding_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .synthesized_binding_entries
-           << ",\"ivar_layout_entries\":"
-           << executable_accessor_layout_lowering_summary.ivar_layout_entries
-           << ",\"ivar_layout_owner_entries\":"
-           << executable_accessor_layout_lowering_summary
-                  .ivar_layout_owner_entries
-           << ",\"descriptor_counts_match_source_graph\":"
-           << ((executable_accessor_layout_lowering_summary.property_metadata_entries ==
-                        runtime_metadata_section_publication.property_descriptor_count &&
-                executable_accessor_layout_lowering_summary.ivar_metadata_entries ==
-                        runtime_metadata_section_publication.ivar_descriptor_count)
-                   ? "true"
-                   : "false")
            << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
