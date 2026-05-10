@@ -1,21 +1,15 @@
-#!/usr/bin/env python3
-"""Validate the live showcase example surface through the public compiler path."""
+"""Helper modules for showcase surface validation."""
 
 from __future__ import annotations
 
-from showcase_surface import (
-    GUIDED_WALKTHROUGH,
+from .cli import fail, main, parse_args
+from .commands import run
+from .fixtures import MODULE_DECL_RE
+from .paths import GUIDED_WALKTHROUGH, PORTFOLIO, ROOT, repo_relative
+from .validation import (
     GUIDED_WALKTHROUGH_CONTRACT_ID,
-    MODULE_DECL_RE,
-    PORTFOLIO,
-    ROOT,
     SHOWCASE_SUMMARY_CONTRACT_ID,
     WORKSPACE_CONTRACT_ID,
-    fail,
-    main,
-    parse_args,
-    repo_relative,
-    run,
 )
 
 __all__ = [
@@ -32,7 +26,3 @@ __all__ = [
     "repo_relative",
     "run",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
