@@ -1,27 +1,16 @@
 #include "io/json/json_parser_string_escape_token.h"
 
-#include <utility>
-
+#include "io/json/json_parser_string_escape_diagnostics.h"
 #include "io/json/json_parser_string_unicode_escape_token.h"
 
 namespace objc3::io::json {
-namespace {
-
-bool FailStringEscape(std::optional<JsonError> &error,
-                      std::size_t cursor,
-                      std::string message) {
-  error = JsonError{std::move(message), cursor};
-  return false;
-}
-
-}  // namespace
 
 bool ParseJsonStringEscapeToken(std::string_view text,
                                 std::size_t &cursor,
                                 std::optional<JsonError> &error,
                                 std::string &out) {
   if (cursor >= text.size()) {
-    return FailStringEscape(error, cursor, "unterminated JSON string escape");
+    return FailUnterminatedJsonStringEscape(error, cursor);
   }
   const char escaped = text[cursor++];
   switch (escaped) {
@@ -48,7 +37,7 @@ bool ParseJsonStringEscapeToken(std::string_view text,
     case 'u':
       return ParseJsonStringUnicodeEscapeToken(text, cursor, error, out);
     default:
-      return FailStringEscape(error, cursor, "invalid JSON string escape");
+      return FailInvalidJsonStringEscape(error, cursor);
   }
 }
 
