@@ -1,7 +1,8 @@
 #include "io/json/json_parser_object_container.h"
 
-#include <string>
 #include <utility>
+
+#include "io/json/json_parser_object_container_member.h"
 
 namespace objc3::io::json {
 
@@ -16,21 +17,8 @@ bool ParseJsonObjectContainer(JsonParserCursor &cursor,
     return true;
   }
   while (true) {
-    std::string key;
-    if (!cursor.ParseString(key)) {
+    if (!ParseJsonObjectContainerMember(cursor, value_parser, object)) {
       return false;
-    }
-    cursor.SkipWhitespace();
-    if (!cursor.Consume(':')) {
-      return cursor.Fail("expected ':' after JSON object key");
-    }
-    JsonValue value;
-    if (!value_parser.ParseValue(value)) {
-      return false;
-    }
-    auto inserted = object.emplace(std::move(key), std::move(value));
-    if (!inserted.second) {
-      return cursor.Fail("duplicate JSON object key");
     }
     cursor.SkipWhitespace();
     if (cursor.Consume('}')) {
