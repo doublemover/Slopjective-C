@@ -39,6 +39,9 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.cpp
   readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.cpp
   runtime_import_json_helpers.cpp
+  runtime_import_json_helpers_accessors.cpp
+  runtime_import_json_helpers_parser_values.cpp
+  runtime_import_json_helpers_readers.cpp
   runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation_evidence.cpp
   runtime_import_preservation_evidence_dispatch.cpp
