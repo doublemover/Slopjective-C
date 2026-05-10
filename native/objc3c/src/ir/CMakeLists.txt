@@ -50,6 +50,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_runtime_member_metadata_emission.cpp
   objc3_ir_runtime_member_metadata_property_descriptors.cpp
   objc3_ir_runtime_metadata_scaffold_emission.cpp
+  objc3_ir_runtime_object_metadata_class_records.cpp
   objc3_ir_runtime_object_metadata_emission.cpp
   objc3_ir_scope_cleanup_emission.cpp
   objc3_ir_runtime_bootstrap_global_emission.cpp
