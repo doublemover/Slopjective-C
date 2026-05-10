@@ -257,6 +257,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_storage_accessor_abi_manifest.h
   objc3_frontend_artifact_storage_accessor_manifest.cpp
   objc3_frontend_artifact_storage_accessor_manifest.h
+  objc3_frontend_artifact_storage_accessor_reflection_manifest.cpp
+  objc3_frontend_artifact_storage_accessor_reflection_manifest.h
   objc3_frontend_artifact_type_system_lowering_plan.cpp
   objc3_frontend_artifact_type_system_lowering_plan.h
   objc3_frontend_artifact_type_system_metadata.cpp
