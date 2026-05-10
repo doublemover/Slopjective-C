@@ -138,6 +138,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_concurrency_runtime_metadata.h
   objc3_frontend_artifact_debug_projection_metadata.cpp
   objc3_frontend_artifact_debug_projection_metadata.h
+  objc3_frontend_artifact_dispatch_accessor_manifest.cpp
+  objc3_frontend_artifact_dispatch_accessor_manifest.h
   objc3_frontend_artifact_dispatch_metadata.cpp
   objc3_frontend_artifact_dispatch_metadata.h
   objc3_frontend_artifact_error_lowering_plan.cpp
