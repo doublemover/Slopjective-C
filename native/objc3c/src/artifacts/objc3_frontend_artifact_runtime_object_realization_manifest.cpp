@@ -1,4 +1,4 @@
-#include "artifacts/objc3_frontend_artifact_runtime_object_manifest.h"
+#include "artifacts/objc3_frontend_artifact_runtime_object_realization_manifest.h"
 
 #include <ostream>
 
