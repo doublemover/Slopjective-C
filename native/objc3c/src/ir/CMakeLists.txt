@@ -282,6 +282,7 @@ add_library(objc3c_ir_publication_surface STATIC
   objc3_ir_module_metadata_publication_lowering_profiles_ownership.cpp
   objc3_ir_module_metadata_publication_lowering_profiles_type_module.cpp
   objc3_ir_module_metadata_publication_prelude.cpp
+  objc3_ir_module_metadata_publication_prelude_lowering_replay.cpp
   objc3_ir_module_metadata_publication_runtime_gates.cpp
   objc3_ir_module_metadata_publication_tail.cpp
   objc3_ir_property_metadata_comment_emission.cpp
