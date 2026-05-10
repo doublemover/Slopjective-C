@@ -344,6 +344,8 @@ add_library(objc3c_runtime_abi_metadata STATIC
   objc3_runtime_registration_descriptor_document.cpp
   objc3_runtime_registration_descriptor_document.h
   objc3_runtime_registration_manifest_artifact.cpp
+  objc3_runtime_registration_manifest_document_bootstrap.cpp
+  objc3_runtime_registration_manifest_document_bootstrap.h
   objc3_runtime_registration_manifest_document.cpp
   objc3_runtime_registration_manifest_document.h
   objc3_runtime_registration_manifest_sections.cpp
