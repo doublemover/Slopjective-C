@@ -1,62 +1,6 @@
 #include "sema/objc3_semantic_passes_body_validation_core_concurrency_async_await.inc"
 #include "sema/objc3_semantic_passes_body_validation_core_concurrency_actor_sendability.inc"
-          handoff.task_runtime_cancellation_summary.deterministic &&
-          handoff.task_runtime_cancellation_summary.task_runtime_interop_sites ==
-              task_runtime_cancellation_summary.task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.runtime_hook_sites ==
-              task_runtime_cancellation_summary.runtime_hook_sites &&
-          handoff.task_runtime_cancellation_summary.cancellation_check_sites ==
-              task_runtime_cancellation_summary.cancellation_check_sites &&
-          handoff.task_runtime_cancellation_summary.cancellation_handler_sites ==
-              task_runtime_cancellation_summary.cancellation_handler_sites &&
-          handoff.task_runtime_cancellation_summary.suspension_point_sites ==
-              task_runtime_cancellation_summary.suspension_point_sites &&
-          handoff.task_runtime_cancellation_summary
-                  .cancellation_propagation_sites ==
-              task_runtime_cancellation_summary
-                  .cancellation_propagation_sites &&
-          handoff.task_runtime_cancellation_summary.normalized_sites ==
-              task_runtime_cancellation_summary.normalized_sites &&
-          handoff.task_runtime_cancellation_summary.gate_blocked_sites ==
-              task_runtime_cancellation_summary.gate_blocked_sites &&
-          handoff.task_runtime_cancellation_summary.contract_violation_sites ==
-              task_runtime_cancellation_summary.contract_violation_sites &&
-          handoff.task_runtime_cancellation_summary.runtime_hook_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.cancellation_check_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.cancellation_handler_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.suspension_point_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary
-                  .cancellation_propagation_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .cancellation_check_sites &&
-          handoff.task_runtime_cancellation_summary
-                  .cancellation_propagation_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .cancellation_handler_sites &&
-          handoff.task_runtime_cancellation_summary.normalized_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.gate_blocked_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.gate_blocked_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .cancellation_propagation_sites &&
-          handoff.task_runtime_cancellation_summary.contract_violation_sites <=
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
-          handoff.task_runtime_cancellation_summary.normalized_sites +
-                  handoff.task_runtime_cancellation_summary.gate_blocked_sites ==
-              handoff.task_runtime_cancellation_summary
-                  .task_runtime_interop_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency_task_runtime.inc"
           handoff.concurrency_replay_race_guard_summary.deterministic &&
           handoff.concurrency_replay_race_guard_summary
                   .concurrency_replay_race_guard_sites ==
