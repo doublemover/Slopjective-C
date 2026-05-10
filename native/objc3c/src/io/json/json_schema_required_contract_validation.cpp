@@ -3,6 +3,8 @@
 #include <cstddef>
 
 #include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_required_contract_entry_validation.h"
+#include "io/json/json_schema_required_contract_uniqueness_validation.h"
 
 namespace objc3::io::json {
 
@@ -14,23 +16,15 @@ void ValidateJsonSchemaRequiredContract(const JsonValue &required,
                                "required must be an array of strings");
     return;
   }
-  for (std::size_t i = 0; i < required.AsArray().size(); ++i) {
-    const JsonValue &entry = required.AsArray()[i];
-    const std::string entry_path = JsonInstanceArrayElementPath(schema_path, i);
-    if (!entry.IsString()) {
-      AddJsonSchemaContractError(result, "invalid_required_entry", entry_path,
-                                 "required entries must be strings");
+  const JsonValue::Array &required_entries = required.AsArray();
+  for (std::size_t i = 0; i < required_entries.size(); ++i) {
+    const JsonValue &entry = required_entries[i];
+    if (!ValidateJsonSchemaRequiredEntryContract(entry, i, schema_path,
+                                                 result)) {
       continue;
     }
-    for (std::size_t j = i + 1; j < required.AsArray().size(); ++j) {
-      if (required.AsArray()[j].IsString() &&
-          required.AsArray()[j].AsString() == entry.AsString()) {
-        AddJsonSchemaContractError(
-            result, "duplicate_required",
-            JsonInstanceArrayElementPath(schema_path, j),
-            "required property names must be unique");
-      }
-    }
+    ValidateJsonSchemaRequiredEntryUniqueness(
+        required_entries, i, entry.AsString(), schema_path, result);
   }
 }
 
