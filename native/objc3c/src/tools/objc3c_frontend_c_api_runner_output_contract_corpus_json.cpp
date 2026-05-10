@@ -1,28 +1,16 @@
 #include "tools/objc3c_frontend_c_api_runner_output_contract_corpus_json.h"
 
-#include "io/objc3_json.h"
-
-using objc3::io::EscapeJsonString;
+#include "tools/objc3c_frontend_c_api_runner_output_contract_corpus_json_internal.h"
 
 void WriteFrontendCApiRunnerOutputContractCorpusJson(
     std::ostream &out,
     const std::string &indent,
     const Objc3CliReportingOutputContractConformanceCorpusExpansionSurface
         &corpus) {
-  out << indent << "\"conformance_corpus_key\": \""
-      << EscapeJsonString(corpus.conformance_corpus_key) << "\",\n";
-  out << indent << "\"conformance_corpus_case_count\": "
-      << corpus.conformance_corpus_case_count << ",\n";
-  out << indent << "\"conformance_corpus_accept_case_count\": "
-      << corpus.conformance_corpus_accept_case_count << ",\n";
-  out << indent << "\"conformance_corpus_reject_case_count\": "
-      << corpus.conformance_corpus_reject_case_count << ",\n";
-  out << indent << "\"conformance_corpus_consistent\": "
-      << (corpus.conformance_corpus_consistent ? "true" : "false") << ",\n";
-  out << indent << "\"conformance_corpus_ready\": "
-      << (corpus.conformance_corpus_ready ? "true" : "false") << ",\n";
-  out << indent << "\"conformance_corpus_key_ready\": "
-      << (corpus.conformance_corpus_key_ready ? "true" : "false") << ",\n";
-  out << indent << "\"core_feature_impl_ready\": "
-      << (corpus.core_feature_impl_ready ? "true" : "false") << "\n";
+  WriteFrontendCApiRunnerOutputContractCorpusIdentityJsonRows(out,
+                                                              indent,
+                                                              corpus);
+  WriteFrontendCApiRunnerOutputContractCorpusExpectationJsonRows(out,
+                                                                 indent,
+                                                                 corpus);
 }
