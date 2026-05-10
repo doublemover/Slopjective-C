@@ -35,6 +35,7 @@ add_library(objc3c_pipeline STATIC
   frontend_control_flow_source_closure_helpers_stmt_sites.cpp
   frontend_dispatch_source_completion_helpers.cpp
   frontend_error_handling_source_closure_helpers.cpp
+  frontend_interop_source_closure_helpers.cpp
   frontend_interop_source_completion_helpers.cpp
   frontend_pipeline_orchestration.cpp
   frontend_pipeline_orchestration_protocol_symbols.cpp
@@ -125,6 +126,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_type_system_preservation_protocol.cpp
   frontend_control_flow_source_closure_helpers.h
   frontend_error_handling_source_closure_helpers.h
+  frontend_interop_source_closure_helpers.h
   frontend_ownership_source_closure_helpers.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
