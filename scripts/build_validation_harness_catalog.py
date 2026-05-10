@@ -165,7 +165,7 @@ def main() -> None:
         'retained_static_guard_classes': policy['retained_static_guard_classes'],
         'migration_targets': {
             'primary_shared_harness': 'scripts/shared_compiler_runtime_acceptance_harness.py',
-            'primary_public_runner': 'scripts.objc3c_workflow',
+            'primary_public_workflow_module': 'scripts.objc3c_workflow',
             'legacy_namespace_work': 'validation-legacy-surface-map',
             'artifact_contract_work': 'validation-acceptance-artifact-index',
         },
@@ -198,7 +198,7 @@ def main() -> None:
         '',
         '## Migration targets',
         f"- primary shared harness: `{catalog['migration_targets']['primary_shared_harness']}`",
-        f"- primary public runner: `{catalog['migration_targets']['primary_public_runner']}`",
+        f"- primary public workflow module: `{catalog['migration_targets']['primary_public_workflow_module']}`",
         f"- legacy namespace work: `{catalog['migration_targets']['legacy_namespace_work']}`",
         f"- artifact contract work: `{catalog['migration_targets']['artifact_contract_work']}`",
         '',

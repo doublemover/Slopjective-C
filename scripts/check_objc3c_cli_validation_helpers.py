@@ -24,16 +24,18 @@ def test_add_check_argument() -> None:
     assert parser.parse_args(["--check"]).check is True
 
 
-def test_public_runner_loads() -> None:
-    runner = load_public_workflow_runner(module_name="objc3c_workflow_runner_helper_test")
-    assert hasattr(runner, "ACTION_SPECS")
-    assert callable(runner.list_actions_payload)
+def test_public_workflow_dispatch_loads() -> None:
+    dispatch = load_public_workflow_runner(
+        module_name="objc3c_workflow_dispatch_helper_test"
+    )
+    assert hasattr(dispatch, "ACTION_SPECS")
+    assert callable(dispatch.list_actions_payload)
 
 
 def main() -> int:
     test_contains_all()
     test_add_check_argument()
-    test_public_runner_loads()
+    test_public_workflow_dispatch_loads()
     print("objc3c-cli-validation-helpers: PASS")
     return 0
 

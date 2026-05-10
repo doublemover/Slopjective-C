@@ -38,7 +38,7 @@ def main() -> int:
         "runbook_has_artifact_contract_heading": "## Editor Protocol And Debug Artifact Contract" in runbook_text,
         "runbook_mentions_combined_surface": "one machine-owned editor tooling surface" in runbook_text,
         "runbook_mentions_tmp_report_family": "tmp/reports/developer-tooling/" in runbook_text,
-        "runbook_mentions_public_runner_entrypoint": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
+        "runbook_mentions_public_workflow_actions": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
         "workflow_registry_exposes_declared_spine": "validate-developer-tooling" in registered_actions,
         "package_exposes_objc3c_bridge": package_bridge_exists,
         "all_required_actions_registered": not missing_actions,
