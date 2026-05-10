@@ -1,26 +1,5 @@
 #pragma once
 
-struct Objc3IRFunctionOrchestrationOptions;
-struct Objc3IRModuleBodyOrchestrationCallbacks;
-struct Objc3IRModuleBodyOrchestrationOptions;
-struct Objc3IRModuleMetadataPublicationOptions;
-struct Objc3IREmitterServiceContextCallbacks;
-struct Objc3IREmitterServiceContextState;
-
-Objc3IRFunctionOrchestrationOptions
-BuildObjc3IREmitterFunctionOrchestrationOptions(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks);
-
-Objc3IRModuleBodyOrchestrationOptions
-BuildObjc3IREmitterModuleBodyOrchestrationOptions(
-    const Objc3IREmitterServiceContextState &state);
-
-Objc3IRModuleBodyOrchestrationCallbacks
-BuildObjc3IREmitterModuleBodyOrchestrationCallbacks(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks);
-
-Objc3IRModuleMetadataPublicationOptions
-BuildObjc3IREmitterModuleMetadataPublicationOptions(
-    const Objc3IREmitterServiceContextState &state);
+#include "ir/objc3_ir_emitter_module_services_body.h"
+#include "ir/objc3_ir_emitter_module_services_function.h"
+#include "ir/objc3_ir_emitter_module_services_publication.h"

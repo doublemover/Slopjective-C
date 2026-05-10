@@ -1,26 +1,12 @@
-#include "ir/objc3_ir_emitter_module_services.h"
+#include "ir/objc3_ir_emitter_module_services_body.h"
 
 #include <string>
 
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
-#include "ir/objc3_ir_emitter_block_value_services.h"
+#include "ir/objc3_ir_emitter_block_value_services_proof_analysis.h"
+#include "ir/objc3_ir_emitter_module_services_function.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
-#include "ir/objc3_ir_emitter_statement_services.h"
-#include "ir/objc3_ir_function_orchestration.h"
 #include "ir/objc3_ir_module_body_orchestration.h"
-#include "ir/objc3_ir_module_metadata_publication.h"
-
-Objc3IRFunctionOrchestrationOptions
-BuildObjc3IREmitterFunctionOrchestrationOptions(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks) {
-  return Objc3IRFunctionOrchestrationOptions{
-      state.program,
-      state.frontend_metadata.arc_mode_enabled,
-      state.class_receiver_constants,
-      BuildObjc3IREmitterStatementOrchestrationOptions(state, callbacks),
-      state.synthetic_method_stats};
-}
 
 Objc3IRModuleBodyOrchestrationOptions
 BuildObjc3IREmitterModuleBodyOrchestrationOptions(
@@ -65,15 +51,4 @@ BuildObjc3IREmitterModuleBodyOrchestrationCallbacks(
       [callbacks](const std::string &reason) {
         (void)callbacks.emit_unsupported_i32_value(reason);
       }};
-}
-
-Objc3IRModuleMetadataPublicationOptions
-BuildObjc3IREmitterModuleMetadataPublicationOptions(
-    const Objc3IREmitterServiceContextState &state) {
-  return Objc3IRModuleMetadataPublicationOptions{
-      state.program.module_name,
-      state.frontend_metadata,
-      state.lowering_ir_boundary,
-      state.synthesized_property_accessor_count,
-      state.vector_signature_function_count};
 }
