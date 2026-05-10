@@ -1,37 +1,4 @@
-          handoff.unsafe_pointer_extension_summary.deterministic &&
-          handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites ==
-              unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.unsafe_keyword_sites ==
-              unsafe_pointer_extension_summary.unsafe_keyword_sites &&
-          handoff.unsafe_pointer_extension_summary.pointer_arithmetic_sites ==
-              unsafe_pointer_extension_summary.pointer_arithmetic_sites &&
-          handoff.unsafe_pointer_extension_summary.raw_pointer_type_sites ==
-              unsafe_pointer_extension_summary.raw_pointer_type_sites &&
-          handoff.unsafe_pointer_extension_summary.unsafe_operation_sites ==
-              unsafe_pointer_extension_summary.unsafe_operation_sites &&
-          handoff.unsafe_pointer_extension_summary.normalized_sites ==
-              unsafe_pointer_extension_summary.normalized_sites &&
-          handoff.unsafe_pointer_extension_summary.gate_blocked_sites ==
-              unsafe_pointer_extension_summary.gate_blocked_sites &&
-          handoff.unsafe_pointer_extension_summary.contract_violation_sites ==
-              unsafe_pointer_extension_summary.contract_violation_sites &&
-          handoff.unsafe_pointer_extension_summary.unsafe_keyword_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.pointer_arithmetic_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.raw_pointer_type_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.unsafe_operation_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.normalized_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.gate_blocked_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.contract_violation_sites <=
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
-          handoff.unsafe_pointer_extension_summary.normalized_sites +
-                  handoff.unsafe_pointer_extension_summary.gate_blocked_sites ==
-              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_unsafe_pointer_diagnostics.inc"
           handoff.inline_asm_intrinsic_governance_summary.deterministic &&
           handoff.inline_asm_intrinsic_governance_summary
                   .inline_asm_intrinsic_sites ==
