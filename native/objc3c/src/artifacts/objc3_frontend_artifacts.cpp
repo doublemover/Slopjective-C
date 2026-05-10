@@ -31,6 +31,7 @@
 #include "artifacts/objc3_frontend_artifact_ir_emission_completion.h"
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
 #include "artifacts/objc3_frontend_artifact_lowering_replay_manifest.h"
+#include "artifacts/objc3_frontend_artifact_manifest_header.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
@@ -90,7 +91,6 @@
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"
-#include "io/json/json_writer.h"
 #include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
@@ -115,7 +115,6 @@
 namespace {
 
 using objc3::io::EscapeJsonString;
-using objc3::io::json::JsonObjectWriter;
 using objc3::artifacts::evidence::
     BuildErrorHandlingResultAndBridgingArtifactReplayJson;
 using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
@@ -409,19 +408,6 @@ using objc3::artifacts::reports::
     BuildVersionedConformanceReportLoweringSummaryJson;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
-
-const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
-  (void)mode;
-  return "canonical";
-}
-
-const char *ArcModeName(Objc3FrontendArcMode mode) {
-  return mode == Objc3FrontendArcMode::kEnabled ? "enabled" : "disabled";
-}
-
-std::string BuildStringArrayJson(const std::vector<std::string> &values) {
-  return objc3::io::json::RenderJsonStringArray(values);
-}
 
 }  // namespace
 
@@ -1404,118 +1390,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       source_shape_plan.resolved_global_values;
 
   std::ostringstream manifest;
-  manifest << "{\n";
-  manifest << "  \"source\": \"" << input_path.generic_string() << "\",\n";
-  manifest << "  \"module\": \"" << program.module_name << "\",\n";
-  manifest << "  \"frontend\": {\n";
-  manifest << "    \"language_version\":" << static_cast<unsigned>(options.language_version) << ",\n";
-  manifest << "    \"language_profile\":\"" << LanguageProfileName(options.language_profile) << "\",\n";
-  manifest << "    \"arc_mode\":\"" << ArcModeName(options.arc_mode) << "\",\n";
-  manifest << "    \"default_language_profile\":\"canonical\",\n";
-  manifest << "    \"canonical_literal_rejection_diagnostics\":true,\n";
-  manifest << "    \"language_version_selection_supported\":true,\n";
-  manifest << "    \"language_profile_selection_supported\":true,\n";
-  manifest << "    \"canonical_rejection_diagnostics_selection_supported\":false,\n";
-  manifest << "    \"canonical_literal_rejection_diagnostics_hard_error\":true,\n";
-  manifest << "    \"strictness_selection_supported\":false,\n";
-  manifest << "    \"strict_concurrency_selection_supported\":false,\n";
-  manifest << "    \"feature_macro_surface_supported\":false,\n";
-  manifest << "    \"feature_claim_truth_surface_contract_id\":\""
-           << kObjc3FeatureClaimStrictnessTruthSurfaceContractId << "\",\n";
-  manifest << "    \"canonical_literal_rejection_counts\":{\"yes_literal_sites\":"
-           << pipeline_result.canonical_literal_rejection_counts.yes_literal_sites
-           << ",\"no_literal_sites\":"
-           << pipeline_result.canonical_literal_rejection_counts.no_literal_sites
-           << ",\"null_literal_sites\":"
-           << pipeline_result.canonical_literal_rejection_counts
-                  .null_literal_sites
-           << ",\"total_literal_sites\":"
-           << pipeline_result.canonical_literal_rejection_counts
-                  .total_literal_sites()
-           << "},\n";
-  manifest << "    \"language_version_pragma_contract\":{\"seen\":"
-           << (pipeline_result.language_version_pragma_contract.seen ? "true" : "false")
-           << ",\"directive_count\":" << pipeline_result.language_version_pragma_contract.directive_count
-           << ",\"duplicate\":" << (pipeline_result.language_version_pragma_contract.duplicate ? "true" : "false")
-           << ",\"non_leading\":"
-           << (pipeline_result.language_version_pragma_contract.non_leading ? "true" : "false")
-           << ",\"first_line\":" << pipeline_result.language_version_pragma_contract.first_line
-           << ",\"first_column\":" << pipeline_result.language_version_pragma_contract.first_column
-           << ",\"last_line\":" << pipeline_result.language_version_pragma_contract.last_line
-           << ",\"last_column\":" << pipeline_result.language_version_pragma_contract.last_column << "},\n";
-  manifest << "    \"bootstrap_registration_source_pragma_contract\":{"
-           << "\"registration_descriptor\":{\"seen\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .registration_descriptor.seen
-                   ? "true"
-                   : "false")
-           << ",\"directive_count\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .registration_descriptor.directive_count
-           << ",\"duplicate\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .registration_descriptor.duplicate
-                   ? "true"
-                   : "false")
-           << ",\"non_leading\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .registration_descriptor.non_leading
-                   ? "true"
-                   : "false")
-           << ",\"first_line\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .registration_descriptor.first_line
-           << ",\"first_column\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .registration_descriptor.first_column
-           << ",\"last_line\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .registration_descriptor.last_line
-           << ",\"last_column\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .registration_descriptor.last_column
-           << ",\"identifier\":\""
-           << EscapeJsonString(
-                  pipeline_result.bootstrap_registration_source_pragma_contract
-                      .registration_descriptor.identifier)
-           << "\"},\"image_root\":{\"seen\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .image_root.seen
-                   ? "true"
-                   : "false")
-           << ",\"directive_count\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .image_root.directive_count
-           << ",\"duplicate\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .image_root.duplicate
-                   ? "true"
-                   : "false")
-           << ",\"non_leading\":"
-           << (pipeline_result.bootstrap_registration_source_pragma_contract
-                       .image_root.non_leading
-                   ? "true"
-                   : "false")
-           << ",\"first_line\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .image_root.first_line
-           << ",\"first_column\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .image_root.first_column
-           << ",\"last_line\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .image_root.last_line
-           << ",\"last_column\":"
-           << pipeline_result.bootstrap_registration_source_pragma_contract
-                  .image_root.last_column
-           << ",\"identifier\":\""
-           << EscapeJsonString(
-                  pipeline_result.bootstrap_registration_source_pragma_contract
-                      .image_root.identifier)
-           << "\"},\"registration_descriptor_pragma_name\":\""
-           << EscapeJsonString(kObjc3BootstrapRegistrationDescriptorPragmaName)
-           << "\",\"image_root_pragma_name\":\""
-           << EscapeJsonString(kObjc3BootstrapImageRootPragmaName) << "\"},\n";
+  objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestHeader(
+      manifest, input_path, program, pipeline_result, options);
   manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";
   manifest << "    \"pipeline\": {\n";
   manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")
