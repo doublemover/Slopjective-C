@@ -1,17 +1,3 @@
-        continue;
-      }
-
-      if (Match(TokenKind::Greater)) {
-        return true;
-      }
-
-      const Token &token = Peek();
-      diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P112", "missing '>' after Objective-C protocol composition list"));
-      return false;
-    }
-  }
-
   bool ParseObjcCategoryClause(std::string &category_name, bool &has_category) {
     if (!Match(TokenKind::LParen)) {
       return true;
