@@ -91,7 +91,9 @@ target_link_libraries(objc3c_ir_publication_surface PUBLIC
 
 add_library(objc3c_ir STATIC
   objc3_ir_emitter.cpp
-  objc3_ir_emitter_block_value_services.cpp
+  objc3_ir_emitter_block_value_services_block_lowering.cpp
+  objc3_ir_emitter_block_value_services_proof_analysis.cpp
+  objc3_ir_emitter_block_value_services_value_materialization.cpp
   objc3_ir_emitter_expression_services.cpp
   objc3_ir_emitter_module_services.cpp
   objc3_ir_emitter_runtime_session.cpp
