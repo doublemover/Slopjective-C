@@ -255,22 +255,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fail if generated-only site/index.md drifts from canonical inputs.",
     )
-    parser.add_argument(
-        "--check-contract",
-        action="store_true",
-        help="Deprecated alias for --check.",
-    )
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    if args.check or args.check_contract:
-        if args.check_contract and not args.check:
-            print(
-                "site-index-check: WARN --check-contract is deprecated; use --check.",
-                file=sys.stderr,
-            )
+    if args.check:
         return check_drift()
     return build_index()
 
