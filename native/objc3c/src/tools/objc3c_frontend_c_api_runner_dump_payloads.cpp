@@ -1,9 +1,6 @@
 #include "tools/objc3c_frontend_c_api_runner_dump_payloads.h"
 
-#include "tools/objc3c_frontend_c_api_runner_observability_json.h"
-#include "tools/objc3c_frontend_c_api_runner_playground_repro_json.h"
-#include "tools/objc3c_frontend_c_api_runner_runtime_inspector_json.h"
-#include "tools/objc3c_frontend_c_api_runner_stage_trace_json.h"
+#include "tools/objc3c_frontend_c_api_runner_dump_payloads_internal.h"
 
 std::vector<std::string> BuildFrontendCApiRunnerDumpPayloads(
     const FrontendCApiRunnerOptions &options,
@@ -17,28 +14,20 @@ std::vector<std::string> BuildFrontendCApiRunnerDumpPayloads(
   if (options.dump_summary_json) {
     payloads.push_back(summary_json);
   }
-  if (options.dump_observability_json) {
-    payloads.push_back(
-        BuildFrontendCApiRunnerObservabilityJson(
-            summary_path,
-            result,
-            status,
-            result_error_message,
-            runtime_metadata_binary_path_text));
-  }
-  if (options.dump_playground_repro_json) {
-    payloads.push_back(
-        BuildFrontendCApiRunnerPlaygroundReproJson(
-            options,
-            result,
-            summary_path));
-  }
-  if (options.dump_runtime_inspector_json) {
-    payloads.push_back(
-        BuildFrontendCApiRunnerRuntimeInspectorJson(options, result));
-  }
-  if (options.dump_stage_trace_json) {
-    payloads.push_back(BuildFrontendCApiRunnerStageTraceJson(result));
-  }
+  AppendFrontendCApiRunnerObservabilityDumpPayload(payloads,
+                                                   options,
+                                                   summary_path,
+                                                   result,
+                                                   status,
+                                                   result_error_message,
+                                                   runtime_metadata_binary_path_text);
+  AppendFrontendCApiRunnerPlaygroundReproDumpPayload(payloads,
+                                                     options,
+                                                     summary_path,
+                                                     result);
+  AppendFrontendCApiRunnerRuntimeInspectorDumpPayload(payloads,
+                                                      options,
+                                                      result);
+  AppendFrontendCApiRunnerStageTraceDumpPayload(payloads, options, result);
   return payloads;
 }
