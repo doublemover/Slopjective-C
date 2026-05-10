@@ -723,6 +723,89 @@ const char *FindParserDiagnosticGrammarHardeningFailureReason(
   return nullptr;
 }
 
+const char *FindParseRecoveryConformanceFailureReason(
+    const Objc3ParseLoweringReadinessSurface &surface,
+    const Objc3ParseLoweringConformancePerformanceReadinessRecord
+        &conformance_performance_readiness) {
+  if (!IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+          surface.parser_recovery_replay_ready,
+          surface.parse_artifact_replay_key_deterministic,
+          surface.long_tail_grammar_replay_keys_ready,
+          surface.long_tail_grammar_diagnostics_hardening_ready,
+          surface.parse_recovery_determinism_hardening_consistent,
+          surface.parse_artifact_handoff_key,
+          surface.parse_artifact_replay_key,
+          surface.parse_artifact_diagnostics_hardening_key,
+          surface.parse_artifact_edge_robustness_key,
+          surface.long_tail_grammar_handoff_key,
+          surface.long_tail_grammar_diagnostics_hardening_key,
+          surface.parse_recovery_determinism_hardening_key)) {
+    return "toolchain/runtime GA operations recovery/determinism hardening is inconsistent";
+  }
+
+  if (!IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
+          IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+              surface.parser_recovery_replay_ready,
+              surface.parse_artifact_replay_key_deterministic,
+              surface.long_tail_grammar_replay_keys_ready,
+              surface.long_tail_grammar_diagnostics_hardening_ready,
+              surface.parse_recovery_determinism_hardening_consistent,
+              surface.parse_artifact_handoff_key,
+              surface.parse_artifact_replay_key,
+              surface.parse_artifact_diagnostics_hardening_key,
+              surface.parse_artifact_edge_robustness_key,
+              surface.long_tail_grammar_handoff_key,
+              surface.long_tail_grammar_diagnostics_hardening_key,
+              surface.parse_recovery_determinism_hardening_key),
+          surface.long_tail_grammar_recovery_determinism_consistent,
+          surface.long_tail_grammar_recovery_determinism_ready,
+          surface.long_tail_grammar_recovery_determinism_key)) {
+    return "toolchain/runtime GA operations recovery/determinism hardening is not ready";
+  }
+
+  if (!surface.long_tail_grammar_recovery_determinism_consistent) {
+    return "long-tail grammar recovery/determinism hardening is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_recovery_determinism_ready) {
+    return "long-tail grammar recovery/determinism hardening is not ready";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_conformance_matrix_consistent) {
+    return "toolchain/runtime GA operations conformance matrix is inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_conformance_matrix_ready) {
+    return "toolchain/runtime GA operations conformance matrix is not ready";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_conformance_corpus_consistent) {
+    return "toolchain/runtime GA operations conformance corpus is inconsistent";
+  }
+
+  if (!conformance_performance_readiness
+           .toolchain_runtime_ga_operations_conformance_corpus_ready) {
+    return "toolchain/runtime GA operations conformance corpus is not ready";
+  }
+
+  if (!surface.long_tail_grammar_conformance_matrix_consistent) {
+    return "long-tail grammar conformance matrix is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_conformance_matrix_ready) {
+    return "long-tail grammar conformance matrix is not ready";
+  }
+
+  if (!surface.parse_recovery_determinism_hardening_consistent) {
+    return "parse recovery/determinism hardening is inconsistent";
+  }
+
+  return nullptr;
+}
+
 }  // namespace
 
 Objc3ParseLoweringFailureReasonReadinessRecord
@@ -791,91 +874,11 @@ BuildObjc3ParseLoweringFailureReasonReadiness(
     return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
-  if (!IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.long_tail_grammar_replay_keys_ready,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.parse_recovery_determinism_hardening_consistent,
-          surface.parse_artifact_handoff_key,
-          surface.parse_artifact_replay_key,
-          surface.parse_artifact_diagnostics_hardening_key,
-          surface.parse_artifact_edge_robustness_key,
-          surface.long_tail_grammar_handoff_key,
-          surface.long_tail_grammar_diagnostics_hardening_key,
-          surface.parse_recovery_determinism_hardening_key)) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations recovery/determinism hardening is inconsistent");
-  }
-
-  if (!IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
-          IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
-              surface.parser_recovery_replay_ready,
-              surface.parse_artifact_replay_key_deterministic,
-              surface.long_tail_grammar_replay_keys_ready,
-              surface.long_tail_grammar_diagnostics_hardening_ready,
-              surface.parse_recovery_determinism_hardening_consistent,
-              surface.parse_artifact_handoff_key,
-              surface.parse_artifact_replay_key,
-              surface.parse_artifact_diagnostics_hardening_key,
-              surface.parse_artifact_edge_robustness_key,
-              surface.long_tail_grammar_handoff_key,
-              surface.long_tail_grammar_diagnostics_hardening_key,
-              surface.parse_recovery_determinism_hardening_key),
-          surface.long_tail_grammar_recovery_determinism_consistent,
-          surface.long_tail_grammar_recovery_determinism_ready,
-          surface.long_tail_grammar_recovery_determinism_key)) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations recovery/determinism hardening is not ready");
-  }
-
-  if (!surface.long_tail_grammar_recovery_determinism_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar recovery/determinism hardening is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_recovery_determinism_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar recovery/determinism hardening is not ready");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_conformance_matrix_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations conformance matrix is inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_conformance_matrix_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations conformance matrix is not ready");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_conformance_corpus_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations conformance corpus is inconsistent");
-  }
-
-  if (!conformance_performance_readiness
-           .toolchain_runtime_ga_operations_conformance_corpus_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "toolchain/runtime GA operations conformance corpus is not ready");
-  }
-
-  if (!surface.long_tail_grammar_conformance_matrix_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar conformance matrix is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_conformance_matrix_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar conformance matrix is not ready");
-  }
-
-  if (!surface.parse_recovery_determinism_hardening_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse recovery/determinism hardening is inconsistent");
+  if (const char *failure_reason =
+          FindParseRecoveryConformanceFailureReason(
+              surface,
+              conformance_performance_readiness)) {
+    return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
   if (const char *failure_reason =
