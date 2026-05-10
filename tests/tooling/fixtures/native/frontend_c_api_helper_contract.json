@@ -20,7 +20,7 @@
     "null_invalid_input_owner": "frontend-c-api-null-invalid-input",
     "abi_version_owner": "frontend-c-api-abi-version",
     "public_private_partition_owner": "frontend-c-api-public-private-partition",
-    "no_fallback_or_report_only_claims": true,
+    "no_fallback_or_evidence_log_claims": true,
     "behavior_owner_split_required": true,
     "canonical_rejection_owner": "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/canonical_rejection.json"
   },
@@ -85,7 +85,7 @@
     "string_release is for standalone owned strings only",
     "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0"
   ],
-  "header_phrase_behavior_boundary": "header ownership phrases are public ABI contract evidence and do not create compatibility, fallback, shim, old-mode, report-only, or generated-artifact support",
+  "header_phrase_behavior_boundary": "header ownership phrases are public ABI contract evidence and do not create compatibility, fallback, shim, old-mode, evidence-log, or generated-artifact support",
   "required_source_fail_closed_snippets": [
     "ReleaseCompileResultOwnedStrings(result);",
     "*result = {};",
@@ -114,5 +114,5 @@
     "stage attempted and skipped flags are mutually exclusive",
     "stage severity counts must add up to diagnostics_total"
   ],
-  "fail_closed_behavior_boundary": "null inputs, undefined artifact kinds, invalid stage ids, malformed stage summaries, borrowed view misuse, ABI version bypass, public/private partition bypass, fallback, shim, old-mode, compatibility, and report-only claims are canonical rejection or strict-error evidence"
+  "fail_closed_behavior_boundary": "null inputs, undefined artifact kinds, invalid stage ids, malformed stage summaries, borrowed view misuse, ABI version bypass, public/private partition bypass, fallback, shim, old-mode, compatibility, and evidence-log claims are canonical rejection or strict-error evidence"
 }

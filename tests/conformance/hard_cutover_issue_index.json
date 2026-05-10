@@ -1271,7 +1271,7 @@
         "docs/workflows/validation.md",
         "docs/support/capability_matrix.json"
       ],
-      "retired_surface_disposition": "hygiene evidence treats direct helper commands and allowlist/report-only surfaces as retired"
+      "retired_surface_disposition": "hygiene evidence treats direct helper commands and allowlist/evidence-log surfaces as retired"
     },
     {
       "issue": "#8150",

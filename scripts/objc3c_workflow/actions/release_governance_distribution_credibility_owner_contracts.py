@@ -13,7 +13,7 @@ class DistributionCredibilityOwnerContract:
     required_artifacts: tuple[str, ...]
     claim_boundary: str
     blocking_conditions: tuple[str, ...]
-    report_only_allowed: bool = False
+    evidence_log_allowed: bool = False
     wrapper_only_allowed: bool = False
 
 
@@ -28,7 +28,7 @@ DISTRIBUTION_SOURCE_CONTRACTS = (
 )
 DISTRIBUTION_BLOCKING_CONDITIONS = (
     "trust report generated without live release drill evidence",
-    "distribution action exposes a report-only credibility claim",
+    "distribution action exposes a evidence-log credibility claim",
     "publication detaches from machine-owned release manifest lineage",
     "operator-authored trust badge replaces checked-in source contract evidence",
     "wrapper-only distribution publication action",
@@ -80,7 +80,7 @@ DISTRIBUTION_CREDIBILITY_OWNER_CONTRACTS: dict[str, DistributionCredibilityOwner
             "tmp/reports/distribution-credibility/publication-summary.json",
             "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
         ),
-        "trust-report publication must preserve release drill lineage and may not stand alone as report-only evidence",
+        "trust-report publication must preserve release drill lineage and may not stand alone as evidence-log evidence",
     ),
     "validate-distribution-credibility": _contract(
         "validate-distribution-credibility",
@@ -107,8 +107,8 @@ def require_distribution_credibility_owner_contract(action_name: str) -> Distrib
         raise RuntimeError(f"{action_name} has no source owner contract")
     if not contract.required_artifacts:
         raise RuntimeError(f"{action_name} has no required artifact contract")
-    if contract.report_only_allowed:
-        raise RuntimeError(f"{action_name} is report-only")
+    if contract.evidence_log_allowed:
+        raise RuntimeError(f"{action_name} is evidence-log")
     if contract.wrapper_only_allowed:
         raise RuntimeError(f"{action_name} is wrapper-only")
     return contract

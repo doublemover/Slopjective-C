@@ -27,5 +27,5 @@
     "expected_contract:exit_code"
   ],
   "canonical_anchor": "tests/tooling/fixtures/activation_triggers",
-  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode activation rows, shim activation rows, fallback activation rows, compatibility activation rows, migration-only activation rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode activation rows, shim activation rows, fallback activation rows, compatibility activation rows, migration-only activation rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

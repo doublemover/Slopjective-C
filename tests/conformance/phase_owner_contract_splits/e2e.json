@@ -16,5 +16,5 @@
     "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "legacy literals, runtime dispatch misses, report-only e2e claims, migration-only acceptance, and generated-only runnable evidence remain negative execution, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "legacy literals, runtime dispatch misses, evidence-log e2e claims, migration-only acceptance, and generated-only runnable evidence remain negative execution, strict-error, or provenance-only evidence"
 }

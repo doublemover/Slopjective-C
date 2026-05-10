@@ -20,5 +20,5 @@
     "runtime_calls/nil_message_send_runtime_call_contract.meta.json:fixture_kind=positive"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "positive IR truth is limited to hand-authored canonical IR fixtures with retired_positive_surface=false; non-nil runtime helper/linkage rows are strict-error evidence and never generated-only, report-only, migration, old-mode, shim, or fallback support"
+  "retired_surface_rule": "positive IR truth is limited to hand-authored canonical IR fixtures with retired_positive_surface=false; non-nil runtime helper/linkage rows are strict-error evidence and never generated-only, evidence-log, migration, old-mode, shim, or fallback support"
 }

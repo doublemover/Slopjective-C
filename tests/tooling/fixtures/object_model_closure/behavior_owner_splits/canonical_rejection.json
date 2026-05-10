@@ -3,10 +3,10 @@
   "catalog": "objc3c-object-model-closure-behavior-owner-split",
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
-  "support_boundary": "object-model closure rows that mention unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, report-only support, generated-only support, generated-report-only support, descriptor-only support, manifest-only support, query-only support, dispatch-inspection-only support, object-inspection-only support, property-synthesis-report-only support, ivar-layout-snapshot-only support, compatibility, shim, fallback, old-mode, legacy, unsupported, migration-only, or milestone-local alternate acceptance paths are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "object-model closure rows that mention unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, evidence-log support, generated-only support, generated-evidence-log support, descriptor-only support, manifest-only support, query-only support, dispatch-inspection-only support, object-inspection-only support, property-synthesis-evidence-log support, ivar-layout-snapshot-only support, compatibility, shim, fallback, old-mode, legacy, unsupported, migration-only, or milestone-local alternate acceptance paths are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
-    "hard_cutover_source_owner_contract:report_only_allowed=false",
+    "hard_cutover_source_owner_contract:evidence_log_allowed=false",
     "hard_cutover_source_owner_contract:fallback_claims_allowed=false",
     "hard_cutover_source_owner_contract:generated_report_claims_allowed=false",
     "frozen_semantic_models:unresolved-dispatch-miss-fallback-is-outside-supported-closure-claims",
@@ -26,8 +26,8 @@
     "*compatibility*",
     "*legacy*",
     "*unsupported*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*",
     "*generated-report*",
@@ -41,8 +41,8 @@
     "*dispatch_inspection_only*",
     "*object-inspection-only*",
     "*object_inspection_only*",
-    "*property-synthesis-report-only*",
-    "*property_synthesis_report_only*",
+    "*property-synthesis-evidence-log*",
+    "*property_synthesis_evidence_log*",
     "*ivar-layout-snapshot-only*",
     "*ivar_layout_snapshot_only*",
     "*source-only*",
@@ -55,5 +55,5 @@
     "*public-reflection-abi*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, shim, fallback, old-mode, unsupported, report-only, generated-only, generated-report-only, descriptor-only, manifest-only, query-only, dispatch-inspection-only, object-inspection-only, property-synthesis-report-only, ivar-layout-snapshot-only, migration-only, and alternate acceptance support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, shim, fallback, old-mode, unsupported, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, dispatch-inspection-only, object-inspection-only, property-synthesis-evidence-log, ivar-layout-snapshot-only, migration-only, and alternate acceptance support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

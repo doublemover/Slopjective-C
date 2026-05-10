@@ -43,11 +43,11 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "rejected parser corpus cases, old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, report-only rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "rejected parser corpus cases, old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

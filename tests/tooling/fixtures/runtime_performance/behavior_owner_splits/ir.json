@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
-  "support_boundary": "IR ownership covers emitted module, runnable package, and acceptance fixture provenance only when canonical IR owners claim the behavior; runtime-performance reports, packet roots, counter snapshots, timing rows, cache rows, generated-only rows, report-only rows, migration-only rows, runner-only rows, and package-only rows are generated or provenance-only artifacts",
+  "support_boundary": "IR ownership covers emitted module, runnable package, and acceptance fixture provenance only when canonical IR owners claim the behavior; runtime-performance reports, packet roots, counter snapshots, timing rows, cache rows, generated-only rows, evidence-log rows, migration-only rows, runner-only rows, and package-only rows are generated or provenance-only artifacts",
   "phase_support_claim_authority": false,
   "selectors": [
     "workloads:startup-installation",
@@ -16,5 +16,5 @@
     "required_packet_fields:summary"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "runnable package artifacts, counter snapshots, report packets, generated-only artifacts, report-only artifacts, migration-only artifacts, timing-only artifacts, cache-only artifacts, runner-only artifacts, package-only artifacts, shim/fallback artifact paths, old-mode IR rows, and compatibility outputs cannot convert into canonical IR support"
+  "retired_surface_rule": "runnable package artifacts, counter snapshots, report packets, generated-only artifacts, evidence-log artifacts, migration-only artifacts, timing-only artifacts, cache-only artifacts, runner-only artifacts, package-only artifacts, shim/fallback artifact paths, old-mode IR rows, and compatibility outputs cannot convert into canonical IR support"
 }

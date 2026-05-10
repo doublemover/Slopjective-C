@@ -7,7 +7,7 @@
     "primary_axis": "behavior owner before benchmark matrix dimension, measured workload list, compile/runtime report root, output root, timing row, cache row, machine profile, raw sample, normalized value, public command wrapper, or retired-surface claim",
     "support_authority": "benchmark parameters define measurement shape and artifact roots only; canonical behavior support must come from behavior owner splits",
     "artifact_rule": "compile/runtime report roots, output roots, machine profiles, raw samples, normalized values, generated reports, cache rows, timing rows, and public command wrappers are provenance-only",
-    "retired_surface_rule": "cross-machine, hand-normalized, screenshot-derived, compatibility, fallback, wrapper-only, old-mode, shim, unsupported, generated-only, report-only, migration-only, timing-only, cache-only, local-only, and foreign-baseline performance claims map to canonical_rejection or performance_provenance"
+    "retired_surface_rule": "cross-machine, hand-normalized, screenshot-derived, compatibility, fallback, wrapper-only, old-mode, shim, unsupported, generated-only, evidence-log, migration-only, timing-only, cache-only, local-only, and foreign-baseline performance claims map to canonical_rejection or performance_provenance"
   },
   "compile_latency": {
     "measured_workloads": [

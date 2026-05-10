@@ -30,5 +30,5 @@
     "authoritative_probe_paths:tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "public concurrency runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, old-mode runtime behavior, report-only runtime closure, manifest-only runtime support, descriptor-only runtime-registration, private-snapshot-only proof, probe-payload-only proof, scheduler fairness, distributed actor transport, external executor integration, and non-runtime-backed ARC/error/interop interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "public concurrency runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, old-mode runtime behavior, evidence-log runtime closure, manifest-only runtime support, descriptor-only runtime-registration, private-snapshot-only proof, probe-payload-only proof, scheduler fairness, distributed actor transport, external executor integration, and non-runtime-backed ARC/error/interop interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

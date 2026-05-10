@@ -30,5 +30,5 @@
     "tooling_contract:packaged-cli-to-editor"
   ],
   "canonical_anchor": "tests/tooling/fixtures/developer_tooling",
-  "retired_surface_rule": "unpublished language-server capability claims, hosted LLVM support without object emission, local-only hosted proof, source-map statement stepping, wrapper-only action capability, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode tooling rows, shim tooling rows, fallback tooling rows, compatibility tooling rows, migration-only tooling rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unpublished language-server capability claims, hosted LLVM support without object emission, local-only hosted proof, source-map statement stepping, wrapper-only action capability, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode tooling rows, shim tooling rows, fallback tooling rows, compatibility tooling rows, migration-only tooling rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

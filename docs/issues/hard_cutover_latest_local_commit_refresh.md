@@ -479,5 +479,5 @@ pipeline, and test slices below are committed local evidence only.
 - generated replay behavior owners: `6e2076598`
 
 These remain committed-owner evidence only. They do not introduce direct helper
-commands, alternate acceptance paths, report-only completion, validation claims,
+commands, alternate acceptance paths, evidence-log completion, validation claims,
 or remote closeout claims.

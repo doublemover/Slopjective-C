@@ -58,7 +58,7 @@ def test_release_gate_fixture_owner_policies_match_contract_model() -> None:
         assert set(owner.owned_actions).issubset(
             _surface_action_names(source_surface, workflow_surface)
         )
-        assert workflow_surface["owner_policy"]["report_only_allowed"] is False
+        assert workflow_surface["owner_policy"]["evidence_log_allowed"] is False
 
 
 def test_release_channel_catalog_exports_gate_and_action_owners() -> None:
@@ -127,7 +127,7 @@ def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> N
         "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
         "toolchain_archive_claim_requires_owner": True,
         "package_payload_owner_action": "package-runnable-toolchain",
-        "report_only_release_claim_allowed": False,
+        "evidence_log_release_claim_allowed": False,
         "wrapper_only_action_surface_allowed": False,
     }
 
@@ -138,7 +138,7 @@ def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> N
         "update_fallback_support_allowed": False,
         "publication_claim_owner": "release-operations-gate",
         "blocker_owner_required_before_publication": True,
-        "report_only_release_claim_allowed": False,
+        "evidence_log_release_claim_allowed": False,
         "wrapper_only_action_surface_allowed": False,
     }
 
@@ -148,13 +148,13 @@ def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> N
         for relative_path in (owner.source_surface, owner.workflow_surface):
             surface = _load_fixture(relative_path)
             assert surface["owner_policy"]["hard_cutover_guardrails"] == guardrails
-            assert surface["owner_policy"]["report_only_allowed"] is False
+            assert surface["owner_policy"]["evidence_log_allowed"] is False
 
 
-def test_packaging_and_release_operations_action_specs_are_not_report_only_claims() -> None:
+def test_packaging_and_release_operations_action_specs_are_not_evidence_log_claims() -> None:
     for specs in (PACKAGING_CHANNEL_ACTION_SPECS, RELEASE_OPERATIONS_ACTION_SPECS):
         for action, spec in specs.items():
-            assert "report-only" not in spec.guarantee_owner
+            assert "evidence-log" not in spec.guarantee_owner
             assert "wrapper" not in spec.backend
             assert RELEASE_GATE_OWNERS[
                 RELEASE_CHANNEL_ACTION_OWNER_MAP[action]["gate_owner"].removesuffix("-gate")
@@ -171,7 +171,7 @@ def test_platform_hardening_fixtures_pin_archive_and_unsupported_host_owners() -
         "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
         "blocker_owner": "platform-hardening-blockers",
         "source_authority": "checked-in-platform-hardening-contracts",
-        "report_only_allowed": False,
+        "evidence_log_allowed": False,
     }
 
     for relative_path in PLATFORM_HARDENING_FIXTURES:

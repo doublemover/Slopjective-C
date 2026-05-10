@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime registry rows, compatibility runtime rows, shim runtime rows, fallback runtime rows, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, compatibility-label-only runtime claims, and registry publication rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime registry rows, compatibility runtime rows, shim runtime rows, fallback runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, compatibility-label-only runtime claims, and registry publication rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

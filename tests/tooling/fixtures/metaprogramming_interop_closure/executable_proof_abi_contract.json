@@ -15,7 +15,7 @@
     "primary_axis": "behavior owner before executable proof report, public command wrapper, private runtime snapshot, package artifact, FFI metadata, or closure/error composition evidence",
     "support_authority": "executable proof reports and public workflows are provenance unless runtime or e2e owners claim behavior already supported by parser, sema, lowering, and IR owners",
     "positive_support_from_report": false,
-    "retired_surface_rule": "report-only, generated-report-only, package-only, cache-only, FFI-metadata-only, closure-error-summary-only, shim workflow, fallback workflow, old-mode command, and stale acceptance proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "evidence-log, generated-evidence-log, package-only, cache-only, FFI-metadata-only, closure-error-summary-only, shim workflow, fallback workflow, old-mode command, and stale acceptance proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "public_commands": [
     "test:objc3c:metaprogramming-conformance",

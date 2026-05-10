@@ -192,7 +192,7 @@
   "claim_restrictions": {
     "forbidden_evidence_classes": [
       "local-only-performance-evidence",
-      "report-only-performance-evidence",
+      "evidence-log-performance-evidence",
       "unsupported-benchmark-claim",
       "compatibility-fallback-performance-claim",
       "wrapper-only-action-surface"
@@ -208,7 +208,7 @@
   },
   "explicit_non_goals": [
     "no local-only performance evidence",
-    "no report-only performance evidence",
+    "no evidence-log performance evidence",
     "no unsupported benchmark claims",
     "no compatibility or fallback performance claim",
     "no wrapper-only action surface"

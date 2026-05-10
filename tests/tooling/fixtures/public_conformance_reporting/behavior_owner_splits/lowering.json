@@ -12,5 +12,5 @@
     "source_paths:schemas/objc3-conformance-evidence-bundle-v1.schema.json"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback lowering, shim lowering, old-mode lowering, compatibility lowering summaries, generated-only lowering support, generated-report-only lowering support, dashboard-only lowering support, badge-only lowering support, and public scorecard-only lowering support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "fallback lowering, shim lowering, old-mode lowering, compatibility lowering summaries, generated-only lowering support, generated-evidence-log lowering support, dashboard-only lowering support, badge-only lowering support, and public scorecard-only lowering support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

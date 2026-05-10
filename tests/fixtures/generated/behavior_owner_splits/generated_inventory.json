@@ -3,7 +3,7 @@
   "catalog": "objc3c-generated-boundary-provenance-owner-split",
   "owner_boundary": "generated_inventory",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "generated inventory ownership covers manifest rows, allowed generated roots, generator labels, replay artifact paths, provenance labels, origin labels, fixture generation metadata, validation payload ids, report-only rows, generated-output-only rows, and migration-only rows only",
+  "support_boundary": "generated inventory ownership covers manifest rows, allowed generated roots, generator labels, replay artifact paths, provenance labels, origin labels, fixture generation metadata, validation payload ids, evidence-log rows, generated-output-only rows, and migration-only rows only",
   "phase_support_claim_authority": false,
   "selectors": [
     "boundary.kind=generated-contract-artifacts",
@@ -22,10 +22,10 @@
     "validation_*/M*.json",
     "validation_*/replay_run_*/module.ll",
     "validation_*/replay_run_*/module.manifest.json",
-    "*report-only*",
+    "*evidence-log*",
     "*generated-output-only*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/fixtures/generated/manifest.json",
-  "retired_surface_rule": "generated inventory rows are provenance-only and cannot create behavior support, compatibility acceptance, fallback support, migration support, report-only support, or generated-output-only support"
+  "retired_surface_rule": "generated inventory rows are provenance-only and cannot create behavior support, compatibility acceptance, fallback support, migration support, evidence-log support, or generated-output-only support"
 }

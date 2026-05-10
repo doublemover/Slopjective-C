@@ -18,5 +18,5 @@
     "hard_cutover_requirements:cross-module-bridge-claims-require-runtime-registration-replay-proof"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-report-only e2e claims, generated-only reports, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and cross-module claims without replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "wrapper-only runnable actions, evidence-log executable proof, generated-evidence-log e2e claims, generated-only reports, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and cross-module claims without replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

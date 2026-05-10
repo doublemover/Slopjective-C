@@ -5,10 +5,10 @@
   "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
   "split_policy": {
-    "primary_axis": "behavior phase before timing workload, workload kind, generated artifact, report-only row, migration-only row, runner bucket, cache proof, docs output, command-surface output, package artifact, or retired-surface claim",
+    "primary_axis": "behavior phase before timing workload, workload kind, generated artifact, evidence-log row, migration-only row, runner bucket, cache proof, docs output, command-surface output, package artifact, or retired-surface claim",
     "positive_rule": "compiler throughput rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; timing workloads, source-surface rows, workload manifests, perf summaries, cache proofs, docs outputs, command-surface outputs, tmp packages, and provenance rows are not behavior support by themselves",
-    "provenance_rule": "generated docs, command surfaces, perf summaries, cache artifacts, tmp packages, workload manifest rows, source-surface rows, artifact-surface rows, optimization-policy rows, validation-tier rows, generated-only rows, report-only rows, and migration-only rows are provenance-only until a phase owner claims behavior",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance path, cache-recovery, cache-only, runner-only, docs-only, command-surface-only, package-only, generated-only, report-only, and migration-only claims are canonical rejection, strict-error, or provenance-only evidence"
+    "provenance_rule": "generated docs, command surfaces, perf summaries, cache artifacts, tmp packages, workload manifest rows, source-surface rows, artifact-surface rows, optimization-policy rows, validation-tier rows, generated-only rows, evidence-log rows, and migration-only rows are provenance-only until a phase owner claims behavior",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance path, cache-recovery, cache-only, runner-only, docs-only, command-surface-only, package-only, generated-only, evidence-log, and migration-only claims are canonical rejection, strict-error, or provenance-only evidence"
   },
   "owner_splits": [
     {

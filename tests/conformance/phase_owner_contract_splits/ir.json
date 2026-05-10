@@ -17,5 +17,5 @@
     "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "non-nil runtime helper calls, generated-only IR packets, placeholder artifacts, and report-only IR claims remain strict linkage evidence or provenance-only evidence"
+  "retired_surface_rule": "non-nil runtime helper calls, generated-only IR packets, placeholder artifacts, and evidence-log IR claims remain strict linkage evidence or provenance-only evidence"
 }

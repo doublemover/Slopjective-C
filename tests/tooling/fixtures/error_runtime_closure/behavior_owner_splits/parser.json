@@ -16,5 +16,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/result_bridge_consumer.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser spellings, parser recovery-only evidence, compatibility parser labels, parser fallback flags, generated source inventories, and report-only source truth are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser spellings, parser recovery-only evidence, compatibility parser labels, parser fallback flags, generated source inventories, and evidence-log source truth are canonical rejection, strict-error, or provenance-only evidence"
 }

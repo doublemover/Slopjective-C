@@ -11,7 +11,7 @@
     "positive_rule": "runtime positives are hand-authored tests/native/runtime fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
     "strict_error_rule": "dispatch misses and unresolved runtime-dispatch symbols are strict-error evidence; they are not positive runtime support",
     "docs_evidence_rule": "owner index rows, phase contracts, runtime-backed conformance manifests, runtime probe pointers, report pointers, generated artifacts, and metadata field names are provenance unless tied to a runtime fixture sidecar",
-    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only runtime rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, evidence-log, and migration-only runtime rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no parser, sema, lowering, IR, or e2e behavior contracts"
   },
   "owner_splits": [

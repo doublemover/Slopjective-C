@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/release_foundation/schema_surface.json",
     "tests/tooling/fixtures/release_foundation/workflow_surface.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed release-foundation violations: missing runnable package manifest, missing required payload fields, missing required payload prefixes, missing release manifest/SBOM/attestation schema surface, missing source stamps, dirty or unstaged payload publication, manual digest or attestation input, manually curated payload inclusion outside checked-in contracts, generated tmp output promoted as source truth, report-only publication, and release evidence wider than the selected runnable package.",
+  "support_boundary": "strict-error ownership covers fail-closed release-foundation violations: missing runnable package manifest, missing required payload fields, missing required payload prefixes, missing release manifest/SBOM/attestation schema surface, missing source stamps, dirty or unstaged payload publication, manual digest or attestation input, manually curated payload inclusion outside checked-in contracts, generated tmp output promoted as source truth, evidence-log publication, and release evidence wider than the selected runnable package.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -25,7 +25,7 @@
     "strict_error:hand-written-attestation",
     "strict_error:manual-payload-inclusion-list",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "strict_error:release-evidence-wider-than-selected-payload",
     "required_manifest_field:contract_id",
     "required_manifest_field:package_root",
@@ -60,5 +60,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/release_foundation",
-  "retired_surface_rule": "missing package manifests, missing payload fields, missing payload prefixes, missing schemas, missing source stamps, dirty publication state, manual digest lists, hand-written attestations, manual payload lists, tmp-as-source claims, report-only publication, evidence wider than payload, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing package manifests, missing payload fields, missing payload prefixes, missing schemas, missing source stamps, dirty publication state, manual digest lists, hand-written attestations, manual payload lists, tmp-as-source claims, evidence-log publication, evidence wider than payload, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

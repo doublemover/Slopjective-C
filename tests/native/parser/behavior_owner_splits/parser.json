@@ -16,5 +16,5 @@
     "negative/*.meta.json:owner_phase=parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "parser positives are limited to canonical syntax support; parser negatives are parser rejection evidence and never compatibility, shim, fallback, generated-only, report-only, or migration support"
+  "retired_surface_rule": "parser positives are limited to canonical syntax support; parser negatives are parser rejection evidence and never compatibility, shim, fallback, generated-only, evidence-log, or migration support"
 }

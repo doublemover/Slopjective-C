@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/positive/*.objc3"
   ],
-  "support_boundary": "parser ownership covers canonical hand-authored Objective-C 3 source syntax in recovery positive fixtures: module declarations, function declarations, typed parameters and returns, literal spelling, separator and prefixed numeric literals, nil literals, selector and keyword message-send syntax, block comments, if/for/while/do/switch statement shape, break/continue/default paths, class/id/instancetype/protocol qualifier syntax, annotations, prototypes, extern declarations, and nested statement scope. Paired IR expectations, native .m dispatch probes, dispatch-ir marker files, generated rows, report-only rows, old-mode labels, shim labels, fallback labels, compatibility labels, and migration labels cannot create parser support.",
+  "support_boundary": "parser ownership covers canonical hand-authored Objective-C 3 source syntax in recovery positive fixtures: module declarations, function declarations, typed parameters and returns, literal spelling, separator and prefixed numeric literals, nil literals, selector and keyword message-send syntax, block comments, if/for/while/do/switch statement shape, break/continue/default paths, class/id/instancetype/protocol qualifier syntax, annotations, prototypes, extern declarations, and nested statement scope. Paired IR expectations, native .m dispatch probes, dispatch-ir marker files, generated rows, evidence-log rows, old-mode labels, shim labels, fallback labels, compatibility labels, and migration labels cannot create parser support.",
   "phase_support_claim_authority": true,
   "selectors": [
     "tests/tooling/fixtures/native/recovery/positive/*.objc3",
@@ -18,5 +18,5 @@
     "syntax_surface:nested_block_statement_scope"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser recovery, shim parser recovery, fallback parser recovery, compatibility parser recovery, generated-only parser rows, report-only parser rows, migration-only parser rows, native .m parser claims, dispatch-ir parser claims, and parser claims derived only from directory labels are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser recovery, shim parser recovery, fallback parser recovery, compatibility parser recovery, generated-only parser rows, evidence-log parser rows, migration-only parser rows, native .m parser claims, dispatch-ir parser claims, and parser claims derived only from directory labels are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

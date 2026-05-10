@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "ir",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "IR conformance owns module emission, textual interface artifacts, metadata preservation, replay manifests, object/IR truth gates, and artifact shape only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
+  "support_boundary": "IR conformance owns module emission, textual interface artifacts, metadata preservation, replay manifests, object/IR truth gates, and artifact shape only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "module_roundtrip",
     "lowering_abi"
@@ -44,5 +44,5 @@
     }
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "artifact compatibility wording, generated-only artifacts, report-only artifacts, migration-only replay claims, shim/fallback artifact paths, old-mode IR rows, tmp artifact paths, dashboard-only artifact rows, prose-only artifact rows, module.ll outputs, and module.manifest.json outputs are provenance labels, canonical rejection, or strict-error evidence unless indexed as a strict rejection or strict-error"
+  "retired_surface_rule": "artifact compatibility wording, generated-only artifacts, evidence-log artifacts, migration-only replay claims, shim/fallback artifact paths, old-mode IR rows, tmp artifact paths, dashboard-only artifact rows, prose-only artifact rows, module.ll outputs, and module.manifest.json outputs are provenance labels, canonical rejection, or strict-error evidence unless indexed as a strict rejection or strict-error"
 }

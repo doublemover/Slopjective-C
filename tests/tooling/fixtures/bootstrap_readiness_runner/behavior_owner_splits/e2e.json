@@ -30,5 +30,5 @@
     "required_snapshot_file:open_blockers.json"
   ],
   "canonical_anchor": "tests/tooling/fixtures/bootstrap_readiness_runner",
-  "retired_surface_rule": "empty open_blockers reports used to erase open issue evidence, blocked_issues treated as zero-open readiness, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode runner rows, shim runner rows, fallback runner rows, compatibility runner rows, migration-only runner rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "empty open_blockers reports used to erase open issue evidence, blocked_issues treated as zero-open readiness, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode runner rows, shim runner rows, fallback runner rows, compatibility runner rows, migration-only runner rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

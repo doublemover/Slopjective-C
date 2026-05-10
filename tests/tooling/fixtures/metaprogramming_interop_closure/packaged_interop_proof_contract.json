@@ -10,7 +10,7 @@
     "primary_axis": "behavior owner before packaged proof report, package manifest, bridge payload, module replay, interop call, or FFI metadata",
     "support_authority": "packaged interop proof is provenance until IR, runtime, and e2e behavior owners claim the package, bridge, replay, and probe behavior together",
     "positive_support_from_report": false,
-    "retired_surface_rule": "packaged proof without coupled artifacts, generated bridge payload-only rows, module-replay-only rows, FFI-metadata-only rows, report-only rows, shim, fallback, old-mode, and compatibility-only proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "packaged proof without coupled artifacts, generated bridge payload-only rows, module-replay-only rows, FFI-metadata-only rows, evidence-log rows, shim, fallback, old-mode, and compatibility-only proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "required_step_actions": [
     "package-runnable-toolchain",

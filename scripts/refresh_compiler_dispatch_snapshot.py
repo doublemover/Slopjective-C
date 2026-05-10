@@ -48,7 +48,7 @@ def snapshot_refresh_contract(
         "dispatch_owner": dispatch_plan.COMPILER_DISPATCH_OWNER,
         "json_output": dispatch_plan.display_path(output_json_path),
         "markdown_output": dispatch_plan.display_path(output_md_path),
-        "no_fallback_or_report_only_claims": True,
+        "no_fallback_or_evidence_log_claims": True,
     }
 
 

@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
-  "support_boundary": "runtime performance provenance covers source-surface rows, workload manifest rows, artifact-surface rows, optimization-policy rows, workload family labels, acceptance case ids, probe paths, runtime acceptance report paths, runtime acceptance script paths, timing measured fields, counter snapshots, packet roots, summary reports, tmp artifact paths, tmp report paths, tmp package paths, generated-only rows, report-only rows, migration-only rows, cache-only rows, runner-only rows, package-only rows, counter-only rows, and owner split routing metadata as provenance only",
+  "support_boundary": "runtime performance provenance covers source-surface rows, workload manifest rows, artifact-surface rows, optimization-policy rows, workload family labels, acceptance case ids, probe paths, runtime acceptance report paths, runtime acceptance script paths, timing measured fields, counter snapshots, packet roots, summary reports, tmp artifact paths, tmp report paths, tmp package paths, generated-only rows, evidence-log rows, migration-only rows, cache-only rows, runner-only rows, package-only rows, counter-only rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "tests/tooling/fixtures/runtime_performance/source_surface.json",
@@ -38,8 +38,8 @@
     "exact_live_paths_for_downstream_work[]",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*cache-only*",
@@ -59,5 +59,5 @@
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "runtime performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, C API, dispatch, acceptance, or performance behavior; source-surface rows, workload rows, artifact rows, optimization-policy rows, acceptance report paths, probe paths, timing rows, cache rows, counter snapshots, generated reports, summary packets, tmp packages, generated-only rows, report-only rows, migration-only rows, shim, fallback, old-mode, compatibility, cache-only, timing-only, runner-only, package-only, and counter-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "runtime performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, C API, dispatch, acceptance, or performance behavior; source-surface rows, workload rows, artifact rows, optimization-policy rows, acceptance report paths, probe paths, timing rows, cache rows, counter snapshots, generated reports, summary packets, tmp packages, generated-only rows, evidence-log rows, migration-only rows, shim, fallback, old-mode, compatibility, cache-only, timing-only, runner-only, package-only, and counter-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

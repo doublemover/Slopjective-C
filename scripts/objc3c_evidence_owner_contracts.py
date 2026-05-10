@@ -214,7 +214,7 @@ EVIDENCE_FAMILIES: dict[str, EvidenceFamily] = {
 
 HARD_CUTOVER_SOURCE_OWNER_CONTRACT = {
     "source_owned": True,
-    "report_only_allowed": False,
+    "evidence_log_allowed": False,
     "fallback_claims_allowed": False,
     "generated_report_claims_allowed": False,
 }
@@ -275,8 +275,8 @@ def validate_boundary_owner_contracts(
         checks[f"{owner.owner_id}_supporting_contracts_exist"] = all(
             (root / path).is_file() for path in owner.supporting_contracts
         )
-        checks[f"{owner.owner_id}_report_only_disallowed"] = (
-            entry.get("report_only_allowed") is False
+        checks[f"{owner.owner_id}_evidence_log_disallowed"] = (
+            entry.get("evidence_log_allowed") is False
         )
         checks[f"{owner.owner_id}_fallback_claims_disallowed"] = (
             entry.get("fallback_claims_allowed") is False

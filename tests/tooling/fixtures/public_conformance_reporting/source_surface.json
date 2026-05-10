@@ -34,7 +34,7 @@
     "source_owner": "public-conformance-source",
     "gate_owner": "public-conformance-gate",
     "blocker_owner": "public-conformance-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "behavior_owner_split_required": true,
     "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
     "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
@@ -52,7 +52,7 @@
     "primary_axis": "behavior phase before public reporting source family, schema anchor, workflow action, generated report, tmp artifact, scorecard, badge, release-evidence bundle, dashboard status, or public claim language",
     "support_authority": "public conformance reporting rows are source, schema, workflow, stability, report, dashboard, scorecard, badge, and claim-language evidence only until parser, sema, lowering, IR, runtime, or e2e owners in upstream checked-in evidence families claim behavior",
     "provenance_rule": "schemas, release-evidence bundles, workflow actions, generated summaries, tmp reports, tmp artifacts, scorecards, badges, public summaries, public status labels, and claim-language rows cannot define canonical behavior support",
-    "retired_surface_rule": "report-only, generated-only, generated-report-only, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, shim, old-mode, fallback, unsupported, and missing-upstream rows are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "evidence-log, generated-only, generated-evidence-log, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, shim, old-mode, fallback, unsupported, and missing-upstream rows are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",

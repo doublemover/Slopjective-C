@@ -51,7 +51,7 @@
     "package_validation_owner": "package-ecosystem-validation-gate",
     "blocker_owner": "package-ecosystem-blockers",
     "source_authority": "checked-in-package-ecosystem-contracts",
-    "report_only_allowed": false
+    "evidence_log_allowed": false
   },
   "owner_contracts": {
     "lock_owner": {
@@ -93,7 +93,7 @@
     "retired_source_acceptance_claims_allowed": false,
     "retired_surface_acceptance_claims_allowed": false,
     "wrapper_only_publication_allowed": false,
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "required_owner_contract_module": "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py"
   },
   "blocker_metadata": {

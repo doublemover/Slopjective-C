@@ -3,7 +3,7 @@
   "catalog": "objc3c-generated-boundary-provenance-owner-split",
   "owner_boundary": "strict_rejection",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "generated inventory rows that mention retired modes, unsupported features, fallback acceptance, shim acceptance, compatibility acceptance, alternate acceptance paths, generator-only behavior, report-only evidence, generated-output-only evidence, migration-only evidence, replay-only evidence, or validation-packet-only evidence are non-positive unless canonical rejection or strict-error owners claim them",
+  "support_boundary": "generated inventory rows that mention retired modes, unsupported features, fallback acceptance, shim acceptance, compatibility acceptance, alternate acceptance paths, generator-only behavior, evidence-log evidence, generated-output-only evidence, migration-only evidence, replay-only evidence, or validation-packet-only evidence are non-positive unless canonical rejection or strict-error owners claim them",
   "phase_support_claim_authority": false,
   "selectors": [
     "README:retired adapter",
@@ -25,13 +25,13 @@
     "*generated_output_only*",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*replay-only*",
     "*validation-packet-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, generator-output-only, generated-output-only, generated-only, report-only, migration-only, replay-only, and validation-packet-only claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, generator-output-only, generated-output-only, generated-only, evidence-log, migration-only, replay-only, and validation-packet-only claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -7,7 +7,7 @@
   "owner_policy": {
     "source_authority": "checked-in-runtime-closure-owner-contracts",
     "missing_artifact_behavior": "fail-closed",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "fallback_allowed": false,
     "compatibility_shims_allowed": false,
     "generated_reports_are_source": false,
@@ -22,7 +22,7 @@
     "executable_proof_owner_role": "executable_proof_owner",
     "claim_publication_mode": "checked-in-owner-contract-plus-executable-proof",
     "missing_artifact_behavior": "fail-closed",
-    "report_only_executable_proof_claims_allowed": false,
+    "evidence_log_executable_proof_claims_allowed": false,
     "fallback_runtime_semantics_allowed": false,
     "compatibility_runtime_semantics_allowed": false,
     "wrapper_only_runnable_actions_allowed": false
@@ -139,17 +139,17 @@
   },
   "hard_cutover_requirements": [
     "no-fallback-runtime-closure-claims",
-    "no-report-only-runtime-closure-publication",
+    "no-evidence-log-runtime-closure-publication",
     "no-generated-report-as-source-authority",
     "runtime-closure-publication-requires-checked-in-owner-contract",
     "cross-module-bridge-claims-require-runtime-registration-replay-proof"
   ],
   "blocked_claim_shapes": [
     "fallback-runtime-behavior",
-    "report-only-runtime-closure",
+    "evidence-log-runtime-closure",
     "compatibility-shim-runtime-closure",
     "public-runtime-abi-widening-without-source-owner",
-    "generated-report-only-source-truth"
+    "generated-evidence-log-source-truth"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/error-runtime-closure",

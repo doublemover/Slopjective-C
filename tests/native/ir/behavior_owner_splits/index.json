@@ -11,7 +11,7 @@
     "positive_rule": "IR positives are hand-authored tests/native/ir fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
     "strict_error_rule": "non-nil runtime helper calls and unresolved runtime-dispatch symbols are strict-error/linkage evidence; they are not positive IR support",
     "docs_evidence_rule": "owner index rows, phase contracts, module-roundtrip manifests, lowering-ABI manifests, report pointers, generated artifact pointers, and metadata field names are provenance unless tied to an IR fixture sidecar",
-    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only IR rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, evidence-log, and migration-only IR rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no parser, sema, lowering, runtime, or e2e behavior contracts"
   },
   "owner_splits": [

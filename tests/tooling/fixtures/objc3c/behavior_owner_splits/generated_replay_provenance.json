@@ -4,7 +4,7 @@
   "owner_phase": "generated_replay_provenance",
   "source_root": "tests/tooling/fixtures/objc3c",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "generated replay provenance covers replay packets, generated module outputs, manifest outputs, validation payload rows, fixture generation metadata, generator labels, replay run labels, report-only rows, generated-only rows, generated-output-only rows, generator-output-only rows, validation-packet-only rows, replay-only rows, and migration-only rows as provenance only",
+  "support_boundary": "generated replay provenance covers replay packets, generated module outputs, manifest outputs, validation payload rows, fixture generation metadata, generator labels, replay run labels, evidence-log rows, generated-only rows, generated-output-only rows, generator-output-only rows, validation-packet-only rows, replay-only rows, and migration-only rows as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "validation_*/M*.json",
@@ -29,13 +29,13 @@
     "*generated_output_only*",
     "*generated-output-only*",
     "*generator-output-only*",
-    "*report_only*",
-    "*report-only*",
+    "*evidence_log*",
+    "*evidence-log*",
     "*migration_only*",
     "*migration-only*",
     "*replay-only*",
     "*validation-packet-only*"
   ],
   "canonical_anchor": "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
-  "retired_surface_rule": "generated replay provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, report-only, generated-output-only, generator-output-only, replay-only, validation-packet-only, shim, fallback, old-mode, compatibility, and migration-only replay rows stay provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "generated replay provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, generated-output-only, generator-output-only, replay-only, validation-packet-only, shim, fallback, old-mode, compatibility, and migration-only replay rows stay provenance, canonical rejection, strict-error, or absent-support evidence"
 }

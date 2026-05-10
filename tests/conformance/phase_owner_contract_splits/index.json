@@ -11,7 +11,7 @@
     "positive_rule": "positive support claims must remain hand-authored tests/native behavior evidence owned by parser, sema, lowering, IR, runtime, or e2e split contracts",
     "docs_evidence_rule": "docs, issue evidence, source_basis text, and cross-index references are provenance only and cannot create behavior support",
     "generated_rule": "generated-only contracts are provenance-only and cannot satisfy phase support claims",
-    "retired_surface_rule": "old-mode, shim, fallback, report-only, generated-only, migration-only, retired-source, unsupported-feature, and alternate acceptance contracts are strict rejection, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode, shim, fallback, evidence-log, generated-only, migration-only, retired-source, unsupported-feature, and alternate acceptance contracts are strict rejection, absent-support, or provenance-only evidence"
   },
   "owner_splits": [
     {

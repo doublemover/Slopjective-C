@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
     "tests/tooling/fixtures/security_hardening/source_surface.json"
   ],
-  "support_boundary": "canonical rejection owns security-hardening rows that look like support but are absent, blocked, degraded, local-only, report-only, generated-only, trust-bypass, wrapper-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-claims and gap claims remain rejection/absent-support evidence, not positive security behavior.",
+  "support_boundary": "canonical rejection owns security-hardening rows that look like support but are absent, blocked, degraded, local-only, evidence-log, generated-only, trust-bypass, wrapper-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-claims and gap claims remain rejection/absent-support evidence, not positive security behavior.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -29,7 +29,7 @@
     "non_claim:no signed-installer trust claim",
     "non_claim:no alternate update trust claim",
     "non_claim:no trust bypass for unsigned payloads",
-    "non_claim:no report-only security proof",
+    "non_claim:no evidence-log security proof",
     "non_claim:no local-only tabletop as capability truth",
     "non_claim:no fallback or trust-bypass security claim",
     "non_claim:no wrapper-only security action claim",
@@ -41,11 +41,11 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "hosted advisory service claims, remote key custody, automatic key rotation, hosted revocation, signed-installer trust, hostile-host execution safety, external package signing, local-only tabletop capability truth, report-only security proof, fallback trust, trust bypass, wrapper-only security actions, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, runner-only success, and workflow-label-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "hosted advisory service claims, remote key custody, automatic key rotation, hosted revocation, signed-installer trust, hostile-host execution safety, external package signing, local-only tabletop capability truth, evidence-log security proof, fallback trust, trust bypass, wrapper-only security actions, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, runner-only success, and workflow-label-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

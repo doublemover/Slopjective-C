@@ -41,7 +41,7 @@ def wrapper_truth_owner_contract() -> dict[str, Any]:
         "status_owner": WRAPPER_STATUS_OWNER,
         "truthfulness_contract_id": TRUTHFULNESS_CONTRACT_ID,
         "provenance_contract_id": PROVENANCE_CONTRACT_ID,
-        "no_fallback_or_report_only_claims": True,
+        "no_fallback_or_evidence_log_claims": True,
     }
 
 

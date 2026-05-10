@@ -21,16 +21,16 @@
     "closure_readiness_owner": "docs/issues/hard_cutover_8132_8150_closeout/closure_readiness_owner.json",
     "positive_rule": "only committed hard-cutover branch source, docs, tests, checked-in owner surfaces, and issue payload rows that point to committed refs can be canonical accepted closeout evidence",
     "negative_rule": "shim, fallback, compatibility, old-mode, unsupported, missing-upstream, alternate acceptance path, retired-source lane, and public compatibility claim rows are canonical rejection, strict-error, or absent-support evidence",
-    "provenance_rule": "docs-only refreshes, local scans, generated summaries, tmp reports, report-only rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, and remote-deferred rows are provenance or closure-readiness state, not positive support",
+    "provenance_rule": "docs-only refreshes, local scans, generated summaries, tmp reports, evidence-log rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, and remote-deferred rows are provenance or closure-readiness state, not positive support",
     "closure_readiness_rule": "local evidence-ready labels do not assert validation, pushed state, GitHub issue edits, or remote closure"
   },
   "branch_evidence_policy": {
     "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
-    "historic_local_refresh_fields": "local refresh labels identify committed refs in this checkout; they are not report-only or uncommitted evidence",
+    "historic_local_refresh_fields": "local refresh labels identify committed refs in this checkout; they are not evidence-log or uncommitted evidence",
     "unsupported_evidence": [
       "uncommitted worktree edits",
       "tmp report output without a matching committed owner surface",
-      "report-only or generated-only summaries without a matching committed owner surface",
+      "evidence-log or generated-only summaries without a matching committed owner surface",
       "shim, fallback, compatibility, old-mode, or unsupported rows presented as positive closeout support",
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"

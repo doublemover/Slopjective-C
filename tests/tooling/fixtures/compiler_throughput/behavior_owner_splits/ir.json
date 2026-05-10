@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
-  "support_boundary": "IR ownership covers canonical IR emission and metadata evidence only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, or timing-only provenance; generated perf summaries, cache proofs, docs, command appendices, and tmp packages are provenance-only",
+  "support_boundary": "IR ownership covers canonical IR emission and metadata evidence only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, or timing-only provenance; generated perf summaries, cache proofs, docs, command appendices, and tmp packages are provenance-only",
   "phase_support_claim_authority": false,
   "selectors": [
     "source_roots:native/objc3c/src/ir",
@@ -18,5 +18,5 @@
     "workloads:command-surface-generation"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "IR cache and artifact provenance, generated-only artifacts, report-only artifacts, migration-only artifacts, shim/fallback artifact paths, old-mode IR rows, compatibility outputs, docs-only outputs, command-surface-only outputs, package-only artifacts, runner-only artifacts, timing-only rows, and tmp package rows cannot convert into canonical IR support"
+  "retired_surface_rule": "IR cache and artifact provenance, generated-only artifacts, evidence-log artifacts, migration-only artifacts, shim/fallback artifact paths, old-mode IR rows, compatibility outputs, docs-only outputs, command-surface-only outputs, package-only artifacts, runner-only artifacts, timing-only rows, and tmp package rows cannot convert into canonical IR support"
 }

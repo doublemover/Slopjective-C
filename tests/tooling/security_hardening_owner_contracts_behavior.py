@@ -55,13 +55,13 @@ def assert_security_hardening_actions_publish_hard_cutover_owner_ids() -> None:
             SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS
         )
         assert "wrapper" not in target.backend
-        assert "report-only" not in target.guarantee_owner
+        assert "evidence-log" not in target.guarantee_owner
         assert target.to_action_spec().guarantee_owner.startswith(
             ", ".join(SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS)
         )
 
 
-def assert_security_hardening_source_and_workflow_forbid_report_only_security_claims() -> None:
+def assert_security_hardening_source_and_workflow_forbid_evidence_log_security_claims() -> None:
     expected_guardrails = security_hardening_hard_cutover_guardrails()
 
     for payload in source_and_workflow_surface_fixtures():
@@ -73,7 +73,7 @@ def assert_security_hardening_source_and_workflow_forbid_report_only_security_cl
         assert_false_fields(
             owner_contract,
             (
-                "report_only_allowed",
+                "evidence_log_allowed",
                 "fallback_claims_allowed",
                 "generated_report_claims_allowed",
                 "wrapper_only_security_actions_allowed",
@@ -97,7 +97,7 @@ def assert_security_hardening_domain_contracts_pin_specific_claim_owners() -> No
         "macro_package_identity_owner": "security-hardening-macro-provenance",
         "macro_provenance_owner": "security-hardening-macro-provenance",
         "runtime_acceptance_owner": "security-hardening-runtime",
-        "report_only_security_proof_allowed": False,
+        "evidence_log_security_proof_allowed": False,
         "fallback_macro_trust_allowed": False,
         "trust_bypass_for_missing_provenance_allowed": False,
         "wrapper_only_macro_security_action_allowed": False,

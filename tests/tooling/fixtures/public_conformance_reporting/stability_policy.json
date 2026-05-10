@@ -64,12 +64,12 @@
   ],
   "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
   "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
-  "fail_closed_behavior_boundary": "provisional, blocked, quarantined, missing-upstream, report-only, generated-only, generated-report-only, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, fallback, shim, old-mode, compatibility, and unsupported public claims cannot be promoted to claim-ready support",
+  "fail_closed_behavior_boundary": "provisional, blocked, quarantined, missing-upstream, evidence-log, generated-only, generated-evidence-log, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, fallback, shim, old-mode, compatibility, and unsupported public claims cannot be promoted to claim-ready support",
   "stability_boundary_policy": {
     "primary_axis": "behavior owner before public status, badge, score band, scoring weight, deduction, minimum claimability row, fail-closed condition, or claim language",
     "support_authority": "claim-ready status requires e2e owner assignment backed by upstream evidence owners and fail-closed stability rules",
     "positive_support_from_badge": false,
-    "retired_surface_rule": "provisional-as-claim-ready, blocked-as-claim-ready, quarantined promotion, missing-upstream evidence, report-only rows, generated-only rows, dashboard-only rows, scorecard-only rows, badge-only rows, fallback rows, shim rows, old-mode rows, compatibility rows, and unsupported rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "provisional-as-claim-ready, blocked-as-claim-ready, quarantined promotion, missing-upstream evidence, evidence-log rows, generated-only rows, dashboard-only rows, scorecard-only rows, badge-only rows, fallback rows, shim rows, old-mode rows, compatibility rows, and unsupported rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "capability_truth_rules": [
     "claim-ready means every upstream evidence owner reported PASS and no hard blocks remain",

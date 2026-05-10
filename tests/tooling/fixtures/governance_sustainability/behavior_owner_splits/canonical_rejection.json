@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
     "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json"
   ],
-  "support_boundary": "canonical rejection owns governance-sustainability rows that look like support but are absent, deprecated, local-only, policy-only, generated-only, report-only, tmp-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals and must-remain-absent surfaces remain rejection/absent-support evidence, not positive governance capability truth.",
+  "support_boundary": "canonical rejection owns governance-sustainability rows that look like support but are absent, deprecated, local-only, policy-only, generated-only, evidence-log, tmp-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals and must-remain-absent surfaces remain rejection/absent-support evidence, not positive governance capability truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -35,11 +35,11 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "hosted community infrastructure, registry moderation service, policy-only substitute for executable review evidence, replacement release/security/adoption claims, deprecated roots, milestone-named workflows, checker wrappers, lane readiness runners, legacy aliases, numeric milestone checker references, hosted registry claims without evidence, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, runner-only success, and workflow-label-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "hosted community infrastructure, registry moderation service, policy-only substitute for executable review evidence, replacement release/security/adoption claims, deprecated roots, milestone-named workflows, checker wrappers, lane readiness runners, legacy aliases, numeric milestone checker references, hosted registry claims without evidence, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, runner-only success, and workflow-label-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/performance_governance/source_surface.json",
     "tests/tooling/fixtures/performance_governance/workflow_surface.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed performance-governance violations: missing required budget families, missing upstream summaries, failing required status, missing machine profile fields, missing warmup or profile capture, environment drift, hard regression, coverage gap, expired waiver treated as active, missing waiver fields, missing raw sample packets, silent comparative baseline omission, missing owner ids, missing required workflow actions, missing schema surfaces, local-only publication, report-only publication, generated tmp output promoted as source truth, and wrapper-only success.",
+  "support_boundary": "strict-error ownership covers fail-closed performance-governance violations: missing required budget families, missing upstream summaries, failing required status, missing machine profile fields, missing warmup or profile capture, environment drift, hard regression, coverage gap, expired waiver treated as active, missing waiver fields, missing raw sample packets, silent comparative baseline omission, missing owner ids, missing required workflow actions, missing schema surfaces, local-only publication, evidence-log publication, generated tmp output promoted as source truth, and wrapper-only success.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -43,7 +43,7 @@
     "strict_error:missing-dashboard-summary-schema",
     "strict_error:missing-public-report-schema",
     "strict_error:local-only-publication",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "strict_error:tmp-output-promoted-as-source-truth",
     "strict_error:wrapper-only-success",
     "breach_id:hard-regression:severity=blocking",
@@ -64,5 +64,5 @@
     "*wrapper-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/performance_governance",
-  "retired_surface_rule": "missing budget families, missing upstream summaries, failing required statuses, missing machine profiles, environment drift, hard regressions, coverage gaps, expired waiver promotion, waiver field omissions, missing raw samples, silent baseline omission, missing owner ids, missing workflow actions, missing schemas, local-only publication, report-only publication, tmp-as-source claims, wrapper-only success, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and local-as-support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing budget families, missing upstream summaries, failing required statuses, missing machine profiles, environment drift, hard regressions, coverage gaps, expired waiver promotion, waiver field omissions, missing raw samples, silent baseline omission, missing owner ids, missing workflow actions, missing schemas, local-only publication, evidence-log publication, tmp-as-source claims, wrapper-only success, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and local-as-support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

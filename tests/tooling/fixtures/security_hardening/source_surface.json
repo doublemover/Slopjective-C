@@ -27,7 +27,7 @@
     "source_owner": "security-hardening-source",
     "gate_owner": "security-hardening-gate",
     "blocker_owner": "security-hardening-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "owned_actions": [
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
@@ -39,7 +39,7 @@
   },
   "hard_cutover_security_guardrails": {
     "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
-    "report_only_security_proof_allowed": false,
+    "evidence_log_security_proof_allowed": false,
     "generated_report_capability_truth_allowed": false,
     "local_tabletop_capability_truth_allowed": false,
     "fallback_claims_allowed": false,
@@ -85,7 +85,7 @@
     "no signed-installer trust claim",
     "no hostile-host execution safety guarantee",
     "no second release package or runtime validation lane",
-    "no report-only security proof",
+    "no evidence-log security proof",
     "no local-only tabletop as capability truth",
     "no fallback or trust-bypass security claim",
     "no wrapper-only security action claim"

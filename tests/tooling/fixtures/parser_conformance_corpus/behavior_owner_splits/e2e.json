@@ -17,5 +17,5 @@
     "upstream_owner_required:tests/native/e2e"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode parser-corpus workflow rows, shim parser-corpus workflow rows, fallback parser-corpus workflow rows, compatibility parser-corpus workflow rows, migration-only parser-corpus workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode parser-corpus workflow rows, shim parser-corpus workflow rows, fallback parser-corpus workflow rows, compatibility parser-corpus workflow rows, migration-only parser-corpus workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

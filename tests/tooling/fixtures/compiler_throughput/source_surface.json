@@ -7,9 +7,9 @@
   "native_build_action": "build-native-binaries",
   "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
   "behavior_boundary": {
-    "primary_axis": "behavior phase before throughput workload bucket, workflow label, cache proof, generated artifact, report-only row, migration-only row, docs output, command-surface output, package artifact, or retired-surface claim",
+    "primary_axis": "behavior phase before throughput workload bucket, workflow label, cache proof, generated artifact, evidence-log row, migration-only row, docs output, command-surface output, package artifact, or retired-surface claim",
     "support_authority": "throughput sources and scripts are timing, provenance, cache, generated-output, package, and runner evidence only until a behavior owner split claims the phase",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, generated-only, report-only, migration-only, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, generated-only, evidence-log, migration-only, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "behavior_phase_split_indexes": [
     {
@@ -45,7 +45,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "recovery, cache reuse, runner-only, docs-only, command-surface-only, package-only, old-mode, shim, fallback, compatibility, generated-only, report-only, migration-only, unsupported, and alternate acceptance rows"
+      "boundary": "recovery, cache reuse, runner-only, docs-only, command-surface-only, package-only, old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, unsupported, and alternate acceptance rows"
     },
     {
       "phase": "compiler_throughput_provenance",

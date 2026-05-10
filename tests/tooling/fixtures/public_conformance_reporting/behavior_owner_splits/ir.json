@@ -16,5 +16,5 @@
     "artifact_paths:tmp/artifacts/public-conformance/report/public-conformance-report.md"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "tmp artifact presence, schema identity, generated scorecards, generated badges, dashboard-only summaries, scorecard-only rows, badge-only rows, generated-report-only rows, report-only rows, compatibility schema labels, and missing-upstream schema evidence are provenance-only and cannot establish IR support"
+  "retired_surface_rule": "tmp artifact presence, schema identity, generated scorecards, generated badges, dashboard-only summaries, scorecard-only rows, badge-only rows, generated-evidence-log rows, evidence-log rows, compatibility schema labels, and missing-upstream schema evidence are provenance-only and cannot establish IR support"
 }

@@ -7,8 +7,8 @@ from scripts.objc3c_runtime_acceptance.case_result import CaseResult
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_ACCEPTANCE_ROOT = ROOT / "scripts" / "objc3c_runtime_acceptance"
 FORBIDDEN_REPORTING_WORDS = (
-    "report-only",
-    "report only",
+    "evidence-log",
+    "evidence log",
     "fallback",
     "migration",
     "compat",

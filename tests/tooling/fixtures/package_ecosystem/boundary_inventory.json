@@ -64,7 +64,7 @@
     "package_validation_owner": "package-ecosystem-validation-gate",
     "blocker_owner": "package-ecosystem-blockers",
     "source_authority": "checked-in-package-ecosystem-contracts",
-    "report_only_allowed": false
+    "evidence_log_allowed": false
   },
   "blocker_metadata": {
     "blocker_owner": "package-ecosystem-blockers",

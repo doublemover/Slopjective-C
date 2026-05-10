@@ -18,5 +18,5 @@
     "hard_cutover_requirements:successor-boundary-owners-must-not-widen-current-runtime-claims"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-only reports, generated-report-only e2e claims, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "wrapper-only runnable actions, evidence-log executable proof, generated-only reports, generated-evidence-log e2e claims, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

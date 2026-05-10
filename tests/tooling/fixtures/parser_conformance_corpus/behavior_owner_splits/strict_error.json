@@ -13,7 +13,7 @@
     "tests/tooling/fixtures/parser_conformance_corpus/reject_post_comma_nondecl.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3"
   ],
-  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, and O3P181 for duplicate throws. Accepting these fixtures or routing them through old-mode, shim, fallback, compatibility, migration, generated-only, or report-only support is strict-error evidence.",
+  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, and O3P181 for duplicate throws. Accepting these fixtures or routing them through old-mode, shim, fallback, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [

@@ -16,5 +16,5 @@
     "story_capabilities:interop"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "unsupported feature claims, compatibility shim gates, semantic fallback gates, old-mode semantic rows, semantic-only benchmark stories, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, timing-only semantic rows, cache-only semantic rows, wrapper-only semantic rows, local-only semantic rows, and foreign-baseline semantic rows are diagnostics, canonical rejection, strict-error, absent-support, or provenance-only evidence until canonical sema fixtures own support"
+  "retired_surface_rule": "unsupported feature claims, compatibility shim gates, semantic fallback gates, old-mode semantic rows, semantic-only benchmark stories, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, timing-only semantic rows, cache-only semantic rows, wrapper-only semantic rows, local-only semantic rows, and foreign-baseline semantic rows are diagnostics, canonical rejection, strict-error, absent-support, or provenance-only evidence until canonical sema fixtures own support"
 }

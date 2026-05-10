@@ -12,12 +12,12 @@
     "canonical_rejection",
     "object_model_provenance"
   ],
-  "support_boundary": "public commands and workflow actions are executable proof routing only; they do not widen public runtime ABI or turn report-only/generated-report-only rows into positive support",
+  "support_boundary": "public commands and workflow actions are executable proof routing only; they do not widen public runtime ABI or turn evidence-log/generated-evidence-log rows into positive support",
   "proof_boundary_policy": {
     "primary_axis": "behavior owner before public command wrapper, workflow label, executable proof report, private runtime query snapshot, generated report, or public runtime ABI boundary",
     "support_authority": "executable proof reports and public workflows are provenance unless runtime or e2e owners claim behavior already supported by parser, sema, lowering, and IR owners",
     "positive_support_from_report": false,
-    "retired_surface_rule": "report-only, generated-report-only, workflow-label-only, command-wrapper-only, query-only, package-only, shim workflow, fallback workflow, old-mode command, milestone-local alternate acceptance, and public ABI widening proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "evidence-log, generated-evidence-log, workflow-label-only, command-wrapper-only, query-only, package-only, shim workflow, fallback workflow, old-mode command, milestone-local alternate acceptance, and public ABI widening proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "public_command_surfaces": [
     "test:objc3c:object-model-conformance",

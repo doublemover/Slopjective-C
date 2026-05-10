@@ -87,7 +87,7 @@ PLATFORM_HARDENING_OWNER_POLICY: dict[str, object] = {
     "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
     "blocker_owner": "platform-hardening-blockers",
     "source_authority": "checked-in-platform-hardening-contracts",
-    "report_only_allowed": False,
+    "evidence_log_allowed": False,
 }
 
 PLATFORM_HARDENING_OWNER_FIELDS: tuple[str, ...] = tuple(PLATFORM_HARDENING_OWNER_POLICY)
@@ -271,7 +271,7 @@ def require_platform_hardening_owner_policy(payload: dict[str, Any], *, surface_
     expect(isinstance(owner_policy, dict), f"{surface_name} missing owner_policy")
     missing_fields = [field for field in PLATFORM_HARDENING_OWNER_FIELDS if field not in owner_policy]
     expect(not missing_fields, f"{surface_name} owner_policy missing fields: {', '.join(missing_fields)}")
-    expect(owner_policy.get("report_only_allowed") is False, f"{surface_name} owner_policy must forbid report-only publication")
+    expect(owner_policy.get("evidence_log_allowed") is False, f"{surface_name} owner_policy must forbid evidence-log publication")
     for field_name, expected_value in PLATFORM_HARDENING_OWNER_POLICY.items():
         expect(owner_policy.get(field_name) == expected_value, f"{surface_name} owner_policy drifted for {field_name}")
     return owner_policy

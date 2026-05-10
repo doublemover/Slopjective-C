@@ -57,8 +57,8 @@ def main() -> int:
 
     source_surface = load_json(SOURCE_SURFACE)
     owner_policy = source_surface.get("owner_policy")
-    if not isinstance(owner_policy, dict) or owner_policy.get("report_only_allowed") is not False:
-        raise RuntimeError("packaging-channel source surface missing non-report-only owner_policy")
+    if not isinstance(owner_policy, dict) or owner_policy.get("evidence_log_allowed") is not False:
+        raise RuntimeError("packaging-channel source surface missing source-owned owner_policy")
     blocker_metadata = source_surface.get("blocker_metadata")
     if not isinstance(blocker_metadata, dict) or blocker_metadata.get("blocker_owner") != "packaging-channels-blockers":
         raise RuntimeError("packaging-channel source surface missing blocker metadata")

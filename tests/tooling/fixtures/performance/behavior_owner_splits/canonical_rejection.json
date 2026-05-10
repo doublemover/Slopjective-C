@@ -5,11 +5,11 @@
   "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
   "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
   "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
-  "support_boundary": "performance rows that mention compatibility, fallback, wrapper-only, unsupported, local-only, report-only, generated-only, migration-only, timing-only, cache-only, cross-machine universal, screenshot-derived, hand-normalized, old-mode, shim, public-wrapper-only, or foreign-language baseline support are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "performance rows that mention compatibility, fallback, wrapper-only, unsupported, local-only, evidence-log, generated-only, migration-only, timing-only, cache-only, cross-machine universal, screenshot-derived, hand-normalized, old-mode, shim, public-wrapper-only, or foreign-language baseline support are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "disallowed_claim_classes:local-only-performance-evidence",
-    "disallowed_claim_classes:report-only-performance-evidence",
+    "disallowed_claim_classes:evidence-log-performance-evidence",
     "disallowed_claim_classes:unsupported-benchmark-claim",
     "disallowed_claim_classes:compatibility-fallback-performance-claim",
     "disallowed_claim_classes:wrapper-only-action-surface",
@@ -28,8 +28,8 @@
     "*unsupported*",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*timing-only*",
@@ -46,5 +46,5 @@
     "*public-wrapper-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, wrapper-only, public-wrapper-only, local-only, report-only, generated-only, migration-only, timing-only, cache-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, wrapper-only, public-wrapper-only, local-only, evidence-log, generated-only, migration-only, timing-only, cache-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

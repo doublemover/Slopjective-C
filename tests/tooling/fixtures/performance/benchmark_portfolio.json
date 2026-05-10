@@ -8,7 +8,7 @@
     "primary_axis": "behavior owner before benchmark workload, comparative baseline, timing row, cache row, raw sample packet, report root, artifact root, package staging, machine profile, generated report, public command wrapper, or retired-surface claim",
     "support_authority": "benchmark workloads and comparative baselines are timing/provenance rows; canonical support is owned by behavior owner splits and cannot be inferred from workload names, benchmark classes, report roots, public commands, expected exit codes, or raw samples",
     "comparative_baseline_rule": "Objective-C 2, Swift, and C++ reference baselines are comparison provenance only and cannot create Objective-C 3 behavior support",
-    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, old-mode, shim, generated-only, report-only, migration-only, cache-only, timing-only, local-only, hand-normalized, screenshot-derived, foreign-baseline, and cross-machine universal claims map to canonical_rejection or performance_provenance",
+    "retired_surface_rule": "compatibility, fallback, wrapper-only, unsupported, old-mode, shim, generated-only, evidence-log, migration-only, cache-only, timing-only, local-only, hand-normalized, screenshot-derived, foreign-baseline, and cross-machine universal claims map to canonical_rejection or performance_provenance",
     "evidence_boundary_rule": "parser, sema, lowering, IR, runtime, e2e, comparative baseline, benchmark timing, report publication, public command routing, raw sample, cache row, machine profile, and generated telemetry evidence are separately routed"
   },
   "behavior_phase_split_indexes": [
@@ -45,7 +45,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "compatibility, fallback, shim, old-mode, unsupported, wrapper-only, local-only, report-only, generated-only, migration-only, cache-only, timing-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline rows"
+      "boundary": "compatibility, fallback, shim, old-mode, unsupported, wrapper-only, local-only, evidence-log, generated-only, migration-only, cache-only, timing-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline rows"
     },
     {
       "phase": "performance_provenance",

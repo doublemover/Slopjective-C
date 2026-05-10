@@ -31,7 +31,7 @@ def assert_performance_owner_contracts_are_shape_valid() -> None:
         forbidden_performance_claim_classes(contract),
         {
             "local-only-performance-evidence",
-            "report-only-performance-evidence",
+            "evidence-log-performance-evidence",
             "unsupported-benchmark-claim",
             "compatibility-fallback-performance-claim",
             "wrapper-only-action-surface",

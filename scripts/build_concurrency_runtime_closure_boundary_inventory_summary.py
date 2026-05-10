@@ -100,7 +100,7 @@ def main() -> int:
         f"- Probe paths: `{summary['authoritative_probe_path_count']}`\n"
         f"- Fixture paths: `{summary['authoritative_fixture_path_count']}`\n"
         f"- Owner roles: `{summary['owner_contract']['owner_role_count']}`\n"
-        f"- Report-only allowed: `{summary['owner_contract']['report_only_allowed']}`\n"
+        f"- Evidence-log allowed: `{summary['owner_contract']['evidence_log_allowed']}`\n"
         f"- Current gaps: `{summary['current_gap_count']}`\n"
         f"- Explicit non-goals: `{summary['explicit_non_goal_count']}`\n"
         f"- Successor milestones: `{summary['successor_milestone_count']}`\n"

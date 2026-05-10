@@ -11,7 +11,7 @@
     "positive_rule": "sema positives are hand-authored tests/native/sema fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
     "negative_rule": "canonical sema diagnostics are hand-authored tests/native/sema fixtures with fixture_kind=negative and behavior_contract=canonical-rejection; they are rejection behavior, not positive behavior truth",
     "docs_evidence_rule": "owner index rows, phase contracts, semantic conformance manifests, report pointers, and metadata field names are provenance unless tied to a sema fixture sidecar",
-    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only sema rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, evidence-log, and migration-only sema rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no parser, lowering, IR, runtime, or e2e behavior contracts"
   },
   "owner_splits": [

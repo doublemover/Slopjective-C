@@ -8,7 +8,7 @@
   "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "fallback_claims_allowed": false,
     "generated_report_claims_allowed": false
   },
@@ -22,7 +22,7 @@
       "check_implementation_anchors": [
         "scripts/check_security_hardening_response_drill.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
@@ -34,7 +34,7 @@
       "supporting_contracts": [],
       "summary_implementation_anchor": "scripts/build_security_hardening_release_key_policy_summary.py",
       "check_implementation_anchors": [],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
@@ -54,7 +54,7 @@
         "scripts/check_security_hardening_source_surface.py",
         "scripts/check_security_hardening_schema_surface.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
@@ -70,7 +70,7 @@
         "scripts/check_objc3c_security_hardening_integration.py",
         "scripts/check_objc3c_security_hardening_end_to_end.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
@@ -162,7 +162,7 @@
     "no signed-installer publication claim",
     "no hostile-host execution safety claim",
     "no external package-signing trust claim",
-    "no report-only security proof",
+    "no evidence-log security proof",
     "no local-only tabletop as capability truth",
     "no fallback or trust-bypass security claim",
     "no wrapper-only security action claim"

@@ -115,15 +115,15 @@ def test_support_claim_links_accept_manifest_fixture_evidence() -> None:
     validator._validate_support_claim_links([_parser_row()], _manifest(PARSER_CLAIM))
 
 
-def test_manifest_support_claims_reject_report_only_commands() -> None:
+def test_manifest_support_claims_reject_evidence_log_commands() -> None:
     validator = _load_validator()
-    report_only_claim = {
+    evidence_log_claim = {
         **PARSER_CLAIM,
         "executable_command": "python scripts/render_behavior_report.py",
     }
 
     with pytest.raises(validator.CapabilityDocsError, match="must use executable command"):
-        validator._manifest_support_claims(_manifest(report_only_claim))
+        validator._manifest_support_claims(_manifest(evidence_log_claim))
 
 
 def test_support_claim_links_require_behavior_matrix_fixture_evidence() -> None:

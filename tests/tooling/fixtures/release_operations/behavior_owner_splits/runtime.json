@@ -18,5 +18,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime release-operation rows, shim runtime release-operation rows, fallback runtime release-operation rows, compatibility runtime release-operation rows, migration-only runtime rows, generated-only runtime rows, report-only runtime rows, runtime-diagnostic-label-only support, alternate runtime publication paths, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime release-operation rows, shim runtime release-operation rows, fallback runtime release-operation rows, compatibility runtime release-operation rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, runtime-diagnostic-label-only support, alternate runtime publication paths, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

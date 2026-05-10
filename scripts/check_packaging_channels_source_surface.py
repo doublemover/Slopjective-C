@@ -50,8 +50,8 @@ def main() -> int:
     if not isinstance(output_roots, list) or not output_roots:
         raise RuntimeError("source surface did not publish machine_owned_output_roots")
     owner_policy = payload.get("owner_policy")
-    if not isinstance(owner_policy, dict) or owner_policy.get("report_only_allowed") is not False:
-        raise RuntimeError("source surface did not publish source-owned non-report-only owner_policy")
+    if not isinstance(owner_policy, dict) or owner_policy.get("evidence_log_allowed") is not False:
+        raise RuntimeError("source surface did not publish source-owned source-owned owner_policy")
     blocker_metadata = payload.get("blocker_metadata")
     if not isinstance(blocker_metadata, dict) or blocker_metadata.get("blocker_owner") != "packaging-channels-blockers":
         raise RuntimeError("source surface did not publish packaging-channel blocker metadata")

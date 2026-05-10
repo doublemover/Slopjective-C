@@ -24,7 +24,7 @@
     "source_owner": "release-operations-source",
     "gate_owner": "release-operations-gate",
     "blocker_owner": "release-operations-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "owned_actions": [
       "check-release-operations-surface",
       "check-release-operations-schema-surface",
@@ -50,7 +50,7 @@
       "alternate_update_support_path_allowed": false,
       "publication_claim_owner": "release-operations-gate",
       "blocker_owner_required_before_publication": true,
-      "report_only_release_claim_allowed": false,
+      "evidence_log_release_claim_allowed": false,
       "wrapper_only_action_surface_allowed": false
     }
   },

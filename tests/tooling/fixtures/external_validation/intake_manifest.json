@@ -22,7 +22,7 @@
         "artifact_owner": "external-validation-artifacts",
         "capability_truth_source": "accepted replay through scripts/check_objc3c_parser_replay_proof.ps1",
         "local_only_capability_truth_allowed": false,
-        "report_only_capability_truth_allowed": false,
+        "evidence_log_capability_truth_allowed": false,
         "fallback_trust_route_allowed": false
       }
     },
@@ -47,7 +47,7 @@
         "artifact_owner": "external-validation-artifacts",
         "capability_truth_source": "accepted replay through scripts/check_objc3c_execution_replay_proof.ps1",
         "local_only_capability_truth_allowed": false,
-        "report_only_capability_truth_allowed": false,
+        "evidence_log_capability_truth_allowed": false,
         "fallback_trust_route_allowed": false
       }
     },
@@ -72,7 +72,7 @@
         "artifact_owner": "external-validation-artifacts",
         "capability_truth_source": "accepted replay through scripts/check_objc3c_execution_replay_proof.ps1",
         "local_only_capability_truth_allowed": false,
-        "report_only_capability_truth_allowed": false,
+        "evidence_log_capability_truth_allowed": false,
         "fallback_trust_route_allowed": false
       }
     }

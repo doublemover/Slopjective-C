@@ -11,7 +11,7 @@
     "positive_rule": "lowering positives are hand-authored tests/native/lowering fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
     "strict_error_rule": "runtime-dispatch link failures and removed fallback flags are strict-error or canonical rejection evidence; they are not positive lowering support",
     "docs_evidence_rule": "owner index rows, phase contracts, lowering conformance manifests, report pointers, and metadata field names are provenance unless tied to a lowering fixture sidecar",
-    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only lowering rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, evidence-log, and migration-only lowering rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no parser, sema, IR, runtime, or e2e behavior contracts"
   },
   "owner_splits": [

@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime audit, compatibility runtime audit, shim runtime audit, fallback runtime audit, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, runner-label-only runtime claims, and audit status rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime audit, compatibility runtime audit, shim runtime audit, fallback runtime audit, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-label-only runtime claims, and audit status rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

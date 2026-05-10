@@ -19,5 +19,5 @@
     "tests/native/runtime/object_model/interface_method_table_contract.objc3"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime dispatch fallback, unresolved dispatch symbols, shim runtime claims, generated-only runtime reports, and report-only runtime claims remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch fallback, unresolved dispatch symbols, shim runtime claims, generated-only runtime reports, and evidence-log runtime claims remain strict-error, canonical rejection, or provenance-only evidence"
 }

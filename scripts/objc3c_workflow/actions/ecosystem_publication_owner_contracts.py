@@ -14,7 +14,7 @@ class EcosystemPublicationOwnerContract:
     evidence_contracts: tuple[str, ...]
     claim_boundary: str
     forbidden_claims: tuple[str, ...]
-    report_only_allowed: bool = False
+    evidence_log_allowed: bool = False
     wrapper_only_allowed: bool = False
     retired_source_acceptance_claim_allowed: bool = False
     retired_surface_acceptance_claim_allowed: bool = False
@@ -136,8 +136,8 @@ def require_ecosystem_publication_owner_contract(action_name: str) -> EcosystemP
         raise RuntimeError(f"{action_name} has no source owner contract")
     if not contract.evidence_contracts:
         raise RuntimeError(f"{action_name} has no evidence contract")
-    if contract.report_only_allowed:
-        raise RuntimeError(f"{action_name} is report-only")
+    if contract.evidence_log_allowed:
+        raise RuntimeError(f"{action_name} is evidence-log")
     if contract.wrapper_only_allowed:
         raise RuntimeError(f"{action_name} is wrapper-only")
     if contract.retired_source_acceptance_claim_allowed:

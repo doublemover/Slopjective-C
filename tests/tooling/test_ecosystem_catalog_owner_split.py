@@ -79,7 +79,7 @@ def test_package_ecosystem_public_actions_have_hard_cutover_owner_contracts() ->
         assert contract.feed_name == "package-ecosystem"
         assert contract.source_contracts
         assert contract.evidence_contracts
-        assert not contract.report_only_allowed
+        assert not contract.evidence_log_allowed
         assert not contract.wrapper_only_allowed
         assert not contract.retired_source_acceptance_claim_allowed
         assert not contract.retired_surface_acceptance_claim_allowed
@@ -96,7 +96,7 @@ def test_adoption_public_actions_have_truthful_owner_contracts() -> None:
         assert contract.owner_role == "adoption-legibility-owner"
         assert contract.source_contracts
         assert contract.evidence_contracts
-        assert not contract.report_only_allowed
+        assert not contract.evidence_log_allowed
         assert not contract.wrapper_only_allowed
         assert not contract.retired_source_acceptance_claim_allowed
         assert not contract.retired_surface_acceptance_claim_allowed

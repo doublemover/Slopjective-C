@@ -14,7 +14,7 @@
     "source_owner": "distribution-credibility-source",
     "gate_owner": "distribution-credibility-gate",
     "blocker_owner": "distribution-credibility-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "owned_actions": [
       "check-distribution-credibility-surface",
       "check-distribution-credibility-schema-surface",

@@ -3,7 +3,7 @@
   "catalog": "objc3c-tooling-native-execution-metadata-behavior-owner-split",
   "owner_phase": "execution_metadata_provenance",
   "source_family": "tests/tooling/fixtures/native/execution",
-  "support_boundary": "execution metadata provenance covers README rows, fixture basenames, meta sidecars, expected exit-code sidecars, diagnostic token payloads, runtime dispatch symbols, native compile args, generated-only rows, report-only rows, and migration-only rows as provenance only",
+  "support_boundary": "execution metadata provenance covers README rows, fixture basenames, meta sidecars, expected exit-code sidecars, diagnostic token payloads, runtime dispatch symbols, native compile args, generated-only rows, evidence-log rows, and migration-only rows as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "positive/README.md",
@@ -19,12 +19,12 @@
     "meta fields:expect_failure.required_diagnostic_tokens",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*sidecar-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "execution metadata sidecars and README rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, report-only, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "execution metadata sidecars and README rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

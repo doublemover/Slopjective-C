@@ -19,5 +19,5 @@
     "upstream_owner_required:tests/native/sema"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode semantic performance-governance rows, shim semantic rows, fallback semantic rows, compatibility semantic rows, migration-only semantic rows, generated-only semantic rows, report-only semantic rows, and governance-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode semantic performance-governance rows, shim semantic rows, fallback semantic rows, compatibility semantic rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and governance-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

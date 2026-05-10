@@ -18,5 +18,5 @@
     "compatibility_terms:taxonomy-only"
   ],
   "canonical_anchor": "tests/tooling/fixtures/extension_registry_compat_contract",
-  "retired_surface_rule": "drift rows, invalid-UTF8 rows, compatibility support rows, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode registry rows, shim registry rows, fallback registry rows, migration-only registry rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "drift rows, invalid-UTF8 rows, compatibility support rows, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode registry rows, shim registry rows, fallback registry rows, migration-only registry rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

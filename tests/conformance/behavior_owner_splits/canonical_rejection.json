@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, report-only, migration-only, dashboard-only, prose-only, tmp-artifact-only, schema-only, workflow-only, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
+  "support_boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, evidence-log, migration-only, dashboard-only, prose-only, tmp-artifact-only, schema-only, workflow-only, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
   "owned_buckets": [
     "parser",
     "semantic",
@@ -48,7 +48,7 @@
         "missing",
         "unsupported",
         "generated-only",
-        "report-only",
+        "evidence-log",
         "migration-only",
         "dashboard-only",
         "prose-only"
@@ -77,8 +77,8 @@
     "*alternate_acceptance*",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*dashboard-only*",
@@ -94,5 +94,5 @@
     "*claim-policy-only*",
     "*claim_policy_only*"
   ],
-  "retired_surface_rule": "retired surfaces, generated-only rows, report-only rows, migration-only rows, dashboard-only rows, prose-only rows, schema-only rows, workflow-only rows, tmp-artifact-only rows, and alternate acceptance rows stay canonical rejection, strict-error, absent-support, known-open, tracking-only, or provenance-only evidence"
+  "retired_surface_rule": "retired surfaces, generated-only rows, evidence-log rows, migration-only rows, dashboard-only rows, prose-only rows, schema-only rows, workflow-only rows, tmp-artifact-only rows, and alternate acceptance rows stay canonical rejection, strict-error, absent-support, known-open, tracking-only, or provenance-only evidence"
 }

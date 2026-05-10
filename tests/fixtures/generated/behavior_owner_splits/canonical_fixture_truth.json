@@ -3,7 +3,7 @@
   "catalog": "objc3c-generated-boundary-provenance-owner-split",
   "owner_boundary": "canonical_fixture_truth",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "canonical fixture truth stays in hand-authored native fixtures and behavior owner indexes; generated manifest rows, generated inventories, fixture generation metadata, report-only rows, generated-output-only rows, and migration-only rows can reference those owners but cannot replace them",
+  "support_boundary": "canonical fixture truth stays in hand-authored native fixtures and behavior owner indexes; generated manifest rows, generated inventories, fixture generation metadata, evidence-log rows, generated-output-only rows, and migration-only rows can reference those owners but cannot replace them",
   "phase_support_claim_authority": false,
   "selectors": [
     "boundary.canonical_behavior_source=false",
@@ -16,9 +16,9 @@
     "fixtures[].phase_support_claim_authority=false",
     "fixtures[].behavior_boundary=generated-provenance-only",
     "*generated-output-only*",
-    "*report-only*",
+    "*evidence-log*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
-  "retired_surface_rule": "generated rows must route behavior claims to canonical owner indexes before any support, rejection, strict-error, or absent-support disposition is cited; generated-output-only, report-only, migration-only, replay-only, and generator-output-only rows remain non-positive"
+  "retired_surface_rule": "generated rows must route behavior claims to canonical owner indexes before any support, rejection, strict-error, or absent-support disposition is cited; generated-output-only, evidence-log, migration-only, replay-only, and generator-output-only rows remain non-positive"
 }

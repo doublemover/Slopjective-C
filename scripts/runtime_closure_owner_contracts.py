@@ -20,7 +20,7 @@ REQUIRED_CLOSURE_PUBLICATION_CONTRACT = {
     "executable_proof_owner_role": "executable_proof_owner",
     "claim_publication_mode": "checked-in-owner-contract-plus-executable-proof",
     "missing_artifact_behavior": "fail-closed",
-    "report_only_executable_proof_claims_allowed": False,
+    "evidence_log_executable_proof_claims_allowed": False,
     "fallback_runtime_semantics_allowed": False,
     "compatibility_runtime_semantics_allowed": False,
     "wrapper_only_runnable_actions_allowed": False,
@@ -40,7 +40,7 @@ REQUIRED_OWNER_ROLES = (
 REQUIRED_OWNER_POLICY = {
     "source_authority": "checked-in-runtime-closure-owner-contracts",
     "missing_artifact_behavior": "fail-closed",
-    "report_only_allowed": False,
+    "evidence_log_allowed": False,
     "fallback_allowed": False,
     "compatibility_shims_allowed": False,
     "generated_reports_are_source": False,
@@ -146,11 +146,11 @@ def runtime_closure_owner_checks(
         and all(isinstance(action, str) and action for action in public_workflow_actions),
         "hard_cutover_requirements_forbid_fallbacks": isinstance(hard_cutover, list)
         and "no-fallback-runtime-closure-claims" in hard_cutover
-        and "no-report-only-runtime-closure-publication" in hard_cutover
+        and "no-evidence-log-runtime-closure-publication" in hard_cutover
         and "no-generated-report-as-source-authority" in hard_cutover,
-        "blocked_claim_shapes_cover_report_only_and_fallbacks": isinstance(blocked_claims, list)
+        "blocked_claim_shapes_cover_evidence_log_and_fallbacks": isinstance(blocked_claims, list)
         and "fallback-runtime-behavior" in blocked_claims
-        and "report-only-runtime-closure" in blocked_claims
+        and "evidence-log-runtime-closure" in blocked_claims
         and "compatibility-shim-runtime-closure" in blocked_claims,
     }
 
@@ -164,8 +164,8 @@ def runtime_closure_owner_summary(owner_contract: dict[str, Any]) -> dict[str, A
         "owner_family": owner_contract.get("family"),
         "owner_role_count": len(roles) if isinstance(roles, dict) else 0,
         "owner_roles": sorted(roles) if isinstance(roles, dict) else [],
-        "report_only_allowed": (
-            policy.get("report_only_allowed") if isinstance(policy, dict) else None
+        "evidence_log_allowed": (
+            policy.get("evidence_log_allowed") if isinstance(policy, dict) else None
         ),
         "fallback_allowed": (
             policy.get("fallback_allowed") if isinstance(policy, dict) else None

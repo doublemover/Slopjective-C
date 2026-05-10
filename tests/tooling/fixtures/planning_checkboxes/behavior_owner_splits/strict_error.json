@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/planning_checkbox_policy.json",
     "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/plan.md"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed planning-checkbox policy violations: unchecked rows without policy exceptions, policy entries whose section does not match the markdown heading, unused policy entries after all checklist rows are completed, and mixed JSON/markdown fixtures where one allowed document does not authorize another document's unchecked implementation row. Promoting those rows through old-mode, shim, fallback, compatibility, migration, generated-only, or report-only support is strict-error evidence.",
+  "support_boundary": "strict-error ownership covers fail-closed planning-checkbox policy violations: unchecked rows without policy exceptions, policy entries whose section does not match the markdown heading, unused policy entries after all checklist rows are completed, and mixed JSON/markdown fixtures where one allowed document does not authorize another document's unchecked implementation row. Promoting those rows through old-mode, shim, fallback, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [

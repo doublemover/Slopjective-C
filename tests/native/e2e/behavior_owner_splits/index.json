@@ -11,7 +11,7 @@
     "positive_rule": "e2e positives are hand-authored tests/native/e2e fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
     "strict_error_rule": "negative execution, legacy literal rejection, and runtime dispatch misses are rejection or strict-error evidence; they are not positive runnable support",
     "docs_evidence_rule": "owner index rows, phase contracts, module-roundtrip manifests, example manifests, package-stage pointers, report pointers, and metadata field names are provenance unless tied to an e2e fixture sidecar",
-    "rejection_rule": "old-mode, shim, fallback, generated-only, report-only, and migration-only e2e rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, shim, fallback, generated-only, evidence-log, and migration-only e2e rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no parser, sema, lowering, IR, or runtime behavior contracts"
   },
   "owner_splits": [

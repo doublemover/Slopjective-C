@@ -110,7 +110,7 @@ EXTERNAL_VALIDATION_OWNER_CONTRACT = ExternalValidationOwnerContract(
     hard_cutover_guardrails=(
         ("fallback_trust_route_allowed", False),
         ("local_only_validation_claim_allowed", False),
-        ("report_only_validation_claim_allowed", False),
+        ("evidence_log_validation_claim_allowed", False),
         ("wrapper_only_action_surface_allowed", False),
         ("unaccepted_fixture_publication_allowed", False),
         ("quarantined_fixture_capability_truth_allowed", False),

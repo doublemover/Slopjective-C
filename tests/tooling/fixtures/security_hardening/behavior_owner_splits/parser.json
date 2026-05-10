@@ -17,5 +17,5 @@
     "upstream_owner_required:tests/native/parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser security rows, shim parser security rows, fallback parser security rows, compatibility parser security rows, generated-only parser rows, report-only parser rows, migration-only parser rows, security-contract-only parser claims, and attribute-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser security rows, shim parser security rows, fallback parser security rows, compatibility parser security rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, security-contract-only parser claims, and attribute-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

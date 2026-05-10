@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json",
     "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json"
   ],
-  "support_boundary": "block/ARC provenance covers owner split contracts, boundary inventory rows, semantic model rows, ARC lifetime policy rows, lowering ABI rows, byref promotion/copy/dispose/forwarding contract rows, executable proof rows, summary anchors, generated report roots, runtime acceptance reports, runnable block/ARC conformance/e2e reports, compile manifests, runtime-registration descriptors, private helper ABI snapshots, ARC debug snapshots, byref forwarding snapshots, public command wrappers, public workflow labels, packaged proof summaries, claim surfaces, measured query rows, machine-owned output roots, generated-only rows, report-only rows, migration-only rows, descriptor-only rows, manifest-only rows, proof-only rows, private-snapshot-only rows, stack-only rows, source-only rows, wrapper-only rows, successor-boundary rows, and owner split routing metadata as provenance only",
+  "support_boundary": "block/ARC provenance covers owner split contracts, boundary inventory rows, semantic model rows, ARC lifetime policy rows, lowering ABI rows, byref promotion/copy/dispose/forwarding contract rows, executable proof rows, summary anchors, generated report roots, runtime acceptance reports, runnable block/ARC conformance/e2e reports, compile manifests, runtime-registration descriptors, private helper ABI snapshots, ARC debug snapshots, byref forwarding snapshots, public command wrappers, public workflow labels, packaged proof summaries, claim surfaces, measured query rows, machine-owned output roots, generated-only rows, evidence-log rows, migration-only rows, descriptor-only rows, manifest-only rows, proof-only rows, private-snapshot-only rows, stack-only rows, source-only rows, wrapper-only rows, successor-boundary rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json",
@@ -78,10 +78,10 @@
     "objc3_runtime_release_i32",
     "*generated-only*",
     "*generated_only*",
-    "*generated-report-only*",
-    "*generated_report_only*",
-    "*report-only*",
-    "*report_only*",
+    "*generated-evidence-log*",
+    "*generated_evidence_log*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*descriptor-only*",
@@ -112,5 +112,5 @@
     "*public-runtime-abi-widening*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "block/ARC provenance never defines positive parser, sema, lowering, IR, runtime, e2e, byref, ARC lifetime, weak/current-property helper, autoreleasepool, runtime-library, acceptance, or package behavior; owner contracts, semantic profiles, ARC policy rows, byref contracts, helper ABI snapshots, generated reports, compile manifests, runtime-registration descriptors, private helper snapshots, ARC debug snapshots, byref forwarding snapshots, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, report-only rows, migration-only rows, descriptor-only rows, manifest-only rows, proof-only rows, private-snapshot-only rows, stack-only rows, source-only rows, sidecar-only rows, wrapper-only rows, successor-boundary rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "block/ARC provenance never defines positive parser, sema, lowering, IR, runtime, e2e, byref, ARC lifetime, weak/current-property helper, autoreleasepool, runtime-library, acceptance, or package behavior; owner contracts, semantic profiles, ARC policy rows, byref contracts, helper ABI snapshots, generated reports, compile manifests, runtime-registration descriptors, private helper snapshots, ARC debug snapshots, byref forwarding snapshots, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, evidence-log rows, migration-only rows, descriptor-only rows, manifest-only rows, proof-only rows, private-snapshot-only rows, stack-only rows, source-only rows, sidecar-only rows, wrapper-only rows, successor-boundary rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

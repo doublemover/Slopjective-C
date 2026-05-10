@@ -13,7 +13,7 @@ PACKAGE_ECOSYSTEM_OWNER_POLICY = {
     "package_validation_owner": "package-ecosystem-validation-gate",
     "blocker_owner": "package-ecosystem-blockers",
     "source_authority": "checked-in-package-ecosystem-contracts",
-    "report_only_allowed": False,
+    "evidence_log_allowed": False,
 }
 
 PACKAGE_ECOSYSTEM_OWNER_FIELDS = tuple(PACKAGE_ECOSYSTEM_OWNER_POLICY)
@@ -30,8 +30,8 @@ def require_package_ecosystem_owner_policy(payload: dict[str, Any], *, surface_n
     missing_fields = [field for field in PACKAGE_ECOSYSTEM_OWNER_FIELDS if field not in owner_policy]
     if missing_fields:
         raise RuntimeError(f"{surface_name} owner_policy missing fields: {', '.join(missing_fields)}")
-    if owner_policy.get("report_only_allowed") is not False:
-        raise RuntimeError(f"{surface_name} owner_policy must forbid report-only publication")
+    if owner_policy.get("evidence_log_allowed") is not False:
+        raise RuntimeError(f"{surface_name} owner_policy must forbid evidence-log publication")
     expected = package_ecosystem_owner_payload()
     for field, expected_value in expected.items():
         if owner_policy.get(field) != expected_value:

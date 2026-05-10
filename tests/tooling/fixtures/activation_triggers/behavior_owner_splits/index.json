@@ -19,7 +19,7 @@
     "canonical_rejection_rule": "drift_* scenarios own deterministic rejection of stale, unsorted, unknown-field, alias-mismatch, metadata-pair-mismatch, line-reference, and missing-required-command inputs; these are not positive acceptance truth",
     "strict_error_rule": "hard_fail_* scenarios own fail-closed strict errors for invalid JSON, missing/invalid paths, forbidden command text, invalid evidence refs, duplicate rows, dependency mismatch, and malformed source metadata; these are not positive acceptance truth",
     "provenance_rule": "issues, milestones, catalog, open-blocker, overlay, expectations, expected JSON, expected markdown, expected stderr, and expected exit-code files are fixture provenance unless the e2e/tooling owner claims the scenario boundary",
-    "retired_surface_rule": "old-mode activation, compatibility activation, shim activation, fallback activation, generated-only activation, report-only activation, migration-only activation, wrapper-only activation, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode activation, compatibility activation, shim activation, fallback activation, generated-only activation, evidence-log activation, migration-only activation, wrapper-only activation, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "owner_splits": [
     {

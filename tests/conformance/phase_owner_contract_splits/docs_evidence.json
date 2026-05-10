@@ -16,5 +16,5 @@
     "tests/conformance/hard_cutover_fixture_family_owner_index.json"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "docs rows, issue evidence, report-only summaries, and owner index references are provenance-only and cannot define positive behavior support"
+  "retired_surface_rule": "docs rows, issue evidence, evidence-log summaries, and owner index references are provenance-only and cannot define positive behavior support"
 }

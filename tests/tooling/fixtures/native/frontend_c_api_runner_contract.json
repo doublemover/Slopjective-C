@@ -17,7 +17,7 @@
     "result_owner": "frontend-c-api-runner-result",
     "artifact_owner": "frontend-c-api-runner-artifact",
     "status_owner": "frontend-c-api-runner-status",
-    "no_fallback_or_report_only_claims": true,
+    "no_fallback_or_evidence_log_claims": true,
     "behavior_owner_split_required": true,
     "canonical_rejection_owner": "tests/tooling/fixtures/native/frontend_c_api_behavior_owner_splits/canonical_rejection.json"
   },
@@ -103,7 +103,7 @@
     "diagnostics output path contract fail-closed",
     "frontend C API accessor contract fail-closed"
   ],
-  "fail_closed_behavior_boundary": "status mismatch, result success mismatch, missing result-owned error messages, empty artifact paths, missing artifacts, diagnostics path failures, accessor failures, fallback, shim, old-mode, compatibility, and report-only claims are canonical rejection or strict-error evidence",
+  "fail_closed_behavior_boundary": "status mismatch, result success mismatch, missing result-owned error messages, empty artifact paths, missing artifacts, diagnostics path failures, accessor failures, fallback, shim, old-mode, compatibility, and evidence-log claims are canonical rejection or strict-error evidence",
   "ownership_expectations": [
     "compile result storage is caller-owned and destroyed through objc3c_frontend_c_result_destroy",
     "result-owned error strings are reported separately from context last_error and must match on failures",

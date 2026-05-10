@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/workflow_surface.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed release-operation violations: missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update manifest fields, missing required upgrade-support report fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without generated replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, runtime alternate-path publication, data-format alternate-path publication, generated tmp output promoted as source truth, and report-only publication.",
+  "support_boundary": "strict-error ownership covers fail-closed release-operation violations: missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update manifest fields, missing required upgrade-support report fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without generated replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, runtime alternate-path publication, data-format alternate-path publication, generated tmp output promoted as source truth, and evidence-log publication.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -31,7 +31,7 @@
     "strict_error:runtime-alternate-path-publication",
     "strict_error:data-format-alternate-path-publication",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "diagnostic_id:abi-major-mismatch",
     "diagnostic_id:runtime-metadata-contract-mismatch",
     "diagnostic_id:data-format-conversion-required",
@@ -80,5 +80,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/release_operations",
-  "retired_surface_rule": "missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, alternate-path publication, tmp-as-source claims, report-only publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, alternate-path publication, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

@@ -13,7 +13,7 @@
     "source_owner": "release-foundation-source",
     "gate_owner": "release-foundation-gate",
     "blocker_owner": "release-foundation-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "owned_actions": [
       "check-release-foundation-surface",
       "check-release-foundation-schema-surface",

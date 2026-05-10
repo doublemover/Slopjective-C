@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
     "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json"
   ],
-  "support_boundary": "e2e ownership covers packaged runnable concurrency conformance, runnable concurrency end-to-end, public command routing, workflow actions, cross-module actor replay, packaged proof, and closure publication only after lower phase owners and executable proof pass; public command wrappers, workflow labels, and report-only proof rows are routing/provenance without canonical behavior ownership",
+  "support_boundary": "e2e ownership covers packaged runnable concurrency conformance, runnable concurrency end-to-end, public command routing, workflow actions, cross-module actor replay, packaged proof, and closure publication only after lower phase owners and executable proof pass; public command wrappers, workflow labels, and evidence-log proof rows are routing/provenance without canonical behavior ownership",
   "phase_support_claim_authority": false,
   "selectors": [
     "public_commands:test:objc3c:concurrency-conformance",
@@ -18,5 +18,5 @@
     "hard_cutover_requirements:scheduler-task-lifecycle-claims-require-private-runtime-helper-proof"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-only reports, generated-report-only e2e claims, old-mode commands, shim workflows, fallback workflows, workflow-label-only claims, stdlib narrative parity, manifest-only cross-module replay, descriptor-only cross-module replay, and cross-module claims without manifest/runtime-registration replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "wrapper-only runnable actions, evidence-log executable proof, generated-only reports, generated-evidence-log e2e claims, old-mode commands, shim workflows, fallback workflows, workflow-label-only claims, stdlib narrative parity, manifest-only cross-module replay, descriptor-only cross-module replay, and cross-module claims without manifest/runtime-registration replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -3,7 +3,7 @@
   "catalog": "native-fixture-owner-split",
   "owner_phase": "tooling_native_provenance",
   "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
-  "support_boundary": "tooling native provenance covers source catalog rows, mixed surface selectors, fixture basenames, package/release witness labels, generated-only rows, report-only rows, migration-only rows, and owner split routing metadata as provenance only",
+  "support_boundary": "tooling native provenance covers source catalog rows, mixed surface selectors, fixture basenames, package/release witness labels, generated-only rows, evidence-log rows, migration-only rows, and owner split routing metadata as provenance only",
   "positive_support_authority": "none",
   "negative_support_authority": "tests/native behavior owner indexes and canonical rejection owner splits",
   "mixed_surfaces": [
@@ -44,8 +44,8 @@
   "selectors": [
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*old-mode*",
@@ -54,5 +54,5 @@
     "*fallback*"
   ],
   "canonical_evidence": [],
-  "retired_surface_rule": "tooling native provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, report-only, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "tooling native provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

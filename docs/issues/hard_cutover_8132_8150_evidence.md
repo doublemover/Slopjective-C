@@ -4,7 +4,7 @@ This is a branch-committed closeout evidence map for the hard-cutover branch. It
 is based on committed branch work as of 2026-05-09. No validation, GitHub
 commands, push, or remote issue updates were run while writing this artifact.
 Historic `local` refresh labels in this file mean committed refs in this
-checkout; they are not report-only evidence, uncommitted worktree evidence, or a
+checkout; they are not evidence-log evidence, uncommitted worktree evidence, or a
 claim that remote issue closure happened.
 
 Canonical behavior and no-compatibility indexes:
@@ -418,7 +418,7 @@ Post-`98d10a61c` local owner refresh:
   dispatch remains rejection or strict-error evidence.
 - Artifact, IO, JSON/schema, conformance-reporting, package, site, runbook, and
   capability-truth owner splits refresh evidence for `#8138`, `#8145`,
-  `#8148`, and `#8150` without creating report-only completion.
+  `#8148`, and `#8150` without creating evidence-log completion.
 - The committed head folded into that docs-only map was `4fddfacb7`.
   Validation, GitHub commands, push, and remote issue edits remain deferred.
 
@@ -682,7 +682,7 @@ push, GitHub issue edits, or remote closure.
 | `#8146` | evidence-ready | Frontend type surfaces are indexed against canonical typed-flow, canonical literal, typed metadata handoff, tooling split evidence, and frontend type extraction cleanup. |
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with typed handoff, IR metadata publication, runtime snapshots, runtime dispatch support, runtime image registration tables, parse/lowering readiness keys, runtime dispatch lowering contracts, pipeline handoff, canonical ownership, and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization, JSON value writers, schema validation owners, conformance claim input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan/input/ordering owners, parse/lowering readiness keys, artifact adapters, dashboard renderers, config tooling expectations, and pipeline handoff. |
-| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
+| `#8149` | evidence-ready | Source hygiene, workflow handler/catalog/release/tooling specs, release-governance owners, validation timing reports, playground/runtime/performance/stress/external-validation/test-orchestration/ecosystem-publication/application/bonus/LLVM tooling workflow owners, native driver CLI ownership, public command budget contracts, source-hygiene cutover residue guardrails, public docs command-surface alignment, telemetry command evidence, and command-surface guardrails are indexed with allowlist/evidence-log surfaces retired. |
 | `#8150` | local-evidence-indexed-remote-deferred | Local closeout evidence is branch-committed and now includes the 90-owner-commit refresh, the follow-up committed owner wave through `f4bf6228e`, the post-`f4bf6228e` wave through `89959f6cc`, the post-`89959f6cc` wave through `e760e3450`, the post-`e760e3450` wave through `0350f4a4a`, the post-`0350f4a4a` wave through `0d2111b18`, the post-`0d2111b18` wave through `2fb0664e0`, the post-`2fb0664e0` wave through `6efdaf8f9`, the baseline committed branch owner wave through `98d10a61c`, the docs-only owner refresh through `4fddfacb7`, the latest local committed source refresh through `2a2d9759a`, and the current docs-only closeout refresh through `b4dad7b30`. Validation, push, GitHub issue edits, and remote closure remain deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in

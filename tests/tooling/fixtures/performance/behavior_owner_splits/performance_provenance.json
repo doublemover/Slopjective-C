@@ -6,7 +6,7 @@
   "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
   "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
   "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
-  "support_boundary": "performance provenance covers benchmark portfolio rows, measurement policy rows, benchmark parameter rows, comparative baseline rows, benchmark classes, workload ids, measured workload lists, expected exit codes, story capability labels, public command wrappers, public action names, report roots, artifact roots, output roots, package staging, telemetry schema paths, raw sample packets, machine profiles, tool versions, normalized values, comparative baseline sources, availability probes, compile/runtime invocations, generated reports, cache rows, timing rows, generated-only rows, report-only rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, and owner split routing metadata as provenance only",
+  "support_boundary": "performance provenance covers benchmark portfolio rows, measurement policy rows, benchmark parameter rows, comparative baseline rows, benchmark classes, workload ids, measured workload lists, expected exit codes, story capability labels, public command wrappers, public action names, report roots, artifact roots, output roots, package staging, telemetry schema paths, raw sample packets, machine profiles, tool versions, normalized values, comparative baseline sources, availability probes, compile/runtime invocations, generated reports, cache rows, timing rows, generated-only rows, evidence-log rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "tests/tooling/fixtures/performance/benchmark_portfolio.json",
@@ -56,8 +56,8 @@
     "exact_live_paths_for_downstream_work[]",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*cache-only*",
@@ -79,5 +79,5 @@
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, C API, or performance behavior; benchmark rows, timing rows, raw samples, report roots, artifact roots, normalized values, package staging, machine profiles, tool versions, public command wrappers, comparative baselines, generated reports, cache rows, generated-only rows, report-only rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, wrapper-only rows, shim, fallback, old-mode, and compatibility rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, C API, or performance behavior; benchmark rows, timing rows, raw samples, report roots, artifact roots, normalized values, package staging, machine profiles, tool versions, public command wrappers, comparative baselines, generated reports, cache rows, generated-only rows, evidence-log rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, wrapper-only rows, shim, fallback, old-mode, and compatibility rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

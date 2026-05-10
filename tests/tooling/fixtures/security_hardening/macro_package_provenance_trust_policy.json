@@ -22,7 +22,7 @@
     "macro_package_identity_owner": "security-hardening-macro-provenance",
     "macro_provenance_owner": "security-hardening-macro-provenance",
     "runtime_acceptance_owner": "security-hardening-runtime",
-    "report_only_security_proof_allowed": false,
+    "evidence_log_security_proof_allowed": false,
     "fallback_macro_trust_allowed": false,
     "trust_bypass_for_missing_provenance_allowed": false,
     "wrapper_only_macro_security_action_allowed": false
@@ -52,7 +52,7 @@
     "no remote package-signing verification claim",
     "no general hostile-macro execution claim",
     "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces",
-    "no report-only macro provenance proof",
+    "no evidence-log macro provenance proof",
     "no fallback macro trust path",
     "no trust bypass when package or provenance metadata is missing",
     "no wrapper-only macro security action capability"

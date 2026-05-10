@@ -59,7 +59,7 @@
     "package_validation_owner": "package-ecosystem-validation-gate",
     "blocker_owner": "package-ecosystem-blockers",
     "source_authority": "checked-in-package-ecosystem-contracts",
-    "report_only_allowed": false
+    "evidence_log_allowed": false
   },
   "owner_contracts": {
     "registry_publication_owner": {
@@ -81,7 +81,7 @@
     "retired_source_acceptance_claims_allowed": false,
     "retired_surface_acceptance_claims_allowed": false,
     "hosted_registry_claim_allowed": false,
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "wrapper_only_allowed": false
   },
   "blocker_metadata": {

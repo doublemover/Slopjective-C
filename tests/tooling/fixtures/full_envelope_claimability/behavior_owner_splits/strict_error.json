@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/full_envelope_claimability/stability_rollout_implementation_contract.json",
     "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed full-envelope claimability violations: missing or failing integrated evidence, missing required evidence-family reports, wrong report contract ids, missing required dashboard fields, missing required public summary fields, missing required acceptance matrix families, missing required release artifact fields, missing required schema, unsupported surfaces marked supported, candidate-only release state treated as stable, preview-only support treated as production strength, release blockers triggered by public conformance/performance/release/distribution failures, generated tmp output promoted as source truth, and report-only publication.",
+  "support_boundary": "strict-error ownership covers fail-closed full-envelope claimability violations: missing or failing integrated evidence, missing required evidence-family reports, wrong report contract ids, missing required dashboard fields, missing required public summary fields, missing required acceptance matrix families, missing required release artifact fields, missing required schema, unsupported surfaces marked supported, candidate-only release state treated as stable, preview-only support treated as production strength, release blockers triggered by public conformance/performance/release/distribution failures, generated tmp output promoted as source truth, and evidence-log publication.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -33,7 +33,7 @@
     "strict_error:missing-release-operations-publication",
     "strict_error:distribution-trust-not-ready",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "release_blocker:missing-or-failing-required-report",
     "release_blocker:public-conformance-blocked",
     "release_blocker:performance-claim-not-ready",
@@ -80,5 +80,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/full_envelope_claimability",
-  "retired_surface_rule": "missing evidence reports, wrong report contract ids, missing dashboard fields, missing public summary fields, missing acceptance matrix families, missing release artifact fields, missing schemas, unsupported surfaces marked supported, candidate/preview promotion to production strength, public conformance blockers, performance blockers, release publication blockers, distribution trust blockers, tmp-as-source claims, report-only publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing evidence reports, wrong report contract ids, missing dashboard fields, missing public summary fields, missing acceptance matrix families, missing release artifact fields, missing schemas, unsupported surfaces marked supported, candidate/preview promotion to production strength, public conformance blockers, performance blockers, release publication blockers, distribution trust blockers, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

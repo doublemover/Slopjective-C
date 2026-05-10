@@ -6,7 +6,7 @@
     "result_owner": "compiler-dispatch-result",
     "artifact_owner": "compiler-dispatch-artifact",
     "status_owner": "compiler-dispatch-status",
-    "no_fallback_or_report_only_claims": true
+    "no_fallback_or_evidence_log_claims": true
   },
   "pages": [
     [

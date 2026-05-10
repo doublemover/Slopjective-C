@@ -12,15 +12,15 @@ RUNTIME_CLOSURE_PUBLICATION_MODE = "checked-in-owner-contract-plus-executable-pr
 RUNTIME_CLOSURE_CLAIM_KIND = "runtime-closure-owner-contract"
 RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES = (
     "fallback-runtime-behavior",
-    "report-only-runtime-closure",
+    "evidence-log-runtime-closure",
     "compatibility-shim-runtime-closure",
     "wrapper-only-runnable-action",
     "public-runtime-abi-widening-without-source-owner",
-    "generated-report-only-source-truth",
+    "generated-evidence-log-source-truth",
 )
 RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS = (
     "no-fallback-runtime-closure-claims",
-    "no-report-only-runtime-closure-publication",
+    "no-evidence-log-runtime-closure-publication",
     "no-generated-report-as-source-authority",
     "runtime-closure-publication-requires-checked-in-owner-contract",
 )
@@ -56,9 +56,9 @@ RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS: tuple[
         "fail-closed",
     ),
     RuntimeClosureForbiddenClaim(
-        "report-only-runtime-closure",
+        "evidence-log-runtime-closure",
         RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
-        "report_only_executable_proof_claims_allowed",
+        "evidence_log_executable_proof_claims_allowed",
         False,
         "fail-closed",
     ),
@@ -84,7 +84,7 @@ RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS: tuple[
         "fail-closed",
     ),
     RuntimeClosureForbiddenClaim(
-        "generated-report-only-source-truth",
+        "generated-evidence-log-source-truth",
         RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
         "generated_reports_are_source",
         False,

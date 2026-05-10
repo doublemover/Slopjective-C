@@ -7,7 +7,7 @@
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
     "tests/native/retired_surface_owner_splits/fallback_dispatch_strict_error.json",
-    "tests/native/retired_surface_owner_splits/migration_report_only_provenance.json"
+    "tests/native/retired_surface_owner_splits/migration_evidence_log_provenance.json"
   ],
   "entries": [
     {

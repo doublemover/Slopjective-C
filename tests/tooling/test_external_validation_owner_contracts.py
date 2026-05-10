@@ -43,7 +43,7 @@ def test_external_validation_owner_contract_blocks_non_truthy_evidence() -> None
     ]
     assert guardrails["fallback_trust_route_allowed"] is False
     assert guardrails["local_only_validation_claim_allowed"] is False
-    assert guardrails["report_only_validation_claim_allowed"] is False
+    assert guardrails["evidence_log_validation_claim_allowed"] is False
     assert guardrails["wrapper_only_action_surface_allowed"] is False
     assert guardrails["unaccepted_fixture_publication_allowed"] is False
     assert guardrails["quarantined_fixture_capability_truth_allowed"] is False

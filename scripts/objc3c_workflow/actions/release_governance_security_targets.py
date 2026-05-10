@@ -27,7 +27,7 @@ VALIDATE_SECURITY_HARDENING = "validate-security-hardening"
 VALIDATE_SECURITY_HARDENING_END_TO_END = "validate-security-hardening-end-to-end"
 
 SECURITY_HARDENING_HARD_CUTOVER_GUARDRAILS: tuple[tuple[str, object], ...] = (
-    ("report_only_security_proof_allowed", False),
+    ("evidence_log_security_proof_allowed", False),
     ("generated_report_capability_truth_allowed", False),
     ("local_tabletop_capability_truth_allowed", False),
     ("fallback_claims_allowed", False),
@@ -73,7 +73,7 @@ class SecurityHardeningTarget:
     def to_action_spec(self) -> ActionSpec:
         guardrails = dict(self.hard_cutover_guardrails)
         disallowed_flags = (
-            "report_only_security_proof_allowed",
+            "evidence_log_security_proof_allowed",
             "generated_report_capability_truth_allowed",
             "local_tabletop_capability_truth_allowed",
             "fallback_claims_allowed",
@@ -120,7 +120,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
             BUILD_SECURITY_POSTURE,
         ),
         forbidden_claims=(
-            "report-only macro trust proof",
+            "evidence-log macro trust proof",
             "fallback macro package trust",
             "trust bypass for missing provenance",
             "wrapper-only macro security action",
@@ -140,7 +140,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
         ),
         forbidden_claims=(
             "local-only tabletop as capability truth",
-            "report-only response readiness proof",
+            "evidence-log response readiness proof",
             "unowned disclosure override",
             "fallback release publication after drill failure",
         ),

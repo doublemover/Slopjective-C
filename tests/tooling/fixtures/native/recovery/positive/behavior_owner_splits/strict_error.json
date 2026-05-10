@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/positive"
   ],
-  "support_boundary": "strict-error ownership covers recovery positive overclaims that must fail closed: fallback or shim acceptance presented as positive behavior, legacy .m probes presented as Objective-C 3 source truth, dispatch-ir markers presented as source truth, generated/report-only rows promoted as support, e2e execution-only rows promoted as source support, missing paired IR expectations promoted as IR truth, unsupported runtime dispatch, invalid nil receiver semantics, and incompatible alias/nullability/protocol qualifier support claims.",
+  "support_boundary": "strict-error ownership covers recovery positive overclaims that must fail closed: fallback or shim acceptance presented as positive behavior, legacy .m probes presented as Objective-C 3 source truth, dispatch-ir markers presented as source truth, generated/evidence-log rows promoted as support, e2e execution-only rows promoted as source support, missing paired IR expectations promoted as IR truth, unsupported runtime dispatch, invalid nil receiver semantics, and incompatible alias/nullability/protocol qualifier support claims.",
   "phase_support_claim_authority": false,
   "selectors": [
     "*fallback-as-positive*",

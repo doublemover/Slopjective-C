@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/negative/*.objc3"
   ],
-  "support_boundary": "strict-error ownership covers recovery negative diagnostics that must fail closed when surfaced through native/e2e acceptance: lexer/parser diagnostic codes, semantic diagnostic codes, too-many-message-args, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, generated/report-only rows promoted as support, and old-mode/shim/fallback/compat rows promoted as support.",
+  "support_boundary": "strict-error ownership covers recovery negative diagnostics that must fail closed when surfaced through native/e2e acceptance: lexer/parser diagnostic codes, semantic diagnostic codes, too-many-message-args, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, generated/evidence-log rows promoted as support, and old-mode/shim/fallback/compat rows promoted as support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [

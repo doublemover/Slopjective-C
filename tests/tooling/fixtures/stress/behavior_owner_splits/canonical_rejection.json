@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "stress rows that mention fallback, shim, old-mode, compatibility, generated-only, report-only, migration-only, unsupported features, alternate acceptance paths, unresolved dispatch, strict errors, generated artifacts, tmp artifacts, replay-output-only support, or report-output-only support are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "stress rows that mention fallback, shim, old-mode, compatibility, generated-only, evidence-log, migration-only, unsupported features, alternate acceptance paths, unresolved dispatch, strict errors, generated artifacts, tmp artifacts, replay-output-only support, or report-output-only support are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "case_ids:*compatibility*",
@@ -21,8 +21,8 @@
     "*alternate_acceptance*",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*old-mode*",
@@ -32,5 +32,5 @@
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "fallback, shim, old-mode, compatibility, generated-only, report-only, migration-only, unsupported-feature, unresolved-dispatch, strict-error, tmp-artifact-only, replay-output-only, report-output-only, and alternate acceptance stress claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "fallback, shim, old-mode, compatibility, generated-only, evidence-log, migration-only, unsupported-feature, unresolved-dispatch, strict-error, tmp-artifact-only, replay-output-only, report-output-only, and alternate acceptance stress claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

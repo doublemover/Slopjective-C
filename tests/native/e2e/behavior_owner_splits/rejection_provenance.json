@@ -3,7 +3,7 @@
   "catalog": "objc3c-e2e-behavior-family-owner-split",
   "owner_boundary": "rejection_provenance",
   "source_family": "tests/native/e2e",
-  "support_boundary": "rejection/provenance ownership covers e2e legacy literal rejection, runtime dispatch strict errors, retired old-mode/dispatch tags, and any generated-only, report-only, migration-only, old-mode, shim, or fallback e2e claims",
+  "support_boundary": "rejection/provenance ownership covers e2e legacy literal rejection, runtime dispatch strict errors, retired old-mode/dispatch tags, and any generated-only, evidence-log, migration-only, old-mode, shim, or fallback e2e claims",
   "phase_support_claim_authority": false,
   "selectors": [
     "negative_execution/legacy_null_literal_alias_rejected.objc3",
@@ -19,9 +19,9 @@
     "*shim*",
     "*fallback*",
     "*generated-only*",
-    "*report-only*",
+    "*evidence-log*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only e2e surfaces are canonical rejection, strict-error, or provenance-only evidence, never positive e2e behavior truth"
+  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, evidence-log, and migration-only e2e surfaces are canonical rejection, strict-error, or provenance-only evidence, never positive e2e behavior truth"
 }

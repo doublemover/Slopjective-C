@@ -20,5 +20,5 @@
     "authoritative_case_ids:cross-module-concurrency-actor-artifact-preservation"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode concurrency lowering, report-only lowering success, manifest-only lowering rows, descriptor-only runtime-registration rows, missing runtime-registration replay, and lowering-only parity narratives are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode concurrency lowering, evidence-log lowering success, manifest-only lowering rows, descriptor-only runtime-registration rows, missing runtime-registration replay, and lowering-only parity narratives are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

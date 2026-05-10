@@ -12,7 +12,7 @@
   },
   "branch_evidence_policy": {
     "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
-    "historic_local_commit_fields": "local_commits and local owner refresh fields name committed branch refs in this checkout; they are not report-only or uncommitted evidence",
+    "historic_local_commit_fields": "local_commits and local owner refresh fields name committed branch refs in this checkout; they are not evidence-log or uncommitted evidence",
     "unsupported_evidence": [
       "uncommitted worktree edits",
       "tmp report output without a matching committed owner surface",
@@ -210,7 +210,7 @@
           "b5a547493",
           "466f8ddcd"
         ],
-        "owner_boundary": "artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits are evidence projections and do not create report-only completion"
+        "owner_boundary": "artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits are evidence projections and do not create evidence-log completion"
       }
     ]
   },
@@ -3024,7 +3024,7 @@
     {
       "issue": "#8149",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Source-hygiene and command-surface guardrail evidence is indexed with allowlist/report-only surfaces retired.",
+      "closeout_summary": "Source-hygiene and command-surface guardrail evidence is indexed with allowlist/evidence-log surfaces retired.",
       "local_commits": [
         "606775842",
         "fd675f294",

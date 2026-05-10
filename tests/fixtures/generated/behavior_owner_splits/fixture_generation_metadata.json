@@ -28,9 +28,9 @@
     "*generator*",
     "*generated-output*",
     "*generated_output*",
-    "*report-only*",
+    "*evidence-log*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/fixtures/generated/manifest.json",
-  "retired_surface_rule": "fixture generation metadata never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-output-only, report-only, migration-only, replay-only, validation-packet-only, and generator-output-only rows remain provenance or canonical rejection evidence"
+  "retired_surface_rule": "fixture generation metadata never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-output-only, evidence-log, migration-only, replay-only, validation-packet-only, and generator-output-only rows remain provenance or canonical rejection evidence"
 }

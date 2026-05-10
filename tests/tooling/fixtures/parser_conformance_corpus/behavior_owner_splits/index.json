@@ -20,7 +20,7 @@
     "canonical_rejection_rule": "rejected manifest cases are hard-cutover parser rejection evidence for removed declaration spellings, malformed punctuation, duplicate modifiers, misplaced qualifiers, and noncanonical type syntax, not alternate parser acceptance paths",
     "strict_error_rule": "manifest diagnostic_code values O3P114, O3P104, O3P100, and O3P181 own strict parser diagnostic evidence when paired with their rejected source fixtures; missing or widened diagnostic ownership is strict-error evidence",
     "provenance_rule": "README prose, manifest case ids, fixture paths, expect labels, diagnostic-code labels, corpus contract id, and owner-split routing rows remain provenance unless parser or rejection owners claim the behavior boundary",
-    "retired_surface_rule": "old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, report-only rows, legacy-looking positives, alternate parser acceptance paths, and rejected rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, alternate parser acceptance paths, and rejected rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "owner_splits": [
     {

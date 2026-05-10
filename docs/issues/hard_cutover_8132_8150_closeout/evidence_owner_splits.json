@@ -9,7 +9,7 @@
     "primary_axis": "evidence owner before issue closeout claim, remote closure readiness, generated report, docs-only refresh, local scan, tracker operation, validation state, or retired-surface disposition",
     "positive_rule": "issue closeout rows can cite canonical accepted evidence only when the row points to committed hard-cutover branch source, docs, tests, or checked-in owner surfaces; closeout metadata does not create parser, sema, lowering, IR, runtime, e2e, workflow, schema, capability, or remote tracker behavior by itself",
     "rejection_rule": "shim, fallback, compatibility, old-mode, unsupported, missing-upstream, alternate acceptance path, retired-source lane, and public compatibility claim rows belong to canonical rejection or strict-error evidence",
-    "provenance_rule": "docs-only refresh rows, local scan observations, generated summaries, tmp report rows, report-only rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, remote-deferred rows, and uncommitted-worktree exclusions are provenance or closure-readiness state until an accepted evidence owner claims them",
+    "provenance_rule": "docs-only refresh rows, local scan observations, generated summaries, tmp report rows, evidence-log rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, remote-deferred rows, and uncommitted-worktree exclusions are provenance or closure-readiness state until an accepted evidence owner claims them",
     "closure_readiness_rule": "closure readiness owns whether the local payload can be used for tracker closeout; validation, push, GitHub issue edits, and remote closure remain explicit gates and cannot be inferred from local payload text"
   },
   "owner_splits": [

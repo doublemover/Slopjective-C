@@ -25,5 +25,5 @@
     "negative/return_void_with_value_rejected.meta.json:behavior_contract=canonical-rejection"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "positive sema truth is limited to hand-authored canonical semantic fixtures; semantic negatives are diagnostic rejection evidence and never generated-only, report-only, migration, old-mode, shim, or fallback support"
+  "retired_surface_rule": "positive sema truth is limited to hand-authored canonical semantic fixtures; semantic negatives are diagnostic rejection evidence and never generated-only, evidence-log, migration, old-mode, shim, or fallback support"
 }

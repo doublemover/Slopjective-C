@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "e2e",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "e2e stress fixtures own deterministic compile-link-run, mixed-module provider/consumer replay, and end-to-end validation boundaries only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, or compatibility provenance",
+  "support_boundary": "e2e stress fixtures own deterministic compile-link-run, mixed-module provider/consumer replay, and end-to-end validation boundaries only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, or compatibility provenance",
   "source_families": [
     "lowering-runtime-stress",
     "mixed-module-differential",
@@ -40,5 +40,5 @@
     }
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "mixed-module compatibility wording, fallback execution, shimmed execution, old-mode execution, generated-only replay rows, report-only replay rows, migration-only execution rows, alternate acceptance paths, and generated replay artifacts are treated as replay provenance, canonical rejection, or strict-error evidence and never as alternate acceptance support"
+  "retired_surface_rule": "mixed-module compatibility wording, fallback execution, shimmed execution, old-mode execution, generated-only replay rows, evidence-log replay rows, migration-only execution rows, alternate acceptance paths, and generated replay artifacts are treated as replay provenance, canonical rejection, or strict-error evidence and never as alternate acceptance support"
 }

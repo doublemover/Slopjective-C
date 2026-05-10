@@ -16,5 +16,5 @@
     "e2e_boundary:no-positive-e2e-from-rejected-source"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode e2e rows, shim e2e rows, fallback e2e rows, compatibility e2e rows, migration-only e2e rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode e2e rows, shim e2e rows, fallback e2e rows, compatibility e2e rows, migration-only e2e rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

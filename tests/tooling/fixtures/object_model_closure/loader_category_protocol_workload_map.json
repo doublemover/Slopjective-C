@@ -10,7 +10,7 @@
     "primary_axis": "behavior owner before loader workload, cross-module replay, category/protocol map row, public workflow label, report row, or fallback dispatch expectation",
     "support_authority": "loader/category/protocol workload rows are provenance until parser, runtime, and e2e owners claim fixture parsing, runtime registration, dispatch/object inspection, and replay behavior together",
     "positive_support_from_workload_map": false,
-    "retired_surface_rule": "workflow-label-only, report-only, generated-report-only, fallback dispatch, old-mode loader, shim loader, compatibility loader, and milestone-local alternate acceptance rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "workflow-label-only, evidence-log, generated-evidence-log, fallback dispatch, old-mode loader, shim loader, compatibility loader, and milestone-local alternate acceptance rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "workloads": [
     {

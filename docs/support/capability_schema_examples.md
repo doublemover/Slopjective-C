@@ -200,7 +200,7 @@ Rules shown by this contract:
   `support_claims`, while rejected, reserved, and internal rows cannot carry
   them.
 - Alias, compatibility, fallback, registry-facade, helper-command, and
-  report-only wording cannot become public behavior support.
+  evidence-log wording cannot become public behavior support.
 - Owner-only rows can explain where truth lives without widening the supported
   language surface.
 

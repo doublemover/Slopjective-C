@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/playbook.md",
     "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/drift_missing_lane_b_validation/batch_manifest.md"
   ],
-  "support_boundary": "canonical rejection owns dispatch-reopen rows that look like support but are invalid-encoding, W2 drift, missing validation, stale intake order, stale closeout order, missing freshness/provenance linkage, generated-only, report-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Drift fixtures are rejection evidence, not alternate dispatch acceptance.",
+  "support_boundary": "canonical rejection owns dispatch-reopen rows that look like support but are invalid-encoding, W2 drift, missing validation, stale intake order, stale closeout order, missing freshness/provenance linkage, generated-only, evidence-log, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Drift fixtures are rejection evidence, not alternate dispatch acceptance.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -34,11 +34,11 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "invalid UTF-8 fixtures, W2 drift fixtures, missing validation fixtures, stale intake order, stale closeout order, missing freshness/provenance evidence, old-mode dispatch rows, shim dispatch rows, fallback dispatch rows, compatibility dispatch rows, migration-only rows, generated-only rows, report-only rows, stale-order positives, drift positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "invalid UTF-8 fixtures, W2 drift fixtures, missing validation fixtures, stale intake order, stale closeout order, missing freshness/provenance evidence, old-mode dispatch rows, shim dispatch rows, fallback dispatch rows, compatibility dispatch rows, migration-only rows, generated-only rows, evidence-log rows, stale-order positives, drift positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

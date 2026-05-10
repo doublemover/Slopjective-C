@@ -8,10 +8,10 @@
   "generated_report_root": "tmp/reports/m316/M316-A001",
   "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
   "behavior_boundary": {
-    "primary_axis": "behavior phase before corrective source-owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, report-only row, migration-only row, runner-only row, or retired-surface claim",
+    "primary_axis": "behavior phase before corrective source-owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
     "support_authority": "runtime-corrective contracts are source, probe, acceptance, report, proof, compile-artifact, and provenance evidence only until a behavior owner split claims the phase",
-    "generated_report_rule": "generated corrective reports, required reports, compile artifacts, replay manifests, proof bundles, module bundles, native-output truth bundles, linked-probe summaries, generated-only rows, report-only rows, migration-only rows, and runner-only rows cannot define canonical support",
-    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-report-only rows, report-only rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "generated_report_rule": "generated corrective reports, required reports, compile artifacts, replay manifests, proof bundles, module bundles, native-output truth bundles, linked-probe summaries, generated-only rows, evidence-log rows, migration-only rows, and runner-only rows cannot define canonical support",
+    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
     "evidence_boundary_rule": "runtime source rows, runtime public ABI/C API path rows, dispatch semantic rows, acceptance workload rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows remain separately routed evidence classes"
   },
   "behavior_phase_split_indexes": [
@@ -48,7 +48,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "strict-error, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-report-only, report-only, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
+      "boundary": "strict-error, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
     },
     {
       "phase": "runtime_corrective_provenance",
@@ -58,7 +58,7 @@
   ],
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "fallback_claims_allowed": false,
     "generated_report_claims_allowed": false
   },
@@ -80,7 +80,7 @@
         "scripts/check_runtime_corrective_live_dispatch_runtime.py",
         "scripts/check_runtime_corrective_dispatch_lowering.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
@@ -96,7 +96,7 @@
       "support_boundary": "native-output truth requires coupled IR, object, provenance, registration manifest, and linked probe evidence; sidecar-only or generated-report proof is rejection/provenance",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_native_output_truth_summary.py",
       "check_implementation_anchors": [],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
@@ -114,7 +114,7 @@
         "scripts/check_runtime_corrective_dispatch_lowering.py",
         "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
@@ -135,7 +135,7 @@
         "scripts/check_runtime_corrective_synthesized_accessor_runtime.py",
         "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
@@ -153,7 +153,7 @@
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_closeout_gate.py"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "fallback_claims_allowed": false,
       "generated_report_claims_allowed": false
     }

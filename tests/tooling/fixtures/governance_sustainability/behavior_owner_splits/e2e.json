@@ -38,5 +38,5 @@
     "proposal_template:governance-new-work-proposal-template-v3"
   ],
   "canonical_anchor": "tests/tooling/fixtures/governance_sustainability",
-  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, policy-only substitute for executable review evidence, proposal-sample-only support, wrapper-only governance actions, old-mode governance workflow rows, shim governance workflow rows, fallback governance workflow rows, compatibility governance workflow rows, migration-only governance workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, policy-only substitute for executable review evidence, proposal-sample-only support, wrapper-only governance actions, old-mode governance workflow rows, shim governance workflow rows, fallback governance workflow rows, compatibility governance workflow rows, migration-only governance workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -3,7 +3,7 @@
   "catalog": "objc3c-lowering-behavior-family-owner-split",
   "owner_boundary": "rejection_provenance",
   "source_family": "tests/native/lowering",
-  "support_boundary": "rejection/provenance ownership covers lowering runtime-dispatch strict link failures, removed fallback flags, retired dispatch tags, and any generated-only, report-only, migration-only, old-mode, shim, or fallback lowering claims",
+  "support_boundary": "rejection/provenance ownership covers lowering runtime-dispatch strict link failures, removed fallback flags, retired dispatch tags, and any generated-only, evidence-log, migration-only, old-mode, shim, or fallback lowering claims",
   "phase_support_claim_authority": false,
   "selectors": [
     "errors/runtime_dispatch_requires_link_strict_error.objc3",
@@ -23,9 +23,9 @@
     "*shim*",
     "*fallback*",
     "*generated-only*",
-    "*report-only*",
+    "*evidence-log*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.meta.json",
-  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only lowering surfaces are canonical strict-error, rejection, or provenance-only evidence, never positive lowering behavior truth"
+  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, evidence-log, and migration-only lowering surfaces are canonical strict-error, rejection, or provenance-only evidence, never positive lowering behavior truth"
 }

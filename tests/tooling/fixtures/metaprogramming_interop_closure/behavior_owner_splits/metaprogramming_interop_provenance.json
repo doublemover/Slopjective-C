@@ -3,7 +3,7 @@
   "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
   "owner_phase": "metaprogramming_interop_provenance",
   "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
-  "support_boundary": "metaprogramming interop provenance covers source-owner contracts, summary/check anchors, runtime acceptance reports, runnable conformance/e2e summaries, package manifests, bridge JSON, generated bridge payloads, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition rows, cache snapshots, private runtime snapshot symbols, public command wrappers, public workflow labels, required artifact fields, required probe fields, generated-only rows, report-only rows, migration-only rows, package-only rows, cache-only rows, module-replay-only rows, FFI-metadata-only rows, closure-error-summary-only rows, and owner split routing metadata as provenance only",
+  "support_boundary": "metaprogramming interop provenance covers source-owner contracts, summary/check anchors, runtime acceptance reports, runnable conformance/e2e summaries, package manifests, bridge JSON, generated bridge payloads, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition rows, cache snapshots, private runtime snapshot symbols, public command wrappers, public workflow labels, required artifact fields, required probe fields, generated-only rows, evidence-log rows, migration-only rows, package-only rows, cache-only rows, module-replay-only rows, FFI-metadata-only rows, closure-error-summary-only rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
@@ -65,10 +65,10 @@
     "tmp/reports/runtime/runnable-interop-e2e/summary.json",
     "*generated-only*",
     "*generated_only*",
-    "*generated-report-only*",
-    "*generated_report_only*",
-    "*report-only*",
-    "*report_only*",
+    "*generated-evidence-log*",
+    "*generated_evidence_log*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*package-only*",
@@ -96,5 +96,5 @@
     "*stale*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "metaprogramming interop provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, FFI, interop, closure/error, package, or metaprogramming behavior; source-owner contracts, generated bridge payloads, package manifests, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition summaries, runtime reports, runnable summaries, cache snapshots, generated-only rows, report-only rows, migration-only rows, package-only rows, cache-only rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "metaprogramming interop provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, FFI, interop, closure/error, package, or metaprogramming behavior; source-owner contracts, generated bridge payloads, package manifests, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition summaries, runtime reports, runnable summaries, cache snapshots, generated-only rows, evidence-log rows, migration-only rows, package-only rows, cache-only rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
     "tests/tooling/fixtures/packaging_channels/workflow_surface.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed packaging-channel violations: missing checked-in channel sources, missing rollback or receipt contracts, package-channel artifacts not derived from the runnable package manifest, absent platform support matrix, skipped source/schema surface checks, missing package-channel child action from the objc3c bridge, report-only workflow summaries, missing package channel manifest fields, missing install receipt fields, unsupported host success, missing payload digest parity, network-dependent offline bundles, installer-only metadata bypassing the release manifest, generated tmp output promoted as source truth, and report-only publication.",
+  "support_boundary": "strict-error ownership covers fail-closed packaging-channel violations: missing checked-in channel sources, missing rollback or receipt contracts, package-channel artifacts not derived from the runnable package manifest, absent platform support matrix, skipped source/schema surface checks, missing package-channel child action from the objc3c bridge, evidence-log workflow summaries, missing package channel manifest fields, missing install receipt fields, unsupported host success, missing payload digest parity, network-dependent offline bundles, installer-only metadata bypassing the release manifest, generated tmp output promoted as source truth, and evidence-log publication.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -22,7 +22,7 @@
     "strict_error:packaging-workflow-skipped-source-surface-check",
     "strict_error:packaging-workflow-skipped-schema-surface-check",
     "strict_error:package-channel-child-action-missing-from-objc3c-bridge",
-    "strict_error:package-channel-workflow-summary-emitted-report-only-status",
+    "strict_error:package-channel-workflow-summary-emitted-evidence-log-status",
     "strict_error:missing-package-channel-manifest-field",
     "strict_error:missing-package-install-receipt-field",
     "strict_error:unsupported-host-success",
@@ -32,14 +32,14 @@
     "strict_error:offline-bundle-requires-network-bootstrap",
     "strict_error:installer-only-metadata-bypasses-release-manifest",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "blocking_condition:channel source contract missing checked-in source",
     "blocking_condition:installer policy missing rollback or receipt contract",
     "blocking_condition:package channel artifact not derived from runnable package manifest",
     "blocking_condition:platform support matrix absent from package-channel summary",
     "blocking_condition:packaging workflow skipped source or schema surface checks",
     "blocking_condition:package-channel child action missing from objc3c bridge",
-    "blocking_condition:package-channel workflow summary emitted report-only status",
+    "blocking_condition:package-channel workflow summary emitted evidence-log status",
     "required_manifest_field:contract_id",
     "required_manifest_field:generated_at_utc",
     "required_manifest_field:platform_id",
@@ -72,5 +72,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/packaging_channels",
-  "retired_surface_rule": "missing checked-in channel sources, missing rollback or receipt contracts, non-derived package channel artifacts, absent platform support matrix, skipped source/schema checks, missing bridge child actions, report-only workflow summaries, missing manifest fields, missing receipt fields, unsupported host success, missing digest parity, network-dependent offline bundles, installer-only metadata bypassing release manifests, tmp-as-source claims, report-only publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing checked-in channel sources, missing rollback or receipt contracts, non-derived package channel artifacts, absent platform support matrix, skipped source/schema checks, missing bridge child actions, evidence-log workflow summaries, missing manifest fields, missing receipt fields, unsupported host success, missing digest parity, network-dependent offline bundles, installer-only metadata bypassing release manifests, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

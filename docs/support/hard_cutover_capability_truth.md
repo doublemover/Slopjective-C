@@ -54,7 +54,7 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 | Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers | `internal` | Treat as owner/evidence surfaces, not language features. |
 | Full object-model runtime realization | `reserved` until a matrix row changes | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
 | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure | `reserved` unless separately implemented | Describe as unavailable or reserved spec surface, not runnable support. |
-| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and report-only completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
+| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
 
 ## Documentation Rule
 
@@ -70,7 +70,7 @@ surfaces:
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 They classify retired-surface residue and generated-report inventory; they do
-not define alternate old-surface support or create report-only claims.
+not define alternate old-surface support or create evidence-log claims.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They

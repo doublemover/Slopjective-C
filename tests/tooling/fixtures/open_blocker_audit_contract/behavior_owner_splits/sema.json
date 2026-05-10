@@ -15,5 +15,5 @@
     "semantic_like_terms:contract_id,final_status,open_blocker_count are tooling contract labels only"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode sema audit, compatibility sema audit, shim sema audit, fallback sema audit, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, and audit labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode sema audit, compatibility sema audit, shim sema audit, fallback sema audit, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and audit labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

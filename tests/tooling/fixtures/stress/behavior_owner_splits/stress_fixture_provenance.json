@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "stress_fixture_provenance",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "stress fixture provenance covers source-surface rows, source family coverage goals, source paths, manifest rows, case ids, compile and execution case lists, surface contract labels, fixture group labels, workflow commands, runbook references, safety policy references, artifact surface references, replay artifacts, generated-only rows, report-only rows, migration-only rows, and owner split routing metadata as provenance only",
+  "support_boundary": "stress fixture provenance covers source-surface rows, source family coverage goals, source paths, manifest rows, case ids, compile and execution case lists, surface contract labels, fixture group labels, workflow commands, runbook references, safety policy references, artifact surface references, replay artifacts, generated-only rows, evidence-log rows, migration-only rows, and owner split routing metadata as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "tests/tooling/fixtures/stress/source_surface.json",
@@ -32,8 +32,8 @@
     "npm run objc3c -- *",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*old-mode*",
@@ -43,5 +43,5 @@
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "stress fixture provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; source-surface rows, manifest rows, workflow labels, generated-only rows, report-only rows, shim, fallback, old-mode, migration-only, compatibility, tmp-artifact-only, replay-output-only, and report-output-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "stress fixture provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; source-surface rows, manifest rows, workflow labels, generated-only rows, evidence-log rows, shim, fallback, old-mode, migration-only, compatibility, tmp-artifact-only, replay-output-only, and report-output-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

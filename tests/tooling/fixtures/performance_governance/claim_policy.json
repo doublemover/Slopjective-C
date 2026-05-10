@@ -43,7 +43,7 @@
   ],
   "forbidden_evidence_classes": [
     "local-only-performance-evidence",
-    "report-only-performance-evidence",
+    "evidence-log-performance-evidence",
     "unsupported-benchmark-claim",
     "compatibility-fallback-performance-claim",
     "wrapper-only-action-surface"

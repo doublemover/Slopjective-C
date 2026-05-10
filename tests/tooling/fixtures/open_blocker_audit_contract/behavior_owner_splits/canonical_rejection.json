@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_*"
   ],
-  "support_boundary": "canonical rejection owns open blocker audit contract rows that look like support but are hard-fail drift, old-mode, shim, fallback, compatibility, generated-only, report-only, migration-only, wrapper-only, runner-only, workflow-label-only, or directory-label-only. Contract drift rows are non-positive even when they include summary JSON or snapshot provenance.",
+  "support_boundary": "canonical rejection owns open blocker audit contract rows that look like support but are hard-fail drift, old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, wrapper-only, runner-only, workflow-label-only, or directory-label-only. Contract drift rows are non-positive even when they include summary JSON or snapshot provenance.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -22,8 +22,8 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*",
     "*wrapper-only*",
@@ -32,5 +32,5 @@
     "*runner_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "hard-fail drift rows, old-mode audit, shim audit, fallback audit, compatibility audit, migration-only audit, report-only audit, generated-only audit, wrapper-only audit, runner-only audit, and alternate acceptance audit claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "hard-fail drift rows, old-mode audit, shim audit, fallback audit, compatibility audit, migration-only audit, evidence-log audit, generated-only audit, wrapper-only audit, runner-only audit, and alternate acceptance audit claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

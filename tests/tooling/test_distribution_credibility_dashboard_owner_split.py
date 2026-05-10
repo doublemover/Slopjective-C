@@ -228,13 +228,13 @@ def test_distribution_credibility_actions_have_trust_and_release_drill_owner_con
         assert contract.source_contracts
         assert contract.required_artifacts
         assert contract.claim_boundary
-        assert not contract.report_only_allowed
+        assert not contract.evidence_log_allowed
         assert not contract.wrapper_only_allowed
-        assert "report-only" in " ".join(contract.blocking_conditions)
+        assert "evidence-log" in " ".join(contract.blocking_conditions)
         assert "wrapper-only" in " ".join(contract.blocking_conditions)
 
 
-def test_distribution_credibility_fixtures_reject_report_only_trust_evidence() -> None:
+def test_distribution_credibility_fixtures_reject_evidence_log_trust_evidence() -> None:
     fixture_root = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibility"
     workflow_surface = load_json_object(fixture_root / "workflow_surface.json")
     trust_architecture = load_json_object(fixture_root / "trust_signal_architecture.json")
@@ -244,19 +244,19 @@ def test_distribution_credibility_fixtures_reject_report_only_trust_evidence() -
     owner_policy = workflow_surface["owner_policy"]
     assert owner_policy["trust_owner"] == "distribution-credibility-trust-owner"
     assert owner_policy["release_drill_owner"] == "distribution-credibility-release-drill-owner"
-    assert owner_policy["report_only_allowed"] is False
+    assert owner_policy["evidence_log_allowed"] is False
     assert owner_policy["wrapper_only_allowed"] is False
 
     trust_owner = trust_architecture["owner_contracts"]["trust_owner"]
-    assert trust_owner["report_only_allowed"] is False
+    assert trust_owner["evidence_log_allowed"] is False
     assert "not independent manual badges" in trust_owner["claim_boundary"]
 
     release_drill_owner = release_drill["owner_contract"]
-    assert release_drill_owner["report_only_allowed"] is False
+    assert release_drill_owner["evidence_log_allowed"] is False
     assert release_drill_owner["wrapper_only_allowed"] is False
     assert "cannot substitute for the drill" in release_drill_owner["claim_boundary"]
 
     claim_policy = artifact_surface["artifact_claim_policy"]
-    assert claim_policy["report_only_allowed"] is False
+    assert claim_policy["evidence_log_allowed"] is False
     assert claim_policy["wrapper_only_allowed"] is False
     assert "release-drill" in claim_policy["trust_report_boundary"]

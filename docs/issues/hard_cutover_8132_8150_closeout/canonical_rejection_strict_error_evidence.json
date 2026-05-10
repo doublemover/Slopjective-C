@@ -21,7 +21,7 @@
     "payloads.md:runtime dispatch fallback is strict-error behavior",
     "payloads.md:old-mode and parser fallback flags are explicit rejection fixtures",
     "payloads.md:retired adapter gates and unsupported feature claims are semantic rejection evidence",
-    "payloads.md:direct helper commands and report-only/allowlist surfaces are retired from public claims",
+    "payloads.md:direct helper commands and evidence-log/allowlist surfaces are retired from public claims",
     "*fallback*",
     "*shim*",
     "*compatibility*",

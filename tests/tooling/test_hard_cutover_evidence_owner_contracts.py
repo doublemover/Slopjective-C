@@ -60,7 +60,7 @@ def test_evidence_families_publish_source_owned_hard_cutover_contracts() -> None
 
         for owner_id in expected_owner_ids[family_name]:
             owner_contract = owner_contracts[owner_id]
-            assert owner_contract["report_only_allowed"] is False
+            assert owner_contract["evidence_log_allowed"] is False
             assert owner_contract["fallback_claims_allowed"] is False
             assert owner_contract["generated_report_claims_allowed"] is False
 

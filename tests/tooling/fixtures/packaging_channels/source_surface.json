@@ -22,7 +22,7 @@
     "source_owner": "packaging-channels-source",
     "gate_owner": "packaging-channels-gate",
     "blocker_owner": "packaging-channels-blockers",
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "owned_actions": [
       "check-packaging-channels-surface",
       "check-packaging-channels-schema-surface",
@@ -39,7 +39,7 @@
       "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
       "toolchain_archive_claim_requires_owner": true,
       "package_payload_owner_action": "package-runnable-toolchain",
-      "report_only_release_claim_allowed": false,
+      "evidence_log_release_claim_allowed": false,
       "wrapper_only_action_surface_allowed": false
     }
   },

@@ -3,7 +3,7 @@
   "catalog": "objc3c-sema-behavior-family-owner-split",
   "owner_boundary": "rejection_provenance",
   "source_family": "tests/native/sema",
-  "support_boundary": "rejection/provenance ownership covers sema compatibility-shim gates, retired adapter tags, and any generated-only, report-only, migration-only, old-mode, shim, or fallback sema claims",
+  "support_boundary": "rejection/provenance ownership covers sema compatibility-shim gates, retired adapter tags, and any generated-only, evidence-log, migration-only, old-mode, shim, or fallback sema claims",
   "phase_support_claim_authority": false,
   "selectors": [
     "errors/removed_compatibility_shim_gate_rejected.objc3",
@@ -19,9 +19,9 @@
     "*shim*",
     "*fallback*",
     "*generated-only*",
-    "*report-only*",
+    "*evidence-log*",
     "*migration-only*"
   ],
   "canonical_anchor": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.meta.json",
-  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only sema surfaces are canonical rejection or provenance-only evidence, never positive sema behavior truth"
+  "retired_surface_rule": "old-mode, compatibility-shim, fallback, generated-only, evidence-log, and migration-only sema surfaces are canonical rejection or provenance-only evidence, never positive sema behavior truth"
 }

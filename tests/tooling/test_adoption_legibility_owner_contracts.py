@@ -36,7 +36,7 @@ def test_adoption_artifact_contract_requires_non_wrapper_publication_owners() ->
     assert isinstance(hard_cutover, dict)
     assert hard_cutover["retired_source_acceptance_claims_allowed"] is False
     assert hard_cutover["retired_surface_acceptance_claims_allowed"] is False
-    assert hard_cutover["report_only_allowed"] is False
+    assert hard_cutover["evidence_log_allowed"] is False
     assert hard_cutover["wrapper_only_publication_allowed"] is False
 
     owner_contracts = contract["owner_contracts"]

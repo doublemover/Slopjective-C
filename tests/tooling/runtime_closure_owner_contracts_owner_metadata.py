@@ -24,7 +24,7 @@ def runtime_closure_owner_summary_keeps_publication_policy_visible() -> None:
         summary = runtime_closure_owner_summary(owner_contract)
 
         assert summary["owner_role_count"] == len(REQUIRED_OWNER_ROLES)
-        assert summary["report_only_allowed"] is False
+        assert summary["evidence_log_allowed"] is False
         assert summary["fallback_allowed"] is False
         assert summary["missing_artifact_behavior"] == "fail-closed"
         assert (

@@ -6,7 +6,7 @@
     "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
     "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
   ],
-  "support_boundary": "provenance/report/generated closeout evidence covers docs-only refreshes, local scan observations, generated summaries, tmp reports, report-only rows, local refresh labels, commit-count summaries, evidence document pointers, uncommitted-worktree exclusions, no-validation statements, no-GitHub statements, no-push statements, remote-deferred statements, and generated or report-only payload context. These rows preserve source and chronology, but cannot establish positive behavior support or closure readiness by themselves.",
+  "support_boundary": "provenance/report/generated closeout evidence covers docs-only refreshes, local scan observations, generated summaries, tmp reports, evidence-log rows, local refresh labels, commit-count summaries, evidence document pointers, uncommitted-worktree exclusions, no-validation statements, no-GitHub statements, no-push statements, remote-deferred statements, and generated or evidence-log payload context. These rows preserve source and chronology, but cannot establish positive behavior support or closure readiness by themselves.",
   "phase_support_claim_authority": false,
   "selectors": [
     "constraints:validation=not run",
@@ -25,14 +25,14 @@
     "payloads.md:not validation, push, GitHub issue edits, or remote closure",
     "payloads.md:tmp/ reports, generated summaries, and remote issue state are not closeout evidence here unless the relevant owner surface is checked in",
     "payloads.md:validation, push, GitHub issue edits, and remote closure remain deferred",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*",
     "*generated-summary-only*",
     "*generated_summary_only*",
-    "*tmp-report-only*",
-    "*tmp_report_only*",
+    "*tmp-evidence-log*",
+    "*tmp_evidence_log*",
     "*tmp-artifact-only*",
     "*tmp_artifact_only*",
     "*docs-only*",
@@ -50,5 +50,5 @@
     "*remote_deferred*"
   ],
   "canonical_anchor": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
-  "retired_surface_rule": "provenance, report-only, generated-only, tmp-only, docs-only, local-scan-only, validation-not-run, GitHub-not-called, push-not-performed, remote-deferred, and uncommitted-worktree rows are not positive behavior support, not accepted closure evidence, and not remote tracker completion"
+  "retired_surface_rule": "provenance, evidence-log, generated-only, tmp-only, docs-only, local-scan-only, validation-not-run, GitHub-not-called, push-not-performed, remote-deferred, and uncommitted-worktree rows are not positive behavior support, not accepted closure evidence, and not remote tracker completion"
 }

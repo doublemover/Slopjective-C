@@ -10,7 +10,7 @@
     "disclosure_publication_owner": "security-hardening-gate",
     "posture_restore_owner": "security-hardening-response-drill",
     "local_tabletop_capability_truth_allowed": false,
-    "report_only_response_readiness_allowed": false,
+    "evidence_log_response_readiness_allowed": false,
     "fallback_release_publication_after_drill_failure_allowed": false,
     "requires_platform_distribution_release_and_posture_evidence": true
   },
@@ -31,7 +31,7 @@
   ],
   "non_claims": [
     "no local-only tabletop as security response capability truth",
-    "no report-only response readiness proof",
+    "no evidence-log response readiness proof",
     "no unowned disclosure override",
     "no fallback release publication after drill failure"
   ]

@@ -13,7 +13,7 @@
     "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
     "blocker_owner": "platform-hardening-blockers",
     "source_authority": "checked-in-platform-hardening-contracts",
-    "report_only_allowed": false
+    "evidence_log_allowed": false
   },
   "blocker_metadata": {
     "blocker_owner": "platform-hardening-blockers",

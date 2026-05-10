@@ -25,7 +25,7 @@ class ReleaseGateOwner:
             "source_owner": self.source_owner,
             "gate_owner": self.gate_owner,
             "blocker_owner": self.blocker_owner,
-            "report_only_allowed": False,
+            "evidence_log_allowed": False,
             "owned_actions": list(self.owned_actions),
         }
         if self.hard_cutover_guardrails:
@@ -57,11 +57,11 @@ class ReleaseGovernanceActionContract:
     gate_id: str
     validation_tier: str
     guarantee_owner: str
-    report_only_allowed: bool = False
+    evidence_log_allowed: bool = False
 
     def to_action_spec(self) -> ActionSpec:
-        if self.report_only_allowed:
-            raise ValueError(f"{self.action} cannot be registered as report-only")
+        if self.evidence_log_allowed:
+            raise ValueError(f"{self.action} cannot be registered as evidence-log")
         owner = RELEASE_GATE_OWNERS[self.gate_id]
         return ActionSpec(
             self.action,
@@ -139,7 +139,7 @@ RELEASE_GATE_OWNERS: dict[str, ReleaseGateOwner] = {
             ),
             ("toolchain_archive_claim_requires_owner", True),
             ("package_payload_owner_action", "package-runnable-toolchain"),
-            ("report_only_release_claim_allowed", False),
+            ("evidence_log_release_claim_allowed", False),
             ("wrapper_only_action_surface_allowed", False),
         ),
     ),
@@ -175,7 +175,7 @@ RELEASE_GATE_OWNERS: dict[str, ReleaseGateOwner] = {
             ("alternate_update_support_path_allowed", False),
             ("publication_claim_owner", "release-operations-gate"),
             ("blocker_owner_required_before_publication", True),
-            ("report_only_release_claim_allowed", False),
+            ("evidence_log_release_claim_allowed", False),
             ("wrapper_only_action_surface_allowed", False),
         ),
     ),

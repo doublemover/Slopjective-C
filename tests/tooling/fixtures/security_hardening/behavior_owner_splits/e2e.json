@@ -30,5 +30,5 @@
     "owner:security-hardening-blockers"
   ],
   "canonical_anchor": "tests/tooling/fixtures/security_hardening",
-  "retired_surface_rule": "local-only tabletop capability truth, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, wrapper-only security actions, old-mode security workflow rows, shim security workflow rows, fallback security workflow rows, compatibility security workflow rows, migration-only security workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "local-only tabletop capability truth, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only security actions, old-mode security workflow rows, shim security workflow rows, fallback security workflow rows, compatibility security workflow rows, migration-only security workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

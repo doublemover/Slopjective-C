@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
     "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.meta.json"
   ],
-  "support_boundary": "strict-error ownership covers recovery dispatch claims that must fail closed: dispatch arity overflow outside the configured native compile argument, missing selector/receiver semantics, invalid parser draft syntax presented as supported syntax, unsupported dispatch runtime entrypoints, fallback dispatch, compatibility dispatch, and generated or report-only claims promoted as support. The six-argument fixture with explicit --objc3-max-message-args 6 is not strict-error evidence by itself.",
+  "support_boundary": "strict-error ownership covers recovery dispatch claims that must fail closed: dispatch arity overflow outside the configured native compile argument, missing selector/receiver semantics, invalid parser draft syntax presented as supported syntax, unsupported dispatch runtime entrypoints, fallback dispatch, compatibility dispatch, and generated or evidence-log claims promoted as support. The six-argument fixture with explicit --objc3-max-message-args 6 is not strict-error evidence by itself.",
   "phase_support_claim_authority": false,
   "selectors": [
     "*too-many-args*",

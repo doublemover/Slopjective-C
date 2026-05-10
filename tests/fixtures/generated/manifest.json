@@ -16,7 +16,7 @@
       "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
       "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
       "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
-      "tests/fixtures/generated/behavior_owner_splits/report_only_generated_output.json",
+      "tests/fixtures/generated/behavior_owner_splits/evidence_log_generated_output.json",
       "tests/fixtures/generated/behavior_owner_splits/fixture_generation_metadata.json",
       "tests/fixtures/generated/behavior_owner_splits/migration_only_generated_output.json"
     ],

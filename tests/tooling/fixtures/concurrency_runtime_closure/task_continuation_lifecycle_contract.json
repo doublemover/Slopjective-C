@@ -17,7 +17,7 @@
     "primary_axis": "behavior owner before continuation lifecycle row, task lifecycle row, task group row, cancellation row, executor hop row, private helper snapshot, probe payload snapshot, generated report, or runnable proof label",
     "support_authority": "task and continuation lifecycle support requires runtime or e2e owner assignment over canonical fixtures and probes",
     "positive_support_from_probe_payload": false,
-    "retired_surface_rule": "probe-payload-only rows, private-snapshot-only rows, report-only proof rows, manifest-only replay rows, descriptor-only replay rows, fallback lifecycle rows, shim lifecycle rows, old-mode task rows, and workflow-label-only rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "probe-payload-only rows, private-snapshot-only rows, evidence-log proof rows, manifest-only replay rows, descriptor-only replay rows, fallback lifecycle rows, shim lifecycle rows, old-mode task rows, and workflow-label-only rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "lifecycle_models": [
     "continuation-allocation-handoff-and-resume-remain-runtime-owned-behavior-backed-by-private-helper-entrypoints-and-testing-snapshots",

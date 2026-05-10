@@ -17,7 +17,7 @@
     "primary_axis": "behavior owner before dashboard status schema, scorecard schema, summary schema, release-evidence schema, schema identity row, generated summary, or dashboard-only support row",
     "support_authority": "public reporting schema support is provenance until IR or e2e owners cite upstream checked-in behavior evidence",
     "positive_support_from_schema": false,
-    "retired_surface_rule": "schema-only rows, dashboard-only rows, scorecard-only rows, generated-report-only rows, report-only rows, compatibility schema labels, old-mode schema labels, and missing-upstream evidence rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "schema-only rows, dashboard-only rows, scorecard-only rows, generated-evidence-log rows, evidence-log rows, compatibility schema labels, old-mode schema labels, and missing-upstream evidence rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "dashboard_status_schema": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "public_scorecard_schema": "schemas/objc3c-public-conformance-scorecard-v1.schema.json",

@@ -63,7 +63,7 @@ Command and evidence truth is hard-cut to the current surfaces:
   matrix row links executable evidence for the exact behavior.
 - The hard-cutover matrix rejects retired adapters, alternate acceptance paths,
   retired-source lanes, direct helper commands, and retired mode labels as
-  public support surfaces. Report-only completion is also not support evidence.
+  public support surfaces. Evidence-log completion is also not support evidence.
   Rows that change support state must use canonical feature names with evidence,
   not revive those labels.
 

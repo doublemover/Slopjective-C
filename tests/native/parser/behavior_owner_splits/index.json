@@ -10,7 +10,7 @@
     "primary_axis": "parser fixture role before fixture path convenience, diagnostic sidecar, snapshot, docs/index row, or retired-surface tag",
     "positive_rule": "parser positives are hand-authored tests/native/parser/positive fixtures with canonical_behavior_source=true and retired_positive_surface=false",
     "docs_evidence_rule": "owner index rows, phase contracts, and diagnostic snapshots are provenance unless tied to a parser fixture sidecar",
-    "rejection_rule": "old-mode, compatibility-shim, fallback, generated-only, report-only, and migration-only parser rows are rejection or provenance-only evidence",
+    "rejection_rule": "old-mode, compatibility-shim, fallback, generated-only, evidence-log, and migration-only parser rows are rejection or provenance-only evidence",
     "omitted_phase_rule": "this family has no sema, lowering, IR, runtime, or e2e behavior contracts"
   },
   "owner_splits": [

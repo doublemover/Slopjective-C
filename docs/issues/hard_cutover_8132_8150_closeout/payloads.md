@@ -4,7 +4,7 @@ These are branch-committed local closeout notes for `#8132`-`#8150`. They are
 not remote completion claims and do not assert remote closure.
 Validation, `gh`, push, and issue edits were intentionally not run while
 preparing them. Historic `local` refresh labels in this file mean committed
-refs in this checkout; they are not report-only evidence, uncommitted worktree
+refs in this checkout; they are not evidence-log evidence, uncommitted worktree
 evidence, or a substitute for deferred tracker operations.
 
 ## Evidence Owner Boundary
@@ -16,7 +16,7 @@ evidence must point to committed branch source, docs, tests, or checked-in owner
 surfaces. Shim, fallback, compatibility, old-mode, unsupported,
 missing-upstream, alternate-acceptance, and retired-source-lane rows are
 rejection, strict-error, or absent-support evidence. Docs-only refreshes, local
-scans, generated summaries, tmp reports, report-only rows, validation-not-run,
+scans, generated summaries, tmp reports, evidence-log rows, validation-not-run,
 GitHub-not-called, push-not-performed, and remote-deferred rows are provenance
 or closure-readiness state, not positive behavior or remote closeout.
 
@@ -242,7 +242,7 @@ commits that landed after the first docs commit.
 | `#8142`, `#8145`, `#8148`, `#8149`, `#8150` | `cef820749`, `58edb82a8`, `8e79a7ab4`, `bb0815a69`, `5089b6b14`, `cd854e616`, `229f3218e`, `68ff5f47f` | Workflow, command, source-hygiene, schema, release, package, and final-readiness owner splits refresh internal control-plane evidence under the npm bridge. |
 | `#8132`, `#8134`, `#8135`, `#8136`, `#8137`, `#8140`, `#8141`, `#8146`, `#8147` | `0fb488ff8`, `03d0eda67`, `22a814b61`, `aab946e78`, `ae5a996ff`, `abb2eaeeb`, `e25918639` | Parser, sema, lowering, IR, frontend, and fixture owner splits refresh compiler architecture and behavior-boundary evidence without widening public language support. |
 | `#8133`, `#8141`, `#8143`, `#8147` | `16292722b`, `92176025a`, `394471c38`, `d090c3e84`, `4fddfacb7` | Runtime dispatch, public-result, memory, and frontend result API owner splits refresh runtime/API contract evidence; unsupported dispatch remains rejection or strict-error evidence. |
-| `#8138`, `#8145`, `#8148`, `#8150` | `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd` | Artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits remain evidence projections and do not create report-only completion. |
+| `#8138`, `#8145`, `#8148`, `#8150` | `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd` | Artifact, IO, JSON/schema, site, runbook, and capability-truth owner splits remain evidence projections and do not create evidence-log completion. |
 
 ## Post-`4fddfacb7` Local Owner Refresh
 
@@ -644,7 +644,7 @@ Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
 `058acec90`, `f00e2e871`, `6d0a19f84`, `f49c6f38f`.
 
-Retired-surface state: direct helper commands and report-only/allowlist surfaces
+Retired-surface state: direct helper commands and evidence-log/allowlist surfaces
 are retired from public claims.
 
 ## #8150

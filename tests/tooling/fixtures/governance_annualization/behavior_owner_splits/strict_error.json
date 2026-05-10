@@ -24,7 +24,7 @@
     "strict_error:escalation_id=EW-M07-04:owner-empty",
     "strict_error:exception_id=EX-M07-009:active-expired-without-renewal",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-annualization-publication",
+    "strict_error:evidence-log-annualization-publication",
     "*fallback-as-positive*",
     "*shim-as-positive*",
     "*old-mode-as-positive*",

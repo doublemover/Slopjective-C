@@ -22,5 +22,5 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_message_too_many_args.objc3"
   ],
   "canonical_anchor": "tests/native/sema/errors",
-  "retired_surface_rule": "old-mode sema recovery, compatibility sema recovery, shim sema recovery, fallback sema recovery, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, wrapper-only semantic rows, and directory-label-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode sema recovery, compatibility sema recovery, shim sema recovery, fallback sema recovery, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, wrapper-only semantic rows, and directory-label-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

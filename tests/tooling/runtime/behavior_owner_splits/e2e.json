@@ -17,5 +17,5 @@
     "README:validate-runtime-architecture"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "alternate acceptance path names, report-only architecture packets, helper-only checks, generated-report-only proof, and wrapper command success are provenance-only unless canonical behavior owners claim support"
+  "retired_surface_rule": "alternate acceptance path names, evidence-log architecture packets, helper-only checks, generated-evidence-log proof, and wrapper command success are provenance-only unless canonical behavior owners claim support"
 }

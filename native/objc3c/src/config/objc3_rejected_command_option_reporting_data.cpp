@@ -11,10 +11,10 @@ constexpr std::array<CommandOptionState,
         {"--objc3-canonical-rejection-diagnostics",
          RemovedCommandOptionOwner::kReporting, FeatureState::Rejected,
          "O3C003",
-         "Report-only canonical rejection diagnostics were removed from the active command surface."},
-        {"--objc3-report-only", RemovedCommandOptionOwner::kReporting,
+         "Evidence-log canonical rejection diagnostics were removed from the active command surface."},
+        {"--objc3-evidence-log", RemovedCommandOptionOwner::kReporting,
          FeatureState::Rejected, "O3C003",
-         "Report-only diagnostics are retired from the active command surface."},
+         "Evidence-log diagnostics are retired from the active command surface."},
     }};
 
 }  // namespace

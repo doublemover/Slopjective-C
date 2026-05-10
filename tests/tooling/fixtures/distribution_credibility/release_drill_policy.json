@@ -36,7 +36,7 @@
       "tmp/reports/release-operations/end-to-end-summary.json",
       "tmp/reports/release_evidence/evidence-index.json"
     ],
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "wrapper_only_allowed": false,
     "claim_boundary": "a release drill is credible only when upstream release evidence exists; dashboard and trust-report output cannot substitute for the drill"
   },
@@ -44,6 +44,6 @@
     "manual smoke screenshots",
     "operator-authored trust badges",
     "alternate package build path",
-    "report-only release readiness"
+    "evidence-log release readiness"
   ]
 }

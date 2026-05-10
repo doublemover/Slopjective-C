@@ -16,5 +16,5 @@
     "compile_manifest_surface_keys:runtime_cross_module_realized_metadata_replay_preservation_surface"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "unresolved dispatch fallback lowering, report-only lowering summaries, generated descriptor-only claims, manifest-only metadata claims, old-mode layout claims, fallback layout claims, and compatibility lowering shims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unresolved dispatch fallback lowering, evidence-log lowering summaries, generated descriptor-only claims, manifest-only metadata claims, old-mode layout claims, fallback layout claims, and compatibility lowering shims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

@@ -6,7 +6,7 @@
   "baseline_boundary_policy": {
     "primary_axis": "behavior owner before comparative baseline language, baseline source, availability probe, compile/runtime invocation, timing row, report row, generated report, local-only row, cross-machine row, or retired-surface claim",
     "support_authority": "comparative baselines are toolchain and timing provenance only; Objective-C 3 behavior support must come from behavior owner splits",
-    "retired_surface_rule": "Objective-C 2, Swift, and C++ comparison rows cannot become old-mode, compatibility, shim, fallback, alternate Objective-C 3 support, foreign-baseline support, local-only support, report-only support, generated-only support, timing-only support, or cross-machine universal support"
+    "retired_surface_rule": "Objective-C 2, Swift, and C++ comparison rows cannot become old-mode, compatibility, shim, fallback, alternate Objective-C 3 support, foreign-baseline support, local-only support, evidence-log support, generated-only support, timing-only support, or cross-machine universal support"
   },
   "baseline_entries": [
     {

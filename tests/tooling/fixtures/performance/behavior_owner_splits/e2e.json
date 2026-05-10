@@ -19,5 +19,5 @@
     "report_root:tmp/reports/performance"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "comparative baselines, public-command wrappers, report publication, generated reports, package staging, machine profiles, tool versions, normalized values, generated-only rows, report-only rows, migration-only rows, timing-only rows, cache-only rows, local-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, shim/fallback execution, old-mode execution, compatibility wording, and foreign-baseline rows are e2e provenance, canonical rejection, strict-error, or absent-support evidence only"
+  "retired_surface_rule": "comparative baselines, public-command wrappers, report publication, generated reports, package staging, machine profiles, tool versions, normalized values, generated-only rows, evidence-log rows, migration-only rows, timing-only rows, cache-only rows, local-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, shim/fallback execution, old-mode execution, compatibility wording, and foreign-baseline rows are e2e provenance, canonical rejection, strict-error, or absent-support evidence only"
 }

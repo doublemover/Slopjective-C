@@ -33,7 +33,7 @@ OWNER_CONTRACT_FIELDS: tuple[str, ...] = (
     "result_owner",
     "artifact_owner",
     "status_owner",
-    "no_fallback_or_report_only_claims",
+    "no_fallback_or_evidence_log_claims",
 )
 
 
@@ -72,7 +72,7 @@ def dispatch_owner_contract() -> dict[str, Any]:
         "result_owner": COMPILER_DISPATCH_RESULT_OWNER,
         "artifact_owner": COMPILER_DISPATCH_ARTIFACT_OWNER,
         "status_owner": COMPILER_DISPATCH_STATUS_OWNER,
-        "no_fallback_or_report_only_claims": True,
+        "no_fallback_or_evidence_log_claims": True,
     }
 
 
@@ -288,8 +288,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Artifact owner: `{payload['owner_contract']['artifact_owner']}`",
         f"- Status owner: `{payload['owner_contract']['status_owner']}`",
         (
-            "- Retired fallback/report-only claims disallowed: "
-            f"**{str(payload['owner_contract']['no_fallback_or_report_only_claims']).lower()}**"
+            "- Retired fallback/evidence-log claims disallowed: "
+            f"**{str(payload['owner_contract']['no_fallback_or_evidence_log_claims']).lower()}**"
         ),
         "",
         "## Milestone",

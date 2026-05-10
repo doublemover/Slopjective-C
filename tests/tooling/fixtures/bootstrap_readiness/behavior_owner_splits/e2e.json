@@ -28,5 +28,5 @@
     "expected_contract:blocking_dimensions"
   ],
   "canonical_anchor": "tests/tooling/fixtures/bootstrap_readiness",
-  "retired_surface_rule": "legacy blocker array payloads, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode bootstrap rows, shim bootstrap rows, fallback bootstrap rows, compatibility bootstrap rows, migration-only bootstrap rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "legacy blocker array payloads, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode bootstrap rows, shim bootstrap rows, fallback bootstrap rows, compatibility bootstrap rows, migration-only bootstrap rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

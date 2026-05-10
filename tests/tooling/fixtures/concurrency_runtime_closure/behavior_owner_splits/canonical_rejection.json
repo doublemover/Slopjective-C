@@ -9,22 +9,22 @@
     "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
     "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
   ],
-  "support_boundary": "concurrency runtime closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, public runtime ABI widening, wrapper-only runnable actions, stdlib actor-shaped or helper narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop interaction, missing private runtime helper proof, or cross-module claims without manifest/runtime-registration replay proof are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "concurrency runtime closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, evidence-log runtime closure, generated-only rows, generated-evidence-log source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, public runtime ABI widening, wrapper-only runnable actions, stdlib actor-shaped or helper narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop interaction, missing private runtime helper proof, or cross-module claims without manifest/runtime-registration replay proof are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
-    "owner_policy:report_only_allowed=false",
+    "owner_policy:evidence_log_allowed=false",
     "owner_policy:fallback_allowed=false",
     "owner_policy:compatibility_shims_allowed=false",
     "owner_policy:generated_reports_are_source=false",
-    "closure_publication_contract:report_only_executable_proof_claims_allowed=false",
+    "closure_publication_contract:evidence_log_executable_proof_claims_allowed=false",
     "closure_publication_contract:fallback_runtime_semantics_allowed=false",
     "closure_publication_contract:compatibility_runtime_semantics_allowed=false",
     "closure_publication_contract:wrapper_only_runnable_actions_allowed=false",
     "blocked_claim_shapes:fallback-runtime-behavior",
-    "blocked_claim_shapes:report-only-runtime-closure",
+    "blocked_claim_shapes:evidence-log-runtime-closure",
     "blocked_claim_shapes:compatibility-shim-runtime-closure",
     "blocked_claim_shapes:public-runtime-abi-widening-without-source-owner",
-    "blocked_claim_shapes:generated-report-only-source-truth",
+    "blocked_claim_shapes:generated-evidence-log-source-truth",
     "blocked_claim_shapes:generated-only-runtime-closure",
     "blocked_claim_shapes:manifest-only-runtime-closure",
     "blocked_claim_shapes:descriptor-only-runtime-registration",
@@ -48,8 +48,8 @@
     "*compatibility*",
     "*legacy*",
     "*unsupported*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*",
     "*generated-report*",
@@ -74,5 +74,5 @@
     "*successor_boundary_widening*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, public runtime ABI widening, wrapper-only runnable actions, stdlib narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop interaction claims, and cross-module claims without replay proof remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, evidence-log runtime closure, generated-only rows, generated-evidence-log source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, public runtime ABI widening, wrapper-only runnable actions, stdlib narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop interaction claims, and cross-module claims without replay proof remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

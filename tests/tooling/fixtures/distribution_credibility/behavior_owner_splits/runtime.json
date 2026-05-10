@@ -19,5 +19,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime distribution rows, shim runtime distribution rows, fallback runtime distribution rows, compatibility runtime distribution rows, migration-only runtime rows, generated-only runtime rows, report-only runtime rows, install-smoke-label-only support, rollback-label-only support, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime distribution rows, shim runtime distribution rows, fallback runtime distribution rows, compatibility runtime distribution rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, install-smoke-label-only support, rollback-label-only support, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

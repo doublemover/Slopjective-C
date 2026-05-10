@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "catalog": "objc3c-generated-boundary-provenance-owner-split",
-  "owner_boundary": "report_only_generated_output",
+  "owner_boundary": "evidence_log_generated_output",
   "source_manifest": "tests/fixtures/generated/manifest.json",
-  "support_boundary": "report-only and generated-output evidence covers replay packets, generated validation contract artifacts, deterministic report payloads, fixture generation metadata, migration-only rows, validation-packet-only rows, replay-only rows, and generator paths as provenance only",
+  "support_boundary": "evidence-log and generated-output evidence covers replay packets, generated validation contract artifacts, deterministic report payloads, fixture generation metadata, migration-only rows, validation-packet-only rows, replay-only rows, and generator paths as provenance only",
   "phase_support_claim_authority": false,
   "selectors": [
     "fixtures[].path=tests/tooling/fixtures/objc3c/**",
@@ -13,8 +13,8 @@
     "boundary.phase_support_claim_authority=false",
     "boundary.behavior_phase_split_indexes:tests/tooling/fixtures/objc3c/behavior_owner_splits/*.json",
     "*report*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-output*",
     "*generated_output*",
     "*generated-output-only*",
@@ -27,5 +27,5 @@
     "*validation_*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
-  "retired_surface_rule": "report-only, generated-output-only, migration-only, replay-only, validation-packet-only, and generator-output-only evidence cannot define positive behavior support"
+  "retired_surface_rule": "evidence-log, generated-output-only, migration-only, replay-only, validation-packet-only, and generator-output-only evidence cannot define positive behavior support"
 }

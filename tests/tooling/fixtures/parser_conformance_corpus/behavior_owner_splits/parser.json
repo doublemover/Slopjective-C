@@ -18,5 +18,5 @@
     "canonical_behavior_source:true"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "parser positives in this corpus are limited to accept_void_pointer_param.objc3; rejected parser fixtures, old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only parser rows, report-only parser rows, and legacy-looking positives are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "parser positives in this corpus are limited to accept_void_pointer_param.objc3; rejected parser fixtures, old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only parser rows, evidence-log parser rows, and legacy-looking positives are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

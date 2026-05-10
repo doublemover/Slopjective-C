@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
     "tests/tooling/fixtures/distribution_credibility/workflow_surface.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed distribution-credibility violations: missing upstream reports, missing release manifest lineage fields, failed required trust signals, checked-in source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing release evidence index, stale trust-report inputs promoted to ready, dashboard/trust-report artifacts generated without source/schema/dashboard/release-drill/release-evidence owner contracts, missing required owner contract modules, wrapper-only publication, generated tmp output promoted as source truth, and report-only publication.",
+  "support_boundary": "strict-error ownership covers fail-closed distribution-credibility violations: missing upstream reports, missing release manifest lineage fields, failed required trust signals, checked-in source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing release evidence index, stale trust-report inputs promoted to ready, dashboard/trust-report artifacts generated without source/schema/dashboard/release-drill/release-evidence owner contracts, missing required owner contract modules, wrapper-only publication, generated tmp output promoted as source truth, and evidence-log publication.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -29,7 +29,7 @@
     "strict_error:required-owner-contract-module-missing",
     "strict_error:wrapper-only-publication",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-publication",
+    "strict_error:evidence-log-publication",
     "operator_blocking_condition:package-channel-install-failure",
     "operator_blocking_condition:rollback-proof-failure",
     "operator_blocking_condition:release-operations-proof-failure",
@@ -57,5 +57,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/distribution_credibility",
-  "retired_surface_rule": "missing upstream reports, missing release manifest fields, failed trust signals, source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing evidence index, stale inputs promoted to ready, missing owner contract inputs, missing required owner modules, wrapper-only publication, tmp-as-source claims, report-only publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing upstream reports, missing release manifest fields, failed trust signals, source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing evidence index, stale inputs promoted to ready, missing owner contract inputs, missing required owner modules, wrapper-only publication, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

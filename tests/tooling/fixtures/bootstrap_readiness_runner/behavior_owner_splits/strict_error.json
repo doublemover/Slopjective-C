@@ -19,7 +19,7 @@
     "strict_error:open-blocker-count-used-as-only-readiness-dimension",
     "strict_error:empty-open-blockers-promoted-over-open-issues",
     "strict_error:tmp-output-promoted-as-source-truth",
-    "strict_error:report-only-runner-publication",
+    "strict_error:evidence-log-runner-publication",
     "*fallback-as-positive*",
     "*shim-as-positive*",
     "*old-mode-as-positive*",

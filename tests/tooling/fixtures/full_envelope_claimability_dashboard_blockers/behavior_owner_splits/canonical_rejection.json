@@ -7,15 +7,15 @@
     "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/policy_missing_dashboard_projection.json",
     "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/runbook.md"
   ],
-  "support_boundary": "canonical rejection owns dashboard-blocker rows that look like support but are explicitly unsupported, report-only, wrapper-only, manual-only, generated-only, missing-projection-shaped, missing-report-shaped, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Unsupported production-strength overclaims and dashboard decisions inferred from report presence alone are rejection/absent-support evidence, not positive claimability truth.",
+  "support_boundary": "canonical rejection owns dashboard-blocker rows that look like support but are explicitly unsupported, evidence-log, wrapper-only, manual-only, generated-only, missing-projection-shaped, missing-report-shaped, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Unsupported production-strength overclaims and dashboard decisions inferred from report presence alone are rejection/absent-support evidence, not positive claimability truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
     "unsupported_overclaim:production-strength-public-claim-for-preview-only-summary",
     "unsupported_overclaim:production-strength-public-claim-for-candidate-scoped-summary",
     "unsupported_overclaim:claimability-support-from-report-presence-only",
-    "unsupported_overclaim:generated-report-only-release-readiness",
-    "unsupported_overclaim:report-only-production-strength",
+    "unsupported_overclaim:generated-evidence-log-release-readiness",
+    "unsupported_overclaim:evidence-log-production-strength",
     "unsupported_overclaim:manual-dashboard-status-source-authority",
     "unsupported_overclaim:missing-dashboard-projection-acceptance",
     "unsupported_overclaim:missing-required-report-acceptance",
@@ -33,11 +33,11 @@
     "*compat*",
     "*migration-only*",
     "*migration_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*generated-only*",
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "production-strength overclaims, report-presence-only support, generated-report-only readiness, report-only production strength, manual dashboard status, missing projection acceptance, missing required report acceptance, old-mode dashboard rows, shim dashboard rows, fallback dashboard rows, compatibility dashboard rows, migration-only rows, generated-only rows, report-only rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "production-strength overclaims, report-presence-only support, generated-evidence-log readiness, evidence-log production strength, manual dashboard status, missing projection acceptance, missing required report acceptance, old-mode dashboard rows, shim dashboard rows, fallback dashboard rows, compatibility dashboard rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

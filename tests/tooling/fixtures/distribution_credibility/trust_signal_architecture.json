@@ -25,7 +25,7 @@
         "build-distribution-credibility-dashboard",
         "publish-distribution-credibility"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "claim_boundary": "trust reports are projections of release drill evidence, not independent manual badges"
     },
     "release_drill_owner": {
@@ -35,7 +35,7 @@
         "validate-distribution-credibility",
         "validate-distribution-credibility-end-to-end"
       ],
-      "report_only_allowed": false,
+      "evidence_log_allowed": false,
       "claim_boundary": "release credibility blocks unless package channel, release operations, and release evidence drill inputs remain attached"
     }
   },
@@ -71,6 +71,6 @@
     "hosted trust service",
     "manual badge program",
     "parallel release source of truth",
-    "report-only trust evidence"
+    "evidence-log trust evidence"
   ]
 }

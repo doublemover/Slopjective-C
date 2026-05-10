@@ -36,7 +36,7 @@
   "hard_cutover_guardrails": {
     "fallback_trust_route_allowed": false,
     "local_only_validation_claim_allowed": false,
-    "report_only_validation_claim_allowed": false,
+    "evidence_log_validation_claim_allowed": false,
     "wrapper_only_action_surface_allowed": false,
     "unaccepted_fixture_publication_allowed": false,
     "quarantined_fixture_capability_truth_allowed": false,

@@ -20,7 +20,7 @@ those rows instead of inventing local status vocabulary.
 | Runtime metadata emission  | internal     | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.        |
 | Runtime dispatch result    | internal     | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                           |
 | Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until implemented matrix rows say otherwise. |
-| Retired/alternate surfaces | not a support state | Old modes, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and report-only completion are negative evidence only. |
+| Retired/alternate surfaces | not a support state | Old modes, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion are negative evidence only. |
 
 ## How to Read This Draft {#toc-how-to-read-this-draft}
 

@@ -104,7 +104,7 @@ def main() -> int:
         f"- Authoritative probes: `{measured_inventory['authoritative_probe_count']}`\n"
         f"- Authoritative fixtures: `{measured_inventory['authoritative_fixture_count']}`\n"
         f"- Owner roles: `{summary['owner_contract']['owner_role_count']}`\n"
-        f"- Report-only allowed: `{summary['owner_contract']['report_only_allowed']}`\n"
+        f"- Evidence-log allowed: `{summary['owner_contract']['evidence_log_allowed']}`\n"
         f"- Current gaps: `{', '.join(summary['current_gap_ids'])}`\n"
         f"- Successor milestones: `{', '.join(summary['successor_milestones'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",

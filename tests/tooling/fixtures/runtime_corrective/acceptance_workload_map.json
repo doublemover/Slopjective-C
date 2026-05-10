@@ -7,10 +7,10 @@
   "harness_path": "scripts/shared_compiler_runtime_acceptance_harness.py",
   "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
   "acceptance_boundary_policy": {
-    "primary_axis": "behavior owner before runtime acceptance suite, runtime acceptance report, public workflow report, linked probe row, generated report, compile artifact, replay manifest, proof bundle, generated-only row, report-only row, migration-only row, runner-only row, or retired-surface claim",
+    "primary_axis": "behavior owner before runtime acceptance suite, runtime acceptance report, public workflow report, linked probe row, generated report, compile artifact, replay manifest, proof bundle, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
     "support_authority": "acceptance workload rows can cite support only through behavior owner splits; suite names, report paths, harness paths, linked-probe summaries, generated reports, and proof artifacts cannot define positive behavior by themselves",
-    "report_rule": "required tmp reports are generated acceptance provenance and cannot define positive behavior; generated-only, report-only, migration-only, runner-only, sidecar-only, unlinked-probe, replay-text-only, and catalog-only acceptance rows stay provenance or rejection",
-    "retired_surface_rule": "unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-report-only, report-only, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows map to canonical_rejection or runtime_corrective_provenance"
+    "report_rule": "required tmp reports are generated acceptance provenance and cannot define positive behavior; generated-only, evidence-log, migration-only, runner-only, sidecar-only, unlinked-probe, replay-text-only, and catalog-only acceptance rows stay provenance or rejection",
+    "retired_surface_rule": "unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows map to canonical_rejection or runtime_corrective_provenance"
   },
   "suite_ids": [
     "runtime-acceptance",

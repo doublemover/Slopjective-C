@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
-  "support_boundary": "e2e ownership covers whole-pipeline timing and runner overlap only after parser, sema, lowering, IR, and runtime owners assign behavior and only when the row is not generated-only, report-only, shim, fallback, old-mode, migration-only, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, or timing-only provenance",
+  "support_boundary": "e2e ownership covers whole-pipeline timing and runner overlap only after parser, sema, lowering, IR, and runtime owners assign behavior and only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, or timing-only provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "heavy_validation_actions:test-execution-smoke",
@@ -18,5 +18,5 @@
     "artifact_roots:tmp/reports/compiler-throughput"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "nightly runner overlap, generated release artifacts, generated-only rows, report-only rows, migration-only rows, fallback execution, shimmed execution, old-mode execution, compatibility wording, cache-only rows, runner-only rows, docs-only rows, command-surface-only rows, package-only rows, timing-only rows, and alternate acceptance paths are e2e provenance, canonical rejection, or strict-error evidence only; they do not create compatibility or fallback acceptance"
+  "retired_surface_rule": "nightly runner overlap, generated release artifacts, generated-only rows, evidence-log rows, migration-only rows, fallback execution, shimmed execution, old-mode execution, compatibility wording, cache-only rows, runner-only rows, docs-only rows, command-surface-only rows, package-only rows, timing-only rows, and alternate acceptance paths are e2e provenance, canonical rejection, or strict-error evidence only; they do not create compatibility or fallback acceptance"
 }

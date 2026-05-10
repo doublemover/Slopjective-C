@@ -21,5 +21,5 @@
     "tests/tooling/fixtures/native/recovery/positive/unary_plus*.objc3"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering recovery, shim lowering recovery, fallback lowering recovery, compatibility lowering recovery, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, native .m lowering claims, dispatch-ir marker claims as source truth, and directory-label-only lowering claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering recovery, shim lowering recovery, fallback lowering recovery, compatibility lowering recovery, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, native .m lowering claims, dispatch-ir marker claims as source truth, and directory-label-only lowering claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -25,8 +25,8 @@ EXPECTED_STEP_ORDER = [
 def main() -> int:
     workflow_surface = load_json(WORKFLOW_SURFACE)
     owner_policy = workflow_surface.get("owner_policy")
-    if not isinstance(owner_policy, dict) or owner_policy.get("report_only_allowed") is not False:
-        raise RuntimeError("packaging-channels workflow surface missing non-report-only owner_policy")
+    if not isinstance(owner_policy, dict) or owner_policy.get("evidence_log_allowed") is not False:
+        raise RuntimeError("packaging-channels workflow surface missing source-owned owner_policy")
     blocker_metadata = workflow_surface.get("blocker_metadata")
     if not isinstance(blocker_metadata, dict) or blocker_metadata.get("blocker_owner") != "packaging-channels-blockers":
         raise RuntimeError("packaging-channels workflow surface missing blocker metadata")

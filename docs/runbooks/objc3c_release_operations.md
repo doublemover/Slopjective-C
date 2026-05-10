@@ -128,4 +128,4 @@ the source and artifact contracts, not in a retired command bridge.
 - no package-manager upgrade semantics
 - no cross-platform support claim beyond the checked-in `windows-x64` channel set
 - no manual support spreadsheet or hand-authored release-operation digest
-- no retired adapter or report-only support claim
+- no retired adapter or evidence-log support claim

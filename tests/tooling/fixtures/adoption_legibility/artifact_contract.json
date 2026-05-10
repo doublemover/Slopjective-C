@@ -45,7 +45,7 @@
     "retired_source_acceptance_claims_allowed": false,
     "retired_surface_acceptance_claims_allowed": false,
     "manual_adoption_metrics_allowed": false,
-    "report_only_allowed": false,
+    "evidence_log_allowed": false,
     "wrapper_only_publication_allowed": false,
     "required_owner_contract_module": "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py"
   },

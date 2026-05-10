@@ -69,7 +69,7 @@ def main() -> int:
                 "blocking_conditions": [
                     "packaged platform hardening manifest missing source contract",
                     "packaged command surface absent from objc3c bridge",
-                    "packaged platform hardening validation emitted report-only status",
+                    "packaged platform hardening validation emitted evidence-log status",
                 ],
             },
             "failures": failures,

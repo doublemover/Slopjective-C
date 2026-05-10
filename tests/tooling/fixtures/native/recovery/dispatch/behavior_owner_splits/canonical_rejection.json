@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/dispatch"
   ],
-  "support_boundary": "canonical rejection owns any recovery dispatch row that looks like support but is old-mode, shim, fallback, compatibility, generated-only, report-only, migration-only, unsupported, alternate acceptance, runner-only, sidecar-only, directory-label-only, missing upstream phase ownership, or outside the hand-authored positive behavior boundary.",
+  "support_boundary": "canonical rejection owns any recovery dispatch row that looks like support but is old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate acceptance, runner-only, sidecar-only, directory-label-only, missing upstream phase ownership, or outside the hand-authored positive behavior boundary.",
   "phase_support_claim_authority": false,
   "selectors": [
     "*old-mode*",
@@ -17,8 +17,8 @@
     "*legacy*",
     "*generated-only*",
     "*generated_only*",
-    "*report-only*",
-    "*report_only*",
+    "*evidence-log*",
+    "*evidence_log*",
     "*migration-only*",
     "*migration_only*",
     "*unsupported*",
@@ -35,5 +35,5 @@
     "message_send_six_args.meta.json:native_compile_args-only"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, generated-only, report-only, migration-only, unsupported, alternate-acceptance, runner-only, sidecar-only, directory-label-only, and missing-upstream recovery dispatch claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate-acceptance, runner-only, sidecar-only, directory-label-only, and missing-upstream recovery dispatch claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

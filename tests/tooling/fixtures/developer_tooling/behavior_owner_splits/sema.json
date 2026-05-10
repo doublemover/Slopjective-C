@@ -15,5 +15,5 @@
     "upstream_owner_required:tests/native/sema"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode sema tooling, compatibility sema tooling, shim sema tooling, fallback sema tooling, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, editor-only diagnostic claims, and language-server labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode sema tooling, compatibility sema tooling, shim sema tooling, fallback sema tooling, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, editor-only diagnostic claims, and language-server labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

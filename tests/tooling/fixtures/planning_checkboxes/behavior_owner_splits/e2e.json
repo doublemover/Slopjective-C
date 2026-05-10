@@ -21,5 +21,5 @@
     "tooling_contract:planning-checkbox-policy-exception"
   ],
   "canonical_anchor": "tests/tooling/fixtures/planning_checkboxes",
-  "retired_surface_rule": "unchecked implementation rows without matching policy, stale policy entries, section mismatches, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, wrapper-only planning checks, old-mode planning rows, shim planning rows, fallback planning rows, compatibility planning rows, migration-only planning rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unchecked implementation rows without matching policy, stale policy entries, section mismatches, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only planning checks, old-mode planning rows, shim planning rows, fallback planning rows, compatibility planning rows, migration-only planning rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }
