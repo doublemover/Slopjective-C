@@ -25,19 +25,36 @@ from .contracts import (
     validate_payload,
 )
 from .github import fetch_milestones, gh_json, run_gh
-from .json_loading import load_json, write_json
+from .json_loading import load_json, load_publication_inputs, write_json
+from .models import (
+    AppliedPublicationResult,
+    DryRunPublicationResult,
+    IssuePublicationPlan,
+    PublicationInputs,
+)
 from .paths import assert_not_tmp_source, is_under, repo_path
-from .publication import create_or_update_issues, ensure_labels, ensure_milestones
+from .publication import (
+    apply_publication,
+    create_or_update_issues,
+    dry_run_publication,
+    ensure_labels,
+    ensure_milestones,
+)
 
 __all__ = [
     "DEFAULT_PAYLOAD",
     "DEFAULT_REPORT",
     "ROOT",
+    "AppliedPublicationResult",
+    "DryRunPublicationResult",
+    "IssuePublicationPlan",
     "LabelDefinition",
     "PublicationError",
+    "PublicationInputs",
     "RELATIONSHIP_END",
     "RELATIONSHIP_START",
     "apply_relationship_section",
+    "apply_publication",
     "assert_not_tmp_source",
     "build_dependency_report",
     "build_dry_run_report",
@@ -54,6 +71,7 @@ __all__ = [
     "issue_labels",
     "issue_number",
     "load_json",
+    "load_publication_inputs",
     "main",
     "milestone_by_title",
     "parse_args",
@@ -64,4 +82,5 @@ __all__ = [
     "validate_existing_report",
     "validate_payload",
     "write_json",
+    "dry_run_publication",
 ]
