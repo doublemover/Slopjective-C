@@ -4,6 +4,8 @@ add_library(objc3c_json STATIC
   json/json_error.cpp
   json/json_array_writer.cpp
   json/json_array_writer_mechanics.cpp
+  json/json_array_writer_value_emission.cpp
+  json/json_array_writer_value_validation.cpp
   json/json_object_writer.cpp
   json/json_object_writer_mechanics.cpp
   json/json_object_writer_value_emission.cpp

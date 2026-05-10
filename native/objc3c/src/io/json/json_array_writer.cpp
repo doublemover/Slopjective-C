@@ -1,60 +1,52 @@
 #include "io/json/json_writer.h"
 
-#include <cmath>
-#include <iomanip>
-#include <stdexcept>
 #include <string_view>
 
-#include "io/json/json_parser.h"
-#include "io/objc3_json.h"
+#include "io/json/json_array_writer_value_emission.h"
+#include "io/json/json_array_writer_value_validation.h"
 
 namespace objc3::io::json {
 
 void JsonArrayWriter::StringValue(std::string_view value) {
   BeginElement();
-  objc3::io::WriteJsonString(out_, value);
+  WriteJsonArrayStringValue(out_, value);
 }
 
 void JsonArrayWriter::BoolValue(bool value) {
   BeginElement();
-  out_ << (value ? "true" : "false");
+  WriteJsonArrayBoolValue(out_, value);
 }
 
 void JsonArrayWriter::IntValue(std::int64_t value) {
   BeginElement();
-  out_ << value;
+  WriteJsonArrayIntValue(out_, value);
 }
 
 void JsonArrayWriter::NumberValue(double value) {
-  if (!std::isfinite(value)) {
-    throw std::invalid_argument("NumberValue received a non-finite number");
-  }
+  ValidateJsonArrayNumberValue(value);
   BeginElement();
-  out_ << std::setprecision(17) << value;
+  WriteJsonArrayNumberValue(out_, value);
 }
 
 void JsonArrayWriter::SizeValue(std::size_t value) {
   BeginElement();
-  out_ << value;
+  WriteJsonArraySizeValue(out_, value);
 }
 
 void JsonArrayWriter::UnsignedValue(std::uint64_t value) {
   BeginElement();
-  out_ << value;
+  WriteJsonArrayUnsignedValue(out_, value);
 }
 
 void JsonArrayWriter::Value(const JsonValue &value) {
   BeginElement();
-  WriteJson(out_, value);
+  WriteJsonArrayJsonValue(out_, value);
 }
 
 void JsonArrayWriter::RawJsonValue(std::string_view value) {
-  JsonParseResult parsed = ParseJson(value);
-  if (!parsed.ok()) {
-    throw std::invalid_argument("RawJsonValue received invalid JSON: " +
-                                parsed.error->Format());
-  }
-  Value(parsed.value);
+  JsonValue parsed = ParseJsonArrayRawValue(value);
+  BeginElement();
+  WriteJsonArrayJsonValue(out_, parsed);
 }
 
 }  // namespace objc3::io::json
