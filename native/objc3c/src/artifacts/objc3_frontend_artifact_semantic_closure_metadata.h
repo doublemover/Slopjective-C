@@ -1,9 +1,13 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "sema/model/frontend_concurrency_symbol_graph_summaries.h"
-#include "sema/model/frontend_linkage_summaries.h"
-#include "sema/objc3_sema_contract_type_handoff.h"
+struct Objc3FrontendClassProtocolCategoryLinkingSummary;
+struct Objc3FrontendObjectPointerNullabilityGenericsSummary;
+struct Objc3FrontendPropertyAttributeSummary;
+struct Objc3FrontendProtocolCategorySummary;
+struct Objc3FrontendSelectorNormalizationSummary;
+struct Objc3FrontendSymbolGraphScopeResolutionSummary;
+struct Objc3IRFrontendMetadata;
+struct Objc3InterfaceImplementationSummary;
 
 namespace objc3::artifacts::frontend {
 

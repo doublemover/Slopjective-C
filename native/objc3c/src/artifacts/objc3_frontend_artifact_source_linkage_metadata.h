@@ -1,11 +1,14 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "pipeline/results/canonical_literal_rejection_counts.h"
-#include "pipeline/results/compile_options.h"
-#include "pipeline/results/report_dto.h"
-#include "sema/model/frontend_linkage_summaries.h"
-#include "sema/objc3_sema_contract_type_handoff.h"
+struct Objc3FrontendCanonicalLiteralRejectionCounts;
+struct Objc3FrontendClassProtocolCategoryLinkingSummary;
+struct Objc3FrontendOptions;
+struct Objc3FrontendPropertyAttributeSummary;
+struct Objc3FrontendProtocolCategorySummary;
+struct Objc3FrontendSelectorNormalizationSummary;
+struct Objc3IRFrontendMetadata;
+struct Objc3InterfaceImplementationSummary;
+struct Objc3VersionedConformanceReportLoweringSummary;
 
 namespace objc3::artifacts::frontend {
 
