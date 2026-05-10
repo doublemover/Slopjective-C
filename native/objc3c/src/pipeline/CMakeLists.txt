@@ -105,6 +105,10 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_final_readiness_gate_core_feature_key.cpp
   readiness/objc3_final_readiness_gate_core_keys.cpp
   readiness/objc3_final_readiness_gate_failure_reasons.cpp
+  readiness/objc3_final_readiness_gate_foundation_failure_reasons.cpp
+  readiness/objc3_final_readiness_gate_shard1_core2_failure_reasons.cpp
+  readiness/objc3_final_readiness_gate_shard2_tail_failure_reasons.cpp
+  readiness/objc3_final_readiness_gate_shard3_4_failure_reasons.cpp
   readiness/objc3_long_tail_grammar_readiness_keys.cpp
   readiness/objc3_parse_lowering_conformance_keys.cpp
   readiness/objc3_parse_lowering_conformance_performance_readiness.cpp
