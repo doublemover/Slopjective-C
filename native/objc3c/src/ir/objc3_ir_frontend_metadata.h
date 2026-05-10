@@ -11,6 +11,7 @@
 #include "ir/objc3_ir_frontend_metadata_dispatch.h"
 #include "ir/objc3_ir_frontend_metadata_dispatch_support.h"
 #include "ir/objc3_ir_frontend_metadata_error_handling.h"
+#include "ir/objc3_ir_frontend_metadata_interop.h"
 #include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
 #include "ir/objc3_ir_frontend_metadata_module_source_linkage.h"
 #include "ir/objc3_ir_frontend_metadata_ownership.h"
@@ -36,7 +37,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendErrorHandlingMetadata,
                                  Objc3IRFrontendSemanticSurfaceMetadata,
                                  Objc3IRFrontendConcurrencyMetadata,
-                                 Objc3IRFrontendDispatchSupportMetadata {
+                                 Objc3IRFrontendDispatchSupportMetadata,
+                                 Objc3IRFrontendInteropMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -86,63 +88,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
-  std::string lowering_interop_interop_replay_key;
-  std::size_t interop_interop_lowering_foreign_callable_sites = 0;
-  std::size_t interop_interop_lowering_c_foreign_callable_sites = 0;
-  std::size_t interop_interop_lowering_objc_runtime_parity_callable_sites = 0;
-  std::size_t interop_interop_lowering_ownership_bridge_callable_sites = 0;
-  std::size_t interop_interop_lowering_error_surface_sites = 0;
-  std::size_t interop_interop_lowering_async_boundary_sites = 0;
-  std::size_t interop_interop_lowering_swift_concurrency_metadata_sites = 0;
-  std::size_t interop_interop_lowering_interface_preserved_foreign_callable_sites =
-      0;
-  std::size_t
-      interop_interop_lowering_interface_preserved_metadata_annotation_sites = 0;
-  std::size_t interop_interop_lowering_guard_blocked_sites = 0;
-  std::size_t interop_interop_lowering_contract_violation_sites = 0;
-  bool deterministic_interop_interop_lowering_handoff = false;
-  std::string lowering_interop_foreign_call_lifetime_replay_key;
-  std::size_t interop_foreign_call_lifetime_lowering_foreign_callable_sites = 0;
-  std::size_t
-      interop_foreign_call_lifetime_lowering_c_foreign_callable_sites = 0;
-  std::size_t
-      interop_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites =
-          0;
-  std::size_t interop_foreign_call_lifetime_lowering_ownership_bridge_sites = 0;
-  std::size_t interop_foreign_call_lifetime_lowering_lifetime_bridge_sites = 0;
-  std::size_t
-      interop_foreign_call_lifetime_lowering_metadata_preservation_sites = 0;
-  std::size_t interop_foreign_call_lifetime_lowering_guard_blocked_sites = 0;
-  std::size_t
-      interop_foreign_call_lifetime_lowering_contract_violation_sites = 0;
-  bool deterministic_interop_foreign_call_lifetime_lowering_handoff = false;
-  std::string lowering_interop_ffi_metadata_interface_preservation_key;
-  std::size_t interop_ffi_metadata_interface_preservation_local_foreign_callable_count =
-      0;
-  std::size_t
-      interop_ffi_metadata_interface_preservation_local_metadata_preservation_sites =
-          0;
-  std::size_t
-      interop_ffi_metadata_interface_preservation_local_interface_annotation_sites =
-          0;
-  std::size_t interop_ffi_metadata_interface_preservation_imported_module_count =
-      0;
-  std::size_t
-      interop_ffi_metadata_interface_preservation_imported_foreign_callable_count =
-          0;
-  std::size_t
-      interop_ffi_metadata_interface_preservation_imported_metadata_preservation_sites =
-          0;
-  std::size_t
-      interop_ffi_metadata_interface_preservation_imported_interface_annotation_sites =
-          0;
-  bool interop_ffi_metadata_interface_preservation_runtime_import_artifact_ready =
-      false;
-  bool interop_ffi_metadata_interface_preservation_separate_compilation_preservation_ready =
-      false;
-  bool deterministic_interop_ffi_metadata_interface_preservation_handoff =
-      false;
-  std::string lowering_interop_header_module_bridge_generation_key;
   std::string lowering_metaprogramming_expansion_replay_key;
   std::size_t metaprogramming_expansion_lowering_derive_inventory_sites = 0;
   std::size_t metaprogramming_expansion_lowering_derived_selector_artifact_sites = 0;
