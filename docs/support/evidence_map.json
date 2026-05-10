@@ -554,6 +554,11 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
     },
     {

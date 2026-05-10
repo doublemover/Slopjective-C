@@ -18,6 +18,8 @@ add_library(objc3c_artifacts_json STATIC
   json/artifact_schema_registry.cpp
   json/artifact_schema_registry.h
   json/artifact_schema_registry_summary.cpp
+  json/capability_support_schema_records.cpp
+  json/capability_support_schema_records.h
   json/program_manifest_json.cpp
   json/program_manifest_json.h
   json/program_manifest_records.cpp

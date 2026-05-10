@@ -10,8 +10,11 @@ actions.
 The machine-readable evidence map is `docs/support/evidence_map.json`; its
 schema id is `objc3c-capability-evidence-map-v1`. The capability matrix schema
 id is `objc3c-capability-matrix-v1`. Both IDs are owned by
-`scripts/objc3c_shared/schema_registry.py`. Example rows and anti-examples live
-in `docs/support/capability_schema_examples.md`.
+`scripts/objc3c_shared/schema_registry.py` and published to the native artifact
+schema registry by
+`native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`.
+Example rows and anti-examples live in
+`docs/support/capability_schema_examples.md`.
 
 `projection_contract` in the JSON file makes this table a flattened projection
 of `docs/support/capability_matrix.json#/capabilities/*/evidence`. Its stable
@@ -134,6 +137,7 @@ which surfaces may own claims and which surfaces only consume evidence.
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/io/json/json_equivalence.cpp`                                                          |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/io/json/json_pointer.cpp`                                                              |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/io/json/json_schema_type.cpp`                                                          |                                          |
+| `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`                                  |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/artifacts/json/artifact_schema_registry.cpp`                                           |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`                                     |                                          |
 | `tooling.json.schema-registry`               |                                                    | source        | `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp`                                 |                                          |

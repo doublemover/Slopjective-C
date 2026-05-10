@@ -78,8 +78,9 @@ The human-readable projections are:
 
 Schema files under `schemas/` are the schema owner inputs. Support
 directory JSON files consume these schemas through
-`scripts/objc3c_shared/schema_registry.py`; they must not carry local schema
-mirrors or copied schema fragments.
+`scripts/objc3c_shared/schema_registry.py` and
+`native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`; they
+must not carry local schema mirrors or copied schema fragments.
 
 ## Hard-Cutover Rules
 

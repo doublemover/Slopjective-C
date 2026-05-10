@@ -27,18 +27,20 @@ evidence, GitHub issue action, remote closure, or compatibility support.
 - `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
 - `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
 
-The canonical capability schema IDs are registered through
-`scripts/objc3c_shared/schema_registry.py`:
+The canonical capability schema IDs are registered through the shared schema
+registry and native artifact publication records:
 
 - `objc3c-capability-matrix-v1`
 - `objc3c-capability-evidence-map-v1`
 - backing schema files under `schemas/`
 - `schemas/README.md`
 - `scripts/objc3c_shared/schema_registry.py`
+- `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
 There is no support-directory schema mirror. Capability matrix consumers load
-the matrix and evidence-map schemas through the shared registry so schema
-ownership cannot drift between local copies and checked-in registry entries.
+the matrix and evidence-map schemas through the shared registry and artifact
+schema contract records so schema ownership cannot drift between local copies
+and checked-in registry entries.
 
 `capability_matrix.json` also carries `projection_policy`. That object names
 the authoritative data files, schema sources, and human projections so consumers

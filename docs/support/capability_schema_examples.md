@@ -5,8 +5,10 @@ schemas. They are illustrative; the checked-in owner data remains
 `docs/support/capability_matrix.json` and `docs/support/evidence_map.json`.
 The schema IDs are `objc3c-capability-matrix-v1` and
 `objc3c-capability-evidence-map-v1`, owned by
-`scripts/objc3c_shared/schema_registry.py`; examples and support-directory
-files must not duplicate schema fragments.
+`scripts/objc3c_shared/schema_registry.py` and published to the native artifact
+schema registry by
+`native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`;
+examples and support-directory files must not duplicate schema fragments.
 
 ## Capability Matrix Entry
 
