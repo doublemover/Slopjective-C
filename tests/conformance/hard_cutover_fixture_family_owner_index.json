@@ -1122,6 +1122,40 @@
       "retired_disposition": "release foundation owner contracts, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, upstream surface paths, build script labels, machine-owned output roots, artifact class ids, payload family labels, manifest field names, payload prefixes, signing boundary labels, digest field names, source stamp field names, generated artifact paths, tmp report paths, tmp package roots, report contract ids, trusted action labels, trusted implementation anchors, trusted generation mode labels, distribution claim labels, rejected claim labels, manual-only input labels, audited channel labels, and owner-split routing rows are resolved through behavior-first phase indexes and release foundation provenance before any release row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in repo-local staged runnable toolchain bundle selection, machine-generated release manifest/SBOM/attestation, provenance publication over the selected payload, repo-relative payload membership from runnable package manifest plus checked-in payload policy, validate-release-foundation workflow ordering, and public release-foundation actions, while second installer-shaped payloads, hand-maintained digest manifests, release claims bypassing the runnable package manifest, system installer claims, package-manager publication, signing/notarization service trust, cross-host binary identity, cross-platform reproducibility, network-hosted release registry, manual digest lists, hand-written attestations, manual payload lists, missing package manifests, missing payload fields, missing payload prefixes, missing schemas, missing source stamps, dirty publication state, tmp-as-source claims, old-mode release rows, shim release rows, fallback release rows, compatibility release rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only release checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "release_operations_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/release_operations/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "release_operations_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/release_operations/behavior_owner_splits/release_operations_provenance.json"
+      ],
+      "retired_disposition": "release operations owner contracts, runbook paths, tutorial paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, implementation anchors, machine-owned output roots, generated artifact paths, tmp report paths, report contract ids, version labels, channel labels, warning labels, diagnostic labels, revert primitive labels, required field names, upstream action labels, workflow child labels, forbidden claim labels, forbidden behavior labels, and owner-split routing rows are resolved through behavior-first phase indexes and release operations provenance before any release-operation row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in same-major release operation policy, owned release-operation actions, validate-release-operations workflow ordering, update manifest field contracts, channel selection rules, supported stable and candidate release-drill windows, explicit warning/revert behavior, and fail-closed publication boundaries, while hosted updater claims, package-manager-specific upgrade flows, second payload lineages, retired update adapters, report-only support claims, cross-major forward compatibility, indefinite support windows, background auto-update, package-manager parity, manual waiver-only support, best-effort preview support, unsupported installer/package manager/signing/cross-host/network/manual positives, missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, alternate-path publication, tmp-as-source claims, old-mode release-operation rows, shim release-operation rows, fallback release-operation rows, compatibility release-operation rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only release checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "platform_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits",

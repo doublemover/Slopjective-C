@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-release-operations-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/release_operations"
+  ],
+  "support_boundary": "parser ownership is non-positive for this release-operations family. Version labels, channel ids, update manifest fields, warning ids, diagnostic ids, public action labels, package bridge labels, schema names, generated artifact paths, and report paths do not define Objective-C 3 parser support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:release_operations",
+    "schema_field:current_version",
+    "schema_field:upgrade_paths",
+    "channel_id:stable",
+    "channel_id:candidate",
+    "channel_id:preview",
+    "compiler_phase_boundary:no-parser-positive-truth-from-release-operations-contracts",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser release-operation rows, shim parser release-operation rows, fallback parser release-operation rows, compatibility parser release-operation rows, migration-only parser rows, generated-only parser rows, report-only parser rows, JSON-contract-only parser claims, and release-operation-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
