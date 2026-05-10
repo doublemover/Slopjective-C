@@ -8,29 +8,7 @@ ParseFrontendCApiRunnerPathStringOption(const std::string &arg,
                                         char **argv,
                                         int &index,
                                         FrontendCApiRunnerOptions &options) {
-  const FrontendCApiRunnerCommandOptionParseResult output_result =
-      ParseFrontendCApiRunnerOutputPathStringOption(arg,
-                                                    argc,
-                                                    argv,
-                                                    index,
-                                                    options);
-  if (output_result !=
-      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
-    return output_result;
-  }
-
-  const FrontendCApiRunnerCommandOptionParseResult toolchain_result =
-      ParseFrontendCApiRunnerToolchainPathStringOption(arg,
-                                                       argc,
-                                                       argv,
-                                                       index,
-                                                       options);
-  if (toolchain_result !=
-      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
-    return toolchain_result;
-  }
-
-  return ParseFrontendCApiRunnerSummaryOutputPathStringOption(arg,
+  return ParseFrontendCApiRunnerPathStringOptionPassSequence(arg,
                                                              argc,
                                                              argv,
                                                              index,

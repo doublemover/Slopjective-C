@@ -4,6 +4,17 @@
 
 #include "tools/objc3c_frontend_c_api_runner_command_parser_options.h"
 
+bool FrontendCApiRunnerPathOptionShouldReturn(
+    FrontendCApiRunnerCommandOptionParseResult result);
+
+FrontendCApiRunnerCommandOptionParseResult
+ParseFrontendCApiRunnerPathStringOptionPassSequence(
+    const std::string &arg,
+    int argc,
+    char **argv,
+    int &index,
+    FrontendCApiRunnerOptions &options);
+
 FrontendCApiRunnerCommandOptionParseResult
 ParseFrontendCApiRunnerOutputPathStringOption(
     const std::string &arg,
