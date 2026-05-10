@@ -5,6 +5,7 @@
 
 struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
+struct Objc3RuntimeBootstrapApiSummary;
 
 namespace objc3::artifacts::frontend {
 
@@ -31,5 +32,9 @@ void WriteRuntimeBlockArcLoweringHelperSurface(
         &runtime_translation_unit_registration_manifest,
     const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
         &runtime_registration_descriptor_frontend_closure);
+
+void WriteRuntimeBlockArcRuntimeAbiSurface(
+    std::ostream &manifest,
+    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api);
 
 }  // namespace objc3::artifacts::frontend
