@@ -1,22 +1,12 @@
 #include "io/json/json_value.h"
 
-#include <stdexcept>
+#include <utility>
 
 namespace objc3::io::json {
 namespace {
 
 const std::string &EmptyString() {
   static const std::string value;
-  return value;
-}
-
-const JsonValue::Array &EmptyArray() {
-  static const JsonValue::Array value;
-  return value;
-}
-
-const JsonValue::Object &EmptyObject() {
-  static const JsonValue::Object value;
   return value;
 }
 
@@ -49,20 +39,6 @@ JsonValue JsonValue::String(std::string value) {
   return out;
 }
 
-JsonValue JsonValue::ArrayValue(Array value) {
-  JsonValue out;
-  out.kind_ = Kind::kArray;
-  out.array_value_ = std::move(value);
-  return out;
-}
-
-JsonValue JsonValue::ObjectValue(Object value) {
-  JsonValue out;
-  out.kind_ = Kind::kObject;
-  out.object_value_ = std::move(value);
-  return out;
-}
-
 JsonValue::Kind JsonValue::kind() const {
   return kind_;
 }
@@ -83,14 +59,6 @@ bool JsonValue::IsString() const {
   return kind_ == Kind::kString;
 }
 
-bool JsonValue::IsArray() const {
-  return kind_ == Kind::kArray;
-}
-
-bool JsonValue::IsObject() const {
-  return kind_ == Kind::kObject;
-}
-
 bool JsonValue::AsBool(bool default_value) const {
   return IsBool() ? bool_value_ : default_value;
 }
@@ -101,38 +69,6 @@ double JsonValue::AsNumber(double default_value) const {
 
 const std::string &JsonValue::AsString() const {
   return IsString() ? string_value_ : EmptyString();
-}
-
-const JsonValue::Array &JsonValue::AsArray() const {
-  return IsArray() ? array_value_ : EmptyArray();
-}
-
-const JsonValue::Object &JsonValue::AsObject() const {
-  return IsObject() ? object_value_ : EmptyObject();
-}
-
-const JsonValue *JsonValue::Find(std::string_view key) const {
-  if (!IsObject()) {
-    return nullptr;
-  }
-  const auto found = object_value_.find(std::string(key));
-  return found == object_value_.end() ? nullptr : &found->second;
-}
-
-std::optional<std::string> JsonValue::GetString(std::string_view key) const {
-  const JsonValue *value = Find(key);
-  if (value == nullptr || !value->IsString()) {
-    return std::nullopt;
-  }
-  return value->AsString();
-}
-
-std::optional<bool> JsonValue::GetBool(std::string_view key) const {
-  const JsonValue *value = Find(key);
-  if (value == nullptr || !value->IsBool()) {
-    return std::nullopt;
-  }
-  return value->AsBool();
 }
 
 }  // namespace objc3::io::json

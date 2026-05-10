@@ -187,6 +187,7 @@ add_library(objc3c_json STATIC
   json/json_string_escape.cpp
   json/json_string_array_writer.cpp
   json/json_value.cpp
+  json/json_value_container.cpp
   json/json_value_container_writer.cpp
   json/json_value_writer.cpp
   json/json_writer.cpp
