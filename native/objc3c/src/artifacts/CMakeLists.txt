@@ -248,6 +248,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_metaprogramming_semantic_artifacts.h
   objc3_frontend_module_semantic_artifacts.cpp
   objc3_frontend_module_semantic_artifacts.h
+  objc3_frontend_ownership_effects_semantic_artifact_json.cpp
   objc3_frontend_ownership_semantic_artifacts.cpp
   objc3_frontend_ownership_semantic_artifacts.h
   objc3_frontend_parser_diagnostic_artifacts.cpp
