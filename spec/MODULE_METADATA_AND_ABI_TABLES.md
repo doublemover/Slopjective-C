@@ -4901,7 +4901,7 @@ shall preserve:
   - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
   - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
   - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
-  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `M251-D003 generated runtime support-library link-wiring summary`
   - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
 - canonical runtime archive path `artifacts/lib/objc3_runtime.lib`,
 - upstream issue anchors `M251-A003`, `M251-B003`, `M251-C003`, and
@@ -6424,7 +6424,7 @@ existing realized graph and category/protocol runtime anchors.
   - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
   - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
   - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
-  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `M256-D004 generated runnable object sample support summary`
 
 ## M256 class/protocol/category conformance gate metadata anchors (E001)
 
@@ -6441,7 +6441,7 @@ chain is sufficient to claim executable behavior.
   - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
   - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
-  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `M256-D004 generated runnable object sample support summary`
 - canonical gate evidence:
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 
@@ -6460,7 +6460,7 @@ one live executable inheritance matrix.
   - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
   - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
-  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `M256-D004 generated runnable object sample support summary`
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 - canonical matrix evidence:
   - `tmp/reports/m256/M256-E002/runnable_class_protocol_category_execution_matrix_summary.json`
@@ -7339,7 +7339,7 @@ object/category/protocol/property sample on the live runtime path.
 - canonical proof assets
   - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
   - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `M259-A002 generated runnable sample-set summary`
 - emitted metadata truth
   - the canonical sample preserves `class_descriptor_count = 4`
   - the canonical sample preserves `protocol_descriptor_count = 2`
@@ -7355,7 +7355,7 @@ about the current runnable metadata-backed core versus later advanced surfaces.
 - contract id
   `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
 - canonical proof assets
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `M259-A002 generated runnable sample-set summary`
   - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`
 - emitted metadata truth
   - the current runnable core still bottoms out in the A002 integrated sample
@@ -7376,9 +7376,9 @@ being misreported as runnable.
   - `tests/tooling/fixtures/native/unsupported_feature_claim_throws_legacy_alias.objc3`
   - `tests/tooling/fixtures/native/unsupported_feature_claim_autoreleasepool_legacy_alias.objc3`
   - `tests/tooling/fixtures/native/unsupported_feature_claim_arc_ownership_qualifier_legacy_alias.objc3`
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `M259-A002 generated runnable sample-set summary`
   - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`
-  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `M259-B002 generated fail-closed advanced-feature diagnostics summary`
 - emitted metadata truth
   - positive runnable probes still preserve the A002 integrated sample metadata
     envelope without introducing new ABI families
@@ -7519,8 +7519,8 @@ release evidence summaries and runtime proof surfaces must remain green before
 - contract id
   `objc3c-runnable-object-model-release-gate/m259-e001-v1`
 - preserved gate evidence anchors
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
-  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `M259-A002 generated runnable sample-set summary`
+  - `M259-B002 generated fail-closed advanced-feature diagnostics summary`
   - `tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json`
   - `tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json`
 - truthful boundary
@@ -7538,8 +7538,8 @@ inspection command plus one proving summary.
 - matrix artifact
   `docs/reference/legacy_spec_anchor_index.md`
 - preserved evidence summary anchors
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
-  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `M259-A002 generated runnable sample-set summary`
+  - `M259-B002 generated fail-closed advanced-feature diagnostics summary`
   - `tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json`
   - `tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json`
 - truthful boundary

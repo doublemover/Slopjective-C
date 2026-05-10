@@ -16,7 +16,7 @@ evidence must point to committed branch source, docs, tests, or checked-in owner
 surfaces. Gate, retired route, compatibility, old-mode, unsupported,
 missing-upstream, alternate-acceptance, and retired-source-lane rows are
 rejection, strict-error, or absent-support evidence. Docs-only refreshes, checkout
-scans, generated evidence summaries, generated evidence outputs, evidence-log rows, validation-not-run,
+scans, generated-output summaries, generated-output rows, evidence-log rows, validation-not-run,
 GitHub-not-called, push-not-performed, and remote-deferred rows are provenance
 or closure-readiness state, not positive behavior or remote closeout.
 

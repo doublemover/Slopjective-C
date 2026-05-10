@@ -120,10 +120,8 @@ Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
-Generated machine-owned outputs stay under:
-
-- `tmp/artifacts/adoption-legibility/`
-- `tmp/reports/adoption-legibility/`
+Generated machine-owned outputs stay in adoption-legibility artifact and report
+roots selected by the public workflow.
 
 No evaluator, conversion, comparison, onboarding, or adoption claim is canonical
 unless it can be regenerated from checked-in contracts and validated through the
@@ -131,7 +129,7 @@ schema above.
 
 ## Evidence Generation
 
-The canonical evidence workflow is:
+The checked-in evidence workflow is:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
@@ -140,7 +138,7 @@ evaluator publication, and evidence summary.
 
 The generator replays the boundary inventory, public claim policy, comparison
 semantics, adoption replay semantics, and artifact contract summaries before
-writing artifacts. Generated evidence is temporary output; checked-in contracts,
+writing artifacts. Generated outputs are temporary; checked-in contracts,
 docs, and action-catalog-owned implementations remain the owner inputs.
 
 ## Public Workflow Integration
@@ -155,14 +153,12 @@ It maps to:
 - `npm run objc3c -- validate-adoption-legibility`
 - `npm run objc3c -- publish-adoption-legibility`
 
-The public workflow validates the generated evidence artifact shape, evaluator
+The public workflow validates the generated-output artifact shape, evaluator
 entrypoints, adoption replay phases, comparison axes, onboarding workspaces, support
 state, and claim-audit blockers.
 
-Evaluator metadata publication emits:
-
-- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
-- `tmp/reports/adoption-legibility/publication-summary.json`
+Evaluator metadata publication emits transient publication artifacts and
+publication summaries selected by the checked-in adoption contract.
 
 ## Current Boundary
 
@@ -184,7 +180,7 @@ Supported in this boundary:
   and support evidence
 - onboarding paths that can be replayed through package, template, showcase, and
   public workflow commands
-- generated adoption evidence under `tmp/reports/` and `tmp/artifacts/`
+- generated adoption outputs selected by the checked-in adoption contracts
 
 Not supported in this boundary:
 

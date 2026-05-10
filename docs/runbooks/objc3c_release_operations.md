@@ -99,9 +99,9 @@ The live release-operations workflow must expose:
 - an integrated release-operations validation command
 - an end-to-end release-operations validation command
 
-These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge and publish
-machine-owned artifacts under `tmp/reports/release-operations/` and
-`tmp/artifacts/release-operations/`.
+These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge
+and publish machine-owned artifacts into release-operations output families
+selected by checked-in contracts.
 
 The update manifest, upgrade-support report, and channel catalog must also
 publish:

@@ -42,8 +42,10 @@ Replay the adoption evidence with:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
-Generated adoption reports stay under `tmp/reports/adoption-legibility/` and
-generated artifacts stay under `tmp/artifacts/adoption-legibility/`.
+The adoption evidence action writes transient adoption reports and artifacts.
+Those outputs are not portfolio owner inputs; showcase support claims still
+resolve through the capability matrix, evidence map, and checked-in example
+sources.
 
 ## Portfolio Boundary
 
@@ -69,12 +71,8 @@ Retired command surfaces, direct helper scripts, showcase-local wrappers,
 alternate compile/runtime support lanes, and retired-source support claims are not
 public entrypoints for this portfolio.
 
-Machine-owned outputs only:
-
-- `tmp/artifacts/showcase/`
-- `tmp/reports/showcase/`
-- `tmp/pkg/objc3c-native-runnable-toolchain/`
-- `tmp/reports/objc3c-public-workflow/`
+Machine-owned outputs are transient build, package, showcase-report, and public
+workflow report roots. They are not canonical example sources.
 
 ## Portfolio Stories
 
@@ -124,11 +122,9 @@ Runtime-backed shared commands used by the showcase surface:
 - `npm run objc3c -- test-execution-replay`
 - `npm run objc3c -- validate-showcase-runtime`
 
-The live compile path emits object and manifest artifacts under
-`tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
-Package staging stays under `tmp/pkg/objc3c-native-runnable-toolchain/`, and
-showcase report artifacts stay under `tmp/reports/showcase/`, rooted at
-`tmp/reports/showcase/summary.json`.
+The live compile path emits object and manifest artifacts with the fixed emit
+prefix `module`. Package staging and showcase report outputs stay in transient
+output roots selected by the public workflow.
 
 Runtime and presentation contracts are checked in per example under
 `showcase/<example-id>/workspace.json`. Those workspace contracts declare the
@@ -140,5 +136,5 @@ for the example.
 
 - screenshots or image-only demos
 - sidecar-only example manifests with no checked-in source
-- example-specific compiler wrappers or milestone-local validation paths
-- treating `tmp/` outputs as canonical example sources
+- example-specific compiler wrappers or milestone-scoped validation paths
+- treating transient outputs as example owner sources

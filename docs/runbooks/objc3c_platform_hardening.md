@@ -227,9 +227,8 @@ The checked-in schema and contract surfaces for that artifact are:
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-The generated summary family for platform hardening lives under:
-
-- `tmp/reports/platform-hardening/`
+The generated summary family for platform hardening is selected by the
+checked-in platform-hardening contract.
 
 Downstream validation and publication work must extend this artifact instead of
 inventing a second matrix format.
@@ -312,10 +311,10 @@ release/update metadata surfaces:
   - `npm run objc3c -- validate-platform-hardening`
   - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - update metadata:
-  - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
+  - generated update manifest selected by the release-operations contract
 - support publication:
   - generated upgrade-support report selected by the release-operations contract
-  - `tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json`
+  - generated release-channel catalog selected by the release-operations contract
 
 These surfaces must publish the same support tiers and supported platform ids as
 the platform support matrix artifact selected by the checked-in

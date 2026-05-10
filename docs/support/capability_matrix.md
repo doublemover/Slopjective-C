@@ -39,7 +39,7 @@ Support-claim contract is separate from projection mechanics: only
 may become public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and
 `internal` rows are negative, unavailable, schema, workflow, owner-boundary, or
 evidence-boundary rows only. Retired terms, compatibility/retired-route wording,
-registry facades, direct helper commands, and generated evidence outputs cannot
+registry facades, direct helper commands, and generated-output rows cannot
 supply missing support claims.
 
 Command and evidence responsibility is hard-cut to the current surfaces:

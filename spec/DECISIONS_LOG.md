@@ -510,7 +510,7 @@ IR or overclaiming runtime behavior before the later M272 execution lanes land.
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable
 `runtime_capability_report` and `public_conformance_report` payloads as a
-direct projection of the lowered conformance-report truth surface rather than
+direct projection of the lowered conformance-report owner surface rather than
 introducing an independent release or CLI-owned claim model.
 
 The current public claim set shall stay explicit:

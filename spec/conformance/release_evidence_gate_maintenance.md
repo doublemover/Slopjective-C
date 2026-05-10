@@ -25,7 +25,7 @@ The schema paths above are registry-owned by
 the release-evidence data pairs only; it must not duplicate JSON Schema
 fragments or introduce alternate schema aliases.
 
-It also verifies that a freshly generated evidence index references all required
+It also verifies that a freshly generated-output index references all required
 artifact payloads.
 
 ## Local Runbook

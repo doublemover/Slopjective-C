@@ -70,7 +70,7 @@ negative-evidence surfaces:
 - `schemas/source-hygiene-hard-cutover-report-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-They classify retired-surface residue and generated evidence output inventory;
+They classify retired-surface residue and generated-output row inventory;
 they do not define alternate old-surface support or create evidence-log claims.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or

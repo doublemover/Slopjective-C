@@ -1,7 +1,7 @@
 # Support Boundary Contract
 
 This directory owns the public Objective-C 3.0 support boundary. Other docs,
-spec chapters, site pages, runbooks, and generated evidence outputs may
+spec chapters, site pages, runbooks, and generated-output rows may
 summarize support, but they must not widen it beyond these files.
 
 ## Canonical Files
@@ -13,7 +13,7 @@ summarize support, but they must not widen it beyond these files.
 | `evidence_map.json` | Machine-readable flattened capability-to-evidence rows. |
 | `evidence_map.md` | Human-readable evidence table. |
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
-| `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated evidence outputs. |
+| `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated-output rows. |
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
 Issue closeout payloads are downstream evidence consumers, not support owners.
@@ -50,7 +50,7 @@ public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and `internal`
 rows remain negative, unavailable, schema, workflow, owner-boundary, or
 evidence-boundary rows and must not be promoted by aliases,
 compatibility/retired-route wording, direct helper commands, registry facades,
-or generated evidence outputs.
+or generated-output rows.
 
 `evidence_map.json` carries `projection_contract`. That contract makes the
 evidence map a flattened projection of

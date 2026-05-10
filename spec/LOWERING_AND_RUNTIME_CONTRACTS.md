@@ -3944,7 +3944,7 @@ runtime-foundation tranche.
   - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
   - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
   - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
-  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `M251-D003 generated runtime support-library link-wiring summary`
   - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
 - `M251-A003` to remain the canonical manifest/runtime-record handoff proof,
 - `M251-B003` to remain the canonical fail-closed runtime-export diagnostic
@@ -5697,7 +5697,7 @@ class/protocol/category surface without broadening the runtime matrix yet.
   - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
   - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
-  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `M256-D004 generated runnable object sample support summary`
 - the next implementation issue is `M256-E002`
 
 ## M256 runnable class/protocol/category execution matrix (E002)
@@ -5717,7 +5717,7 @@ execution matrix for executable classes, protocols, and categories.
   - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
   - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
-  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `M256-D004 generated runnable object sample support summary`
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 - live matrix case:
   - `tests/tooling/fixtures/native/inheritance_override_realization_positive.objc3`

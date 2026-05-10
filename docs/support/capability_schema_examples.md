@@ -180,7 +180,7 @@ Rules shown by this policy:
     "retired mode labels",
     "workflow registry facades",
     "direct helper commands",
-    "generated evidence outputs without matching implemented rows",
+    "generated-output rows without matching implemented rows",
     "compatibility or retired route wording"
   ],
   "owner_only_states": [
@@ -214,4 +214,4 @@ These are not valid support claims:
 - "retired-source lane accepts old syntax"
 - "run a direct helper script as the public command"
 - "implemented because a roadmap says it is planned"
-- "complete because a generated evidence output says so without a matching implemented row"
+- "complete because a generated-output row says so without a matching implemented row"

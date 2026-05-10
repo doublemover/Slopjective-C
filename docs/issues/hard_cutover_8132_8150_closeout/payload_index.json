@@ -14,14 +14,14 @@
   },
   "evidence_owner_split_index": "docs/issues/hard_cutover_8132_8150_closeout/evidence_owner_splits.json",
   "evidence_owner_policy": {
-    "primary_axis": "evidence owner before issue closeout claim, generated evidence output, docs-only refresh, checkout scan, validation state, tracker operation, or remote closure readiness",
+    "primary_axis": "evidence owner before issue closeout claim, generated-output row, docs-only refresh, checkout scan, validation state, tracker operation, or remote closure readiness",
     "canonical_accepted_evidence_owner": "docs/issues/hard_cutover_8132_8150_closeout/canonical_accepted_evidence.json",
     "canonical_rejection_strict_error_owner": "docs/issues/hard_cutover_8132_8150_closeout/canonical_rejection_strict_error_evidence.json",
     "provenance_report_generated_owner": "docs/issues/hard_cutover_8132_8150_closeout/provenance_report_generated_evidence.json",
     "closure_readiness_owner": "docs/issues/hard_cutover_8132_8150_closeout/closure_readiness_owner.json",
     "positive_rule": "only committed hard-cutover branch source, docs, tests, checked-in owner surfaces, and issue payload rows that point to committed refs can be canonical accepted closeout evidence",
     "negative_rule": "gate, retired route, compatibility, old-mode, unsupported, missing-upstream, alternate acceptance path, retired-source lane, and public compatibility claim rows are canonical rejection, strict-error, or absent-support evidence",
-    "provenance_rule": "docs-only refreshes, checkout scans, generated evidence summaries, generated evidence outputs, evidence-log rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, and remote-deferred rows are provenance or closure-readiness state, not positive support",
+    "provenance_rule": "docs-only refreshes, checkout scans, generated-output summaries, generated-output rows, evidence-log rows, validation-not-run rows, GitHub-not-called rows, push-not-performed rows, and remote-deferred rows are provenance or closure-readiness state, not positive support",
     "closure_readiness_rule": "local evidence-ready labels do not assert validation, pushed state, GitHub issue edits, or remote closure"
   },
   "branch_evidence_policy": {

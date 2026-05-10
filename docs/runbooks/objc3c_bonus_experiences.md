@@ -92,21 +92,21 @@ real implementation exists.
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
 - build-emitted owner artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+  - generated repo-superclean owner artifact selected by the checked-in build contract
 - playground/repro artifact roots:
-  - `tmp/artifacts/playground/`
-  - `tmp/reports/playground/`
-  - `tmp/artifacts/showcase/`
+  - playground artifacts
+  - playground reports
+  - showcase artifacts
 - runtime inspector and stage-trace report roots:
-  - `tmp/reports/objc3c-public-workflow/compile-observability.json`
-  - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
-  - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
-  - `tmp/reports/developer-tooling/integration-summary.json`
+  - compile observability output
+  - runtime inspector output
+  - compile-stage trace output
+  - developer-tooling integration summary
 - showcase/tutorial validation report roots:
-  - `tmp/artifacts/project-template/`
-  - `tmp/reports/project-template/`
-  - `tmp/reports/showcase/`
-  - `tmp/reports/tutorials/`
+  - project-template artifacts
+  - project-template reports
+  - showcase reports
+  - tutorial reports
 - staged package manifest within a runnable package root:
   - `artifacts/package/objc3c-runnable-toolchain-package.json`
 
@@ -168,7 +168,7 @@ mock JSON, or hand-written walkthrough output as authoritative.
 - keep checked-in bonus-experience guidance in `docs/runbooks/`
 - keep runnable example sources under `showcase/` or existing tutorial/example
   roots
-- keep generated reports, traces, and captures under `tmp/`
+- keep generated-output reports, traces, and captures under transient output roots
 - prove bonus-experience behavior through the live showcase, tutorial, and
   developer-tooling validation paths before widening the surface
 

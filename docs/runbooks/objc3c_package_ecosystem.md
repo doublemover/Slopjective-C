@@ -107,9 +107,9 @@ The canonical workspace and mirror semantics are checked in at:
 Local package workspaces are materialized from checked-in stdlib, showcase, and
 canonical application surfaces. Lockfiles and mirrors are generated outputs:
 
-- lockfiles publish under `tmp/artifacts/package-ecosystem/locks/`
-- mirror indexes publish under `tmp/artifacts/package-ecosystem/mirrors/`
-- replay and validation summaries publish under `tmp/reports/package-ecosystem/`
+- lockfiles publish under the package-ecosystem lock output family
+- mirror indexes publish under the package-ecosystem mirror output family
+- replay and validation summaries publish under the package-ecosystem report family
 
 An offline mirror is a local artifact cache plus an index generated from a
 locked package graph. It must not fetch from the network during validation, and
@@ -147,10 +147,8 @@ Schema surfaces:
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-Machine-owned generated outputs stay under:
-
-- `tmp/artifacts/package-ecosystem/`
-- `tmp/reports/package-ecosystem/`
+Machine-owned generated outputs stay in package-ecosystem artifact and report
+families selected by the checked-in package contracts.
 
 No package ecosystem artifact is claimable unless it can be regenerated from
 checked-in contracts and validated through the `npm run objc3c -- <action>` bridge.
@@ -170,9 +168,9 @@ Helper implementations are action-catalog-owned and are not direct package
 commands.
 
 The lock generator derives packages from `stdlib/module_inventory.json` and
-`showcase/portfolio.json`, emits a deterministic lock under
-`tmp/artifacts/package-ecosystem/locks/`, and writes a summary under
-`tmp/reports/package-ecosystem/`.
+`showcase/portfolio.json`, emits a deterministic lock under the
+package-ecosystem lock output family, and writes a generated-output summary
+under the package-ecosystem report family.
 
 ## Mirror And Registry Evidence
 

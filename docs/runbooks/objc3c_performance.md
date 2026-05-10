@@ -76,18 +76,18 @@ The only current claim classes allowed from this surface are:
   - `tests/tooling/fixtures/performance/objc3/`
   - `tests/tooling/fixtures/performance/baselines/`
 
-## Exact Live Artifact And Output Paths
+## Live Artifact And Output Families
 
 - native binaries and runtime library:
   - `artifacts/bin/objc3c-native.exe`
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
 - machine-owned benchmark roots:
-  - `tmp/artifacts/performance/`
-  - `tmp/reports/performance/`
-  - `tmp/pkg/objc3c-native-runnable-toolchain/`
+  - performance artifacts
+  - performance reports
+  - runnable-toolchain package staging
 - build-owned owner artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+  - generated repo-superclean owner artifact selected by the checked-in build contract
 
 ## Exact Live Commands
 

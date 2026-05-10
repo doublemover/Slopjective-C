@@ -91,12 +91,12 @@ Machine-owned governance artifact contract:
 
 - `tests/tooling/fixtures/governance_sustainability/artifact_contract.json`
 - `npm run objc3c -- validate-governance-sustainability`
-- generated evidence artifact selected by the checked-in governance contract
+- generated-output artifact selected by the checked-in governance contract
 - generated publication artifacts selected by the checked-in governance contract
 
 The checked-in contracts under `tests/tooling/fixtures/governance_sustainability/`
-are the owner inputs. Files under `tmp/reports/` and `tmp/artifacts/` are
-replayable outputs only and must never become implementation inputs.
+are the owner inputs. Generated report and artifact outputs are replayable
+outputs only and must never become implementation inputs.
 
 Replayable governance enforcement:
 
@@ -106,14 +106,14 @@ Replayable governance enforcement:
   public command surface
 - generated enforcement summary selected by the checked-in governance contract
 - generated integration summary selected by the checked-in governance contract
-- generated evidence artifact selected by the checked-in governance contract
+- generated-output artifact selected by the checked-in governance contract
 - generated publication summary selected by the checked-in governance contract
 
 Long-horizon anti-regression reporting:
 
 - `npm run objc3c -- validate-governance-sustainability`
-- canonical history artifact: `tmp/artifacts/governance-sustainability/anti-regression-history.json`
-- canonical anti-regression summary: `tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json`
+- generated history artifact selected by the checked-in governance contract
+- generated anti-regression summary selected by the checked-in governance contract
 
 Closeout gate:
 

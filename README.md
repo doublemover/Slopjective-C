@@ -42,7 +42,7 @@ Current public support states:
 | Native module decomposition, public C runtime result APIs, workflow bridge, and JSON/schema helpers | `internal` | Owner and evidence surfaces, not language support claims. |
 | Full object-model runtime realization and property/ivar/reflection closure | `reserved` | Unclaimed until implemented matrix rows link executable evidence. |
 | Blocks, full ARC automation, `throws`, async/task/actor runtime closure, metaprogramming/property behavior runtime closure, and broader interop | `reserved` unless narrower rows say otherwise | Unavailable as public support outside exact implemented rows. |
-| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and generated-evidence completion | retired wording, not a support state | Rejection, absence, or source-hygiene inventory only. |
+| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and generated-output completion | retired wording, not a support state | Rejection, absence, or source-hygiene inventory only. |
 
 ## Runnable Subset
 
@@ -99,7 +99,7 @@ Use the shortest path that matches what you are trying to do.
 | pick the right capability-backed example first                  | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                         |
 | map ObjC2 patterns into canonical ObjC3 examples or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations         | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                      |
-| evaluate adoption and support claims                            | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
+| evaluate adoption and support claims                            | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated-output summary              |
 | inspect performance surfaces                                    | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                       |
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
@@ -269,7 +269,7 @@ npm run objc3c -- build-public-command-surface
 3. Compile the canonical hello fixture:
 
 ```powershell
-npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out-dir <generated-output-dir> --emit-prefix module
 ```
 
 4. Run the bounded default validation:
@@ -299,7 +299,7 @@ Operational facts:
 - native builds run through the public `build-native-*` actions backed by CMake/Ninja
 - the persistent build tree lives under `tmp/build-objc3c-native`
 - published binaries and libraries live under `artifacts/`
-- contract artifacts and summaries live under `tmp/artifacts/` and `tmp/reports/`
+- contract artifacts and summaries live under transient generated-output roots
 
 For the exact backend and artifact contract, use
 `docs/runbooks/objc3c_public_command_surface.md` and

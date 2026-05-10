@@ -96,29 +96,29 @@ Downstream work must preserve these rules:
   - `tests/tooling/fixtures/objc3c/`
   - `tests/conformance/`
 
-## Exact Live Artifact And Output Paths
+## Live Artifact And Output Families
 
 - build-owned owner artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
-- checked-in stress source summary:
-  - `tmp/reports/stress/source-surface-summary.json`
+  - generated repo-superclean owner artifact selected by the checked-in build contract
+- stress source summary:
+  - generated stress source-surface output selected by the checked-in stress contract
 - checked-in stress artifact/minimization contract:
   - `tests/tooling/fixtures/stress/artifact_surface.json`
 - current machine-owned fuzz root:
-  - `tmp/artifacts/objc3c-native/fuzz-safety/`
+  - generated fuzz-safety output root
 - existing machine-owned validation roots that downstream work must reuse:
-  - `tmp/artifacts/objc3c-native/execution-smoke/`
-  - `tmp/reports/conformance/`
-  - `tmp/reports/runtime/`
-  - `tmp/pkg/objc3c-native-runnable-toolchain/`
+  - execution-smoke artifacts
+  - conformance reports
+  - runtime reports
+  - runnable-toolchain package staging
 - new machine-owned stress roots for downstream stress-validation work:
-  - `tmp/artifacts/stress/`
-  - `tmp/reports/stress/`
+  - stress artifacts
+  - stress reports
 - machine-owned reducer and triage roots that downstream work must populate:
-  - `tmp/artifacts/stress/failures/`
-  - `tmp/artifacts/stress/minimized/`
-  - `tmp/artifacts/stress/replays/`
-  - `tmp/artifacts/stress/triage/`
+  - failure captures
+  - minimized reproductions
+  - replay captures
+  - triage captures
 
 ## Exact Live Commands
 

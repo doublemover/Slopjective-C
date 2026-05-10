@@ -74,8 +74,8 @@ implemented:
   `objc3c-frontend-c-api-runner`
 - runtime-side inspection comes from exported testing/debug ABI snapshots that
   are emitted from the real runtime implementation
-- build-owned owner metadata comes from
-  `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+- build-owned owner metadata comes from the generated repo-superclean owner
+  artifact selected by the checked-in build contract
 
 Downstream issues must extend these exact surfaces before inventing new ones.
 
@@ -87,23 +87,23 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - runtime library:
   - `artifacts/lib/objc3_runtime.lib`
 - build-emitted owner artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+  - generated repo-superclean owner artifact selected by the checked-in build contract
 - default compile/explain output root:
-  - `tmp/artifacts/compilation/objc3c-native/`
+  - generated native compilation artifact root
 - runtime/debug report roots:
-  - `tmp/reports/runtime/`
-  - `tmp/reports/objc3c-public-workflow/`
-  - `tmp/artifacts/playground/`
-  - `tmp/reports/playground/`
+  - runtime reports
+  - public-workflow reports
+  - playground artifacts
+  - playground reports
 - developer-tooling dump artifacts:
-  - `tmp/reports/objc3c-public-workflow/inspect-compile-observability-summary.json`
-  - `tmp/reports/objc3c-public-workflow/compile-observability.json`
-  - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
-  - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
-  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
-  - `tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json`
-  - `tmp/reports/objc3c-public-workflow/trace-compile-stages-summary.json`
-  - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
+  - compile observability summary
+  - compile observability payload
+  - runtime inspector summary
+  - runtime inspector payload
+  - capability explorer payload
+  - runtime inspector benchmark payload
+  - compile-stage trace summary
+  - compile-stage trace payload
 
 ## Exact Live Commands
 
@@ -148,7 +148,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `runtime_metadata_object_inspection_uses_llvm_objdump`
 - live capability-explorer probe contract:
   - `npm run objc3c -- inspect-capability-explorer`
-  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
+  - generated capability-explorer public-workflow payload
   - `capability_demo_consistency`
   - `stdlib/program_surface.json`
   - `showcase/portfolio.json`
@@ -293,8 +293,8 @@ The generated developer-tooling surface must group:
 - formatter execution results and formatted output references
 - debug artifact inspection, breakpoint anchors, and stepping availability
 
-The authoritative report family lives under `tmp/reports/developer-tooling/`
-and must be produced by the public runner plus replayable checked-in scripts.
+The developer-tooling report family is transient output produced by the public
+runner plus replayable checked-in scripts. It does not own capability claims.
 
 The current generator for the combined surface is reached through:
 

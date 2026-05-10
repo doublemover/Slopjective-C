@@ -49,8 +49,8 @@ tables or examples.
 | `objc3c-full-envelope-dashboard-summary-v1.schema.json` | Full-envelope claimability dashboard summaries over support, conformance, release, performance, and trust evidence. |
 | `objc3c-developer-tooling-editor-surface-v1.schema.json` | Combined editor tooling surface summaries for diagnostics, navigation, formatting, debug, and unpublished capability metadata. |
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |
-| `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated evidence, fixtures, and archive references without support-claim inflation. |
-| `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated evidence outputs, and active rejection findings. |
+| `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated outputs, fixtures, and archive references without support-claim inflation. |
+| `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated-output rows, and active rejection findings. |
 
 ## Workflow Registry Schemas
 
@@ -63,7 +63,7 @@ truth for the npm bridge and registry payloads, not local-host aliases.
 | ------ | ---- |
 | `action-registry-v1.schema.json` | Public workflow action registry payloads and capability-boundary fields exposed by `npm run objc3c -- --list-json`. |
 | `schema-index-v1.schema.json` | Machine-readable workflow schema index, registry owner surfaces, and capability boundary schema IDs. |
-| `workflow-report-v1.schema.json` | Public workflow report shape emitted under `tmp/reports/objc3c-public-workflow/`. |
+| `workflow-report-v1.schema.json` | Public workflow report shape emitted under the public-workflow generated-output family. |
 
 The canonical data files are:
 

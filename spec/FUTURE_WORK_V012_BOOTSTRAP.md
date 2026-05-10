@@ -7,7 +7,7 @@ to Lane D shard `planning-issue-191`.
 
 Current hard-cutover overlay: this bootstrap remains an archival planning
 artifact. Current public workflow prose must use `npm run objc3c -- <action>`,
-must keep helper paths and generated reports out of the public command surface,
+must keep helper paths and generated-output reports out of the public command surface,
 and must not reinterpret old carryover/defer language as alternate old-surface,
 alternate acceptance, retired adapter, alias adapter, or retired-source lane
 support.

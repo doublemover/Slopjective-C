@@ -58,7 +58,7 @@ Supported in this boundary:
 - explicit deprecation and support-window policy
 - conversion replay drills over checked-in package and application surfaces
 - revert drills that consume generated update and release-operation metadata
-- soak and aging evidence that can be replayed under `tmp/reports/`
+- soak and aging evidence that can be replayed through generated-output artifacts
 - operator-visible support-window publication through the `npm run objc3c -- <action>` bridge
 
 Not supported in this boundary:
@@ -162,10 +162,8 @@ Replay it with:
 
 - `npm run objc3c -- validate-long-horizon-operations`
 
-Generated machine-owned outputs stay under:
-
-- `tmp/artifacts/long-horizon-operations/`
-- `tmp/reports/long-horizon-operations/`
+Generated machine-owned outputs stay in long-horizon artifact and report
+families selected by checked-in contracts.
 
 No long-horizon claim is supportable unless it can be regenerated from the
 checked-in policy contracts and validated through this artifact contract.
@@ -197,7 +195,7 @@ It maps to:
 - `npm run objc3c -- validate-long-horizon-operations`
 - `npm run objc3c -- publish-long-horizon-operations`
 
-The public workflow validates the generated evidence artifact shape, claim
+The public workflow validates the generated-output artifact shape, claim
 audit, conversion evidence, revert channel coverage, and soak evidence family
 coverage.
 

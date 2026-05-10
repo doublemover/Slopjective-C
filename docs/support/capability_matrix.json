@@ -55,7 +55,7 @@
       "retired mode labels",
       "workflow registry facades",
       "direct helper commands",
-      "generated evidence outputs without matching implemented rows",
+      "generated-output rows without matching implemented rows",
       "compatibility or retired route wording"
     ],
     "owner_only_states": [

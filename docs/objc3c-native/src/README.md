@@ -80,7 +80,7 @@ repo surfaces:
 Explicit non-goals for naming cleanup:
 
 - inventing duplicate owner directories,
-- promoting `tmp/` or `artifacts/` paths into canonical doc inputs,
+- promoting transient output paths into documentation owner inputs,
 - reintroducing milestone-coded, stage-coded, or retired alias names as
   first-class command surfaces.
 
