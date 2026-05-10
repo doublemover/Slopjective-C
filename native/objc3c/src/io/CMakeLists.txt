@@ -8,6 +8,7 @@ add_library(objc3c_json STATIC
   json/json_pointer.cpp
   json/json_pointer_tokens.cpp
   json/json_schema.cpp
+  json/json_schema_array_applicator_dispatch_validation.cpp
   json/json_schema_array_cardinality_validation.cpp
   json/json_schema_array_cardinality_max_items_validation.cpp
   json/json_schema_array_cardinality_min_items_validation.cpp
@@ -17,6 +18,7 @@ add_library(objc3c_json STATIC
   json/json_schema_array_items_element_validation.cpp
   json/json_schema_array_items_keyword_validation.cpp
   json/json_schema_array_items_validation.cpp
+  json/json_schema_array_post_constraint_dispatch_validation.cpp
   json/json_schema_array_uniqueness_duplicates_validation.cpp
   json/json_schema_array_uniqueness_validation.cpp
   json/json_schema_array_validation.cpp
