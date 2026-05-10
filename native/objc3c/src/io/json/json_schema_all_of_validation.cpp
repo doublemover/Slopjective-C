@@ -1,9 +1,7 @@
 #include "io/json/json_schema_all_of_validation.h"
 
-#include <cstddef>
-
-#include "io/json/json_schema_errors.h"
-#include "io/json/json_schema_validation.h"
+#include "io/json/json_schema_all_of_candidate_validation.h"
+#include "io/json/json_schema_all_of_keyword_validation.h"
 
 namespace objc3::io::json {
 
@@ -13,23 +11,17 @@ void ValidateJsonSchemaAllOf(const JsonValue &schema_root,
                              const std::string &instance_path,
                              const std::string &schema_path,
                              JsonSchemaResult &result) {
-  const JsonValue *all_of = schema.Find("allOf");
-  if (all_of != nullptr) {
-    if (!all_of->IsArray()) {
-      AddJsonSchemaContractError(
-          result, "invalid_all_of", JsonSchemaKeywordPath(schema_path, "allOf"),
-          "allOf must be an array of schema objects");
-    } else {
-      const JsonValue::Array &candidates = all_of->AsArray();
-      for (std::size_t i = 0; i < candidates.size(); ++i) {
-        ValidateJsonSchemaNode(schema_root, candidates[i], payload,
-                               instance_path,
-                               JsonSchemaArrayElementPath(schema_path, "allOf",
-                                                          i),
-                               result);
-      }
-    }
+  const JsonSchemaAllOfKeywordValidation all_of =
+      ValidateJsonSchemaAllOfKeyword(schema, schema_path, result);
+  if (all_of.value == nullptr) {
+    return;
   }
+  if (!all_of.valid) {
+    return;
+  }
+  ValidateJsonSchemaAllOfCandidates(schema_root, all_of.value->AsArray(),
+                                    payload, instance_path, schema_path,
+                                    result);
 }
 
 }  // namespace objc3::io::json
