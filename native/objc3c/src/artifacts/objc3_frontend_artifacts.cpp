@@ -14,6 +14,7 @@
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_concurrency_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
 #include "artifacts/objc3_frontend_artifact_cross_module_manifest_surfaces.h"
@@ -231,6 +232,7 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     WriteExecutableRuntimeMetadataManifestSurfaces;
 using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
+using objc3::artifacts::frontend::WriteConcurrencyManifestSurfaces;
 using objc3::artifacts::frontend::WriteCrossModuleManifestSurfaces;
 using objc3::artifacts::frontend::WriteDispatchManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
@@ -4969,35 +4971,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       dispatch_dispatch_control_lowering_contract,
       dispatch_dispatch_control_lowering_replay_key,
       dispatch_dispatch_metadata_interface_preservation_summary);
+  WriteConcurrencyManifestSurfaces(
+      manifest, concurrency_actor_member_isolation_source_closure_summary,
+      concurrency_actor_isolation_sendable_semantic_model_summary,
+      concurrency_actor_isolation_sendability_enforcement_summary,
+      concurrency_actor_race_hazard_escape_diagnostics_summary,
+      concurrency_actor_lowering_metadata_contract,
+      concurrency_actor_lowering_metadata_replay_key,
+      concurrency_task_group_cancellation_source_closure_summary,
+      concurrency_async_effect_suspension_semantic_model_summary,
+      concurrency_task_executor_cancellation_semantic_model_summary);
   manifest
-            << ",\"objc_concurrency_actor_member_and_isolation_source_closure\":"
-            << BuildConcurrencyActorMemberIsolationSourceClosureSummaryJson(
-                   concurrency_actor_member_isolation_source_closure_summary)
-           << ",\"objc_concurrency_actor_isolation_and_sendable_semantic_model\":"
-           << BuildConcurrencyActorIsolationSendableSemanticModelSummaryJson(
-                  concurrency_actor_isolation_sendable_semantic_model_summary)
-           << ",\"objc_concurrency_actor_isolation_and_sendability_enforcement\":"
-           << BuildConcurrencyActorIsolationSendabilityEnforcementSummaryJson(
-                  concurrency_actor_isolation_sendability_enforcement_summary)
-           << ",\"objc_concurrency_actor_race_hazard_and_escape_diagnostics\":"
-           << BuildConcurrencyActorRaceHazardEscapeDiagnosticsSummaryJson(
-                  concurrency_actor_race_hazard_escape_diagnostics_summary)
-           << ",\"objc_concurrency_actor_lowering_and_metadata_contract\":"
-           << BuildConcurrencyActorLoweringMetadataContractJson(
-                  concurrency_actor_member_isolation_source_closure_summary,
-                  concurrency_actor_isolation_sendability_enforcement_summary,
-                  concurrency_actor_race_hazard_escape_diagnostics_summary,
-                  concurrency_actor_lowering_metadata_contract,
-                  concurrency_actor_lowering_metadata_replay_key)
-           << ",\"objc_concurrency_task_group_and_cancellation_source_closure\":"
-           << BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson(
-                  concurrency_task_group_cancellation_source_closure_summary)
-           << ",\"objc_concurrency_async_effect_and_suspension_semantic_model\":"
-           << BuildConcurrencyAsyncEffectSuspensionSemanticModelSummaryJson(
-                  concurrency_async_effect_suspension_semantic_model_summary)
-           << ",\"objc_concurrency_task_executor_and_cancellation_semantic_model\":"
-           << BuildConcurrencyTaskExecutorCancellationSemanticModelSummaryJson(
-                  concurrency_task_executor_cancellation_semantic_model_summary)
            << ",\"objc_ownership_system_extension_semantic_model\":"
            << BuildOwnershipSystemExtensionSemanticModelSummaryJson(
                   ownership_system_extension_semantic_model_summary)
