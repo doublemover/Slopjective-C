@@ -9,6 +9,7 @@
 #include "ir/objc3_ir_frontend_metadata_block.h"
 #include "ir/objc3_ir_frontend_metadata_dispatch.h"
 #include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
+#include "ir/objc3_ir_frontend_metadata_module_source_linkage.h"
 #include "ir/objc3_ir_frontend_metadata_ownership.h"
 #include "ir/objc3_ir_frontend_metadata_pipeline_readiness.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_bundles.h"
@@ -26,7 +27,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendDispatchMetadata,
                                  Objc3IRFrontendOwnershipMetadata,
                                  Objc3IRFrontendBlockMetadata,
-                                 Objc3IRFrontendTypeSystemMetadata {
+                                 Objc3IRFrontendTypeSystemMetadata,
+                                 Objc3IRFrontendModuleSourceLinkageMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -76,53 +78,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
-  std::string lowering_module_import_graph_replay_key;
-  std::size_t module_import_graph_lowering_sites = 0;
-  std::size_t module_import_graph_lowering_import_edge_candidate_sites = 0;
-  std::size_t module_import_graph_lowering_namespace_segment_sites = 0;
-  std::size_t module_import_graph_lowering_object_pointer_type_sites = 0;
-  std::size_t module_import_graph_lowering_pointer_declarator_sites = 0;
-  std::size_t module_import_graph_lowering_normalized_sites = 0;
-  std::size_t module_import_graph_lowering_contract_violation_sites = 0;
-  bool deterministic_module_import_graph_lowering_handoff = false;
-  std::string lowering_namespace_collision_shadowing_replay_key;
-  std::size_t namespace_collision_shadowing_lowering_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_namespace_segment_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_import_edge_candidate_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_object_pointer_type_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_pointer_declarator_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_normalized_sites = 0;
-  std::size_t namespace_collision_shadowing_lowering_contract_violation_sites = 0;
-  bool deterministic_namespace_collision_shadowing_lowering_handoff = false;
-  std::string lowering_public_private_api_partition_replay_key;
-  std::size_t public_private_api_partition_lowering_sites = 0;
-  std::size_t public_private_api_partition_lowering_namespace_segment_sites = 0;
-  std::size_t public_private_api_partition_lowering_import_edge_candidate_sites = 0;
-  std::size_t public_private_api_partition_lowering_object_pointer_type_sites = 0;
-  std::size_t public_private_api_partition_lowering_pointer_declarator_sites = 0;
-  std::size_t public_private_api_partition_lowering_normalized_sites = 0;
-  std::size_t public_private_api_partition_lowering_contract_violation_sites = 0;
-  bool deterministic_public_private_api_partition_lowering_handoff = false;
-  std::string lowering_incremental_module_cache_invalidation_replay_key;
-  std::size_t incremental_module_cache_invalidation_lowering_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_namespace_segment_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_import_edge_candidate_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_object_pointer_type_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_pointer_declarator_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_normalized_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_cache_invalidation_candidate_sites = 0;
-  std::size_t incremental_module_cache_invalidation_lowering_contract_violation_sites = 0;
-  bool deterministic_incremental_module_cache_invalidation_lowering_handoff = false;
-  std::string lowering_cross_module_conformance_replay_key;
-  std::size_t cross_module_conformance_lowering_sites = 0;
-  std::size_t cross_module_conformance_lowering_namespace_segment_sites = 0;
-  std::size_t cross_module_conformance_lowering_import_edge_candidate_sites = 0;
-  std::size_t cross_module_conformance_lowering_object_pointer_type_sites = 0;
-  std::size_t cross_module_conformance_lowering_pointer_declarator_sites = 0;
-  std::size_t cross_module_conformance_lowering_normalized_sites = 0;
-  std::size_t cross_module_conformance_lowering_cache_invalidation_candidate_sites = 0;
-  std::size_t cross_module_conformance_lowering_contract_violation_sites = 0;
-  bool deterministic_cross_module_conformance_lowering_handoff = false;
   std::string lowering_error_handling_throws_abi_propagation_replay_key;
   std::string lowering_throws_propagation_replay_key;
   std::string lowering_result_like_replay_key;
