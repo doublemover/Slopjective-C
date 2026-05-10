@@ -251,19 +251,6 @@ static bool IsDispatchEffectivelyDirectMethod(const Objc3MethodInfo &method,
 }
 
 template <typename CallableDeclT>
-static bool HasDispatchCallableDispatchIntentAttributes(
-    const CallableDeclT &decl) {
-  return decl.objc_direct_declared || decl.objc_final_declared ||
-         decl.objc_dynamic_declared;
-}
-
-static bool HasDispatchContainerDispatchIntentAttributes(
-    const Objc3InterfaceDecl &decl) {
-  return decl.objc_direct_members_declared || decl.objc_final_declared ||
-         decl.objc_sealed_declared;
-}
-
-template <typename CallableDeclT>
 static void DiagnoseDispatchCallableDispatchIntentConflicts(
     const CallableDeclT &decl, const std::string &callable_label,
     std::vector<std::string> &diagnostics) {

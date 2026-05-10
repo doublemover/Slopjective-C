@@ -1,3 +1,5 @@
+#include "sema/objc3_semantic_dispatch_intent_helpers.h"
+
 #include "sema/objc3_semantic_passes_type_baseline_and_feature_claims.inc"
 #include "sema/objc3_semantic_passes_concurrency_and_ownership_diagnostics.inc"
 #include "sema/objc3_semantic_passes_ownership_and_dispatch_helpers.inc"

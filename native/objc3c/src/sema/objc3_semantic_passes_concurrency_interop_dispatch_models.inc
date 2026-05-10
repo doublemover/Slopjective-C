@@ -495,12 +495,6 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
   return summary;
 }
 
-template <typename CallableDeclT>
-static bool HasDispatchCallableDispatchIntentAttributes(
-    const CallableDeclT &decl);
-static bool HasDispatchContainerDispatchIntentAttributes(
-    const Objc3InterfaceDecl &decl);
-
 Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
 BuildMetaprogrammingExpansionBehaviorSemanticModelSummary(
     const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
