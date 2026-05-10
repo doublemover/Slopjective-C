@@ -1,16 +1,9 @@
-#!/usr/bin/env python3
-"""Stable entrypoint for docs/objc3c-native fragment stitching."""
+"""Builder package for the Objective-C 3 native implementation docs."""
 
 from __future__ import annotations
 
-import sys as _sys
-from pathlib import Path as _Path
-
-_SCRIPTS_DIR = _Path(__file__).resolve().parent
-if str(_SCRIPTS_DIR) not in _sys.path:
-    _sys.path.insert(0, str(_SCRIPTS_DIR))
-
-from objc3c_native_docs_builder import (  # noqa: E402
+from .cli import build_docs, build_parser, check_contract, check_drift, main
+from .constants import (
     FRAGMENT_ORDER,
     LINT_DISABLE_LINE,
     ORDER_LINE_RE,
@@ -19,16 +12,13 @@ from objc3c_native_docs_builder import (  # noqa: E402
     REQUIRED_HEADINGS,
     ROOT,
     SRC_DIR,
-    ContractCheckResult,
-    build_docs,
-    build_parser,
-    check_contract,
-    check_drift,
+)
+from .models import ContractCheckResult
+from .output_writing import output_digest
+from .section_rendering import print_diff_preview
+from .source_loading import (
     find_unknown_fragments,
-    main,
-    output_digest,
     parse_order_from_readme,
-    print_diff_preview,
     read_fragment_bytes,
     required_fragment_paths,
     stitch_fragments,
@@ -61,7 +51,3 @@ __all__ = [
     "validate_readme_contract",
     "validate_source_contract",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
