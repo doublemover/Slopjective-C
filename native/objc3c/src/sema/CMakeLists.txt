@@ -23,7 +23,7 @@ add_library(objc3c_sema_contract_flow STATIC
   objc3_sema_pass_manager_control_binding_validation_flow.cpp
   objc3_sema_pass_manager_concurrency_publication_flow.cpp
   objc3_sema_pass_manager_core_publication_flow.cpp
-  objc3_sema_pass_manager_contract_flow.cpp
+  objc3_sema_pass_manager_dispatch_runtime_arc_validation_flow.cpp
   objc3_sema_pass_manager_intermodule_flow.cpp
   objc3_sema_pass_manager_module_publication_flow.cpp
   objc3_sema_pass_manager_parser_publication_flow.cpp
