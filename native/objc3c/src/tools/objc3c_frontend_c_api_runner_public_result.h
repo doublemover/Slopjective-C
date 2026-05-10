@@ -5,6 +5,7 @@
 #include "libobjc3c_frontend/c_api.h"
 #include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_options.h"
+#include "tools/objc3c_frontend_c_api_runner_public_result_diagnostics.h"
 #include "tools/objc3c_frontend_c_api_runner_public_result_ownership.h"
 #include "tools/objc3c_frontend_c_api_runner_result_error_snapshot.h"
 
@@ -15,9 +16,7 @@ struct FrontendCApiRunnerPublicResultView {
   bool success = false;
   bool semantic_skipped = false;
   FrontendCApiRunnerArtifactPathView paths;
-  std::string last_error;
-  std::string result_error_message;
-  bool result_error_message_present = false;
+  FrontendCApiRunnerPublicResultDiagnostics diagnostics;
   FrontendCApiRunnerCOwnershipView c_api_ownership;
 };
 

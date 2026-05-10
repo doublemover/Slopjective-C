@@ -17,7 +17,7 @@ void WriteFrontendCApiRunnerSummaryObservabilityRuntimeBonusSections(
       public_result.paths.summary,
       result,
       status,
-      public_result.result_error_message,
+      public_result.diagnostics.result_error_message,
       public_result.paths.runtime_metadata_binary);
   out << ",\n";
   out << "  \"runtime_inspector\": ";

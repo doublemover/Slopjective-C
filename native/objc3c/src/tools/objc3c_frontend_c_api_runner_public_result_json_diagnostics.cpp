@@ -9,11 +9,13 @@ using objc3::io::EscapeJsonString;
 void WriteFrontendCApiRunnerPublicResultDiagnosticJsonRows(
     std::ostream &out,
     const FrontendCApiRunnerPublicResultView &public_result) {
-  out << "  \"last_error\": \"" << EscapeJsonString(public_result.last_error)
+  const FrontendCApiRunnerPublicResultDiagnostics &diagnostics =
+      public_result.diagnostics;
+  out << "  \"last_error\": \"" << EscapeJsonString(diagnostics.last_error)
       << "\",\n";
   out << "  \"result_error_message\": \""
-      << EscapeJsonString(public_result.result_error_message) << "\",\n";
+      << EscapeJsonString(diagnostics.result_error_message) << "\",\n";
   out << "  \"result_error_message_present\": "
-      << (public_result.result_error_message_present ? "true" : "false")
+      << (diagnostics.result_error_message_present ? "true" : "false")
       << ",\n";
 }

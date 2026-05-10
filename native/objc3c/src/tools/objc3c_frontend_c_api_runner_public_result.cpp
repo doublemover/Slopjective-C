@@ -15,10 +15,8 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
   view.success = result.success != 0;
   view.semantic_skipped = result.semantic_skipped != 0;
   view.paths = paths;
-  view.last_error = error_snapshot.last_error;
-  view.result_error_message = error_snapshot.result_error_message.text;
-  view.result_error_message_present =
-      error_snapshot.result_error_message.present;
+  view.diagnostics =
+      BuildFrontendCApiRunnerPublicResultDiagnostics(error_snapshot);
   view.c_api_ownership = BuildFrontendCApiRunnerCOwnershipView(
       options,
       status,

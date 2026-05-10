@@ -22,7 +22,7 @@ bool PublishFrontendCApiRunnerSessionResult(
         summary_path,
         *session_result.compile_result,
         session_result.status,
-        session_result.public_result.result_error_message,
+        session_result.public_result.diagnostics.result_error_message,
         session_result.artifact_paths.runtime_metadata_binary,
         session_result.json);
   } else {
