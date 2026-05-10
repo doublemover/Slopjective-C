@@ -7,7 +7,6 @@ from typing import Any
 from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.validation import contains_all
-from objc3c_type_semantic_model_closure.compiler import diagnostic_matches
 from objc3c_type_semantic_model_closure.compiler import run_compiler
 from objc3c_type_semantic_model_closure.cross_module import compile_cross_module_generic_contract_summary
 from objc3c_type_semantic_model_closure.cross_module import compile_cross_module_nullability_contract_summary
@@ -15,6 +14,7 @@ from objc3c_type_semantic_model_closure.cross_module import compile_cross_module
 from objc3c_type_semantic_model_closure.cross_module import write_drifted_generic_contract_surface
 from objc3c_type_semantic_model_closure.cross_module import write_drifted_nullability_contract_surface
 from objc3c_type_semantic_model_closure.cross_module import write_drifted_protocol_contract_surface
+from objc3c_type_semantic_model_closure.negative import compile_negative_summary
 from objc3c_type_semantic_model_closure.positive import POSITIVE_MIN_COUNTS
 from objc3c_type_semantic_model_closure.positive import REPLAY_KEY_SEGMENTS
 from objc3c_type_semantic_model_closure.positive import ZERO_FIELDS
@@ -354,44 +354,20 @@ def build_summary() -> dict[str, Any]:
     ]
     no_tmp_source_truth = all(not rel(path).startswith("tmp/") for path in source_truth_paths)
 
-    negative_checks = {
-        "negative_fixture_fails_closed": negative_run["exit_code"] != 0,
-        "negative_diagnostics_json_emitted": negative_run["diagnostics_path"] is not None,
-        "negative_duplicate_protocol_diagnostic_observed": diagnostic_matches(negative_run["diagnostics"], "O3S206", 7, 21),
-        "nullability_negative_fixture_fails_closed": nullability_negative_run["exit_code"] != 0,
-        "nullability_negative_diagnostics_json_emitted": nullability_negative_run["diagnostics_path"] is not None,
-        "nullable_to_nonnull_diagnostic_observed": diagnostic_matches(nullability_negative_run["diagnostics"], "O3S227", 9, 23),
-        "protocol_method_nullability_negative_fixture_fails_closed": protocol_method_nullability_negative_run["exit_code"] != 0,
-        "protocol_method_nullability_negative_diagnostics_json_emitted": protocol_method_nullability_negative_run["diagnostics_path"] is not None,
-        "protocol_method_nullability_conflict_diagnostic_observed": diagnostic_matches(protocol_method_nullability_negative_run["diagnostics"], "O3S218", 9, 1),
-        "protocol_property_nullability_negative_fixture_fails_closed": protocol_property_nullability_negative_run["exit_code"] != 0,
-        "protocol_property_nullability_negative_diagnostics_json_emitted": protocol_property_nullability_negative_run["diagnostics_path"] is not None,
-        "protocol_property_nullability_conflict_diagnostic_observed": diagnostic_matches(protocol_property_nullability_negative_run["diagnostics"], "O3S218", 9, 1),
-        "unknown_protocol_composition_negative_fixture_fails_closed": unknown_protocol_composition_negative_run["exit_code"] != 0,
-        "unknown_protocol_composition_negative_diagnostics_json_emitted": unknown_protocol_composition_negative_run["diagnostics_path"] is not None,
-        "unknown_protocol_composition_diagnostic_observed": diagnostic_matches(unknown_protocol_composition_negative_run["diagnostics"], "O3S206", 4, 21),
-        "protocol_qualified_unknown_message_negative_fixture_fails_closed": protocol_qualified_unknown_message_negative_run["exit_code"] != 0,
-        "protocol_qualified_unknown_message_negative_diagnostics_json_emitted": protocol_qualified_unknown_message_negative_run["diagnostics_path"] is not None,
-        "protocol_qualified_unknown_message_diagnostic_observed": diagnostic_matches(protocol_qualified_unknown_message_negative_run["diagnostics"], "O3S216", 18, 18),
-        "typed_object_receiver_unknown_message_negative_fixture_fails_closed": typed_object_receiver_unknown_message_negative_run["exit_code"] != 0,
-        "typed_object_receiver_unknown_message_negative_diagnostics_json_emitted": typed_object_receiver_unknown_message_negative_run["diagnostics_path"] is not None,
-        "typed_object_receiver_unknown_message_diagnostic_observed": diagnostic_matches(typed_object_receiver_unknown_message_negative_run["diagnostics"], "O3S216", 18, 18),
-        "generic_constraint_violation_negative_fixture_fails_closed": generic_constraint_violation_negative_run["exit_code"] != 0,
-        "generic_constraint_violation_negative_diagnostics_json_emitted": generic_constraint_violation_negative_run["diagnostics_path"] is not None,
-        "generic_constraint_violation_diagnostic_observed": diagnostic_matches(generic_constraint_violation_negative_run["diagnostics"], "O3S206", 29, 50),
-        "generic_substitution_unknown_message_negative_fixture_fails_closed": generic_substitution_unknown_message_negative_run["exit_code"] != 0,
-        "generic_substitution_unknown_message_negative_diagnostics_json_emitted": generic_substitution_unknown_message_negative_run["diagnostics_path"] is not None,
-        "generic_substitution_unknown_message_diagnostic_observed": diagnostic_matches(generic_substitution_unknown_message_negative_run["diagnostics"], "O3S216", 23, 18),
-        "nested_generic_constraint_violation_negative_fixture_fails_closed": nested_generic_constraint_violation_negative_run["exit_code"] != 0,
-        "nested_generic_constraint_violation_negative_diagnostics_json_emitted": nested_generic_constraint_violation_negative_run["diagnostics_path"] is not None,
-        "nested_generic_constraint_violation_diagnostic_observed": diagnostic_matches(nested_generic_constraint_violation_negative_run["diagnostics"], "O3S206", 33, 12),
-        "generic_invariant_assignment_negative_fixture_fails_closed": generic_invariant_assignment_negative_run["exit_code"] != 0,
-        "generic_invariant_assignment_negative_diagnostics_json_emitted": generic_invariant_assignment_negative_run["diagnostics_path"] is not None,
-        "generic_invariant_assignment_diagnostic_observed": diagnostic_matches(generic_invariant_assignment_negative_run["diagnostics"], "O3S206", 30, 26),
-        "protocol_generic_unknown_protocol_negative_fixture_fails_closed": protocol_generic_unknown_protocol_negative_run["exit_code"] != 0,
-        "protocol_generic_unknown_protocol_negative_diagnostics_json_emitted": protocol_generic_unknown_protocol_negative_run["diagnostics_path"] is not None,
-        "protocol_generic_unknown_protocol_diagnostic_observed": diagnostic_matches(protocol_generic_unknown_protocol_negative_run["diagnostics"], "O3S206", 10, 12),
-    }
+    negative_checks = compile_negative_summary(
+        negative_run=negative_run,
+        nullability_negative_run=nullability_negative_run,
+        protocol_method_nullability_negative_run=protocol_method_nullability_negative_run,
+        protocol_property_nullability_negative_run=protocol_property_nullability_negative_run,
+        unknown_protocol_composition_negative_run=unknown_protocol_composition_negative_run,
+        protocol_qualified_unknown_message_negative_run=protocol_qualified_unknown_message_negative_run,
+        typed_object_receiver_unknown_message_negative_run=typed_object_receiver_unknown_message_negative_run,
+        generic_constraint_violation_negative_run=generic_constraint_violation_negative_run,
+        generic_substitution_unknown_message_negative_run=generic_substitution_unknown_message_negative_run,
+        nested_generic_constraint_violation_negative_run=nested_generic_constraint_violation_negative_run,
+        generic_invariant_assignment_negative_run=generic_invariant_assignment_negative_run,
+        protocol_generic_unknown_protocol_negative_run=protocol_generic_unknown_protocol_negative_run,
+    )
 
     conformance_checks = {
         "semantic_manifest_indexes_typ_8013_01": "TYP-8013-01.json" in manifest_text,
