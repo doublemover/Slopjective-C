@@ -65,6 +65,8 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_runner.cpp
   frontend_runtime_export_enforcement_helpers.cpp
   frontend_runtime_export_enforcement_helpers_diagnostics.cpp
+  frontend_runtime_export_enforcement_helpers_diagnostics_duplicates.cpp
+  frontend_runtime_export_enforcement_helpers_diagnostics_incomplete.cpp
   frontend_runtime_export_enforcement_helpers_duplicate_identity.cpp
   frontend_runtime_export_enforcement_helpers_failure.cpp
   frontend_runtime_export_enforcement_helpers_incomplete_declarations.cpp
@@ -159,6 +161,7 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_runner.h
   frontend_phase_publication_helpers.h
   frontend_runtime_export_enforcement_helpers.h
+  frontend_runtime_export_enforcement_helpers_diagnostics_owners.h
   frontend_runtime_export_enforcement_helpers_owners.h
   frontend_runtime_metadata_boundary_helpers.h
   frontend_runtime_metadata_boundary_helpers_owners.h
