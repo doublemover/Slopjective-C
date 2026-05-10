@@ -33,6 +33,7 @@ add_library(objc3c_pipeline STATIC
   frontend_concurrency_source_closure_helpers.cpp
   frontend_control_flow_source_closure_helpers.cpp
   frontend_control_flow_source_closure_helpers_stmt_sites.cpp
+  frontend_concurrency_async_source_closure_helpers.cpp
   frontend_dispatch_source_completion_helpers.cpp
   frontend_error_handling_source_closure_helpers.cpp
   frontend_interop_source_closure_helpers.cpp
@@ -84,6 +85,7 @@ add_library(objc3c_pipeline STATIC
   frontend_source_closure_replay_keys_metaprogramming_interop.cpp
   frontend_source_closure_replay_keys_ownership_dispatch.cpp
   frontend_source_closure_replay_keys_tooling_symbol_graph.cpp
+  frontend_concurrency_task_source_closure_helpers.cpp
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
   readiness/objc3_final_readiness_gate_advanced_keys.cpp
