@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <string>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_function_decl_nodes.h"
+#include "ast/objc3_ast_method_decl_nodes.h"
 
 namespace objc3c::parse {
 

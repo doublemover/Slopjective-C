@@ -2,6 +2,6 @@
 
 #include <string>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_function_decl_nodes.h"
 
 std::string Objc3FunctionSignatureReplayKey(const FunctionDecl &function);

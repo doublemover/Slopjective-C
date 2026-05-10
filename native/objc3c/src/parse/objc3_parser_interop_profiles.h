@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_property_decl_nodes.h"
 
 namespace objc3c::parse {
 
