@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
-"""Emit an integrated evidence bundle for the live objc3 runtime architecture."""
+"""Importable runtime architecture proof-packet package."""
 
 from __future__ import annotations
 
-from objc3c_runtime_architecture_proof_packet import (
+from .cli import main
+from .contracts import (
     CLAIM_BOUNDARY_CONTRACT_ID,
     HARNESS_SCRIPT,
     HARNESS_SUMMARY_CONTRACT_ID,
@@ -15,18 +15,20 @@ from objc3c_runtime_architecture_proof_packet import (
     PUBLIC_SMOKE_SUITE_ID,
     ROOT,
     SURFACE_KEYS,
-    ValidatedRuntimeArchitectureProofPacket,
-    build_proof_packet,
-    collect_child_report_paths,
-    expect,
+)
+from .fixtures import (
     load_harness_summary,
     load_public_workflow_report,
     load_runtime_acceptance_report,
-    main,
-    render_summary_path,
     run_public_smoke_harness,
+)
+from .rendering import render_summary_path, write_proof_packet
+from .summary import build_proof_packet
+from .validation_checks import (
+    ValidatedRuntimeArchitectureProofPacket,
+    collect_child_report_paths,
+    expect,
     validate_runtime_architecture_proof_packet,
-    write_proof_packet,
 )
 
 __all__ = [
@@ -54,7 +56,3 @@ __all__ = [
     "validate_runtime_architecture_proof_packet",
     "write_proof_packet",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
