@@ -279,6 +279,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_bootstrap_api_artifacts.cpp
   objc3_frontend_runtime_bootstrap_artifacts.cpp
   objc3_frontend_runtime_bootstrap_artifacts.h
+  objc3_frontend_runtime_bootstrap_json.cpp
   objc3_frontend_runtime_bootstrap_legality_failure_artifacts.cpp
   objc3_frontend_runtime_bootstrap_legality_semantics_artifacts.cpp
   objc3_frontend_runtime_bootstrap_restart_semantics_artifacts.cpp
