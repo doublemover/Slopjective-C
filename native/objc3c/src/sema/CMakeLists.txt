@@ -150,6 +150,7 @@ add_library(objc3c_semantic_passes_core STATIC
   objc3_semantic_effects_diagnostics_model_summaries.cpp
   objc3_semantic_interop_runtime_parity_summary.cpp
   objc3_semantic_passes.cpp
+  objc3_semantic_swift_interop_model_summary.cpp
 )
 objc3c_apply_build_defaults(objc3c_semantic_passes_core)
 objc3c_apply_llvm_direct_config(objc3c_semantic_passes_core)
