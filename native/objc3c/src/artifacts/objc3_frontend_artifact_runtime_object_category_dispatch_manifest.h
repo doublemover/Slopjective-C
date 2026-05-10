@@ -3,15 +3,13 @@
 #include <iosfwd>
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_runtime_object_category_dispatch_manifest.h"
-
 struct Objc3RuntimeBootstrapApiSummary;
 struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
 
 namespace objc3::artifacts::frontend {
 
-void WriteRuntimeClassMetaclassProtocolRealizationSurface(
+void WriteRuntimeCategoryAttachmentMergedDispatchSurface(
     std::ostream &manifest,
     const std::string &runtime_state_publication_emit_prefix,
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary
