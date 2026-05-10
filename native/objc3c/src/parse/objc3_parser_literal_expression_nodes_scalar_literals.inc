@@ -1,0 +1,36 @@
+std::unique_ptr<Expr> BuildObjc3NumericLiteralExpr(
+    int value,
+    const Objc3LexToken &token) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::Number;
+  literal->number = value;
+  literal->line = token.line;
+  literal->column = token.column;
+  return literal;
+}
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExpr(
+    bool value,
+    const Objc3LexToken &token) {
+  return BuildObjc3BoolLiteralExprAt(value, token.line, token.column);
+}
+
+std::unique_ptr<Expr> BuildObjc3BoolLiteralExprAt(
+    bool value,
+    unsigned line,
+    unsigned column) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::BoolLiteral;
+  literal->bool_value = value;
+  literal->line = line;
+  literal->column = column;
+  return literal;
+}
+
+std::unique_ptr<Expr> BuildObjc3NilLiteralExpr(const Objc3LexToken &token) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::NilLiteral;
+  literal->line = token.line;
+  literal->column = token.column;
+  return literal;
+}
