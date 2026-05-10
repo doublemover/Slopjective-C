@@ -85,6 +85,7 @@ add_library(objc3c_ir_publication_surface STATIC
   objc3_ir_module_metadata_publication_lowering_profiles.cpp
   objc3_ir_module_metadata_publication_prelude.cpp
   objc3_ir_module_metadata_publication_runtime_gates.cpp
+  objc3_ir_module_metadata_publication_tail.cpp
   objc3_ir_property_metadata_comment_emission.cpp
   objc3_ir_static_data_emission.cpp
   objc3_ir_surface_serialization.cpp
