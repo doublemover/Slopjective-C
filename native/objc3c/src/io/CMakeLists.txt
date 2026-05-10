@@ -343,6 +343,7 @@ target_link_libraries(objc3c_runtime_abi_cross_module PUBLIC
 add_library(objc3c_runtime_abi_metadata STATIC
   objc3_runtime_artifact_contracts.cpp
   objc3_runtime_artifact_contracts.h
+  objc3_runtime_artifact_contracts_translation_unit.cpp
   objc3_runtime_metadata_discovery_document.cpp
   objc3_runtime_metadata_discovery_document.h
   objc3_runtime_metadata_linker_retention_artifact.cpp
