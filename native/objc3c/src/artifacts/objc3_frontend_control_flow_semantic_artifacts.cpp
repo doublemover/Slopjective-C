@@ -1,6 +1,6 @@
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 
-#include "lower/contracts/control_flow_safety_lowering_contracts.h"
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {

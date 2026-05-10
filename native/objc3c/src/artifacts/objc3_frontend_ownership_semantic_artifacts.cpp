@@ -4,12 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "ast/objc3_ast_core.h"
 #include "ast/objc3_ast_declarations.h"
-#include "lower/contracts/block_abi_lowering_contract_records.h"
-#include "lower/contracts/block_source_closure_contracts.h"
-#include "lower/contracts/lowering_arc_contracts.h"
-#include "lower/contracts/ownership_system_extension_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {

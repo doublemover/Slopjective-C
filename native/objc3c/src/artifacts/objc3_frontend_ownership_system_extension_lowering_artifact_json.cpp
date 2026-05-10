@@ -3,8 +3,8 @@
 #include <sstream>
 #include <string>
 
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/ownership_system_extension_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {

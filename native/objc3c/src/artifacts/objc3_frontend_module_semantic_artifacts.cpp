@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {

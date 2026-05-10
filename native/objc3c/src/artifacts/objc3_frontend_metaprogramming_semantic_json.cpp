@@ -3,9 +3,9 @@
 #include <sstream>
 #include <vector>
 
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "io/json/json_writer.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/metaprogramming_expansion_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {

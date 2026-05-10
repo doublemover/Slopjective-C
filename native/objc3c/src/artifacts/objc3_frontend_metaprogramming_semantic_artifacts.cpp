@@ -1,7 +1,6 @@
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
 
-#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
-#include "lower/contracts/metaprogramming_expansion_lowering_contracts.h"
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

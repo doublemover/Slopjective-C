@@ -4,10 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "io/json/json_writer.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/interop_ffi_metadata_contracts.h"
-#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_runtime_import_surface.h"
 

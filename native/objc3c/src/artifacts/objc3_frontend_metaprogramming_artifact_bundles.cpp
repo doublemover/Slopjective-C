@@ -9,8 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "ast/objc3_ast_declarations.h"
-#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
