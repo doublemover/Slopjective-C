@@ -304,6 +304,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_type_system_manifest_surfaces.h
   objc3_frontend_artifact_type_system_metadata.cpp
   objc3_frontend_artifact_type_system_metadata.h
+  objc3_frontend_artifact_tooling_manifest_surfaces.cpp
+  objc3_frontend_artifact_tooling_manifest_surfaces.h
   objc3_frontend_artifacts.cpp
   objc3_frontend_artifacts.h
   objc3_frontend_artifacts_runtime_manifest_surfaces.cpp

@@ -51,6 +51,7 @@
 #include "artifacts/objc3_frontend_artifact_source_closure_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
+#include "artifacts/objc3_frontend_artifact_tooling_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_type_system_metadata.h"
@@ -230,6 +231,7 @@ using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
 using objc3::artifacts::frontend::WriteCrossModuleManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
 using objc3::artifacts::frontend::WriteSourceClosureManifestSurfaces;
+using objc3::artifacts::frontend::WriteToolingManifestSurfaces;
 using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
 using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
@@ -4921,31 +4923,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       metaprogramming_property_behavior_source_completion_summary,
       interop_foreign_import_source_closure_summary,
       interop_cpp_swift_interop_annotation_source_completion_summary);
+  WriteToolingManifestSurfaces(
+      manifest, tooling_diagnostics_migrator_source_inventory_summary,
+      tooling_migration_canonicalization_source_completion_summary,
+      tooling_diagnostic_taxonomy_portability_contract_summary,
+      tooling_feature_specific_fixit_synthesis_summary,
+      tooling_legacy_canonical_migration_semantics_summary,
+      tooling_machine_readable_conformance_report_contract_summary,
+      tooling_feature_aware_conformance_report_emission_summary,
+      tooling_corpus_sharding_release_evidence_packaging_summary);
   manifest
-           << ",\"objc_tooling_diagnostics_fixit_and_migrator_source_inventory\":"
-                  << BuildToolingDiagnosticsMigratorSourceInventorySummaryJson(
-                  tooling_diagnostics_migrator_source_inventory_summary)
-           << ",\"objc_tooling_migration_and_canonicalization_source_completion\":"
-                  << BuildToolingMigrationCanonicalizationSourceCompletionSummaryJson(
-                  tooling_migration_canonicalization_source_completion_summary)
-           << ",\"objc_tooling_diagnostic_taxonomy_and_portability_contract\":"
-                  << BuildToolingDiagnosticTaxonomyPortabilityContractSummaryJson(
-                  tooling_diagnostic_taxonomy_portability_contract_summary)
-           << ",\"objc_tooling_feature_specific_fixit_synthesis\":"
-                  << BuildToolingFeatureSpecificFixitSynthesisSummaryJson(
-                  tooling_feature_specific_fixit_synthesis_summary)
-           << ",\"objc_tooling_legacy_canonical_migration_semantics\":"
-                  << BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
-                      tooling_legacy_canonical_migration_semantics_summary)
-           << ",\"objc_tooling_machine_readable_conformance_report_contract\":"
-                  << BuildToolingMachineReadableConformanceReportContractSummaryJson(
-                      tooling_machine_readable_conformance_report_contract_summary)
-           << ",\"objc_tooling_feature_aware_conformance_report_emission\":"
-                  << BuildToolingFeatureAwareConformanceReportEmissionSummaryJson(
-                      tooling_feature_aware_conformance_report_emission_summary)
-           << ",\"objc_tooling_corpus_sharding_release_evidence_packaging\":"
-                  << BuildToolingCorpusShardingReleaseEvidencePackagingSummaryJson(
-                      tooling_corpus_sharding_release_evidence_packaging_summary)
            << ",\"objc_interop_interop_semantic_model\":"
            << BuildInteropInteropSemanticModelSummaryJson(
                   interop_interop_semantic_model_summary)
