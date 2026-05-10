@@ -323,6 +323,8 @@ add_library(objc3c_runtime_abi_cross_module STATIC
   objc3_cross_module_runtime_link_plan_ordering.h
   objc3_cross_module_runtime_link_plan_sections.cpp
   objc3_cross_module_runtime_link_plan_sections.h
+  objc3_cross_module_runtime_link_plan_sections_validation.cpp
+  objc3_cross_module_runtime_link_plan_sections_validation.h
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi_cross_module)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi_cross_module)
