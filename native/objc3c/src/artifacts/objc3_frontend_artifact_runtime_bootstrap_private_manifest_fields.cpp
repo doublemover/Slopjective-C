@@ -4,12 +4,31 @@
 
 #include "ast/objc3_ast_contracts.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/runtime_bootstrap_image_root_contracts.h"
-#include "lower/contracts/runtime_bootstrap_link_discovery_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 
 namespace objc3::artifacts::frontend {
+namespace {
+
+inline constexpr const char
+    *kObjc3ArtifactRuntimeArchiveStaticLinkDiscoveryContractId =
+        "objc3c.runtime.metadata.archive.and.static.link.discovery.v1";
+inline constexpr const char *kObjc3ArtifactRuntimeArchiveStaticLinkMergeModel =
+    "deduplicated-driver-flag-fan-in";
+inline constexpr const char
+    *kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusContractId =
+        "objc3c.runtime.bootstrap.archive.static.link.replay.corpus.v1";
+inline constexpr const char
+    *kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusModel =
+        "merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes";
+inline constexpr const char
+    *kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel =
+        "plain-link-omits-bootstrap-images-retained-link-replays-them";
+inline constexpr const char
+    *kObjc3ArtifactRuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId =
+        "objc3c.runtime.bootstrap.registration.descriptor.image.root.lowering.v1";
+
+}  // namespace
 
 void WriteRuntimeBootstrapPrivateManifestFields(
     std::ostream &manifest,
@@ -100,10 +119,10 @@ void WriteRuntimeBootstrapPrivateManifestFields(
            << ",\"objc_runtime_bootstrap_archive_static_link_replay_corpus\":{"
            << "\"contract_id\":\""
            << objc3::io::EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId)
+                  kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusContractId)
            << "\",\"archive_static_link_discovery_contract_id\":\""
            << objc3::io::EscapeJsonString(
-                  kObjc3RuntimeArchiveStaticLinkDiscoveryContractId)
+                  kObjc3ArtifactRuntimeArchiveStaticLinkDiscoveryContractId)
            << "\",\"bootstrap_failure_restart_contract_id\":\""
            << objc3::io::EscapeJsonString(
                   runtime_bootstrap_failure_restart_semantics.contract_id)
@@ -111,15 +130,15 @@ void WriteRuntimeBootstrapPrivateManifestFields(
            << objc3::io::EscapeJsonString(runtime_bootstrap_lowering.contract_id)
            << "\",\"registration_descriptor_lowering_contract_id\":\""
            << objc3::io::EscapeJsonString(
-                  kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId)
+                  kObjc3ArtifactRuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId)
            << "\",\"corpus_model\":\""
            << objc3::io::EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel)
+                  kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusModel)
            << "\",\"binary_proof_model\":\""
            << objc3::io::EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel)
+                  kObjc3ArtifactRuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel)
            << "\",\"merge_model\":\""
-           << objc3::io::EscapeJsonString(kObjc3RuntimeArchiveStaticLinkMergeModel)
+           << objc3::io::EscapeJsonString(kObjc3ArtifactRuntimeArchiveStaticLinkMergeModel)
            << "\",\"translation_unit_identity_key\":\""
            << objc3::io::EscapeJsonString(translation_unit_identity_key)
            << "\",\"registration_descriptor_identifier\":\""
