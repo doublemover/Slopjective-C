@@ -55,6 +55,7 @@ target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_flow_diagnostics_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_flow.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_closeout_surface_records.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_publication_contract.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_parity_validation_records.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_sema_pass_manager_contract_results.h
