@@ -1,0 +1,16 @@
+#pragma once
+
+#include <cstddef>
+#include <iosfwd>
+
+struct Objc3IRFrontendMetadata;
+
+void EmitObjc3IRDispatchOwnershipMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata,
+    std::size_t synthesized_property_accessor_count, std::ostringstream &out);
+
+void EmitObjc3IRBlockArcMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRErrorHandlingMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
