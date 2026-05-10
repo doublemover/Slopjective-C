@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-annualization-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_annualization/baseline_ok.json"
+  ],
+  "support_boundary": "e2e/governance ownership covers only the canonical annualization baseline scenario: annual review due and completed timestamps are present, completion precedes the due timestamp, cadence anchor is present, quorum has five present voters, three vendors, spec editor and tooling owner present, recusal ratio 0.2, and publication windows match the baseline deadlines. Negative scenario files are rejection or strict-error evidence, not alternate positive annualization truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "scenario:baseline_ok",
+    "annual_review_due_utc:2026-01-31T23:59:59Z",
+    "annual_review_completed_utc:2026-01-24T17:00:00Z",
+    "cadence.utc_anchor:2026-02-26T16:00:00Z",
+    "quorum.present_voters:5",
+    "quorum.vendor_count:3",
+    "quorum.spec_editor_present:true",
+    "quorum.tooling_owner_present:true",
+    "quorum.recusal_ratio:0.2",
+    "publication_windows.attestation_deadline_utc:2026-02-26T20:00:00Z",
+    "publication_windows.minutes_deadline_utc:2026-02-27T16:00:00Z",
+    "publication_windows.packet_deadline_utc:2026-03-01T16:00:00Z"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/governance_annualization/baseline_ok.json",
+  "retired_surface_rule": "missing-field positives, quorum-fail positives, W2 deadline-regression positives, missing-owner escalation positives, expired-exception positives, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode annualization rows, shim annualization rows, fallback annualization rows, compatibility annualization rows, migration-only rows, wrapper-only e2e rows, and filename-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

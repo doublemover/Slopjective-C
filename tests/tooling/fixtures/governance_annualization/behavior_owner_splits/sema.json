@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-annualization-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_annualization"
+  ],
+  "support_boundary": "sema ownership is non-positive for governance-annualization fixtures. Annual review timestamps, cadence anchors, quorum values, publication deadlines, exception rows, and escalation records are governance annualization state, not Objective-C 3 semantic behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:governance_annualization",
+    "scenario:baseline_ok",
+    "scenario:missing_field",
+    "scenario:quorum_fail",
+    "scenario:w2_deadline_regression",
+    "scenario:w2_escalation_missing_owner",
+    "scenario:w2_exception_expired",
+    "compiler_phase_boundary:no-sema-positive-truth-from-governance-annualization",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic governance-annualization rows, shim semantic rows, fallback semantic rows, compatibility semantic rows, migration-only semantic rows, generated-only semantic rows, report-only semantic rows, and governance-state semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-annualization-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_annualization"
+  ],
+  "support_boundary": "lowering ownership is non-positive for governance-annualization fixtures. The family contains JSON governance annualization scenario snapshots only, with no checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/governance_annualization/**/*-lowering.expect.txt",
+    "tooling_fixture_family:governance_annualization",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-governance-annualization",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering governance-annualization rows, shim lowering rows, fallback lowering rows, compatibility lowering rows, migration-only lowering rows, generated-only lowering rows, report-only lowering rows, and annualization-state lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

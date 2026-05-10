@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-annualization-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_annualization"
+  ],
+  "support_boundary": "runtime ownership is non-positive for governance-annualization fixtures. Quorum counts, annual review dates, publication deadlines, exceptions, and escalations are governance state, not native runtime dispatch, storage, object-model, or ABI support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:governance_annualization",
+    "tooling_terms:annual_review_due_utc,annual_review_completed_utc,cadence,quorum,publication_windows,exceptions,escalation_records",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-governance-annualization",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime governance-annualization rows, compatibility runtime rows, shim runtime rows, fallback runtime rows, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, governance-label-only runtime claims, and annualization-state rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

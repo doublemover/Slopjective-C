@@ -1532,6 +1532,40 @@
       "retired_disposition": "governance sustainability owner contracts, budget inventories, waiver registries, stewardship semantics, maintainer review contracts, extension review policies, proposal templates, proposal samples, runbook paths, docs paths, schema paths, tmp report paths, tmp artifact paths, script anchors, command strings, public action labels, package bridge labels, owner-section names, publication projections, blocker projections, generated report paths, evidence schema labels, issue label names, successor issue labels, and execution-order sample rows are resolved through behavior-first phase indexes and governance sustainability provenance before any governance row is cited as support; compiler phase positives are non-positive for this family and governance e2e positives are limited to hand-authored validate/publish governance workflow, budget, waiver, stewardship, maintainer review, extension review, schema surface, and anti-regression contracts, while hosted community infrastructure, registry moderation service, policy-only substitute for executable review evidence, replacement release/security/adoption claims, deprecated roots, milestone-named workflows, checker wrapper tests, lane readiness runners, legacy aliases, numeric milestone checker references, missing source contracts, missing implementation anchors, schema omissions, non-replayable publication artifacts, runtime evidence depending on tmp, expired or unowned waivers, unknown surface drift, missing proposal packets, missing owner/backup, missing support-boundary classification, missing demotion paths, old-mode governance rows, shim governance rows, fallback governance rows, compatibility governance rows, generated-only rows, report-only rows, migration-only rows, runner-only success, workflow-label-only success, proposal-sample-only support, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "governance_annualization_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "governance_annualization_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/governance_annualization_provenance.json"
+      ],
+      "retired_disposition": "governance annualization scenario files, annual review due/completed timestamp fields, cadence utc_anchor values, quorum present_voters/vendor_count/spec_editor_present/tooling_owner_present/recusal_ratio fields, publication window deadline fields, exception ids and status timestamps, escalation ids, linked exception ids, owner strings, opened/response/closed timestamps, empty exception and escalation arrays, and owner-split routing rows are resolved through behavior-first phase indexes and governance annualization provenance before any annualization row is cited as support; compiler phase positives are non-positive for this family and governance e2e positives are limited to the hand-authored baseline_ok scenario with completed annual review, valid cadence anchor, passing quorum, and baseline publication windows, while missing annual_review_completed_utc, failed quorum values, missing spec editor, high recusal ratio, W2 deadline regressions, active escalation records with empty owner, active expired exceptions without renewal, missing-field positives, quorum-fail positives, old-mode annualization rows, shim rows, fallback rows, compatibility rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only annualization checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "security_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/security_hardening/behavior_owner_splits",
