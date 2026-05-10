@@ -126,6 +126,10 @@ target_link_libraries(objc3c_artifacts_frontend_conformance PUBLIC
 add_library(objc3c_artifacts_reports STATIC
   reports/frontend_conformance_report_contracts.cpp
   reports/frontend_conformance_report_contracts.h
+  reports/frontend_conformance_report_contracts_json_helpers.h
+  reports/frontend_conformance_report_lowering.cpp
+  reports/frontend_conformance_report_semantics.cpp
+  reports/frontend_conformance_report_tooling.cpp
   reports/report_dto.h
 )
 objc3c_apply_build_defaults(objc3c_artifacts_reports)
