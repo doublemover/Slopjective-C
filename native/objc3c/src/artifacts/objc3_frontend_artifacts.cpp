@@ -40,6 +40,7 @@
 #include "artifacts/objc3_frontend_artifact_lowering_replay_manifest.h"
 #include "artifacts/objc3_frontend_artifact_manifest_header.h"
 #include "artifacts/objc3_frontend_artifact_manifest_pipeline.h"
+#include "artifacts/objc3_frontend_artifact_manifest_replay_tail.h"
 #include "artifacts/objc3_frontend_artifact_manifest_readiness.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
@@ -3455,169 +3456,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       control_flow_control_flow_semantic_model_summary,
       type_system_type_semantic_model_summary,
       symbol_graph_scope_resolution_summary, function_manifest);
-  manifest << "    }\n";
-  manifest << "  },\n";
-  const objc3::artifacts::frontend::
-      Objc3FrontendArtifactManifestLoweringHeaderFields
-          manifest_lowering_header_fields{
-              vector_signature_functions,
-              property_synthesis_ivar_binding_replay_key,
-              property_synthesis_ivar_binding_contract.deterministic};
-  objc3::artifacts::frontend::
-      AppendObjc3FrontendArtifactManifestLoweringHeader(
-          manifest, options, manifest_lowering_header_fields);
-  const objc3::artifacts::frontend::
-      Objc3RuntimeDispatchTableReflectionRecordLoweringFields
-          runtime_dispatch_table_reflection_record_lowering_fields{
-              message_send_selector_lowering_contract.message_send_sites};
-  const bool dispatch_accessor_deterministic_handoff =
-      property_synthesis_ivar_binding_contract.deterministic &&
-      dispatch_surface_classification_contract.deterministic &&
-      message_send_selector_lowering_contract.deterministic &&
-      runtime_link_host_link_contract.deterministic;
-  objc3::artifacts::frontend::
-      Objc3DispatchAndSynthesizedAccessorLoweringFields
-          dispatch_and_synthesized_accessor_lowering_fields;
-  dispatch_and_synthesized_accessor_lowering_fields.runtime_dispatch_symbol =
-      runtime_link_host_link_contract.runtime_dispatch_symbol;
-  dispatch_and_synthesized_accessor_lowering_fields.runtime_dispatch_arg_slots =
-      runtime_link_host_link_contract.runtime_dispatch_arg_slots;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .runtime_dispatch_declaration_parameter_count =
-      runtime_link_host_link_contract
-          .runtime_dispatch_declaration_parameter_count;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .runtime_dispatch_symbol_matches_lowering =
-      runtime_link_host_link_contract.runtime_dispatch_symbol ==
-          options.lowering.runtime_dispatch_symbol &&
-      runtime_link_host_link_contract.runtime_dispatch_symbol ==
-          runtime_support_library_link_wiring.runtime_dispatch_symbol;
-  dispatch_and_synthesized_accessor_lowering_fields.live_runtime_dispatch_sites =
-      dispatch_surface_classification_contract.instance_dispatch_sites +
-      dispatch_surface_classification_contract.class_dispatch_sites +
-      dispatch_surface_classification_contract.super_dispatch_sites +
-      dispatch_surface_classification_contract.dynamic_dispatch_sites;
-  dispatch_and_synthesized_accessor_lowering_fields.direct_dispatch_sites =
-      dispatch_surface_classification_contract.direct_dispatch_sites;
-  dispatch_and_synthesized_accessor_lowering_fields.message_send_sites =
-      message_send_selector_lowering_contract.message_send_sites;
-  dispatch_and_synthesized_accessor_lowering_fields.property_synthesis_sites =
-      property_synthesis_ivar_binding_contract.property_synthesis_sites;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .property_synthesis_explicit_ivar_bindings =
-      property_synthesis_ivar_binding_contract
-          .property_synthesis_explicit_ivar_bindings;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .property_synthesis_default_ivar_bindings =
-      property_synthesis_ivar_binding_contract
-          .property_synthesis_default_ivar_bindings;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .interface_owned_property_synthesis_sites =
-      property_synthesis_ivar_binding_contract
-          .interface_owned_property_synthesis_sites;
-  dispatch_and_synthesized_accessor_lowering_fields
-      .implementation_property_redeclaration_sites =
-      property_synthesis_ivar_binding_contract
-          .implementation_property_redeclaration_sites;
-  dispatch_and_synthesized_accessor_lowering_fields.ivar_binding_resolved =
-      property_synthesis_ivar_binding_contract.ivar_binding_resolved;
-  dispatch_and_synthesized_accessor_lowering_fields.deterministic_handoff =
-      dispatch_accessor_deterministic_handoff;
-  objc3::artifacts::frontend::Objc3DispatchAccessorRuntimeAbiFields
-      dispatch_accessor_runtime_abi_fields;
-  dispatch_accessor_runtime_abi_fields.runtime_dispatch_symbol =
-      runtime_link_host_link_contract.runtime_dispatch_symbol;
-  dispatch_accessor_runtime_abi_fields.deterministic =
-      dispatch_accessor_deterministic_handoff;
-  const objc3::artifacts::frontend::Objc3StorageAccessorRuntimeAbiFields
-      storage_accessor_runtime_abi_fields{
-          property_synthesis_ivar_binding_contract.deterministic &&
-          runtime_link_host_link_contract.deterministic};
-  objc3::artifacts::frontend::WriteObjc3FrontendRuntimeManifestSurfaces(
-      manifest, runtime_translation_unit_registration_manifest,
-      runtime_metadata_source_records, executable_metadata_source_graph,
-      dispatch_and_synthesized_accessor_lowering_fields,
-      dispatch_accessor_runtime_abi_fields,
-      runtime_dispatch_table_reflection_record_lowering_fields,
-      storage_accessor_runtime_abi_fields,
-      runtime_metadata_section_publication, runtime_bootstrap_api,
-      runtime_bootstrap_semantics,
-      runtime_registration_descriptor_frontend_closure,
-      runtime_registration_descriptor_image_root_source_surface,
-      runtime_bootstrap_lowering, runtime_bootstrap_legality_semantics,
-      runtime_bootstrap_failure_restart_semantics);
-  objc3::artifacts::frontend::WriteObjc3FrontendDispatchReplayManifestEntries(
-      manifest, id_class_sel_object_pointer_typecheck_replay_key,
-      id_class_sel_object_pointer_typecheck_contract,
-      dispatch_surface_classification_replay_key,
-      dispatch_surface_classification_contract,
-      message_send_selector_lowering_replay_key,
-      message_send_selector_lowering_contract,
-      dispatch_abi_marshalling_replay_key, dispatch_abi_marshalling_contract,
-      nil_receiver_semantics_foldability_replay_key,
-      nil_receiver_semantics_foldability_contract,
-      control_flow_control_flow_safety_lowering_replay_key,
-      control_flow_control_flow_safety_lowering_contract,
-      super_dispatch_method_family_replay_key,
-      super_dispatch_method_family_contract, runtime_link_host_link_replay_key,
-      runtime_link_host_link_contract, runtime_support_library_link_wiring);
-  objc3::artifacts::frontend::
-      WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
-          manifest, ownership_qualifier_lowering_replay_key,
-          ownership_qualifier_lowering_contract,
-          retain_release_operation_lowering_replay_key,
-          retain_release_operation_lowering_contract,
-          autoreleasepool_scope_lowering_replay_key,
-          autoreleasepool_scope_lowering_contract,
-          weak_unowned_semantics_lowering_replay_key,
-          weak_unowned_semantics_lowering_contract,
-          arc_diagnostics_fixit_lowering_replay_key,
-          arc_diagnostics_fixit_lowering_contract,
-          block_literal_capture_lowering_replay_key,
-          block_literal_capture_lowering_contract,
-          block_abi_invoke_trampoline_lowering_replay_key,
-          block_abi_invoke_trampoline_lowering_contract,
-          block_storage_escape_lowering_replay_key,
-          block_storage_escape_lowering_contract,
-          block_copy_dispose_lowering_replay_key,
-          block_copy_dispose_lowering_contract,
-          block_determinism_perf_baseline_lowering_replay_key,
-          block_determinism_perf_baseline_lowering_contract);
-  objc3::artifacts::frontend::
-      WriteObjc3FrontendTypeAndModuleReplayManifestEntries(
-          manifest, lightweight_generic_constraint_lowering_replay_key,
-          lightweight_generic_constraint_lowering_contract,
-          nullability_flow_warning_precision_lowering_replay_key,
-          nullability_flow_warning_precision_lowering_contract,
-          protocol_qualified_object_type_lowering_replay_key,
-          protocol_qualified_object_type_lowering_contract,
-          variance_bridge_cast_lowering_replay_key,
-          variance_bridge_cast_lowering_contract,
-          generic_metadata_abi_lowering_replay_key,
-          generic_metadata_abi_lowering_contract,
-          module_import_graph_lowering_replay_key,
-          module_import_graph_lowering_contract,
-          namespace_collision_shadowing_lowering_replay_key,
-          namespace_collision_shadowing_lowering_contract,
-          public_private_api_partition_lowering_replay_key,
-          public_private_api_partition_lowering_contract,
-          incremental_module_cache_invalidation_lowering_replay_key,
-          incremental_module_cache_invalidation_lowering_contract,
-          cross_module_conformance_lowering_replay_key,
-          cross_module_conformance_lowering_contract);
-  objc3::artifacts::frontend::WriteObjc3FrontendErrorReplayManifestEntries(
-      manifest, throws_propagation_lowering_replay_key,
-      throws_propagation_lowering_contract, result_like_lowering_replay_key,
-      result_like_lowering_contract, ns_error_bridging_lowering_replay_key,
-      ns_error_bridging_lowering_contract, unwind_cleanup_lowering_replay_key,
-      unwind_cleanup_lowering_contract,
-      error_handling_throws_abi_propagation_lowering_replay_key,
-      deterministic_error_handling_throws_abi_propagation_lowering,
-      error_handling_result_and_bridging_artifact_replay_summary);
-  objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestRecordArrays(
-      manifest, program, resolved_global_values, manifest_functions,
-      type_metadata_handoff, runtime_metadata_source_records);
-  manifest << "}\n";
+  objc3::artifacts::frontend::AppendObjc3FrontendArtifactManifestReplayTail(
+      manifest, program, pipeline_result, options, function_manifest,
+      source_shape_plan, core_lowering_plan, ownership_aware_lowering_plan,
+      block_lowering_plan, type_system_lowering_plan, runtime_import_plan,
+      module_lowering_plan, error_lowering_plan, interop_lowering_plan,
+      runtime_metadata_plan, runtime_registration_plan);
   bundle.manifest_json = manifest.str();
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
   objc3::artifacts::frontend::PopulateObjc3FrontendArtifactBundleOutputs(

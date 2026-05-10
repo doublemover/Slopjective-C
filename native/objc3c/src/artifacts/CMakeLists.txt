@@ -218,6 +218,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_manifest_header.h
   objc3_frontend_artifact_manifest_pipeline.cpp
   objc3_frontend_artifact_manifest_pipeline.h
+  objc3_frontend_artifact_manifest_replay_tail.cpp
+  objc3_frontend_artifact_manifest_replay_tail.h
   objc3_frontend_artifact_manifest_readiness.cpp
   objc3_frontend_artifact_manifest_readiness.h
   objc3_frontend_artifact_metaprogramming_manifest_surfaces.cpp
