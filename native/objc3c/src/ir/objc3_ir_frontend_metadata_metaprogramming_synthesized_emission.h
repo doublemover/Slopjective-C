@@ -2,11 +2,10 @@
 
 #include <cstddef>
 #include <string>
-#include <vector>
 
-#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_artifact_model.h"
 
-struct Objc3IRFrontendMetaprogrammingSynthesizedEmissionMetadata {
+struct Objc3IRFrontendMetaprogrammingSynthesizedEmissionCountersMetadata {
   std::string lowering_metaprogramming_synthesized_emission_replay_key;
   std::size_t metaprogramming_synthesized_emitted_derive_method_sites = 0;
   std::size_t metaprogramming_synthesized_emitted_macro_artifact_sites = 0;
@@ -16,10 +15,8 @@ struct Objc3IRFrontendMetaprogrammingSynthesizedEmissionMetadata {
   std::size_t metaprogramming_synthesized_guard_blocked_sites = 0;
   std::size_t metaprogramming_synthesized_contract_violation_sites = 0;
   bool deterministic_metaprogramming_synthesized_emission_handoff = false;
-  std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
-      metaprogramming_derived_method_bundles_lexicographic;
-  std::vector<Objc3IRMetaprogrammingMacroArtifactBundle>
-      metaprogramming_macro_artifact_bundles_lexicographic;
-  std::vector<Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle>
-      metaprogramming_property_behavior_artifact_bundles_lexicographic;
 };
+
+struct Objc3IRFrontendMetaprogrammingSynthesizedEmissionMetadata
+    : Objc3IRFrontendMetaprogrammingSynthesizedEmissionCountersMetadata,
+      Objc3IRFrontendMetaprogrammingArtifactModelMetadata {};
