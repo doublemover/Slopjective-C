@@ -12,6 +12,7 @@ from stdlib_surface.artifacts import validate_module_artifacts
 from stdlib_surface.commands import validate_command_surfaces
 from stdlib_surface.contracts import validate_document_headers
 from stdlib_surface.inventory import validate_inventory_and_policy
+from stdlib_surface.semantics import validate_semantic_policy
 
 from check_stdlib_surface_model import (
     StdlibSurfaceDocuments,
@@ -134,90 +135,15 @@ def main() -> int:
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest advanced exports drifted for {module_name}")
 
-    semantic_module_semver = semantic_policy.get("module_semver")
-    if not isinstance(semantic_module_semver, dict) or not semantic_module_semver:
-        return fail("semantic policy missing module_semver")
-    for module_name, version_payload in semantic_module_semver.items():
-        if module_name not in inventory_modules_by_name:
-            return fail(f"semantic policy referenced unknown module {module_name}")
-        if not isinstance(version_payload, dict):
-            return fail(f"semantic policy module_semver malformed for {module_name}")
-        if version_payload != {"major": 1, "minor": 0, "patch": 0}:
-            return fail(f"semantic policy module_semver drifted for {module_name}")
-
-    error_semantics = semantic_policy.get("error_semantics")
-    if not isinstance(error_semantics, dict):
-        return fail("semantic policy missing error_semantics")
-    if error_semantics.get("result_ok_tag") != 1 or error_semantics.get("result_err_tag") != 2:
-        return fail("semantic policy result tag values drifted")
-    if error_semantics.get("result_bridge_diagnostic") != (
-        "returns 0 when option presence matches the provided result tag, otherwise 30601"
-    ):
-        return fail("semantic policy result_bridge_diagnostic drifted")
-    if error_semantics.get("text_data_compatibility_diagnostic") != (
-        "returns 0 when unit_count equals byte_count, otherwise 30602"
-    ):
-        return fail("semantic policy text_data_compatibility_diagnostic drifted")
-
-    keypath_semantics = semantic_policy.get("keypath_semantics")
-    if not isinstance(keypath_semantics, dict):
-        return fail("semantic policy missing keypath_semantics")
-    if keypath_semantics.get("text_compatibility_diagnostic") != (
-        "returns 0 when text_units is at least component_count, otherwise 30603"
-    ):
-        return fail("semantic policy text_compatibility_diagnostic drifted")
-    if keypath_semantics.get("typed_keypath_metadata") != (
-        "remains count-and-component preserving until runtime-backed keypath metadata lands"
-    ):
-        return fail("semantic policy typed_keypath_metadata drifted")
-    if keypath_semantics.get("reflection_interop") != (
-        "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries"
-    ):
-        return fail("semantic policy reflection_interop drifted")
-    if keypath_semantics.get("runtime_composition_adapter") != (
-        "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers"
-    ):
-        return fail("semantic policy runtime_composition_adapter drifted")
-
-    concurrency_semantics = semantic_policy.get("concurrency_semantics")
-    if not isinstance(concurrency_semantics, dict):
-        return fail("semantic policy missing concurrency_semantics")
-    if concurrency_semantics.get("spawn_token") != (
-        "returns seed plus 1 as the current deterministic child-spawn token placeholder"
-    ):
-        return fail("semantic policy spawn_token drifted")
-    if concurrency_semantics.get("cancellation_checkpoint") != (
-        "returns 1 when the provided flag is nonzero and 0 otherwise"
-    ):
-        return fail("semantic policy cancellation_checkpoint drifted")
-    if concurrency_semantics.get("family_growth_rule") != (
-        "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency"
-    ):
-        return fail("semantic policy concurrency family_growth_rule drifted")
-    if concurrency_semantics.get("layering_rule") != (
-        "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
-    ):
-        return fail("semantic policy concurrency layering_rule drifted")
-
-    system_semantics = semantic_policy.get("system_semantics")
-    if not isinstance(system_semantics, dict):
-        return fail("semantic policy missing system_semantics")
-    if system_semantics.get("resource_token") != (
-        "returns seed plus 4 as the current deterministic strict-system resource token placeholder"
-    ):
-        return fail("semantic policy system resource_token drifted")
-    if system_semantics.get("profile_gate") != (
-        "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports"
-    ):
-        return fail("semantic policy system profile_gate drifted")
-    if system_semantics.get("runtime_composition_hook") != (
-        "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers"
-    ):
-        return fail("semantic policy system runtime_composition_hook drifted")
-    if system_semantics.get("layering_rule") != (
-        "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
-    ):
-        return fail("semantic policy system layering_rule drifted")
+    semantic_policy_error, semantic_policy_validation = validate_semantic_policy(
+        semantic_policy=semantic_policy,
+        inventory_module_names=inventory_module_names,
+    )
+    if semantic_policy_error is not None:
+        return fail(semantic_policy_error)
+    if semantic_policy_validation is None:
+        raise RuntimeError("stdlib surface semantic policy validation did not return a payload")
+    semantic_module_semver = semantic_policy_validation.module_semver
 
     command_surface_error, command_surface_validation = validate_command_surfaces(
         root=ROOT,
