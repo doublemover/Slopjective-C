@@ -1,0 +1,10 @@
+  std::vector<bool> param_ownership_insert_retain;
+  std::vector<bool> param_ownership_insert_release;
+  std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_is_weak_reference;
+  std::vector<bool> param_ownership_is_unowned_reference;
+  std::vector<bool> param_ownership_is_unowned_safe_reference;
+  std::vector<bool> param_ownership_arc_diagnostic_candidate;
+  std::vector<bool> param_ownership_arc_fixit_available;
+  std::vector<std::string> param_ownership_arc_diagnostic_profile;
+  std::vector<std::string> param_ownership_arc_fixit_hint;

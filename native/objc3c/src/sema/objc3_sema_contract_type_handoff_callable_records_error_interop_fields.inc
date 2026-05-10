@@ -1,0 +1,10 @@
+  bool ns_error_bridging_profile_is_normalized = false;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t ns_error_bridging_normalized_sites = 0;
+  std::size_t ns_error_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_contract_violation_sites = 0;

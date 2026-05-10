@@ -1,0 +1,18 @@
+  ValueType type = ValueType::Unknown;
+  Objc3SemanticCanonicalType canonical_type;
+  bool is_vector = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+  bool id_spelling = false;
+  bool class_spelling = false;
+  bool instancetype_spelling = false;
+  bool object_pointer_type_spelling = false;
+  bool has_generic_suffix = false;
+  bool has_pointer_declarator = false;
+  bool has_nullability_suffix = false;
+  bool has_ownership_qualifier = false;
+  bool has_invalid_generic_suffix = false;
+  bool has_invalid_pointer_declarator = false;
+  bool has_invalid_nullability_suffix = false;
+  bool has_invalid_ownership_qualifier = false;
+  bool has_invalid_type_suffix = false;

@@ -1,0 +1,10 @@
+  std::string selector_normalized;
+  std::size_t selector_piece_count = 0;
+  std::size_t selector_parameter_piece_count = 0;
+  bool selector_contract_normalized = false;
+  bool selector_had_pieceless_form = false;
+  bool selector_has_spelling_mismatch = false;
+  bool selector_has_arity_mismatch = false;
+  bool selector_has_parameter_linkage_mismatch = false;
+  bool selector_has_normalization_flag_mismatch = false;
+  bool selector_has_missing_piece_keyword = false;
