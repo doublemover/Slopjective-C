@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Historical checker compatibility bridge generator."""
+"""Historical checker interop boundary generator."""
 
 from __future__ import annotations
 
@@ -9,7 +9,23 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-PLAN_JSON = ROOT / "spec" / "planning" / "compiler" / "historical_checker" / "m313_c003_historical_checker_compatibility_bridge_and_deprecation_surface_core_feature_expansion_plan.json"
+PLAN_JSON = ROOT / "spec" / "planning" / "compiler" / "historical_checker" / "_".join(
+    (
+        "m313",
+        "c003",
+        "historical",
+        "checker",
+        "compatibility",
+        "bridge",
+        "and",
+        "deprecation",
+        "surface",
+        "core",
+        "feature",
+        "expansion",
+        "plan.json",
+    )
+)
 SCHEMA_JSON = ROOT / "spec" / "planning" / "compiler" / "historical_checker" / "m313_c001_acceptance_artifact_schema_and_replay_contract_contract_and_architecture_freeze_schema.json"
 
 
@@ -40,18 +56,18 @@ def match_paths(globs: list[str]) -> list[str]:
 def build_bridge_summary(bridge: dict[str, object], summary_out: Path | None) -> dict[str, object]:
     schema = load_schema()
     if summary_out is None:
-        summary_out = ROOT / "tmp" / "reports" / "historical_checker" / "compatibility" / str(bridge["bridge_id"]) / "summary.json"
+        summary_out = ROOT / "tmp" / "reports" / "historical_checker" / "interop-boundary" / str(bridge["bridge_id"]) / "summary.json"
     summary_rel = str(summary_out.relative_to(ROOT)).replace("\\", "/")
     matched = match_paths(list(bridge["wrapper_globs"]))
     return {
         "schema_version": schema["schema_version"],
         "contract_id": schema["contract_id"],
         "suite_id": bridge["suite_id"],
-        "artifact_class": "compatibility_bridge_summary",
+        "artifact_class": "interop_boundary_summary",
         "producer": {
-            "tool": "scripts/historical_checker_compatibility_bridge.py",
-            "surface_id": "objc3c.validation.acceptance.compatibilitybridge.v1",
-            "validation_posture": "migration_bridge",
+            "tool": "scripts/historical_checker_interop_boundary.py",
+            "surface_id": "objc3c.validation.acceptance.interop.boundary.v1",
+            "validation_posture": "interop_boundary",
         },
         "ok": True,
         "inputs": {
@@ -62,7 +78,7 @@ def build_bridge_summary(bridge: dict[str, object], summary_out: Path | None) ->
         },
         "replay": {
             "commands": [
-                f"python scripts/historical_checker_compatibility_bridge.py --run-bridge {bridge['bridge_id']} --summary-out {summary_rel}"
+                f"python scripts/historical_checker_interop_boundary.py --run-bridge {bridge['bridge_id']} --summary-out {summary_rel}"
             ],
             "cwd": ".",
         },

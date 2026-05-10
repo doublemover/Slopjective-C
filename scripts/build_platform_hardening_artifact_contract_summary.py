@@ -47,7 +47,7 @@ def main() -> int:
         "artifact_has_required_fields": all(field in artifact for field in contract["required_fields"]),
         "artifact_has_required_publication_fields": all(field in publication_surface for field in contract["required_publication_surface_fields"]),
         "runbook_mentions_machine_owned_artifact_contract": "## Machine-Owned Artifact Contract" in runbook_text,
-        "runbook_mentions_support_matrix_artifact_path": "`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`" in runbook_text,
+        "runbook_mentions_support_matrix_artifact_path": f"`{contract['generated_artifact_path']}`" in runbook_text,
     }
 
     payload = {

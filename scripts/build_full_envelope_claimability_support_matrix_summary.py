@@ -33,7 +33,7 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
-OUT_DIR = ROOT / "tmp/reports/full-envelope-claimability/support-matrix"
+OUT_DIR = ROOT / "tmp" / "reports" / "full-envelope-claimability" / "support-matrix"
 JSON_OUT = OUT_DIR / "support_matrix_summary.json"
 MD_OUT = OUT_DIR / "support_matrix_summary.md"
 

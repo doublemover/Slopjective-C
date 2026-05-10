@@ -15,22 +15,29 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests/tooling/fixtures/full_envelope_claimability"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
 
-SUPPORT_MATRIX_SUMMARY = "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json"
-CLAIM_POLICY_SUMMARY = "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json"
-RELEASE_BLOCKER_SUMMARY = "tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json"
-ROLLOUT_READINESS_SUMMARY = "tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"
-DASHBOARD_SUMMARY = "tmp/reports/full-envelope-claimability/dashboard-summary.json"
-PUBLIC_SUMMARY = "tmp/reports/full-envelope-claimability/public-summary.json"
-CLAIMABILITY_REPORT_MD = "tmp/artifacts/full-envelope-claimability/report/full-envelope-claimability-report.md"
+def evidence_index_path(*parts: str) -> str:
+    return "/".join(parts)
 
-CONFORMANCE_CORPUS_SUMMARY = "tmp/reports/conformance/corpus-integration-summary.json"
-STRESS_INTEGRATION_SUMMARY = "tmp/reports/stress/integration-summary.json"
-EXTERNAL_VALIDATION_SUMMARY = "tmp/reports/external-validation/integration-summary.json"
-PUBLIC_CONFORMANCE_SUMMARY = "tmp/reports/public-conformance/integration-summary.json"
-PERFORMANCE_GOVERNANCE_SUMMARY = "tmp/reports/performance-governance/integration-summary.json"
-RELEASE_FOUNDATION_SUMMARY = "tmp/reports/release-foundation/integration-summary.json"
-RELEASE_OPERATIONS_SUMMARY = "tmp/reports/release-operations/integration-summary.json"
-DISTRIBUTION_CREDIBILITY_SUMMARY = "tmp/reports/distribution-credibility/integration-summary.json"
+
+TEMP_REPORT_ROOT = ("tmp", "reports")
+TEMP_ARTIFACT_ROOT = ("tmp", "artifacts")
+
+SUPPORT_MATRIX_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "support-matrix", "support_matrix_summary.json")
+CLAIM_POLICY_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "claim-policy", "claim_policy_summary.json")
+RELEASE_BLOCKER_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "release-blockers", "release_blocker_summary.json")
+ROLLOUT_READINESS_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "rollout-readiness", "rollout_readiness_summary.json")
+DASHBOARD_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "dashboard-summary.json")
+PUBLIC_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "full-envelope-claimability", "public-summary.json")
+CLAIMABILITY_REPORT_MD = evidence_index_path(*TEMP_ARTIFACT_ROOT, "full-envelope-claimability", "report", "full-envelope-claimability-report.md")
+
+CONFORMANCE_CORPUS_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "conformance", "corpus-integration-summary.json")
+STRESS_INTEGRATION_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "stress", "integration-summary.json")
+EXTERNAL_VALIDATION_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "external-validation", "integration-summary.json")
+PUBLIC_CONFORMANCE_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "public-conformance", "integration-summary.json")
+PERFORMANCE_GOVERNANCE_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "performance-governance", "integration-summary.json")
+RELEASE_FOUNDATION_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "release-foundation", "integration-summary.json")
+RELEASE_OPERATIONS_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "release-operations", "integration-summary.json")
+DISTRIBUTION_CREDIBILITY_SUMMARY = evidence_index_path(*TEMP_REPORT_ROOT, "distribution-credibility", "integration-summary.json")
 
 ROLLOUT_CLASS_STABLE = "stable"
 ROLLOUT_CLASS_CANDIDATE = "candidate"

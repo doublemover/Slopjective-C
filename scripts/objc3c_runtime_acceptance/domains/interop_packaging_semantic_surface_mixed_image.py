@@ -42,7 +42,7 @@ def build_runtime_mixed_image_compatibility_interop_semantics_surface(
             "<emit-prefix>.interop-bridge.json",
         ],
         "language_profile_model": (
-            "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-interop-bridge-compatibility-boundary-through-runtime-import-surfaces-and-cross-module-link-plans"
+            "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-interop-boundary-through-runtime-import-surfaces-and-cross-module-link-plans"
         ),
         "diagnostic_model": (
             "duplicate-registration-order-or-import-surface-drift-rejects-the-consumer-before-cross-module-link-plan-installation-advances"

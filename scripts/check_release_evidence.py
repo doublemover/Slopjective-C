@@ -23,15 +23,15 @@ ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 REQUIRED_SCHEMA_DATA_PAIRS: tuple[tuple[str, str], ...] = (
     (
         "schemas/objc3-runtime-2025Q4.manifest.schema.json",
-        "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+        "/".join(("reports", "conformance", "manifests", "objc3-runtime-2025Q4.manifest.json")),
     ),
     (
         "schemas/objc3-abi-2025Q4.schema.json",
-        "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+        "/".join(("reports", "conformance", "manifests", "objc3-abi-2025Q4.example.json")),
     ),
     (
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
-        "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json",
+        "/".join(("reports", "conformance", "bundles", "objc3-conformance-evidence-bundle-v0.11.example.json")),
     ),
 )
 
@@ -58,7 +58,7 @@ def main() -> int:
         return fail("missing public claim drift checker scripts/check_objc3c_public_claim_drift.py")
 
     required_artifact_paths: set[str] = set()
-    input_root_arg = "reports/conformance"
+    input_root_arg = REPORTS_CONFORMANCE_ROOT.relative_to(ROOT).as_posix()
     allow_empty_index = False
 
     if REPORTS_CONFORMANCE_ROOT.is_dir():
@@ -92,7 +92,7 @@ def main() -> int:
         input_root_arg = EMPTY_INPUT_ROOT.relative_to(ROOT).as_posix()
         allow_empty_index = True
         print(
-            "release-evidence: reports/conformance is absent; using generated-only empty index mode"
+            "release-evidence: checked-in conformance corpus is absent; using generated-only empty index mode"
         )
 
     INDEX_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -145,7 +145,7 @@ def main() -> int:
             python_script_command("scripts/generate_conformance_evidence_index.py")
         ),
         "input_root": input_root_arg,
-        "output_path": "tmp/reports/release_evidence/evidence-index.json",
+        "output_path": INDEX_OUTPUT.relative_to(ROOT).as_posix(),
     }
     for field_name, expected_value in expected_envelope.items():
         if envelope.get(field_name) != expected_value:

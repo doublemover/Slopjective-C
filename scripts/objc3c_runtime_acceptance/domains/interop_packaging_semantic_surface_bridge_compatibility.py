@@ -1,4 +1,4 @@
-"""C/C++/Swift bridge compatibility semantic contract surface builder."""
+"""C/C++/Swift interop boundary semantic contract surface builder."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id in {"c-cpp-swift-bridge-compatibility-semantics"}
+        if result.case_id in {"c-cpp-swift-interop-boundary-semantics"}
     ]
     return {
         "contract_id": (
@@ -39,7 +39,7 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
             "<emit-prefix>.interop-bridge.json",
         ],
         "language_profile_model": (
-            "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-consumer-import-and-cross-module-link-planning-without-bridge-shape-drift"
+            "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-consumer-import-and-cross-module-link-planning-without-interop-boundary-shape-drift"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [

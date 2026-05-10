@@ -72,7 +72,7 @@ CASE_RUNNERS: dict[str, CaseRunner] = {
         run_dir,
         clangxx,
     ),
-    "c-cpp-swift-bridge-compatibility-semantics": lambda run_dir, clangxx: run_no_clang(
+    "c-cpp-swift-interop-boundary-semantics": lambda run_dir, clangxx: run_no_clang(
         runtime_acceptance.check_c_cpp_swift_bridge_compatibility_semantics_case,
         run_dir,
         clangxx,

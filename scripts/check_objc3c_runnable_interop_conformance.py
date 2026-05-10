@@ -24,7 +24,7 @@ REQUIRED_CASES = {
     "textual-binary-interface-parity-source-surface",
     "mixed-image-compatibility-interop-semantics",
     "imported-runtime-packaging-replay",
-    "c-cpp-swift-bridge-compatibility-semantics",
+    "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
     "mixed-image-package-lowering-bridge-emission",
@@ -75,10 +75,10 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
-    retired_route_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-interop-conformance" / "live-case"
-    retired_route_root.mkdir(parents=True, exist_ok=True)
+    live_case_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-interop-conformance" / "live-case"
+    live_case_root.mkdir(parents=True, exist_ok=True)
     clangxx = runtime_acceptance.find_clangxx()
-    with tempfile.TemporaryDirectory(dir=retired_route_root) as tmp_dir:
+    with tempfile.TemporaryDirectory(dir=live_case_root) as tmp_dir:
         run_dir = Path(tmp_dir)
         results = [
             runtime_acceptance.check_cross_module_runtime_package_interop_source_surface_case(run_dir),

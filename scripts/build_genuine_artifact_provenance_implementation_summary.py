@@ -10,8 +10,8 @@ from objc3c_tooling.subprocesses import command_text, python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts/generate_conformance_evidence_index.py"
-INPUT_ROOT = ROOT / "reports/conformance"
-INDEX_OUTPUT = ROOT / "tmp/reports/release_evidence/evidence-index.json"
+INPUT_ROOT = ROOT / "reports" / "conformance"
+INDEX_OUTPUT = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json"
 OUT_DIR = ROOT / "tmp/reports/source-hygiene/genuine-artifact-provenance-implementation"
 JSON_OUT = OUT_DIR / "genuine_artifact_provenance_implementation_summary.json"
@@ -64,8 +64,8 @@ def main() -> int:
         "output_path_under_allowed_roots": any(
             envelope.get("output_path", "").startswith(root) for root in contract["output_roots"]
         ),
-        "input_root_matches_reports_conformance": envelope.get("input_root") == "reports/conformance",
-        "output_path_matches_release_evidence_index": envelope.get("output_path") == "tmp/reports/release_evidence/evidence-index.json",
+        "input_root_matches_reports_conformance": envelope.get("input_root") == normalize(INPUT_ROOT),
+        "output_path_matches_release_evidence_index": envelope.get("output_path") == normalize(INDEX_OUTPUT),
         "replay_uses_canonical_generator": isinstance(command, list)
         and command[:2] == python_script_command("scripts/generate_conformance_evidence_index.py"),
         "replay_includes_input_and_output_paths": isinstance(command, list)

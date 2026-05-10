@@ -120,7 +120,7 @@ def main() -> None:
         'legacy_surface_count': len(rows),
         'state_counts': state_counts,
         'surfaces': rows,
-        'next_issues': ['validation-acceptance-artifact-index', 'validation-legacy-bridge-matrix'],
+        'next_issues': ['validation-acceptance-artifact-index', 'validation-boundary-transition-index'],
     }
 
     write_json_file(NAMESPACE_JSON_PATH, payload)
@@ -145,7 +145,7 @@ def main() -> None:
         lines.append(f"  - successor_surface: `{row['successor_surface']}`")
         lines.append(f"  - reference_count: `{row['reference_count']}`")
         lines.append(f"  - inventory_gap: `{str(row['inventory_gap']).lower()}`")
-    lines.extend(['', 'Next issues: `validation-acceptance-artifact-index`, `validation-legacy-bridge-matrix`', ''])
+    lines.extend(['', 'Next issues: `validation-acceptance-artifact-index`, `validation-boundary-transition-index`', ''])
     markdown = '\n'.join(lines)
     write_text(NAMESPACE_MD_PATH, markdown)
     write_text(SUMMARY_MD_PATH, markdown)

@@ -11,6 +11,13 @@ from objc3c_tooling.subprocesses import python_script_command, run_completed as 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "supply_chain_audit_contract.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "supply-chain-audit-summary.json"
+TEMP_REPORT_ROOT = ROOT / "tmp" / "reports"
+TEMP_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts"
+RELEASE_EVIDENCE_INDEX = TEMP_REPORT_ROOT / "release_evidence" / "evidence-index.json"
+UPDATE_MANIFEST = TEMP_ARTIFACT_ROOT / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+UPGRADE_SUPPORT_REPORT = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+CHANNEL_CATALOG = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
+TRUST_REPORT = TEMP_ARTIFACT_ROOT / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 
 STEP_COMMANDS = {
     "build_security_hardening_response_policy_summary": python_script_command("scripts/build_security_hardening_response_policy_summary.py"),
@@ -66,11 +73,11 @@ def main() -> int:
         if not path.is_file():
             failures.append(f"missing required report {raw_path}")
 
-    release_evidence = read_json(ROOT / "tmp/reports/release_evidence/evidence-index.json") if (ROOT / "tmp/reports/release_evidence/evidence-index.json").is_file() else {}
-    update_manifest = read_json(ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json") if (ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json").is_file() else {}
-    upgrade_support_report = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json").is_file() else {}
-    channel_catalog = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json").is_file() else {}
-    trust_report = read_json(ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json") if (ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json").is_file() else {}
+    release_evidence = read_json(RELEASE_EVIDENCE_INDEX) if RELEASE_EVIDENCE_INDEX.is_file() else {}
+    update_manifest = read_json(UPDATE_MANIFEST) if UPDATE_MANIFEST.is_file() else {}
+    upgrade_support_report = read_json(UPGRADE_SUPPORT_REPORT) if UPGRADE_SUPPORT_REPORT.is_file() else {}
+    channel_catalog = read_json(CHANNEL_CATALOG) if CHANNEL_CATALOG.is_file() else {}
+    trust_report = read_json(TRUST_REPORT) if TRUST_REPORT.is_file() else {}
 
     checks = {
         "release_evidence_schema_matches": release_evidence.get("schema_id") == "objc3-conformance-evidence-index/v1",

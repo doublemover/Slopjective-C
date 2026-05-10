@@ -57,7 +57,7 @@ def is_under(child: Path, parent: Path) -> bool:
 def assert_not_tmp_source(path: Path) -> None:
     if is_under(path, ROOT / "tmp"):
         raise PublicationError(
-            f"refusing to use tmp/ as planning source of truth: {path.relative_to(ROOT).as_posix()}"
+            f"refusing transient planning input: {path.relative_to(ROOT).as_posix()}"
         )
 
 

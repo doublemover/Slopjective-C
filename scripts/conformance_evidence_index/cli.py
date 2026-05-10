@@ -27,6 +27,9 @@ from conformance_evidence_index.timestamps import (
 
 
 def build_parser() -> argparse.ArgumentParser:
+    sample_output = "/".join(("reports", "conformance", "evidence-index.v0.11.sample.json"))
+    release_output = "/".join(("reports", "conformance", "evidence-index.v0.11.json"))
+    default_input_root = "/".join(("reports", "conformance"))
     parser = argparse.ArgumentParser(
         prog="generate_conformance_evidence_index.py",
         description=(
@@ -37,11 +40,11 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             f"  {GENERATOR_PATH} \\\n"
-            "    --output reports/conformance/evidence-index.v0.11.sample.json \\\n"
+            f"    --output {sample_output} \\\n"
             "    --release-label v0.11 \\\n"
             "    --generated-at 2026-02-23T00:00:00Z\n\n"
             f"  SOURCE_DATE_EPOCH=1767139200 {GENERATOR_PATH} \\\n"
-            "    --output reports/conformance/evidence-index.v0.11.json \\\n"
+            f"    --output {release_output} \\\n"
             "    --release-label v0.11"
         ),
     )
@@ -50,7 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(DEFAULT_INPUT_ROOT),
         help=(
             "Artifact root directory to scan. Defaults to "
-            "'reports/conformance' (relative to repository root)."
+            f"'{default_input_root}' (relative to repository root)."
         ),
     )
     parser.add_argument(

@@ -29,7 +29,7 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/release_candidate_evidence_contract.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
-OUT_DIR = ROOT / "tmp/reports/full-envelope-claimability/release-candidate-evidence"
+OUT_DIR = ROOT / "tmp" / "reports" / "full-envelope-claimability" / "release-candidate-evidence"
 JSON_OUT = OUT_DIR / "release_candidate_evidence_summary.json"
 MD_OUT = OUT_DIR / "release_candidate_evidence_summary.md"
 

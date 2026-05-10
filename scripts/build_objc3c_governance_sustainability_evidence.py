@@ -14,15 +14,23 @@ from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TEMP_REPORT_ROOT = ("tmp", "reports")
+GOVERNANCE_REPORT_FAMILY = (*TEMP_REPORT_ROOT, "governance-sustainability")
+
+
+def evidence_path(*parts: str) -> str:
+    return "/".join(parts)
+
+
 ARTIFACT_CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "artifact_contract.json"
 WAIVER_REGISTRY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
 INTEGRATION_CHECK = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
 EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "governance-sustainability-evidence.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "evidence-summary.json"
 SELF_GENERATED_REPORTS = {
-    "tmp/reports/governance-sustainability/evidence-summary.json",
-    "tmp/reports/governance-sustainability/publication-summary.json",
-    "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json",
+    evidence_path(*GOVERNANCE_REPORT_FAMILY, "evidence-summary.json"),
+    evidence_path(*GOVERNANCE_REPORT_FAMILY, "publication-summary.json"),
+    evidence_path(*GOVERNANCE_REPORT_FAMILY, "closeout-gate", "governance_sustainability_closeout_gate.json"),
 }
 
 CONTRACT_ID = "objc3c.governance.sustainability.evidence.v1"
@@ -144,15 +152,15 @@ def main() -> int:
     generated_reports = [str(path) for path in contract.get("generated_reports", [])]
     report_payloads = {path: load_optional_summary(path) for path in generated_reports}
 
-    budget_inventory = report_payloads.get("tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json", {})
-    policy = report_payloads.get("tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json", {})
-    maintainer_review = report_payloads.get("tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json", {})
-    extension_policy = report_payloads.get("tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json", {})
-    extension_workflow = report_payloads.get("tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json", {})
-    stewardship = report_payloads.get("tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json", {})
-    budget_enforcement = report_payloads.get("tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json", {})
-    anti_regression = report_payloads.get("tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json", {})
-    integration = report_payloads.get("tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json", {})
+    budget_inventory = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "budget-inventory", "governance_budget_inventory_summary.json"), {})
+    policy = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "sustainable-progress-policy", "governance_policy_summary.json"), {})
+    maintainer_review = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "maintainer-review-regression", "governance_maintainer_review_summary.json"), {})
+    extension_policy = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "extension-review-policy", "governance_extension_review_policy_summary.json"), {})
+    extension_workflow = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "extension-review-workflow", "governance_extension_review_workflow_summary.json"), {})
+    stewardship = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "stewardship-semantics", "governance_stewardship_semantics_summary.json"), {})
+    budget_enforcement = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "budget-enforcement", "governance_budget_enforcement_summary.json"), {})
+    anti_regression = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "anti-regression", "governance_anti_regression_summary.json"), {})
+    integration = report_payloads.get(evidence_path(*GOVERNANCE_REPORT_FAMILY, "integration", "governance_sustainability_integration_summary.json"), {})
 
     failures: list[str] = []
     for path, payload in report_payloads.items():

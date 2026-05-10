@@ -1,4 +1,4 @@
-"""C/C++/Swift bridge compatibility interop packaging semantic acceptance case."""
+"""C/C++/Swift interop boundary packaging semantic acceptance case."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from ..paths import ROOT
 def check_c_cpp_swift_bridge_compatibility_semantics_case(
     run_dir: Path,
 ) -> CaseResult:
-    case_dir = run_dir / "c-cpp-swift-bridge-compatibility-semantics"
+    case_dir = run_dir / "c-cpp-swift-interop-boundary-semantics"
     provider_fixture = ROOT / Path(INTEROP_HEADER_MODULE_PROVIDER_FIXTURE)
     consumer_fixture = ROOT / Path(INTEROP_HEADER_MODULE_CONSUMER_FIXTURE)
 
@@ -92,7 +92,7 @@ def check_c_cpp_swift_bridge_compatibility_semantics_case(
     imported_modules = link_plan.get("imported_modules", [])
     expect(
         isinstance(imported_modules, list) and len(imported_modules) == 1,
-        "expected bridge-compatibility consumer compile to publish one imported module",
+        "expected interop-boundary consumer compile to publish one imported module",
     )
     imported_module = imported_modules[0]
     expect(
@@ -125,7 +125,7 @@ def check_c_cpp_swift_bridge_compatibility_semantics_case(
     )
 
     return CaseResult(
-        case_id="c-cpp-swift-bridge-compatibility-semantics",
+        case_id="c-cpp-swift-interop-boundary-semantics",
         probe="compile-runtime-import-surface-bridge-artifacts-and-cross-module-link-plan",
         fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",

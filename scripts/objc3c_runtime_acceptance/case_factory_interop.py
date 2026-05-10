@@ -32,7 +32,7 @@ def build_interop_packaging_case_factories(
             ),
         ),
         (
-            "c-cpp-swift-bridge-compatibility-semantics",
+            "c-cpp-swift-interop-boundary-semantics",
             lambda: domains.interop_packaging.check_c_cpp_swift_bridge_compatibility_semantics_case(
                 run_dir
             ),

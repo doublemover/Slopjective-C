@@ -94,7 +94,7 @@ def main() -> None:
                 },
             },
         ],
-        'next_issues': ['validation-acceptance-suite-matrix', 'validation-legacy-bridge-matrix', 'validation-ci-topology'],
+        'next_issues': ['validation-acceptance-suite-matrix', 'validation-boundary-transition-index', 'validation-ci-topology'],
     }
 
     validate_payload(payload)
@@ -113,7 +113,7 @@ def main() -> None:
         lines.append(f"- `{artifact['issue_code']}` -> `{artifact['artifact_kind']}`")
         lines.append(f"  - report_path: `{artifact['report_path']}`")
         lines.append(f"  - planning_source_paths: {', '.join(f'`{path}`' for path in artifact['planning_source_paths'])}")
-    lines.extend(['', 'Next issues: `validation-acceptance-suite-matrix`, `validation-legacy-bridge-matrix`, `validation-ci-topology`', ''])
+    lines.extend(['', 'Next issues: `validation-acceptance-suite-matrix`, `validation-boundary-transition-index`, `validation-ci-topology`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
 
 

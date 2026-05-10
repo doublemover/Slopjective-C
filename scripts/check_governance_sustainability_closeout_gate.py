@@ -13,65 +13,66 @@ OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gat
 SUMMARY_PATH = OUT_DIR / "governance_sustainability_closeout_gate.json"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md"
 PROPOSAL_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "new-work-proposal-closeout"
+GOVERNANCE_REPORT_ROOT = ROOT / "tmp" / "reports" / "governance-sustainability"
 
 COMMANDS = [
     {
         "name": "governance-budget-inventory",
         "command": python_script_command("scripts/build_governance_budget_inventory_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "budget-inventory" / "governance_budget_inventory_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-policy",
         "command": python_script_command("scripts/build_governance_policy_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "sustainable-progress-policy" / "governance_policy_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-maintainer-review",
         "command": python_script_command("scripts/build_governance_maintainer_review_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "maintainer-review-regression" / "governance_maintainer_review_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-extension-policy",
         "command": python_script_command("scripts/build_governance_extension_review_policy_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "extension-review-policy" / "governance_extension_review_policy_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-extension-workflow",
         "command": python_script_command("scripts/build_governance_extension_review_workflow_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "extension-review-workflow" / "governance_extension_review_workflow_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-stewardship-semantics",
         "command": python_script_command("scripts/build_governance_stewardship_semantics_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "stewardship-semantics" / "governance_stewardship_semantics_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-schema-surface",
         "command": python_script_command("scripts/check_governance_sustainability_schema_surface.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "schema-surface" / "governance_schema_surface_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-artifact-contract",
         "command": python_script_command("scripts/build_governance_artifact_contract_summary.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "artifact-contract" / "governance_artifact_contract_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-budget-enforcement",
         "command": python_script_command("scripts/check_governance_sustainability_budget_enforcement.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "budget-enforcement" / "governance_budget_enforcement_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
@@ -98,21 +99,21 @@ COMMANDS = [
     {
         "name": "governance-integration",
         "command": python_script_command("scripts/check_objc3c_governance_sustainability_integration.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "integration" / "governance_sustainability_integration_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-evidence",
         "command": python_script_command("scripts/build_objc3c_governance_sustainability_evidence.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/evidence-summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "evidence-summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-publication",
         "command": python_script_command("scripts/publish_objc3c_governance_sustainability_metadata.py"),
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/publication-summary.json",
+        "summary_path": GOVERNANCE_REPORT_ROOT / "publication-summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
@@ -190,7 +191,7 @@ def main() -> int:
         "status": "PASS" if ok else "FAIL",
         "issue": "governance-closeout-gate",
         "runbook_mentions_closeout_gate": "check_governance_sustainability_closeout_gate.py" in runbook_text,
-        "runbook_mentions_closeout_summary": "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json" in runbook_text,
+        "runbook_mentions_closeout_summary": str(SUMMARY_PATH.relative_to(ROOT)).replace("\\", "/") in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,
     }

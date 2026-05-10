@@ -1,4 +1,4 @@
-"""Compatibility facade for shared JSON and text file helpers."""
+"""Shared JSON and text file helper exports."""
 
 from __future__ import annotations
 
