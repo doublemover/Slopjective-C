@@ -1,3 +1,5 @@
+#include "parse/objc3_parser_attributes_status_code_bridge_clause_assignment.inc"
+
   template <typename TCallableDecl>
   bool ParseStatusCodeBridgeAttributePayload(
       TCallableDecl &decl,
@@ -38,37 +40,9 @@
         return false;
       }
 
-      if (clause.text == "success") {
-        if (saw_success) {
-          diagnostics_.push_back(MakeDiag(
-              clause.line, clause.column, "O3P275",
-              "duplicate objc_status_code success clause"));
-          return false;
-        }
-        decl.objc_status_code_success_literal = value_text;
-        saw_success = true;
-      } else if (clause.text == "error_type") {
-        if (saw_error_type) {
-          diagnostics_.push_back(MakeDiag(
-              clause.line, clause.column, "O3P276",
-              "duplicate objc_status_code error_type clause"));
-          return false;
-        }
-        decl.objc_status_code_error_type_spelling = value_text;
-        saw_error_type = true;
-      } else if (clause.text == "mapping") {
-        if (saw_mapping) {
-          diagnostics_.push_back(MakeDiag(
-              clause.line, clause.column, "O3P277",
-              "duplicate objc_status_code mapping clause"));
-          return false;
-        }
-        decl.objc_status_code_mapping_symbol = value_text;
-        saw_mapping = true;
-      } else {
-        diagnostics_.push_back(MakeDiag(
-            clause.line, clause.column, "O3P278",
-            "unsupported objc_status_code clause '" + clause.text + "'"));
+      if (!ApplyStatusCodeBridgeAttributeClause(
+              decl, clause, value_text, saw_success, saw_error_type,
+              saw_mapping)) {
         return false;
       }
 
