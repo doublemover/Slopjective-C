@@ -33,6 +33,7 @@
 #include "artifacts/objc3_frontend_artifact_manifest_header.h"
 #include "artifacts/objc3_frontend_artifact_manifest_pipeline.h"
 #include "artifacts/objc3_frontend_artifact_manifest_readiness.h"
+#include "artifacts/objc3_frontend_artifact_metaprogramming_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
@@ -232,6 +233,7 @@ using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
 using objc3::artifacts::frontend::WriteCrossModuleManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
 using objc3::artifacts::frontend::WriteInteropManifestSurfaces;
+using objc3::artifacts::frontend::WriteMetaprogrammingManifestSurfaces;
 using objc3::artifacts::frontend::WriteSourceClosureManifestSurfaces;
 using objc3::artifacts::frontend::WriteToolingManifestSurfaces;
 using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
@@ -4947,35 +4949,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       interop_foreign_call_lifetime_lowering_replay_key,
       interop_ffi_metadata_interface_preservation_contract,
       interop_ffi_metadata_interface_preservation_replay_key);
+  WriteMetaprogrammingManifestSurfaces(
+      manifest, metaprogramming_expansion_behavior_semantic_model_summary,
+      metaprogramming_derive_expansion_inventory_summary,
+      metaprogramming_macro_safety_sandbox_determinism_summary,
+      metaprogramming_property_behavior_legality_compatibility_summary,
+      metaprogramming_property_behavior_source_completion_summary,
+      metaprogramming_expansion_lowering_contract,
+      metaprogramming_expansion_lowering_replay_key,
+      metaprogramming_synthesized_artifact_emission_contract,
+      metaprogramming_synthesized_artifact_emission_replay_key,
+      metaprogramming_module_interface_replay_preservation_summary);
   manifest
-            << ",\"objc_metaprogramming_expansion_and_behavior_semantic_model\":"
-            << BuildMetaprogrammingExpansionBehaviorSemanticModelSummaryJson(
-                   metaprogramming_expansion_behavior_semantic_model_summary)
-            << ",\"objc_metaprogramming_derive_expansion_inventory\":"
-            << BuildMetaprogrammingDeriveExpansionInventorySummaryJson(
-                   metaprogramming_derive_expansion_inventory_summary)
-            << ",\"objc_metaprogramming_macro_safety_sandbox_and_determinism_semantics\":"
-            << BuildMetaprogrammingMacroSafetySandboxDeterminismSummaryJson(
-                   metaprogramming_macro_safety_sandbox_determinism_summary)
-            << ",\"objc_metaprogramming_property_behavior_legality_and_interaction_completion\":"
-            << BuildMetaprogrammingPropertyBehaviorLegalityCompatibilitySummaryJson(
-                   metaprogramming_property_behavior_legality_compatibility_summary)
-            << ",\"objc_metaprogramming_expansion_and_lowering_contract\":"
-            << BuildMetaprogrammingExpansionLoweringContractJson(
-                   metaprogramming_property_behavior_source_completion_summary,
-                   metaprogramming_derive_expansion_inventory_summary,
-                   metaprogramming_macro_safety_sandbox_determinism_summary,
-                   metaprogramming_property_behavior_legality_compatibility_summary,
-                   metaprogramming_expansion_lowering_contract,
-                   metaprogramming_expansion_lowering_replay_key)
-            << ",\"objc_metaprogramming_synthesized_ast_and_ir_emission\":"
-            << BuildMetaprogrammingSynthesizedArtifactEmissionContractJson(
-                   metaprogramming_expansion_lowering_contract,
-                   metaprogramming_synthesized_artifact_emission_contract,
-                   metaprogramming_synthesized_artifact_emission_replay_key)
-           << ",\"objc_metaprogramming_module_interface_and_replay_preservation\":"
-           << BuildMetaprogrammingModuleInterfaceReplayPreservationSummaryJson(
-                  metaprogramming_module_interface_replay_preservation_summary)
            << ",\"objc_dispatch_dynamism_and_dispatch_control_semantic_model\":"
            << BuildDispatchDispatchIntentSemanticModelSummaryJson(
                   dispatch_dispatch_intent_semantic_model_summary)
