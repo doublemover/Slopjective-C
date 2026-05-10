@@ -7,27 +7,26 @@
 
 void WriteFrontendCApiRunnerObservabilitySections(
     std::ostream &out,
-    objc3c_frontend_c_status_t status,
     const FrontendCApiRunnerObservabilityContext &context) {
   WriteFrontendCApiRunnerObservabilityStatusStageJsonRows(
       out,
       context.child_indent,
-      status,
-      context.last_attempted_stage,
-      context.blocking_stage);
+      context.publication.status,
+      context.publication.last_attempted_stage,
+      context.publication.blocking_stage);
   WriteFrontendCApiRunnerObservabilityDiagnosticTotalJsonRows(
       out,
       context.child_indent,
-      context.diagnostic_totals,
-      context.result_error_message_present);
+      context.publication.diagnostics.totals,
+      context.publication.diagnostics.result_error_message_present);
   WriteFrontendCApiRunnerObservabilityArtifactPresenceJsonRows(
       out,
       context.child_indent,
       context.grandchild_indent,
-      context.paths);
+      context.publication.paths);
   WriteFrontendCApiRunnerObservabilityDumpCommandJsonRows(
       out,
       context.child_indent,
       context.grandchild_indent,
-      context.paths);
+      context.publication.paths);
 }

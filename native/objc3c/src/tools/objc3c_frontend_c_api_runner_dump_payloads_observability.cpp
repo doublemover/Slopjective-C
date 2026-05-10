@@ -7,11 +7,10 @@ void AppendFrontendCApiRunnerObservabilityDumpPayload(
     const FrontendCApiRunnerOptions &options,
     const FrontendCApiRunnerDumpPublication &publication) {
   if (options.dump_observability_json) {
-    payloads.push_back(BuildFrontendCApiRunnerObservabilityJson(
-        publication.summary_path,
-        FrontendCApiRunnerDumpCompileResult(publication),
-        publication.status,
-        publication.result_error_message,
-        publication.runtime_metadata_binary_path_text));
+    const FrontendCApiRunnerObservabilityPublication
+        observability_publication =
+            BuildFrontendCApiRunnerObservabilityPublication(publication);
+    payloads.push_back(
+        BuildFrontendCApiRunnerObservabilityJson(observability_publication));
   }
 }
