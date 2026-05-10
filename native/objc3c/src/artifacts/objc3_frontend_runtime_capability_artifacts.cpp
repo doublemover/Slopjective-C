@@ -8,6 +8,7 @@
 #include "artifacts/objc3_frontend_runtime_capability_contracts.h"
 #include "artifacts/reports/report_dto.h"
 #include "io/objc3_json.h"
+#include "token/objc3_token_contract.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -45,19 +46,19 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
   constexpr OptionalFeatureEntry kEntries[] = {
       {"throws", "not-claimed",
        "runtime-backed throws/error propagation is not part of the runnable native surface yet",
-       kArtifactUnsupportedFeatureClaimThrows},
+       kObjc3UnsupportedFeatureClaimThrows},
       {"async-await", "not-claimed",
        "async/await lowering and runtime scheduling are not part of the runnable native surface yet",
-       kArtifactUnsupportedFeatureClaimAsyncAwait},
+       kObjc3UnsupportedFeatureClaimAsyncAwait},
       {"actors", "not-claimed",
        "actor isolation and actor runtime support are not part of the runnable native surface yet",
-       kArtifactUnsupportedFeatureClaimActors},
+       kObjc3UnsupportedFeatureClaimActors},
       {"blocks", "not-claimed",
        "blocks are still tracked as unsupported in the public conformance claim surface",
-       kArtifactUnsupportedFeatureClaimBlocks},
+       kObjc3UnsupportedFeatureClaimBlocks},
       {"arc", "not-claimed",
        "ARC remains unsupported in the public conformance claim surface until the full runnable ARC contract closes",
-       kArtifactUnsupportedFeatureClaimArc},
+       kObjc3UnsupportedFeatureClaimArc},
   };
   constexpr std::size_t kEntryCount = sizeof(kEntries) / sizeof(kEntries[0]);
   std::ostringstream out;

@@ -37,15 +37,4 @@ inline constexpr const char *kArtifactRuntimeCapabilityConcurrencyMode = "off";
 inline constexpr const char *kArtifactRuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
 
-inline constexpr const char *kArtifactUnsupportedFeatureClaimThrows =
-    "unsupported:throws";
-inline constexpr const char *kArtifactUnsupportedFeatureClaimAsyncAwait =
-    "unsupported:async-await";
-inline constexpr const char *kArtifactUnsupportedFeatureClaimActors =
-    "unsupported:actors";
-inline constexpr const char *kArtifactUnsupportedFeatureClaimBlocks =
-    "unsupported:blocks";
-inline constexpr const char *kArtifactUnsupportedFeatureClaimArc =
-    "unsupported:arc";
-
 }  // namespace objc3::artifacts::frontend
