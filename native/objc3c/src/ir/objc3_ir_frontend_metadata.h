@@ -16,6 +16,7 @@
 #include "ir/objc3_ir_frontend_metadata_runtime_bundles.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_support.h"
+#include "ir/objc3_ir_frontend_metadata_semantic_surface.h"
 #include "ir/objc3_ir_frontend_metadata_type_system.h"
 // Historical extraction contract marker:
 // #include "parse/objc3_parser_contract.h"
@@ -30,7 +31,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendBlockMetadata,
                                  Objc3IRFrontendTypeSystemMetadata,
                                  Objc3IRFrontendModuleSourceLinkageMetadata,
-                                 Objc3IRFrontendErrorHandlingMetadata {
+                                 Objc3IRFrontendErrorHandlingMetadata,
+                                 Objc3IRFrontendSemanticSurfaceMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -353,35 +355,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t
       inline_asm_intrinsic_governance_lowering_contract_violation_sites = 0;
   bool deterministic_inline_asm_intrinsic_governance_lowering_handoff = false;
-  std::size_t object_pointer_type_spellings = 0;
-  std::size_t pointer_declarator_entries = 0;
-  std::size_t pointer_declarator_depth_total = 0;
-  std::size_t pointer_declarator_token_entries = 0;
-  std::size_t nullability_suffix_entries = 0;
-  std::size_t generic_suffix_entries = 0;
-  std::size_t terminated_generic_suffix_entries = 0;
-  std::size_t unterminated_generic_suffix_entries = 0;
-  bool deterministic_object_pointer_nullability_generics_handoff = false;
-  std::size_t global_symbol_nodes = 0;
-  std::size_t function_symbol_nodes = 0;
-  std::size_t interface_symbol_nodes = 0;
-  std::size_t implementation_symbol_nodes = 0;
-  std::size_t interface_property_symbol_nodes = 0;
-  std::size_t implementation_property_symbol_nodes = 0;
-  std::size_t interface_method_symbol_nodes = 0;
-  std::size_t implementation_method_symbol_nodes = 0;
-  std::size_t top_level_scope_symbols = 0;
-  std::size_t nested_scope_symbols = 0;
-  std::size_t scope_frames_total = 0;
-  std::size_t implementation_interface_resolution_sites = 0;
-  std::size_t implementation_interface_resolution_hits = 0;
-  std::size_t implementation_interface_resolution_misses = 0;
-  std::size_t method_resolution_sites = 0;
-  std::size_t method_resolution_hits = 0;
-  std::size_t method_resolution_misses = 0;
-  bool deterministic_symbol_graph_handoff = false;
-  bool deterministic_scope_resolution_handoff = false;
-  std::string deterministic_symbol_graph_scope_resolution_handoff_key;
   std::size_t canonical_literal_rejection_total() const {
     return canonical_literal_yes_rejection_sites +
            canonical_literal_no_rejection_sites +
