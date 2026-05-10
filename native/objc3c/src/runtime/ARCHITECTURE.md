@@ -30,6 +30,7 @@ Owned code paths:
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - acceptance and replay reporting:
+  - `scripts.objc3c_workflow`
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
   - `npm run objc3c -- <action>`
