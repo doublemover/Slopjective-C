@@ -311,6 +311,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_type_system_contract_artifacts.h
   objc3_frontend_type_system_nullability_preservation_json.cpp
   objc3_frontend_type_system_optional_keypath_json.cpp
+  objc3_frontend_type_system_preservation_json.cpp
   objc3_frontend_type_system_semantic_json.cpp
   objc3_frontend_type_system_semantic_artifacts.h
 )
