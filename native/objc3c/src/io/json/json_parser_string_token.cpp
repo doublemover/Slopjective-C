@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "io/json/json_parser_unicode_escape.h"
+#include "io/json/json_parser_string_escape_token.h"
 
 namespace objc3::io::json {
 namespace {
@@ -38,38 +38,8 @@ bool ParseJsonStringToken(std::string_view text,
       out.push_back(static_cast<char>(ch));
       continue;
     }
-    if (cursor >= text.size()) {
-      return FailStringToken(error, cursor, "unterminated JSON string escape");
-    }
-    const char escaped = text[cursor++];
-    switch (escaped) {
-      case '"':
-      case '\\':
-      case '/':
-        out.push_back(escaped);
-        break;
-      case 'b':
-        out.push_back('\b');
-        break;
-      case 'f':
-        out.push_back('\f');
-        break;
-      case 'n':
-        out.push_back('\n');
-        break;
-      case 'r':
-        out.push_back('\r');
-        break;
-      case 't':
-        out.push_back('\t');
-        break;
-      case 'u':
-        if (!ParseJsonUnicodeEscape(text, cursor, error, out)) {
-          return false;
-        }
-        break;
-      default:
-        return FailStringToken(error, cursor, "invalid JSON string escape");
+    if (!ParseJsonStringEscapeToken(text, cursor, error, out)) {
+      return false;
     }
   }
   return FailStringToken(error, cursor, "unterminated JSON string");
