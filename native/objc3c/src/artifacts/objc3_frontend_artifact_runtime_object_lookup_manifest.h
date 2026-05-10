@@ -1,8 +1,5 @@
 #pragma once
 
-#include "artifacts/objc3_frontend_artifact_runtime_object_lookup_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_object_reflection_manifest.h"
-
 #include <iosfwd>
 #include <string>
 
@@ -12,7 +9,7 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
 
 namespace objc3::artifacts::frontend {
 
-void WriteRuntimeObjectModelAbiQuerySurface(
+void WriteRuntimeRealizationLookupSemanticsSurface(
     std::ostream &manifest,
     const std::string &runtime_state_publication_emit_prefix,
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary
