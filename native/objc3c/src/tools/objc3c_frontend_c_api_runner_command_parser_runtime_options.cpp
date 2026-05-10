@@ -1,6 +1,6 @@
 #include "tools/objc3c_frontend_c_api_runner_command_parser_options.h"
 
-#include "tools/objc3c_frontend_c_api_runner_option_values.h"
+#include "tools/objc3c_frontend_c_api_runner_command_parser_runtime_options_internal.h"
 
 FrontendCApiRunnerCommandOptionParseResult
 ParseFrontendCApiRunnerNumericRuntimeOption(
@@ -10,33 +10,35 @@ ParseFrontendCApiRunnerNumericRuntimeOption(
     int &index,
     FrontendCApiRunnerOptions &options,
     std::string &error) {
-  if (arg == "--objc3-max-message-args" && index + 1 < argc) {
-    if (!ParseFrontendCApiRunnerMaxMessageSendArgs(
-            argv[++index],
-            options.max_message_send_args,
-            error)) {
-      return FrontendCApiRunnerCommandOptionParseResult::kError;
-    }
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  const FrontendCApiRunnerCommandOptionParseResult max_message_args_result =
+      ParseFrontendCApiRunnerMaxMessageArgsOption(arg, argc, argv, index,
+                                                  options, error);
+  if (max_message_args_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return max_message_args_result;
   }
-  if (arg == "--objc3-runtime-dispatch-symbol" && index + 1 < argc) {
-    if (!ParseFrontendCApiRunnerRuntimeDispatchSymbol(
-            argv[++index],
-            options.runtime_dispatch_symbol,
-            error)) {
-      return FrontendCApiRunnerCommandOptionParseResult::kError;
-    }
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+
+  const FrontendCApiRunnerCommandOptionParseResult
+      runtime_dispatch_symbol_result =
+          ParseFrontendCApiRunnerRuntimeDispatchSymbolOption(
+              arg,
+              argc,
+              argv,
+              index,
+              options,
+              error);
+  if (runtime_dispatch_symbol_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return runtime_dispatch_symbol_result;
   }
-  if (arg == "--objc3-bootstrap-registration-order-ordinal" &&
-      index + 1 < argc) {
-    if (!ParseFrontendCApiRunnerRegistrationOrderOrdinal(
-            argv[++index],
-            options.translation_unit_registration_order_ordinal,
-            error)) {
-      return FrontendCApiRunnerCommandOptionParseResult::kError;
-    }
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+
+  const FrontendCApiRunnerCommandOptionParseResult registration_ordinal_result =
+      ParseFrontendCApiRunnerRegistrationOrdinalOption(arg, argc, argv, index,
+                                                       options, error);
+  if (registration_ordinal_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return registration_ordinal_result;
   }
+
   return FrontendCApiRunnerCommandOptionParseResult::kNotHandled;
 }
