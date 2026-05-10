@@ -150,6 +150,7 @@ add_library(objc3c_semantic_passes_core STATIC
   objc3_semantic_dispatch_model_summaries.cpp
   objc3_semantic_dispatch_intent_legality_summaries.cpp
   objc3_semantic_effects_diagnostics_model_summaries.cpp
+  objc3_semantic_error_handling_try_do_catch_summary.cpp
   objc3_semantic_interop_runtime_parity_summary.cpp
   objc3_semantic_passes.cpp
   objc3_semantic_swift_interop_model_summary.cpp
