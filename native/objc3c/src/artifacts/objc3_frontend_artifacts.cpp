@@ -25,6 +25,7 @@
 #include "artifacts/objc3_frontend_artifact_executable_metadata_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_interop_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ir_emission_completion.h"
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
@@ -230,6 +231,7 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
 using objc3::artifacts::frontend::WriteCrossModuleManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
+using objc3::artifacts::frontend::WriteInteropManifestSurfaces;
 using objc3::artifacts::frontend::WriteSourceClosureManifestSurfaces;
 using objc3::artifacts::frontend::WriteToolingManifestSurfaces;
 using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
@@ -4932,48 +4934,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       tooling_machine_readable_conformance_report_contract_summary,
       tooling_feature_aware_conformance_report_emission_summary,
       tooling_corpus_sharding_release_evidence_packaging_summary);
+  WriteInteropManifestSurfaces(
+      manifest, interop_interop_semantic_model_summary,
+      interop_interop_runtime_parity_summary,
+      interop_cpp_interop_interaction_summary,
+      interop_swift_interop_isolation_summary,
+      interop_foreign_surface_interface_preservation_summary,
+      interop_header_module_bridge_generation_summary,
+      interop_interop_lowering_contract,
+      interop_interop_lowering_replay_key,
+      interop_foreign_call_lifetime_lowering_contract,
+      interop_foreign_call_lifetime_lowering_replay_key,
+      interop_ffi_metadata_interface_preservation_contract,
+      interop_ffi_metadata_interface_preservation_replay_key);
   manifest
-           << ",\"objc_interop_interop_semantic_model\":"
-           << BuildInteropInteropSemanticModelSummaryJson(
-                  interop_interop_semantic_model_summary)
-           << ",\"objc_interop_c_and_objc_runtime_parity_semantics\":"
-           << BuildInteropInteropRuntimeParitySummaryJson(
-                  interop_interop_runtime_parity_summary)
-           << ",\"objc_interop_cpp_ownership_throws_and_async_interactions\":"
-           << BuildInteropCppInteropInteractionSummaryJson(
-                  interop_cpp_interop_interaction_summary)
-           << ",\"objc_interop_swift_metadata_and_isolation_mapping\":"
-           << BuildInteropSwiftInteropIsolationSummaryJson(
-                  interop_swift_interop_isolation_summary)
-           << ",\"objc_interop_foreign_surface_interface_and_module_preservation\":"
-           << BuildInteropForeignSurfaceInterfacePreservationSummaryJson(
-                  interop_foreign_surface_interface_preservation_summary)
-           << ",\"objc_interop_header_module_and_bridge_generation\":"
-           << BuildInteropHeaderModuleBridgeGenerationSummaryJson(
-                  interop_header_module_bridge_generation_summary)
-           << ",\"objc_interop_interop_lowering_and_abi_contract\":"
-           << BuildInteropInteropLoweringContractJson(
-                  interop_interop_semantic_model_summary,
-                  interop_interop_runtime_parity_summary,
-                  interop_cpp_interop_interaction_summary,
-                  interop_swift_interop_isolation_summary,
-                  interop_foreign_surface_interface_preservation_summary,
-                  interop_interop_lowering_contract,
-                  interop_interop_lowering_replay_key)
-           << ",\"objc_interop_foreign_call_and_lifetime_lowering\":"
-           << BuildInteropForeignCallLifetimeLoweringContractJson(
-                  interop_interop_lowering_contract,
-                  interop_cpp_interop_interaction_summary,
-                  interop_foreign_surface_interface_preservation_summary,
-                  interop_foreign_call_lifetime_lowering_contract,
-                  interop_foreign_call_lifetime_lowering_replay_key)
-           << ",\"objc_interop_ffi_metadata_and_interface_preservation\":"
-           << BuildInteropFfiMetadataInterfacePreservationContractJson(
-                  interop_foreign_call_lifetime_lowering_contract,
-                  interop_foreign_call_lifetime_lowering_replay_key,
-                  interop_foreign_surface_interface_preservation_summary,
-                  interop_ffi_metadata_interface_preservation_contract,
-                  interop_ffi_metadata_interface_preservation_replay_key)
             << ",\"objc_metaprogramming_expansion_and_behavior_semantic_model\":"
             << BuildMetaprogrammingExpansionBehaviorSemanticModelSummaryJson(
                    metaprogramming_expansion_behavior_semantic_model_summary)
