@@ -242,6 +242,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifacts.h
   objc3_frontend_concurrency_semantic_artifacts.cpp
   objc3_frontend_concurrency_semantic_artifacts.h
+  objc3_frontend_concurrency_semantic_json.cpp
   objc3_frontend_control_flow_semantic_json.cpp
   objc3_frontend_control_flow_semantic_artifacts.cpp
   objc3_frontend_control_flow_semantic_artifacts.h
