@@ -11,6 +11,10 @@ add_library(objc3c_pipeline STATIC
   frontend_dispatch_source_completion_helpers.cpp
   frontend_interop_source_completion_helpers.cpp
   frontend_pipeline_orchestration.cpp
+  frontend_pipeline_orchestration_protocol_symbols.cpp
+  frontend_pipeline_orchestration_runtime_export.cpp
+  frontend_pipeline_orchestration_semantic_models.cpp
+  frontend_pipeline_orchestration_source_readiness.cpp
   frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
   frontend_metadata_handoff_ordering.cpp
@@ -65,6 +69,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_type_system_preservation_optional_keypath.cpp
   runtime_import_type_system_preservation_protocol.cpp
   frontend_pipeline_defaults.h
+  frontend_pipeline_orchestration_owners.h
   frontend_pipeline_result_contract.h
   frontend_pipeline_result_handoff.h
   frontend_pipeline_sema_stage_runner.h
