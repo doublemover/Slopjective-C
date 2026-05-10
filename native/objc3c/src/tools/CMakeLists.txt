@@ -24,6 +24,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_output_contract_hardening_surfaces.cpp
   objc3c_frontend_c_api_runner_output_contract_json.cpp
   objc3c_frontend_c_api_runner_output_contract_matrix_json.cpp
+  objc3c_frontend_c_api_runner_output_contract_matrix_json_rows.cpp
   objc3c_frontend_c_api_runner_output_paths.cpp
   objc3c_frontend_c_api_runner_playground_repro_json.cpp
   objc3c_frontend_c_api_runner_public_result.cpp
