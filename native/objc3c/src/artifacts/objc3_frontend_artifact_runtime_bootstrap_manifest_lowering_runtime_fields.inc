@@ -1,0 +1,84 @@
+  manifest << ",\"runtime_bootstrap_lowering_contract_id\":\""
+           << runtime_bootstrap_lowering.contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_manifest_contract_id\":\""
+           << runtime_bootstrap_lowering.registration_manifest_contract_id
+           << "\",\"runtime_bootstrap_registrar_contract_id\":\""
+           << kObjc3RuntimeBootstrapRegistrarContractId
+           << "\",\"runtime_bootstrap_registrar_stage_registration_table_symbol\":\""
+           << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
+           << "\",\"runtime_bootstrap_registrar_image_walk_snapshot_symbol\":\""
+           << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol
+           << "\",\"runtime_bootstrap_registrar_image_walk_model\":\""
+           << kObjc3RuntimeBootstrapImageWalkModel
+           << "\",\"runtime_bootstrap_registrar_discovery_root_validation_model\":\""
+           << kObjc3RuntimeBootstrapDiscoveryRootValidationModel
+           << "\",\"runtime_bootstrap_registrar_selector_pool_interning_model\":\""
+           << kObjc3RuntimeBootstrapSelectorPoolInterningModel
+           << "\",\"runtime_bootstrap_registrar_realization_staging_model\":\""
+           << kObjc3RuntimeBootstrapRealizationStagingModel
+           << "\",\"runtime_bootstrap_reset_contract_id\":\""
+           << kObjc3RuntimeBootstrapResetContractId
+           << "\",\"runtime_bootstrap_reset_replay_registered_images_symbol\":\""
+           << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol
+           << "\",\"runtime_bootstrap_reset_reset_replay_state_snapshot_symbol\":\""
+           << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol
+           << "\",\"runtime_bootstrap_reset_lifecycle_model\":\""
+           << kObjc3RuntimeBootstrapResetLifecycleModel
+           << "\",\"runtime_bootstrap_reset_replay_order_model\":\""
+           << kObjc3RuntimeBootstrapReplayOrderModel
+           << "\",\"runtime_bootstrap_reset_image_local_init_state_reset_model\":\""
+           << kObjc3RuntimeBootstrapImageLocalInitStateResetModel
+           << "\",\"runtime_bootstrap_reset_bootstrap_catalog_retention_model\":\""
+           << kObjc3RuntimeBootstrapCatalogRetentionModel
+           << "\",\"runtime_bootstrap_lowering_bootstrap_semantics_contract_id\":\""
+           << runtime_bootstrap_lowering.bootstrap_semantics_contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_contract_id\":\""
+           << runtime_bootstrap_lowering
+                  .registration_descriptor_frontend_closure_contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_artifact\":\""
+           << runtime_bootstrap_lowering.registration_descriptor_artifact
+           << "\",\"runtime_bootstrap_lowering_boundary_model\":\""
+           << runtime_bootstrap_lowering.lowering_boundary_model
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_handoff_model\":\""
+           << runtime_bootstrap_lowering.registration_descriptor_handoff_model
+           << "\",\"runtime_bootstrap_lowering_constructor_root_symbol\":\""
+           << runtime_bootstrap_lowering.constructor_root_symbol
+           << "\",\"runtime_bootstrap_lowering_init_stub_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.constructor_init_stub_symbol_prefix
+           << "\",\"runtime_bootstrap_lowering_registration_table_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.registration_table_symbol_prefix
+           << "\",\"runtime_bootstrap_lowering_registration_entrypoint_symbol\":\""
+           << runtime_bootstrap_lowering.registration_entrypoint_symbol
+           << "\",\"runtime_bootstrap_lowering_global_ctor_list_model\":\""
+           << runtime_bootstrap_lowering.global_ctor_list_model
+           << "\",\"runtime_bootstrap_lowering_constructor_root_emission_state\":\""
+           << runtime_bootstrap_lowering.constructor_root_emission_state
+           << "\",\"runtime_bootstrap_lowering_init_stub_emission_state\":\""
+           << runtime_bootstrap_lowering.init_stub_emission_state
+           << "\",\"runtime_bootstrap_lowering_registration_table_emission_state\":\""
+           << runtime_bootstrap_lowering.registration_table_emission_state
+           << "\",\"runtime_bootstrap_lowering_fail_closed\":"
+           << (runtime_bootstrap_lowering.fail_closed ? "true" : "false")
+           << ",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_contract_ready\":"
+           << (runtime_bootstrap_lowering
+                       .registration_descriptor_frontend_closure_contract_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_lowering_no_bootstrap_ir_materialization_yet\":"
+           << (runtime_bootstrap_lowering.no_bootstrap_ir_materialization_yet
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_lowering_ready_for_bootstrap_materialization\":"
+           << (runtime_bootstrap_lowering.ready_for_bootstrap_materialization
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_lowering_replay_key\":\""
+           << objc3::io::EscapeJsonString(runtime_bootstrap_lowering.replay_key)
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_replay_key\":\""
+           << objc3::io::EscapeJsonString(
+                  runtime_bootstrap_lowering
+                      .registration_descriptor_frontend_closure_replay_key)
+           << "\",\"runtime_bootstrap_lowering_failure_reason\":\""
+           << objc3::io::EscapeJsonString(
+                  runtime_bootstrap_lowering.failure_reason)
+           << "\"";
