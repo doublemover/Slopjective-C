@@ -1,6 +1,6 @@
 #include "io/json/json_schema_node_preflight_validation.h"
 
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_node_preflight_guard_validation.h"
 #include "io/json/json_schema_ref_preflight_validation.h"
 
 namespace objc3::io::json {
@@ -11,9 +11,7 @@ bool ValidateJsonSchemaNodePreflight(const JsonValue &schema_root,
                                      const std::string &instance_path,
                                      const std::string &schema_path,
                                      JsonSchemaResult &result) {
-  if (!schema.IsObject()) {
-    AddJsonSchemaContractError(result, "invalid_schema_node", schema_path,
-                               "schema node must be a JSON object");
+  if (!ValidateJsonSchemaNodePreflightGuard(schema, schema_path, result)) {
     return false;
   }
 
