@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include "io/json/json_object_writer_value_emission.h"
+#include "io/json/json_object_writer_value_validation.h"
 
 namespace objc3::io::json {
 

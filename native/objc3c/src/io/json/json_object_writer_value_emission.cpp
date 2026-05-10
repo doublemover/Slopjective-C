@@ -1,11 +1,8 @@
 #include "io/json/json_object_writer_value_emission.h"
 
-#include <cmath>
 #include <iomanip>
 #include <ostream>
-#include <stdexcept>
 
-#include "io/json/json_parser.h"
 #include "io/json/json_writer.h"
 #include "io/objc3_json.h"
 
@@ -22,12 +19,6 @@ void WriteJsonObjectBoolMemberValue(std::ostream &out, bool value) {
 
 void WriteJsonObjectIntMemberValue(std::ostream &out, std::int64_t value) {
   out << value;
-}
-
-void ValidateJsonObjectNumberMemberValue(double value) {
-  if (!std::isfinite(value)) {
-    throw std::invalid_argument("NumberField received a non-finite number");
-  }
 }
 
 void WriteJsonObjectNumberMemberValue(std::ostream &out, double value) {
@@ -52,15 +43,6 @@ void WriteJsonObjectStringArrayMemberValue(
 void WriteJsonObjectValueMemberValue(std::ostream &out,
                                      const JsonValue &value) {
   WriteJson(out, value);
-}
-
-JsonValue ParseJsonObjectRawMemberValue(std::string_view value) {
-  JsonParseResult parsed = ParseJson(value);
-  if (!parsed.ok()) {
-    throw std::invalid_argument("RawJsonField received invalid JSON: " +
-                                parsed.error->Format());
-  }
-  return parsed.value;
 }
 
 }  // namespace objc3::io::json

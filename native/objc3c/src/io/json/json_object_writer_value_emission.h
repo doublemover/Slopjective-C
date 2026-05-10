@@ -15,7 +15,6 @@ void WriteJsonObjectStringMemberValue(std::ostream &out,
                                       std::string_view value);
 void WriteJsonObjectBoolMemberValue(std::ostream &out, bool value);
 void WriteJsonObjectIntMemberValue(std::ostream &out, std::int64_t value);
-void ValidateJsonObjectNumberMemberValue(double value);
 void WriteJsonObjectNumberMemberValue(std::ostream &out, double value);
 void WriteJsonObjectSizeMemberValue(std::ostream &out, std::size_t value);
 void WriteJsonObjectUnsignedMemberValue(std::ostream &out,
@@ -25,6 +24,5 @@ void WriteJsonObjectStringArrayMemberValue(
     const std::vector<std::string> &values);
 void WriteJsonObjectValueMemberValue(std::ostream &out,
                                      const JsonValue &value);
-[[nodiscard]] JsonValue ParseJsonObjectRawMemberValue(std::string_view value);
 
 }  // namespace objc3::io::json
