@@ -97,6 +97,10 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_status_mapping.cpp
   objc3c_frontend_c_api_runner_summary_io.cpp
   objc3c_frontend_c_api_runner_summary_json.cpp
+  objc3c_frontend_c_api_runner_summary_json_output_contract.cpp
+  objc3c_frontend_c_api_runner_summary_json_public_result.cpp
+  objc3c_frontend_c_api_runner_summary_json_runtime_sections.cpp
+  objc3c_frontend_c_api_runner_summary_json_stages.cpp
   objc3c_frontend_c_api_runner_summary_path.cpp
   objc3c_frontend_c_api_runner_usage.cpp
   objc3c_frontend_c_api_runner.cpp
