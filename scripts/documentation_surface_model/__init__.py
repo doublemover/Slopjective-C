@@ -1,18 +1,21 @@
-"""Compatibility wrapper for the documentation surface checker model."""
+"""Public import surface for the documentation surface model checker."""
 
 from __future__ import annotations
 
-from documentation_surface_model import (
+from documentation_surface.model import (
+    DocumentationSurfaceModel,
+    DocumentationSurfaceReport,
+    DocumentationSurfaceReportWriter,
+    DocumentationSurfaceSource,
+)
+
+from .registry import (
     CHECKER_NAME,
     DOCUMENTATION_SURFACE_BLOCKER_METADATA,
     DOCUMENTATION_SURFACE_MODEL,
     DOCUMENTATION_SURFACE_OWNER,
     DOCUMENTATION_SURFACE_OWNER_SURFACE,
     ROOT,
-    DocumentationSurfaceModel,
-    DocumentationSurfaceReport,
-    DocumentationSurfaceReportWriter,
-    DocumentationSurfaceSource,
     _source,
 )
 
