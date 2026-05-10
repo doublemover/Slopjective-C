@@ -12,6 +12,35 @@ bool PopulatePreservationEvidence(const RuntimeImportJsonValue::Object &root,
                                   Objc3ImportedRuntimeModuleSurface &surface,
                                   std::string &error);
 
+bool PopulateFrontendClosureSummary(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    std::string &error);
+
+bool PopulateImportedRuntimeLanguageEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedInteropEvidence(const RuntimeImportJsonValue::Object &root,
+                                     Objc3ImportedRuntimeModuleSurface &surface,
+                                     std::string &error);
+
+bool PopulateImportedMetaprogrammingEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedDispatchEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
+bool PopulateImportedRuntimeArtifactEvidence(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
 bool PopulateSerializedRuntimeMetadataReuse(
     const RuntimeImportJsonValue::Object &root,
     Objc3ImportedRuntimeModuleSurface &surface,

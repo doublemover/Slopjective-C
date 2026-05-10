@@ -41,6 +41,12 @@ add_library(objc3c_pipeline STATIC
   runtime_import_json_helpers.cpp
   runtime_import_packaging_peer_artifacts.cpp
   runtime_import_preservation_evidence.cpp
+  runtime_import_preservation_evidence_dispatch.cpp
+  runtime_import_preservation_evidence_frontend.cpp
+  runtime_import_preservation_evidence_interop.cpp
+  runtime_import_preservation_evidence_metaprogramming.cpp
+  runtime_import_preservation_evidence_runtime_artifacts.cpp
+  runtime_import_preservation_evidence_runtime_language.cpp
   runtime_import_preservation_packaging.cpp
   runtime_import_preservation.cpp
   runtime_import_preservation_readiness.cpp
