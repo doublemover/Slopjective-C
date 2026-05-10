@@ -27,8 +27,6 @@ class JsonParserCursor {
   bool Fail(std::string message);
 
  private:
-  bool ConsumeDigits();
-
   std::string_view text_;
   std::size_t cursor_ = 0;
   std::optional<JsonError> error_;
