@@ -2,14 +2,13 @@
 
 #include <sstream>
 
-#include "io/objc3_json.h"
 #include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
-#include "tools/objc3c_frontend_c_api_runner_commands.h"
 #include "tools/objc3c_frontend_c_api_runner_diagnostic_totals.h"
+#include "tools/objc3c_frontend_c_api_runner_observability_json_artifacts.h"
+#include "tools/objc3c_frontend_c_api_runner_observability_json_diagnostics.h"
+#include "tools/objc3c_frontend_c_api_runner_observability_json_dump_commands.h"
+#include "tools/objc3c_frontend_c_api_runner_observability_json_status.h"
 #include "tools/objc3c_frontend_c_api_runner_stage_selection.h"
-#include "tools/objc3c_frontend_c_api_runner_status_mapping.h"
-
-using objc3::io::EscapeJsonString;
 
 void WriteFrontendCApiRunnerObservabilityJson(
     std::ostream &out,
@@ -30,63 +29,27 @@ void WriteFrontendCApiRunnerObservabilityJson(
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   out << "{\n";
-  out << child_indent << "\"status_name\": \"" << FrontendCApiStatusName(status)
-      << "\",\n";
-  out << child_indent << "\"last_attempted_stage\": \""
-      << EscapeJsonString(last_attempted_stage) << "\",\n";
-  out << child_indent << "\"blocking_stage\": \""
-      << EscapeJsonString(blocking_stage) << "\",\n";
-  out << child_indent << "\"highest_diagnostic_severity\": \""
-      << HighestFrontendCApiDiagnosticSeverity(diagnostic_totals) << "\",\n";
-  out << child_indent << "\"result_error_message_present\": "
-      << (!result_error_message.empty() ? "true" : "false") << ",\n";
-  out << child_indent << "\"diagnostics_total\": " << diagnostic_totals.total
-      << ",\n";
-  out << child_indent << "\"diagnostics_notes\": " << diagnostic_totals.notes
-      << ",\n";
-  out << child_indent << "\"diagnostics_warnings\": "
-      << diagnostic_totals.warnings << ",\n";
-  out << child_indent << "\"diagnostics_errors\": " << diagnostic_totals.errors
-      << ",\n";
-  out << child_indent << "\"diagnostics_fatals\": " << diagnostic_totals.fatals
-      << ",\n";
-  out << child_indent << "\"artifact_presence\": {\n";
-  out << grandchild_indent << "\"summary\": true,\n";
-  out << grandchild_indent << "\"diagnostics\": "
-      << (FrontendCApiRunnerPathExists(paths.diagnostics) ? "true"
-                                                              : "false")
-      << ",\n";
-  out << grandchild_indent << "\"manifest\": "
-      << (FrontendCApiRunnerPathExists(paths.manifest) ? "true" : "false")
-      << ",\n";
-  out << grandchild_indent << "\"ir\": "
-      << (FrontendCApiRunnerPathExists(paths.ir) ? "true" : "false")
-      << ",\n";
-  out << grandchild_indent << "\"object\": "
-      << (FrontendCApiRunnerPathExists(paths.object) ? "true" : "false")
-      << ",\n";
-  out << grandchild_indent << "\"runtime_metadata_binary\": "
-      << (!paths.runtime_metadata_binary.empty() ? "true" : "false")
-      << "\n";
-  out << child_indent << "},\n";
-  out << child_indent << "\"dump_commands\": {\n";
-  out << grandchild_indent << "\"summary\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.summary))
-      << "\",\n";
-  out << grandchild_indent << "\"diagnostics\": \""
-      << EscapeJsonString(
-             BuildFrontendCApiRunnerReadCommand(paths.diagnostics))
-      << "\",\n";
-  out << grandchild_indent << "\"manifest\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.manifest))
-      << "\",\n";
-  out << grandchild_indent << "\"ir\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.ir))
-      << "\",\n";
-  out << grandchild_indent << "\"object\": \""
-      << EscapeJsonString(BuildFrontendCApiRunnerReadCommand(paths.object))
-      << "\"\n";
-  out << child_indent << "}\n";
+  WriteFrontendCApiRunnerObservabilityStatusStageJsonRows(
+      out,
+      child_indent,
+      status,
+      last_attempted_stage,
+      blocking_stage);
+  WriteFrontendCApiRunnerObservabilityDiagnosticTotalJsonRows(
+      out,
+      child_indent,
+      diagnostic_totals,
+      !result_error_message.empty());
+  WriteFrontendCApiRunnerObservabilityArtifactPresenceJsonRows(
+      out,
+      child_indent,
+      grandchild_indent,
+      paths);
+  WriteFrontendCApiRunnerObservabilityDumpCommandJsonRows(
+      out,
+      child_indent,
+      grandchild_indent,
+      paths);
   out << indent << "}";
 }
 
