@@ -1,16 +1,12 @@
-struct MatchExhaustivenessInfo {
-  bool exhaustive = false;
-  bool bool_exhaustive = false;
-  bool result_case_exhaustive = false;
-};
+#include "sema/objc3_semantic_match_exhaustiveness.h"
 
-static bool IsMatchCatchAllPattern(const SwitchCase &case_stmt) {
+bool IsMatchCatchAllPattern(const SwitchCase &case_stmt) {
   return case_stmt.is_default ||
          case_stmt.match_pattern_kind == MatchPatternKind::Wildcard ||
          case_stmt.match_pattern_kind == MatchPatternKind::Binding;
 }
 
-static MatchExhaustivenessInfo ClassifyMatchExhaustiveness(
+MatchExhaustivenessInfo ClassifyMatchExhaustiveness(
     const SwitchStmt &switch_stmt) {
   MatchExhaustivenessInfo info;
   bool saw_true = false;

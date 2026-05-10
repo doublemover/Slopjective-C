@@ -82,6 +82,7 @@ add_library(objc3c_semantic_type_surface STATIC
   objc3_semantic_feature_claim_rules.cpp
   objc3_semantic_feature_claims.cpp
   objc3_semantic_generic_argument_relations.cpp
+  objc3_semantic_match_exhaustiveness.cpp
   objc3_semantic_pass_helpers.cpp
   objc3_semantic_protocol_composition_parser.cpp
   objc3_semantic_signature_compatibility.cpp
@@ -142,6 +143,7 @@ target_link_libraries(objc3c_sema_static_scalar_analysis PUBLIC
 add_library(objc3c_semantic_passes_core STATIC
   objc3_pure_contract.cpp
   objc3_semantic_constant_evaluator.cpp
+  objc3_semantic_control_flow_model_summary.cpp
   objc3_semantic_effects_diagnostics_model_summaries.cpp
   objc3_semantic_passes.cpp
 )
