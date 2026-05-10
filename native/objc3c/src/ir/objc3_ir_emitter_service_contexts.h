@@ -9,8 +9,6 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
-#include "ir/objc3_ir_block_lowering.h"
-#include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_function_orchestration.h"
 #include "ir/objc3_ir_function_signature_model.h"
@@ -20,7 +18,6 @@
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
-#include "ir/objc3_ir_value_materialization.h"
 #include "lower/objc3_lowering_contract.h"
 
 struct Objc3IREmitterServiceContextState {
@@ -70,19 +67,7 @@ BuildObjc3IREmitterServiceContextCallbacks(
     std::function<std::string(const std::string &reason)>
         emit_unsupported_i32_value);
 
-Objc3IRBlockLoweringContext BuildObjc3IREmitterBlockLoweringContext(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks);
-
-Objc3IRCompileTimeProofAnalysisContext
-BuildObjc3IREmitterCompileTimeProofAnalysisContext(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks);
-
-Objc3IRValueMaterializationContext
-BuildObjc3IREmitterValueMaterializationContext(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks);
+#include "ir/objc3_ir_emitter_block_value_services.h"
 
 Objc3IRFunctionOrchestrationOptions
 BuildObjc3IREmitterFunctionOrchestrationOptions(
