@@ -3,7 +3,7 @@
 #include <string>
 
 #include "libobjc3c_frontend/c_api.h"
-#include "tools/objc3c_frontend_c_api_runner_c_string.h"
+#include "tools/objc3c_frontend_c_api_runner_string_snapshot.h"
 
 bool ValidateFrontendCApiResultStatusAndErrorAccessors(
     objc3c_frontend_c_status_t status,

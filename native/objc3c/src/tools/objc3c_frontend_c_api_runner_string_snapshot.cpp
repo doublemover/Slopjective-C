@@ -1,4 +1,4 @@
-#include "tools/objc3c_frontend_c_api_runner_c_string.h"
+#include "tools/objc3c_frontend_c_api_runner_string_snapshot.h"
 
 FrontendCApiRunnerStringSnapshot SnapshotOptionalFrontendCApiString(
     const objc3c_frontend_c_string_t *value) {

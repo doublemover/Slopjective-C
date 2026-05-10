@@ -14,7 +14,6 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_bonus_experiences_json_runtime_inspector_fields.cpp
   objc3c_frontend_c_api_runner_bonus_experiences_json_sections.cpp
   objc3c_frontend_c_api_runner_bonus_experiences_json_template_demo.cpp
-  objc3c_frontend_c_api_runner_c_string.cpp
   objc3c_frontend_c_api_runner_c_string_artifact_paths.cpp
   objc3c_frontend_c_api_runner_c_string_error_message.cpp
   objc3c_frontend_c_api_runner_c_string_last_error.cpp
@@ -186,6 +185,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_stage_trace_json_compile_session.cpp
   objc3c_frontend_c_api_runner_stage_trace_json_summary.cpp
   objc3c_frontend_c_api_runner_status_mapping.cpp
+  objc3c_frontend_c_api_runner_string_snapshot.cpp
   objc3c_frontend_c_api_runner_summary_io.cpp
   objc3c_frontend_c_api_runner_summary_json.cpp
   objc3c_frontend_c_api_runner_summary_json_output_contract.cpp
