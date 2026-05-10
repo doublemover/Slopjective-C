@@ -8,6 +8,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import load_json_any as load_json
 from scripts.objc3c_workflow.public_command_api import (
@@ -21,7 +26,6 @@ from scripts.objc3c_workflow.actions.command_facades_inventory import (
 
 sys.dont_write_bytecode = True
 
-ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_JSON = ROOT / 'package.json'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
 DEFAULT_OUTPUT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'

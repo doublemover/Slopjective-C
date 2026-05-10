@@ -24,6 +24,7 @@ OPERATOR_PREFIXES: tuple[str, ...] = (
     "package-",
     "proof-",
     "test-",
+    "trace-",
     "validate-",
 )
 

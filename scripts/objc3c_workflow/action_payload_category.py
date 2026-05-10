@@ -17,6 +17,7 @@ CANONICAL_ACTION_CATEGORIES: tuple[str, ...] = (
     "proof",
     "publish",
     "test",
+    "trace",
     "validate",
 )
 
