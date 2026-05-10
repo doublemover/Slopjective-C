@@ -81,6 +81,8 @@ add_library(objc3c_json STATIC
   json/json_schema_node_preflight_validation.cpp
   json/json_schema_numeric_contract_validation.cpp
   json/json_schema_numeric_constraint_maximum_validation.cpp
+  json/json_schema_numeric_constraint_minimum_keyword_validation.cpp
+  json/json_schema_numeric_constraint_minimum_payload_validation.cpp
   json/json_schema_numeric_constraint_minimum_validation.cpp
   json/json_schema_numeric_constraint_validation.cpp
   json/json_schema_numeric_maximum_contract_validation.cpp

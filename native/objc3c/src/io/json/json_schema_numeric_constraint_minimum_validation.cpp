@@ -1,6 +1,7 @@
 #include "io/json/json_schema_numeric_constraint_minimum_validation.h"
 
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_numeric_constraint_minimum_keyword_validation.h"
+#include "io/json/json_schema_numeric_constraint_minimum_payload_validation.h"
 
 namespace objc3::io::json {
 
@@ -9,20 +10,13 @@ void ValidateJsonSchemaMinimumConstraint(const JsonValue &schema,
                                          const std::string &instance_path,
                                          const std::string &schema_path,
                                          JsonSchemaResult &result) {
-  const JsonValue *minimum = schema.Find("minimum");
-  if (minimum != nullptr && payload.IsNumber()) {
-    if (!minimum->IsNumber()) {
-      AddJsonSchemaContractError(
-          result, "invalid_minimum",
-          JsonSchemaKeywordPath(schema_path, "minimum"),
-          "minimum must be a number");
-    } else if (payload.AsNumber() < minimum->AsNumber()) {
-      AddJsonSchemaPayloadError(
-          result, "minimum", instance_path,
-          JsonSchemaKeywordPath(schema_path, "minimum"),
-          "number is below minimum");
-    }
+  const JsonValue *minimum = ValidateJsonSchemaMinimumKeyword(
+      schema, payload, schema_path, result);
+  if (minimum == nullptr) {
+    return;
   }
+  ValidateJsonSchemaMinimumPayload(*minimum, payload, instance_path,
+                                   schema_path, result);
 }
 
 }  // namespace objc3::io::json
