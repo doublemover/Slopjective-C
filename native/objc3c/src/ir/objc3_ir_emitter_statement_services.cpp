@@ -1,5 +1,6 @@
 #include "ir/objc3_ir_emitter_statement_services.h"
 
+#include "ir/objc3_ir_emitter_block_value_services.h"
 #include "ir/objc3_ir_emitter_expression_services.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
 

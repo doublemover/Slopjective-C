@@ -3,6 +3,7 @@
 #include <string>
 
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
+#include "ir/objc3_ir_emitter_block_value_services.h"
 #include "ir/objc3_ir_emitter_statement_services.h"
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_statement_orchestration.h"

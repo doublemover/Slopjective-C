@@ -63,6 +63,3 @@ Objc3IREmitterServiceContextCallbacks
 BuildObjc3IREmitterServiceContextCallbacks(
     std::function<std::string(const std::string &reason)>
         emit_unsupported_i32_value);
-
-#include "ir/objc3_ir_emitter_block_value_services.h"
-#include "ir/objc3_ir_emitter_module_services.h"
