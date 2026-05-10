@@ -251,6 +251,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_interop_semantic_artifacts.cpp
   objc3_frontend_interop_semantic_artifacts.h
   objc3_frontend_metaprogramming_artifact_bundles.cpp
+  objc3_frontend_metaprogramming_replay_preservation.cpp
   objc3_frontend_metaprogramming_semantic_artifacts.cpp
   objc3_frontend_metaprogramming_semantic_artifacts.h
   objc3_frontend_module_semantic_artifacts.cpp
