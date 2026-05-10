@@ -19,7 +19,6 @@
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
-#include "artifacts/objc3_frontend_artifact_debug_projection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
@@ -39,25 +38,20 @@
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_module_metadata.h"
 #include "artifacts/objc3_frontend_artifact_object_dispatch_metadata.h"
-#include "artifacts/objc3_frontend_artifact_object_inspection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_metadata.h"
-#include "artifacts/objc3_frontend_artifact_pipeline_readiness_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
 #include "artifacts/objc3_frontend_artifact_property_atomicity_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_block_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_concurrency_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_output.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
-#include "artifacts/objc3_frontend_artifact_runtime_metadata_typed_bundles.h"
 #include "artifacts/objc3_frontend_artifact_runtime_object_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_release_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
-#include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
@@ -6540,36 +6534,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       executable_metadata_typed_lowering_handoff, input_path,
       bundle.parse_lowering_readiness_surface.parse_artifact_replay_key,
       bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key);
-  // bootstrap materialization anchor: the native IR emitter consumes
-  // this lowering packet directly when it materializes the ctor root, derived
-  // init stub, registration table, and image descriptor. Driver/process code
-  // may publish the same packet, but they may not re-derive those symbol
-  // shapes independently from truncated sidecar state.
-  // registration-table/image-local-init anchor: the same lowering
-  // packet now also carries the self-describing registration-table layout,
-  // ABI/version counts, and image-local init-state model that the emitter,
-  // manifest writers, and later runtime image-walk code must preserve exactly.
-  objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeBootstrapMetadata(
-      ir_frontend_metadata, bundle.runtime_bootstrap_lowering_summary,
-      bundle.runtime_registration_descriptor_frontend_closure_summary,
-      bundle.runtime_translation_unit_registration_manifest_summary);
   objc3::artifacts::frontend::
-      ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
-          ir_frontend_metadata, executable_metadata_typed_lowering_handoff,
-          runtime_metadata_section_publication);
-  objc3::artifacts::frontend::ApplyObjc3FrontendObjectInspectionMetadata(
-      ir_frontend_metadata, runtime_metadata_object_inspection);
-  objc3::artifacts::frontend::ApplyObjc3FrontendDebugProjectionMetadata(
-      ir_frontend_metadata, executable_metadata_debug_projection);
-  objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeSupportLibraryMetadata(
-      ir_frontend_metadata, runtime_support_library,
-      runtime_support_library_core_feature, runtime_support_library_link_wiring);
-  objc3::artifacts::frontend::ApplyObjc3FrontendPipelineReadinessMetadata(
-      ir_frontend_metadata,
-      ownership_aware_lowering_behavior_scaffold,
-      pipeline_result.ir_emission_completeness_scaffold,
-      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
-      ir_emission_core_feature_impl_surface);
+      ApplyObjc3FrontendFinalRuntimeAndReadinessMetadata(
+          ir_frontend_metadata, bundle,
+          executable_metadata_typed_lowering_handoff,
+          runtime_metadata_section_publication,
+          runtime_metadata_object_inspection,
+          executable_metadata_debug_projection,
+          runtime_support_library, runtime_support_library_core_feature,
+          runtime_support_library_link_wiring,
+          ownership_aware_lowering_behavior_scaffold,
+          pipeline_result.ir_emission_completeness_scaffold,
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          ir_emission_core_feature_impl_surface);
   if (!objc3::artifacts::frontend::CompleteObjc3FrontendArtifactIREmission(
           bundle, pipeline_result, options, program, ir_frontend_metadata,
           runtime_dispatch_lowering_abi_contract,

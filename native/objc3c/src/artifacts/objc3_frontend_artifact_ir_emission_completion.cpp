@@ -2,11 +2,65 @@
 
 #include <string>
 
+#include "artifacts/objc3_frontend_artifact_debug_projection_metadata.h"
+#include "artifacts/objc3_frontend_artifact_object_inspection_metadata.h"
+#include "artifacts/objc3_frontend_artifact_pipeline_readiness_metadata.h"
+#include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
+#include "artifacts/objc3_frontend_artifact_runtime_metadata_typed_bundles.h"
+#include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "diag/objc3_diag_format.h"
 #include "ir/objc3_ir_emitter.h"
 
 namespace objc3::artifacts::frontend {
+
+void ApplyObjc3FrontendFinalRuntimeAndReadinessMetadata(
+    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    const Objc3FrontendArtifactBundle &bundle,
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff,
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        &runtime_metadata_section_publication,
+    const Objc3RuntimeMetadataObjectInspectionHarnessSummary
+        &runtime_metadata_object_inspection,
+    const Objc3ExecutableMetadataDebugProjectionSummary
+        &executable_metadata_debug_projection,
+    const Objc3RuntimeSupportLibraryContractSummary &runtime_support_library,
+    const Objc3RuntimeSupportLibraryCoreFeatureSummary
+        &runtime_support_library_core_feature,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary
+        &runtime_support_library_link_wiring,
+    const Objc3OwnershipAwareLoweringBehaviorScaffold
+        &ownership_aware_lowering_behavior_scaffold,
+    const Objc3IREmissionCompletenessScaffold
+        &ir_emission_completeness_scaffold,
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface
+        &lowering_pipeline_pass_graph_core_feature_surface,
+    const Objc3IREmissionCoreFeatureImplementationSurface
+        &ir_emission_core_feature_impl_surface) {
+  // The native IR emitter consumes this lowering packet directly when it
+  // materializes the ctor root, derived init stub, registration table, image
+  // descriptor, and image-local init-state model.
+  ApplyObjc3FrontendRuntimeBootstrapMetadata(
+      ir_frontend_metadata, bundle.runtime_bootstrap_lowering_summary,
+      bundle.runtime_registration_descriptor_frontend_closure_summary,
+      bundle.runtime_translation_unit_registration_manifest_summary);
+  ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
+      ir_frontend_metadata, executable_metadata_typed_lowering_handoff,
+      runtime_metadata_section_publication);
+  ApplyObjc3FrontendObjectInspectionMetadata(
+      ir_frontend_metadata, runtime_metadata_object_inspection);
+  ApplyObjc3FrontendDebugProjectionMetadata(ir_frontend_metadata,
+                                            executable_metadata_debug_projection);
+  ApplyObjc3FrontendRuntimeSupportLibraryMetadata(
+      ir_frontend_metadata, runtime_support_library,
+      runtime_support_library_core_feature, runtime_support_library_link_wiring);
+  ApplyObjc3FrontendPipelineReadinessMetadata(
+      ir_frontend_metadata, ownership_aware_lowering_behavior_scaffold,
+      ir_emission_completeness_scaffold,
+      lowering_pipeline_pass_graph_core_feature_surface,
+      ir_emission_core_feature_impl_surface);
+}
 
 bool CompleteObjc3FrontendArtifactIREmission(
     Objc3FrontendArtifactBundle &bundle,
