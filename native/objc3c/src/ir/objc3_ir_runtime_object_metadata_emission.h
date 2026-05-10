@@ -6,8 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ir/objc3_ir_frontend_metadata.h"
-
+struct Objc3IRFrontendMetadata;
 struct Objc3RuntimeMetadataLayoutPolicy;
 struct Objc3RuntimeMetadataLayoutPolicyFamily;
 

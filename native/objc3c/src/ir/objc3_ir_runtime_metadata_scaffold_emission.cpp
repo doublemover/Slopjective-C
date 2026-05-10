@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_module_identity.h"
 #include "ir/objc3_ir_runtime_artifact_emission.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 
 #include <iosfwd>
 #include <string>
 #include <vector>
+
+struct Objc3IRFrontendMetadata;
 
 struct Objc3IRRuntimeBootstrapGlobalEmissionOptions {
   std::string module_name;

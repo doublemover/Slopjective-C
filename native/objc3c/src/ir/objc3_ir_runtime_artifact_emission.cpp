@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "ir/objc3_ir_c_string.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
 #include "lower/contracts/runtime_metadata_layout_policy_record_contracts.h"
 #include "lower/contracts/runtime_metadata_object_format_contracts.h"

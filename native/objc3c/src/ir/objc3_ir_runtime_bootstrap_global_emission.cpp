@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast_contracts.h"
 #include "ir/objc3_ir_c_string.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "lower/objc3_lowering_contract.h"
 
 #include <cstdint>

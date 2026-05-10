@@ -6,9 +6,10 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
+
+struct Objc3IRFrontendMetadata;
 
 struct Objc3IRRuntimeMetadataScaffoldEmissionOptions {
   const std::string &module_name;

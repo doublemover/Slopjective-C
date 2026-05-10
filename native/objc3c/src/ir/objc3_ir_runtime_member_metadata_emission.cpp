@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "ir/objc3_ir_c_string.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_symbol_model.h"

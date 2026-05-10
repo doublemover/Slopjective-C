@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 
+struct Objc3IRFrontendMetadata;
 struct Objc3RuntimeMetadataLayoutPolicy;
 
 struct Objc3IRRuntimeArtifactEmissionOptions {
