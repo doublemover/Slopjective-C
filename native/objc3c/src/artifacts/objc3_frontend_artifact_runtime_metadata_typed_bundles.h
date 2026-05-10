@@ -1,9 +1,11 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
+#include "ir/objc3_ir_frontend_metadata_runtime_bundles.h"
 #include "runtime/metadata/class_metadata.h"
 
 #include <vector>
+
+struct Objc3IRFrontendMetadata;
 
 namespace objc3::artifacts::frontend {
 

@@ -6,9 +6,21 @@
 #include <utility>
 #include <vector>
 
-#include "lower/contracts/executable_property_layout_contracts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 
 namespace objc3::artifacts::frontend {
+namespace {
+
+inline constexpr const char *kArtifactExecutableIvarLayoutEmissionContractId =
+    "objc3c.executable.ivar.layout.emission.v1";
+inline constexpr const char *kArtifactExecutableIvarLayoutDescriptorModel =
+    "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering";
+inline constexpr const char *kArtifactExecutableIvarOffsetGlobalModel =
+    "one-retained-i64-offset-global-per-emitted-ivar-binding";
+inline constexpr const char *kArtifactExecutableIvarLayoutTableModel =
+    "declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size";
+
+}  // namespace
 
 void ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
     Objc3IRFrontendMetadata &ir_frontend_metadata,
@@ -106,13 +118,13 @@ void ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
         ";ivar_layout_entries=" + std::to_string(ivar_bundles.size()) +
         ";deterministic=true;lane_contract=objc3c.property.ivar.source.model.v1";
     ir_frontend_metadata.executable_ivar_layout_emission_contract_id =
-        kObjc3ExecutableIvarLayoutEmissionContractId;
+        kArtifactExecutableIvarLayoutEmissionContractId;
     ir_frontend_metadata.executable_ivar_layout_descriptor_model =
-        kObjc3ExecutableIvarLayoutDescriptorModel;
+        kArtifactExecutableIvarLayoutDescriptorModel;
     ir_frontend_metadata.executable_ivar_offset_global_model =
-        kObjc3ExecutableIvarOffsetGlobalModel;
+        kArtifactExecutableIvarOffsetGlobalModel;
     ir_frontend_metadata.executable_ivar_layout_table_model =
-        kObjc3ExecutableIvarLayoutTableModel;
+        kArtifactExecutableIvarLayoutTableModel;
     std::set<std::string> ivar_layout_owner_identities;
     bool ivar_layout_emission_complete = true;
     std::size_t ivar_offset_global_entries = 0;
