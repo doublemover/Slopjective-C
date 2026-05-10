@@ -135,7 +135,7 @@ target_link_libraries(objc3c_artifacts_reports PUBLIC
 )
 
 add_library(objc3c_artifacts STATIC
-  objc3_frontend_actor_semantic_artifacts.cpp
+  objc3_frontend_actor_semantic_json.cpp
   objc3_frontend_actor_semantic_artifacts.h
   objc3_frontend_artifact_arc_ownership_metadata.cpp
   objc3_frontend_artifact_arc_ownership_metadata.h
