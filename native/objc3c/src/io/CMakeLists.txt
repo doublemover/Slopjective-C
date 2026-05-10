@@ -87,6 +87,7 @@ add_library(objc3c_json STATIC
   json/json_schema_required_contract_uniqueness_validation.cpp
   json/json_schema_required_contract_validation.cpp
   json/json_schema_runtime_field_validation.cpp
+  json/json_schema_runtime_node_dispatch_validation.cpp
   json/json_schema_runtime_node_validation.cpp
   json/json_schema_scalar_validation.cpp
   json/json_schema_string_constraint_length_validation.cpp

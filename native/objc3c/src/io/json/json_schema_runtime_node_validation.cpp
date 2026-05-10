@@ -2,8 +2,7 @@
 
 #include "io/json/json_schema_composition_validation.h"
 #include "io/json/json_schema_node_preflight_validation.h"
-#include "io/json/json_schema_runtime_field_validation.h"
-#include "io/json/json_schema_value_keyword_validation.h"
+#include "io/json/json_schema_runtime_node_dispatch_validation.h"
 
 namespace objc3::io::json {
 
@@ -19,12 +18,11 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
   }
   ValidateJsonSchemaCompositionKeywords(schema_root, schema, payload,
                                         instance_path, schema_path, result);
-  if (!ValidateJsonSchemaValueKeywords(schema, payload, instance_path,
-                                       schema_path, result)) {
+  if (!ValidateJsonSchemaRuntimeNodeDispatch(schema_root, schema, payload,
+                                             instance_path, schema_path,
+                                             result)) {
     return;
   }
-  ValidateJsonSchemaRuntimeFields(schema_root, schema, payload, instance_path,
-                                  schema_path, result);
 }
 
 }  // namespace objc3::io::json
