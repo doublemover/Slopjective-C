@@ -3,28 +3,33 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+if __package__:
+    from .conformance_corpus_surface_model import (
+        ROOT,
+        ConformanceCorpusPaths,
+        ConformanceCorpusSurfaceModel,
+        ConformanceCorpusSurfaceReportWriter,
+        SurfaceValidationError,
+        main,
+    )
+else:
+    from conformance_corpus_surface_model import (
+        ROOT,
+        ConformanceCorpusPaths,
+        ConformanceCorpusSurfaceModel,
+        ConformanceCorpusSurfaceReportWriter,
+        SurfaceValidationError,
+        main,
+    )
 
-from check_conformance_corpus_surface_model import (
-    ConformanceCorpusPaths,
-    ConformanceCorpusSurfaceModel,
-    ConformanceCorpusSurfaceReportWriter,
-    SurfaceValidationError,
+__all__ = (
+    "ROOT",
+    "ConformanceCorpusPaths",
+    "ConformanceCorpusSurfaceModel",
+    "ConformanceCorpusSurfaceReportWriter",
+    "SurfaceValidationError",
+    "main",
 )
-
-
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def main() -> int:
-    paths = ConformanceCorpusPaths(ROOT)
-    writer = ConformanceCorpusSurfaceReportWriter(paths)
-    model = ConformanceCorpusSurfaceModel(paths)
-    try:
-        summary = model.build_summary()
-    except SurfaceValidationError as exc:
-        return writer.write_failure(exc.message)
-    return writer.write_success(summary)
 
 
 if __name__ == "__main__":
