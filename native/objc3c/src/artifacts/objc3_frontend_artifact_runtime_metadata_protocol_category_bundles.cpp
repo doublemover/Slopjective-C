@@ -9,7 +9,7 @@
 namespace objc3::artifacts::frontend {
 
 bool ApplyObjc3FrontendRuntimeMetadataProtocolCategoryBundles(
-    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    Objc3IRFrontendRuntimeSourceClosureMetadata &runtime_source_metadata,
     const Objc3ExecutableMetadataSourceGraph &source_graph,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication) {
@@ -150,14 +150,15 @@ bool ApplyObjc3FrontendRuntimeMetadataProtocolCategoryBundles(
       category_bundles.size() ==
           runtime_metadata_section_publication.category_descriptor_count;
   if (protocol_category_payload_complete) {
-    ir_frontend_metadata.runtime_metadata_protocol_bundles_lexicographic =
+    runtime_source_metadata.runtime_metadata_protocol_bundles_lexicographic =
         std::move(protocol_bundles);
-    ir_frontend_metadata.runtime_metadata_category_bundles_lexicographic =
+    runtime_source_metadata.runtime_metadata_category_bundles_lexicographic =
         std::move(category_bundles);
   }
-  ir_frontend_metadata.runtime_metadata_protocol_category_emission_ready =
+  runtime_source_metadata.runtime_metadata_protocol_category_emission_ready =
       protocol_category_payload_complete;
-  ir_frontend_metadata.runtime_metadata_protocol_category_emission_fail_closed =
+  runtime_source_metadata
+      .runtime_metadata_protocol_category_emission_fail_closed =
       protocol_category_payload_complete;
   return protocol_category_payload_complete;
 }

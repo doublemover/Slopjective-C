@@ -18,7 +18,6 @@
 #include "ir/objc3_ir_frontend_metadata_ownership.h"
 #include "ir/objc3_ir_frontend_metadata_ownership_support.h"
 #include "ir/objc3_ir_frontend_metadata_pipeline_readiness.h"
-#include "ir/objc3_ir_frontend_metadata_runtime_bundles.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_runtime_support.h"
 #include "ir/objc3_ir_frontend_metadata_semantic_surface.h"

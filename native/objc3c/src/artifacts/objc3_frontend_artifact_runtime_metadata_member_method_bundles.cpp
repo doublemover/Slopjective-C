@@ -37,8 +37,9 @@ std::string BuildRuntimeMetadataInstanceMethodOwnerIdentity(
 }  // namespace
 
 bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
-    const Objc3IRFrontendMetadata &ir_frontend_metadata,
     const Objc3ExecutableMetadataSourceGraph &source_graph,
+    const std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
+        &derived_method_bundles,
     const std::vector<Objc3IRRuntimeMetadataPropertyBundle> &property_bundles,
     std::vector<Objc3IRRuntimeMetadataMethodListBundle>
         &method_list_bundles) {
@@ -187,9 +188,7 @@ bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
     }
   }
 
-  for (const auto &derive_bundle :
-       ir_frontend_metadata
-           .metaprogramming_derived_method_bundles_lexicographic) {
+  for (const auto &derive_bundle : derived_method_bundles) {
     if (derive_bundle.implementation_name.empty() ||
         derive_bundle.declaration_owner_identity.empty() ||
         derive_bundle.export_owner_identity.empty() ||

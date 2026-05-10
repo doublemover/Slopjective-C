@@ -8,7 +8,7 @@
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendRuntimeMetadataClassMetaclassBundles(
-    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    Objc3IRFrontendRuntimeSourceClosureMetadata &runtime_source_metadata,
     const Objc3ExecutableMetadataSourceGraph &source_graph,
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication) {
@@ -136,12 +136,14 @@ void ApplyObjc3FrontendRuntimeMetadataClassMetaclassBundles(
       bundles.size() ==
           runtime_metadata_section_publication.class_descriptor_count;
   if (bundle_payload_complete) {
-    ir_frontend_metadata.runtime_metadata_class_metaclass_bundles_lexicographic =
+    runtime_source_metadata
+        .runtime_metadata_class_metaclass_bundles_lexicographic =
         std::move(bundles);
   }
-  ir_frontend_metadata.runtime_metadata_class_metaclass_emission_ready =
+  runtime_source_metadata.runtime_metadata_class_metaclass_emission_ready =
       bundle_payload_complete;
-  ir_frontend_metadata.runtime_metadata_class_metaclass_emission_fail_closed =
+  runtime_source_metadata
+      .runtime_metadata_class_metaclass_emission_fail_closed =
       bundle_payload_complete;
 }
 

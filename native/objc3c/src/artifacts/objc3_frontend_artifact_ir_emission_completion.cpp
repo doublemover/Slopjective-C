@@ -46,7 +46,9 @@ void ApplyObjc3FrontendFinalRuntimeAndReadinessMetadata(
       bundle.runtime_registration_descriptor_frontend_closure_summary,
       bundle.runtime_translation_unit_registration_manifest_summary);
   ApplyObjc3FrontendRuntimeMetadataTypedLoweringBundles(
-      ir_frontend_metadata, executable_metadata_typed_lowering_handoff,
+      ir_frontend_metadata, ir_frontend_metadata,
+      ir_frontend_metadata.metaprogramming_derived_method_bundles_lexicographic,
+      executable_metadata_typed_lowering_handoff,
       runtime_metadata_section_publication);
   ApplyObjc3FrontendObjectInspectionMetadata(
       ir_frontend_metadata, runtime_metadata_object_inspection);

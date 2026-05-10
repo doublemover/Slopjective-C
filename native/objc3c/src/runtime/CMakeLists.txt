@@ -2,6 +2,9 @@ add_library(objc3c_runtime_metadata INTERFACE)
 target_link_libraries(objc3c_runtime_metadata INTERFACE
   objc3c_build_defaults
 )
+target_sources(objc3c_runtime_metadata INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/metadata/runtime_metadata_typed_bundles.h
+)
 
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

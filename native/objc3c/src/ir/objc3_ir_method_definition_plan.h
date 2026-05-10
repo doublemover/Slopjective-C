@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "ast/objc3_ast_core.h"
-#include "ir/objc3_ir_frontend_metadata_runtime_bundles.h"
+#include "runtime/metadata/runtime_metadata_typed_bundles.h"
 
 struct Objc3IRFrontendMetadata;
 struct Objc3MethodDecl;
