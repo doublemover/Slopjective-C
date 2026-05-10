@@ -9,12 +9,10 @@ open SPT issues on GitHub.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +27,16 @@ from spt_issue_closure.models import (
     LoadedPlan,
     PlannedAction,
     SourceLineResult,
+)
+from spt_issue_closure.plan import (
+    build_plan_payload,
+    build_planned_actions,
+    compute_file_digest,
+    display_path,
+    load_plan,
+    normalize_source_line_hash,
+    source_line_result,
+    write_plan,
 )
 
 ROOT = SCRIPT_ROOT.parents[0]
@@ -137,266 +145,6 @@ def fetch_open_spt_issues(task_id_pattern: re.Pattern[str]) -> dict[str, IssueRe
 def checkbox_state(path: Path, line: int) -> tuple[bool, str]:
     result = source_line_result(path, line, expected_hash=None)
     return result.checked, result.display_line
-
-
-def compute_source_line_hash(raw_line: str) -> str:
-    digest = hashlib.sha256(raw_line.encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
-
-
-def compute_file_digest(path: Path) -> str:
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    return f"sha256:{digest}"
-
-
-def _display_path(path: Path) -> str:
-    if path.is_absolute():
-        try:
-            return path.relative_to(ROOT).as_posix()
-        except ValueError:
-            return path.as_posix()
-    return path.as_posix()
-
-
-def _normalize_source_line_hash(value: str) -> str:
-    candidate = value.strip()
-    if candidate.lower().startswith("sha256:"):
-        return candidate.split(":", maxsplit=1)[1].lower()
-    return candidate.lower()
-
-
-def _utc_timestamp() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _canonical_json(payload: dict[str, Any]) -> str:
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-
-
-def compute_plan_digest(payload: dict[str, Any]) -> str:
-    digest = hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
-
-
-def build_planned_actions(candidates: list[tuple[CatalogTask, IssueRef, str]]) -> list[PlannedAction]:
-    return [
-        PlannedAction(
-            task_id=task.task_id,
-            task_key=task.task_key,
-            issue_number=issue.number,
-            issue_url=issue.url,
-            source_path=_display_path(task.path),
-            source_line=task.line,
-            source_checkbox_line=raw_line,
-        )
-        for task, issue, raw_line in candidates
-    ]
-
-
-def build_plan_payload(
-    *,
-    catalog_path: Path,
-    catalog_digest: str,
-    lane_filter: str | None,
-    task_id_prefix: str,
-    commit_sha: str | None,
-    actions: list[PlannedAction],
-) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "schema_version": 1,
-        "generated_at": _utc_timestamp(),
-        "catalog_path": _display_path(catalog_path),
-        "catalog_digest": catalog_digest,
-        "lane_filter": lane_filter,
-        "task_id_prefix": task_id_prefix,
-        "commit_sha": commit_sha,
-        "candidate_task_ids": [action.task_id for action in actions],
-        "candidate_issue_ids": [action.issue_number for action in actions],
-        "candidates": [
-            {
-                "task_id": action.task_id,
-                "task_key": action.task_key,
-                "issue_number": action.issue_number,
-                "issue_url": action.issue_url,
-                "source_path": action.source_path,
-                "source_line": action.source_line,
-                "source_checkbox_line": action.source_checkbox_line,
-            }
-            for action in actions
-        ],
-    }
-    payload["plan_digest"] = compute_plan_digest(payload)
-    return payload
-
-
-def write_plan(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-
-def _expect_plan_str(payload: dict[str, Any], key: str) -> str:
-    value = payload.get(key)
-    if not isinstance(value, str) or not value:
-        raise RuntimeError(f"plan JSON missing non-empty string key '{key}'")
-    return value
-
-
-def _expect_plan_optional_str(payload: dict[str, Any], key: str) -> str | None:
-    value = payload.get(key)
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise RuntimeError(f"plan JSON key '{key}' must be a string or null")
-    if value == "":
-        return None
-    return value
-
-
-def _expect_plan_int(payload: dict[str, Any], key: str) -> int:
-    value = payload.get(key)
-    if not isinstance(value, int):
-        raise RuntimeError(f"plan JSON missing integer key '{key}'")
-    return value
-
-
-def load_plan(path: Path) -> LoadedPlan:
-    if not path.exists():
-        raise RuntimeError(f"plan file not found: {path.as_posix()}")
-
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise RuntimeError(f"unable to read plan file '{path.as_posix()}': {exc}") from exc
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"invalid JSON in plan file '{path.as_posix()}': {exc}") from exc
-
-    if not isinstance(payload, dict):
-        raise RuntimeError("plan JSON must be an object")
-
-    plan_digest = _expect_plan_str(payload, "plan_digest")
-    payload_without_digest = dict(payload)
-    payload_without_digest.pop("plan_digest", None)
-    actual_plan_digest = compute_plan_digest(payload_without_digest)
-    if _normalize_source_line_hash(plan_digest) != _normalize_source_line_hash(actual_plan_digest):
-        raise RuntimeError(
-            f"plan digest mismatch expected={plan_digest} actual={actual_plan_digest}"
-        )
-
-    catalog_digest = _expect_plan_str(payload, "catalog_digest")
-    lane_filter = _expect_plan_optional_str(payload, "lane_filter")
-    if lane_filter is not None and lane_filter not in {"A", "B", "C", "D"}:
-        raise RuntimeError("plan JSON key 'lane_filter' must be one of A/B/C/D or null")
-    task_id_prefix = _expect_plan_str(payload, "task_id_prefix")
-    commit_sha = _expect_plan_optional_str(payload, "commit_sha")
-
-    raw_candidates = payload.get("candidates")
-    if not isinstance(raw_candidates, list):
-        raise RuntimeError("plan JSON missing 'candidates' array")
-
-    actions: list[PlannedAction] = []
-    for raw in raw_candidates:
-        if not isinstance(raw, dict):
-            raise RuntimeError("plan JSON candidates must be objects")
-        task_id = _expect_plan_str(raw, "task_id")
-        issue_number = _expect_plan_int(raw, "issue_number")
-        issue_url = _expect_plan_str(raw, "issue_url")
-        source_path = _expect_plan_str(raw, "source_path")
-        source_line = _expect_plan_int(raw, "source_line")
-        source_checkbox_line = _expect_plan_str(raw, "source_checkbox_line")
-        task_key_raw = raw.get("task_key")
-        if task_key_raw is None:
-            task_key = None
-        elif isinstance(task_key_raw, str) and task_key_raw:
-            task_key = task_key_raw
-        else:
-            raise RuntimeError(
-                f"plan candidate '{task_id}' key 'task_key' must be non-empty string when present"
-            )
-
-        actions.append(
-            PlannedAction(
-                task_id=task_id,
-                task_key=task_key,
-                issue_number=issue_number,
-                issue_url=issue_url,
-                source_path=source_path,
-                source_line=source_line,
-                source_checkbox_line=source_checkbox_line,
-            )
-        )
-
-    candidate_task_ids = payload.get("candidate_task_ids")
-    if not isinstance(candidate_task_ids, list) or not all(
-        isinstance(item, str) for item in candidate_task_ids
-    ):
-        raise RuntimeError("plan JSON key 'candidate_task_ids' must be an array of strings")
-    candidate_issue_ids = payload.get("candidate_issue_ids")
-    if not isinstance(candidate_issue_ids, list) or not all(
-        isinstance(item, int) for item in candidate_issue_ids
-    ):
-        raise RuntimeError("plan JSON key 'candidate_issue_ids' must be an array of integers")
-
-    derived_task_ids = [action.task_id for action in actions]
-    derived_issue_ids = [action.issue_number for action in actions]
-    if candidate_task_ids != derived_task_ids:
-        raise RuntimeError("plan candidate_task_ids does not match candidates payload")
-    if candidate_issue_ids != derived_issue_ids:
-        raise RuntimeError("plan candidate_issue_ids does not match candidates payload")
-
-    return LoadedPlan(
-        catalog_digest=catalog_digest,
-        lane_filter=lane_filter,
-        task_id_prefix=task_id_prefix,
-        commit_sha=commit_sha,
-        actions=actions,
-    )
-
-
-def source_line_result(path: Path, line: int, expected_hash: str | None) -> SourceLineResult:
-    if not path.exists():
-        return SourceLineResult(
-            raw_line=None,
-            checked=False,
-            display_line="<missing file>",
-            stale_reason="missing-file",
-        )
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    if line <= 0 or line > len(lines):
-        return SourceLineResult(
-            raw_line=None,
-            checked=False,
-            display_line="<line out of range>",
-            stale_reason="line-out-of-range",
-        )
-
-    raw_line = lines[line - 1]
-    display_line = raw_line.strip()
-    checked = display_line.startswith("- [x]") or display_line.startswith("- [X]")
-    if expected_hash is None:
-        return SourceLineResult(
-            raw_line=raw_line,
-            checked=checked,
-            display_line=display_line,
-            stale_reason=None,
-        )
-
-    actual_hash = _normalize_source_line_hash(compute_source_line_hash(raw_line))
-    expected_hash_norm = _normalize_source_line_hash(expected_hash)
-    if actual_hash != expected_hash_norm:
-        return SourceLineResult(
-            raw_line=raw_line,
-            checked=checked,
-            display_line=display_line,
-            stale_reason=f"hash-mismatch expected={expected_hash} actual=sha256:{actual_hash}",
-        )
-
-    return SourceLineResult(
-        raw_line=raw_line,
-        checked=checked,
-        display_line=display_line,
-        stale_reason=None,
-    )
 
 
 def close_issue(number: int, comment: str) -> None:
@@ -554,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     catalog_tasks = load_catalog(catalog)
     live_catalog_digest = compute_file_digest(catalog)
     if loaded_plan is not None:
-        if _normalize_source_line_hash(loaded_plan.catalog_digest) != _normalize_source_line_hash(
+        if normalize_source_line_hash(loaded_plan.catalog_digest) != normalize_source_line_hash(
             live_catalog_digest
         ):
             print(
@@ -593,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.fail_on_stale_source and stale_entries:
         for task, reason in stale_entries:
-            rel = _display_path(task.path)
+            rel = display_path(task.path)
             key_info = f" task_key={task.task_key}" if task.task_key else ""
             hash_info = f" source_line_hash={task.source_line_hash}" if task.source_line_hash else ""
             print(
@@ -628,7 +376,7 @@ def main(argv: list[str] | None = None) -> int:
                     f"plan_action {action.task_id} source checkbox is no longer checked"
                 )
                 continue
-            if action.source_path != _display_path(task.path) or action.source_line != task.line:
+            if action.source_path != display_path(task.path) or action.source_line != task.line:
                 invalid_plan_actions.append(
                     f"plan_action {action.task_id} source does not match current catalog entry"
                 )
@@ -685,7 +433,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         write_plan(plan_out_path, payload)
         print(
-            f"plan_written path={_display_path(plan_out_path)} actions={len(planned_actions)} "
+            f"plan_written path={display_path(plan_out_path)} actions={len(planned_actions)} "
             f"digest={payload['plan_digest']}"
         )
         print("dry-run only; pass --apply --plan-in <path> to close issues")
