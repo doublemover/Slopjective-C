@@ -2,10 +2,8 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
-#include "lower/contracts/runtime_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -36,9 +34,9 @@ void WriteRuntimePropertyIvarAccessorReflectionImplementationSurface(
            << "\",\"storage_accessor_runtime_abi_surface_contract_id\":\""
            << kObjc3RuntimeStorageAccessorAbiSurfaceContractId
            << "\",\"property_metadata_reflection_contract_id\":\""
-           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << kStorageAccessorRuntimePropertyMetadataReflectionContractId
            << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
-           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << kStorageAccessorRuntimeBackedObjectOwnershipAttributeSurfaceContractId
            << "\",\"public_header_path\":\""
            << runtime_bootstrap_api.public_header_path
            << "\",\"internal_header_path\":\""
@@ -47,17 +45,17 @@ void WriteRuntimePropertyIvarAccessorReflectionImplementationSurface(
            << ",\"property_registry_state_snapshot_symbol\":\"objc3_runtime_copy_property_registry_state_for_testing\""
            << ",\"property_entry_snapshot_symbol\":\"objc3_runtime_copy_property_entry_for_testing\""
            << ",\"current_property_read_symbol\":\""
-           << kObjc3RuntimeReadCurrentPropertyI32Symbol
+           << kStorageAccessorReadCurrentPropertyI32Symbol
            << "\",\"current_property_write_symbol\":\""
-           << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+           << kStorageAccessorWriteCurrentPropertyI32Symbol
            << "\",\"current_property_exchange_symbol\":\""
-           << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+           << kStorageAccessorExchangeCurrentPropertyI32Symbol
            << "\",\"bind_current_property_context_symbol\":\"objc3_runtime_bind_current_property_context_for_testing\""
            << ",\"clear_current_property_context_symbol\":\"objc3_runtime_clear_current_property_context_for_testing\""
            << ",\"weak_current_property_load_symbol\":\""
-           << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+           << kStorageAccessorLoadWeakCurrentPropertyI32Symbol
            << "\",\"weak_current_property_store_symbol\":\""
-           << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+           << kStorageAccessorStoreWeakCurrentPropertyI32Symbol
            << "\",\"implementation_model\":\""
            << kObjc3RuntimePropertyIvarAccessorReflectionImplementationModel
            << "\",\"reflection_model\":\""

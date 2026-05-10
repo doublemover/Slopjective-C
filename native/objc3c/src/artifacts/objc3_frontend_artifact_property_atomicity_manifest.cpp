@@ -2,9 +2,8 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/ownership_runtime_semantics_contracts.h"
-#include "lower/contracts/runtime_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -32,9 +31,9 @@ void WriteRuntimePropertyAtomicitySynthesisReflectionSourceSurface(
            << "\",\"property_storage_source_surface_contract_id\":\""
            << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
            << "\",\"property_metadata_reflection_contract_id\":\""
-           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << kStorageAccessorRuntimePropertyMetadataReflectionContractId
            << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
-           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << kStorageAccessorRuntimeBackedObjectOwnershipAttributeSurfaceContractId
            << "\",\"atomic_modifier_field\":\"Objc3PropertyDecl.is_atomic\""
            << ",\"nonatomic_modifier_field\":\"Objc3PropertyDecl.is_nonatomic\""
            << ",\"atomicity_conflict_field\":\"Objc3PropertyDecl.has_atomicity_conflict\""

@@ -3,7 +3,7 @@
 #include <set>
 #include <string>
 
-#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -20,23 +20,23 @@ BuildAccessorStorageLoweringMetadataSummary(
     if (!property_record.getter_storage_runtime_helper_symbol.empty()) {
       ++summary.synthesized_getter_entries;
       if (property_record.getter_storage_runtime_helper_symbol ==
-          kObjc3RuntimeReadCurrentPropertyI32Symbol) {
+          kStorageAccessorReadCurrentPropertyI32Symbol) {
         ++summary.current_property_read_entries;
       } else if (property_record.getter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol) {
+                 kStorageAccessorLoadWeakCurrentPropertyI32Symbol) {
         ++summary.weak_current_property_load_entries;
       }
     }
     if (!property_record.setter_storage_runtime_helper_symbol.empty()) {
       ++summary.synthesized_setter_entries;
       if (property_record.setter_storage_runtime_helper_symbol ==
-          kObjc3RuntimeWriteCurrentPropertyI32Symbol) {
+          kStorageAccessorWriteCurrentPropertyI32Symbol) {
         ++summary.current_property_write_entries;
       } else if (property_record.setter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeExchangeCurrentPropertyI32Symbol) {
+                 kStorageAccessorExchangeCurrentPropertyI32Symbol) {
         ++summary.current_property_exchange_entries;
       } else if (property_record.setter_storage_runtime_helper_symbol ==
-                 kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol) {
+                 kStorageAccessorStoreWeakCurrentPropertyI32Symbol) {
         ++summary.weak_current_property_store_entries;
       }
     }

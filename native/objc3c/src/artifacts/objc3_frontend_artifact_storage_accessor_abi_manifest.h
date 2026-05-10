@@ -2,17 +2,16 @@
 
 #include <iosfwd>
 
-struct Objc3PropertySynthesisIvarBindingContract;
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
+
 struct Objc3RuntimeBootstrapApiSummary;
-struct Objc3RuntimeLinkHostLinkContract;
 
 namespace objc3::artifacts::frontend {
 
 void WriteStorageAccessorRuntimeAbiSurface(
     std::ostream &manifest,
     const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api,
-    const Objc3RuntimeLinkHostLinkContract &runtime_link_host_link_contract,
-    const Objc3PropertySynthesisIvarBindingContract
-        &property_synthesis_ivar_binding_contract);
+    const Objc3StorageAccessorRuntimeAbiFields
+        &storage_accessor_runtime_abi_fields);
 
 }  // namespace objc3::artifacts::frontend

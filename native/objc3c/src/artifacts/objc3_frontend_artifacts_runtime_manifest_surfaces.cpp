@@ -13,6 +13,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_artifact_runtime_release_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest.h"
 #include "artifacts/objc3_runtime_state_publication_paths.h"
 #include "runtime/metadata/class_metadata.h"
@@ -39,6 +40,8 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
         &message_send_selector_lowering_contract,
     const Objc3RuntimeDispatchTableReflectionRecordLoweringFields
         &runtime_dispatch_table_reflection_record_lowering_fields,
+    const Objc3StorageAccessorRuntimeAbiFields
+        &storage_accessor_runtime_abi_fields,
     const Objc3PropertySynthesisIvarBindingContract
         &property_synthesis_ivar_binding_contract,
     const Objc3RuntimeMetadataSectionPublicationSummary
@@ -81,8 +84,7 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
       dispatch_surface_classification_contract,
       message_send_selector_lowering_contract);
   WriteStorageAccessorRuntimeAbiSurface(
-      manifest, runtime_bootstrap_api, runtime_link_host_link_contract,
-      property_synthesis_ivar_binding_contract);
+      manifest, runtime_bootstrap_api, storage_accessor_runtime_abi_fields);
   WriteRuntimeStatePublicationSurface(
       manifest, runtime_state_publication_emit_prefix,
       runtime_translation_unit_registration_manifest, runtime_bootstrap_semantics);

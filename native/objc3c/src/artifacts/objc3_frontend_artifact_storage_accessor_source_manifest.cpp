@@ -2,11 +2,8 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
-#include "lower/contracts/object_model_lowering_contracts.h"
-#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
-#include "lower/contracts/runtime_dispatch_abi_contracts.h"
-#include "lower/contracts/runtime_property_layout_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {
@@ -65,20 +62,20 @@ void WriteRuntimePropertyIvarStorageAccessorSourceSurface(
            << ",\"getter_runtime_helper_field\":\"Objc3RuntimeMetadataPropertySourceRecord.getter_storage_runtime_helper_symbol\""
            << ",\"setter_runtime_helper_field\":\"Objc3RuntimeMetadataPropertySourceRecord.setter_storage_runtime_helper_symbol\""
            << ",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
-           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << kStorageAccessorDispatchAndSynthesizedAccessorLoweringSurfaceContractId
            << "\",\"executable_property_accessor_layout_lowering_contract_id\":\""
-           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << kStorageAccessorExecutablePropertyAccessorLayoutLoweringContractId
            << "\",\"executable_ivar_layout_emission_contract_id\":\""
-           << kObjc3ExecutableIvarLayoutEmissionContractId
+           << kStorageAccessorExecutableIvarLayoutEmissionContractId
            << "\",\"executable_synthesized_accessor_property_lowering_contract_id\":\""
-           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
+           << kStorageAccessorExecutableSynthesizedAccessorPropertyLoweringContractId
            << "\",\"storage_accessor_runtime_abi_surface_contract_id\":\""
            << kObjc3RuntimeStorageAccessorAbiSurfaceContractId
            << "\""
            << ",\"accessor_storage_lowering_metadata_model\":\""
-           << kObjc3AccessorStorageLoweringMetadataModel
+           << kStorageAccessorLoweringMetadataModel
            << "\",\"accessor_storage_lowering_helper_selection_model\":\""
-           << kObjc3AccessorStorageLoweringHelperSelectionModel
+           << kStorageAccessorLoweringHelperSelectionModel
            << "\",\"compatibility_semantics_model\":\""
            << kObjc3ExecutablePropertyCompatibilitySemanticsModel
            << "\",\"ast_source_path\":\"native/objc3c/src/ast/objc3_ast.h\""
