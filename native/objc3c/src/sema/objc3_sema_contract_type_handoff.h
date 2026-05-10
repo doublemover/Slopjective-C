@@ -1,25 +1,3 @@
-  std::size_t body_statement_count = 0;
-  std::size_t baseline_weight = 0;
-  bool capture_set_deterministic = false;
-  bool baseline_profile_is_normalized = false;
-  std::string baseline_profile;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-struct Objc3BlockDeterminismPerfBaselineSummary {
-  std::size_t block_literal_sites = 0;
-  std::size_t baseline_weight_total = 0;
-  std::size_t parameter_entries_total = 0;
-  std::size_t capture_entries_total = 0;
-  std::size_t body_statement_entries_total = 0;
-  std::size_t deterministic_capture_sites = 0;
-  std::size_t heavy_tier_sites = 0;
-  std::size_t normalized_profile_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
