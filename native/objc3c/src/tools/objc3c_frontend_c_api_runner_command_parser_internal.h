@@ -24,3 +24,26 @@ DispatchFrontendCApiRunnerCommandOption(const std::string &arg,
                                         int &index,
                                         FrontendCApiRunnerOptions &options,
                                         std::string &error);
+
+FrontendCApiRunnerCommandOptionParseResult
+DispatchFrontendCApiRunnerPathRuntimeOptionPass(
+    const std::string &arg,
+    int argc,
+    char **argv,
+    int &index,
+    FrontendCApiRunnerOptions &options,
+    std::string &error);
+
+FrontendCApiRunnerCommandOptionParseResult
+DispatchFrontendCApiRunnerBackendOptionPass(const std::string &arg,
+                                            int argc,
+                                            char **argv,
+                                            int &index,
+                                            FrontendCApiRunnerOptions &options,
+                                            std::string &error);
+
+FrontendCApiRunnerCommandOptionParseResult
+DispatchFrontendCApiRunnerEmissionHelpOptionPass(
+    const std::string &arg,
+    FrontendCApiRunnerOptions &options,
+    std::string &error);
