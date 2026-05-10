@@ -3,16 +3,16 @@
 #include <iostream>
 
 #include "tools/objc3c_frontend_c_api_runner_dump_actions.h"
-#include "tools/objc3c_frontend_c_api_runner_result_error_snapshot.h"
 #include "tools/objc3c_frontend_c_api_runner_summary_io.h"
 
-bool PublishFrontendCApiRunnerSessionSummary(
+bool PublishFrontendCApiRunnerSessionResult(
     const FrontendCApiRunnerOptions &options,
     const std::filesystem::path &summary_path,
-    const FrontendCApiRunnerCompileSession &compile_session,
-    const FrontendCApiRunnerSessionSummary &summary,
+    const FrontendCApiRunnerSessionResult &session_result,
     std::string &error) {
-  if (!WriteFrontendCApiRunnerSummaryFile(summary_path, summary.json, error)) {
+  if (!WriteFrontendCApiRunnerSummaryFile(summary_path,
+                                          session_result.json,
+                                          error)) {
     return false;
   }
 
@@ -20,12 +20,11 @@ bool PublishFrontendCApiRunnerSessionSummary(
     EmitFrontendCApiRunnerDumpActions(
         options,
         summary_path,
-        compile_session.result,
-        compile_session.status,
-        FrontendCApiRunnerResultErrorMessageText(
-            compile_session.error_snapshot),
-        summary.artifact_paths.runtime_metadata_binary,
-        summary.json);
+        *session_result.compile_result,
+        session_result.status,
+        session_result.public_result.result_error_message,
+        session_result.artifact_paths.runtime_metadata_binary,
+        session_result.json);
   } else {
     std::cout << "wrote summary: " << summary_path.generic_string() << "\n";
   }

@@ -14,5 +14,3 @@ FrontendCApiRunnerResultErrorSnapshot
 CaptureFrontendCApiRunnerResultErrorSnapshot(
     const objc3c_frontend_c_context_t *context,
     const objc3c_frontend_c_compile_result_t &result);
-const std::string &FrontendCApiRunnerResultErrorMessageText(
-    const FrontendCApiRunnerResultErrorSnapshot &snapshot);

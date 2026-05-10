@@ -7,8 +7,7 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
     const FrontendCApiRunnerArtifactPathView &paths,
     objc3c_frontend_c_status_t status,
     const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const FrontendCApiRunnerStringSnapshot &result_error_message) {
+    const FrontendCApiRunnerResultErrorSnapshot &error_snapshot) {
   FrontendCApiRunnerPublicResultView view;
   view.backend_name = FrontendCApiRunnerPublicResultBackendName(options);
   view.status_code = static_cast<unsigned>(status);
@@ -16,13 +15,14 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
   view.success = result.success != 0;
   view.semantic_skipped = result.semantic_skipped != 0;
   view.paths = paths;
-  view.last_error = last_error;
-  view.result_error_message = result_error_message.text;
-  view.result_error_message_present = result_error_message.present;
+  view.last_error = error_snapshot.last_error;
+  view.result_error_message = error_snapshot.result_error_message.text;
+  view.result_error_message_present =
+      error_snapshot.result_error_message.present;
   view.c_api_ownership = BuildFrontendCApiRunnerCOwnershipView(
       options,
       status,
       result,
-      result_error_message);
+      error_snapshot.result_error_message);
   return view;
 }

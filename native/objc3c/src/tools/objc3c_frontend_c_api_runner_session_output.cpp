@@ -1,27 +1,26 @@
 #include "tools/objc3c_frontend_c_api_runner_session_output.h"
 
 #include "tools/objc3c_frontend_c_api_runner_session_publication.h"
-#include "tools/objc3c_frontend_c_api_runner_session_summary.h"
+#include "tools/objc3c_frontend_c_api_runner_session_result.h"
 
 bool EmitFrontendCApiRunnerSessionOutput(
     const FrontendCApiRunnerOptions &options,
     const std::filesystem::path &summary_path,
     const FrontendCApiRunnerCompileSession &compile_session,
     std::string &error) {
-  FrontendCApiRunnerSessionSummary summary;
-  if (!BuildFrontendCApiRunnerSessionSummary(
+  FrontendCApiRunnerSessionResult session_result;
+  if (!BuildFrontendCApiRunnerSessionResult(
           options,
           summary_path,
           compile_session,
-          summary,
+          session_result,
           error)) {
     return false;
   }
 
-  return PublishFrontendCApiRunnerSessionSummary(
+  return PublishFrontendCApiRunnerSessionResult(
       options,
       summary_path,
-      compile_session,
-      summary,
+      session_result,
       error);
 }

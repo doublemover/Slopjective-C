@@ -11,8 +11,3 @@ CaptureFrontendCApiRunnerResultErrorSnapshot(
   snapshot.result_error_message = FrontendCApiResultErrorMessageSnapshot(result);
   return snapshot;
 }
-
-const std::string &FrontendCApiRunnerResultErrorMessageText(
-    const FrontendCApiRunnerResultErrorSnapshot &snapshot) {
-  return snapshot.result_error_message.text;
-}

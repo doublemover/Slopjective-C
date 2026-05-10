@@ -9,7 +9,6 @@ void WriteFrontendCApiRunnerSummaryObservabilityRuntimeBonusSections(
     const FrontendCApiRunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result,
     objc3c_frontend_c_status_t status,
-    const FrontendCApiRunnerStringSnapshot &result_error_message,
     const FrontendCApiRunnerPublicResultView &public_result) {
   out << "  \"observability\": ";
   WriteFrontendCApiRunnerObservabilityJson(
@@ -18,7 +17,7 @@ void WriteFrontendCApiRunnerSummaryObservabilityRuntimeBonusSections(
       public_result.paths.summary,
       result,
       status,
-      result_error_message.text,
+      public_result.result_error_message,
       public_result.paths.runtime_metadata_binary);
   out << ",\n";
   out << "  \"runtime_inspector\": ";

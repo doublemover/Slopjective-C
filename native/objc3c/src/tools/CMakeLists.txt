@@ -177,7 +177,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_session.cpp
   objc3c_frontend_c_api_runner_session_output.cpp
   objc3c_frontend_c_api_runner_session_publication.cpp
-  objc3c_frontend_c_api_runner_session_summary.cpp
+  objc3c_frontend_c_api_runner_session_result.cpp
   objc3c_frontend_c_api_runner_shell_quote.cpp
   objc3c_frontend_c_api_runner_stage_selection.cpp
   objc3c_frontend_c_api_runner_stage_shape.cpp

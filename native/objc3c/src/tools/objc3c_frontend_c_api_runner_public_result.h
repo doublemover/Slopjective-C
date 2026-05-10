@@ -6,6 +6,7 @@
 #include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
 #include "tools/objc3c_frontend_c_api_runner_options.h"
 #include "tools/objc3c_frontend_c_api_runner_public_result_ownership.h"
+#include "tools/objc3c_frontend_c_api_runner_result_error_snapshot.h"
 
 struct FrontendCApiRunnerPublicResultView {
   const char *backend_name = "clang";
@@ -25,5 +26,4 @@ FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
     const FrontendCApiRunnerArtifactPathView &paths,
     objc3c_frontend_c_status_t status,
     const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const FrontendCApiRunnerStringSnapshot &result_error_message);
+    const FrontendCApiRunnerResultErrorSnapshot &error_snapshot);
