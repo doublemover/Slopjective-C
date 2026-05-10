@@ -36,9 +36,6 @@ function New-Objc3cNativeCompileCommand {
     args_without_out_dir = $argsWithoutOutDir
     input_path = $inputPath
     cache_context = $cacheContext
-    out_dir = [string]$ParsedArgs.out_dir
-    emit_prefix = [string]$ParsedArgs.emit_prefix
-    use_cache = [bool]$ParsedArgs.use_cache
   }
 }
 
