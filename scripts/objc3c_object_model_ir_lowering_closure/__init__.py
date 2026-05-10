@@ -71,7 +71,3 @@ __all__ = [
     "run_compiler",
     "write_outputs",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
