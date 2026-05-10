@@ -549,6 +549,99 @@ const char *FindLoweringToolchainCloseoutFailureReason(
   return nullptr;
 }
 
+const char *FindParseArtifactDiagnosticHandoffFailureReason(
+    const Objc3ParseLoweringReadinessSurface &surface) {
+  if (!surface.long_tail_grammar_core_feature_consistent) {
+    return "long-tail grammar core feature is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_handoff_key_deterministic) {
+    return "long-tail grammar handoff key is not deterministic";
+  }
+
+  if (!surface.long_tail_grammar_expansion_accounting_consistent) {
+    return "long-tail grammar expansion accounting is inconsistent";
+  }
+
+  if (!surface.parse_artifact_handoff_consistent) {
+    return "parse artifact handoff is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_surface_consistent) {
+    return "parser diagnostics surface is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_source_precision_scaffold_ready) {
+    return "parser diagnostic source-precision scaffold is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_core_feature_ready) {
+    return "parser diagnostic grammar hooks core feature is not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent) {
+    return "parser diagnostic grammar hooks core feature expansion accounting is inconsistent";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready) {
+    return "parser diagnostic grammar hooks core feature expansion replay keys are not ready";
+  }
+
+  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready) {
+    return "parser diagnostic grammar hooks core feature expansion is not ready";
+  }
+
+  if (!surface.parser_diagnostic_code_surface_deterministic) {
+    return "parser diagnostic code surface is not deterministic";
+  }
+
+  if (!surface.parse_artifact_handoff_deterministic) {
+    return "parse artifact handoff is not deterministic";
+  }
+
+  if (!surface.parse_artifact_layout_fingerprint_consistent) {
+    return "parse artifact layout fingerprint is inconsistent";
+  }
+
+  if (!surface.parse_artifact_fingerprint_consistent) {
+    return "parse artifact fingerprint is inconsistent";
+  }
+
+  if (!surface.compatibility_handoff_consistent) {
+    return "compatibility handoff is inconsistent";
+  }
+
+  if (!surface.long_tail_grammar_compatibility_handoff_ready) {
+    return "long-tail grammar compatibility handoff is not ready";
+  }
+
+  if (!surface.parse_artifact_replay_key_deterministic) {
+    return "parse artifact replay key is not deterministic";
+  }
+
+  if (!surface.long_tail_grammar_replay_keys_ready) {
+    return "long-tail grammar replay keys are not ready";
+  }
+
+  if (!surface.long_tail_grammar_expansion_ready) {
+    return "long-tail grammar core feature expansion is not ready";
+  }
+
+  if (!surface.parse_artifact_diagnostics_hardening_consistent) {
+    return "parse artifact diagnostics hardening is inconsistent";
+  }
+
+  if (!surface.parser_token_count_budget_consistent) {
+    return "parser token count budget is inconsistent";
+  }
+
+  if (!surface.language_version_pragma_coordinate_order_consistent) {
+    return "language-version pragma coordinate order is inconsistent";
+  }
+
+  return nullptr;
+}
+
 }  // namespace
 
 Objc3ParseLoweringFailureReasonReadinessRecord
@@ -607,113 +700,9 @@ BuildObjc3ParseLoweringFailureReasonReadiness(
         "parser recovery handoff is not replay ready");
   }
 
-  if (!surface.long_tail_grammar_core_feature_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar core feature is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_handoff_key_deterministic) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar handoff key is not deterministic");
-  }
-
-  if (!surface.long_tail_grammar_expansion_accounting_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar expansion accounting is inconsistent");
-  }
-
-  if (!surface.parse_artifact_handoff_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact handoff is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_surface_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostics surface is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_source_precision_scaffold_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic source-precision scaffold is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_core_feature_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks core feature is not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks core feature expansion accounting is inconsistent");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks core feature expansion replay keys are not ready");
-  }
-
-  if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic grammar hooks core feature expansion is not ready");
-  }
-
-  if (!surface.parser_diagnostic_code_surface_deterministic) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser diagnostic code surface is not deterministic");
-  }
-
-  if (!surface.parse_artifact_handoff_deterministic) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact handoff is not deterministic");
-  }
-
-  if (!surface.parse_artifact_layout_fingerprint_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact layout fingerprint is inconsistent");
-  }
-
-  if (!surface.parse_artifact_fingerprint_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact fingerprint is inconsistent");
-  }
-
-  if (!surface.compatibility_handoff_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure("compatibility handoff is inconsistent");
-  }
-
-  if (!surface.long_tail_grammar_compatibility_handoff_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar compatibility handoff is not ready");
-  }
-
-  if (!surface.parse_artifact_replay_key_deterministic) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact replay key is not deterministic");
-  }
-
-  if (!surface.long_tail_grammar_replay_keys_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar replay keys are not ready");
-  }
-
-  if (!surface.long_tail_grammar_expansion_ready) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "long-tail grammar core feature expansion is not ready");
-  }
-
-  if (!surface.parse_artifact_diagnostics_hardening_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parse artifact diagnostics hardening is inconsistent");
-  }
-
-  if (!surface.parser_token_count_budget_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "parser token count budget is inconsistent");
-  }
-
-  if (!surface.language_version_pragma_coordinate_order_consistent) {
-    return Objc3ParseLoweringFailureReasonReadinessFailure(
-        "language-version pragma coordinate order is inconsistent");
+  if (const char *failure_reason =
+          FindParseArtifactDiagnosticHandoffFailureReason(surface)) {
+    return Objc3ParseLoweringFailureReasonReadinessFailure(failure_reason);
   }
 
   if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent) {
