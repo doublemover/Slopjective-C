@@ -1,15 +1,3 @@
-      accumulate_method_selector_metadata(method_metadata);
-    }
-  }
-  handoff.selector_normalization_summary.deterministic =
-      handoff.selector_normalization_summary.deterministic &&
-      handoff.selector_normalization_summary.normalized_methods <=
-          handoff.selector_normalization_summary.methods_total &&
-      handoff.selector_normalization_summary.selector_parameter_piece_entries <=
-          handoff.selector_normalization_summary.selector_piece_entries &&
-      handoff.selector_normalization_summary.contract_violations() <=
-          handoff.selector_normalization_summary.methods_total;
-
   handoff.protocol_category_composition_summary = Objc3ProtocolCategoryCompositionSummary{};
   const auto accumulate_function_metadata_composition =
       [&handoff](const Objc3SemanticFunctionTypeMetadata &metadata) {
