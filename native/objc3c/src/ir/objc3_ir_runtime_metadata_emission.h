@@ -1,10 +1,9 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
-
 #include <cstddef>
 #include <string>
 
+struct Objc3IRFrontendMetadata;
 struct Objc3RuntimeMetadataLayoutPolicy;
 
 struct Objc3IRRuntimeMetadataSymbols {

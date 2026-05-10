@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "ir/objc3_ir_frontend_metadata.h"
+
 namespace {
 
 constexpr const char *kObjc3IRFrontendProfilePrefix =

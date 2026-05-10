@@ -4,8 +4,9 @@
 #include <iosfwd>
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "lower/objc3_lowering_contract.h"
+
+struct Objc3IRFrontendMetadata;
 
 struct Objc3IRModuleMetadataPublicationOptions {
   const std::string &module_name;

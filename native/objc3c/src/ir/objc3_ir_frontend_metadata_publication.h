@@ -4,7 +4,6 @@
 #include <iosfwd>
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering.h"
 #include "ir/objc3_ir_frontend_metadata_publication_concurrency.h"
 #include "ir/objc3_ir_frontend_metadata_publication_core.h"
@@ -15,6 +14,7 @@
 #include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics.h"
 #include "ir/objc3_ir_frontend_metadata_publication_runtime_support.h"
 
+struct Objc3IRFrontendMetadata;
 struct Objc3RuntimeMetadataLayoutPolicy;
 struct Objc3IRRuntimeMetadataSymbols;
 

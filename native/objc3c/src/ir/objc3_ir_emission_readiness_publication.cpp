@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 
+#include "ir/objc3_ir_frontend_metadata.h"
+
 namespace {
 
 void EmitOptionalReplayKey(const char *name, const std::string &key,

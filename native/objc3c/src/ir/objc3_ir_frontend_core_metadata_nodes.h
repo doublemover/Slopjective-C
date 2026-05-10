@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
+struct Objc3IRFrontendMetadata;
 
 std::string BuildObjc3IRFrontendNamedMetadataTable();
 

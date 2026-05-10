@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "ir/objc3_ir_c_string.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 
 std::string BuildObjc3IRFrontendNamedMetadataTable() {
   return
