@@ -90,6 +90,8 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_final_readiness_gate_advanced_keys_shard2.cpp
   readiness/objc3_final_readiness_gate_advanced_keys_shard3.cpp
   readiness/objc3_final_readiness_gate_advanced_keys_shard4.cpp
+  readiness/objc3_final_readiness_gate_core_closeout_keys.cpp
+  readiness/objc3_final_readiness_gate_core_feature_key.cpp
   readiness/objc3_final_readiness_gate_core_keys.cpp
   readiness/objc3_final_readiness_gate_failure_reasons.cpp
   readiness/objc3_long_tail_grammar_readiness_keys.cpp
