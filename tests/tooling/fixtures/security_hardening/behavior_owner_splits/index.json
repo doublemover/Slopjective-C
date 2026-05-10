@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-security-hardening-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json",
+    "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+    "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
+    "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+    "tests/tooling/fixtures/security_hardening/schema_surface.json",
+    "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+    "tests/tooling/fixtures/security_hardening/source_surface.json",
+    "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+    "tests/tooling/fixtures/security_hardening/workflow_surface.json"
+  ],
+  "split_policy": {
+    "primary_axis": "security-hardening behavior owner before fixture directory label, tmp report path, generated artifact path, script anchor, native path reference, public action label, release policy link, package bridge label, workflow label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "security-hardening positives are limited to hand-authored source contracts that route macro provenance semantics, runtime hardening case identity, response drill ownership, installer/update key policy, and end-to-end security-hardening workflow ownership to their canonical behavior owners",
+    "canonical_rejection_rule": "hosted advisory service claims, remote release-key rotation, remote key custody, hosted revocation, signed-installer trust, hostile-host execution safety, external package-signing trust, local-only tabletop capability truth, report-only security proof, trust-bypass claims, wrapper-only security action claims, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "package-channel install failure, revert proof failure, release-operations proof failure, missing release evidence, runtime hardening regression, disclosure/license uncertainty, missing macro package/provenance metadata, missing runtime acceptance evidence, fallback/trust-bypass rows promoted as support, and generated/report rows promoted as security support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, schema paths, script anchors, native code path references, native fixture path references, public actions, workflow labels, package bridge labels, required report paths, required artifact paths, successor issue labels, machine-owned output roots, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode security hardening, shim security hardening, fallback security hardening, compatibility security hardening, migration-only rows, generated-only rows, report-only rows, local-only tabletop rows, runner-only success, workflow-label-only success, wrapper-only security actions, and generated/report rows promoted as security capability support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "security_hardening_provenance",
+      "path": "tests/tooling/fixtures/security_hardening/behavior_owner_splits/security_hardening_provenance.json"
+    }
+  ]
+}

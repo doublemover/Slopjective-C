@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-security-hardening-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/source_surface.json"
+  ],
+  "support_boundary": "parser ownership is non-positive for this security-hardening family. Macro attribute names, package/provenance labels, JSON owner contracts, runbook paths, script anchors, native fixture path references, public action labels, and generated report paths do not define parser support unless canonical parser fixtures own the underlying Objective-C 3 syntax.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:security_hardening",
+    "attribute_label:objc_macro",
+    "attribute_label:objc_macro_package",
+    "attribute_label:objc_macro_provenance",
+    "compiler_phase_boundary:no-parser-positive-truth-from-security-contracts",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser security rows, shim parser security rows, fallback parser security rows, compatibility parser security rows, generated-only parser rows, report-only parser rows, migration-only parser rows, security-contract-only parser claims, and attribute-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
