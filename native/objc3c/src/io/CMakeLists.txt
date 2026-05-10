@@ -11,6 +11,7 @@ add_library(objc3c_json STATIC
   json/json_object_writer_container_fields.cpp
   json/json_object_writer_mechanics.cpp
   json/json_object_writer_value_emission.cpp
+  json/json_object_writer_value_emission_scalars.cpp
   json/json_object_writer_value_validation.cpp
   json/json_parser.cpp
   json/json_parser_array_container.cpp
