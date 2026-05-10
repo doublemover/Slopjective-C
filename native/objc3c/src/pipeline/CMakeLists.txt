@@ -87,6 +87,9 @@ add_library(objc3c_pipeline STATIC
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
   readiness/objc3_final_readiness_gate_advanced_keys.cpp
+  readiness/objc3_final_readiness_gate_advanced_keys_shard2.cpp
+  readiness/objc3_final_readiness_gate_advanced_keys_shard3.cpp
+  readiness/objc3_final_readiness_gate_advanced_keys_shard4.cpp
   readiness/objc3_final_readiness_gate_core_keys.cpp
   readiness/objc3_final_readiness_gate_failure_reasons.cpp
   readiness/objc3_long_tail_grammar_readiness_keys.cpp
