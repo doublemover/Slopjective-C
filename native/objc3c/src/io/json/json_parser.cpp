@@ -3,12 +3,15 @@
 #include <string>
 #include <utility>
 
+#include "io/json/json_parser_array_container.h"
 #include "io/json/json_parser_cursor.h"
+#include "io/json/json_parser_object_container.h"
+#include "io/json/json_parser_value_delegate.h"
 
 namespace objc3::io::json {
 namespace {
 
-class Parser {
+class Parser : public JsonParserValueDelegate {
  public:
   explicit Parser(std::string_view text) : cursor_(text) {}
 
@@ -26,17 +29,17 @@ class Parser {
   }
 
  private:
-  bool ParseValue(JsonValue &out) {
+  bool ParseValue(JsonValue &out) override {
     cursor_.SkipWhitespace();
     if (cursor_.AtEnd()) {
       return cursor_.Fail("unexpected end of JSON input");
     }
     const char ch = cursor_.Peek();
     if (ch == '{') {
-      return ParseObject(out);
+      return ParseJsonObjectContainer(cursor_, *this, out);
     }
     if (ch == '[') {
-      return ParseArray(out);
+      return ParseJsonArrayContainer(cursor_, *this, out);
     }
     if (ch == '"') {
       std::string value;
@@ -59,69 +62,6 @@ class Parser {
       return cursor_.ParseNumber(out);
     }
     return cursor_.Fail("unexpected JSON token");
-  }
-
-  bool ParseObject(JsonValue &out) {
-    cursor_.Consume('{');
-    JsonValue::Object object;
-    cursor_.SkipWhitespace();
-    if (cursor_.Consume('}')) {
-      out = JsonValue::ObjectValue(std::move(object));
-      return true;
-    }
-    while (true) {
-      std::string key;
-      if (!cursor_.ParseString(key)) {
-        return false;
-      }
-      cursor_.SkipWhitespace();
-      if (!cursor_.Consume(':')) {
-        return cursor_.Fail("expected ':' after JSON object key");
-      }
-      JsonValue value;
-      if (!ParseValue(value)) {
-        return false;
-      }
-      auto inserted = object.emplace(std::move(key), std::move(value));
-      if (!inserted.second) {
-        return cursor_.Fail("duplicate JSON object key");
-      }
-      cursor_.SkipWhitespace();
-      if (cursor_.Consume('}')) {
-        out = JsonValue::ObjectValue(std::move(object));
-        return true;
-      }
-      if (!cursor_.Consume(',')) {
-        return cursor_.Fail("expected ',' or '}' in JSON object");
-      }
-      cursor_.SkipWhitespace();
-    }
-  }
-
-  bool ParseArray(JsonValue &out) {
-    cursor_.Consume('[');
-    JsonValue::Array array;
-    cursor_.SkipWhitespace();
-    if (cursor_.Consume(']')) {
-      out = JsonValue::ArrayValue(std::move(array));
-      return true;
-    }
-    while (true) {
-      JsonValue value;
-      if (!ParseValue(value)) {
-        return false;
-      }
-      array.push_back(std::move(value));
-      cursor_.SkipWhitespace();
-      if (cursor_.Consume(']')) {
-        out = JsonValue::ArrayValue(std::move(array));
-        return true;
-      }
-      if (!cursor_.Consume(',')) {
-        return cursor_.Fail("expected ',' or ']' in JSON array");
-      }
-      cursor_.SkipWhitespace();
-    }
   }
 
   bool ParseLiteral(std::string_view literal, JsonValue value, JsonValue &out) {

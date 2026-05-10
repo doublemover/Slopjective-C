@@ -5,7 +5,9 @@ add_library(objc3c_json STATIC
   json/json_array_writer.cpp
   json/json_object_writer.cpp
   json/json_parser.cpp
+  json/json_parser_array_container.cpp
   json/json_parser_cursor.cpp
+  json/json_parser_object_container.cpp
   json/json_parser_string_token.cpp
   json/json_pointer.cpp
   json/json_pointer_tokens.cpp
