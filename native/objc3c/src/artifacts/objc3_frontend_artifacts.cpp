@@ -12,7 +12,7 @@
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_artifact_block_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
-#include "artifacts/objc3_frontend_artifact_bundle_outputs.h"
+#include "artifacts/objc3_frontend_artifact_bundle_publication.h"
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_conformance_report_plan.h"
@@ -34,7 +34,6 @@
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_interop_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
-#include "artifacts/objc3_frontend_artifact_ir_application.h"
 #include "artifacts/objc3_frontend_artifact_ir_emission_completion.h"
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
 #include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_fields.h"
@@ -603,15 +602,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &concurrency_actor_isolation_sendability_lowering_contract =
           semantic_lowering_plan
               .concurrency_actor_isolation_sendability_lowering_contract;
-  const std::string
-      &concurrency_actor_isolation_sendability_lowering_replay_key =
-          semantic_lowering_plan
-              .concurrency_actor_isolation_sendability_lowering_replay_key;
-  const Objc3ActorLoweringMetadataContract
-      &concurrency_actor_lowering_metadata_contract =
-          semantic_lowering_plan.concurrency_actor_lowering_metadata_contract;
-  const std::string &concurrency_actor_lowering_metadata_replay_key =
-      semantic_lowering_plan.concurrency_actor_lowering_metadata_replay_key;
   const Objc3TaskRuntimeInteropCancellationLoweringContract
       &concurrency_task_runtime_interop_cancellation_lowering_contract =
           semantic_lowering_plan
@@ -685,8 +675,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &executable_metadata_runtime_ingest_packaging_contract =
           runtime_metadata_plan
               .executable_metadata_runtime_ingest_packaging_contract;
-  const std::string &executable_metadata_runtime_ingest_binary_payload =
-      runtime_metadata_plan.executable_metadata_runtime_ingest_binary_payload;
   const Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary
       &executable_metadata_runtime_ingest_binary_boundary =
           runtime_metadata_plan
@@ -751,29 +739,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         conformance_report_plan.post_pipeline_failure.code.c_str(),
         conformance_report_plan.post_pipeline_failure.message);
   }
-  const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
-      &frontend_compatibility_strictness_claim_semantics =
-          conformance_report_plan
-              .frontend_compatibility_strictness_claim_semantics;
   const Objc3ToolingLegacyCanonicalMigrationSemanticsSummary
       &tooling_legacy_canonical_migration_semantics_summary =
           conformance_report_plan
               .tooling_legacy_canonical_migration_semantics_summary;
-  const Objc3VersionedConformanceReportLoweringSummary
-      &versioned_conformance_report_lowering =
-          conformance_report_plan.versioned_conformance_report_lowering;
   const Objc3ToolingMachineReadableConformanceReportContractSummary
       &tooling_machine_readable_conformance_report_contract_summary =
           conformance_report_plan
               .tooling_machine_readable_conformance_report_contract_summary;
-  const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
-      &tooling_feature_aware_conformance_report_emission_summary =
-          conformance_report_plan
-              .tooling_feature_aware_conformance_report_emission_summary;
-  const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
-      &tooling_corpus_sharding_release_evidence_packaging_summary =
-          conformance_report_plan
-              .tooling_corpus_sharding_release_evidence_packaging_summary;
   const Objc3FrontendArtifactCoreLoweringPlan core_lowering_plan =
       BuildObjc3FrontendArtifactCoreLoweringPlan(
           program, pipeline_result, options,
@@ -817,26 +790,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           core_lowering_plan.message_send_selector_lowering_contract;
   const auto &message_send_selector_lowering_snapshot =
       core_lowering_plan.message_send_selector_lowering_snapshot;
-  const std::string &message_send_selector_lowering_replay_key =
-      core_lowering_plan.message_send_selector_lowering_replay_key;
   const Objc3DispatchAbiMarshallingContract &dispatch_abi_marshalling_contract =
       core_lowering_plan.dispatch_abi_marshalling_contract;
   const auto &dispatch_abi_marshalling_snapshot =
       core_lowering_plan.dispatch_abi_marshalling_snapshot;
-  const std::string &dispatch_abi_marshalling_replay_key =
-      core_lowering_plan.dispatch_abi_marshalling_replay_key;
   const Objc3NilReceiverSemanticsFoldabilityContract
       &nil_receiver_semantics_foldability_contract =
           core_lowering_plan.nil_receiver_semantics_foldability_contract;
   const auto &nil_receiver_semantics_foldability_snapshot =
       core_lowering_plan.nil_receiver_semantics_foldability_snapshot;
-  const std::string &nil_receiver_semantics_foldability_replay_key =
-      core_lowering_plan.nil_receiver_semantics_foldability_replay_key;
-  const Objc3TypeSystemOptionalKeypathLoweringContract
-      &type_system_optional_keypath_lowering_contract =
-          core_lowering_plan.type_system_optional_keypath_lowering_contract;
-  const std::string &type_system_optional_keypath_lowering_replay_key =
-      core_lowering_plan.type_system_optional_keypath_lowering_replay_key;
   const Objc3ControlFlowControlFlowSafetyLoweringContract
       &control_flow_control_flow_safety_lowering_contract =
           core_lowering_plan.control_flow_control_flow_safety_lowering_contract;
@@ -1026,12 +988,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3SerializedRuntimeMetadataImportLoweringSummary
       &serialized_runtime_metadata_import_lowering =
           runtime_import_plan.serialized_runtime_metadata_import_lowering;
-  const Objc3RuntimeMetadataSourceRecordSet
-      &serialized_runtime_metadata_reuse_records =
-          runtime_import_plan.serialized_runtime_metadata_reuse_records;
-  const Objc3SerializedRuntimeMetadataArtifactReuseSummary
-      &serialized_runtime_metadata_artifact_reuse =
-          runtime_import_plan.serialized_runtime_metadata_artifact_reuse;
   const Objc3CrossModuleBuildRuntimeOrchestrationSummary
       &cross_module_build_runtime_orchestration =
           runtime_import_plan.cross_module_build_runtime_orchestration;
@@ -1116,36 +1072,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   for (const auto &failure : interop_lowering_plan.post_pipeline_failures) {
     record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const auto &error_handling_result_and_bridging_artifact_replay_summary =
-      interop_lowering_plan
-          .error_handling_result_and_bridging_artifact_replay_summary;
-  const Objc3InteropForeignSurfaceInterfacePreservationSummary
-      &interop_foreign_surface_interface_preservation_summary =
-          interop_lowering_plan
-              .interop_foreign_surface_interface_preservation_summary;
   const Objc3InteropInteropLoweringContract
       &interop_interop_lowering_contract =
           interop_lowering_plan.interop_interop_lowering_contract;
   const std::string &interop_interop_lowering_replay_key =
       interop_lowering_plan.interop_interop_lowering_replay_key;
-  const Objc3InteropForeignCallLifetimeLoweringContract
-      &interop_foreign_call_lifetime_lowering_contract =
-          interop_lowering_plan
-              .interop_foreign_call_lifetime_lowering_contract;
-  const std::string &interop_foreign_call_lifetime_lowering_replay_key =
-      interop_lowering_plan
-          .interop_foreign_call_lifetime_lowering_replay_key;
-  const std::string &interop_ffi_metadata_interface_preservation_replay_key =
-      interop_lowering_plan
-          .interop_ffi_metadata_interface_preservation_replay_key;
-  const Objc3InteropFfiMetadataInterfacePreservationContract
-      &interop_ffi_metadata_interface_preservation_contract =
-          interop_lowering_plan
-              .interop_ffi_metadata_interface_preservation_contract;
-  const Objc3InteropHeaderModuleBridgeGenerationSummary
-      &interop_header_module_bridge_generation_summary =
-          interop_lowering_plan
-              .interop_header_module_bridge_generation_summary;
   const Objc3FrontendArtifactPreservationPlan artifact_preservation_plan =
       BuildObjc3FrontendArtifactPreservationPlan(
           runtime_metadata_source_records,
@@ -1168,19 +1099,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const auto dispatch_dispatch_metadata_interface_preservation_snapshot =
       objc3::artifacts::frontend::BuildDispatchMetadataPreservationSnapshot(
           dispatch_dispatch_metadata_interface_preservation_summary);
-  const auto &runtime_block_ownership_artifact_preservation_summary =
-      artifact_preservation_plan
-          .runtime_block_ownership_artifact_preservation_summary;
-  const auto &runtime_storage_reflection_artifact_preservation_summary =
-      artifact_preservation_plan
-          .runtime_storage_reflection_artifact_preservation_summary;
-  const auto &metaprogramming_module_interface_replay_preservation_summary =
-      artifact_preservation_plan
-          .metaprogramming_module_interface_replay_preservation_summary;
-  const auto
-      &metaprogramming_macro_host_process_cache_runtime_integration_summary =
-          artifact_preservation_plan
-              .metaprogramming_macro_host_process_cache_runtime_integration_summary;
   const Objc3FrontendArtifactSourceShapePlan source_shape_plan =
       BuildObjc3FrontendArtifactSourceShapePlan(program, pipeline_result);
   for (const auto &failure : source_shape_plan.post_pipeline_failures) {
@@ -2510,59 +2428,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_lowering_plan, type_system_lowering_plan, runtime_import_plan,
       module_lowering_plan, error_lowering_plan, interop_lowering_plan,
       runtime_metadata_plan, runtime_registration_plan);
-  bundle.manifest_json = manifest.str();
-  bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
-  objc3::artifacts::frontend::PopulateObjc3FrontendArtifactBundleOutputs(
-      bundle, program, runtime_aware_import_module_frontend_closure,
-      runtime_metadata_source_records, type_metadata_handoff,
-      type_system_optional_keypath_lowering_contract,
-      type_system_type_semantic_model_summary,
-      message_send_selector_lowering_replay_key,
-      dispatch_abi_marshalling_replay_key,
-      nil_receiver_semantics_foldability_replay_key,
-      type_system_optional_keypath_lowering_replay_key,
-      runtime_support_library_link_wiring,
-      error_handling_result_and_bridging_artifact_replay_summary,
-      concurrency_actor_lowering_metadata_contract,
-      concurrency_actor_lowering_metadata_replay_key,
-      concurrency_actor_isolation_sendability_lowering_replay_key,
-      interop_foreign_surface_interface_preservation_summary,
-      interop_header_module_bridge_generation_summary,
-      interop_foreign_call_lifetime_lowering_contract,
-      interop_foreign_call_lifetime_lowering_replay_key,
-      interop_ffi_metadata_interface_preservation_contract,
-      interop_ffi_metadata_interface_preservation_replay_key,
-      metaprogramming_module_interface_replay_preservation_summary,
-      metaprogramming_macro_host_process_cache_runtime_integration_summary,
-      dispatch_dispatch_metadata_interface_preservation_summary,
-      runtime_block_ownership_artifact_preservation_summary,
-      runtime_storage_reflection_artifact_preservation_summary,
-      serialized_runtime_metadata_artifact_reuse,
-      serialized_runtime_metadata_reuse_records,
-      versioned_conformance_report_lowering, options, pipeline_result,
-      frontend_compatibility_strictness_claim_semantics,
-      tooling_feature_aware_conformance_report_emission_summary,
-      tooling_corpus_sharding_release_evidence_packaging_summary,
-      runtime_registration_descriptor_image_root_source_surface,
-      runtime_registration_descriptor_frontend_closure,
-      runtime_translation_unit_registration_manifest,
-      runtime_bootstrap_legality_semantics,
-      runtime_bootstrap_legality_failure_contract,
-      runtime_bootstrap_failure_restart_semantics,
-      tooling_legacy_canonical_migration_semantics_summary,
-      tooling_machine_readable_conformance_report_contract_summary,
-      runtime_bootstrap_api, runtime_bootstrap_semantics,
-      runtime_bootstrap_lowering);
 
-  objc3::artifacts::frontend::FinalizeObjc3FrontendArtifactIrApplication({
+  objc3::artifacts::frontend::PublishObjc3FrontendArtifactBundleOutputs({
       .bundle = bundle,
       .input_path = input_path,
       .pipeline_result = pipeline_result,
       .options = options,
       .program = program,
+      .manifest_json = manifest.str(),
       .post_pipeline_failure = post_pipeline_failure,
       .ir_emission_core_feature_impl_surface =
           ir_emission_core_feature_impl_surface,
+      .type_system_type_semantic_model_summary =
+          type_system_type_semantic_model_summary,
       .conformance_report_plan = conformance_report_plan,
       .semantic_lowering_plan = semantic_lowering_plan,
       .core_lowering_plan = core_lowering_plan,
