@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "artifacts/evidence/error_handling_replay_evidence.h"
-#include "artifacts/interop/interop_bridge_artifacts.h"
 #include "artifacts/json/program_manifest_json.h"
 #include "artifacts/json/runtime_metadata_manifest_json.h"
 #include "artifacts/json/semantic_type_manifest_json.h"
@@ -119,9 +118,6 @@ namespace {
 using objc3::io::EscapeJsonString;
 using objc3::artifacts::evidence::
     BuildErrorHandlingResultAndBridgingArtifactReplayJson;
-using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
-using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
-using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentCompatibilitySummaryJson;
 using objc3::artifacts::frontend::BuildDispatchAbiMarshallingContract;
@@ -6333,62 +6329,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
-  bundle.runtime_aware_import_module_artifact_json =
-      objc3::artifacts::frontend::
-          BuildObjc3FrontendRuntimeImportArtifactPayloadJson(
-              program, runtime_aware_import_module_frontend_closure,
-              runtime_metadata_source_records, type_metadata_handoff,
-              type_system_optional_keypath_lowering_contract,
-              type_system_type_semantic_model_summary,
-              message_send_selector_lowering_replay_key,
-              dispatch_abi_marshalling_replay_key,
-              nil_receiver_semantics_foldability_replay_key,
-              type_system_optional_keypath_lowering_replay_key,
-              runtime_support_library_link_wiring,
-              error_handling_result_and_bridging_artifact_replay_summary,
-              concurrency_actor_lowering_metadata_contract,
-              concurrency_actor_lowering_metadata_replay_key,
-              concurrency_actor_isolation_sendability_lowering_replay_key,
-              interop_foreign_surface_interface_preservation_summary,
-              interop_header_module_bridge_generation_summary,
-              interop_foreign_call_lifetime_lowering_contract,
-              interop_foreign_call_lifetime_lowering_replay_key,
-              interop_ffi_metadata_interface_preservation_contract,
-              interop_ffi_metadata_interface_preservation_replay_key,
-              metaprogramming_module_interface_replay_preservation_summary,
-              metaprogramming_macro_host_process_cache_runtime_integration_summary,
-              dispatch_dispatch_metadata_interface_preservation_summary,
-              runtime_block_ownership_artifact_preservation_summary,
-              runtime_storage_reflection_artifact_preservation_summary,
-              serialized_runtime_metadata_artifact_reuse,
-              serialized_runtime_metadata_reuse_records);
-  if (interop_header_module_bridge_generation_summary.runtime_generation_ready &&
-      interop_header_module_bridge_generation_summary.deterministic) {
-    bundle.interop_bridge_header_artifact_text = BuildInteropBridgeHeaderArtifactText(
-        program, runtime_aware_import_module_frontend_closure,
-        interop_header_module_bridge_generation_summary);
-    bundle.interop_bridge_module_artifact_text = BuildInteropBridgeModuleArtifactText(
-        runtime_aware_import_module_frontend_closure,
-        interop_header_module_bridge_generation_summary);
-    bundle.interop_bridge_artifact_json = BuildInteropBridgeArtifactJson(
-        program, runtime_aware_import_module_frontend_closure,
-        interop_header_module_bridge_generation_summary);
-  }
-  bundle.metaprogramming_macro_host_process_cache_runtime_integration_ready =
-      metaprogramming_macro_host_process_cache_runtime_integration_summary
-          .runtime_import_artifact_ready;
-  bundle.metaprogramming_macro_host_process_cache_runtime_integration_replay_key =
-      metaprogramming_macro_host_process_cache_runtime_integration_summary.replay_key;
-  bundle
-      .metaprogramming_macro_host_process_cache_runtime_integration_cache_root_relative_path =
-      metaprogramming_macro_host_process_cache_runtime_integration_summary
-          .cache_root_relative_path;
-  if (error_handling_result_and_bridging_artifact_replay_summary
-          .binary_artifact_replay_ready) {
-    bundle.error_handling_result_bridge_artifact_replay_json =
-        BuildErrorHandlingResultAndBridgingArtifactReplayJson(
-            error_handling_result_and_bridging_artifact_replay_summary);
-  }
+  objc3::artifacts::frontend::PopulateObjc3FrontendRuntimeImportArtifactOutputs(
+      bundle, program, runtime_aware_import_module_frontend_closure,
+      runtime_metadata_source_records, type_metadata_handoff,
+      type_system_optional_keypath_lowering_contract,
+      type_system_type_semantic_model_summary,
+      message_send_selector_lowering_replay_key,
+      dispatch_abi_marshalling_replay_key,
+      nil_receiver_semantics_foldability_replay_key,
+      type_system_optional_keypath_lowering_replay_key,
+      runtime_support_library_link_wiring,
+      error_handling_result_and_bridging_artifact_replay_summary,
+      concurrency_actor_lowering_metadata_contract,
+      concurrency_actor_lowering_metadata_replay_key,
+      concurrency_actor_isolation_sendability_lowering_replay_key,
+      interop_foreign_surface_interface_preservation_summary,
+      interop_header_module_bridge_generation_summary,
+      interop_foreign_call_lifetime_lowering_contract,
+      interop_foreign_call_lifetime_lowering_replay_key,
+      interop_ffi_metadata_interface_preservation_contract,
+      interop_ffi_metadata_interface_preservation_replay_key,
+      metaprogramming_module_interface_replay_preservation_summary,
+      metaprogramming_macro_host_process_cache_runtime_integration_summary,
+      dispatch_dispatch_metadata_interface_preservation_summary,
+      runtime_block_ownership_artifact_preservation_summary,
+      runtime_storage_reflection_artifact_preservation_summary,
+      serialized_runtime_metadata_artifact_reuse,
+      serialized_runtime_metadata_reuse_records);
   if (IsReadyObjc3VersionedConformanceReportLoweringSummary(
           versioned_conformance_report_lowering)) {
     bundle.versioned_conformance_report_artifact_json =
