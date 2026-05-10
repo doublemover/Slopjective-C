@@ -21,6 +21,7 @@ target_link_libraries(objc3c_ir_core_models PUBLIC
 
 add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_block_lowering.cpp
+  objc3_ir_block_lowering_helper_emission.cpp
   objc3_ir_block_runtime_contracts.cpp
   objc3_ir_class_receiver_bindings.cpp
   objc3_ir_compile_time_proof_analysis.cpp
