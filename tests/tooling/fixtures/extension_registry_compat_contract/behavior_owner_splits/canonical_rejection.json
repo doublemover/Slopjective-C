@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/drift_missing_validator_ordering",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w1_drift_schema_invariants",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w2_drift_parity_taxonomy_gating"
+  ],
+  "support_boundary": "canonical rejection owns extension registry drift and compatibility overclaim rows: missing validator ordering, schema invariant drift, W2 parity/taxonomy/gating drift, conditional compatibility used as support, compatibility labels promoted to public support, old-mode rows, shim rows, fallback rows, migration-only rows, generated-only rows, report-only rows, wrapper-only rows, runner-only rows, and directory-label-only rows.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/drift_missing_validator_ordering",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w1_drift_schema_invariants",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w2_drift_parity_taxonomy_gating",
+    "drift_class:missing_validator_ordering",
+    "drift_class:schema_invariants",
+    "drift_class:parity_taxonomy_gating",
+    "compatibility_terms:taxonomy-only",
+    "*compatibility-support*",
+    "*compatibility_support*",
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*",
+    "*compat*",
+    "*migration-only*",
+    "*migration_only*",
+    "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "drift rows, compatibility support claims, old-mode registry rows, shim registry rows, fallback registry rows, compatibility registry rows, migration-only registry rows, report-only registry rows, generated-only registry rows, wrapper-only registry rows, runner-only registry rows, and alternate acceptance registry claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract"
+  ],
+  "support_boundary": "sema ownership is non-positive for extension registry compatibility contract fixtures because compatibility_matrix, lifecycle_state, validators, waiver_policy, and publication gates are tooling governance labels, not Objective-C 3 semantic behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/extension_registry_compat_contract/**/*.objc3",
+    "tooling_fixture_family:extension_registry_compat_contract",
+    "compiler_phase_boundary:no-sema-positive-truth",
+    "upstream_owner_required:tests/native/sema",
+    "semantic_like_terms:compatibility_matrix,lifecycle_state,waiver_policy are governance labels only"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema registry rows, compatibility sema rows, shim sema rows, fallback sema rows, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, and compatibility taxonomy labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

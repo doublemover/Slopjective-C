@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract"
+  ],
+  "support_boundary": "runtime ownership is non-positive for extension registry compatibility contract fixtures. Registry ids, compatibility policies, validators, waivers, escalation levels, and publication gates are governance state, not native runtime dispatch, storage, object-model, or ABI behavior support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:extension_registry_compat_contract",
+    "tooling_terms:registry_id,compatibility_matrix,validators,waiver_policy,publication_gate",
+    "compiler_phase_boundary:no-runtime-positive-truth",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime registry rows, compatibility runtime rows, shim runtime rows, fallback runtime rows, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, compatibility-label-only runtime claims, and registry publication rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

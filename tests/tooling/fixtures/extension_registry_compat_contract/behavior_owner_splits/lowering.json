@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract"
+  ],
+  "support_boundary": "lowering ownership is non-positive for extension registry compatibility contract fixtures. This family does not contain lowering source fixtures or lowering expectations; accepted registry governance scenarios prove tooling contract behavior only.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/extension_registry_compat_contract/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/extension_registry_compat_contract/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:extension_registry_compat_contract",
+    "compiler_phase_boundary:no-lowering-positive-truth",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering registry rows, shim lowering registry rows, fallback lowering registry rows, compatibility lowering rows, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, and registry expected text promoted as lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
