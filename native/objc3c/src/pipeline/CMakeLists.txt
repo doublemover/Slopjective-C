@@ -47,6 +47,9 @@ add_library(objc3c_pipeline STATIC
   frontend_metadata_handoff_helpers_type_names.cpp
   frontend_metadata_handoff_ordering.cpp
   frontend_metaprogramming_source_completion_helpers.cpp
+  frontend_ownership_source_closure_helpers.cpp
+  frontend_ownership_source_closure_helpers_expr_sites.cpp
+  frontend_ownership_source_closure_helpers_stmt_sites.cpp
   frontend_ownership_source_completion_helpers.cpp
   frontend_phase_publication_helpers.cpp
   frontend_pipeline_pragma_contracts.cpp
@@ -120,6 +123,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_type_system_preservation_optional_keypath.cpp
   runtime_import_type_system_preservation_protocol.cpp
   frontend_control_flow_source_closure_helpers.h
+  frontend_ownership_source_closure_helpers.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
   frontend_pipeline_result_contract.h
