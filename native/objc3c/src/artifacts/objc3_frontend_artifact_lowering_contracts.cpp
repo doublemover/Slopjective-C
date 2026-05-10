@@ -3,6 +3,12 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "lower/contracts/concurrency_actor_contracts.h"
+#include "lower/contracts/concurrency_task_lowering_contracts.h"
+#include "lower/contracts/dispatch_control_lowering_contracts.h"
+#include "lower/contracts/ownership_system_extension_contracts.h"
+#include "pipeline/objc3_frontend_types.h"
+
 namespace objc3::artifacts::frontend {
 
 Objc3ActorIsolationSendabilityLoweringContract

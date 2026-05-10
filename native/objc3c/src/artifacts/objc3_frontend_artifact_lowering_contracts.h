@@ -1,10 +1,20 @@
 #pragma once
 
-#include "lower/contracts/concurrency_actor_contracts.h"
-#include "lower/contracts/concurrency_task_lowering_contracts.h"
-#include "lower/contracts/dispatch_control_lowering_contracts.h"
-#include "lower/contracts/ownership_system_extension_contracts.h"
-#include "pipeline/objc3_frontend_types.h"
+struct Objc3ActorIsolationSendabilityLoweringContract;
+struct Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary;
+struct Objc3ConcurrencyReplayRaceGuardLoweringContract;
+struct Objc3ConcurrencyStructuredTaskCancellationSemanticSummary;
+struct Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary;
+struct Objc3DispatchDispatchControlLoweringContract;
+struct Objc3DispatchDispatchIntentCompatibilitySummary;
+struct Objc3DispatchDispatchIntentLegalitySummary;
+struct Objc3DispatchDispatchIntentSemanticModelSummary;
+struct Objc3OwnershipBorrowedPointerEscapeAnalysisSummary;
+struct Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary;
+struct Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary;
+struct Objc3OwnershipSystemExtensionLoweringContract;
+struct Objc3OwnershipSystemExtensionSemanticModelSummary;
+struct Objc3TaskRuntimeInteropCancellationLoweringContract;
 
 namespace objc3::artifacts::frontend {
 
