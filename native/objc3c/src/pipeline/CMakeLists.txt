@@ -31,6 +31,8 @@ add_library(objc3c_pipeline STATIC
   frontend_executable_metadata_source_graph_readiness_ordering.cpp
   frontend_executable_metadata_source_graph_readiness_publication.cpp
   frontend_concurrency_source_closure_helpers.cpp
+  frontend_control_flow_source_closure_helpers.cpp
+  frontend_control_flow_source_closure_helpers_stmt_sites.cpp
   frontend_dispatch_source_completion_helpers.cpp
   frontend_interop_source_completion_helpers.cpp
   frontend_pipeline_orchestration.cpp
@@ -117,6 +119,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_type_system_preservation_nullability.cpp
   runtime_import_type_system_preservation_optional_keypath.cpp
   runtime_import_type_system_preservation_protocol.cpp
+  frontend_control_flow_source_closure_helpers.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
   frontend_pipeline_result_contract.h
