@@ -1,78 +1,68 @@
-#!/usr/bin/env python3
-"""Run deterministic repo-root open blocker audit orchestration."""
+"""Open-blocker audit runner package."""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-from typing import Sequence
-
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_ROOT = ROOT / "scripts"
-for import_root in (ROOT, SCRIPT_ROOT):
-    import_root_text = str(import_root)
-    if import_root_text not in sys.path:
-        sys.path.insert(0, import_root_text)
-
-from scripts.open_blocker_audit import (  # noqa: E402
-    CHECKER_MODE,
+from .cli import build_parser, run_cli
+from .commands import run_command
+from .constants import (
     CHECK_OPEN_BLOCKER_AUDIT_CONTRACT_SCRIPT_PATH,
-    CONTRACT_CHECK_STDERR_FILENAME,
-    CONTRACT_CHECK_TRANSCRIPT_FILENAME,
     DEFAULT_AUDIT_ROOT,
-    DEFAULT_COMMAND_TIMEOUT_SECONDS,
-    DEFAULT_EXCLUDE_PATHS,
     DEFAULT_OUTPUT_DIR,
-    DEFAULT_SNAPSHOT_RELATIVE_PATH,
-    EXIT_OK,
-    EXIT_OPEN_BLOCKERS,
-    EXIT_RUNNER_ERROR,
-    EXTRACT_LOG_FILENAME,
     EXTRACT_OPEN_BLOCKERS_SCRIPT_PATH,
-    REPORT_MD_FILENAME,
-    RUNNER_CONTRACT_ID,
-    RUNNER_CONTRACT_VERSION,
-    RUNNER_ID,
-    SUMMARY_JSON_FILENAME,
+    ROOT,
+)
+from .models import (
     AuditOutputPaths,
     AuditScope,
     CommandResult,
     CommandSpec,
     SnapshotMetadata,
-    build_extract_snapshot_spec,
-    build_extractor_exclude_paths,
-    build_output_paths,
-    build_parser,
+)
+from .normalization import (
     build_runner_snapshot_payload,
-    build_summary_payload,
-    build_contract_check_spec,
-    determine_final_exit,
     extract_blocker_count,
-    normalize_exclude_paths,
     normalize_extract_snapshot_stdout,
-    normalize_include_globs,
     normalize_snapshot_metadata,
-    render_command_log,
-    render_contract_check_transcript,
-    render_markdown_report,
-    resolve_audit_scope,
-    resolve_effective_audit_root,
-    resolve_markdown_scope,
-    run_audit,
-    run_cli,
-    run_command,
-    validate_contract_check_output,
     validate_extract_snapshot_payload,
     validate_generated_at_utc,
     validate_snapshot_source,
+)
+from .rendering import (
+    CHECKER_MODE,
+    CONTRACT_CHECK_STDERR_FILENAME,
+    CONTRACT_CHECK_TRANSCRIPT_FILENAME,
+    DEFAULT_COMMAND_TIMEOUT_SECONDS,
+    DEFAULT_SNAPSHOT_RELATIVE_PATH,
+    EXIT_OK,
+    EXIT_OPEN_BLOCKERS,
+    EXIT_RUNNER_ERROR,
+    EXTRACT_LOG_FILENAME,
+    REPORT_MD_FILENAME,
+    RUNNER_CONTRACT_ID,
+    RUNNER_CONTRACT_VERSION,
+    RUNNER_ID,
+    SUMMARY_JSON_FILENAME,
+    build_contract_check_spec,
+    build_output_paths,
+    build_summary_payload,
+    determine_final_exit,
+    render_command_log,
+    render_contract_check_transcript,
+    render_markdown_report,
+    validate_contract_check_output,
     write_text,
 )
-from objc3c_tooling.paths import display_path, resolve_repo_path  # noqa: E402
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    return run_cli(argv, command_runner=run_command)
-
+from .runner import run_audit
+from .scanning import (
+    DEFAULT_EXCLUDE_PATHS,
+    build_extract_snapshot_spec,
+    build_extractor_exclude_paths,
+    normalize_exclude_paths,
+    normalize_include_globs,
+    resolve_audit_scope,
+    resolve_effective_audit_root,
+    resolve_markdown_scope,
+)
 
 __all__ = [
     "CHECKER_MODE",
@@ -100,17 +90,15 @@ __all__ = [
     "CommandResult",
     "CommandSpec",
     "SnapshotMetadata",
+    "build_contract_check_spec",
     "build_extract_snapshot_spec",
     "build_extractor_exclude_paths",
     "build_output_paths",
     "build_parser",
     "build_runner_snapshot_payload",
     "build_summary_payload",
-    "build_contract_check_spec",
     "determine_final_exit",
-    "display_path",
     "extract_blocker_count",
-    "main",
     "normalize_exclude_paths",
     "normalize_extract_snapshot_stdout",
     "normalize_include_globs",
@@ -121,7 +109,6 @@ __all__ = [
     "resolve_audit_scope",
     "resolve_effective_audit_root",
     "resolve_markdown_scope",
-    "resolve_repo_path",
     "run_audit",
     "run_cli",
     "run_command",
@@ -131,7 +118,3 @@ __all__ = [
     "validate_snapshot_source",
     "write_text",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
