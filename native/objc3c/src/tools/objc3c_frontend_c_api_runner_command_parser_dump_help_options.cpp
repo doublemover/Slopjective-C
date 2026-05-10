@@ -1,42 +1,25 @@
 #include "tools/objc3c_frontend_c_api_runner_command_parser_options.h"
 
-#include "diagnostics/modes/objc3_removed_mode_options.h"
-#include "tools/objc3c_frontend_c_api_runner_dump_options.h"
-#include "tools/objc3c_frontend_c_api_runner_usage.h"
-
-FrontendCApiRunnerCommandOptionParseResult
-ParseFrontendCApiRunnerRemovedModeOption(const std::string &arg,
-                                         std::string &error) {
-  if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(arg,
-                                                                   error)) {
-    return FrontendCApiRunnerCommandOptionParseResult::kError;
-  }
-  return FrontendCApiRunnerCommandOptionParseResult::kNotHandled;
-}
+#include "tools/objc3c_frontend_c_api_runner_command_parser_dump_help_internal.h"
 
 FrontendCApiRunnerCommandOptionParseResult
 ParseFrontendCApiRunnerEmissionDumpHelpOption(
     const std::string &arg,
     FrontendCApiRunnerOptions &options,
     std::string &error) {
-  if (arg == "--no-emit-manifest") {
-    options.emit_manifest = false;
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+  const FrontendCApiRunnerCommandOptionParseResult emission_toggle_result =
+      ParseFrontendCApiRunnerEmissionToggleOption(arg, options);
+  if (emission_toggle_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return emission_toggle_result;
   }
-  if (arg == "--no-emit-ir") {
-    options.emit_ir = false;
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
+
+  const FrontendCApiRunnerCommandOptionParseResult dump_flag_result =
+      ParseFrontendCApiRunnerDumpFlagOption(arg, options);
+  if (dump_flag_result !=
+      FrontendCApiRunnerCommandOptionParseResult::kNotHandled) {
+    return dump_flag_result;
   }
-  if (arg == "--no-emit-object") {
-    options.emit_object = false;
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
-  }
-  if (ApplyFrontendCApiRunnerDumpOption(arg, options)) {
-    return FrontendCApiRunnerCommandOptionParseResult::kHandled;
-  }
-  if (arg == "--help" || arg == "-h") {
-    error = FrontendCApiRunnerUsage();
-    return FrontendCApiRunnerCommandOptionParseResult::kError;
-  }
-  return FrontendCApiRunnerCommandOptionParseResult::kNotHandled;
+
+  return ParseFrontendCApiRunnerHelpOption(arg, error);
 }
