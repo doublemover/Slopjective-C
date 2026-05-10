@@ -54,6 +54,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
+#include "artifacts/objc3_frontend_artifact_semantic_summary_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_source_closure_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
@@ -242,6 +243,7 @@ using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
 using objc3::artifacts::frontend::WriteInteropManifestSurfaces;
 using objc3::artifacts::frontend::WriteMetaprogrammingManifestSurfaces;
 using objc3::artifacts::frontend::WriteOwnershipManifestSurfaces;
+using objc3::artifacts::frontend::WriteSemanticSummaryManifestSurfaces;
 using objc3::artifacts::frontend::WriteSourceClosureManifestSurfaces;
 using objc3::artifacts::frontend::WriteToolingManifestSurfaces;
 using objc3::artifacts::frontend::WriteTypeSystemManifestSurfaces;
@@ -409,11 +411,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildObjc3FrontendArtifactFunctionManifest(program, pipeline_result);
   const std::vector<const FunctionDecl *> &manifest_functions =
       function_manifest.manifest_functions;
-  const std::size_t scalar_return_i32 = function_manifest.scalar_return_i32;
-  const std::size_t scalar_return_bool = function_manifest.scalar_return_bool;
-  const std::size_t scalar_return_void = function_manifest.scalar_return_void;
-  const std::size_t scalar_param_i32 = function_manifest.scalar_param_i32;
-  const std::size_t scalar_param_bool = function_manifest.scalar_param_bool;
   const std::size_t vector_signature_functions =
       function_manifest.vector_signature_functions;
   const std::size_t vector_return_signatures =
@@ -5018,67 +5015,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       control_flow_control_flow_safety_lowering_replay_key,
       autoreleasepool_scope_lowering_contract,
       autoreleasepool_scope_lowering_replay_key);
-  manifest
-           << ",\"objc_error_handling_error_semantic_model\":"
-           << BuildErrorHandlingErrorSemanticModelSummaryJson(
-                  error_handling_error_semantic_model_summary)
-           << ",\"objc_error_handling_try_do_catch_semantics\":"
-           << BuildErrorHandlingTryDoCatchSemanticSummaryJson(
-                  error_handling_try_do_catch_semantic_summary)
-           << ",\"objc_error_handling_error_bridge_legality\":"
-           << BuildErrorHandlingErrorBridgeLegalitySummaryJson(
-                  error_handling_error_bridge_legality_summary)
-           << ",\"objc_control_flow_control_flow_semantic_model\":"
-           << BuildControlFlowControlFlowSemanticModelSummaryJson(
-                  control_flow_control_flow_semantic_model_summary)
-           << ",\"objc_type_system_type_semantic_model\":"
-           << BuildTypeSystemTypeSemanticModelSummaryJson(
-                  type_system_type_semantic_model_summary)
-           << ",\"objc_symbol_graph_scope_resolution_surface\":{\"global_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.global_symbol_nodes
-           << ",\"function_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.function_symbol_nodes
-           << ",\"interface_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.interface_symbol_nodes
-           << ",\"implementation_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.implementation_symbol_nodes
-           << ",\"interface_property_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.interface_property_symbol_nodes
-           << ",\"implementation_property_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes
-           << ",\"interface_method_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.interface_method_symbol_nodes
-           << ",\"implementation_method_symbol_nodes\":"
-           << symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes
-           << ",\"top_level_scope_symbols\":"
-           << symbol_graph_scope_resolution_summary.top_level_scope_symbols
-           << ",\"nested_scope_symbols\":"
-           << symbol_graph_scope_resolution_summary.nested_scope_symbols
-           << ",\"scope_frames_total\":"
-           << symbol_graph_scope_resolution_summary.scope_frames_total
-           << ",\"implementation_interface_resolution_sites\":"
-           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites
-           << ",\"implementation_interface_resolution_hits\":"
-           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits
-           << ",\"implementation_interface_resolution_misses\":"
-           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses
-           << ",\"method_resolution_sites\":"
-           << symbol_graph_scope_resolution_summary.method_resolution_sites
-           << ",\"method_resolution_hits\":"
-           << symbol_graph_scope_resolution_summary.method_resolution_hits
-           << ",\"method_resolution_misses\":"
-           << symbol_graph_scope_resolution_summary.method_resolution_misses
-           << ",\"deterministic_symbol_graph_handoff\":"
-           << (symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff ? "true" : "false")
-           << ",\"deterministic_scope_resolution_handoff\":"
-           << (symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff ? "true" : "false")
-           << ",\"deterministic_handoff_key\":\""
-           << symbol_graph_scope_resolution_summary.deterministic_handoff_key
-           << "\"}"
-           << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
-           << ",\"scalar_return_bool\":" << scalar_return_bool
-           << ",\"scalar_return_void\":" << scalar_return_void << ",\"scalar_param_i32\":" << scalar_param_i32
-           << ",\"scalar_param_bool\":" << scalar_param_bool << "}}\n";
+  WriteSemanticSummaryManifestSurfaces(
+      manifest, error_handling_error_semantic_model_summary,
+      error_handling_try_do_catch_semantic_summary,
+      error_handling_error_bridge_legality_summary,
+      control_flow_control_flow_semantic_model_summary,
+      type_system_type_semantic_model_summary,
+      symbol_graph_scope_resolution_summary, function_manifest);
   manifest << "    }\n";
   manifest << "  },\n";
   objc3::artifacts::frontend::
