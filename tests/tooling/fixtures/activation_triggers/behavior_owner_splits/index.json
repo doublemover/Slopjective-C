@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers/*/issues.json",
+    "tests/tooling/fixtures/activation_triggers/*/milestones.json",
+    "tests/tooling/fixtures/activation_triggers/*/catalog.json",
+    "tests/tooling/fixtures/activation_triggers/*/open_blockers*.json",
+    "tests/tooling/fixtures/activation_triggers/*/overlay_*.json",
+    "tests/tooling/fixtures/activation_triggers/*/expectations.json",
+    "tests/tooling/fixtures/activation_triggers/*/expected.json",
+    "tests/tooling/fixtures/activation_triggers/*/expected.md",
+    "tests/tooling/fixtures/activation_triggers/*/expected_exit_code.txt",
+    "tests/tooling/fixtures/activation_triggers/*/expected_stderr.txt"
+  ],
+  "split_policy": {
+    "primary_axis": "tooling/e2e activation behavior before fixture directory label, JSON snapshot, expected report, generated output, drift row, hard-fail row, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "activation trigger positives are limited to hand-authored accepted scenario directories whose expected activation contract is owned by the e2e/tooling owner; parser, sema, lowering, IR, and runtime phases get no positive compiler behavior from this fixture family",
+    "canonical_rejection_rule": "drift_* scenarios own deterministic rejection of stale, unsorted, unknown-field, alias-mismatch, metadata-pair-mismatch, line-reference, and missing-required-command inputs; these are not positive acceptance truth",
+    "strict_error_rule": "hard_fail_* scenarios own fail-closed strict errors for invalid JSON, missing/invalid paths, forbidden command text, invalid evidence refs, duplicate rows, dependency mismatch, and malformed source metadata; these are not positive acceptance truth",
+    "provenance_rule": "issues, milestones, catalog, open-blocker, overlay, expectations, expected JSON, expected markdown, expected stderr, and expected exit-code files are fixture provenance unless the e2e/tooling owner claims the scenario boundary",
+    "retired_surface_rule": "old-mode activation, compatibility activation, shim activation, fallback activation, generated-only activation, report-only activation, migration-only activation, wrapper-only activation, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "activation_triggers_provenance",
+      "path": "tests/tooling/fixtures/activation_triggers/behavior_owner_splits/activation_triggers_provenance.json"
+    }
+  ]
+}

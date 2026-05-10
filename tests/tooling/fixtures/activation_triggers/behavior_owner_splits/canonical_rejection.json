@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers/drift_*"
+  ],
+  "support_boundary": "canonical rejection owns activation trigger drift scenarios: root key order drift, row key order drift, unknown fields, unsorted task ids, unsorted blocker rows, duplicate milestone numbers, status alias mismatch, lane-label alias mismatch, task-count mismatch, metadata pair mismatch, line-reference ordering drift, open-blocker source drift, T4 overlay conflicts, missing required command drift, and release-scale or dispatch-evidence catalog drift. These rows are rejection evidence, not positive activation support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/activation_triggers/drift_*",
+    "drift_class:root_key_order",
+    "drift_class:row_key_order",
+    "drift_class:unknown_field",
+    "drift_class:unsorted_ids",
+    "drift_class:alias_mismatch",
+    "drift_class:task_count_mismatch",
+    "drift_class:metadata_pair_mismatch",
+    "drift_class:line_reference_ordering",
+    "drift_class:missing_required_command",
+    "*old-mode*",
+    "*old_mode*",
+    "*shim*",
+    "*fallback*",
+    "*compatibility*",
+    "*compat*",
+    "*migration-only*",
+    "*migration_only*",
+    "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "drift rows, old-mode activation, shim activation, fallback activation, compatibility activation, migration-only activation, report-only activation, generated-only activation, wrapper-only activation, and alternate acceptance activation claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

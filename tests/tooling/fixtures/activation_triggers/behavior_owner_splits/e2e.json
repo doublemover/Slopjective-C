@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers/*/expected.json",
+    "tests/tooling/fixtures/activation_triggers/*/expected.md"
+  ],
+  "support_boundary": "e2e/tooling ownership covers accepted activation trigger behavior only: offline-deterministic mode, fail-closed activation contract, trigger ordering, active trigger id calculation, open-blocker trigger state, T4 governance overlay state, gate_open, queue_state, exit_code, dispatch evidence happy paths, release scale happy paths, zero-open behavior, preflight behavior, and all-false/mixed trigger scenarios. This does not create compiler parser, sema, lowering, IR, or runtime positive truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/activation_triggers/activation_triggered",
+    "tests/tooling/fixtures/activation_triggers/all_false_t4_false",
+    "tests/tooling/fixtures/activation_triggers/mixed_t1_t4",
+    "tests/tooling/fixtures/activation_triggers/t4_only",
+    "tests/tooling/fixtures/activation_triggers/zero_open",
+    "tests/tooling/fixtures/activation_triggers/preflight",
+    "tests/tooling/fixtures/activation_triggers/catalog_metadata_happy",
+    "tests/tooling/fixtures/activation_triggers/catalog_execution_metadata_happy",
+    "tests/tooling/fixtures/activation_triggers/dispatch_evidence_w*_happy",
+    "tests/tooling/fixtures/activation_triggers/release_scale_foundation_w*_happy",
+    "expected_contract:mode=offline-deterministic",
+    "expected_contract:fail_closed=true",
+    "expected_contract:activation_required",
+    "expected_contract:gate_open",
+    "expected_contract:queue_state",
+    "expected_contract:exit_code"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/activation_triggers",
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode activation rows, shim activation rows, fallback activation rows, compatibility activation rows, migration-only activation rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

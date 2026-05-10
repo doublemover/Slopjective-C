@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers"
+  ],
+  "support_boundary": "sema ownership is non-positive for activation trigger fixtures because this family contains issue, milestone, catalog, blocker, overlay, and expected-output snapshots, not semantic Objective-C 3 fixtures. Semantic behavior claims must point back to canonical sema fixture owners.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/activation_triggers/**/*.objc3",
+    "tooling_fixture_family:activation_triggers",
+    "compiler_phase_boundary:no-sema-positive-truth",
+    "upstream_owner_required:tests/native/sema",
+    "semantic_like_terms:status,blocked,open,closed are tooling state labels only"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema activation, compatibility sema activation, shim sema activation, fallback sema activation, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, and activation status labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
