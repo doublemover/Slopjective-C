@@ -33,6 +33,9 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_orchestration_source_readiness.cpp
   frontend_pipeline_result_handoff.cpp
   frontend_metadata_handoff_helpers.cpp
+  frontend_metadata_handoff_helpers_owner_identity.cpp
+  frontend_metadata_handoff_helpers_property_accessors.cpp
+  frontend_metadata_handoff_helpers_type_names.cpp
   frontend_metadata_handoff_ordering.cpp
   frontend_metaprogramming_source_completion_helpers.cpp
   frontend_ownership_source_completion_helpers.cpp
