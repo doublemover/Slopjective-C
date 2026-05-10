@@ -1,10 +1,6 @@
 #pragma once
 
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "pipeline/objc3_ir_emission_completeness_scaffold.h"
-#include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
-#include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
-#include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 

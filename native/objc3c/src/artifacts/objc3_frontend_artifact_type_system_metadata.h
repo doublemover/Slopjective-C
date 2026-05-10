@@ -2,8 +2,7 @@
 
 #include <string>
 
-#include "ir/objc3_ir_frontend_metadata.h"
-#include "lower/contracts/type_system_generic_lowering_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 
