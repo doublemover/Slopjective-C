@@ -6143,44 +6143,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_registration_descriptor_image_root_source_surface,
       runtime_bootstrap_lowering, runtime_bootstrap_legality_semantics,
       runtime_bootstrap_failure_restart_semantics);
-  objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
-      manifest,
-      {{"lowering_id_class_sel_object_pointer_typecheck",
-        id_class_sel_object_pointer_typecheck_replay_key,
-        kObjc3IdClassSelObjectPointerTypecheckLaneContract,
-        id_class_sel_object_pointer_typecheck_contract.deterministic},
-       {"lowering_dispatch_surface_classification",
-        dispatch_surface_classification_replay_key,
-        kObjc3DispatchSurfaceClassificationContractId,
-        dispatch_surface_classification_contract.deterministic},
-       {"lowering_message_send_selector_lowering",
-        message_send_selector_lowering_replay_key,
-        kObjc3MessageSendSelectorLoweringLaneContract,
-        message_send_selector_lowering_contract.deterministic},
-       {"lowering_dispatch_abi_marshalling", dispatch_abi_marshalling_replay_key,
-        kObjc3DispatchAbiMarshallingLaneContract,
-        dispatch_abi_marshalling_contract.deterministic},
-       {"lowering_nil_receiver_semantics_foldability",
-        nil_receiver_semantics_foldability_replay_key,
-        kObjc3NilReceiverSemanticsFoldabilityLaneContract,
-        nil_receiver_semantics_foldability_contract.deterministic},
-       {"lowering_control_flow_control_flow_safety",
-        control_flow_control_flow_safety_lowering_replay_key,
-        kObjc3ControlFlowControlFlowSafetyLoweringLaneContract,
-        control_flow_control_flow_safety_lowering_contract.deterministic},
-       {"lowering_super_dispatch_method_family",
-        super_dispatch_method_family_replay_key,
-        kObjc3SuperDispatchMethodFamilyLaneContract,
-        super_dispatch_method_family_contract.deterministic},
-       {"lowering_runtime_link_host_link", runtime_link_host_link_replay_key,
-        kObjc3RuntimeLinkHostLinkLaneContract,
-        runtime_link_host_link_contract.deterministic}});
-  manifest << "  \"runtime_link_host_link_runtime_dispatch_symbol\":\""
-           << runtime_link_host_link_contract.runtime_dispatch_symbol
-           << "\",\n";
-  manifest << "  \"runtime_support_library_link_wiring_runtime_dispatch_symbol\":\""
-           << runtime_support_library_link_wiring.runtime_dispatch_symbol
-           << "\",\n";
+  objc3::artifacts::frontend::WriteObjc3FrontendDispatchReplayManifestEntries(
+      manifest, id_class_sel_object_pointer_typecheck_replay_key,
+      id_class_sel_object_pointer_typecheck_contract,
+      dispatch_surface_classification_replay_key,
+      dispatch_surface_classification_contract,
+      message_send_selector_lowering_replay_key,
+      message_send_selector_lowering_contract,
+      dispatch_abi_marshalling_replay_key, dispatch_abi_marshalling_contract,
+      nil_receiver_semantics_foldability_replay_key,
+      nil_receiver_semantics_foldability_contract,
+      control_flow_control_flow_safety_lowering_replay_key,
+      control_flow_control_flow_safety_lowering_contract,
+      super_dispatch_method_family_replay_key,
+      super_dispatch_method_family_contract, runtime_link_host_link_replay_key,
+      runtime_link_host_link_contract, runtime_support_library_link_wiring);
   objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
       manifest,
       {{"lowering_ownership_qualifier", ownership_qualifier_lowering_replay_key,
