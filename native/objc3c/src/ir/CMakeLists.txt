@@ -97,6 +97,8 @@ add_library(objc3c_ir STATIC
   objc3_ir_emitter_runtime_session.cpp
   objc3_ir_emitter_service_contexts.cpp
   objc3_ir_emitter_state_initialization.cpp
+  objc3_ir_emitter_state_initialization_function_state.cpp
+  objc3_ir_emitter_state_initialization_static_models.cpp
   objc3_ir_emitter_statement_services.cpp
   objc3_ir_module_body_orchestration.cpp
 )

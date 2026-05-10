@@ -5,8 +5,14 @@
 #include <unordered_set>
 #include <vector>
 
-#include "ir/objc3_ir_emitter_service_contexts.h"
-#include "ir/objc3_ir_emitter_state_initialization.h"
+#include "ir/objc3_ir_runtime_dispatch_state.h"
+#include "ir/objc3_ir_synthetic_method_emission.h"
+
+struct Objc3IREmitterServiceContextCallbacks;
+struct Objc3IREmitterServiceContextState;
+struct Objc3IREmitterStateInitialization;
+struct Objc3IRFrontendMetadata;
+struct Objc3Program;
 
 struct Objc3IREmitterRuntimeSessionInputs {
   const Objc3Program &program;

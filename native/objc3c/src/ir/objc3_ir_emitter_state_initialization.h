@@ -7,13 +7,15 @@
 #include <unordered_set>
 #include <vector>
 
-#include "ast/objc3_ast.h"
 #include "ir/objc3_ir_emitter_context.h"
-#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "lower/objc3_lowering_contract.h"
+
+struct FunctionDecl;
+struct Objc3IRFrontendMetadata;
+struct Objc3Program;
 
 struct Objc3IREmitterStateInitialization {
   Objc3IRRuntimeMetadataSymbols runtime_metadata_symbols;

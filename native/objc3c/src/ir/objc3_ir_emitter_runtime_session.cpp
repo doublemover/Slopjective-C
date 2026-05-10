@@ -1,5 +1,8 @@
 #include "ir/objc3_ir_emitter_runtime_session.h"
 
+#include "ir/objc3_ir_emitter_service_contexts.h"
+#include "ir/objc3_ir_emitter_state_initialization.h"
+
 Objc3IREmitterRuntimeSession::Objc3IREmitterRuntimeSession(
     const Objc3IREmitterRuntimeSessionInputs &inputs)
     : inputs_(inputs) {
