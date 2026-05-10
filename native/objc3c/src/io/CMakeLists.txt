@@ -3,6 +3,7 @@ add_library(objc3c_json STATIC
   json/json_equivalence_nodes.cpp
   json/json_error.cpp
   json/json_array_writer.cpp
+  json/json_array_writer_mechanics.cpp
   json/json_object_writer.cpp
   json/json_object_writer_mechanics.cpp
   json/json_parser.cpp

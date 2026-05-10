@@ -10,17 +10,6 @@
 
 namespace objc3::io::json {
 
-JsonArrayWriter::JsonArrayWriter(std::ostream &out) : out_(out) {
-  out_ << '[';
-}
-
-void JsonArrayWriter::BeginElement() {
-  if (!first_) {
-    out_ << ',';
-  }
-  first_ = false;
-}
-
 void JsonArrayWriter::StringValue(std::string_view value) {
   BeginElement();
   objc3::io::WriteJsonString(out_, value);
@@ -66,14 +55,6 @@ void JsonArrayWriter::RawJsonValue(std::string_view value) {
                                 parsed.error->Format());
   }
   Value(parsed.value);
-}
-
-void JsonArrayWriter::End() {
-  if (ended_) {
-    return;
-  }
-  out_ << ']';
-  ended_ = true;
 }
 
 }  // namespace objc3::io::json
