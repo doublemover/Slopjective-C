@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "io/json/json_parser_unicode_escape.h"
+#include "io/json/json_parser_string_unicode_escape_token.h"
 
 namespace objc3::io::json {
 namespace {
@@ -46,7 +46,7 @@ bool ParseJsonStringEscapeToken(std::string_view text,
       out.push_back('\t');
       return true;
     case 'u':
-      return ParseJsonUnicodeEscape(text, cursor, error, out);
+      return ParseJsonStringUnicodeEscapeToken(text, cursor, error, out);
     default:
       return FailStringEscape(error, cursor, "invalid JSON string escape");
   }
