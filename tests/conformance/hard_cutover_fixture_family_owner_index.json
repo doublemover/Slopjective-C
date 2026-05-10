@@ -928,6 +928,40 @@
       "retired_disposition": "performance benchmark workloads, comparative baselines, benchmark classes, measured workload lists, timing rows, cache rows, report roots, artifact roots, output roots, raw samples, telemetry, generated reports, machine profiles, tool versions, package staging, public command wrappers, normalized values, availability probes, compile invocations, runtime invocations, generated-only rows, report-only rows, migration-only rows, local-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, and foreign-baseline rows are resolved through behavior-first phase indexes and performance provenance before any benchmark row, timing row, raw sample, report, cache row, public command, or comparative baseline is cited as support; compatibility, fallback, shim, old-mode, unsupported, wrapper-only, public-wrapper-only, local-only, report-only, generated-only, migration-only, timing-only, cache-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline support claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "performance_governance_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/performance_governance/behavior_owner_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "performance_governance_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/performance_governance/behavior_owner_splits/performance_governance_provenance.json"
+      ],
+      "retired_disposition": "performance governance policy contracts, budget ids, metric ids, threshold values, source fields, breach ids, severity labels, operator actions, claim statuses, waiver requirements, allowed waiver statuses, lab profile ids, machine profile field names, noise envelope fields, environment drift triggers, owner ids, source surface paths, checked-in source paths, workflow action labels, upstream validate action labels, schema paths, report roots, artifact roots, upstream report paths, release evidence paths, package bridge labels, forbidden evidence labels, explicit non-goal labels, and owner-split routing rows are resolved through behavior-first phase indexes and performance governance provenance before any governance row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in budget family definitions, metric threshold policy, breach taxonomy and triage, release-ready/caution/blocked claim policy, checked-in time-bounded waiver requirements, approved Windows lab profile and noise controls, source/budget/breach ownership, required workflow actions, required schemas, upstream report requirements, and release-evidence path shape, while local-only evidence, report-only evidence, unsupported benchmark claims, compatibility-fallback performance claims, wrapper-only action surfaces, spreadsheet-only publication, hand-edited performance badge or dashboard status, benchmark sources outside the checked-in performance/compiler-throughput/runtime-performance surfaces, missing required budget families, missing upstream summaries, failing required statuses, missing machine profile fields, missing raw samples, hard regressions, coverage gaps, environment drift, expired waivers promoted to active, missing waiver fields, silent comparative baseline omission, missing workflow actions, missing schema surfaces, old-mode performance-governance rows, shim rows, fallback rows, compatibility rows, migration-only rows, generated-only rows, report-only rows, local-only rows, runner-only success, workflow-label-only success, dashboard-only success, badge-only success, wrapper-only governance checks, and generated/report/local rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "metaprogramming_interop_closure_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits",

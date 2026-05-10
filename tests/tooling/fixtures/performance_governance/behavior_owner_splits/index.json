@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-governance-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tests/tooling/fixtures/performance_governance/lab_policy.json",
+    "tests/tooling/fixtures/performance_governance/owner_contracts.json",
+    "tests/tooling/fixtures/performance_governance/schema_surface.json",
+    "tests/tooling/fixtures/performance_governance/source_surface.json",
+    "tests/tooling/fixtures/performance_governance/waivers.json",
+    "tests/tooling/fixtures/performance_governance/workflow_surface.json"
+  ],
+  "split_policy": {
+    "primary_axis": "performance-governance policy behavior before benchmark timing row, child report path, dashboard artifact path, public report path, schema path, workflow action label, package bridge label, local-only evidence label, wrapper-only action label, compatibility label, shim label, fallback label, old-mode label, migration label, or generated artifact label",
+    "positive_rule": "performance-governance positives are limited to hand-authored checked-in contracts for budget family definitions, metric threshold policy, breach taxonomy and triage, claim status policy, waiver requirements, approved lab profile and noise controls, source/budget/breach ownership, required workflow actions, required schemas, and release-evidence path shape",
+    "canonical_rejection_rule": "local-only evidence, report-only evidence, unsupported benchmark claims, compatibility or fallback performance claims, wrapper-only action surfaces, spreadsheet-only publication paths, hand-edited performance badges or dashboard status, benchmark sources outside the checked-in performance/compiler-throughput/runtime-performance surfaces, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing budget families, missing required upstream summaries, missing required machine profile fields, missing raw sample packets, missing budget or breach owners, missing waiver fields, expired waivers treated as active, hard regressions, coverage gaps, environment drift, silent comparative baseline omission, missing dashboard/public report schemas, missing required workflow actions, report-only publication, local-only publication, and generated/report rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON policy contracts, runbook paths, source surface paths, checked-in source paths, script anchors, schema paths, action ids, report roots, artifact roots, release evidence paths, upstream report paths, budget ids, metric ids, source fields, threshold values, lab profile ids, machine profile field names, owner ids, breach ids, waiver registry rows, claim status labels, and owner-split routing rows remain provenance unless an owner split claims the performance-governance behavior boundary",
+    "retired_surface_rule": "old-mode performance-governance rows, shim rows, fallback rows, compatibility rows, migration-only rows, generated-only rows, report-only rows, local-only rows, wrapper-only rows, runner-only success, workflow-label-only success, dashboard-only success, badge-only success, hand-edited publication rows, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "performance_governance_provenance",
+      "path": "tests/tooling/fixtures/performance_governance/behavior_owner_splits/performance_governance_provenance.json"
+    }
+  ]
+}

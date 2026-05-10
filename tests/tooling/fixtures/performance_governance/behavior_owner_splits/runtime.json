@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-governance-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/performance_governance/owner_contracts.json",
+    "tests/tooling/fixtures/performance_governance/source_surface.json"
+  ],
+  "support_boundary": "runtime ownership is non-positive for this performance-governance family except for provenance routing to canonical runtime-performance owners. Runtime hot-path budget ids, runtime benchmark report paths, and runtime source owner ids are governance inputs here; runtime execution behavior remains owned by canonical runtime fixtures.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "benchmark_source_id:runtime-hot-path-workloads",
+    "budget_id:runtime-hot-path",
+    "benchmark_source_owner_id:runtime-performance-source-owner",
+    "source_surface_path:tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "report_path:tmp/reports/runtime-performance/benchmark-summary.json",
+    "report_path:tmp/reports/runtime-performance/integration-summary.json",
+    "action_id:benchmark-runtime-performance",
+    "action_id:validate-runtime-performance",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-performance-governance-contracts",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime performance-governance rows, shim runtime rows, fallback runtime rows, compatibility runtime rows, migration-only runtime rows, generated-only runtime rows, report-only runtime rows, runtime-budget-label-only support, runtime-report-label-only support, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
