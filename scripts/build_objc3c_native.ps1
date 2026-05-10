@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_frontend_contracts.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_superclean_surface.psm1") -Force
@@ -85,46 +86,6 @@ function Write-BuildStep {
   Write-Host ("[build:objc3c-native] " + $Message)
 }
 
-function Write-JsonArtifactFile {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$OutputPath,
-    [Parameter(Mandatory = $true)]
-    $Payload,
-    [int]$Depth = 8
-  )
-
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-
-  $leaf = Split-Path -Leaf $OutputPath
-  $tempPath = Join-Path $parent ('.' + $leaf + '.' + [Guid]::NewGuid().ToString('N') + '.tmp')
-  $json = $Payload | ConvertTo-Json -Depth $Depth
-  Set-Content -LiteralPath $tempPath -Value $json -Encoding utf8
-  $overwriteMoveMethod = [System.IO.File].GetMethod("Move", [Type[]]@([string], [string], [bool]))
-  $maxAttempts = 12
-  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-    try {
-      if ($null -ne $overwriteMoveMethod) {
-        [System.IO.File]::Move($tempPath, $OutputPath, $true)
-      }
-      else {
-        [System.IO.File]::Copy($tempPath, $OutputPath, $true)
-        Remove-Item -LiteralPath $tempPath -Force
-      }
-      return
-    }
-    catch {
-      if ($attempt -eq $maxAttempts) {
-        throw
-      }
-      Start-Sleep -Milliseconds 100
-    }
-  }
-}
-
 function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
@@ -169,8 +130,8 @@ function Invoke-FrontendPacketGeneration {
           -Modules $Modules `
           -SharedSources $SharedSources `
           -BinaryTargets @(
-            (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath),
-            (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath)
+            (Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath),
+            (Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath)
           )
       }
       "frontend_invocation_lock" {
@@ -301,7 +262,7 @@ function Compile-ObjectFiles {
   for ($index = 0; $index -lt $SourcePaths.Count; $index++) {
     $sourcePath = $SourcePaths[$index]
     $objectPath = New-StagedObjectPath -ObjectDir $ObjectDir -TargetName $TargetName -Index $index
-    $relativeSource = Get-RepoRelativePath -RootPath $repoRoot -TargetPath $sourcePath
+    $relativeSource = Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $sourcePath
     Write-BuildStep ("compile_unit=" + $TargetName + " [" + ($index + 1) + "/" + $SourcePaths.Count + "] -> " + $relativeSource)
     $compileArgs = @(
       "-std=c++20"
@@ -344,30 +305,10 @@ function Link-ExecutableFromObjects {
     [string]$RepoRoot
   )
 
-  Write-BuildStep ("link_start=" + $TargetName + " -> " + (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
+  Write-BuildStep ("link_start=" + $TargetName + " -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
   & $Clangxx @ObjectPaths $Libclang -o $StagedOutput
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  Write-BuildStep ("link_done=" + $TargetName + " -> " + (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
-}
-
-function Get-RepoRelativePath {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$RootPath,
-    [Parameter(Mandatory = $true)]
-    [string]$TargetPath
-  )
-
-  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path.TrimEnd('\', '/')
-  if (Test-Path -LiteralPath $TargetPath) {
-    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
-  } else {
-    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
-  }
-  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
-  $targetUri = [System.Uri]::new($resolvedTarget)
-  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
-  return $relative.Replace('\', '/')
+  Write-BuildStep ("link_done=" + $TargetName + " -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
 }
 
 function Write-FrontendModuleScaffoldArtifact {
@@ -408,28 +349,7 @@ function Write-FrontendModuleScaffoldArtifact {
     binary_targets = $BinaryTargets
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
-}
-
-function Get-FileSha256Hex {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$Path
-  )
-
-  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
-    throw "cannot hash missing file: $Path"
-  }
-
-  $sha256 = [System.Security.Cryptography.SHA256]::Create()
-  $stream = [System.IO.File]::OpenRead($Path)
-  try {
-    $hashBytes = $sha256.ComputeHash($stream)
-    return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
-  } finally {
-    $stream.Dispose()
-    $sha256.Dispose()
-  }
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendInvocationLockArtifact {
@@ -472,24 +392,24 @@ function Write-FrontendInvocationLockArtifact {
     schema_version = 1
     scaffold_contract_id = [string]$scaffoldPayload.contract_id
     scaffold = [ordered]@{
-      path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendScaffoldPath
-      sha256 = Get-FileSha256Hex -Path $FrontendScaffoldPath
+      path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendScaffoldPath
+      sha256 = Get-Objc3cNativeFileSha256Hex -Path $FrontendScaffoldPath
     }
     binaries = @(
       [ordered]@{
         name = "objc3c-native"
-        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
-        sha256 = Get-FileSha256Hex -Path $NativeBinaryPath
+        path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
+        sha256 = Get-Objc3cNativeFileSha256Hex -Path $NativeBinaryPath
       },
       [ordered]@{
         name = "objc3c-frontend-c-api-runner"
-        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
-        sha256 = Get-FileSha256Hex -Path $CapiBinaryPath
+        path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
+        sha256 = Get-Objc3cNativeFileSha256Hex -Path $CapiBinaryPath
       }
     )
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendCoreFeatureExpansionArtifact {
@@ -565,11 +485,11 @@ function Write-FrontendCoreFeatureExpansionArtifact {
     binaries = @(
       [ordered]@{
         name = "objc3c-native"
-        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
+        path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
       },
       [ordered]@{
         name = "objc3c-frontend-c-api-runner"
-        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
+        path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
       }
     )
     invocation = [ordered]@{
@@ -585,7 +505,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
     }
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendEdgeCompatibilityArtifact {
@@ -664,7 +584,7 @@ function Write-FrontendEdgeCompatibilityArtifact {
     }
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendEdgeRobustnessArtifact {
@@ -721,7 +641,7 @@ function Write-FrontendEdgeRobustnessArtifact {
     }
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendDiagnosticsHardeningArtifact {
@@ -772,7 +692,7 @@ function Write-FrontendDiagnosticsHardeningArtifact {
     }
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendRecoveryDeterminismHardeningArtifact {
@@ -832,7 +752,7 @@ function Write-FrontendRecoveryDeterminismHardeningArtifact {
     }
   }
 
-  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendConformanceMatrixArtifact {
@@ -1263,10 +1183,10 @@ if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
   if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
   if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
 
-  Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-  Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-  Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
-  Write-BuildStep ("compile_commands=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
+  Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  Write-BuildStep ("compile_commands=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
 } else {
   Write-BuildStep "cmake_build_skip=native-binaries"
 }
@@ -1291,17 +1211,17 @@ Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact `
   -FrontendDefinitions $frontendPacketDefinitions
 
 if (Test-Path -LiteralPath $outExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 }
 if (Test-Path -LiteralPath $outCapiExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 }
 if (Test-Path -LiteralPath $outRuntimeLib -PathType Leaf) {
-  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
 }
 foreach ($packetDefinition in $frontendPacketDefinitions) {
   if (Test-Path -LiteralPath $packetDefinition.OutputPath -PathType Leaf) {
-    Write-Output ($packetDefinition.Name + "=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
+    Write-Output ($packetDefinition.Name + "=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
   }
 }
-Write-Output ("repo_superclean_surface=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))
+Write-Output ("repo_superclean_surface=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))

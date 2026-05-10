@@ -1,64 +1,7 @@
 $ErrorActionPreference = "Stop"
 
-function Get-Objc3cNativeSupercleanRepoRelativePath {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$RootPath,
-    [Parameter(Mandatory = $true)]
-    [string]$TargetPath
-  )
+Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force
 
-  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path.TrimEnd('\', '/')
-  if (Test-Path -LiteralPath $TargetPath) {
-    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
-  } else {
-    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
-  }
-  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
-  $targetUri = [System.Uri]::new($resolvedTarget)
-  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
-  return $relative.Replace('\', '/')
-}
-
-function Write-Objc3cNativeSupercleanJsonArtifactFile {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$OutputPath,
-    [Parameter(Mandatory = $true)]
-    $Payload,
-    [int]$Depth = 8
-  )
-
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-
-  $leaf = Split-Path -Leaf $OutputPath
-  $tempPath = Join-Path $parent ('.' + $leaf + '.' + [Guid]::NewGuid().ToString('N') + '.tmp')
-  $json = $Payload | ConvertTo-Json -Depth $Depth
-  Set-Content -LiteralPath $tempPath -Value $json -Encoding utf8
-  $overwriteMoveMethod = [System.IO.File].GetMethod("Move", [Type[]]@([string], [string], [bool]))
-  $maxAttempts = 12
-  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-    try {
-      if ($null -ne $overwriteMoveMethod) {
-        [System.IO.File]::Move($tempPath, $OutputPath, $true)
-      }
-      else {
-        [System.IO.File]::Copy($tempPath, $OutputPath, $true)
-        Remove-Item -LiteralPath $tempPath -Force
-      }
-      return
-    }
-    catch {
-      if ($attempt -eq $maxAttempts) {
-        throw
-      }
-      Start-Sleep -Milliseconds 100
-    }
-  }
-}
 function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
   param(
     [Parameter(Mandatory = $true)]
@@ -169,10 +112,10 @@ function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
       test_docs = "test:docs"
     }
     native_build_outputs = [ordered]@{
-      native_executable = Get-Objc3cNativeSupercleanRepoRelativePath -RootPath $RepoRoot -TargetPath $NativeExecutablePath
-      frontend_c_api_runner = Get-Objc3cNativeSupercleanRepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendCapiRunnerPath
-      runtime_library = Get-Objc3cNativeSupercleanRepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
-      compile_commands = Get-Objc3cNativeSupercleanRepoRelativePath -RootPath $RepoRoot -TargetPath $CompileCommandsPath
+      native_executable = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $NativeExecutablePath
+      frontend_c_api_runner = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendCapiRunnerPath
+      runtime_library = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
+      compile_commands = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath $CompileCommandsPath
     }
     bonus_experience_surfaces = [ordered]@{
       playground = [ordered]@{
@@ -657,7 +600,7 @@ function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
         [ordered]@{
           name = [string]$_.Name
           family = [string]$_.Family
-          artifact_path = Get-Objc3cNativeSupercleanRepoRelativePath -RootPath $RepoRoot -TargetPath ([string]$_.OutputPath)
+          artifact_path = Get-Objc3cNativeRepoRelativePath -RootPath $RepoRoot -TargetPath ([string]$_.OutputPath)
         }
       }
     )
@@ -668,6 +611,6 @@ function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
     )
   }
 
-  Write-Objc3cNativeSupercleanJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+  Write-Objc3cNativeJsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 Export-ModuleMember -Function "Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact"
