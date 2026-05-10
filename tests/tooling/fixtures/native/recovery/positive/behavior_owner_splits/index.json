@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.m",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
+  ],
+  "split_policy": {
+    "primary_axis": "behavior phase before recovery positive directory label, paired IR expectation, native lowering-dispatch probe, report row, generated row, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "recovery positive fixtures may cite positive behavior only through hand-authored Objective-C 3 source rows and paired checked-in IR expectations owned by parser, sema, lowering, IR, runtime, or e2e owner splits; the directory name, legacy .m probes, dispatch-ir marker files, generated rows, report-only rows, and provenance rows are not generic positive behavior truth",
+    "provenance_rule": "source inventories, paired IR expectation inventories, native lowering-dispatch .m probes, dispatch-ir marker expectations, directory labels, fixture names, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, and owner-split routing rows remain provenance unless a phase owner claims the underlying canonical hand-authored behavior",
+    "retired_surface_rule": "old-mode recovery, compatibility recovery, shim recovery, fallback recovery, generated-only recovery, report-only recovery, migration-only recovery, native .m dispatch probes cited as Objective-C 3 support, dispatch-ir markers cited as source truth, runner-only success, and e2e execution-only claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "e2e_boundary_rule": "this recovery positive family does not create positive end-to-end execution support; executable success belongs in native execution or e2e fixture owners, with this family providing source, IR expectation, and provenance routing only"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "recovery_positive_provenance",
+      "path": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/recovery_positive_provenance.json"
+    }
+  ]
+}

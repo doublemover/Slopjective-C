@@ -1088,6 +1088,40 @@
       "retired_disposition": "concurrency runtime closure owner contracts, scheduler/executor policy, task lifecycle contracts, actor isolation contracts, private helper ABI snapshots, continuation/task/actor probe payload snapshots, runtime acceptance summaries, runnable concurrency conformance/e2e reports, compile manifests, runtime-registration descriptors, public commands, workflow labels, generated reports, machine-owned report roots, and packaged proof labels are resolved through behavior-first phase indexes and concurrency runtime provenance before any concurrency row is cited as support; fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, public runtime ABI widening, wrapper-only runnable actions, workflow-label-only rows, stdlib actor-shaped narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop overclaims, and cross-module claims without manifest/runtime-registration replay proof remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "native_recovery_positive_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits",
+      "acceptance_area": "canonical_behavior_fixtures",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "recovery_positive_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/native/recovery/positive/behavior_owner_splits/recovery_positive_provenance.json"
+      ],
+      "retired_disposition": "native recovery positive fixtures, paired Objective-C 3 IR expectations, native lowering-dispatch .m probes, dispatch-ir marker expectations, directory labels, source inventory rows, and fixture-name topic labels are resolved through behavior-first phase indexes and recovery positive provenance before any recovery positive row is cited as support; old-mode recovery, compatibility recovery, shim recovery, fallback recovery, generated-only recovery rows, report-only recovery rows, migration-only recovery rows, native-.m-as-Objective-C-3 support, dispatch-ir-as-source support, unsupported runtime dispatch, alternate acceptance, runner-only execution, directory-label-only support, and e2e execution-only claims remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "native_recovery_dispatch_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/native/recovery/dispatch/behavior_owner_splits",

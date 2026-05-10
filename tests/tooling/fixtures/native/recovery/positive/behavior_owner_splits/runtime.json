@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/message_send*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send*.objc3-ir.expect.txt"
+  ],
+  "support_boundary": "runtime ownership covers canonical runtime dispatch evidence only where recovery positive Objective-C 3 message-send fixtures require runtime entrypoint behavior: selector constants, receiver dispatch, nil receiver zero-result behavior, nil-bound identifier elision, nonzero receiver fast paths, non-fast-path invalidation, and bool operand coercion around dispatch. General parser, sema, lowering, and IR positives in this directory are not runtime positives unless the runtime owner claims them; native .m dispatch probes and dispatch-ir marker files remain provenance.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/positive/message_send_basic.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_keywords.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_four_args.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*nil*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*fast_path.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*non_fast_path.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_bool_operand_coercion_positive.objc3",
+    "runtime_surface:objc3_runtime_dispatch_i32",
+    "runtime_surface:nil_receiver_zero_result",
+    "runtime_surface:selector_constant_registration"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime recovery, compatibility runtime recovery, shim runtime recovery, fallback runtime recovery, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, native .m runtime claims, dispatch-ir marker claims as runtime support, unsupported runtime dispatch, and directory-label-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

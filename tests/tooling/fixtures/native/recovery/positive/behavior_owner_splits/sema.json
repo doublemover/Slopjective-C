@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/*.objc3"
+  ],
+  "support_boundary": "sema ownership covers canonical hand-authored semantic behavior in recovery positive fixtures: bool/i32 flow, assignment targets, global initializer references, alias signatures, class/id/instancetype/protocol/SEL/foundation scalar typing, nil receiver and nil-bound identifier semantics, receiver fast-path classification, comparison and logical expression typing, function prototype resolution, extern/pure prototype resolution, return-path behavior, and legal scope shadowing. IR expectation files, native .m dispatch probes, dispatch-ir marker files, generated rows, report-only rows, old-mode labels, shim labels, fallback labels, compatibility labels, and migration labels are not semantic support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/positive/*typed*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*assignment*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*alias_signature.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*nullability_alias_signature.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*protocol_qualifier_alias_signature.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*nil*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*fast_path.objc3",
+    "semantic_surface:return_paths",
+    "semantic_surface:prototype_and_extern_resolution",
+    "semantic_surface:legal_shadow_scope_control"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema recovery, compatibility sema recovery, shim sema recovery, fallback sema recovery, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, native .m semantic claims, dispatch-ir semantic claims, and directory-label-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
