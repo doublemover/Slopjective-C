@@ -17,6 +17,7 @@
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_metadata.h"
 #include "artifacts/objc3_frontend_artifact_cross_module_manifest_surfaces.h"
+#include "artifacts/objc3_frontend_artifact_dispatch_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_runtime_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_error_handling_manifest_surfaces.h"
@@ -231,6 +232,7 @@ using objc3::artifacts::frontend::
     WriteExecutableRuntimeMetadataManifestSurfaces;
 using objc3::artifacts::frontend::WriteBlockManifestSurfaces;
 using objc3::artifacts::frontend::WriteCrossModuleManifestSurfaces;
+using objc3::artifacts::frontend::WriteDispatchManifestSurfaces;
 using objc3::artifacts::frontend::WriteErrorHandlingManifestSurfaces;
 using objc3::artifacts::frontend::WriteInteropManifestSurfaces;
 using objc3::artifacts::frontend::WriteMetaprogrammingManifestSurfaces;
@@ -4960,26 +4962,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       metaprogramming_synthesized_artifact_emission_contract,
       metaprogramming_synthesized_artifact_emission_replay_key,
       metaprogramming_module_interface_replay_preservation_summary);
+  WriteDispatchManifestSurfaces(
+      manifest, dispatch_dispatch_intent_semantic_model_summary,
+      dispatch_dispatch_intent_legality_summary,
+      dispatch_dispatch_intent_compatibility_summary,
+      dispatch_dispatch_control_lowering_contract,
+      dispatch_dispatch_control_lowering_replay_key,
+      dispatch_dispatch_metadata_interface_preservation_summary);
   manifest
-           << ",\"objc_dispatch_dynamism_and_dispatch_control_semantic_model\":"
-           << BuildDispatchDispatchIntentSemanticModelSummaryJson(
-                  dispatch_dispatch_intent_semantic_model_summary)
-            << ",\"objc_dispatch_override_finality_and_sealing_legality\":"
-            << BuildDispatchDispatchIntentLegalitySummaryJson(
-                   dispatch_dispatch_intent_legality_summary)
-            << ",\"objc_dispatch_dynamism_control_compatibility_diagnostics\":"
-            << BuildDispatchDispatchIntentCompatibilitySummaryJson(
-                   dispatch_dispatch_intent_compatibility_summary)
-           << ",\"objc_dispatch_dispatch_control_lowering_contract\":"
-           << BuildDispatchDispatchControlLoweringContractJson(
-                  dispatch_dispatch_intent_semantic_model_summary,
-                  dispatch_dispatch_intent_legality_summary,
-                  dispatch_dispatch_intent_compatibility_summary,
-                  dispatch_dispatch_control_lowering_contract,
-                  dispatch_dispatch_control_lowering_replay_key)
-           << ",\"objc_dispatch_dispatch_metadata_and_interface_preservation\":"
-           << BuildDispatchDispatchMetadataInterfacePreservationSummaryJson(
-                  dispatch_dispatch_metadata_interface_preservation_summary)
             << ",\"objc_concurrency_actor_member_and_isolation_source_closure\":"
             << BuildConcurrencyActorMemberIsolationSourceClosureSummaryJson(
                    concurrency_actor_member_isolation_source_closure_summary)
