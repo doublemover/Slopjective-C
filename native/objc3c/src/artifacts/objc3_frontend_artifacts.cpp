@@ -6350,39 +6350,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result, frontend_compatibility_strictness_claim_semantics,
           tooling_feature_aware_conformance_report_emission_summary,
           tooling_corpus_sharding_release_evidence_packaging_summary);
-  bundle.runtime_aware_import_module_frontend_closure_summary =
-      runtime_aware_import_module_frontend_closure;
-  bundle.versioned_conformance_report_lowering_summary =
-      versioned_conformance_report_lowering;
-  bundle.runtime_registration_descriptor_image_root_source_surface_summary =
-      runtime_registration_descriptor_image_root_source_surface;
-  bundle.runtime_registration_descriptor_frontend_closure_summary =
-      runtime_registration_descriptor_frontend_closure;
-  bundle.runtime_block_ownership_artifact_preservation_summary =
-      runtime_block_ownership_artifact_preservation_summary;
-  bundle.runtime_storage_reflection_artifact_preservation_summary =
-      runtime_storage_reflection_artifact_preservation_summary;
-  bundle.runtime_translation_unit_registration_manifest_summary =
-      runtime_translation_unit_registration_manifest;
-  bundle.runtime_bootstrap_legality_semantics_summary =
-      runtime_bootstrap_legality_semantics;
-  bundle.runtime_bootstrap_legality_failure_contract_summary =
-      runtime_bootstrap_legality_failure_contract;
-  bundle.runtime_bootstrap_failure_restart_semantics_summary =
-      runtime_bootstrap_failure_restart_semantics;
-  bundle.frontend_compatibility_strictness_claim_semantics_summary =
-      frontend_compatibility_strictness_claim_semantics;
-  bundle.tooling_legacy_canonical_migration_semantics_summary =
-      tooling_legacy_canonical_migration_semantics_summary;
-  bundle.tooling_machine_readable_conformance_report_contract_summary =
-      tooling_machine_readable_conformance_report_contract_summary;
-  bundle.tooling_feature_aware_conformance_report_emission_summary =
-      tooling_feature_aware_conformance_report_emission_summary;
-  bundle.tooling_corpus_sharding_release_evidence_packaging_summary =
-      tooling_corpus_sharding_release_evidence_packaging_summary;
-  bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
-  bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
-  bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
+  objc3::artifacts::frontend::PopulateObjc3FrontendArtifactBundleSummaryOutputs(
+      bundle, runtime_aware_import_module_frontend_closure,
+      versioned_conformance_report_lowering,
+      runtime_registration_descriptor_image_root_source_surface,
+      runtime_registration_descriptor_frontend_closure,
+      runtime_block_ownership_artifact_preservation_summary,
+      runtime_storage_reflection_artifact_preservation_summary,
+      runtime_translation_unit_registration_manifest,
+      runtime_bootstrap_legality_semantics,
+      runtime_bootstrap_legality_failure_contract,
+      runtime_bootstrap_failure_restart_semantics,
+      frontend_compatibility_strictness_claim_semantics,
+      tooling_legacy_canonical_migration_semantics_summary,
+      tooling_machine_readable_conformance_report_contract_summary,
+      tooling_feature_aware_conformance_report_emission_summary,
+      tooling_corpus_sharding_release_evidence_packaging_summary,
+      runtime_bootstrap_api, runtime_bootstrap_semantics,
+      runtime_bootstrap_lowering);
 
   if (objc3::artifacts::frontend::FinalizeObjc3FrontendPostPipelineFailure(
           bundle, options, post_pipeline_failure)) {

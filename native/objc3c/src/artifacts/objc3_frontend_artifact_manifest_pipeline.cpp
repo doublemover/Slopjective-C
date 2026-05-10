@@ -111,4 +111,74 @@ void AppendObjc3FrontendArtifactManifestPipelineStages(
   manifest << "      },\n";
 }
 
+void PopulateObjc3FrontendArtifactBundleSummaryOutputs(
+    Objc3FrontendArtifactBundle &bundle,
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary
+        &runtime_aware_import_module_frontend_closure,
+    const Objc3VersionedConformanceReportLoweringSummary
+        &versioned_conformance_report_lowering,
+    const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
+        &runtime_registration_descriptor_image_root_source_surface,
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+        &runtime_registration_descriptor_frontend_closure,
+    const Objc3RuntimeBlockOwnershipArtifactPreservationSummary
+        &runtime_block_ownership_artifact_preservation_summary,
+    const Objc3RuntimeStorageReflectionArtifactPreservationSummary
+        &runtime_storage_reflection_artifact_preservation_summary,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &runtime_translation_unit_registration_manifest,
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary
+        &runtime_bootstrap_legality_semantics,
+    const Objc3RuntimeBootstrapLegalityFailureContractSummary
+        &runtime_bootstrap_legality_failure_contract,
+    const Objc3RuntimeBootstrapFailureRestartSemanticsSummary
+        &runtime_bootstrap_failure_restart_semantics,
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+        &frontend_compatibility_strictness_claim_semantics,
+    const Objc3ToolingLegacyCanonicalMigrationSemanticsSummary
+        &tooling_legacy_canonical_migration_semantics_summary,
+    const Objc3ToolingMachineReadableConformanceReportContractSummary
+        &tooling_machine_readable_conformance_report_contract_summary,
+    const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
+        &tooling_feature_aware_conformance_report_emission_summary,
+    const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
+        &tooling_corpus_sharding_release_evidence_packaging_summary,
+    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api,
+    const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics,
+    const Objc3RuntimeBootstrapLoweringSummary &runtime_bootstrap_lowering) {
+  bundle.runtime_aware_import_module_frontend_closure_summary =
+      runtime_aware_import_module_frontend_closure;
+  bundle.versioned_conformance_report_lowering_summary =
+      versioned_conformance_report_lowering;
+  bundle.runtime_registration_descriptor_image_root_source_surface_summary =
+      runtime_registration_descriptor_image_root_source_surface;
+  bundle.runtime_registration_descriptor_frontend_closure_summary =
+      runtime_registration_descriptor_frontend_closure;
+  bundle.runtime_block_ownership_artifact_preservation_summary =
+      runtime_block_ownership_artifact_preservation_summary;
+  bundle.runtime_storage_reflection_artifact_preservation_summary =
+      runtime_storage_reflection_artifact_preservation_summary;
+  bundle.runtime_translation_unit_registration_manifest_summary =
+      runtime_translation_unit_registration_manifest;
+  bundle.runtime_bootstrap_legality_semantics_summary =
+      runtime_bootstrap_legality_semantics;
+  bundle.runtime_bootstrap_legality_failure_contract_summary =
+      runtime_bootstrap_legality_failure_contract;
+  bundle.runtime_bootstrap_failure_restart_semantics_summary =
+      runtime_bootstrap_failure_restart_semantics;
+  bundle.frontend_compatibility_strictness_claim_semantics_summary =
+      frontend_compatibility_strictness_claim_semantics;
+  bundle.tooling_legacy_canonical_migration_semantics_summary =
+      tooling_legacy_canonical_migration_semantics_summary;
+  bundle.tooling_machine_readable_conformance_report_contract_summary =
+      tooling_machine_readable_conformance_report_contract_summary;
+  bundle.tooling_feature_aware_conformance_report_emission_summary =
+      tooling_feature_aware_conformance_report_emission_summary;
+  bundle.tooling_corpus_sharding_release_evidence_packaging_summary =
+      tooling_corpus_sharding_release_evidence_packaging_summary;
+  bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
+  bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
+  bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
+}
+
 }  // namespace objc3::artifacts::frontend
