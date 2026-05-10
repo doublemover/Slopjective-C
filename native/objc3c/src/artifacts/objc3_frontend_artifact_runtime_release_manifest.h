@@ -1,15 +1,4 @@
 #pragma once
 
 #include "artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.h"
-
-#include <iosfwd>
-
-struct Objc3RuntimeBootstrapApiSummary;
-
-namespace objc3::artifacts::frontend {
-
-void WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
-    std::ostream &manifest,
-    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api);
-
-}  // namespace objc3::artifacts::frontend
+#include "artifacts/objc3_frontend_artifact_runtime_release_evidence_manifest.h"
