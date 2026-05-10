@@ -94,62 +94,7 @@
          (handoff.runtime_link_host_link_summary.default_runtime_dispatch_symbol_binding ==
           (handoff.runtime_link_host_link_summary.runtime_dispatch_symbol ==
            kObjc3RuntimeLinkHostLinkDefaultDispatchSymbol)) &&
-         handoff.retain_release_operation_summary.deterministic &&
-         handoff.retain_release_operation_summary.ownership_qualified_sites ==
-             retain_release_operation_summary.ownership_qualified_sites &&
-         handoff.retain_release_operation_summary.retain_insertion_sites ==
-             retain_release_operation_summary.retain_insertion_sites &&
-         handoff.retain_release_operation_summary.release_insertion_sites ==
-             retain_release_operation_summary.release_insertion_sites &&
-         handoff.retain_release_operation_summary.autorelease_insertion_sites ==
-             retain_release_operation_summary.autorelease_insertion_sites &&
-         handoff.retain_release_operation_summary.contract_violation_sites ==
-             retain_release_operation_summary.contract_violation_sites &&
-         handoff.weak_unowned_semantics_summary.deterministic &&
-         handoff.weak_unowned_semantics_summary.ownership_candidate_sites ==
-             weak_unowned_semantics_summary.ownership_candidate_sites &&
-         handoff.weak_unowned_semantics_summary.weak_reference_sites ==
-             weak_unowned_semantics_summary.weak_reference_sites &&
-         handoff.weak_unowned_semantics_summary.unowned_reference_sites ==
-             weak_unowned_semantics_summary.unowned_reference_sites &&
-         handoff.weak_unowned_semantics_summary.unowned_safe_reference_sites ==
-             weak_unowned_semantics_summary.unowned_safe_reference_sites &&
-         handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites ==
-             weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
-         handoff.weak_unowned_semantics_summary.contract_violation_sites ==
-             weak_unowned_semantics_summary.contract_violation_sites &&
-         handoff.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
-             handoff.weak_unowned_semantics_summary.unowned_reference_sites &&
-         handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
-             handoff.weak_unowned_semantics_summary.ownership_candidate_sites &&
-         handoff.weak_unowned_semantics_summary.contract_violation_sites <=
-             handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
-                 handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
-         handoff.arc_diagnostics_fixit_summary.deterministic &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites ==
-             arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites ==
-             arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites ==
-             arc_diagnostics_fixit_summary.ownership_arc_profiled_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
-             arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites ==
-             arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites &&
-         handoff.arc_diagnostics_fixit_summary.contract_violation_sites ==
-             arc_diagnostics_fixit_summary.contract_violation_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
-             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
-             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
-             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
-                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
-         handoff.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
-             handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
-                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_arc_ownership_checks.inc"
          handoff.autoreleasepool_scope_summary.deterministic &&
          handoff.autoreleasepool_scope_summary.scope_sites ==
              autoreleasepool_scope_summary.scope_sites &&
