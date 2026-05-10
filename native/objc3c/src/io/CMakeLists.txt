@@ -114,6 +114,8 @@ add_library(objc3c_json STATIC
   json/json_schema_unsupported_applicator_keyword_contracts.cpp
   json/json_schema_unsupported_assertion_keyword_contracts.cpp
   json/json_schema_unsupported_keyword_contracts.cpp
+  json/json_schema_value_keyword_literal_dispatch_validation.cpp
+  json/json_schema_value_keyword_type_dispatch_validation.cpp
   json/json_schema_value_keyword_validation.cpp
   json/json_schema_value_literal_const_validation.cpp
   json/json_schema_value_literal_enum_validation.cpp
