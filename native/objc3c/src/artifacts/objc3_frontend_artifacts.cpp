@@ -58,6 +58,7 @@
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 #include "artifacts/objc3_frontend_artifact_source_shape_plan.h"
+#include "artifacts/objc3_frontend_artifact_storage_accessor_manifest.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_metadata.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
