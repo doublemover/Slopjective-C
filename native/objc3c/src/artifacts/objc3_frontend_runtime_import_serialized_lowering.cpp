@@ -3,7 +3,6 @@
 #include <sstream>
 
 #include "io/json/json_writer.h"
-#include "sema/model/semantic_type.h"
 
 namespace objc3::artifacts::frontend {
 

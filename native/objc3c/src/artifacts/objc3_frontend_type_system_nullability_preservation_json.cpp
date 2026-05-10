@@ -3,8 +3,8 @@
 #include <sstream>
 #include <string>
 
+#include "artifacts/objc3_frontend_runtime_import_type_contracts.h"
 #include "io/objc3_json.h"
-#include "sema/model/frontend_type_source_closure.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
@@ -14,8 +14,9 @@ using objc3::io::EscapeJsonString;
 std::string BuildTypeSystemNullabilityContractPreservationReplayKey(
     const Objc3TypeSystemTypeSemanticModelSummary &summary) {
   std::ostringstream out;
-  out << kObjc3TypeSystemNullabilityContractPreservationContractId
-      << ";source_contract=" << kObjc3TypeSystemTypeSemanticModelContractId
+  out << kObjc3ArtifactTypeSystemNullabilityContractPreservationContractId
+      << ";source_contract="
+      << kObjc3ArtifactTypeSystemTypeSemanticModelContractId
       << ";type_semantic_replay=" << summary.replay_key
       << ";canonical_types=" << summary.canonical_type_entries
       << ";object_types=" << summary.canonical_object_type_entries
@@ -48,9 +49,9 @@ std::string BuildTypeSystemNullabilityContractPreservationJson(
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
-             kObjc3TypeSystemNullabilityContractPreservationContractId)
+             kObjc3ArtifactTypeSystemNullabilityContractPreservationContractId)
       << "\",\"source_contract_id\":\""
-      << EscapeJsonString(kObjc3TypeSystemTypeSemanticModelContractId)
+      << EscapeJsonString(kObjc3ArtifactTypeSystemTypeSemanticModelContractId)
       << "\",\"preservation_model\":\"runtime-import-surface-preserves-canonical-nullability-counts-and-type-semantic-replay-boundary\""
       << ",\"canonical_type_count\":" << summary.canonical_type_entries
       << ",\"object_type_count\":" << summary.canonical_object_type_entries

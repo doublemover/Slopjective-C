@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "io/objc3_json.h"
-#include "sema/model/semantic_type.h"
 #include "support/objc3_runtime_metadata_record_set.h"
 
 namespace objc3::artifacts::frontend {

@@ -10,7 +10,6 @@
 #include "io/json/json_writer.h"
 #include "io/objc3_json.h"
 #include "pipeline/results/evidence_record.h"
-#include "sema/model/semantic_type.h"
 #include "artifacts/objc3_runtime_import_preservation_artifact_builders.h"
 #include "support/objc3_runtime_metadata_record_set.h"
 

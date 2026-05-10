@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "artifacts/objc3_frontend_runtime_import_type_contracts.h"
 #include "io/objc3_json.h"
-#include "lower/contracts/dispatch_control_lowering_contracts.h"
 #include "support/objc3_runtime_metadata_record_set.h"
 
 namespace objc3::artifacts::frontend {
@@ -64,18 +64,19 @@ BuildDispatchDispatchMetadataInterfacePreservationSummary(
         &imported_runtime_module_surfaces) {
   Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary summary;
   summary.contract_id =
-      kObjc3DispatchDispatchMetadataInterfacePreservationContractId;
-  summary.source_contract_id = kObjc3DispatchDispatchControlLoweringContractId;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationContractId;
+  summary.source_contract_id =
+      kObjc3ArtifactDispatchDispatchControlLoweringContractId;
   summary.surface_path =
-      kObjc3DispatchDispatchMetadataInterfacePreservationSurfacePath;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationSurfacePath;
   summary.import_artifact_member_name =
-      kObjc3DispatchDispatchMetadataInterfacePreservationImportArtifactMemberName;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationImportArtifactMemberName;
   summary.source_model =
-      kObjc3DispatchDispatchMetadataInterfacePreservationSourceModel;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationSourceModel;
   summary.preservation_model =
-      kObjc3DispatchDispatchMetadataInterfacePreservationModel;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationModel;
   summary.fail_closed_model =
-      kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel;
+      kObjc3ArtifactDispatchDispatchMetadataInterfacePreservationFailClosedModel;
   summary.lowering_replay_key = lowering_replay_key;
   summary.local_direct_callable_record_count =
       CountDirectCallableRuntimeMethodRecords(local_runtime_metadata_source_records);

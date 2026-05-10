@@ -6,7 +6,6 @@
 
 #include "io/objc3_json.h"
 #include "runtime/metadata/selector_metadata.h"
-#include "sema/model/semantic_type.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
