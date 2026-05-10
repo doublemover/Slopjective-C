@@ -23,6 +23,7 @@
 #include "ir/objc3_ir_frontend_metadata_semantic_surface.h"
 #include "ir/objc3_ir_frontend_metadata_task_runtime_support.h"
 #include "ir/objc3_ir_frontend_metadata_type_system.h"
+#include "ir/objc3_ir_frontend_metadata_unsafe_intrinsics.h"
 // Historical extraction contract marker:
 // #include "parse/objc3_parser_contract.h"
 
@@ -43,7 +44,8 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
                                  Objc3IRFrontendInteropMetadata,
                                  Objc3IRFrontendMetaprogrammingMetadata,
                                  Objc3IRFrontendOwnershipSupportMetadata,
-                                 Objc3IRFrontendTaskRuntimeSupportMetadata {
+                                 Objc3IRFrontendTaskRuntimeSupportMetadata,
+                                 Objc3IRFrontendUnsafeIntrinsicsMetadata {
   std::uint8_t language_version = 3u;
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
@@ -93,29 +95,6 @@ struct Objc3IRFrontendMetadata : Objc3IRFrontendRuntimeSupportMetadata,
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
-  std::string lowering_unsafe_pointer_extension_replay_key;
-  std::size_t unsafe_pointer_extension_lowering_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_unsafe_keyword_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_pointer_arithmetic_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_raw_pointer_type_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_unsafe_operation_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_normalized_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_gate_blocked_sites = 0;
-  std::size_t unsafe_pointer_extension_lowering_contract_violation_sites = 0;
-  bool deterministic_unsafe_pointer_extension_lowering_handoff = false;
-  std::string lowering_inline_asm_intrinsic_governance_replay_key;
-  std::size_t inline_asm_intrinsic_governance_lowering_sites = 0;
-  std::size_t inline_asm_intrinsic_governance_lowering_inline_asm_sites = 0;
-  std::size_t inline_asm_intrinsic_governance_lowering_intrinsic_sites = 0;
-  std::size_t inline_asm_intrinsic_governance_lowering_governed_intrinsic_sites =
-      0;
-  std::size_t
-      inline_asm_intrinsic_governance_lowering_privileged_intrinsic_sites = 0;
-  std::size_t inline_asm_intrinsic_governance_lowering_normalized_sites = 0;
-  std::size_t inline_asm_intrinsic_governance_lowering_gate_blocked_sites = 0;
-  std::size_t
-      inline_asm_intrinsic_governance_lowering_contract_violation_sites = 0;
-  bool deterministic_inline_asm_intrinsic_governance_lowering_handoff = false;
   std::size_t canonical_literal_rejection_total() const {
     return canonical_literal_yes_rejection_sites +
            canonical_literal_no_rejection_sites +
