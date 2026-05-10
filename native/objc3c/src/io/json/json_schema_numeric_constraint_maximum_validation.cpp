@@ -1,6 +1,7 @@
 #include "io/json/json_schema_numeric_constraint_maximum_validation.h"
 
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_numeric_constraint_maximum_keyword_validation.h"
+#include "io/json/json_schema_numeric_constraint_maximum_payload_validation.h"
 
 namespace objc3::io::json {
 
@@ -9,20 +10,13 @@ void ValidateJsonSchemaMaximumConstraint(const JsonValue &schema,
                                          const std::string &instance_path,
                                          const std::string &schema_path,
                                          JsonSchemaResult &result) {
-  const JsonValue *maximum = schema.Find("maximum");
-  if (maximum != nullptr && payload.IsNumber()) {
-    if (!maximum->IsNumber()) {
-      AddJsonSchemaContractError(
-          result, "invalid_maximum",
-          JsonSchemaKeywordPath(schema_path, "maximum"),
-          "maximum must be a number");
-    } else if (payload.AsNumber() > maximum->AsNumber()) {
-      AddJsonSchemaPayloadError(
-          result, "maximum", instance_path,
-          JsonSchemaKeywordPath(schema_path, "maximum"),
-          "number is above maximum");
-    }
+  const JsonValue *maximum = ValidateJsonSchemaMaximumKeyword(
+      schema, payload, schema_path, result);
+  if (maximum == nullptr) {
+    return;
   }
+  ValidateJsonSchemaMaximumPayload(*maximum, payload, instance_path,
+                                   schema_path, result);
 }
 
 }  // namespace objc3::io::json
