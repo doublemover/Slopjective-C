@@ -5,12 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast.h"
-#include "pipeline/objc3_frontend_types.h"
-#include "sema/objc3_semantic_passes.h"
-#include "support/objc3_runtime_metadata_record_set.h"
-
+struct FunctionDecl;
 struct Objc3FrontendArtifactBundle;
+struct Objc3FrontendOptions;
+struct Objc3FrontendPipelineResult;
+struct Objc3Program;
+struct Objc3PropertySynthesisIvarBindingContract;
+struct Objc3RuntimeMetadataSourceRecordSet;
+struct Objc3SemanticTypeMetadataHandoff;
 
 namespace objc3::artifacts::frontend {
 
