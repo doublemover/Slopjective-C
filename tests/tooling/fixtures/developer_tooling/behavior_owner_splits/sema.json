@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling"
+  ],
+  "support_boundary": "sema ownership is non-positive for this developer-tooling family except through upstream canonical sema owners. Contract terms such as diagnostics, symbol names, definitions, unpublished capabilities, and negative diagnostic codes are tooling publication labels; semantic compiler truth remains owned by native sema fixtures and compile-owned diagnostics artifacts.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:developer_tooling",
+    "semantic_like_terms:diagnostics,symbol-navigation,definition,negative_diagnostic_codes",
+    "expected_negative_diagnostic_codes:O3S203",
+    "compiler_phase_boundary:no-sema-positive-truth-from-owner-contracts",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema tooling, compatibility sema tooling, shim sema tooling, fallback sema tooling, generated-only semantic rows, report-only semantic rows, migration-only semantic rows, editor-only diagnostic claims, and language-server labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

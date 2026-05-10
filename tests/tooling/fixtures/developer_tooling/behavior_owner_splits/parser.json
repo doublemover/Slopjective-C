@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
+    "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3"
+  ],
+  "support_boundary": "parser ownership covers only the hand-authored Objective-C 3 formatter fixture source shape in messy_hello.objc3 and formatted_hello.objc3: module declarations, let bindings, function declarations, typed parameters, arithmetic return expressions, call expressions, if/else statement shape, and normalized formatting-preserved syntax. JSON owner contracts, tmp report paths, script anchors, native path references, and language-server/debug/hosted capability labels do not define parser support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
+    "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
+    "syntax_surface:module",
+    "syntax_surface:let-binding",
+    "syntax_surface:function-declaration",
+    "syntax_surface:typed-parameters",
+    "syntax_surface:call-expression",
+    "syntax_surface:if-else",
+    "tooling_surface:formatter-source-pair"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser tooling, shim parser tooling, fallback parser tooling, compatibility parser tooling, generated-only parser rows, report-only parser rows, migration-only parser rows, editor-only shadow parser claims, and parser claims derived only from JSON owner contracts are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling"
+  ],
+  "support_boundary": "lowering ownership is non-positive for developer-tooling owner contracts. Compile-stage tracing, compile observability, formatted source, editor contracts, and hosted LLVM probe labels do not create lowering behavior unless canonical lowering fixtures own the underlying behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/developer_tooling/**/*-ir.expect.txt",
+    "tooling_fixture_family:developer_tooling",
+    "tooling_terms:compile-stage-trace,compile-observability,hosted-llvm-probe",
+    "compiler_phase_boundary:no-lowering-positive-truth",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering tooling, shim lowering tooling, fallback lowering tooling, compatibility lowering tooling, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, hosted-probe-only lowering claims, and compile-stage-label-only support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
