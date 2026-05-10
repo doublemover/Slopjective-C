@@ -9,4 +9,5 @@
 #include "parse/objc3_parser_core_method_parameters.inc"
 #include "parse/objc3_parser_core_statement_parser.inc"
 #include "parse/objc3_parser_core_statements.inc"
+#include "parse/objc3_parser_core_block_literal_expressions.inc"
 #include "parse/objc3_parser_core_blocks_and_expressions.inc"
