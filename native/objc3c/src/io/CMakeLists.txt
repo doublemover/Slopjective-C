@@ -25,6 +25,8 @@ add_library(objc3c_json STATIC
   json/json_schema_array_uniqueness_validation.cpp
   json/json_schema_array_validation.cpp
   json/json_schema_all_of_candidate_validation.cpp
+  json/json_schema_all_of_composition_contract_array_validation.cpp
+  json/json_schema_all_of_composition_contract_traversal_validation.cpp
   json/json_schema_all_of_composition_contract_validation.cpp
   json/json_schema_all_of_keyword_validation.cpp
   json/json_schema_all_of_validation.cpp
