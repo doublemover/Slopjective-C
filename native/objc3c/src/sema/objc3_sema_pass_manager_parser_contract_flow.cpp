@@ -11,7 +11,7 @@ BuildObjc3ParserSemaConformanceEvidenceRecord(
       surface.parser_sema_conformance_corpus;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.conformance_matrix_deterministic =
       surface.deterministic_parser_sema_conformance_matrix &&
@@ -113,8 +113,8 @@ BuildObjc3ParserSemaConformanceEvidenceRecord(
           record.parser_sema_conformance_evidence_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_matrix_evidence_count == 30u &&
       record.passed_matrix_evidence_count ==
           record.required_matrix_evidence_count &&
@@ -139,7 +139,7 @@ BuildObjc3ParserSemaContractReadinessRecord(
   Objc3ParserSemaContractReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.conformance_evidence_ready =
       surface.deterministic_parser_sema_conformance_evidence_record &&
@@ -363,8 +363,8 @@ BuildObjc3ParserSemaContractReadinessRecord(
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.conformance_evidence_ready &&
       record.conformance_matrix_ready && record.conformance_corpus_ready &&
       record.performance_quality_guardrails_ready &&

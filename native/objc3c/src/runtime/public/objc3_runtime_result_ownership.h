@@ -4,6 +4,6 @@ namespace objc3c::runtime {
 
 const char *RuntimeResultDiagnosticOwnerModel();
 const char *RuntimeResultFailClosedOwnershipModel();
-int RuntimeResultFallbackPathAllowed();
+int RuntimeResultRetiredRoutePathAllowed();
 
 }  // namespace objc3c::runtime

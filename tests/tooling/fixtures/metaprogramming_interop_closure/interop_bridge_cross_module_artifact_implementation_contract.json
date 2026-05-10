@@ -14,7 +14,7 @@
     "primary_axis": "behavior owner before bridge JSON, package manifest, module replay, interop call label, FFI metadata, or generated bridge payload",
     "support_authority": "cross-module interop artifact rows are provenance until lowering, IR, runtime, or e2e owners claim behavior against hand-authored fixtures and probes",
     "positive_support_from_artifact": false,
-    "retired_surface_rule": "generated bridge payloads, module-replay-only rows, FFI-metadata-only rows, package-only rows, evidence-log rows, shim, fallback, old-mode, and compatibility-only bridge claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "generated bridge payloads, module-replay-only rows, FFI-metadata-only rows, package-only rows, evidence-log rows, gate, retired route, old-mode, and compatibility-only bridge claims are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "authoritative_case_ids": [
     "cross-module-runtime-package-interop-source-surface",

@@ -68,7 +68,7 @@ struct RegisteredImageMetadata {
   bool linker_anchor_matches_discovery_root = false;
   bool used_staged_registration_table = false;
   bool ownership_explicit = true;
-  bool fallback_path_allowed = false;
+  bool retired_route_path_allowed = false;
 };
 
 }  // namespace objc3c::runtime

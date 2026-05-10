@@ -13,7 +13,7 @@
     "tests/tooling/fixtures/parser_conformance_corpus/reject_post_comma_nondecl.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3"
   ],
-  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, and O3P181 for duplicate throws. Accepting these fixtures or routing them through old-mode, shim, fallback, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
+  "support_boundary": "strict-error ownership covers exact parser diagnostic expectations for the rejected corpus cases: O3P114 for non-void pointer parameter type syntax, O3P104 for trailing comma parameter punctuation, O3P100 for malformed post-comma/declaration/modifier spellings, and O3P181 for duplicate throws. Accepting these fixtures or routing them through old-mode, gate, retired route, compatibility, migration, generated-only, or evidence-log support is strict-error evidence.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -28,8 +28,8 @@
     "strict_error:accepting-rejected-parser-corpus-case",
     "strict_error:missing-diagnostic-code",
     "strict_error:widened-diagnostic-code",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -37,5 +37,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "accepted rejected parser corpus cases, missing diagnostic codes, widened diagnostic codes, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "accepted rejected parser corpus cases, missing diagnostic codes, widened diagnostic codes, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

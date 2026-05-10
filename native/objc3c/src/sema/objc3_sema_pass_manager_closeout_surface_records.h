@@ -16,8 +16,8 @@ struct Objc3SemaCloseoutSurfaceReadinessRecord {
   std::string parity_closeout_publication_readiness_owner =
       kObjc3SemaParityCloseoutPublicationReadinessOwner;
   std::string parity_validation_owner = kObjc3SemaParityValidationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool parser_sema_contract_ready = false;
   bool parser_sema_conformance_evidence_ready = false;
@@ -52,8 +52,8 @@ inline bool IsReadyObjc3SemaCloseoutSurfaceReadinessRecord(
          Objc3SemaOwnerIsExplicit(
              record.parity_closeout_publication_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.parser_sema_contract_ready &&
          record.parser_sema_conformance_evidence_ready &&
          record.diagnostics_publication_ready &&

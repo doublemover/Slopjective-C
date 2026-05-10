@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/negative/*.objc3"
   ],
-  "support_boundary": "recovery negative provenance owns source inventory, diagnostic-code inventory, fixture-name topic labels, parser/sema/runtime routing labels, conservative-reject labels, draft-syntax labels, generated-only labels, evidence-log labels, migration-only labels, old-mode labels, shim labels, fallback labels, compatibility labels, unsupported labels, alternate acceptance labels, directory labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "recovery negative provenance owns source inventory, diagnostic-code inventory, fixture-name topic labels, parser/sema/runtime routing labels, conservative-reject labels, draft-syntax labels, generated-only labels, evidence-log labels, migration-only labels, old-mode labels, gate labels, retired route labels, compatibility labels, unsupported labels, alternate acceptance labels, directory labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -32,8 +32,8 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*unsupported*",
@@ -41,5 +41,5 @@
     "*alternate_acceptance*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "recovery negative provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, or capability behavior; source inventory, diagnostic-code inventory, directory labels, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, shim rows, fallback rows, compatibility rows, unsupported rows, alternate acceptance rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "recovery negative provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, or capability behavior; source inventory, diagnostic-code inventory, directory labels, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, compatibility rows, unsupported rows, alternate acceptance rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

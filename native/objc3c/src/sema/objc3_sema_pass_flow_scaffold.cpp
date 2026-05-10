@@ -66,7 +66,7 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.typed_semantic_handoff_owner,
       summary.diagnostic_handoff_owner,
       summary.owner_model,
-      summary.strict_no_fallback,
+      summary.strict_no_retired_route,
       summary.strict_no_compatibility) &&
       Objc3SemaOwnerIsExplicit(summary.diagnostic_catalog_owner) &&
       Objc3SemaOwnerIsExplicit(summary.diagnostic_fixit_owner) &&
@@ -128,8 +128,8 @@ void FinalizeObjc3SemaPassFlowSummary(
               << ":diagnostic_fixit_owner=" << summary.diagnostic_fixit_owner
               << ":diagnostic_recovery_owner=" << summary.diagnostic_recovery_owner
               << ":owner_model=" << summary.owner_model
-              << ":strict_no_fallback="
-              << (summary.strict_no_fallback ? "true" : "false")
+              << ":strict_no_retired_route="
+              << (summary.strict_no_retired_route ? "true" : "false")
               << ":strict_no_compatibility="
               << (summary.strict_no_compatibility ? "true" : "false")
               << ":recovery_counts_as_success="

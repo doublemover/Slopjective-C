@@ -19,8 +19,8 @@
     "*generated_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "validation_*/M*.json",
     "validation_*/replay_run_*/module.ll",
@@ -29,5 +29,5 @@
     "fixtures[].phase_support_claim_authority=false"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "migration-only, generated-output-only, generator-output-only, evidence-log, replay-only, validation-packet-only, old-mode, shim, fallback, and compatibility generated rows remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "migration-only, generated-output-only, generator-output-only, evidence-log, replay-only, validation-packet-only, old-mode, gate, retired route, and compatibility generated rows remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

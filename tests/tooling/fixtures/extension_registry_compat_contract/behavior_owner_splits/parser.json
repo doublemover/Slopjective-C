@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser registry rows, shim parser registry rows, fallback parser registry rows, compatibility parser rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from registry schema or package text are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser registry rows, gate parser registry rows, retired route parser registry rows, compatibility parser rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from registry schema or package text are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

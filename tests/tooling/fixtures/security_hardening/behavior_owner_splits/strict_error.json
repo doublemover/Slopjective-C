@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
     "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed security-hardening evidence: package-channel install failure, revert proof failure, release-operations proof failure, missing release evidence, runtime hardening regression, disclosure/license uncertainty, missing macro metadata, orphan macro metadata, invalid macro package, invalid macro provenance, nonpure macros, invalid method topology, missing runtime acceptance evidence, fallback/trust bypass promoted as support, and report/generated rows promoted as security capability truth.",
+  "support_boundary": "strict-error ownership covers fail-closed security-hardening evidence: package-channel install failure, revert proof failure, release-operations proof failure, missing release evidence, runtime hardening regression, disclosure/license uncertainty, missing macro metadata, orphan macro metadata, invalid macro package, invalid macro provenance, nonpure macros, invalid method topology, missing runtime acceptance evidence, retired-route/trust bypass promoted as support, and report/generated rows promoted as security capability truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -31,16 +31,16 @@
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
     "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3",
     "unsupported_claim:runtime hardening without runnable evidence",
-    "unsupported_claim:runtime fallback acceptance",
+    "unsupported_claim:runtime retired route acceptance",
     "unsupported_claim:trust bypass for missing runtime case",
     "unsupported_claim:wrapper-only runtime security action",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*generated-as-support*",
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "missing macro metadata, invalid package/provenance metadata, nonpure macro claims, method-topology violations, missing runtime evidence, disclosure uncertainty, package/install/revert/release proof failures, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, trust-bypass-as-support, wrapper-only security support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing macro metadata, invalid package/provenance metadata, nonpure macro claims, method-topology violations, missing runtime evidence, disclosure uncertainty, package/install/revert/release proof failures, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, trust-bypass-as-support, wrapper-only security support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

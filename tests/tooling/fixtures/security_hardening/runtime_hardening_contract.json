@@ -9,7 +9,7 @@
     "regression_blocker_owner": "security-hardening-blockers",
     "runtime_claim_requires_acceptance_report": true,
     "runtime_claim_requires_runnable_candidate_report": true,
-    "runtime_fallback_acceptance_allowed": false,
+    "runtime_retired_route_acceptance_allowed": false,
     "trust_bypass_for_missing_runtime_case_allowed": false,
     "wrapper_only_runtime_security_action_allowed": false
   },
@@ -37,7 +37,7 @@
   ],
   "non_claims": [
     "no runtime hardening without runnable evidence",
-    "no runtime fallback acceptance",
+    "no runtime retired route acceptance",
     "no trust bypass for a missing runtime case",
     "no wrapper-only runtime security action"
   ]

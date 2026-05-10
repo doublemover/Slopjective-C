@@ -1,6 +1,6 @@
 {
   "id": "MTC-73-GATE-01",
-  "title": "Reject disabled match feature flag without fallback acceptance",
+  "title": "Reject disabled match feature flag without retired route acceptance",
   "feature": "match provisional gating and hard-cutover fail-closed behavior",
   "bucket": "semantic",
   "profile": "core",
@@ -23,7 +23,7 @@
           "start": { "line": 1, "column": 29 },
           "end": { "line": 1, "column": 52 }
         },
-        "message": "match feature toggles are removed in the Objective-C 3.0 hard cutover; disabled-feature fallback paths are not accepted",
+        "message": "match feature toggles are removed in the Objective-C 3.0 hard cutover; disabled-feature retired route paths are not accepted",
         "fixits": []
       },
       {

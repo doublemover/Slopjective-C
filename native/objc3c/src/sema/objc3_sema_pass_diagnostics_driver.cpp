@@ -29,7 +29,7 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
   result.sema_pass_flow_summary.diagnostic_recovery_owner =
       input.diagnostics_bus.diagnostic_recovery_owner;
   result.sema_pass_flow_summary.owner_model = input.owner_model;
-  result.sema_pass_flow_summary.strict_no_fallback = input.strict_no_fallback;
+  result.sema_pass_flow_summary.strict_no_retired_route = input.strict_no_retired_route;
   result.sema_pass_flow_summary.strict_no_compatibility =
       input.strict_no_compatibility;
   result.sema_pass_flow_summary.recovery_counts_as_success =

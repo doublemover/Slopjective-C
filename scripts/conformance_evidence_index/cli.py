@@ -84,7 +84,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Optional index-level release label (for example: v0.11). "
-            "Also used as fallback release_id when an artifact has no release token."
+            "Also used as retired route release_id when an artifact has no release token."
         ),
     )
     parser.add_argument(
@@ -152,7 +152,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         records = build_artifact_records(
             artifact_paths=artifact_paths,
-            release_fallback=args.release_label,
+            release_retired_route=args.release_label,
             strict_generated_at=args.strict_generated_at,
         )
     except StrictGeneratedAtError as exc:

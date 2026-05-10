@@ -8,7 +8,7 @@ BuildObjc3ParserSemaParityPublicationReadinessRecord(
   Objc3ParserSemaParityPublicationReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.handoff_publication_transfer_ready =
       deterministic_transfer_record &&
@@ -91,8 +91,8 @@ BuildObjc3ParserSemaParityPublicationReadinessRecord(
           record.parser_sema_parity_publication_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.handoff_publication_transfer_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_publication_count == 17u &&
       record.passed_publication_count == record.required_publication_count &&
       record.failed_publication_count == 0u;

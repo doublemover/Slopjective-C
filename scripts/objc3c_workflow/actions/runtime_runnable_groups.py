@@ -11,15 +11,15 @@ RUNTIME_RUNNABLE_VALIDATION_TIER = "full"
 RUNTIME_CLOSURE_PUBLICATION_MODE = "checked-in-owner-contract-plus-executable-proof"
 RUNTIME_CLOSURE_CLAIM_KIND = "runtime-closure-owner-contract"
 RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES = (
-    "fallback-runtime-behavior",
+    "retired-route-runtime-behavior",
     "evidence-log-runtime-closure",
-    "compatibility-shim-runtime-closure",
+    "compatibility-gate-runtime-closure",
     "wrapper-only-runnable-action",
     "public-runtime-abi-widening-without-source-owner",
     "generated-evidence-log-source-truth",
 )
 RUNTIME_CLOSURE_HARD_CUTOVER_REQUIREMENTS = (
-    "no-fallback-runtime-closure-claims",
+    "no-retired-route-runtime-closure-claims",
     "no-evidence-log-runtime-closure-publication",
     "no-generated-report-as-source-authority",
     "runtime-closure-publication-requires-checked-in-owner-contract",
@@ -49,9 +49,9 @@ RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS: tuple[
     RuntimeClosureForbiddenClaim, ...
 ] = (
     RuntimeClosureForbiddenClaim(
-        "fallback-runtime-behavior",
+        "retired-route-runtime-behavior",
         RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
-        "fallback_runtime_semantics_allowed",
+        "retired_route_runtime_semantics_allowed",
         False,
         "fail-closed",
     ),
@@ -63,7 +63,7 @@ RUNTIME_CLOSURE_FORBIDDEN_CLAIM_CONTRACTS: tuple[
         "fail-closed",
     ),
     RuntimeClosureForbiddenClaim(
-        "compatibility-shim-runtime-closure",
+        "compatibility-gate-runtime-closure",
         RUNTIME_CLOSURE_FORBIDDEN_CLAIM_OWNER,
         "compatibility_runtime_semantics_allowed",
         False,

@@ -3,7 +3,7 @@
   "catalog": "objc3c-stress-behavior-owner-split",
   "owner_phase": "parser",
   "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
-  "support_boundary": "parser stress fixtures own tokenization, grammar shape, parser recovery, and parser diagnostics only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, or compatibility provenance",
+  "support_boundary": "parser stress fixtures own tokenization, grammar shape, parser recovery, and parser diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, or compatibility provenance",
   "source_families": [
     "parser-sema-fuzz"
   ],
@@ -28,5 +28,5 @@
     }
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode spellings, removed parser fallback flags, parser shims, compatibility parser routing, generated-only parser rows, evidence-log parser rows, and migration-only parser claims remain parser rejections, strict-error, or provenance-only evidence, never stress positives"
+  "retired_surface_rule": "old-mode spellings, removed parser retired route flags, parser gates, compatibility parser routing, generated-only parser rows, evidence-log parser rows, and migration-only parser claims remain parser rejections, strict-error, or provenance-only evidence, never stress positives"
 }

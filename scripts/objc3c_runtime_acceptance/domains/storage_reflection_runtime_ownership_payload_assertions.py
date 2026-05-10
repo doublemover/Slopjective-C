@@ -202,7 +202,7 @@ def _expected_manifest_implementation_surface() -> dict[str, Any]:
             "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
         ),
         "fail_closed_model": (
-            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis"
         ),
     }
 
@@ -242,7 +242,7 @@ def _expected_live_implementation_surface() -> dict[str, Any]:
             "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
         ),
         "fail_closed_model": (
-            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis"
         ),
     }
 

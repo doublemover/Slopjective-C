@@ -38,7 +38,7 @@ struct RuntimeState {
   std::string fail_closed_ownership_model =
       kObjc3RuntimeFailClosedOwnershipModel;
   bool runtime_owner_split_explicit = true;
-  bool fallback_path_allowed = false;
+  bool retired_route_path_allowed = false;
   std::uint64_t registered_image_count = 0;
   std::uint64_t registered_descriptor_total = 0;
   std::uint64_t next_expected_registration_order_ordinal = 1;

@@ -34,7 +34,7 @@ BuildObjc3ParserSemaHandoffPublicationEvidenceRecord(
   record.parser_sema_contract_handoff_owner =
       handoff.owner_record.parser_sema_contract_handoff_owner;
   record.owner_model = handoff.owner_record.owner_model;
-  record.strict_no_fallback = handoff.owner_record.strict_no_fallback;
+  record.strict_no_retired_route = handoff.owner_record.strict_no_retired_route;
   record.strict_no_compatibility =
       handoff.owner_record.strict_no_compatibility;
   record.conformance_matrix_ready = matrix.deterministic;
@@ -70,8 +70,8 @@ BuildObjc3ParserSemaHandoffPublicationEvidenceRecord(
           record.parser_sema_conformance_evidence_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.conformance_matrix_ready && record.conformance_corpus_ready &&
       record.parser_recovery_replay_ready &&
       record.parser_recovery_replay_case_present &&
@@ -107,7 +107,7 @@ BuildObjc3ParserSemaHandoffPublicationTransferRecord(
   record.parser_sema_contract_handoff_owner =
       handoff.owner_record.parser_sema_contract_handoff_owner;
   record.owner_model = handoff.owner_record.owner_model;
-  record.strict_no_fallback = handoff.owner_record.strict_no_fallback;
+  record.strict_no_retired_route = handoff.owner_record.strict_no_retired_route;
   record.strict_no_compatibility =
       handoff.owner_record.strict_no_compatibility;
   record.owner_record_ready =
@@ -212,8 +212,8 @@ BuildObjc3ParserSemaHandoffPublicationTransferRecord(
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_transfer_count == 19u &&
       record.passed_transfer_count == record.required_transfer_count &&
       record.failed_transfer_count == 0u;

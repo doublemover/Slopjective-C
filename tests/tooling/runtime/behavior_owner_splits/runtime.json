@@ -22,5 +22,5 @@
     "tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "fallback dispatch behavior, shim runtime behavior, old-mode runtime behavior, public ABI widening, unsupported dispatch outcomes, and helper-only runtime success remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "retired route dispatch behavior, gate runtime behavior, old-mode runtime behavior, public ABI widening, unsupported dispatch outcomes, and helper-only runtime success remain strict-error, canonical rejection, or provenance-only evidence"
 }

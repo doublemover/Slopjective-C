@@ -15,5 +15,5 @@
     "claim_narrowing_constraints:no-source-only-metadata-equals-runtime-truth-claim"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "source-only metadata equality, probe-local reflection truth, public reflection ABI claims, universal selector success claims, compatibility shims, old-mode object identity claims, and fallback-positive semantic claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "source-only metadata equality, probe-local reflection truth, public reflection ABI claims, universal selector success claims, compatibility gates, old-mode object identity claims, and retired-route-positive semantic claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

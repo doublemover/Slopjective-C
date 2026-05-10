@@ -12,8 +12,8 @@ struct Objc3SemaCoreSemanticParityPublicationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_publication_count = 12u;
   std::size_t passed_publication_count = 0;
@@ -39,8 +39,8 @@ inline bool IsReadyObjc3SemaCoreSemanticParityPublicationReadinessRecord(
              record.core_semantic_parity_publication_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_publication_count == 12u &&
          record.passed_publication_count == record.required_publication_count &&
          record.failed_publication_count == 0u &&
@@ -64,8 +64,8 @@ struct Objc3SemaModuleSemanticParityPublicationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_publication_count = 5u;
   std::size_t passed_publication_count = 0;
@@ -84,8 +84,8 @@ inline bool IsReadyObjc3SemaModuleSemanticParityPublicationReadinessRecord(
              record.module_semantic_parity_publication_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_publication_count == 5u &&
          record.passed_publication_count == record.required_publication_count &&
          record.failed_publication_count == 0u &&
@@ -103,8 +103,8 @@ struct Objc3SemaIntermoduleFlowParityPublicationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_publication_count = 2u;
   std::size_t passed_publication_count = 0;
@@ -120,8 +120,8 @@ inline bool IsReadyObjc3SemaIntermoduleFlowParityPublicationReadinessRecord(
              record.intermodule_flow_parity_publication_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_publication_count == 2u &&
          record.passed_publication_count == record.required_publication_count &&
          record.failed_publication_count == 0u &&
@@ -135,8 +135,8 @@ struct Objc3SemaConcurrencyParityPublicationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_publication_count = 3u;
   std::size_t passed_publication_count = 0;
@@ -153,8 +153,8 @@ inline bool IsReadyObjc3SemaConcurrencyParityPublicationReadinessRecord(
              record.concurrency_parity_publication_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_publication_count == 3u &&
          record.passed_publication_count == record.required_publication_count &&
          record.failed_publication_count == 0u &&

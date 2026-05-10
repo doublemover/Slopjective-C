@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
     "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json"
   ],
-  "support_boundary": "canonical rejection owns platform-hardening rows that look like support but are unsupported, overbroad, unproved, tool-probe-only, generated-only, evidence-log, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Gap claims and forbidden claims are rejection/absent-support evidence, not positive platform support.",
+  "support_boundary": "canonical rejection owns platform-hardening rows that look like support but are unsupported, overbroad, unproved, tool-probe-only, generated-only, evidence-log, old-mode, gate, retired route, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Gap claims and forbidden claims are rejection/absent-support evidence, not positive platform support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -31,8 +31,8 @@
     "unsupported_claim:supported if LLVM is installed",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -43,5 +43,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "non-windows-x64 support, cross-platform parity, unproved package manager publication, signed/notarized installer trust, multi-host install matrix, cross-host archive support, all-LLVM-version support, tool-probe-only support, evidence-log support, old-mode platform rows, shim platform rows, fallback platform rows, compatibility platform rows, migration-only rows, generated-only rows, evidence-log rows, widened support positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "non-windows-x64 support, cross-platform parity, unproved package manager publication, signed/notarized installer trust, multi-host install matrix, cross-host archive support, all-LLVM-version support, tool-probe-only support, evidence-log support, old-mode platform rows, gate platform rows, retired route platform rows, compatibility platform rows, migration-only rows, generated-only rows, evidence-log rows, widened support positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -17,5 +17,5 @@
     "provenance_coupling:native_compile_args=--objc3-max-message-args"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime dispatch, compatibility runtime dispatch, shim runtime dispatch, fallback runtime dispatch, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, unsupported dispatch arity, and sidecar-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime dispatch, compatibility runtime dispatch, gate runtime dispatch, retired route runtime dispatch, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, unsupported dispatch arity, and sidecar-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

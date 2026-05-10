@@ -84,10 +84,10 @@
     "*milestone-local*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "runtime corrective provenance never defines positive parser, sema, lowering, IR, runtime, e2e, C API, dispatch, acceptance, native-output, proof, or performance behavior; source-owner contracts, acceptance maps, generated reports, required reports, compile artifacts, replay manifests, module bundles, native-output truth bundles, linked-probe summaries, sidecar-only proof, unlinked probes, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, shim, fallback, old-mode, compatibility, cache-only, timing-only, package-only, and counter-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "runtime corrective provenance never defines positive parser, sema, lowering, IR, runtime, e2e, C API, dispatch, acceptance, native-output, proof, or performance behavior; source-owner contracts, acceptance maps, generated reports, required reports, compile artifacts, replay manifests, module bundles, native-output truth bundles, linked-probe summaries, sidecar-only proof, unlinked probes, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, gate, retired route, old-mode, compatibility, cache-only, timing-only, package-only, and counter-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

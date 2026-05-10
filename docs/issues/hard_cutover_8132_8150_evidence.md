@@ -139,16 +139,16 @@ Retired hard-cutover surfaces are documented this way:
 
 - old-mode literals: parser/e2e rejection fixtures with `O3C002`
 - removed compatibility mode flag: parser rejection fixture
-- removed parser fallback flag: parser rejection fixture
+- removed parser retired route flag: parser rejection fixture
 - retired adapter gate: semantic rejection fixture
-- runtime dispatch fallback: lowering, IR, runtime, and e2e strict-error fixtures
+- runtime dispatch retired route: lowering, IR, runtime, and e2e strict-error fixtures
 - retired-source lane as behavior support: absent from public support and not a
   positive fixture class
 
 Acceptance area ownership is now indexed in
 `tests/conformance/hard_cutover_acceptance_area_owners.json`. The residue audit
 in `tests/conformance/hard_cutover_positive_residue_audit.json` records that the
-remaining positive-fixture lexical hits for `fallback`, `shim`, and `migrator`
+remaining positive-fixture lexical hits for `retired-route`, `gate`, and `migrator`
 are ordinary variable/function/symbol names or diagnostic inventory labels, not
 retired mode, retired adapter, alternate-dispatch acceptance, or retired-source lane acceptance.
 The phase/family topology in
@@ -291,7 +291,7 @@ Follow-up local owner refresh after `f66452822`:
   snapshots/query owners, image registration API owners, runtime public ABI
   records, method class-chain resolution owners, dispatch status helpers, and
   property/storage reflection snapshot owners, and runtime fixture owner
-  anchors. Fallback dispatch remains strict-error evidence.
+  anchors. RetiredRoute dispatch remains strict-error evidence.
 - Public C API and frontend contract evidence is refreshed by frontend C API
   contract tightening, frontend result accessor consolidation, and tooling
   expectation updates. These are contract boundaries, not compatibility
@@ -364,7 +364,7 @@ Post-`e760e3450` local owner refresh:
 - Behavior fixture boundary evidence is refreshed by boundary contracts and
   positive fixture lexical residue docs for `#8144`, `#8145`, and `#8150`.
 - Positive residue evidence remains lexical/symbol evidence only; it does not
-  create support for shim, fallback, migration, old-mode, or compatibility
+  create support for gate, retired route, migration, old-mode, or compatibility
   behavior.
 
 Post-`0350f4a4a` local owner refresh:
@@ -666,10 +666,10 @@ push, GitHub issue edits, or remote closure.
 | Issue | Local Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
 | `#8132` | evidence-ready | Compiler architecture decomposition is indexed from root, frontend, driver, AST, IR, pipeline, ownership, schema, parser owner-path, tooling expectation, split-owner tooling-check, and stale-monolith cleanup commits. |
-| `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class-chain resolution, dispatch status, public ABI records, class graph, dispatch state, receiver identity, dispatch resolution state/target, protocol conformance, registration API/table, property/storage reflection, strict-error fixture renames, and wrapper commits; runtime fallback remains strict-error evidence. |
-| `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, AST ownership, parser/token tooling-check splits, and stale-monolith cleanup are indexed; old-mode and parser fallback flags are rejection fixtures. |
+| `#8133` | evidence-ready | Runtime strict typed dispatch is indexed from dispatch result, selector/keypath/cache/state, metadata, fast-path, builtin lookup, class-chain resolution, dispatch status, public ABI records, class graph, dispatch state, receiver identity, dispatch resolution state/target, protocol conformance, registration API/table, property/storage reflection, strict-error fixture renames, and wrapper commits; runtime retired route remains strict-error evidence. |
+| `#8134` | evidence-ready | Parser, lexer, token, canonical literal handoff, include-owner path, AST ownership, parser/token tooling-check splits, and stale-monolith cleanup are indexed; old-mode and parser retired route flags are rejection fixtures. |
 | `#8135` | evidence-ready | Semantic, diagnostic, config, and parser-contract/sema integration owner splits are tied to typed-flow, unsupported-feature, and retired adapter rejection fixtures. |
-| `#8136` | evidence-ready | Lowering owner splits, typed sema-to-lowering handoff, parse/lowering readiness keys, and runtime dispatch lowering contracts are tied to strict runtime-dispatch and removed fallback fixtures. |
+| `#8136` | evidence-ready | Lowering owner splits, typed sema-to-lowering handoff, parse/lowering readiness keys, and runtime dispatch lowering contracts are tied to strict runtime-dispatch and removed retired route fixtures. |
 | `#8137` | evidence-ready | IR emitter, message-send validation, runtime metadata, typed handoff, artifact-claim metadata, pipeline result handoff, runtime dispatch support, parse/lowering readiness, and runtime dispatch lowering contract splits are tied to canonical IR fixture evidence. |
 | `#8138` | evidence-ready | Pipeline, IO, JSON, artifact, config, dashboard, conformance-claim input, runtime registration manifest/artifact builder, cross-module runtime link plan/input/ordering, developer tooling/playground/bonus/LLVM, performance workflow/artifact, ecosystem publication, application workflow, parse/lowering readiness keys, schema, and publication splits are indexed as internal ownership evidence, not public compatibility support. |
 | `#8139` | evidence-ready | Native target-family splits are indexed as internal topology evidence and refreshed by newer native driver CLI/native-docs source ownership plus diagnostics, config, IO, runtime, artifact, IR, and pipeline owner CMake updates. |

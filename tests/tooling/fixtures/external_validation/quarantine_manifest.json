@@ -16,7 +16,7 @@
         "trust_policy_owner": "external-validation-trust-policy",
         "blocked_claim_owner": "external-validation-public-claims",
         "capability_truth_allowed": false,
-        "fallback_trust_route_allowed": false
+        "retired_route_trust_route_allowed": false
       }
     },
     {
@@ -33,7 +33,7 @@
         "trust_policy_owner": "external-validation-trust-policy",
         "blocked_claim_owner": "external-validation-public-claims",
         "capability_truth_allowed": false,
-        "fallback_trust_route_allowed": false
+        "retired_route_trust_route_allowed": false
       }
     },
     {
@@ -50,7 +50,7 @@
         "trust_policy_owner": "external-validation-trust-policy",
         "blocked_claim_owner": "external-validation-public-claims",
         "capability_truth_allowed": false,
-        "fallback_trust_route_allowed": false
+        "retired_route_trust_route_allowed": false
       }
     }
   ]

@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser bootstrap, shim parser bootstrap, fallback parser bootstrap, compatibility parser bootstrap, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from bootstrap snapshots are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser bootstrap, gate parser bootstrap, retired route parser bootstrap, compatibility parser bootstrap, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from bootstrap snapshots are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

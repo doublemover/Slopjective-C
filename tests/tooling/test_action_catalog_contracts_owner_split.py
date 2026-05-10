@@ -60,7 +60,7 @@ def test_action_category_contract_has_no_alias_metadata() -> None:
 
     assert action_category("lint") == "lint"
     assert action_category("check-public-command-budget") == "check"
-    assert payload["unknown_category_fallback_allowed"] is False
+    assert payload["unknown_category_retired_route_allowed"] is False
     assert payload["public_command_aliases_allowed"] is False
     try:
         action_category("ci-public-command-budget")
@@ -77,7 +77,7 @@ def test_action_audience_contract_has_no_default_public_split() -> None:
     assert action_audience("build-site") == "maintainer"
     assert action_audience("lint") == "maintainer"
     assert payload["hidden_internal_public_split_allowed"] is False
-    assert payload["unknown_audience_fallback_allowed"] is False
+    assert payload["unknown_audience_retired_route_allowed"] is False
     assert payload["public_command_aliases_allowed"] is False
     try:
         action_audience("ci-public-command-budget")
@@ -97,7 +97,7 @@ def test_action_payload_publishes_durable_owner_contract_bundle() -> None:
         "scripts/objc3c_workflow/action_payload_field_owners.py"
     )
     assert fields["payload_contracts"] == contracts
-    assert contracts["audience"]["unknown_audience_fallback_allowed"] is False
+    assert contracts["audience"]["unknown_audience_retired_route_allowed"] is False
     assert "public_command_aliases" not in contracts
 
 

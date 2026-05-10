@@ -3,7 +3,7 @@
   "catalog": "native-fixture-owner-split",
   "owner_phase": "canonical_rejection",
   "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
-  "support_boundary": "retired, unsupported, legacy-looking, old-mode, shim-looking, fallback-looking, compatibility-looking, generated-only, evidence-log, and migration-only surfaces are non-positive unless a canonical native manifest entry proves otherwise",
+  "support_boundary": "retired, unsupported, legacy-looking, old-mode, gate-looking, retired-route-looking, compatibility-looking, generated-only, evidence-log, and migration-only surfaces are non-positive unless a canonical native manifest entry proves otherwise",
   "positive_support_authority": "none",
   "negative_support_authority": "tests/native plus strict sidecar metadata",
   "mixed_surfaces": [
@@ -14,7 +14,7 @@
         "removed_*",
         "unsupported_feature_claim_*",
         "*compatibility*",
-        "*fallback*"
+        "*retired-route*"
       ],
       "disposition": "retired or unsupported execution surfaces are canonical rejection or strict-error contracts"
     },
@@ -35,10 +35,10 @@
   "canonical_evidence": [
     "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
     "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
-    "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+    "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
     "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
     "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
   ],
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, migration-lane, unsupported-feature, generated-only, evidence-log, and runtime-dispatch residues stay rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, gate, retired route, compatibility, migration-lane, unsupported-feature, generated-only, evidence-log, and runtime-dispatch residues stay rejection, strict-error, absent-support, or provenance-only evidence"
 }

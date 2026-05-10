@@ -12,8 +12,8 @@ struct Objc3SemaUnsafeErrorParityValidationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_validation_count = 5u;
   std::size_t passed_validation_count = 0;
@@ -32,8 +32,8 @@ inline bool IsReadyObjc3SemaUnsafeErrorParityValidationReadinessRecord(
              record.unsafe_error_parity_validation_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_validation_count == 5u &&
          record.passed_validation_count == record.required_validation_count &&
          record.failed_validation_count == 0u &&
@@ -50,8 +50,8 @@ struct Objc3SemaControlBindingParityValidationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_validation_count = 6u;
   std::size_t passed_validation_count = 0;
@@ -71,8 +71,8 @@ inline bool IsReadyObjc3SemaControlBindingParityValidationReadinessRecord(
              record.control_binding_parity_validation_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_validation_count == 6u &&
          record.passed_validation_count == record.required_validation_count &&
          record.failed_validation_count == 0u &&
@@ -90,8 +90,8 @@ struct Objc3SemaAsyncBlockMessageParityValidationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_validation_count = 7u;
   std::size_t passed_validation_count = 0;
@@ -112,8 +112,8 @@ inline bool IsReadyObjc3SemaAsyncBlockMessageParityValidationReadinessRecord(
              record.async_block_message_parity_validation_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_validation_count == 7u &&
          record.passed_validation_count == record.required_validation_count &&
          record.failed_validation_count == 0u &&
@@ -131,8 +131,8 @@ struct Objc3SemaDispatchRuntimeArcParityValidationReadinessRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_validation_count = 8u;
   std::size_t passed_validation_count = 0;
@@ -154,8 +154,8 @@ inline bool IsReadyObjc3SemaDispatchRuntimeArcParityValidationReadinessRecord(
              record.dispatch_runtime_arc_parity_validation_readiness_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_validation_count == 8u &&
          record.passed_validation_count == record.required_validation_count &&
          record.failed_validation_count == 0u &&

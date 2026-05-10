@@ -272,8 +272,8 @@ def main() -> int:
     if claim_status_requirements != EXPECTED_CLAIM_STATUS_REQUIREMENTS:
         failures.append("claim policy status requirements drifted from hard-cutover release gates")
     for requirements in claim_status_requirements.values():
-        if isinstance(requirements, list) and any("fallback" in str(item) for item in requirements):
-            failures.append("claim policy reintroduced fallback wording")
+        if isinstance(requirements, list) and any("retired-route" in str(item) for item in requirements):
+            failures.append("claim policy reintroduced retired route wording")
 
     waivers = waivers_payload.get("waivers", [])
     if not isinstance(waivers, list):

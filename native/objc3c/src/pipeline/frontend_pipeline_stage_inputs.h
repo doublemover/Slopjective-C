@@ -11,7 +11,7 @@ namespace objc3c::pipeline {
 
 struct FrontendPipelineInput {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
-  std::string owner_model = kFrontendPipelineNoFallbackOwnerModel;
+  std::string owner_model = kFrontendPipelineNoRetiredRouteOwnerModel;
   std::string source_path;
   std::string source_text;
   std::string emit_prefix = "module";
@@ -44,22 +44,22 @@ struct LowerStageInput {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
   std::string typed_semantic_handoff_owner = kObjc3TypedSemanticHandoffOwner;
   std::string lower_to_ir_handoff_owner = kObjc3LoweringIRHandoffOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::size_t declared_globals = 0;
   std::size_t declared_functions = 0;
   std::size_t runtime_dispatch_arg_slots = kRuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 
 struct EmitStageInput {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
   std::string ir_artifact_owner = kObjc3IRModuleArtifactOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string ir_path;
   std::string clang_path = "clang";
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 

@@ -49,13 +49,13 @@
       "internal"
     ],
     "public_behavior_claim_namespace": "objc3c.behavior.*",
-    "no_alias_or_fallback_claim_sources": [
+    "no_alias_or_retired_route_claim_sources": [
       "retired surface terms",
       "retired mode labels",
       "workflow registry facades",
       "direct helper commands",
       "generated reports without matching implemented rows",
-      "compatibility or fallback wording"
+      "compatibility or retired route wording"
     ],
     "owner_only_states": [
       "rejected",

@@ -19,5 +19,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser spellings, parser fallback flags, shim parser labels, compatibility parser labels, generated source inventories, evidence-log source truth, and source-only concurrency support claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser spellings, parser retired route flags, gate parser labels, compatibility parser labels, generated source inventories, evidence-log source truth, and source-only concurrency support claims are canonical rejection, strict-error, or provenance-only evidence"
 }

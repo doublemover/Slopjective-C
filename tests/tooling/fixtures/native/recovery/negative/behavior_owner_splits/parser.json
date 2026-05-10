@@ -21,5 +21,5 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "old-mode parser recovery, shim parser recovery, fallback parser recovery, compatibility parser recovery, generated-only parser rows, evidence-log parser rows, migration-only parser rows, wrapper-only parser rows, and parser claims derived only from directory labels are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser recovery, gate parser recovery, retired route parser recovery, compatibility parser recovery, generated-only parser rows, evidence-log parser rows, migration-only parser rows, wrapper-only parser rows, and parser claims derived only from directory labels are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

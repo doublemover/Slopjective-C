@@ -17,5 +17,5 @@
     "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime-dispatch fallback lowering, removed fallback flags, strict link evidence, and generated-only lowering rows remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime-dispatch retired route lowering, removed retired route flags, strict link evidence, and generated-only lowering rows remain strict-error, canonical rejection, or provenance-only evidence"
 }

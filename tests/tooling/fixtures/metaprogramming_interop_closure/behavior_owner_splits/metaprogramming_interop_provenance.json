@@ -89,12 +89,12 @@
     "*synthesized_artifact*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*unsupported*",
     "*stale*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "metaprogramming interop provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, FFI, interop, closure/error, package, or metaprogramming behavior; source-owner contracts, generated bridge payloads, package manifests, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition summaries, runtime reports, runnable summaries, cache snapshots, generated-only rows, evidence-log rows, migration-only rows, package-only rows, cache-only rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "metaprogramming interop provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, FFI, interop, closure/error, package, or metaprogramming behavior; source-owner contracts, generated bridge payloads, package manifests, runtime-import artifacts, module replay manifests, FFI metadata rows, closure/error composition summaries, runtime reports, runnable summaries, cache snapshots, generated-only rows, evidence-log rows, migration-only rows, package-only rows, cache-only rows, gate, retired route, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

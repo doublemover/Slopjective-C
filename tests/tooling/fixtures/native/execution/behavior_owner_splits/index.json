@@ -11,7 +11,7 @@
     "primary_axis": "behavior phase before execution sidecar, expected exit code, diagnostic stage, live runtime dispatch metadata, or fixture basename",
     "positive_rule": "execution metadata can cite positive behavior only through e2e compile-link-run sidecars after parser, sema, lowering, IR, or runtime owners claim their phase evidence",
     "provenance_rule": "README rows, fixture basenames, meta sidecars, expected exit codes, runtime dispatch symbols, native compile args, generated-only rows, evidence-log rows, and migration-only rows are provenance until a canonical hand-authored behavior owner claims behavior",
-    "retired_surface_rule": "legacy-looking, old-mode, fallback-looking, shim-looking, compatibility-looking, unsupported-feature, strict-dispatch, unresolved-symbol, non-fast-path, generated-only, evidence-log, and migration-only metadata are canonical rejection, strict-error, or provenance-only evidence"
+    "retired_surface_rule": "legacy-looking, old-mode, retired-route-looking, gate-looking, compatibility-looking, unsupported-feature, strict-dispatch, unresolved-symbol, non-fast-path, generated-only, evidence-log, and migration-only metadata are canonical rejection, strict-error, or provenance-only evidence"
   },
   "owner_splits": [
     {

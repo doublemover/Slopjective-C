@@ -7,7 +7,7 @@
 - Result owner: `compiler-dispatch-result`
 - Artifact owner: `compiler-dispatch-artifact`
 - Status owner: `compiler-dispatch-status`
-- Retired fallback/evidence-log claims disallowed: **true**
+- Retired retired-route/evidence-log claims disallowed: **true**
 
 ## Milestone
 

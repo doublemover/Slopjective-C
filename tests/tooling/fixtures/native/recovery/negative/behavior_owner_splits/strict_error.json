@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/negative/*.objc3"
   ],
-  "support_boundary": "strict-error ownership covers recovery negative diagnostics that must fail closed when surfaced through native/e2e acceptance: lexer/parser diagnostic codes, semantic diagnostic codes, too-many-message-args, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, generated/evidence-log rows promoted as support, and old-mode/shim/fallback/compat rows promoted as support.",
+  "support_boundary": "strict-error ownership covers recovery negative diagnostics that must fail closed when surfaced through native/e2e acceptance: lexer/parser diagnostic codes, semantic diagnostic codes, too-many-message-args, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, generated/evidence-log rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -18,10 +18,10 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_*generic*.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_pure_definition_*.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_*conservative_reject.objc3",
-    "*fallback-as-positive*",
-    "*fallback_as_positive*",
-    "*shim-as-positive*",
-    "*shim_as_positive*",
+    "*retired-route-as-positive*",
+    "*retired_route_as_positive*",
+    "*gate-as-positive*",
+    "*gate_as_positive*",
     "*old-mode-as-positive*",
     "*old_mode_as_positive*",
     "*compat-as-positive*",
@@ -32,5 +32,5 @@
     "*report_as_support*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "diagnostic failures, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, and report-as-support claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "diagnostic failures, unsupported runtime dispatch, invalid nil receiver semantics, invalid alias/nullability/protocol/generic semantics, pure/extern semantic violations, conservative control-flow rejection, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, and report-as-support claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

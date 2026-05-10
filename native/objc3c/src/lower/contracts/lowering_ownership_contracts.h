@@ -34,8 +34,8 @@ inline constexpr const char *kObjc3IRRuntimeDispatchResultOwner =
     "native.ir.runtime-dispatch-result";
 inline constexpr const char *kObjc3IRDirectDispatchResultOwner =
     "native.ir.direct-dispatch-result";
-inline constexpr const char *kObjc3LoweringNoFallbackOwnerModel =
-    "strict-hard-cutover-no-fallback-no-compatibility-shim";
+inline constexpr const char *kObjc3LoweringNoRetiredRouteOwnerModel =
+    "strict-hard-cutover-no-retired-route-no-compatibility-gate";
 
 inline bool Objc3LoweringContractOwnerIsExplicit(const std::string &owner) {
   return !owner.empty() && owner.rfind("native.", 0) == 0;
@@ -44,20 +44,20 @@ inline bool Objc3LoweringContractOwnerIsExplicit(const std::string &owner) {
 inline bool Objc3LoweringStrictOwnerModelIsReady(
     const std::string &owner,
     const std::string &owner_model,
-    bool strict_no_fallback,
+    bool strict_no_retired_route,
     bool strict_no_compatibility) {
   return Objc3LoweringContractOwnerIsExplicit(owner) &&
-         owner_model == kObjc3LoweringNoFallbackOwnerModel &&
-         strict_no_fallback && strict_no_compatibility;
+         owner_model == kObjc3LoweringNoRetiredRouteOwnerModel &&
+         strict_no_retired_route && strict_no_compatibility;
 }
 
 inline std::string Objc3LoweringOwnerReplayKey(
     const std::string &owner,
     const std::string &owner_model,
-    bool strict_no_fallback,
+    bool strict_no_retired_route,
     bool strict_no_compatibility) {
   return "owner=" + owner + ";owner_model=" + owner_model +
-         ";strict_no_fallback=" + (strict_no_fallback ? "true" : "false") +
+         ";strict_no_retired_route=" + (strict_no_retired_route ? "true" : "false") +
          ";strict_no_compatibility=" +
          (strict_no_compatibility ? "true" : "false");
 }

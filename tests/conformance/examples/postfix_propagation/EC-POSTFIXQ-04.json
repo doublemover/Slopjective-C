@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#f-4",
     "docs/reference/legacy_spec_anchor_index.md#f-6"
   ],
-  "source": "id _Nullable consume(id first, id fallback);\n\nid _Nullable call(id _Nullable input, id fallback) {\n    return consume(input?, fallback);\n}\n",
+  "source": "id _Nullable consume(id first, id retired route);\n\nid _Nullable call(id _Nullable input, id retired route) {\n    return consume(input?, retired route);\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": []

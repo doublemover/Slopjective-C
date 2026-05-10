@@ -27,7 +27,7 @@ NativeDiagCatalogSummary BuildNativeDiagCatalogSummary() {
         Objc3DiagnosticOwnerIsExplicit(entry.catalog_owner);
     summary.hard_cutover_flags_consistent =
         summary.hard_cutover_flags_consistent &&
-        !entry.legacy_positive_allowed && !entry.fallback_allowed;
+        !entry.legacy_positive_allowed && !entry.retired_route_allowed;
   }
   summary.family_count = families.size();
   summary.families_unique = summary.family_count == summary.entry_count;

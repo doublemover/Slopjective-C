@@ -13,10 +13,10 @@ bool RequestedArtifactsHaveOwnedPaths(const Objc3LoweringArtifactPlan &plan) {
 }
 
 bool StrictOwnerReady(const std::string &owner, const std::string &owner_model,
-                      bool strict_no_fallback,
+                      bool strict_no_retired_route,
                       bool strict_no_compatibility) {
   return Objc3LoweringStrictOwnerModelIsReady(
-      owner, owner_model, strict_no_fallback, strict_no_compatibility);
+      owner, owner_model, strict_no_retired_route, strict_no_compatibility);
 }
 
 std::string FirstFailureReason(const Objc3LoweringIRHandoff &handoff) {
@@ -62,19 +62,19 @@ Objc3LoweringIRHandoff Objc3BuildLoweringIRHandoff(
   handoff.runtime_dispatch_arg_slots = runtime_dispatch_arg_slots;
   handoff.lower_handoff_owner_ready =
       StrictOwnerReady(handoff.lower_handoff_owner, handoff.owner_model,
-                       handoff.strict_no_fallback,
+                       handoff.strict_no_retired_route,
                        handoff.strict_no_compatibility);
   handoff.ir_artifact_owner_ready =
       StrictOwnerReady(handoff.ir_artifact_owner, handoff.owner_model,
-                       handoff.strict_no_fallback,
+                       handoff.strict_no_retired_route,
                        handoff.strict_no_compatibility);
   handoff.runtime_dispatch_owner_ready =
       StrictOwnerReady(handoff.runtime_dispatch_owner, handoff.owner_model,
-                       handoff.strict_no_fallback,
+                       handoff.strict_no_retired_route,
                        handoff.strict_no_compatibility);
   handoff.runtime_dispatch_result_owner_ready =
       StrictOwnerReady(handoff.runtime_dispatch_result_owner, handoff.owner_model,
-                       handoff.strict_no_fallback,
+                       handoff.strict_no_retired_route,
                        handoff.strict_no_compatibility);
   handoff.artifact_publication_owner_ready =
       Objc3LoweringArtifactPlanPublicationOwnerIsReady(artifacts);
@@ -91,7 +91,7 @@ Objc3LoweringIRHandoff Objc3BuildLoweringIRHandoff(
       handoff.runtime_dispatch_owner_ready &&
       handoff.runtime_dispatch_result_owner_ready &&
       handoff.artifact_publication_owner_ready &&
-      handoff.strict_no_fallback && handoff.strict_no_compatibility;
+      handoff.strict_no_retired_route && handoff.strict_no_compatibility;
   handoff.ready = Objc3LoweringIRHandoffIsReady(handoff);
   handoff.failure_reason = FirstFailureReason(handoff);
   handoff.replay_key = Objc3LoweringIRHandoffReplayKey(handoff);
@@ -107,7 +107,7 @@ bool Objc3LoweringIRHandoffIsReady(const Objc3LoweringIRHandoff &handoff) {
          handoff.fixed_runtime_dispatch_slots &&
          handoff.requested_artifact_paths_owned &&
          handoff.phase_handoff_explicit &&
-         handoff.strict_no_fallback && handoff.strict_no_compatibility;
+         handoff.strict_no_retired_route && handoff.strict_no_compatibility;
 }
 
 std::string Objc3LoweringIRHandoffReplayKey(
@@ -136,6 +136,6 @@ std::string Objc3LoweringIRHandoffReplayKey(
       << ";failure_reason=" << handoff.failure_reason << ";"
       << Objc3LoweringOwnerReplayKey(
              handoff.lower_handoff_owner, handoff.owner_model,
-             handoff.strict_no_fallback, handoff.strict_no_compatibility);
+             handoff.strict_no_retired_route, handoff.strict_no_compatibility);
   return out.str();
 }

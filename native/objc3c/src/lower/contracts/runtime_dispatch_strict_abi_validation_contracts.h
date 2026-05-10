@@ -7,7 +7,7 @@
 // Strict runtime dispatch validation contracts own the hard-cutover owner
 // readiness and replay surface used by dispatch boundary normalization.
 inline constexpr const char *kObjc3RuntimeDispatchLoweringOwnerModel =
-    kObjc3LoweringNoFallbackOwnerModel;
+    kObjc3LoweringNoRetiredRouteOwnerModel;
 
 inline bool Objc3RuntimeDispatchLoweringOwnerIsReady() {
   return Objc3LoweringStrictOwnerModelIsReady(

@@ -83,7 +83,7 @@ This document is aligned to:
 | `LS-1` | Completed intake packet, baseline syntax and semantics evidence, diagnostics evidence, determinism evidence, security evidence, namespace validity proof.             |
 | `LS-2` | Transition dossier, rubric `ACCEPT+`, at least one production implementation, provisional test obligations pass, initial vendor claim linkage.                        |
 | `LS-3` | Transition dossier, rubric `ACCEPT-STRONG`, two independent implementations, cross-vendor interop evidence, stable test obligations pass, published claim references. |
-| `LS-4` | Deprecation dossier, replacement guidance, diagnostics with fix-its, sunset timeline, and no-fallback impact statement.                                                |
+| `LS-4` | Deprecation dossier, replacement guidance, diagnostics with fix-its, sunset timeline, and no-retired-route impact statement.                                                |
 | `LS-5` | Retirement dossier, proof deprecation window elapsed, ecosystem impact review, tombstone publication record.                                                          |
 
 Freshness and replay rules:
@@ -125,7 +125,7 @@ Freshness and replay rules:
 | ------------- | -------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `TB-01`       | Intake triage                          | Intake packet and trace fields                    | Triage disposition with blockers and due dates.                                  |
 | `TB-02`       | Promotion readiness (`T-01` or `T-02`) | Transition dossier and gate results               | Vote record with disposition, conditions, effective release, and effective date. |
-| `TB-03`       | Deprecation readiness (`T-03`)         | Deprecation dossier and no-fallback replay evidence | Deprecation decision with sunset start and rollback conditions.                |
+| `TB-03`       | Deprecation readiness (`T-03`)         | Deprecation dossier and no-retired-route replay evidence | Deprecation decision with sunset start and rollback conditions.                |
 | `TB-04`       | Retirement readiness (`T-04`)          | Retirement dossier and sunset compliance evidence | Retirement decision and tombstone publication authorization.                     |
 | `TB-05`       | Emergency rollback (`RB-*`)            | Incident report and containment status            | Temporary hold or rollback disposition with follow-up actions.                   |
 

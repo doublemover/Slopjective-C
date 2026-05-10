@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/reports/*.json",
     "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/runbook.md"
   ],
-  "support_boundary": "dashboard-blocker provenance owns JSON policy inventories, negative policy fixtures, report fixture paths, runbook paths, summary implementation anchors, required report names, required report contract ids, report status labels, report field labels, rollout class labels, release blocker ids, dashboard summary paths, public summary paths, required dashboard field names, required public summary field names, source-owned decision field names, blocking public claim class labels, blocking rollout class labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "dashboard-blocker provenance owns JSON policy inventories, negative policy fixtures, report fixture paths, runbook paths, summary implementation anchors, required report names, required report contract ids, report status labels, report field labels, rollout class labels, release blocker ids, dashboard summary paths, public summary paths, required dashboard field names, required public summary field names, source-owned decision field names, blocking public claim class labels, blocking rollout class labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers",
@@ -54,11 +54,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "dashboard-blocker provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, distribution credibility, release operations, packaging channels, package ecosystem, production strength, dashboard publication, public claimability, acceptance, or compatibility behavior; policies, negative policies, report fixtures, runbooks, summary paths, artifact paths, field names, blocker labels, rollout labels, claim class labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "dashboard-blocker provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, distribution credibility, release operations, packaging channels, package ecosystem, production strength, dashboard publication, public claimability, acceptance, or compatibility behavior; policies, negative policies, report fixtures, runbooks, summary paths, artifact paths, field names, blocker labels, rollout labels, claim class labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

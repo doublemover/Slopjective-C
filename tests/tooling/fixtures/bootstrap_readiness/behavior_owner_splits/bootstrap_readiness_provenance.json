@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/bootstrap_readiness/*/expected_exit_code.txt",
     "tests/tooling/fixtures/bootstrap_readiness/*/expected_stderr.txt"
   ],
-  "support_boundary": "bootstrap readiness provenance owns snapshot inventories, fixture directory labels, expected JSON/markdown reports, expected stderr and exit-code files, readiness state labels, intake recommendation labels, blocker-count labels, legacy blocker array payload labels, malformed JSON labels, hard-fail labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, wrapper labels, runner labels, workflow labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "bootstrap readiness provenance owns snapshot inventories, fixture directory labels, expected JSON/markdown reports, expected stderr and exit-code files, readiness state labels, intake recommendation labels, blocker-count labels, legacy blocker array payload labels, malformed JSON labels, hard-fail labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, wrapper labels, runner labels, workflow labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/bootstrap_readiness",
@@ -48,12 +48,12 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*legacy*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "bootstrap readiness provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, acceptance, or capability behavior; snapshots, expected outputs, legacy payloads, malformed JSON rows, hard-fail rows, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, wrapper rows, runner rows, workflow labels, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "bootstrap readiness provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, acceptance, or capability behavior; snapshots, expected outputs, legacy payloads, malformed JSON rows, hard-fail rows, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, wrapper rows, runner rows, workflow labels, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

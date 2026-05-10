@@ -22,7 +22,7 @@
   "claim_narrowing_constraints": [
     "property-behavior-claims-stay-narrower-than-the-private-current-property-helper-boundary-and-runtime-owned-property-registry-snapshots",
     "unsupported-property-behavior-combinations-remain-diagnostic-backed-and-fail-closed-until-dedicated-runtime-evidence-lands",
-    "no-public-runtime-abi-widening-or-storage-global-fallbacks-are-claimed-by-this-policy",
+    "no-public-runtime-abi-widening-or-storage-global-retired-routes-are-claimed-by-this-policy",
     "synthesized accessor artifacts, generated materialization reports, module replay rows, and storage reflection metadata are provenance until claimed by sema, lowering, runtime, or e2e owners"
   ],
   "authoritative_case_ids": [

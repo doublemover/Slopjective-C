@@ -16,5 +16,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering security rows, shim lowering security rows, fallback lowering security rows, compatibility lowering security rows, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, readiness-label-only lowering claims, and security-contract-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering security rows, gate lowering security rows, retired route lowering security rows, compatibility lowering security rows, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, readiness-label-only lowering claims, and security-contract-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

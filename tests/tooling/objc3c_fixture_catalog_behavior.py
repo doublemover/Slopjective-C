@@ -40,7 +40,7 @@ def assert_native_catalog_tracks_behavior_first_boundaries(
         "tests/tooling/fixtures/native/execution/negative"
     ]
     assert "O3S221" in unsupported_claims["hard_cutover_rule"]
-    assert "fallback execution paths" in unsupported_claims["hard_cutover_rule"]
+    assert "retired route execution paths" in unsupported_claims["hard_cutover_rule"]
 
 
 def assert_recovery_readme_documents_phase_boundaries(readme: str) -> None:

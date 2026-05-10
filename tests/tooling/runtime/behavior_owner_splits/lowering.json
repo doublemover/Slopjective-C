@@ -15,5 +15,5 @@
     "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback lowering, compatibility shim lowering, helper-only lowering success, generated-evidence-log lowering evidence, and alternate acceptance path lowering claims are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "retired route lowering, compatibility gate lowering, helper-only lowering success, generated-evidence-log lowering evidence, and alternate acceptance path lowering claims are strict-error, canonical rejection, or provenance-only evidence"
 }

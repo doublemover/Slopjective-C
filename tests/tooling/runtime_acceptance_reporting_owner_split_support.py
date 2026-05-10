@@ -9,7 +9,7 @@ RUNTIME_ACCEPTANCE_ROOT = ROOT / "scripts" / "objc3c_runtime_acceptance"
 FORBIDDEN_REPORTING_WORDS = (
     "evidence-log",
     "evidence log",
-    "fallback",
+    "retired-route",
     "migration",
     "compat",
     "compatibility",

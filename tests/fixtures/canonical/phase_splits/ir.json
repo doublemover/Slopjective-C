@@ -53,5 +53,5 @@
       "expected_diagnostic_code": "link.unresolved_symbol"
     }
   ],
-  "retired_surface_rule": "non-nil runtime helper calls are strict-error linkage evidence, not fallback support"
+  "retired_surface_rule": "non-nil runtime helper calls are strict-error linkage evidence, not retired route support"
 }

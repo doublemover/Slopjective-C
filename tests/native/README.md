@@ -26,5 +26,5 @@ absence for each retired surface.
 
 Runtime dispatch fixtures are typed boundary evidence. `objc3_runtime_dispatch_i32`
 and related message-send projections either materialize through the canonical
-runtime owner path or remain strict link/run errors; they are never fallback,
-shim, or compatibility acceptance lanes.
+runtime owner path or remain strict link/run errors; they are never retired route,
+gate, or compatibility acceptance lanes.

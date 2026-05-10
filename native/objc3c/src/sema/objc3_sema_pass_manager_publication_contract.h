@@ -17,8 +17,8 @@ struct Objc3SemaPassManagerInput {
   Objc3SemaDiagnosticsBus diagnostics_bus;
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner = kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool recovery_counts_as_success = false;
 };
@@ -32,8 +32,8 @@ struct Objc3ParserSemaHandoffOwnerRecord {
       kObjc3ParserSemaSnapshotNormalizationOwner;
   std::string canonical_rejection_owner =
       kObjc3ParserSemaCanonicalRejectionOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool strict_snapshot_normalization_rejection = true;
   bool strict_canonical_literal_rejection = true;
@@ -48,8 +48,8 @@ inline bool IsReadyObjc3ParserSemaHandoffOwnerRecord(
          Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.snapshot_normalization_owner) &&
          Objc3SemaOwnerIsExplicit(record.canonical_rejection_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.strict_snapshot_normalization_rejection &&
          record.strict_canonical_literal_rejection && record.deterministic;
 }
@@ -60,7 +60,7 @@ BuildObjc3ParserSemaHandoffOwnerRecord(const Objc3SemaPassManagerInput &input) {
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.parser_contract_snapshot_supplied =
       input.parser_contract_snapshot != nullptr;
@@ -70,8 +70,8 @@ BuildObjc3ParserSemaHandoffOwnerRecord(const Objc3SemaPassManagerInput &input) {
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.snapshot_normalization_owner) &&
       Objc3SemaOwnerIsExplicit(record.canonical_rejection_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.strict_snapshot_normalization_rejection &&
       record.strict_canonical_literal_rejection;
   return record;
@@ -86,8 +86,8 @@ struct Objc3SemaPassManagerPublicationRecord {
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
   std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool parser_sema_handoff_owner_ready = false;
   bool pass_flow_summary_ready = false;
@@ -106,8 +106,8 @@ inline bool IsReadyObjc3SemaPassManagerPublicationRecord(
          Objc3SemaOwnerIsExplicit(record.pass_flow_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
          Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.parser_sema_handoff_owner_ready &&
          record.pass_flow_summary_ready && record.semantic_diagnostics_ready &&
          record.type_metadata_handoff_ready &&
@@ -127,7 +127,7 @@ BuildObjc3SemaPassManagerPublicationRecord(
   record.pass_flow_owner = pass_flow_summary.stage_input_owner;
   record.diagnostic_handoff_owner = pass_flow_summary.diagnostic_handoff_owner;
   record.owner_model = pass_flow_summary.owner_model;
-  record.strict_no_fallback = pass_flow_summary.strict_no_fallback;
+  record.strict_no_retired_route = pass_flow_summary.strict_no_retired_route;
   record.strict_no_compatibility = pass_flow_summary.strict_no_compatibility;
   record.parser_sema_handoff_owner_ready =
       IsReadyObjc3ParserSemaHandoffOwnerRecord(parser_owner_record);
@@ -147,8 +147,8 @@ BuildObjc3SemaPassManagerPublicationRecord(
       Objc3SemaOwnerIsExplicit(record.pass_flow_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.parser_sema_handoff_owner_ready &&
       record.pass_flow_summary_ready && record.semantic_diagnostics_ready &&
       record.type_metadata_handoff_ready &&
@@ -165,8 +165,8 @@ struct Objc3SemaTypeMetadataPublicationRecord {
       kObjc3SemaTypeMetadataPublicationOwner;
   std::string atomic_vector_mapping_publication_owner =
       kObjc3SemaAtomicVectorMappingPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t integration_surface_global_count = 0;
   std::size_t integration_surface_function_count = 0;
@@ -192,8 +192,8 @@ inline bool IsReadyObjc3SemaTypeMetadataPublicationRecord(
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
          Objc3SemaOwnerIsExplicit(
              record.atomic_vector_mapping_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.cardinality_consistent &&
          record.interface_implementation_handoff_ready &&
          record.protocol_category_composition_handoff_ready &&
@@ -216,7 +216,7 @@ BuildObjc3SemaTypeMetadataPublicationRecord(
   record.integration_surface_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.integration_surface_global_count = integration_surface.globals.size();
   record.integration_surface_function_count =
@@ -261,8 +261,8 @@ BuildObjc3SemaTypeMetadataPublicationRecord(
       Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.cardinality_consistent &&
       record.interface_implementation_handoff_ready &&
       record.protocol_category_composition_handoff_ready &&

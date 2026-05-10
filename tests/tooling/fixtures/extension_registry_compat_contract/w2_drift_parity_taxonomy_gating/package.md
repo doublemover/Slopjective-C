@@ -42,7 +42,7 @@ Status: published package fixture for issue `#786` (`[W1][V013-GOV-02] Add exten
 ### 1.4 Ownership lock for issue `#786`
 
 1. Lane C write ownership is limited to the two paths listed in Section `1.1`.
-2. The fixture-local `schema.json` and `readme.md` carry the preserved transition/rejection evidence for this issue; compatibility labels are fixture-local taxonomy evidence only and do not define public support, fallback, alias, shim, wrapper, or alternate success behavior.
+2. The fixture-local `schema.json` and `readme.md` carry the preserved transition/rejection evidence for this issue; compatibility labels are fixture-local taxonomy evidence only and do not define public support, retired route, alias, gate, wrapper, or alternate success behavior.
 3. Validation evidence for this issue is published in `docs/reference/legacy_spec_anchor_index.md`.
 
 ## 2. Suite Contract Summary
@@ -58,7 +58,7 @@ The transition/rejection validation fixture contract is published against synchr
 
 ## 3. Change-Rejection Matrix (Backward and Forward)
 
-Compatibility terms in this section are rejection-taxonomy labels for fixture evidence. They do not authorize shims, fallback paths, wrappers, aliases, or alternate success paths.
+Compatibility terms in this section are rejection-taxonomy labels for fixture evidence. They do not authorize gates, retired route paths, wrappers, aliases, or alternate success paths.
 
 ### 3.1 Required transition dimensions
 
@@ -71,10 +71,10 @@ Compatibility terms in this section are rejection-taxonomy labels for fixture ev
 | Matrix ID | Change class | Schema versioning rule | Required-field rule | Backward result | Forward result | Deterministic action | Validator IDs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `CM-RC-01` | `patch_nonsemantic` | Patch (`x.y.z`) only | Required fields unchanged | `pass` | `pass` | Record pass-class taxonomy evidence only if all validators pass; this is not a compatibility support grant. | `VAL-RC-01`, `VAL-RC-04` |
-| `CM-RC-02` | `minor_optional_addition` | Minor (`x.y.0`) | New fields must remain optional | `conditional` | `pass` | Record conditional taxonomy evidence only when validators document unknown optional fields; no runtime fallback or alternate success path is permitted. | `VAL-RC-03`, `VAL-RC-05` |
+| `CM-RC-02` | `minor_optional_addition` | Minor (`x.y.0`) | New fields must remain optional | `conditional` | `pass` | Record conditional taxonomy evidence only when validators document unknown optional fields; no runtime retired route or alternate success path is permitted. | `VAL-RC-03`, `VAL-RC-05` |
 | `CM-RC-03` | `minor_enum_expansion` | Minor (`x.y.0`) | Required fields unchanged | `conditional` | `conditional` | Require explicit replay-only rejection-evidence note before fixture publication. | `VAL-RC-03`, `VAL-RC-06` |
 | `CM-RC-04` | `minor_required_addition` | Minor requested but invalid | New required fields are not allowed in minor updates | `fail` | `fail` | Reject change; record major-only rejection evidence with no corrective path. | `VAL-RC-05` |
-| `CM-RC-05` | `major_required_removal` | Major (`x.0.0`) required | Removed required field must include rejection evidence | `fail` | `conditional` | Block until removal is represented as fail/hold evidence; no transition window or fallback path is permitted. | `VAL-RC-05`, `VAL-RC-06` |
+| `CM-RC-05` | `major_required_removal` | Major (`x.0.0`) required | Removed required field must include rejection evidence | `fail` | `conditional` | Block until removal is represented as fail/hold evidence; no transition window or retired route path is permitted. | `VAL-RC-05`, `VAL-RC-06` |
 | `CM-RC-06` | `major_required_rename_without_alias` | Major (`x.0.0`) required | Rename requires explicit rejection mapping | `fail` | `fail` | Reject publish until rejection mapping is defined as evidence only; aliases and wrappers are not permitted. | `VAL-RC-05` |
 | `CM-RC-07` | `unknown_major_input` | Unknown major from consumer perspective | Required-field interpretation is undefined | `fail` | `fail` | Hard fail closed and escalate under `E2`. | `VAL-RC-06` |
 | `CM-RC-08` | `required_field_type_drift` | Any version | Required-field type changes are breaking | `fail` | `fail` | Reject publish and require schema correction. | `VAL-RC-04`, `VAL-RC-05` |

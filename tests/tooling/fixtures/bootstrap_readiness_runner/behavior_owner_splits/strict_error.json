@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/bootstrap_readiness_runner/zero_open",
     "tests/tooling/fixtures/bootstrap_readiness_runner/blocked_issues"
   ],
-  "support_boundary": "strict-error ownership covers fail-closed bootstrap-readiness-runner violations: missing required scenario JSON, blocked_issues ignored by the runner, issue 1149 treated as release-ready, open_blocker_count used as the only readiness dimension, generated/report rows promoted as support, and old-mode/shim/fallback/compat rows promoted as support.",
+  "support_boundary": "strict-error ownership covers fail-closed bootstrap-readiness-runner violations: missing required scenario JSON, blocked_issues ignored by the runner, issue 1149 treated as release-ready, open_blocker_count used as the only readiness dimension, generated/report rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -20,13 +20,13 @@
     "strict_error:empty-open-blockers-promoted-over-open-issues",
     "strict_error:tmp-output-promoted-as-source-truth",
     "strict_error:evidence-log-runner-publication",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*generated-as-support*",
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "missing scenario JSON, ignored blocked issues, issue 1149 promoted as ready, open_blocker_count-only readiness, empty-open-blockers promoted over open issues, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing scenario JSON, ignored blocked issues, issue 1149 promoted as ready, open_blocker_count-only readiness, empty-open-blockers promoted over open issues, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

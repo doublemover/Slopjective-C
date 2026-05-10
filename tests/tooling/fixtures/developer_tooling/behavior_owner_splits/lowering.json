@@ -15,5 +15,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering tooling, shim lowering tooling, fallback lowering tooling, compatibility lowering tooling, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, hosted-probe-only lowering claims, and compile-stage-label-only support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering tooling, gate lowering tooling, retired route lowering tooling, compatibility lowering tooling, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, hosted-probe-only lowering claims, and compile-stage-label-only support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

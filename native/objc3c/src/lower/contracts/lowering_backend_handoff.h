@@ -13,7 +13,7 @@ struct Objc3LoweringBackendHandoff {
   bool object_backend_route_ready = false;
   bool artifact_publication_route_ready = false;
   bool owner_split_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::string output_directory;
   std::string emit_prefix;
@@ -22,7 +22,7 @@ struct Objc3LoweringBackendHandoff {
   std::string manifest_relative_path;
   std::string runtime_metadata_relative_path;
   std::string backend_handoff_owner = kObjc3LoweringBackendHandoffOwner;
-  std::string backend_handoff_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string backend_handoff_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string replay_key;
 };
 

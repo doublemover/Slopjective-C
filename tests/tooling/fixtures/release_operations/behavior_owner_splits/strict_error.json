@@ -71,8 +71,8 @@
     "required_upgrade_support_report_field:revert_guidance",
     "required_upgrade_support_report_field:fail_closed_diagnostics",
     "required_upgrade_support_report_field:forbidden_claims",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -80,5 +80,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/release_operations",
-  "retired_surface_rule": "missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, alternate-path publication, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing upstream artifacts, missing channel artifacts, missing schema fields, missing same-major revert primitives, missing required update fields, missing package-channel input, unsupported channel selection, ABI major mismatch, runtime metadata contract mismatch, data-format conversion requirements without replay/revert evidence, silent cross-major upgrade, warning-free preview promotion, revert path omission, alternate-path publication, tmp-as-source claims, evidence-log publication, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

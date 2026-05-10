@@ -85,7 +85,7 @@ def build_executable_synthesized_accessor_property_lowering_surface(
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
             "no-milestone-specific-scaffolding",
-            "no-storage-global-fallbacks-or-sidecar-body-proof",
+            "no-storage-global-retired-routes-or-sidecar-body-proof",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,

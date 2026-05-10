@@ -18,8 +18,8 @@ struct Objc3LoweringDiagnostic {
   unsigned line = 1;
   unsigned column = 1;
   std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
-  std::string diagnostic_owner_model = kObjc3LoweringNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string diagnostic_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::string replay_key;
 };

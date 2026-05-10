@@ -12,7 +12,7 @@
     "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/planning_checkbox_policy.json",
     "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/plan.md"
   ],
-  "support_boundary": "canonical rejection owns planning-checkbox rows that look like support but are unallowed, mismatched, stale, unused, generated-only, evidence-log, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Unchecked implementation rows without matching policy and stale policy entries are rejection evidence, not positive planning support.",
+  "support_boundary": "canonical rejection owns planning-checkbox rows that look like support but are unallowed, mismatched, stale, unused, generated-only, evidence-log, old-mode, gate, retired route, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Unchecked implementation rows without matching policy and stale policy entries are rejection evidence, not positive planning support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -30,8 +30,8 @@
     "stale_policy:Unused Fixture > 1. Historical Checklist",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -42,5 +42,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "unchecked rows without matching policy, section mismatches, unused policy entries, mixed directory rows with any unallowed unchecked checklist, old-mode planning rows, shim planning rows, fallback planning rows, compatibility planning rows, migration-only rows, generated-only rows, evidence-log rows, stale policy positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unchecked rows without matching policy, section mismatches, unused policy entries, mixed directory rows with any unallowed unchecked checklist, old-mode planning rows, gate planning rows, retired route planning rows, compatibility planning rows, migration-only rows, generated-only rows, evidence-log rows, stale policy positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

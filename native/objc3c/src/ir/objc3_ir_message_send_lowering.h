@@ -11,7 +11,7 @@ struct Objc3IRMessageSendLoweringPlan {
   std::string direct_call_symbol;
   Objc3IRReceiverDispatchPolicy receiver_dispatch_policy;
   std::string dispatch_result_owner = kObjc3IRRuntimeDispatchResultOwner;
-  std::string dispatch_result_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string dispatch_result_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   bool uses_canonical_runtime_entrypoint = false;
   bool owns_dispatch_result = false;
   bool hard_cutover_dispatch_target = false;
@@ -20,7 +20,7 @@ struct Objc3IRMessageSendLoweringPlan {
   bool elides_to_nil_result = false;
   bool emits_nil_checked_dispatch = false;
   bool fail_closed = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::string failure_reason;
 };

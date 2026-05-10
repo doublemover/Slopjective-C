@@ -14,8 +14,8 @@ struct Objc3SemaTypedSemanticHandoffRecord {
       kObjc3SemaTypedSemanticHandoffOwner;
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool type_metadata_identity_handoffs_ready = false;
   bool type_annotation_handoffs_ready = false;
@@ -33,8 +33,8 @@ inline bool IsReadyObjc3SemaTypedSemanticHandoffRecord(
              record.typed_semantic_handoff_publication_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.type_metadata_identity_handoffs_ready &&
          record.type_annotation_handoffs_ready &&
          record.module_boundary_handoffs_ready &&
@@ -50,8 +50,8 @@ struct Objc3SemaAtomicVectorMappingPublicationRecord {
   std::string integration_surface_owner = kObjc3SemaStageInputOwner;
   std::string typed_semantic_handoff_owner =
       kObjc3SemaTypedSemanticHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
@@ -69,8 +69,8 @@ inline bool IsReadyObjc3SemaAtomicVectorMappingPublicationRecord(
              record.atomic_vector_mapping_publication_owner) &&
          Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.atomic_memory_order_mapping_ready &&
          record.vector_type_lowering_ready &&
          record.mapping_summaries_ready && record.deterministic;
@@ -84,8 +84,8 @@ struct Objc3SemaTypeMetadataMappingReadinessRecord {
       kObjc3SemaTypedSemanticHandoffOwner;
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t globals_total = 0;
   std::size_t functions_total = 0;
@@ -111,8 +111,8 @@ inline bool IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
          Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
          Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.type_metadata_publication_ready &&
          record.type_metadata_handoff_ready &&
          record.cardinality_consistent &&

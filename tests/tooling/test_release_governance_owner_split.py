@@ -134,8 +134,8 @@ def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> N
     operations_guardrails = release_gate_hard_cutover_guardrails("release-operations")
     assert operations_guardrails == {
         "missing_upstream_artifact_behavior": "fail-closed",
-        "compatibility_update_fallback_allowed": False,
-        "update_fallback_support_allowed": False,
+        "compatibility_update_retired_route_allowed": False,
+        "update_retired_route_support_allowed": False,
         "publication_claim_owner": "release-operations-gate",
         "blocker_owner_required_before_publication": True,
         "evidence_log_release_claim_allowed": False,

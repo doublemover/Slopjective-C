@@ -103,7 +103,7 @@
   "explicit_non_goals": [
     "no-runtime-execution-claim-without-linked-probes",
     "no-public-runtime-abi-widening",
-    "no-storage-global-fallback-claims",
+    "no-storage-global-retired-route-claims",
     "no-milestone-specific-scaffolding"
   ]
 }

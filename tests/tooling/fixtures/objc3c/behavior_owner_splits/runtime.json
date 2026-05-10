@@ -18,5 +18,5 @@
     "validation_nil_receiver_semantics_foldability_contract/**"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime fallback, unresolved dispatch, host-link replay names, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, replay-only runtime rows, and generated-output-only runtime rows are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runtime retired route, unresolved dispatch, host-link replay names, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, replay-only runtime rows, and generated-output-only runtime rows are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

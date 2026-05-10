@@ -143,7 +143,7 @@ def assert_executable_synthesized_accessor_surface(
             "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers"
         ),
         "fail_closed_model": (
-            "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-fallbacks"
+            "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-retired-routes"
         ),
     }
     _expect_surface_fields(

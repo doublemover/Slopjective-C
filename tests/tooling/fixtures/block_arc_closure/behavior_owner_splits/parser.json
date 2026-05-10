@@ -18,5 +18,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/arc_mode_handling_positive.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser spellings, parser fallback flags, compatibility parser labels, generated source inventories, and source-only byref or ARC support claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser spellings, parser retired route flags, compatibility parser labels, generated source inventories, and source-only byref or ARC support claims are canonical rejection, strict-error, or provenance-only evidence"
 }

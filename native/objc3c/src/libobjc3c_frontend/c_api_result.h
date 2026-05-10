@@ -15,7 +15,7 @@
  *   result-owned strings returned by result_error_message/result_artifact_path.
  * - undefined artifact kinds and NULL inputs fail closed as NULL/empty/0.
  * - NULL results, absent payloads, and undefined artifact kinds never
- *   manufacture fallback values: pointer accessors return NULL, views return
+ *   manufacture retired route values: pointer accessors return NULL, views return
  *   {NULL, 0}, and boolean predicates return 0.
  */
 /*

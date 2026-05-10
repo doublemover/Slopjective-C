@@ -910,7 +910,7 @@
         "tests/conformance/hard_cutover_catalog.json",
         "tests/fixtures/canonical/manifest.json"
       ],
-      "retired_surface_disposition": "not a public behavior surface; no shim, fallback, compatibility, or migration support claimed"
+      "retired_surface_disposition": "not a public behavior surface; no gate, retired route, compatibility, or migration support claimed"
     },
     {
       "issue": "#8133",
@@ -932,7 +932,7 @@
         "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
-      "retired_surface_disposition": "dispatch fallback is strict-error evidence, not a positive behavior lane"
+      "retired_surface_disposition": "dispatch retired route is strict-error evidence, not a positive behavior lane"
     },
     {
       "issue": "#8134",
@@ -954,9 +954,9 @@
         "tests/native/parser/positive/canonical_module_main.objc3",
         "tests/native/parser/positive/objc_property_surface.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
-      "retired_surface_disposition": "parser old-mode and fallback flags are rejection fixtures"
+      "retired_surface_disposition": "parser old-mode and retired route flags are rejection fixtures"
     },
     {
       "issue": "#8135",
@@ -972,7 +972,7 @@
       ],
       "behavior_evidence": [
         "tests/native/sema/types/typed_i32_bool_flow.objc3",
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
@@ -992,10 +992,10 @@
       ],
       "behavior_evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
       ],
-      "retired_surface_disposition": "lowering runtime fallback is strict-error/rejection evidence only"
+      "retired_surface_disposition": "lowering runtime retired route is strict-error/rejection evidence only"
     },
     {
       "issue": "#8137",
@@ -1014,7 +1014,7 @@
         "tests/native/ir/metadata/module_metadata_name.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
       ],
-      "retired_surface_disposition": "IR runtime call fallback is strict-error evidence when unresolved"
+      "retired_surface_disposition": "IR runtime call retired route is strict-error evidence when unresolved"
     },
     {
       "issue": "#8138",
@@ -1034,7 +1034,7 @@
         "tests/conformance/hard_cutover_catalog.json",
         "docs/support/evidence_map.json"
       ],
-      "retired_surface_disposition": "artifact and IO support evidence is internal ownership; it does not create migration or fallback support"
+      "retired_surface_disposition": "artifact and IO support evidence is internal ownership; it does not create migration or retired route support"
     },
     {
       "issue": "#8139",
@@ -1053,7 +1053,7 @@
         "docs/support/capability_matrix.json",
         "docs/support/evidence_map.json"
       ],
-      "retired_surface_disposition": "target topology is internal ownership evidence and no public fallback lane is exposed"
+      "retired_surface_disposition": "target topology is internal ownership evidence and no public retired route lane is exposed"
     },
     {
       "issue": "#8140",
@@ -1141,7 +1141,7 @@
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
-      "retired_surface_disposition": "runtime acceptance evidence keeps unsupported dispatch as strict error, not fallback success"
+      "retired_surface_disposition": "runtime acceptance evidence keeps unsupported dispatch as strict error, not retired route success"
     },
     {
       "issue": "#8144",
@@ -1251,7 +1251,7 @@
         "docs/support/evidence_map.json",
         "tests/tooling/test_objc3c_shared_json_schema.py"
       ],
-      "retired_surface_disposition": "schema rows classify unsupported states; they do not define fallback support"
+      "retired_surface_disposition": "schema rows classify unsupported states; they do not define retired route support"
     },
     {
       "issue": "#8149",

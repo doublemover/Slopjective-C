@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, evidence-log, migration-only, dashboard-only, prose-only, tmp-artifact-only, schema-only, workflow-only, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
+  "support_boundary": "old-mode, gate, retired route, compatibility, unsupported, known-open, generated-only, evidence-log, migration-only, dashboard-only, prose-only, tmp-artifact-only, schema-only, workflow-only, and alternate acceptance path conformance rows are non-positive unless a canonical behavior owner claims positive support",
   "owned_buckets": [
     "parser",
     "semantic",
@@ -16,29 +16,29 @@
     {
       "manifest": "tests/conformance/parser/manifest.json",
       "selectors": [
-        "hard_cutover_retired_mode_and_parser_fallback_rejections",
+        "hard_cutover_retired_mode_and_parser_retired_route_rejections",
         "HC-LEGACY-*.json",
         "LMV-48-NEG-01.json"
       ],
-      "disposition": "old-mode and parser fallback surfaces are parser rejections"
+      "disposition": "old-mode and parser retired route surfaces are parser rejections"
     },
     {
       "manifest": "tests/conformance/semantic/manifest.json",
       "selectors": [
-        "hard_cutover_compatibility_shim_gate_rejections",
+        "hard_cutover_compatibility_gate_rejections",
         "HC-GATE-01.json",
         "*unsupported*",
         "*GATE*"
       ],
-      "disposition": "shim, adapter, and unsupported feature claims are semantic rejections"
+      "disposition": "gate, adapter, and unsupported feature claims are semantic rejections"
     },
     {
       "manifest": "tests/conformance/lowering_abi/manifest.json",
       "selectors": [
-        "hard_cutover_runtime_dispatch_fallback_rejection",
-        "HC-NOSHIM-01.json"
+        "hard_cutover_runtime_dispatch_retired_route_rejection",
+        "HC-NOGATE-01.json"
       ],
-      "disposition": "runtime dispatch fallback claims are strict lowering/link errors"
+      "disposition": "runtime dispatch retired route claims are strict lowering/link errors"
     },
     {
       "manifest": "tests/conformance/spec_open_issues/manifest.json",
@@ -67,8 +67,8 @@
   "selectors": [
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*unsupported*",
     "*known-open*",

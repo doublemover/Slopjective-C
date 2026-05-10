@@ -38,7 +38,7 @@
       "owner_index_area": "parser_lexer_ast",
       "positive_authority": "tests/native/parser/positive",
       "negative_authority": "tests/native/parser/negative",
-      "retired_surface_disposition": "old-mode literals and removed parser mode/fallback flags are parse or compile rejections",
+      "retired_surface_disposition": "old-mode literals and removed parser mode/retired-route flags are parse or compile rejections",
       "generated_fixture_authority": false,
       "closeout_authority": false
     },
@@ -56,7 +56,7 @@
       "owner_index_area": "lowering_and_ir",
       "positive_authority": "tests/native/lowering plus tests/conformance/lowering_abi canonical ABI fixtures",
       "negative_authority": "tests/native/lowering/errors and strict lowering/link diagnostics",
-      "retired_surface_disposition": "removed runtime fallback flags and non-nil dispatch fallback linkage are strict-error or rejection evidence",
+      "retired_surface_disposition": "removed runtime retired route flags and non-nil dispatch retired route linkage are strict-error or rejection evidence",
       "generated_fixture_authority": false,
       "closeout_authority": false
     },
@@ -65,7 +65,7 @@
       "owner_index_area": "lowering_and_ir",
       "positive_authority": "tests/native/ir/{module,function,metadata,runtime_calls}",
       "negative_authority": "tests/native/ir/runtime_calls",
-      "retired_surface_disposition": "runtime helper call residues are strict linkage diagnostics, not fallback support",
+      "retired_surface_disposition": "runtime helper call residues are strict linkage diagnostics, not retired route support",
       "generated_fixture_authority": false,
       "closeout_authority": false
     },
@@ -137,9 +137,9 @@
       "evidence": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"

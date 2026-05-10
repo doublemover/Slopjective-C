@@ -52,10 +52,10 @@
     "*timing_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "compiler throughput provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or performance behavior; source-surface rows, workload rows, artifact rows, optimization-policy rows, validation-tier rows, workflow labels, cache proof labels, generated docs, command surfaces, perf summaries, tmp packages, generated-only rows, evidence-log rows, migration-only rows, shim, fallback, old-mode, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, and timing-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "compiler throughput provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or performance behavior; source-surface rows, workload rows, artifact rows, optimization-policy rows, validation-tier rows, workflow labels, cache proof labels, generated docs, command surfaces, perf summaries, tmp packages, generated-only rows, evidence-log rows, migration-only rows, gate, retired route, old-mode, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, and timing-only rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

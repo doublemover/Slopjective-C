@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/planning_checkboxes/**/*.json",
     "tests/tooling/fixtures/planning_checkboxes/**/*.md"
   ],
-  "support_boundary": "planning-checkbox provenance owns JSON policy files, markdown planning files, fixture directory names, spec/planning path labels, path fields, section fields, reason text, checklist row text, scenario labels, policy version values, allowed_unchecked_sections entries, stale policy labels, mismatch labels, mixed directory labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "planning-checkbox provenance owns JSON policy files, markdown planning files, fixture directory names, spec/planning path labels, path fields, section fields, reason text, checklist row text, scenario labels, policy version values, allowed_unchecked_sections entries, stale policy labels, mismatch labels, mixed directory labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/planning_checkboxes",
@@ -37,11 +37,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "planning-checkbox provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, planning policy, markdown hygiene, checklist, acceptance, or compatibility behavior; policy files, markdown files, path labels, section labels, reason text, scenario names, stale policy labels, mismatch labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "planning-checkbox provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, planning policy, markdown hygiene, checklist, acceptance, or compatibility behavior; policy files, markdown files, path labels, section labels, reason text, scenario names, stale policy labels, mismatch labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

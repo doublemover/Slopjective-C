@@ -10,13 +10,13 @@
     "primary_axis": "behavior phase before metaprogramming expansion, synthesized artifact, module replay, interop call, FFI metadata, closure/error boundary, source-owner contract, report, package, or workflow",
     "support_authority": "metaprogramming and interop closure rows are source, acceptance, package, probe, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
     "generated_report_rule": "runtime reports, runnable conformance/e2e summaries, package artifacts, runtime-import artifacts, module replay rows, FFI metadata rows, closure/error composition rows, cache snapshots, and generated bridge payloads cannot define canonical support",
-    "retired_surface_rule": "compatibility, shim, fallback, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, evidence-log, and generated-evidence-log evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "retired_surface_rule": "compatibility, gate, retired route, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, evidence-log, and generated-evidence-log evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
     "evidence_boundary_rule": "metaprogramming expansion, synthesized artifacts, module replay, interop calls, FFI metadata, closure/error boundaries, runtime acceptance reports, public workflows, generated bridge payloads, package manifests, runtime-import artifacts, and cache snapshots are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
   },
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "evidence_log_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "generated_report_claims_allowed": false
   },
   "source_owner_contracts": {
@@ -37,7 +37,7 @@
         "scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "property_behavior_owner": {
@@ -53,11 +53,11 @@
         "canonical_rejection",
         "metaprogramming_interop_provenance"
       ],
-      "support_boundary": "property behavior support requires semantic legality, lowering helper selection, runtime materialization, and packaged evidence; synthesized-accessor artifacts, generated materialization reports, module replay rows, and storage reflection metadata are provenance until claimed by a behavior owner; unsupported combinations and storage fallback claims stay rejection evidence",
+      "support_boundary": "property behavior support requires semantic legality, lowering helper selection, runtime materialization, and packaged evidence; synthesized-accessor artifacts, generated materialization reports, module replay rows, and storage reflection metadata are provenance until claimed by a behavior owner; unsupported combinations and storage retired route claims stay rejection evidence",
       "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
       "check_implementation_anchors": [],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "interop_runtime_owner": {
@@ -81,7 +81,7 @@
         "scripts/check_metaprogramming_interop_closure_interop_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "metaprogramming_lowering_owner": {
@@ -100,7 +100,7 @@
         "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "runtime_abi_packaged_proof_owner": {
@@ -121,7 +121,7 @@
         "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     }
   },

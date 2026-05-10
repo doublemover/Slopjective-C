@@ -88,20 +88,20 @@
       ]
     },
     {
-      "surface_family": "removed_parser_fallback_flag",
-      "historical_positive_surface": "parser fallback flag acceptance",
+      "surface_family": "removed_parser_retired_route_flag",
+      "historical_positive_surface": "parser retired route flag acceptance",
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "parser_rejection",
-      "diagnostic_owner": "OBJC3-E-REMOVED-FALLBACK-FLAG",
-      "negative_detector_pattern_id": "OBJC3-E-REMOVED-FALLBACK-FLAG",
+      "diagnostic_owner": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
       "canonical_fixture_family": "parser/negative",
       "retired_tags": [
         "old-mode"
       ],
       "fixtures": [
         {
-          "path": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
-          "sidecar": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.meta.json",
+          "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.meta.json",
           "fixture_kind": "rejection",
           "expected_stage": "parse",
           "strict_rejection_name": true,
@@ -110,20 +110,20 @@
       ]
     },
     {
-      "surface_family": "removed_compatibility_shim_gate",
+      "surface_family": "removed_compatibility_gate",
       "historical_positive_surface": "retired adapter feature-gate acceptance",
       "canonical_disposition": "canonical-rejection",
       "behavior_outcome": "semantic_rejection",
-      "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
-      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+      "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
       "canonical_fixture_family": "sema/errors",
       "retired_tags": [
         "runtime-adapter"
       ],
       "fixtures": [
         {
-          "path": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
-          "sidecar": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.meta.json",
+          "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+          "sidecar": "tests/native/sema/errors/removed_compatibility_gate_rejected.meta.json",
           "fixture_kind": "negative",
           "expected_stage": "compile",
           "strict_rejection_name": true,
@@ -132,20 +132,20 @@
       ]
     },
     {
-      "surface_family": "removed_runtime_dispatch_fallback_flag",
-      "historical_positive_surface": "runtime dispatch fallback ABI flag acceptance",
+      "surface_family": "removed_runtime_dispatch_retired_route_flag",
+      "historical_positive_surface": "runtime dispatch retired route ABI flag acceptance",
       "canonical_disposition": "canonical-strict-error",
       "behavior_outcome": "lowering_or_link_strict_error",
-      "diagnostic_owner": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
-      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
+      "diagnostic_owner": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
       "canonical_fixture_family": "lowering/errors",
       "retired_tags": [
         "runtime-dispatch"
       ],
       "fixtures": [
         {
-          "path": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
-          "sidecar": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.meta.json",
+          "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+          "sidecar": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.meta.json",
           "fixture_kind": "strict-error",
           "expected_stage": "compile",
           "strict_rejection_name": true,

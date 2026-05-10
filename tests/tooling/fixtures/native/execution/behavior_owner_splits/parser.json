@@ -17,5 +17,5 @@
     "negative/misplaced_qualifier_*.meta.json"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser spellings, removed parser flags, malformed qualifier compatibility claims, and parser fallback names remain canonical rejection or parser diagnostics"
+  "retired_surface_rule": "old-mode parser spellings, removed parser flags, malformed qualifier compatibility claims, and parser retired route names remain canonical rejection or parser diagnostics"
 }

@@ -26,5 +26,5 @@
     "owner:security-hardening-runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime hardening without runnable evidence, runtime fallback acceptance, trust bypass for missing runtime cases, wrapper-only runtime security actions, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, old-mode runtime rows, shim runtime rows, fallback runtime rows, compatibility runtime rows, and tmp-evidence-log runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runtime hardening without runnable evidence, runtime retired route acceptance, trust bypass for missing runtime cases, wrapper-only runtime security actions, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, old-mode runtime rows, gate runtime rows, retired route runtime rows, compatibility runtime rows, and tmp-evidence-log runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

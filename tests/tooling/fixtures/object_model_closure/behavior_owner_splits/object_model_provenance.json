@@ -101,8 +101,8 @@
     "*milestone_local*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*unsupported*",
     "*stale*",
@@ -110,5 +110,5 @@
     "*public-reflection-abi*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "object-model provenance never defines positive parser, sema, lowering, IR, runtime, e2e, dispatch, metadata, reflection, property synthesis, ivar layout, loader replay, acceptance, or package behavior; source-owner contracts, generated reports, compile manifests, runtime-registration descriptors, runtime metadata records, dispatch/object inspection dumps, property/ivar layout snapshots, private query snapshots, workload maps, command wrappers, workflow labels, packaged proof summaries, source-only rows, probe-local rows, generated-only rows, evidence-log rows, migration-only rows, descriptor-only rows, manifest-only rows, query-only rows, inspection-only rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "object-model provenance never defines positive parser, sema, lowering, IR, runtime, e2e, dispatch, metadata, reflection, property synthesis, ivar layout, loader replay, acceptance, or package behavior; source-owner contracts, generated reports, compile manifests, runtime-registration descriptors, runtime metadata records, dispatch/object inspection dumps, property/ivar layout snapshots, private query snapshots, workload maps, command wrappers, workflow labels, packaged proof summaries, source-only rows, probe-local rows, generated-only rows, evidence-log rows, migration-only rows, descriptor-only rows, manifest-only rows, query-only rows, inspection-only rows, gate, retired route, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

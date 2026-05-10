@@ -11,7 +11,7 @@
     "primary_axis": "behavior phase before corrective source-owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
     "support_authority": "runtime-corrective contracts are source, probe, acceptance, report, proof, compile-artifact, and provenance evidence only until a behavior owner split claims the phase",
     "generated_report_rule": "generated corrective reports, required reports, compile artifacts, replay manifests, proof bundles, module bundles, native-output truth bundles, linked-probe summaries, generated-only rows, evidence-log rows, migration-only rows, and runner-only rows cannot define canonical support",
-    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "retired_surface_rule": "retired-route, gate, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
     "evidence_boundary_rule": "runtime source rows, runtime public ABI/C API path rows, dispatch semantic rows, acceptance workload rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows remain separately routed evidence classes"
   },
   "behavior_phase_split_indexes": [
@@ -48,7 +48,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "strict-error, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
+      "boundary": "strict-error, unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
     },
     {
       "phase": "runtime_corrective_provenance",
@@ -59,7 +59,7 @@
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "evidence_log_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "generated_report_claims_allowed": false
   },
   "source_owner_contracts": {
@@ -81,7 +81,7 @@
         "scripts/check_runtime_corrective_dispatch_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "runtime_corrective_native_output_owner": {
@@ -97,7 +97,7 @@
       "summary_implementation_anchor": "scripts/build_runtime_corrective_native_output_truth_summary.py",
       "check_implementation_anchors": [],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "runtime_corrective_lowering_provenance_owner": {
@@ -115,7 +115,7 @@
         "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "runtime_corrective_accessor_owner": {
@@ -129,14 +129,14 @@
         "runtime",
         "canonical_rejection"
       ],
-      "support_boundary": "synthesized accessor claims require semantic ownership, lowering helper selection, and runtime-backed execution; storage-global fallback claims remain rejection evidence",
+      "support_boundary": "synthesized accessor claims require semantic ownership, lowering helper selection, and runtime-backed execution; storage-global retired route claims remain rejection evidence",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_synthesized_accessor_runtime.py",
         "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "runtime_corrective_executable_proof_owner": {
@@ -154,7 +154,7 @@
         "scripts/check_runtime_corrective_closeout_gate.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     }
   },

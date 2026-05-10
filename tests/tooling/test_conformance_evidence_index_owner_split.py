@@ -68,7 +68,7 @@ def test_manifest_inference_stays_isolated_from_payload_grouping() -> None:
         infer_profile_release(
             rel_path="reports/conformance/bundles/runtime-core-2026Q1.example.json",
             payload=payload,
-            release_fallback=None,
+            release_retired_route=None,
             strict_generated_at=True,
         )
     )
@@ -87,7 +87,7 @@ def test_strict_generated_at_failure_is_owned_by_manifest_inference() -> None:
         infer_profile_release(
             rel_path="reports/conformance/bad.json",
             payload={"generated_at": "2026-05-09 12:34:56"},
-            release_fallback="v0.11",
+            release_retired_route="v0.11",
             strict_generated_at=True,
         )
 

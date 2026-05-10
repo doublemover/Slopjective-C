@@ -138,7 +138,7 @@
     // runtime-probe-backed property evidence.
     const objc3c::support::Objc3PropertyOwnershipProfileKind
         ownership_profile_kind =
-            objc3c::support::ApplyPropertyOwnershipProfileFallback(
+            objc3c::support::ApplyPropertyOwnershipProfileRetiredRoute(
                 info,
                 info.is_weak || property_has_attribute_named("weak"),
                 info.is_strong || property_has_attribute_named("strong"),

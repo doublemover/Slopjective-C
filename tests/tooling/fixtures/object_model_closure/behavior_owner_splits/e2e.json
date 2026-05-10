@@ -19,5 +19,5 @@
     "public_command_surfaces:test:objc3c:runnable-storage-reflection"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "evidence-log public command success, workflow-label-only acceptance, generated-evidence-log support, generated-only support, milestone-local parallel acceptance scaffolding, old-mode commands, shim workflows, fallback workflows, and public ABI widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "evidence-log public command success, workflow-label-only acceptance, generated-evidence-log support, generated-only support, milestone-local parallel acceptance scaffolding, old-mode commands, gate workflows, retired route workflows, and public ABI widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

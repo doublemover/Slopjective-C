@@ -16,5 +16,5 @@
     "positive/message_send_nil_bound_identifier_keyword_elision.meta.json"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime-dispatch fallback lowering, non-fast-path labels, unresolved-symbol success claims, and sidecar-only lowering support remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime-dispatch retired route lowering, non-fast-path labels, unresolved-symbol success claims, and sidecar-only lowering support remain strict-error, canonical rejection, or provenance-only evidence"
 }

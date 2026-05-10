@@ -13,5 +13,5 @@
     "source_paths:tests/tooling/fixtures/external_validation/quarantine_manifest.json"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "compatibility semantic summaries, shim-positive claims, fallback semantic summaries, old-mode semantic claims, unsupported semantic rows, quarantined external evidence, blocked evidence promotion, scorecard-only semantic readiness, badge-only semantic readiness, and provisional public language remain canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "compatibility semantic summaries, gate-positive claims, retired route semantic summaries, old-mode semantic claims, unsupported semantic rows, quarantined external evidence, blocked evidence promotion, scorecard-only semantic readiness, badge-only semantic readiness, and provisional public language remain canonical rejection, strict-error, or provenance-only evidence"
 }

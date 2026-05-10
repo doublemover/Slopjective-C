@@ -194,7 +194,7 @@
       "local-only-performance-evidence",
       "evidence-log-performance-evidence",
       "unsupported-benchmark-claim",
-      "compatibility-fallback-performance-claim",
+      "compatibility-retired-route-performance-claim",
       "wrapper-only-action-surface"
     ],
     "required_public_claim_inputs": [
@@ -210,7 +210,7 @@
     "no local-only performance evidence",
     "no evidence-log performance evidence",
     "no unsupported benchmark claims",
-    "no compatibility or fallback performance claim",
+    "no compatibility or retired route performance claim",
     "no wrapper-only action surface"
   ]
 }

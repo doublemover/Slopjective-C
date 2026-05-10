@@ -40,8 +40,8 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
     assert matrix["source_of_truth"] == "tests/native"
     for token in (
         "old-mode",
-        "shim",
-        "fallback",
+        "gate",
+        "retired-route",
         "compatibility",
         "migration-lane",
         "unsupported-feature",
@@ -62,9 +62,9 @@ def test_retired_surface_matrix_entries_are_strict_native_fixtures() -> None:
     assert seen_surfaces == {
         "legacy-literal-aliases",
         "removed-compatibility-mode-flag",
-        "removed-parser-fallback-flag",
-        "removed-compatibility-shim-gate",
-        "removed-runtime-dispatch-fallback-flag",
+        "removed-parser-retired-route-flag",
+        "removed-compatibility-gate",
+        "removed-runtime-dispatch-retired-route-flag",
         "non-nil-runtime-dispatch-linkage",
         "unknown-receiver-runtime-dispatch",
         "negative-execution-runtime-dispatch",
@@ -195,7 +195,7 @@ def test_tooling_positive_fixture_names_do_not_claim_retired_surfaces() -> None:
         "legacy",
         "old_mode",
         "old-mode",
-        "shim",
+        "gate",
         "compat",
         "compatibility",
         "migration",

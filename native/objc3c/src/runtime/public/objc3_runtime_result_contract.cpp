@@ -17,7 +17,7 @@ objc3_runtime_dispatch_i32_result MakeRuntimeDispatchI32Result(
   result.diagnostic_message = diagnostic.message;
   result.diagnostic_owner_model = RuntimeResultDiagnosticOwnerModel();
   result.fail_closed_ownership_model = RuntimeResultFailClosedOwnershipModel();
-  result.fallback_path_allowed = RuntimeResultFallbackPathAllowed();
+  result.retired_route_path_allowed = RuntimeResultRetiredRoutePathAllowed();
   return result;
 }
 

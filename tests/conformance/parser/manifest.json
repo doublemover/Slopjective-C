@@ -34,8 +34,8 @@
       ]
     },
     {
-      "name": "hard_cutover_retired_mode_and_parser_fallback_rejections",
-      "feature": "retired mode spellings and parser fallback toggles are canonical parser rejections",
+      "name": "hard_cutover_retired_mode_and_parser_retired_route_rejections",
+      "feature": "retired mode spellings and parser retired route toggles are canonical parser rejections",
       "files": [
         "HC-LEGACY-01.json",
         "HC-LEGACY-02.json"

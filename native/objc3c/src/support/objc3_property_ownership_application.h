@@ -5,7 +5,7 @@
 namespace objc3c::support {
 
 template <typename PropertyProfileLike>
-inline Objc3PropertyOwnershipProfileKind ApplyPropertyOwnershipProfileFallback(
+inline Objc3PropertyOwnershipProfileKind ApplyPropertyOwnershipProfileRetiredRoute(
     PropertyProfileLike &profile,
     bool has_weak_ownership,
     bool has_strong_ownership,
@@ -18,7 +18,7 @@ inline Objc3PropertyOwnershipProfileKind ApplyPropertyOwnershipProfileFallback(
 }
 
 template <typename PropertyProfileLike>
-inline Objc3PropertyOwnershipProfileKind ApplyPropertyOwnershipProfileFallback(
+inline Objc3PropertyOwnershipProfileKind ApplyPropertyOwnershipProfileRetiredRoute(
     PropertyProfileLike &profile,
     bool include_retain_profile) {
   return ApplyPropertyOwnershipProfile(profile, include_retain_profile);

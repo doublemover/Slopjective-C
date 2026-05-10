@@ -51,8 +51,8 @@
     "required_source_stamp:package_manifest_sha256",
     "required_source_stamp:repo_superclean_surface_sha256",
     "required_source_stamp:release_evidence_index_sha256",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -60,5 +60,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/release_foundation",
-  "retired_surface_rule": "missing package manifests, missing payload fields, missing payload prefixes, missing schemas, missing source stamps, dirty publication state, manual digest lists, hand-written attestations, manual payload lists, tmp-as-source claims, evidence-log publication, evidence wider than payload, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing package manifests, missing payload fields, missing payload prefixes, missing schemas, missing source stamps, dirty publication state, manual digest lists, hand-written attestations, manual payload lists, tmp-as-source claims, evidence-log publication, evidence wider than payload, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

@@ -150,7 +150,7 @@ def build_navigation_payload(source_display: str, manifest_path_text: str | None
         "symbol_count": len(symbols),
         "supported_symbol_kinds": sorted({symbol["kind"] for symbol in symbols}),
         "symbols": symbols,
-        "fallback_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
+        "retired_route_reason": "" if manifest_path_text else "compile produced no manifest-backed declaration surface",
     }
 
 
@@ -181,7 +181,7 @@ def build_debug_payload(
         "source_map_supported": False,
         "source_map_model": "declaration-coordinate-only",
         "statement_level_stepping": False,
-        "stepping_fallback_reason": "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
+        "stepping_retired_route_reason": "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
         "object_artifact_present": bool(object_path_text),
         "object_path": object_path_text,
         "declaration_breakpoint_anchor_count": len(declaration_breakpoints),
@@ -190,7 +190,7 @@ def build_debug_payload(
         "object_symbol_inventory_command": object_symbols,
         "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
         "artifact_inspection_ready": bool(object_path_text and object_symbols),
-        "fallback_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
+        "retired_route_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
     }
 
 

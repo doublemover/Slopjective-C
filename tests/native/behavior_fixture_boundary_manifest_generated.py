@@ -51,8 +51,8 @@ def test_generated_manifest_cannot_reference_native_behavior_or_retired_support(
         "old-mode",
         "compatibility",
         "migration",
-        "fallback",
-        "shim",
+        "retired-route",
+        "gate",
         "runtime_dispatch",
         "runtime-dispatch",
     )

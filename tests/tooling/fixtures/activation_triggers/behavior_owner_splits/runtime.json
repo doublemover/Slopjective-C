@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime activation, compatibility runtime activation, shim runtime activation, fallback runtime activation, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, dispatch-label-only runtime claims, and activation queue-state rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime activation, compatibility runtime activation, gate runtime activation, retired route runtime activation, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, dispatch-label-only runtime claims, and activation queue-state rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

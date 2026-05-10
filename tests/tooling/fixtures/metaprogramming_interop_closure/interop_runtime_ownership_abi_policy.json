@@ -11,7 +11,7 @@
     "support_authority": "mixed-image and C/C++/Swift compatibility rows, interop calls, FFI metadata, bridge payloads, and closure/error composition rows are narrow packaged-proof provenance unless parser, sema, lowering, IR, runtime, and e2e owners claim behavior",
     "positive_support_from_label": false,
     "positive_support_from_metadata": false,
-    "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported foreign loader topology, public package-loader ABI widening, FFI-metadata-only, closure-error-summary-only, and broader cross-language semantics map to canonical_rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "compatibility, gate, retired route, old-mode, unsupported foreign loader topology, public package-loader ABI widening, FFI-metadata-only, closure-error-summary-only, and broader cross-language semantics map to canonical_rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "canonical_surfaces": [
     "runtime_cross_module_package_interop_source_surface",

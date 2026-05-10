@@ -15,7 +15,7 @@ inline bool Objc3FrontendDiagnosticStageSliceIsValid(
              objc3c::contracts::kObjc3FrontendDiagnosticsBusContract) &&
          slice.diagnostics != nullptr &&
          slice.owner_contract_id == kObjc3DiagnosticOwnerContractId &&
-         slice.owner_model == kObjc3DiagnosticNoFallbackOwnerModel &&
-         !slice.fallback_allowed && !slice.compatibility_shim_allowed &&
+         slice.owner_model == kObjc3DiagnosticNoRetiredRouteOwnerModel &&
+         !slice.retired_route_allowed && !slice.compatibility_gate_allowed &&
          !slice.recovery_counts_as_success;
 }

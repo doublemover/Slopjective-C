@@ -95,8 +95,8 @@
     "*wrapper_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*foreign-runtime*",
     "*async-or-interop-overclaim*",
@@ -105,5 +105,5 @@
     "*public-runtime-abi-widening*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "error runtime provenance never defines positive parser, sema, lowering, IR, runtime, e2e, diagnostics, recovery, result-bridging, runtime-import, runtime-preservation, runtime-library, acceptance, or package behavior; owner contracts, semantic profiles, diagnostics/recovery profile rows, bridge compatibility rows, helper ABI snapshots, generated reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, result bridge metadata, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, evidence-log rows, migration-only rows, wrapper-only rows, shim, fallback, old-mode, compatibility, foreign-runtime, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "error runtime provenance never defines positive parser, sema, lowering, IR, runtime, e2e, diagnostics, recovery, result-bridging, runtime-import, runtime-preservation, runtime-library, acceptance, or package behavior; owner contracts, semantic profiles, diagnostics/recovery profile rows, bridge compatibility rows, helper ABI snapshots, generated reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, result bridge metadata, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, evidence-log rows, migration-only rows, wrapper-only rows, gate, retired route, old-mode, compatibility, foreign-runtime, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

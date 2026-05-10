@@ -74,10 +74,10 @@
     "*wrapper-only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, C API, or performance behavior; benchmark rows, timing rows, raw samples, report roots, artifact roots, normalized values, package staging, machine profiles, tool versions, public command wrappers, comparative baselines, generated reports, cache rows, generated-only rows, evidence-log rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, wrapper-only rows, shim, fallback, old-mode, and compatibility rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "performance provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, dispatch, C API, or performance behavior; benchmark rows, timing rows, raw samples, report roots, artifact roots, normalized values, package staging, machine profiles, tool versions, public command wrappers, comparative baselines, generated reports, cache rows, generated-only rows, evidence-log rows, local-only rows, migration-only rows, cross-machine rows, screenshot-derived rows, hand-normalized rows, wrapper-only rows, gate, retired route, old-mode, and compatibility rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

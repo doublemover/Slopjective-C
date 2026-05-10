@@ -12,7 +12,7 @@ inline Objc3FrontendDiagnosticStageSlice PostPipelineDiagnosticSlice(
       Objc3FrontendDiagnosticsBusContractId(),
       &post_pipeline_diagnostics,
       kObjc3DiagnosticOwnerContractId,
-      kObjc3DiagnosticNoFallbackOwnerModel,
+      kObjc3DiagnosticNoRetiredRouteOwnerModel,
       false,
       false,
       false};

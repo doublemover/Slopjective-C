@@ -1353,7 +1353,7 @@ runtime or in sidecars.
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
-  - `no-storage-global-fallbacks-or-sidecar-body-proof`
+  - `no-storage-global-retired-routes-or-sidecar-body-proof`
 
 This is the authoritative synthesized-accessor body lowering boundary. It
 freezes the fact that missing effective accessors become emitted method bodies

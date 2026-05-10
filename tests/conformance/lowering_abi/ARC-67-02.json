@@ -12,7 +12,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-4-5-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3-3-4"
   ],
-  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\nvoid consumeOwned(__attribute__((ns_consumed)) id value);\n\nid _Nonnull arc67_ownership_hazard(id _Nullable maybeValue,\n                                   id _Nonnull fallback) {\n    id candidate = maybeValue ?? fallback;\n    consumeOwned(candidate);\n    return candidate;\n}\n",
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\nvoid consumeOwned(__attribute__((ns_consumed)) id value);\n\nid _Nonnull arc67_ownership_hazard(id _Nullable maybeValue,\n                                   id _Nonnull retired route) {\n    id candidate = maybeValue ?? retired route;\n    consumeOwned(candidate);\n    return candidate;\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [

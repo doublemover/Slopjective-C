@@ -14,7 +14,7 @@ inline constexpr const char *kObjc3RuntimeRegistrationDescriptorArtifactName =
 inline constexpr const char *kObjc3RuntimeRegistrationManifestArtifactName =
     "module.runtime-registration-manifest.json";
 inline constexpr const char *kObjc3RuntimeRegistrationPublicationOwnerModel =
-    kObjc3LoweringNoFallbackOwnerModel;
+    kObjc3LoweringNoRetiredRouteOwnerModel;
 
 struct Objc3RuntimeRegistrationPublicationContract {
   std::string module_name;

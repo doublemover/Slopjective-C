@@ -45,7 +45,7 @@
     "local-only-performance-evidence",
     "evidence-log-performance-evidence",
     "unsupported-benchmark-claim",
-    "compatibility-fallback-performance-claim",
+    "compatibility-retired-route-performance-claim",
     "wrapper-only-action-surface"
   ],
   "required_public_claim_inputs": [

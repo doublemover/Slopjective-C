@@ -12,8 +12,8 @@ const char *RuntimeResultFailClosedOwnershipModel() {
   return kObjc3RuntimeFailClosedOwnershipModel;
 }
 
-int RuntimeResultFallbackPathAllowed() {
-  return RuntimeFallbackPathsAreAllowed() ? 1 : 0;
+int RuntimeResultRetiredRoutePathAllowed() {
+  return RuntimeRetiredRoutePathsAreAllowed() ? 1 : 0;
 }
 
 }  // namespace objc3c::runtime

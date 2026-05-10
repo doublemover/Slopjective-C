@@ -14,7 +14,7 @@
     "evidence_log_rule": "generated reports, replay packets, manifest entries, generator paths, validation outputs, generated-output-only rows, migration-only rows, and fixture generation metadata are provenance-only until canonical behavior owners claim support",
     "fixture_generation_metadata_rule": "origin, generator, provenance, allowed path roots, hand-edit policy, source-of-truth labels, validation payload ids, replay run labels, and phase-support-authority flags are fixture generation metadata and cannot define behavior",
     "migration_only_rule": "migration-only, generated-output-only, evidence-log, replay-only, validation-packet-only, and generator-output-only rows stay provenance or rejection even when they reference canonical fixture paths",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance, evidence-log, generated-output-only, generator-output-only, migration-only, replay-only, and validation-packet-only claims are strict rejection, canonical rejection, or provenance-only evidence"
+    "retired_surface_rule": "old-mode, gate, retired route, compatibility, unsupported, alternate acceptance, evidence-log, generated-output-only, generator-output-only, migration-only, replay-only, and validation-packet-only claims are strict rejection, canonical rejection, or provenance-only evidence"
   },
   "owner_splits": [
     {

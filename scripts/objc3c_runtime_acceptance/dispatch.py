@@ -48,7 +48,7 @@ def build_property_ivar_accessor_reflection_implementation_surface() -> dict[str
                 "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
             ),
             "fail_closed_model": (
-                "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+                "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis"
             ),
         },
         private_testing_surface_only=False,

@@ -13,13 +13,13 @@
     "canonical_rejection",
     "error_runtime_provenance"
   ],
-  "compatibility_behavior_boundary": "bridge compatibility is a narrowed private-helper/runtime-registration replay contract; wider public ABI, foreign-runtime, fallback, shim, old-mode, generated-only, or evidence-log compatibility claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+  "compatibility_behavior_boundary": "bridge compatibility is a narrowed private-helper/runtime-registration replay contract; wider public ABI, foreign-runtime, retired route, gate, old-mode, generated-only, or evidence-log compatibility claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
   "compatibility_boundary_policy": {
     "primary_axis": "behavior owner before bridge compatibility label, result bridge metadata, runtime-registration replay proof, runtime-import preservation row, private helper snapshot, or foreign-runtime claim",
     "support_authority": "bridged NSError/status and result bridge claims are provenance until sema, runtime, or e2e owners claim the narrowed private-helper and runtime-registration replay behavior",
     "positive_support_from_label": false,
     "positive_support_from_metadata": false,
-    "retired_surface_rule": "foreign-runtime bridge compatibility, compatibility-only rows, result-bridge-metadata-only rows, runtime-import-only rows, shim bridge rows, fallback bridge rows, old-mode bridge rows, evidence-log rows, and public ABI widening rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "foreign-runtime bridge compatibility, compatibility-only rows, result-bridge-metadata-only rows, runtime-import-only rows, gate bridge rows, retired route bridge rows, old-mode bridge rows, evidence-log rows, and public ABI widening rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "canonical_surfaces": [
     "runtime_bridging_filter_unwind_diagnostics_surface",

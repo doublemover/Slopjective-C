@@ -17,5 +17,5 @@
     "upstream_owner_required:tests/native/sema"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode semantic packaging rows, shim semantic packaging rows, fallback semantic packaging rows, compatibility semantic packaging rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and packaging-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode semantic packaging rows, gate semantic packaging rows, retired route semantic packaging rows, compatibility semantic packaging rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and packaging-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

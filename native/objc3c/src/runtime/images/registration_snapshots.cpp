@@ -107,7 +107,7 @@ int CopyRuntimeRegistrationStateForTesting(
       BorrowRuntimeCString(state.fail_closed_ownership_model);
   snapshot->runtime_owner_split_explicit =
       state.runtime_owner_split_explicit ? 1 : 0;
-  snapshot->fallback_path_allowed = state.fallback_path_allowed ? 1 : 0;
+  snapshot->retired_route_path_allowed = state.retired_route_path_allowed ? 1 : 0;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

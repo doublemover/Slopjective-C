@@ -41,5 +41,5 @@
       "expected_diagnostic_code": "O3S213"
     }
   ],
-  "retired_surface_rule": "retired adapter, compatibility, fallback, unsupported-feature, and runtime-dispatch residues are intentionally absent from this split"
+  "retired_surface_rule": "retired adapter, compatibility, retired route, unsupported-feature, and runtime-dispatch residues are intentionally absent from this split"
 }

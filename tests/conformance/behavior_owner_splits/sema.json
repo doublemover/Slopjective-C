@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "sema",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "semantic conformance owns type checking, nullability, generics, effects, ownership, concurrency legality, interop semantic diagnostics, and unsupported feature diagnostics only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
+  "support_boundary": "semantic conformance owns type checking, nullability, generics, effects, ownership, concurrency legality, interop semantic diagnostics, and unsupported feature diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "semantic",
     "diagnostics"
@@ -64,5 +64,5 @@
     }
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "retired adapter feature gates, unsupported runnable claims, semantic shims, semantic fallback gates, old-mode semantic rows, compatibility semantic rows, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, dashboard-only semantic rows, and prose-only semantic rows are semantic rejection, strict-error, absent-support, tracking-only, or provenance-only evidence"
+  "retired_surface_rule": "retired adapter feature gates, unsupported runnable claims, semantic gates, semantic retired route gates, old-mode semantic rows, compatibility semantic rows, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, dashboard-only semantic rows, and prose-only semantic rows are semantic rejection, strict-error, absent-support, tracking-only, or provenance-only evidence"
 }

@@ -58,8 +58,8 @@
       "summary": "The supported closure path keeps reflection and aggregate object-model answers on the private runtime-owned query surface instead of widening the public ABI."
     },
     {
-      "semantic_id": "unresolved-dispatch-miss-fallback-is-outside-supported-closure-claims",
-      "summary": "Deterministic miss fallback remains canonical rejection and strict-error evidence outside the supported full object-model closure claim; it must not be presented as successful realized-method execution."
+      "semantic_id": "unresolved-dispatch-miss-retired-route-is-outside-supported-closure-claims",
+      "summary": "Deterministic miss retired route remains canonical rejection and strict-error evidence outside the supported full object-model closure claim; it must not be presented as successful realized-method execution."
     }
   ],
   "claim_narrowing_constraints": [

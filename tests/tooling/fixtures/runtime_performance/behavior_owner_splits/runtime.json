@@ -22,5 +22,5 @@
     "probe:tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime dispatch fallback, runtime shims, old-mode runtime rows, compatibility runtime rows, unresolved dispatch, alternate runtime acceptance paths, cache-only fast-path claims, timing-only runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-only runtime rows, package-only runtime rows, and counter-only runtime rows remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch retired route, runtime gates, old-mode runtime rows, compatibility runtime rows, unresolved dispatch, alternate runtime acceptance paths, cache-only fast-path claims, timing-only runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-only runtime rows, package-only runtime rows, and counter-only runtime rows remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

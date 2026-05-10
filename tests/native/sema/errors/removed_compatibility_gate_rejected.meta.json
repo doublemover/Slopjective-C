@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "removed_compatibility_shim_gate_rejected.objc3",
+  "fixture": "removed_compatibility_gate_rejected.objc3",
   "origin": "hand-authored",
   "owner_phase": "sema",
   "behavior_family": "errors",
@@ -15,16 +15,16 @@
   },
   "expected": {
     "stage": "compile",
-    "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+    "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
     "required_tokens": [
-      "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
-      "compatibility shim gates are removed"
+      "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "compatibility gates are removed"
     ]
   },
   "execution": {
     "native_compile_args": [
       "-fobjc-version=3",
-      "-fobjc3-compatibility-shims=on",
+      "-fobjc3-compatibility-gates=on",
       "-fsyntax-only"
     ]
   }

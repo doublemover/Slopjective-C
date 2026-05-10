@@ -29,8 +29,8 @@
     "blocking_condition:platform matrix artifact missing source-owned owner policy",
     "blocking_condition:platform matrix artifact missing publication surface",
     "blocking_condition:support matrix schema drifted from source contract",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -38,5 +38,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/platform_hardening",
-  "retired_surface_rule": "unsupported host execution, missing required tools, unsupported channel claims, support tier overclaims, failed package validation, host matrix drift, rollback loss, missing native executable, widened toolchain claims, missing release reports, schema drift, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, tool-probe-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unsupported host execution, missing required tools, unsupported channel claims, support tier overclaims, failed package validation, host matrix drift, rollback loss, missing native executable, widened toolchain claims, missing release reports, schema drift, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, tool-probe-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

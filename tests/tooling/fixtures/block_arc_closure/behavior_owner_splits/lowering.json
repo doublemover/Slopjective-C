@@ -20,5 +20,5 @@
     "implementation_invariants:promotion-runs-copy-helper-once-for-owned-capture-storage"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode ARC lowering, proof-only promotion helper claims, stack-only byref success, missing runtime-registration replay, descriptor-only lowering rows, and lowering evidence-log success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "retired route runtime lowering, compatibility gate lowering, old-mode ARC lowering, proof-only promotion helper claims, stack-only byref success, missing runtime-registration replay, descriptor-only lowering rows, and lowering evidence-log success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

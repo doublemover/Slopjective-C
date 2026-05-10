@@ -19,5 +19,5 @@
     "authoritative_case_ids:executable-throw-catch-cleanup-lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode result-bridge lowering, public ABI widening through helper calls, missing runtime-registration replay, runtime-import-only preservation, and lowering evidence-log success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "retired route runtime lowering, compatibility gate lowering, old-mode result-bridge lowering, public ABI widening through helper calls, missing runtime-registration replay, runtime-import-only preservation, and lowering evidence-log success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

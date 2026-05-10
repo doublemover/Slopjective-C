@@ -19,5 +19,5 @@
     "claim_narrowing_constraints:no-evidence-only-sidecar-ownership-model"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "lowering-owned reinterpretation of capture-family truth, evidence-only sidecar ownership models, source-only ownership truth, compatibility-positive ARC semantics, fallback ARC semantics, old-mode capture claims, and unsupported ownership widening stay diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "lowering-owned reinterpretation of capture-family truth, evidence-only sidecar ownership models, source-only ownership truth, compatibility-positive ARC semantics, retired route ARC semantics, old-mode capture claims, and unsupported ownership widening stay diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

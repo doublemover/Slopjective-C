@@ -13,5 +13,5 @@
     "validation_*/replay_run_2/module.manifest.json"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "dual-run replay determinism, evidence-log rows, generated-only rows, migration-only rows, replay-only rows, validation-packet-only rows, and generated-output-only rows are not compatibility, shim, fallback, or alternate acceptance support"
+  "retired_surface_rule": "dual-run replay determinism, evidence-log rows, generated-only rows, migration-only rows, replay-only rows, validation-packet-only rows, and generated-output-only rows are not compatibility, gate, retired route, or alternate acceptance support"
 }

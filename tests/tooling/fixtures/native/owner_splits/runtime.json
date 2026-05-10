@@ -43,5 +43,5 @@
     "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
     "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3"
   ],
-  "retired_surface_rule": "runtime dispatch fallback and unresolved dispatch symbols are strict errors"
+  "retired_surface_rule": "runtime dispatch retired route and unresolved dispatch symbols are strict errors"
 }

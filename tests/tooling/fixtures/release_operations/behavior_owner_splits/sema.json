@@ -18,5 +18,5 @@
     "upstream_owner_required:tests/native/sema"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode semantic release-operation rows, shim semantic release-operation rows, fallback semantic release-operation rows, compatibility semantic release-operation rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and release-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode semantic release-operation rows, gate semantic release-operation rows, retired route semantic release-operation rows, compatibility semantic release-operation rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and release-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -43,6 +43,6 @@
     "no-proof-from-replay-text-alone",
     "no-proof-from-manifests-without-emitted-object-and-linked-probe",
     "no-milestone-local-proof-theater",
-    "no-claim-that-compatibility-shims-alone-prove-native-output-truth"
+    "no-claim-that-compatibility-gates-alone-prove-native-output-truth"
   ]
 }

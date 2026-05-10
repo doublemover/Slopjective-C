@@ -33,7 +33,7 @@ def assert_performance_owner_contracts_are_shape_valid() -> None:
             "local-only-performance-evidence",
             "evidence-log-performance-evidence",
             "unsupported-benchmark-claim",
-            "compatibility-fallback-performance-claim",
+            "compatibility-retired-route-performance-claim",
             "wrapper-only-action-surface",
         },
     )

@@ -100,13 +100,13 @@
     "*successor_boundary*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*unsupported*",
     "*stale*",
     "*public-runtime-abi-widening*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "concurrency runtime provenance never defines positive parser, sema, lowering, IR, runtime, e2e, task lifecycle, actor isolation, scheduler/executor cancellation, runtime-library, acceptance, cross-module replay, or package behavior; owner contracts, semantic profiles, lowering/runtime ABI rows, executable proof rows, lifecycle/policy rows, generated reports, compile manifests, runtime-registration descriptors, private helper snapshots, probe payload snapshots, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, evidence-log rows, migration-only rows, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, wrapper-only rows, successor-boundary rows, shim, fallback, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "concurrency runtime provenance never defines positive parser, sema, lowering, IR, runtime, e2e, task lifecycle, actor isolation, scheduler/executor cancellation, runtime-library, acceptance, cross-module replay, or package behavior; owner contracts, semantic profiles, lowering/runtime ABI rows, executable proof rows, lifecycle/policy rows, generated reports, compile manifests, runtime-registration descriptors, private helper snapshots, probe payload snapshots, public commands, workflow labels, packaged proof summaries, machine-owned outputs, generated-only rows, evidence-log rows, migration-only rows, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, workflow-label-only rows, wrapper-only rows, successor-boundary rows, gate, retired route, old-mode, compatibility, unsupported, and stale rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

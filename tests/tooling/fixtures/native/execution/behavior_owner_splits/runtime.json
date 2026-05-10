@@ -15,5 +15,5 @@
     "positive/message_send_nonzero_bound_identifier_invalidation_non_fast_path.meta.json"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime dispatch fallback, strict dispatch success promotion, compatibility dispatch, shim dispatch, non-fast-path support labels, and public runtime ABI widening remain strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch retired route, strict dispatch success promotion, compatibility dispatch, gate dispatch, non-fast-path support labels, and public runtime ABI widening remain strict-error, canonical rejection, or provenance-only evidence"
 }

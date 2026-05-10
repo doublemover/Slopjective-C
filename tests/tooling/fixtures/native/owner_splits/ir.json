@@ -35,5 +35,5 @@
     "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3",
     "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
   ],
-  "retired_surface_rule": "runtime helper call residues are strict linkage diagnostics, not fallback support"
+  "retired_surface_rule": "runtime helper call residues are strict linkage diagnostics, not retired route support"
 }

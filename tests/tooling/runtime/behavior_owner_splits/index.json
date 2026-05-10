@@ -10,7 +10,7 @@
     "primary_axis": "behavior phase before runtime probe, helper support test, public ABI snapshot, registration replay packet, generated report, or strict dispatch outcome",
     "positive_rule": "runtime tooling probes can cite canonical behavior only through sema, lowering, IR, runtime, or e2e owners",
     "provenance_rule": "probe output, runtime snapshots, generated reports, helper-only checks, architecture packets, registration replay packets, and public workflow labels are provenance until a phase owner claims behavior",
-    "retired_surface_rule": "fallback dispatch, shim behavior, old-mode behavior, compatibility-positive runtime claims, alternate acceptance paths, retired-source lane names, helper-only success, generated-evidence-log proof, and unsupported dispatch outcomes are canonical rejection, strict-error, or provenance-only evidence"
+    "retired_surface_rule": "retired route dispatch, gate behavior, old-mode behavior, compatibility-positive runtime claims, alternate acceptance paths, retired-source lane names, helper-only success, generated-evidence-log proof, and unsupported dispatch outcomes are canonical rejection, strict-error, or provenance-only evidence"
   },
   "owner_splits": [
     {

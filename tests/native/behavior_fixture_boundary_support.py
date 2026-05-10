@@ -28,8 +28,8 @@ EXPECTED_BOUNDARY_BY_KIND = {
 }
 RETIRED_POSITIVE_SURFACE_TERMS = (
     "old-mode",
-    "shim",
-    "fallback",
+    "gate",
+    "retired-route",
     "compat",
     "migration-lane",
 )
@@ -76,13 +76,13 @@ HARD_CUTOVER_CONTRACTS = {
         "rejection",
         "OBJC3-E-REMOVED-COMPATIBILITY-MODE",
     ),
-    "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3": (
+    "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3": (
         "rejection",
-        "OBJC3-E-REMOVED-FALLBACK-FLAG",
+        "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
     ),
-    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3": (
+    "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3": (
         "negative",
-        "OBJC3-E-REMOVED-COMPATIBILITY-SHIM",
+        "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
     ),
     "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3": (
         "negative",
@@ -96,9 +96,9 @@ HARD_CUTOVER_CONTRACTS = {
         "strict-error",
         "link.unresolved_symbol",
     ),
-    "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3": (
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3": (
         "strict-error",
-        "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
+        "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
     ),
     "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3": (
         "strict-error",

@@ -26,7 +26,7 @@ from conformance_evidence_index.paths import (
 def build_artifact_records(
     *,
     artifact_paths: Sequence[Path],
-    release_fallback: str | None,
+    release_retired_route: str | None,
     strict_generated_at: bool = False,
 ) -> list[ArtifactRecord]:
     records: list[ArtifactRecord] = []
@@ -45,7 +45,7 @@ def build_artifact_records(
         ) = infer_profile_release(
             rel_path=rel_path,
             payload=payload,
-            release_fallback=release_fallback,
+            release_retired_route=release_retired_route,
             strict_generated_at=strict_generated_at,
         )
 

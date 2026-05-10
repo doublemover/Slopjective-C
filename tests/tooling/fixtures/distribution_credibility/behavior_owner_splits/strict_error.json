@@ -48,8 +48,8 @@
     "required_release_manifest_field:sbom_path",
     "required_owner_contract_module:scripts/objc3c_workflow/actions/release_governance_distribution_credibility_owner_contracts.py",
     "artifact_claim_policy:trust_report_boundary=source-schema-dashboard-release-drill-release-evidence-owner-contracts",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -57,5 +57,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/distribution_credibility",
-  "retired_surface_rule": "missing upstream reports, missing release manifest fields, failed trust signals, source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing evidence index, stale inputs promoted to ready, missing owner contract inputs, missing required owner modules, wrapper-only publication, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing upstream reports, missing release manifest fields, failed trust signals, source contract drift, package-channel install failure, rollback proof failure, release-operations proof failure, missing evidence index, stale inputs promoted to ready, missing owner contract inputs, missing required owner modules, wrapper-only publication, tmp-as-source claims, evidence-log publication, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

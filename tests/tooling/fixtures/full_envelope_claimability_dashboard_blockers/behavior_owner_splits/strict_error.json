@@ -50,8 +50,8 @@
     "required_public_summary_field:report_markdown_path",
     "source_owned_decision_field:dashboard_release_blocker_projection",
     "source_owned_decision_field:dashboard_blocks_production_strength_claim",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -59,5 +59,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers",
-  "retired_surface_rule": "missing dashboard projection, missing reports, missing contract ids, missing dashboard fields, missing public summary fields, missing source-owned decisions, performance claim not ready, blocked performance release status, missing public blocker projection, tmp-as-source claims, evidence-log publication, unsupported production strength, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing dashboard projection, missing reports, missing contract ids, missing dashboard fields, missing public summary fields, missing source-owned decisions, performance claim not ready, blocked performance release status, missing public blocker projection, tmp-as-source claims, evidence-log publication, unsupported production strength, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

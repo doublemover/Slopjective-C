@@ -12,7 +12,7 @@ void MarkRejectedRegistrationUnlocked(
     RuntimeState &state, const objc3_runtime_image_descriptor *image,
     int status) {
   state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
-  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.retired_route_path_allowed = RuntimeRetiredRoutePathsAreAllowed();
   state.last_registration_status = status;
   state.last_rejected_module_name =
       image != nullptr && image->module_name != nullptr ? image->module_name : "";
@@ -40,7 +40,7 @@ void ApplyImageWalkRecordUnlocked(RuntimeState &state,
   state.bootstrap_replay_owner = record.bootstrap_replay_owner;
   state.fail_closed_ownership_model = record.fail_closed_ownership_model;
   state.runtime_owner_split_explicit = record.ownership_explicit;
-  state.fallback_path_allowed = record.fallback_path_allowed;
+  state.retired_route_path_allowed = record.retired_route_path_allowed;
   state.walked_image_count = static_cast<std::uint64_t>(
       state.registered_image_metadata_by_identity_key.size());
   state.last_discovery_root_entry_count = record.discovery_root_entry_count;

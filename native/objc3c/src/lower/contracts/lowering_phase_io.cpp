@@ -22,17 +22,17 @@ Objc3LoweringPhaseInput Objc3BuildLoweringPhaseInput(
       Objc3LoweringStrictOwnerModelIsReady(
           input.stage_input_owner,
           input.owner_model,
-          input.strict_no_fallback,
+          input.strict_no_retired_route,
           input.strict_no_compatibility) &&
       Objc3LoweringStrictOwnerModelIsReady(
           input.stage_output_owner,
           input.owner_model,
-          input.strict_no_fallback,
+          input.strict_no_retired_route,
           input.strict_no_compatibility) &&
       Objc3LoweringStrictOwnerModelIsReady(
           input.diagnostic_handoff_owner,
           input.owner_model,
-          input.strict_no_fallback,
+          input.strict_no_retired_route,
           input.strict_no_compatibility);
   return input;
 }
@@ -80,8 +80,8 @@ std::string Objc3LoweringPhaseInputReplayKey(
       << ";stage_output_owner=" << input.stage_output_owner
       << ";diagnostic_handoff_owner=" << input.diagnostic_handoff_owner
       << ";owner_model=" << input.owner_model
-      << ";strict_no_fallback="
-      << (input.strict_no_fallback ? "true" : "false")
+      << ";strict_no_retired_route="
+      << (input.strict_no_retired_route ? "true" : "false")
       << ";strict_no_compatibility="
       << (input.strict_no_compatibility ? "true" : "false");
   return out.str();
@@ -98,8 +98,8 @@ std::string Objc3LoweringPhaseOutputReplayKey(
       << ";stage_output_owner=" << output.stage_output_owner
       << ";diagnostic_handoff_owner=" << output.diagnostic_handoff_owner
       << ";owner_model=" << output.owner_model
-      << ";strict_no_fallback="
-      << (output.strict_no_fallback ? "true" : "false")
+      << ";strict_no_retired_route="
+      << (output.strict_no_retired_route ? "true" : "false")
       << ";strict_no_compatibility="
       << (output.strict_no_compatibility ? "true" : "false");
   for (const Objc3LoweringDiagnostic &diagnostic : output.diagnostics) {

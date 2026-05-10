@@ -10,8 +10,8 @@ bool Objc3SemaDiagnosticsBusHasHardCutoverOwner(
          Objc3SemaOwnerIsExplicit(bus.diagnostic_catalog_owner) &&
          Objc3SemaOwnerIsExplicit(bus.diagnostic_fixit_owner) &&
          Objc3SemaOwnerIsExplicit(bus.diagnostic_recovery_owner) &&
-         bus.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         bus.strict_no_fallback && bus.strict_no_compatibility &&
+         bus.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         bus.strict_no_retired_route && bus.strict_no_compatibility &&
          !bus.recovery_counts_as_success &&
          Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kSemantic);
 }

@@ -23,8 +23,8 @@
       "legacy",
       "old_mode",
       "old-mode",
-      "shim",
-      "fallback",
+      "gate",
+      "retired-route",
       "compatibility",
       "migration"
     ],
@@ -64,7 +64,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
-      "boundary": "retired, unsupported, legacy-looking, shim-looking, and fallback-looking surfaces remain non-positive"
+      "boundary": "retired, unsupported, legacy-looking, gate-looking, and retired-route-looking surfaces remain non-positive"
     }
   ],
   "families": [
@@ -96,7 +96,7 @@
         "tests/tooling/fixtures/native/recovery/positive"
       ],
       "metadata": "lowering source fixtures and accepted-source ABI handoff witnesses",
-      "hard_cutover_rule": "lowering fixtures use canonical ABI handoff only and must not encode alternate shim paths"
+      "hard_cutover_rule": "lowering fixtures use canonical ABI handoff only and must not encode alternate gate paths"
     },
     {
       "family": "ir",
@@ -105,7 +105,7 @@
         "tests/tooling/fixtures/native/recovery/positive"
       ],
       "metadata": "IR expectation files and module/function/metadata emission fixtures",
-      "hard_cutover_rule": "IR expectations are first-class IR evidence and must not be cited as lowering, shim, or fallback support"
+      "hard_cutover_rule": "IR expectations are first-class IR evidence and must not be cited as lowering, gate, or retired route support"
     },
     {
       "family": "artifact_manifest",
@@ -133,7 +133,7 @@
         "tests/tooling/fixtures/native/execution/negative"
       ],
       "metadata": "compile-stage sidecars for source surfaces that are parsed but not runnable in the native hard-cutover surface",
-      "hard_cutover_rule": "throws and ARC ownership qualifier runnable claims are explicit O3S221 rejections, not source-only shims or fallback execution paths"
+      "hard_cutover_rule": "throws and ARC ownership qualifier runnable claims are explicit O3S221 rejections, not source-only gates or retired route execution paths"
     },
     {
       "family": "renamed_positive_claims",
@@ -152,7 +152,7 @@
         "tests/tooling/fixtures/native/parity_baseline"
       ],
       "metadata": "fixture data for command/library parity and comparison baselines",
-      "hard_cutover_rule": "baseline comparison is provenance-only evidence, not interoperability, drop-in compatibility, fallback acceptance, or an alternate success path"
+      "hard_cutover_rule": "baseline comparison is provenance-only evidence, not interoperability, drop-in compatibility, retired route acceptance, or an alternate success path"
     }
   ],
   "owner_splits": [
@@ -193,7 +193,7 @@
             "main_bool_entrypoint.objc3",
             "unary_plus_*.objc3"
           ],
-          "disposition": "canonical lowering or ABI handoff evidence only; no runtime fallback acceptance"
+          "disposition": "canonical lowering or ABI handoff evidence only; no runtime retired route acceptance"
         },
         {
           "owner": "ir",
@@ -272,7 +272,7 @@
           "selectors": [
             "expect_failure.stage=link + link.unresolved_symbol:*"
           ],
-          "disposition": "strict link-error evidence for required runtime symbols; not a fallback path"
+          "disposition": "strict link-error evidence for required runtime symbols; not a retired route path"
         },
         {
           "owner": "runtime",
@@ -289,7 +289,7 @@
             "removed_*",
             "unsupported_feature_claim_*",
             "*compatibility*",
-            "*fallback*"
+            "*retired-route*"
           ],
           "disposition": "retired or unsupported surfaces are non-positive canonical rejection or strict-error contracts"
         }

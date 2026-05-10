@@ -47,7 +47,7 @@ can distinguish source truth from reader-facing summaries.
 Only `implemented` rows with `support_claims` in `objc3c.behavior.*` can become
 public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and `internal`
 rows remain negative, unavailable, schema, workflow, report, or owner truth and
-must not be promoted by aliases, compatibility/fallback wording, direct helper
+must not be promoted by aliases, compatibility/retired-route wording, direct helper
 commands, registry facades, or generated reports.
 
 `evidence_map.json` carries `projection_contract`. That contract makes the

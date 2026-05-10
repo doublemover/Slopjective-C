@@ -17,5 +17,5 @@
     "capability_truth_language:blocked"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "workflow-label-only success, wrapper-only workflow success, evidence-log public readiness, generated-only readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, old-mode commands, shim workflows, fallback workflows, compatibility workflows, and provisional or blocked artifacts promoted as claim-ready are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "workflow-label-only success, wrapper-only workflow success, evidence-log public readiness, generated-only readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, old-mode commands, gate workflows, retired route workflows, compatibility workflows, and provisional or blocked artifacts promoted as claim-ready are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

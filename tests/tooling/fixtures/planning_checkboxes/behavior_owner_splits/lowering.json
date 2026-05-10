@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering planning rows, shim lowering planning rows, fallback lowering planning rows, compatibility lowering planning rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and planning-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering planning rows, gate lowering planning rows, retired route lowering planning rows, compatibility lowering planning rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and planning-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

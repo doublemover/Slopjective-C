@@ -53,8 +53,8 @@
     "environment_drift_trigger:relative_standard_deviation_exceeded",
     "environment_drift_trigger:summary_report_older_than_budget_window",
     "environment_drift_trigger:benchmark_executable_missing",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -64,5 +64,5 @@
     "*wrapper-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/performance_governance",
-  "retired_surface_rule": "missing budget families, missing upstream summaries, failing required statuses, missing machine profiles, environment drift, hard regressions, coverage gaps, expired waiver promotion, waiver field omissions, missing raw samples, silent baseline omission, missing owner ids, missing workflow actions, missing schemas, local-only publication, evidence-log publication, tmp-as-source claims, wrapper-only success, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and local-as-support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing budget families, missing upstream summaries, failing required statuses, missing machine profiles, environment drift, hard regressions, coverage gaps, expired waiver promotion, waiver field omissions, missing raw samples, silent baseline omission, missing owner ids, missing workflow actions, missing schemas, local-only publication, evidence-log publication, tmp-as-source claims, wrapper-only success, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and local-as-support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

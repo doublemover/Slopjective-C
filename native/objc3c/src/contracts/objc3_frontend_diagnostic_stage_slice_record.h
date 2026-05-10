@@ -13,8 +13,8 @@ struct Objc3FrontendDiagnosticStageSlice {
   std::string_view contract_id = Objc3FrontendDiagnosticsBusContractId();
   const std::vector<std::string> *diagnostics = nullptr;
   std::string_view owner_contract_id = kObjc3DiagnosticOwnerContractId;
-  std::string_view owner_model = kObjc3DiagnosticNoFallbackOwnerModel;
-  bool fallback_allowed = false;
-  bool compatibility_shim_allowed = false;
+  std::string_view owner_model = kObjc3DiagnosticNoRetiredRouteOwnerModel;
+  bool retired_route_allowed = false;
+  bool compatibility_gate_allowed = false;
   bool recovery_counts_as_success = false;
 };

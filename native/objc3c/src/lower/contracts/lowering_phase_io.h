@@ -24,9 +24,9 @@ struct Objc3LoweringPhaseInput {
   std::string stage_input_owner = kObjc3TypedSemanticHandoffOwner;
   std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
   std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   bool owner_split_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 
@@ -37,8 +37,8 @@ struct Objc3LoweringPhaseOutput {
   Objc3LoweringIRHandoff lower_to_ir_handoff;
   std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
   std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::string replay_key;
 };

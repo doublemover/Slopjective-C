@@ -6,7 +6,7 @@
     "primary_axis": "behavior phase before stress family name, source-surface row, manifest case id, workflow label, generated artifact, evidence-log row, migration-only row, compatibility row, or retired-surface claim",
     "positive_rule": "stress fixtures can cite canonical Objective-C 3 behavior only through parser, sema, lowering, IR, runtime, or e2e owners; source-surface rows, manifest case ids, workflow labels, replay outputs, and provenance rows are not behavior support by themselves",
     "provenance_rule": "stress source-surface rows, family coverage goals, source paths, manifest rows, case ids, fixture group names, surface contract labels, workflow commands, replay artifacts, generated-only rows, evidence-log rows, and migration-only rows are provenance until a phase owner claims behavior",
-    "retired_surface_rule": "compatibility-looking, fallback-looking, shim-looking, old-mode, migration-only, generated-only, evidence-log, unsupported-feature, and alternate acceptance path stress cases are canonical rejection, strict-error, or provenance-only evidence",
+    "retired_surface_rule": "compatibility-looking, retired-route-looking, gate-looking, old-mode, migration-only, generated-only, evidence-log, unsupported-feature, and alternate acceptance path stress cases are canonical rejection, strict-error, or provenance-only evidence",
     "generated_artifact_rule": "tmp stress artifacts, replay outputs, module.ll outputs, module.manifest.json outputs, generated-only rows, and evidence-log rows are machine-owned evidence and cannot create positive behavior support"
   },
   "owner_splits": [
@@ -43,7 +43,7 @@
     {
       "owner_phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "stress fallback, shim, old-mode, migration, generated-only, evidence-log, compatibility, unsupported, strict-error, and alternate acceptance claims"
+      "boundary": "stress retired route, gate, old-mode, migration, generated-only, evidence-log, compatibility, unsupported, strict-error, and alternate acceptance claims"
     },
     {
       "owner_phase": "stress_fixture_provenance",

@@ -14,8 +14,8 @@ struct Objc3ParserSemaHandoffPublicationEvidenceRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string parser_sema_contract_handoff_owner =
       kObjc3ParserSemaContractHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool conformance_matrix_ready = false;
   bool conformance_corpus_ready = false;
@@ -42,8 +42,8 @@ inline bool IsReadyObjc3ParserSemaHandoffPublicationEvidenceRecord(
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(
              record.parser_sema_contract_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.conformance_matrix_ready && record.conformance_corpus_ready &&
          record.parser_recovery_replay_ready &&
          record.parser_recovery_replay_case_present &&
@@ -68,8 +68,8 @@ struct Objc3ParserSemaHandoffPublicationTransferRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string parser_sema_contract_handoff_owner =
       kObjc3ParserSemaContractHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_transfer_count = 19u;
   std::size_t passed_transfer_count = 0;
@@ -109,8 +109,8 @@ inline bool IsReadyObjc3ParserSemaHandoffPublicationTransferRecord(
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(
              record.parser_sema_contract_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_transfer_count == 19u &&
          record.passed_transfer_count == record.required_transfer_count &&
          record.failed_transfer_count == 0u && record.owner_record_ready &&
@@ -139,8 +139,8 @@ struct Objc3ParserSemaParityPublicationReadinessRecord {
   std::string handoff_publication_transfer_owner =
       kObjc3ParserSemaHandoffPublicationTransferOwner;
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_publication_count = 17u;
   std::size_t passed_publication_count = 0;
@@ -172,8 +172,8 @@ inline bool IsReadyObjc3ParserSemaParityPublicationReadinessRecord(
          Objc3SemaOwnerIsExplicit(
              record.handoff_publication_transfer_owner) &&
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_publication_count == 17u &&
          record.passed_publication_count == record.required_publication_count &&
          record.failed_publication_count == 0u &&

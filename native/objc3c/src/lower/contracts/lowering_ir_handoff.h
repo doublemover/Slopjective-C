@@ -12,7 +12,7 @@ struct Objc3LoweringIRHandoff {
   std::string runtime_dispatch_owner = kObjc3RuntimeDispatchLoweringOwner;
   std::string runtime_dispatch_result_owner =
       kObjc3IRRuntimeDispatchResultOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string runtime_dispatch_symbol =
       kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol;
   std::size_t runtime_dispatch_arg_slots = kObjc3RuntimeDispatchDefaultArgs;
@@ -26,7 +26,7 @@ struct Objc3LoweringIRHandoff {
   bool fixed_runtime_dispatch_slots = false;
   bool requested_artifact_paths_owned = false;
   bool phase_handoff_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool ready = false;
   std::string failure_reason;

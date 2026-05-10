@@ -34,7 +34,7 @@ def test_canonical_fixture_manifest_matches_native_behavior_catalog() -> None:
         "positive fixtures cover canonical behavior only"
     )
     assert canonical_boundary["retired_surface_policy"] == (
-        "old-mode, shim, fallback, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata"
+        "old-mode, gate, retired route, compatibility, migration-lane, unsupported feature, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata"
     )
     assert canonical_boundary["boundary_contract_index"] == (
         "tests/conformance/hard_cutover_fixture_boundary_contracts.json"

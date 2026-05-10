@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/negative/*.objc3"
   ],
-  "support_boundary": "canonical rejection owns recovery negative fixtures as fail-closed evidence: lexer/parser malformed source, semantic type and flow failures, unsupported syntax or types, conservative return/control-flow rejection, duplicate declarations, invalid aliases, protocol/generic/nullability conflicts, pure/extern violations, runtime-dispatch residues, and any row that looks like support but is generated-only, evidence-log, migration-only, old-mode, shim, fallback, compatibility, wrapper-only, runner-only, e2e-only, or directory-label-only.",
+  "support_boundary": "canonical rejection owns recovery negative fixtures as fail-closed evidence: lexer/parser malformed source, semantic type and flow failures, unsupported syntax or types, conservative return/control-flow rejection, duplicate declarations, invalid aliases, protocol/generic/nullability conflicts, pure/extern violations, runtime-dispatch residues, and any row that looks like support but is generated-only, evidence-log, migration-only, old-mode, gate, retired route, compatibility, wrapper-only, runner-only, e2e-only, or directory-label-only.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -15,8 +15,8 @@
     "diagnostic_code:O3S*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*legacy*",
@@ -39,5 +39,5 @@
     "*alternate_acceptance*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, wrapper-only, runner-only, e2e-only, directory-label-only, unsupported, and alternate-acceptance recovery negative claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, gate, retired route, compatibility, generated-only, evidence-log, migration-only, wrapper-only, runner-only, e2e-only, directory-label-only, unsupported, and alternate-acceptance recovery negative claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

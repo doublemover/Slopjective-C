@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/developer_tooling/*.json"
   ],
-  "support_boundary": "canonical rejection owns developer-tooling rows that look like support but are unpublished, unsupported, local-only, hosted-without-object-emission, source-map or statement-stepping overclaims, wrapper-only, generated-only, evidence-log, migration-only, old-mode, shim, fallback, compatibility, runner-only, workflow-label-only, or directory-label-only. Negative and gap capabilities remain explicit rejection/absent-support evidence.",
+  "support_boundary": "canonical rejection owns developer-tooling rows that look like support but are unpublished, unsupported, local-only, hosted-without-object-emission, source-map or statement-stepping overclaims, wrapper-only, generated-only, evidence-log, migration-only, old-mode, gate, retired route, compatibility, runner-only, workflow-label-only, or directory-label-only. Negative and gap capabilities remain explicit rejection/absent-support evidence.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -24,8 +24,8 @@
     "unsupported_claim:wrapper-only action capability",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -36,5 +36,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "unpublished capabilities, unsupported hosted LLVM claims, local-only hosted proof, source-map stepping overclaims, wrapper-only action capability, old-mode tooling, shim tooling, fallback tooling, compatibility tooling, migration-only tooling, evidence-log tooling, generated-only tooling, runner-only tooling, and alternate acceptance tooling claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unpublished capabilities, unsupported hosted LLVM claims, local-only hosted proof, source-map stepping overclaims, wrapper-only action capability, old-mode tooling, gate tooling, retired route tooling, compatibility tooling, migration-only tooling, evidence-log tooling, generated-only tooling, runner-only tooling, and alternate acceptance tooling claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -26,5 +26,5 @@
     "*sidecar-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "execution metadata sidecars and README rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, shim, fallback, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "execution metadata sidecars and README rows never define positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, gate, retired route, old-mode, and migration-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

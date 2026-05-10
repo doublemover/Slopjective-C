@@ -20,5 +20,5 @@
     "authoritative_runtime_symbols:objc3_runtime_write_current_property_i32"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "unresolved dispatch, runtime pseudo-success, public ABI widening, unlinked probes, fallback runtime paths, runtime shims, old-mode runtime rows, compatibility runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-only runtime rows, cache-only runtime rows, counter-only runtime rows, sidecar-only proof, replay-text-only proof, and alternate acceptance rows remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unresolved dispatch, runtime pseudo-success, public ABI widening, unlinked probes, retired route runtime paths, runtime gates, old-mode runtime rows, compatibility runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-only runtime rows, cache-only runtime rows, counter-only runtime rows, sidecar-only proof, replay-text-only proof, and alternate acceptance rows remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

@@ -57,10 +57,10 @@ def ensure_case_passed(case_map: dict[str, dict[str, Any]], case_id: str) -> Non
         expect(case.get("passed") is True, f"required concurrency case {case_id} did not pass")
         return
 
-    fallback_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-concurrency-conformance" / "live-case"
-    fallback_root.mkdir(parents=True, exist_ok=True)
+    retired_route_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-concurrency-conformance" / "live-case"
+    retired_route_root.mkdir(parents=True, exist_ok=True)
     clangxx = runtime_acceptance.find_clangxx()
-    with tempfile.TemporaryDirectory(dir=fallback_root) as tmp_dir:
+    with tempfile.TemporaryDirectory(dir=retired_route_root) as tmp_dir:
         run_dir = Path(tmp_dir)
         if case_id == "unified-concurrency-runtime-architecture":
             result = runtime_acceptance.check_unified_concurrency_runtime_architecture_case(run_dir)

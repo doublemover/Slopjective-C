@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering rows, shim lowering rows, fallback lowering rows, compatibility lowering rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and parser-corpus-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering rows, gate lowering rows, retired route lowering rows, compatibility lowering rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and parser-corpus-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

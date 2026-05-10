@@ -35,7 +35,7 @@ inline constexpr const char
         "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts";
 inline constexpr const char
     *kObjc3RuntimePropertyIvarAccessorReflectionImplementationFailClosedModel =
-        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis";
+        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-retired-route-synthesis";
 inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceModel =
     "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion";
 inline constexpr const char *kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId =

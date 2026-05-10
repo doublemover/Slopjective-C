@@ -17,8 +17,8 @@ manifest citable without treating the full manifest as one mixed fixture bucket.
 
 The behavior outcome grouping is extracted into `behavior_splits/*.json` for
 positive, diagnostic-negative, canonical-rejection, and strict-error ownership
-checks. Those indexes are outcome-first: a fixture with compatibility, shim,
-fallback, unsupported-feature, old-mode, or runtime-dispatch residue is owned by
+checks. Those indexes are outcome-first: a fixture with compatibility, gate,
+retired-route, unsupported-feature, old-mode, or runtime-dispatch residue is owned by
 rejection or strict-error metadata even when its path sits beside ordinary
 negative diagnostics.
 
@@ -30,7 +30,7 @@ The phase owner decides the fixture boundary before path convenience does:
 parser owns syntax rejections, semantic owns typed diagnostics, lowering ABI and
 IR own strict lowering/link failures, runtime owns dispatch/status failures, and
 e2e owns execution-boundary confirmation. No canonical entry should describe a
-retired surface as fallback, shim, compatibility, or migration support.
+retired surface as retired route, gate, compatibility, or migration support.
 Mixed fixture directories in `tests/tooling/fixtures/native` are split by the
 same owner phases before they can be cited as canonical coverage. Legacy-looking
 positive residues are canonical-rejection candidates first; they become positive

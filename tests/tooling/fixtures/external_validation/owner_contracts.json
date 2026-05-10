@@ -34,7 +34,7 @@
     "tmp/reports/external-validation/integration-summary.json": "objc3c.external_validation.integration.summary.v1"
   },
   "hard_cutover_guardrails": {
-    "fallback_trust_route_allowed": false,
+    "retired_route_trust_route_allowed": false,
     "local_only_validation_claim_allowed": false,
     "evidence_log_validation_claim_allowed": false,
     "wrapper_only_action_surface_allowed": false,

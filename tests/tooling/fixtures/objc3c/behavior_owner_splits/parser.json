@@ -12,5 +12,5 @@
     "*diagnostics_recovery* parser-origin payload rows"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode spellings, parser fallback names, generated-only parser rows, evidence-log parser rows, migration-only parser rows, replay-only parser rows, and generated-output-only parser rows remain parser rejection provenance, not generated support"
+  "retired_surface_rule": "old-mode spellings, parser retired route names, generated-only parser rows, evidence-log parser rows, migration-only parser rows, replay-only parser rows, and generated-output-only parser rows remain parser rejection provenance, not generated support"
 }

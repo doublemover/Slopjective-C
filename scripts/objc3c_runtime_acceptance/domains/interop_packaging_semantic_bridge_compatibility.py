@@ -62,7 +62,7 @@ def check_c_cpp_swift_bridge_compatibility_semantics_case(
     )
     expect(
         "ffiHeaderBridge" in provider_bridge_header
-        and "BridgeProviderExtrasShim" in provider_bridge_header
+        and "BridgeProviderExtrasGate" in provider_bridge_header
         and "ffiInbound" in provider_bridge_header
         and "BridgeProvider.forward" in provider_bridge_header,
         "expected generated bridge header to preserve the C, C++, and Swift-facing bridge names",

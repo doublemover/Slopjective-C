@@ -13,8 +13,8 @@ struct Objc3SemaDiagnosticsBus {
   std::string diagnostic_catalog_owner = std::string(::kObjc3SemaDiagnosticCatalogOwner);
   std::string diagnostic_fixit_owner = std::string(::kObjc3SemaDiagnosticFixitOwner);
   std::string diagnostic_recovery_owner = std::string(::kObjc3SemaDiagnosticRecoveryOwner);
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool recovery_counts_as_success = false;
 
@@ -51,8 +51,8 @@ struct Objc3SemaDiagnosticsPublicationRecord {
       std::string(::kObjc3SemaDiagnosticFixitOwner);
   std::string diagnostic_recovery_owner =
       std::string(::kObjc3SemaDiagnosticRecoveryOwner);
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool recovery_counts_as_success = false;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
@@ -76,8 +76,8 @@ inline bool IsReadyObjc3SemaDiagnosticsPublicationRecord(
          Objc3SemaOwnerIsExplicit(record.diagnostic_catalog_owner) &&
          Objc3SemaOwnerIsExplicit(record.diagnostic_fixit_owner) &&
          Objc3SemaOwnerIsExplicit(record.diagnostic_recovery_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          !record.recovery_counts_as_success &&
          record.diagnostics_total == record.diagnostics_after_pass.back() &&
          record.diagnostics_after_pass_monotonic &&
@@ -100,7 +100,7 @@ BuildObjc3SemaDiagnosticsPublicationRecord(
   record.diagnostic_fixit_owner = pass_flow_summary.diagnostic_fixit_owner;
   record.diagnostic_recovery_owner = pass_flow_summary.diagnostic_recovery_owner;
   record.owner_model = pass_flow_summary.owner_model;
-  record.strict_no_fallback = pass_flow_summary.strict_no_fallback;
+  record.strict_no_retired_route = pass_flow_summary.strict_no_retired_route;
   record.strict_no_compatibility = pass_flow_summary.strict_no_compatibility;
   record.recovery_counts_as_success =
       pass_flow_summary.recovery_counts_as_success;
@@ -127,8 +127,8 @@ BuildObjc3SemaDiagnosticsPublicationRecord(
       Objc3SemaOwnerIsExplicit(record.diagnostic_catalog_owner) &&
       Objc3SemaOwnerIsExplicit(record.diagnostic_fixit_owner) &&
       Objc3SemaOwnerIsExplicit(record.diagnostic_recovery_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       !record.recovery_counts_as_success &&
       record.diagnostics_total == record.diagnostics_after_pass.back() &&
       record.diagnostics_after_pass_monotonic &&
@@ -149,8 +149,8 @@ struct Objc3SemaPassFlowRecoveryRecord {
   std::string diagnostic_handoff_owner = kObjc3SemaDiagnosticHandoffOwner;
   std::string diagnostics_publication_owner =
       kObjc3SemaDiagnosticsPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool recovery_counts_as_success = false;
   bool parser_recovery_replay_ready = false;
@@ -173,8 +173,8 @@ inline bool IsReadyObjc3SemaPassFlowRecoveryRecord(
              record.parser_sema_contract_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          !record.recovery_counts_as_success &&
          record.parser_recovery_replay_ready &&
          record.parser_recovery_replay_case_present &&
@@ -195,7 +195,7 @@ BuildObjc3SemaPassFlowRecoveryRecord(
   record.stage_input_owner = pass_flow_summary.stage_input_owner;
   record.diagnostic_handoff_owner = pass_flow_summary.diagnostic_handoff_owner;
   record.owner_model = pass_flow_summary.owner_model;
-  record.strict_no_fallback = pass_flow_summary.strict_no_fallback;
+  record.strict_no_retired_route = pass_flow_summary.strict_no_retired_route;
   record.strict_no_compatibility = pass_flow_summary.strict_no_compatibility;
   record.recovery_counts_as_success =
       pass_flow_summary.recovery_counts_as_success;
@@ -222,8 +222,8 @@ BuildObjc3SemaPassFlowRecoveryRecord(
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.diagnostic_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.diagnostics_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       !record.recovery_counts_as_success &&
       record.parser_recovery_replay_ready &&
       record.parser_recovery_replay_case_present &&

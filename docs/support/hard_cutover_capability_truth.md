@@ -24,7 +24,7 @@ that is absent from the authoritative data.
 Claim rule: only `implemented` rows with `support_claims` in
 `objc3c.behavior.*` are public Objective-C 3.0 behavior claims. Rejected,
 reserved, and internal rows are negative, unavailable, schema, workflow, report,
-or owner truth only; compatibility/fallback wording and aliases cannot fill in a
+or owner truth only; compatibility/retired-route wording and aliases cannot fill in a
 missing support claim.
 
 Issue closeout payloads are support-boundary evidence only when they point back

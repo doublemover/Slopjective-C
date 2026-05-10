@@ -9,7 +9,7 @@
     "stage_owner": "native.frontend.parser.diagnostic-stage",
     "fixit_owner": "native.frontend.parser.diagnostic-fixit",
     "recovery_owner": "native.frontend.parser.diagnostic-recovery",
-    "owner_model": "strict-hard-cutover-no-fallback-no-compatibility-shim",
+    "owner_model": "strict-hard-cutover-no-retired-route-no-compatibility-gate",
     "recovery_counts_as_success": false
   },
   "behavior_family": "negative",
@@ -21,8 +21,8 @@
     "canonical_behavior_source": true,
     "behavior_contract": "canonical-rejection",
     "retired_positive_surface": true,
-    "fallback_allowed": false,
-    "shim_allowed": false
+    "retired_route_allowed": false,
+    "gate_allowed": false
   },
   "expected": {
     "stage": "compile",

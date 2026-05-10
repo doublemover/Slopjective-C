@@ -9,7 +9,7 @@ struct Objc3TypedSemaLoweringHandoffContract {
   std::string typed_semantic_handoff_owner = kObjc3TypedSemanticHandoffOwner;
   std::string lowering_consumer_owner =
       kObjc3LoweringSemanticBoundaryConsumerOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::size_t global_type_entries = 0;
   std::size_t function_type_entries = 0;
   std::size_t function_param_slots = 0;
@@ -23,7 +23,7 @@ struct Objc3TypedSemaLoweringHandoffContract {
   bool callable_surfaces_typed = false;
   bool runtime_metadata_ready = false;
   bool owner_contract_recorded = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool deterministic = false;
   std::string replay_key;
@@ -55,8 +55,8 @@ inline std::string BuildObjc3TypedSemaLoweringHandoffReplayKey(
          contract.typed_semantic_handoff_owner +
          ";lowering_consumer_owner=" + contract.lowering_consumer_owner +
          ";owner_model=" + contract.owner_model +
-         ";strict_no_fallback=" +
-         (contract.strict_no_fallback ? "true" : "false") +
+         ";strict_no_retired_route=" +
+         (contract.strict_no_retired_route ? "true" : "false") +
          ";strict_no_compatibility=" +
          (contract.strict_no_compatibility ? "true" : "false");
 }
@@ -71,12 +71,12 @@ inline bool IsReadyObjc3TypedSemaLoweringHandoffContract(
          Objc3LoweringStrictOwnerModelIsReady(
              contract.typed_semantic_handoff_owner,
              contract.owner_model,
-             contract.strict_no_fallback,
+             contract.strict_no_retired_route,
              contract.strict_no_compatibility) &&
          Objc3LoweringStrictOwnerModelIsReady(
              contract.lowering_consumer_owner,
              contract.owner_model,
-             contract.strict_no_fallback,
+             contract.strict_no_retired_route,
              contract.strict_no_compatibility) &&
          contract.callable_type_contract_violations == 0u &&
          contract.deterministic && !contract.replay_key.empty();

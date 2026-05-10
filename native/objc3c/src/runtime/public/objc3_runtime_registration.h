@@ -39,7 +39,7 @@ typedef struct objc3_runtime_registration_state_snapshot {
   const char *public_dispatch_diagnostics_owner;
   const char *fail_closed_ownership_model;
   int runtime_owner_split_explicit;
-  int fallback_path_allowed;
+  int retired_route_path_allowed;
 } objc3_runtime_registration_state_snapshot;
 
 #ifdef __cplusplus

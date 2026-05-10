@@ -6,7 +6,7 @@
     "support_authority": false,
     "primary_axis": "provenance artifact before behavior support, evidence-log row, generated-only row, migration-only row, cache proof, runner proof, docs output, command-surface output, or package artifact",
     "generated_rule": "tmp reports, perf summaries, command surfaces, docs outputs, runnable packages, generated-only rows, evidence-log rows, and migration-only rows are generated/provenance-only evidence",
-    "retired_surface_rule": "cache, macro-host, runner, docs, command-surface, package, timing, or report artifacts that mention fallback, shim, compatibility, old-mode, unsupported, recovery-positive, generated-only, evidence-log, migration-only, or alternate acceptance semantics map to canonical_rejection or compiler_throughput_provenance"
+    "retired_surface_rule": "cache, macro-host, runner, docs, command-surface, package, timing, or report artifacts that mention retired route, gate, compatibility, old-mode, unsupported, recovery-positive, generated-only, evidence-log, migration-only, or alternate acceptance semantics map to canonical_rejection or compiler_throughput_provenance"
   },
   "benchmark_script": "scripts/check_objc3c_native_perf_budget.ps1",
   "summary_contract_id": "objc3c.compiler.throughput.summary.v1",

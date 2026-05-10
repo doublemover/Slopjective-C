@@ -12,12 +12,12 @@
     "tests/tooling/fixtures/bootstrap_readiness/*/expected_stderr.txt"
   ],
   "split_policy": {
-    "primary_axis": "tooling/e2e bootstrap readiness behavior before fixture directory label, JSON snapshot, expected report, legacy blocker payload, malformed JSON, hard-fail row, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "primary_axis": "tooling/e2e bootstrap readiness behavior before fixture directory label, JSON snapshot, expected report, legacy blocker payload, malformed JSON, hard-fail row, old-mode label, gate label, retired route label, compatibility label, or migration label",
     "positive_rule": "bootstrap readiness positives are limited to hand-authored readiness scenarios owned by the e2e/tooling owner; parser, sema, lowering, IR, and runtime phases get no positive compiler behavior from this fixture family",
-    "canonical_rejection_rule": "legacy blocker array payloads, compatibility-shaped blocker rows, old-mode readiness rows, shim/fallback rows, generated-only rows, evidence-log rows, migration-only rows, wrapper-only rows, and directory-label-only claims are non-positive rejection or provenance evidence",
+    "canonical_rejection_rule": "legacy blocker array payloads, compatibility-shaped blocker rows, old-mode readiness rows, gate/retired-route rows, generated-only rows, evidence-log rows, migration-only rows, wrapper-only rows, and directory-label-only claims are non-positive rejection or provenance evidence",
     "strict_error_rule": "malformed JSON and hard_fail_* open-blocker metadata scenarios own fail-closed strict errors and cannot be cited as positive readiness support",
     "provenance_rule": "issues, milestones, catalog, open blockers, expected JSON, expected markdown, expected stderr, and expected exit-code files are fixture provenance unless the e2e/tooling owner claims the scenario boundary",
-    "retired_surface_rule": "old-mode bootstrap, compatibility bootstrap, shim bootstrap, fallback bootstrap, legacy blocker payload support, generated-only bootstrap, evidence-log bootstrap, migration-only bootstrap, wrapper-only bootstrap, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode bootstrap, compatibility bootstrap, gate bootstrap, retired route bootstrap, legacy blocker payload support, generated-only bootstrap, evidence-log bootstrap, migration-only bootstrap, wrapper-only bootstrap, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "owner_splits": [
     {

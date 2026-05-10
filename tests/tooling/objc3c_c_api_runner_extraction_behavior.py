@@ -12,7 +12,7 @@ from objc3c_c_api_runner_extraction_assertions import (
 )
 
 
-def assert_c_shim_compile_path(source: str) -> None:
+def assert_c_gate_compile_path(source: str) -> None:
     assert_source_contains(
         source,
         [

@@ -17,5 +17,5 @@
     "required_ll_snippets:call i32 @objc3_runtime_read_current_property_i32()"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime dispatch fallback lowering, direct-dispatch alternate entrypoints, transitional lowering residue, storage fallback claims, shim lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, runner-only lowering rows, sidecar-only lowering proof, unlinked lowering probes, package-only lowering rows, and catalog-only acceptance rows remain strict-error, rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch retired route lowering, direct-dispatch alternate entrypoints, transitional lowering residue, storage retired route claims, gate lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, runner-only lowering rows, sidecar-only lowering proof, unlinked lowering probes, package-only lowering rows, and catalog-only acceptance rows remain strict-error, rejection, absent-support, or provenance-only evidence"
 }

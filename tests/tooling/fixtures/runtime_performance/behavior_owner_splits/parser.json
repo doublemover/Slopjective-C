@@ -14,5 +14,5 @@
     "fixture:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "parser fallback flags, legacy spellings, old-mode syntax, parser shims, compatibility parser lanes, generated-only parser rows, evidence-log parser rows, migration-only parser rows, timing-only parser rows, cache-only parser rows, runner-only parser rows, package-only parser rows, and counter-only parser rows remain parser rejection, strict-error, or provenance-only evidence and cannot be inferred from runtime timing rows"
+  "retired_surface_rule": "parser retired route flags, legacy spellings, old-mode syntax, parser gates, compatibility parser lanes, generated-only parser rows, evidence-log parser rows, migration-only parser rows, timing-only parser rows, cache-only parser rows, runner-only parser rows, package-only parser rows, and counter-only parser rows remain parser rejection, strict-error, or provenance-only evidence and cannot be inferred from runtime timing rows"
 }

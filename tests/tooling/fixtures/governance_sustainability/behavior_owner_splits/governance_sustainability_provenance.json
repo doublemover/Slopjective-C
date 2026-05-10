@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/governance_sustainability/*.json"
   ],
-  "support_boundary": "governance-sustainability provenance owns JSON owner-contract inventories, budget inventory rows, waiver registry rows, stewardship metadata rows, maintainer review rows, extension review rows, proposal template fields, proposal sample rows, runbook paths, docs paths, schema path labels, script anchors, command strings, public action labels, package bridge labels, owner-section names, publication projections, blocker projections, generated report paths, tmp artifact paths, evidence schema labels, issue label names, successor issue labels, execution-order sample rows, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "governance-sustainability provenance owns JSON owner-contract inventories, budget inventory rows, waiver registry rows, stewardship metadata rows, maintainer review rows, extension review rows, proposal template fields, proposal sample rows, runbook paths, docs paths, schema path labels, script anchors, command strings, public action labels, package bridge labels, owner-section names, publication projections, blocker projections, generated report paths, tmp artifact paths, evidence schema labels, issue label names, successor issue labels, execution-order sample rows, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/governance_sustainability",
@@ -52,11 +52,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "governance sustainability provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release, distribution, platform, package, adoption, security, governance workflow, proposal publication, budget, waiver, stewardship, or extension-review behavior; owner contracts, reports, artifacts, scripts, schemas, docs paths, public actions, workflow labels, proposal samples, labels, successor issues, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, wrapper rows, runner rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "governance sustainability provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release, distribution, platform, package, adoption, security, governance workflow, proposal publication, budget, waiver, stewardship, or extension-review behavior; owner contracts, reports, artifacts, scripts, schemas, docs paths, public actions, workflow labels, proposal samples, labels, successor issues, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, wrapper rows, runner rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

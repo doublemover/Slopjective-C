@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/distribution_credibility/*.json"
   ],
-  "support_boundary": "distribution-credibility provenance owns JSON owner-contract inventories, runbook paths, primary doc paths, release doc paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, machine-owned output roots, report paths, artifact paths, trust signal ids, upstream surface labels, status labels, state labels, incident ids, drill step labels, required report contract ids, release manifest field names, owner contract roles, non-goal labels, degraded condition labels, blocking condition labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "distribution-credibility provenance owns JSON owner-contract inventories, runbook paths, primary doc paths, release doc paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, machine-owned output roots, report paths, artifact paths, trust signal ids, upstream surface labels, status labels, state labels, incident ids, drill step labels, required report contract ids, release manifest field names, owner contract roles, non-goal labels, degraded condition labels, blocking condition labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/distribution_credibility",
@@ -64,11 +64,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "distribution-credibility provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, trust signal, release readiness, operator state, dashboard, trust report, hosted trust service, manual badge, release drill, release operation, package channel, release evidence, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, docs, public actions, signal labels, status labels, state labels, incident labels, drill labels, required report labels, non-goal labels, degraded labels, blocking labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "distribution-credibility provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, trust signal, release readiness, operator state, dashboard, trust report, hosted trust service, manual badge, release drill, release operation, package channel, release evidence, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, docs, public actions, signal labels, status labels, state labels, incident labels, drill labels, required report labels, non-goal labels, degraded labels, blocking labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

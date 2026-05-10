@@ -68,8 +68,8 @@
     "resolver_failure:unstable ordering, missing digest inputs, or unpinned refs fail the lock",
     "resolver_failure:a lock that cannot replay through the objc3c package bridge is unsupported",
     "required_owner_contract_module:scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -77,5 +77,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/package_ecosystem",
-  "retired_surface_rule": "missing package source contracts, absent public workflow actions, generated evidence outside roots, hosted registry claims without local evidence, missing schemas, missing owner contracts, wrapper-only publication, missing provenance, ambiguous identity, unstable lock ordering, public replay failure, missing workspace sources, absent replay paths, disconnected mirrors, network mirror validation, unlocked package identities, hand-authored registry indexes, release/update drift, mirror/local registry drift, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing package source contracts, absent public workflow actions, generated evidence outside roots, hosted registry claims without local evidence, missing schemas, missing owner contracts, wrapper-only publication, missing provenance, ambiguous identity, unstable lock ordering, public replay failure, missing workspace sources, absent replay paths, disconnected mirrors, network mirror validation, unlocked package identities, hand-authored registry indexes, release/update drift, mirror/local registry drift, tmp-as-source claims, evidence-log publication, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

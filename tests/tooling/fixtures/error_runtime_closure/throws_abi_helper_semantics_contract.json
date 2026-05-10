@@ -16,7 +16,7 @@
     "primary_axis": "behavior owner before helper ABI packet, result bridge helper call, cleanup ordering packet, private runtime snapshot, generated report, or public runtime ABI claim",
     "support_authority": "throw/catch helper ABI support requires lowering and runtime owner assignment over canonical fixtures and probes",
     "positive_support_from_snapshot": false,
-    "retired_surface_rule": "helper ABI snapshot-only rows, fallback helper calls, compatibility helper shims, old-mode bridge helpers, public runtime ABI widening, evidence-log helper proof, and result-bridge-metadata-only rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "helper ABI snapshot-only rows, retired route helper calls, compatibility helper gates, old-mode bridge helpers, public runtime ABI widening, evidence-log helper proof, and result-bridge-metadata-only rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [

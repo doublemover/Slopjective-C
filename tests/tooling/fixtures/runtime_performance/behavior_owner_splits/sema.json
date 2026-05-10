@@ -17,5 +17,5 @@
     "measured_fields:ownership_runtime_hook_profile"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "unsupported ownership claims, compatibility shim gates, semantic fallback gates, old-mode semantic rows, semantic recovery positives, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, timing-only semantic rows, cache-only semantic rows, runner-only semantic rows, package-only semantic rows, and counter-only semantic rows stay semantic diagnostics, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "unsupported ownership claims, compatibility gates, semantic retired route gates, old-mode semantic rows, semantic recovery positives, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, timing-only semantic rows, cache-only semantic rows, runner-only semantic rows, package-only semantic rows, and counter-only semantic rows stay semantic diagnostics, canonical rejection, absent-support, or provenance-only evidence"
 }

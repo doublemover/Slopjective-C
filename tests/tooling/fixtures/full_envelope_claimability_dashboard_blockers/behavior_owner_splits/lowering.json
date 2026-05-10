@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering dashboard rows, shim lowering dashboard rows, fallback lowering dashboard rows, compatibility lowering dashboard rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and dashboard-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering dashboard rows, gate lowering dashboard rows, retired route lowering dashboard rows, compatibility lowering dashboard rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and dashboard-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -18,5 +18,5 @@
     "required_step_actions:packaged-execution-replay"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "evidence-log, generated-evidence-log, generated-only, stale-or-missing acceptance, package proof without coupled artifacts, module replay without behavior owners, public workflow wrappers, shim workflows, fallback workflows, and old-mode public commands are e2e provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "evidence-log, generated-evidence-log, generated-only, stale-or-missing acceptance, package proof without coupled artifacts, module replay without behavior owners, public workflow wrappers, gate workflows, retired route workflows, and old-mode public commands are e2e provenance, canonical rejection, strict-error, or absent-support evidence"
 }

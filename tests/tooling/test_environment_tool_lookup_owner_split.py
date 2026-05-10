@@ -8,6 +8,6 @@ from scripts.objc3c_workflow.environment_tools import (
 
 def test_environment_tool_lookup_falls_back_when_missing() -> None:
     assert public_first_available_tool is first_available_tool
-    assert first_available_tool("__objc3c_missing_tool__", fallback="fallback-tool") == (
-        "fallback-tool"
+    assert first_available_tool("__objc3c_missing_tool__", retired route="retired-route-tool") == (
+        "retired-route-tool"
     )

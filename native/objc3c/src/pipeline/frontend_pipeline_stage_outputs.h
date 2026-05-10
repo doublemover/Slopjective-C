@@ -48,7 +48,7 @@ struct LowerStageOutput {
   std::string ir_artifact_owner = kObjc3IRModuleArtifactOwner;
   std::string runtime_dispatch_result_owner =
       kObjc3IRRuntimeDispatchResultOwner;
-  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   Objc3LoweringIRHandoff lower_to_ir_handoff;
   bool ir_emitted = false;
   bool lower_to_ir_handoff_ready = false;
@@ -57,7 +57,7 @@ struct LowerStageOutput {
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
   std::size_t runtime_dispatch_arg_slots = kRuntimeDispatchDefaultArgs;
   std::string selector_global_ordering = "lexicographic";
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 

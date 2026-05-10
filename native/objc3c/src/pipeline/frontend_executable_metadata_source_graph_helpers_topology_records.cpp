@@ -87,7 +87,7 @@ void AddExecutableMetadataPropertyNodes(
     node.effective_setter_available = property.effective_setter_available;
     node.effective_setter_selector = property.effective_setter_selector;
     node.accessor_ownership_profile = property.accessor_ownership_profile;
-    objc3c::support::ApplyPropertyOwnershipProfileFallback(node, false);
+    objc3c::support::ApplyPropertyOwnershipProfileRetiredRoute(node, false);
     objc3c::support::RebuildPropertyAccessorOwnershipProfileIfNeeded(node);
     node.synthesizes_executable_accessors =
         ShouldSynthesizeExecutablePropertyAccessors(

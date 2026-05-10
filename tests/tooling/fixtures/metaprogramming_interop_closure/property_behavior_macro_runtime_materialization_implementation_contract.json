@@ -14,7 +14,7 @@
     "primary_axis": "behavior owner before generated materialization report or synthesized accessor artifact",
     "support_authority": "property-behavior materialization support requires sema, lowering, runtime, or e2e owner assignment over hand-authored fixtures",
     "positive_support_from_report": false,
-    "retired_surface_rule": "generated materialization reports, synthesized-artifact-only rows, module replay rows, storage fallback rows, shim, fallback, old-mode, and unsupported property-behavior rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "generated materialization reports, synthesized-artifact-only rows, module replay rows, storage retired route rows, gate, retired route, old-mode, and unsupported property-behavior rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "authoritative_case_ids": [
     "metaprogramming-derive-property-behavior-semantics",

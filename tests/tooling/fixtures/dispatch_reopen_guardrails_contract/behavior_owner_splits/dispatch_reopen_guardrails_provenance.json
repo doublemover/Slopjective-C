@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/**/*.md"
   ],
-  "support_boundary": "dispatch-reopen guardrails provenance owns markdown fixture files, fixture directory names, scenario labels, batch ids, issue numbers, lane labels, agent ids, owned path labels, command strings, source-of-truth input path labels, dependency ids, runner ids, command ids, snapshot/freshness evidence ids, gate ids, hard/soft class labels, dispatch state labels, commit ids, invalid-encoding labels, drift labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "dispatch-reopen guardrails provenance owns markdown fixture files, fixture directory names, scenario labels, batch ids, issue numbers, lane labels, agent ids, owned path labels, command strings, source-of-truth input path labels, dependency ids, runner ids, command ids, snapshot/freshness evidence ids, gate ids, hard/soft class labels, dispatch state labels, commit ids, invalid-encoding labels, drift labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/dispatch_reopen_guardrails_contract",
@@ -45,11 +45,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "dispatch-reopen provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, dispatch, planning, workflow, validation, gate, lane, reopen, acceptance, or compatibility behavior; markdown files, scenario labels, batch ids, issue labels, lane labels, agent ids, command strings, source path labels, dependency ids, evidence ids, gate ids, state labels, commit ids, invalid-encoding labels, drift labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "dispatch-reopen provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, dispatch, planning, workflow, validation, gate, lane, reopen, acceptance, or compatibility behavior; markdown files, scenario labels, batch ids, issue labels, lane labels, agent ids, command strings, source path labels, dependency ids, evidence ids, gate ids, state labels, commit ids, invalid-encoding labels, drift labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

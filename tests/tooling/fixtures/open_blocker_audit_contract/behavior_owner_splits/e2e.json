@@ -19,5 +19,5 @@
     "expected_contract:extract_open_blockers_snapshot_json.argv"
   ],
   "canonical_anchor": "tests/tooling/fixtures/open_blocker_audit_contract",
-  "retired_surface_rule": "hard-fail drift rows, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode audit rows, shim audit rows, fallback audit rows, compatibility audit rows, migration-only audit rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "hard-fail drift rows, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode audit rows, gate audit rows, retired route audit rows, compatibility audit rows, migration-only audit rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

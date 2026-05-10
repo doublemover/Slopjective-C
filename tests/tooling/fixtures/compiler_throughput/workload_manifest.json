@@ -6,7 +6,7 @@
     "primary_axis": "behavior owner before workload kind, workflow label, cache mode, generated artifact, evidence-log row, migration-only row, package artifact, or runner bucket",
     "support_authority": "workloads are measurement and provenance rows; canonical support must be cited through owner_splits and never through workload names alone",
     "generated_artifact_rule": "docs, command-surface, reports, cache proof, perf summary, runner package, generated-only, evidence-log, and migration-only workloads are generated or provenance-only unless a phase owner claims behavior",
-    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, alternate acceptance, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, generated-only, evidence-log, and migration-only rows map to canonical_rejection or compiler_throughput_provenance"
+    "retired_surface_rule": "retired-route, gate, old-mode, compatibility, unsupported, alternate acceptance, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, generated-only, evidence-log, and migration-only rows map to canonical_rejection or compiler_throughput_provenance"
   },
   "workloads": [
     {
@@ -56,7 +56,7 @@
         "runtime",
         "canonical_rejection"
       ],
-      "support_boundary": "macro-host and import cache invalidation provenance only; stale-cache, fallback, or recovery-positive behavior maps to canonical rejection",
+      "support_boundary": "macro-host and import cache invalidation provenance only; stale-cache, retired route, or recovery-positive behavior maps to canonical rejection",
       "objective": "measure cache reuse and invalidation over a source that already publishes macro-host and import surfaces"
     },
     {
@@ -70,7 +70,7 @@
         "ir",
         "canonical_rejection"
       ],
-      "support_boundary": "runtime-acceptance subsurface only; macro-host cache publication cannot establish fallback or alternate runtime support",
+      "support_boundary": "runtime-acceptance subsurface only; macro-host cache publication cannot establish retired route or alternate runtime support",
       "objective": "keep macro-host cache publication tied to the live runtime-acceptance path"
     },
     {
@@ -106,7 +106,7 @@
         "e2e",
         "canonical_rejection"
       ],
-      "support_boundary": "runner ownership and duplicate-loop evidence only; overlap rows that mention recovery or fallback stay rejection/provenance",
+      "support_boundary": "runner ownership and duplicate-loop evidence only; overlap rows that mention recovery or retired route stay rejection/provenance",
       "objective": "keep heavyweight suite ownership explicit so duplicate recovery-negative loops can be removed"
     }
   ]

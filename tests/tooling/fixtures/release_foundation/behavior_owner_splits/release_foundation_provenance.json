@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/release_foundation/*.json"
   ],
-  "support_boundary": "release-foundation provenance owns JSON owner-contract inventories, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, upstream surface paths, build script labels, machine-owned output roots, artifact class ids, payload family labels, manifest field names, payload prefixes, signing boundary labels, digest field names, source stamp field names, generated artifact paths, tmp report paths, tmp package roots, report contract ids, trusted action labels, trusted implementation anchors, trusted generation mode labels, distribution claim labels, rejected claim labels, manual-only input labels, audited channel labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "release-foundation provenance owns JSON owner-contract inventories, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, upstream surface paths, build script labels, machine-owned output roots, artifact class ids, payload family labels, manifest field names, payload prefixes, signing boundary labels, digest field names, source stamp field names, generated artifact paths, tmp report paths, tmp package roots, report contract ids, trusted action labels, trusted implementation anchors, trusted generation mode labels, distribution claim labels, rejected claim labels, manual-only input labels, audited channel labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/release_foundation",
@@ -52,11 +52,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "release-foundation provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release foundation, distribution, package, provenance, SBOM, attestation, reproducibility, signing, installer, publication, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, public actions, artifact ids, payload labels, digest labels, source stamp labels, rejected claim labels, manual-only labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "release-foundation provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release foundation, distribution, package, provenance, SBOM, attestation, reproducibility, signing, installer, publication, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, public actions, artifact ids, payload labels, digest labels, source stamp labels, rejected claim labels, manual-only labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

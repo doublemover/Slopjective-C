@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/release_operations/upgrade_path_surface.json"
   ],
-  "support_boundary": "canonical rejection owns release-operation rows that look like support but are explicitly out of scope, unsupported, forbidden, evidence-log, wrapper-only, retired-path, alternate-path, manual-only, installer-shaped, package-manager-shaped, signing-service-shaped, cross-host/cross-platform overclaims, hosted-network-updater claims, generated-only, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals and forbidden claims are rejection/absent-support evidence, not positive release-operation truth.",
+  "support_boundary": "canonical rejection owns release-operation rows that look like support but are explicitly out of scope, unsupported, forbidden, evidence-log, wrapper-only, retired-path, alternate-path, manual-only, installer-shaped, package-manager-shaped, signing-service-shaped, cross-host/cross-platform overclaims, hosted-network-updater claims, generated-only, old-mode, gate, retired route, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals and forbidden claims are rejection/absent-support evidence, not positive release-operation truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -39,8 +39,8 @@
     "unsupported_overclaim:network-hosted-updater-support",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -51,5 +51,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "hosted updater claims, package-manager-specific upgrade flows, second payload lineages, retired update adapters, evidence-log support claims, cross-major forward compatibility, indefinite support windows, background auto-update, package-manager parity, manual waiver-only support, best-effort preview support, unsupported installer/package manager/signing/cross-host/network/manual positives, old-mode release-operation rows, shim release-operation rows, fallback release-operation rows, compatibility release-operation rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "hosted updater claims, package-manager-specific upgrade flows, second payload lineages, retired update adapters, evidence-log support claims, cross-major forward compatibility, indefinite support windows, background auto-update, package-manager parity, manual waiver-only support, best-effort preview support, unsupported installer/package manager/signing/cross-host/network/manual positives, old-mode release-operation rows, gate release-operation rows, retired route release-operation rows, compatibility release-operation rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

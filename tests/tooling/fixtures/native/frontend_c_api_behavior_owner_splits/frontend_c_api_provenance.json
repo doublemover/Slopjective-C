@@ -37,10 +37,10 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "frontend C API provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or public capability behavior; generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, header-only, source-snippet-only, and artifact-path-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "frontend C API provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or public capability behavior; generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, header-only, source-snippet-only, and artifact-path-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

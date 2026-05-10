@@ -17,5 +17,5 @@
     "measured_fields:strict_error_first_dispatch_path"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime dispatch fallback lowering, non-canonical receiver dispatch, fallback-like fast-path rows, shim lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, timing-only lowering rows, cache-only lowering rows, runner-only lowering rows, package-only lowering rows, and counter-only lowering rows are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch retired route lowering, non-canonical receiver dispatch, retired-route-like fast-path rows, gate lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, timing-only lowering rows, cache-only lowering rows, runner-only lowering rows, package-only lowering rows, and counter-only lowering rows are strict-error, canonical rejection, or provenance-only evidence"
 }

@@ -18,5 +18,5 @@
     "tests/native/sema/types/typed_i32_bool_flow.objc3"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "compatibility shim gates, unsupported feature claims, unsupported ARC ownership claims, and evidence-log semantic claims remain semantic diagnostics, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "compatibility gates, unsupported feature claims, unsupported ARC ownership claims, and evidence-log semantic claims remain semantic diagnostics, canonical rejection, or provenance-only evidence"
 }

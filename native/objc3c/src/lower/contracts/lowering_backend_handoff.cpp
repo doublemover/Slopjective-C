@@ -50,7 +50,7 @@ Objc3LoweringBackendHandoff Objc3BuildLoweringBackendHandoff(
   handoff.owner_split_explicit = Objc3LoweringStrictOwnerModelIsReady(
       handoff.backend_handoff_owner,
       handoff.backend_handoff_owner_model,
-      handoff.strict_no_fallback,
+      handoff.strict_no_retired_route,
       handoff.strict_no_compatibility);
   handoff.replay_key = Objc3LoweringBackendHandoffReplayKey(handoff);
   return handoff;
@@ -64,7 +64,7 @@ bool Objc3LoweringBackendHandoffIsReady(
          Objc3LoweringStrictOwnerModelIsReady(
              handoff.backend_handoff_owner,
              handoff.backend_handoff_owner_model,
-             handoff.strict_no_fallback,
+             handoff.strict_no_retired_route,
              handoff.strict_no_compatibility);
 }
 
@@ -97,7 +97,7 @@ std::string Objc3LoweringBackendHandoffReplayKey(
       << Objc3LoweringOwnerReplayKey(
              handoff.backend_handoff_owner,
              handoff.backend_handoff_owner_model,
-             handoff.strict_no_fallback,
+             handoff.strict_no_retired_route,
              handoff.strict_no_compatibility);
   return out.str();
 }

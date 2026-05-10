@@ -40,10 +40,10 @@
       ]
     },
     {
-      "name": "hard_cutover_runtime_dispatch_fallback_rejection",
-      "feature": "fallback runtime dispatch ABI claims are strict lowering errors",
+      "name": "hard_cutover_runtime_dispatch_retired_route_rejection",
+      "feature": "retired route runtime dispatch ABI claims are strict lowering errors",
       "files": [
-        "HC-NOSHIM-01.json"
+        "HC-NOGATE-01.json"
       ],
       "hard_cutover": {
         "positive_fixture_policy": "no lowering retired-source lane or runtime ABI alternate acceptance positives",

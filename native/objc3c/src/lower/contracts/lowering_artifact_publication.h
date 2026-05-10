@@ -16,9 +16,9 @@ struct Objc3LoweringArtifactPlan {
   std::string manifest_relative_path;
   std::string runtime_metadata_relative_path;
   std::string publication_owner = kObjc3LoweringArtifactPublicationOwner;
-  std::string publication_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string publication_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   bool publication_owner_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 

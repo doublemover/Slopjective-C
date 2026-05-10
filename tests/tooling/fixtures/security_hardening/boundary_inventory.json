@@ -9,7 +9,7 @@
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "evidence_log_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "generated_report_claims_allowed": false
   },
   "source_owner_contracts": {
@@ -23,7 +23,7 @@
         "scripts/check_security_hardening_response_drill.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
       "local_tabletop_capability_truth_allowed": false,
@@ -35,7 +35,7 @@
       "summary_implementation_anchor": "scripts/build_security_hardening_release_key_policy_summary.py",
       "check_implementation_anchors": [],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
       "local_tabletop_capability_truth_allowed": false,
@@ -55,7 +55,7 @@
         "scripts/check_security_hardening_schema_surface.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
       "local_tabletop_capability_truth_allowed": false,
@@ -71,7 +71,7 @@
         "scripts/check_objc3c_security_hardening_end_to_end.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false,
       "wrapper_only_security_actions_allowed": false,
       "local_tabletop_capability_truth_allowed": false,
@@ -164,7 +164,7 @@
     "no external package-signing trust claim",
     "no evidence-log security proof",
     "no local-only tabletop as capability truth",
-    "no fallback or trust-bypass security claim",
+    "no retired route or trust-bypass security claim",
     "no wrapper-only security action claim"
   ],
   "successor_issues": [

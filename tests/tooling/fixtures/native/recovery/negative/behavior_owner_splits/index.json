@@ -5,12 +5,12 @@
     "tests/tooling/fixtures/native/recovery/negative/*.objc3"
   ],
   "split_policy": {
-    "primary_axis": "diagnostic phase before recovery negative directory label, generated report, evidence-log row, old-mode label, shim label, fallback label, compatibility label, migration label, runner label, or e2e label",
+    "primary_axis": "diagnostic phase before recovery negative directory label, generated report, evidence-log row, old-mode label, gate label, retired route label, compatibility label, migration label, runner label, or e2e label",
     "negative_rule": "recovery negative fixtures are canonical rejection, strict diagnostic, or provenance evidence only; no row in this family defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, or capability support",
     "parser_rule": "lexer/parser diagnostics own O3L* and O3P* rejection fixtures, malformed tokenization, missing punctuation, missing operands, malformed declarations, misplaced qualifiers, invalid literals, unterminated constructs, and draft-syntax parser rejections",
     "sema_rule": "semantic diagnostics own O3S* rejection fixtures, type mismatch, undefined symbols, arity mismatch, unsupported type suffixes, return-path failures, pure/extern semantic violations, generic/protocol/nullability conflicts, conservative switch/loop/condition rejections, and cross-module semantic contracts",
     "lowering_ir_runtime_e2e_rule": "lowering, IR, runtime, and e2e owners may route negative evidence only as fail-closed rejection or strict-error evidence; they do not inherit positive support from rejected source, generated reports, runner-only success, or directory labels",
-    "retired_surface_rule": "old-mode recovery, compatibility recovery, shim recovery, fallback recovery, generated-only recovery, evidence-log recovery, migration-only recovery, wrapper-only recovery, runner-only success, e2e execution-only success, and any generated/report row promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    "retired_surface_rule": "old-mode recovery, compatibility recovery, gate recovery, retired route recovery, generated-only recovery, evidence-log recovery, migration-only recovery, wrapper-only recovery, runner-only success, e2e execution-only success, and any generated/report row promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
   "owner_splits": [
     {

@@ -9,7 +9,7 @@
     "evidence_log_security_proof_allowed": false,
     "generated_report_capability_truth_allowed": false,
     "local_tabletop_capability_truth_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "trust_bypass_claims_allowed": false,
     "wrapper_only_security_actions_allowed": false,
     "security_positive_claim_requires_source_contract": true,
@@ -33,7 +33,7 @@
       ],
       "forbidden_claims": [
         "evidence-log macro trust proof",
-        "fallback macro package trust",
+        "retired route macro package trust",
         "trust bypass for missing provenance",
         "wrapper-only macro security action"
       ]
@@ -56,7 +56,7 @@
         "local-only tabletop as capability truth",
         "evidence-log response readiness proof",
         "unowned disclosure override",
-        "fallback release publication after drill failure"
+        "retired route release publication after drill failure"
       ]
     },
     "runtime_hardening_owner": {
@@ -75,7 +75,7 @@
       ],
       "forbidden_claims": [
         "runtime hardening without runnable evidence",
-        "runtime fallback acceptance",
+        "runtime retired route acceptance",
         "trust bypass for missing runtime case",
         "wrapper-only runtime security action"
       ]
@@ -100,7 +100,7 @@
         "automatic key rotation",
         "hosted revocation",
         "signed-installer trust",
-        "fallback update trust",
+        "retired route update trust",
         "trust bypass for unsigned payload"
       ]
     }

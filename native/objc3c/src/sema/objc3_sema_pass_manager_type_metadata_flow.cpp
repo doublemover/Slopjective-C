@@ -6,7 +6,7 @@ Objc3SemaTypedSemanticHandoffRecord BuildObjc3SemaTypedSemanticHandoffRecord(
   Objc3SemaTypedSemanticHandoffRecord record;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.type_metadata_identity_handoffs_ready =
       surface.deterministic_interface_implementation_handoff &&
@@ -66,8 +66,8 @@ Objc3SemaTypedSemanticHandoffRecord BuildObjc3SemaTypedSemanticHandoffRecord(
           record.typed_semantic_handoff_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.type_metadata_identity_handoffs_ready &&
       record.type_annotation_handoffs_ready &&
       record.module_boundary_handoffs_ready &&
@@ -89,7 +89,7 @@ BuildObjc3SemaAtomicVectorMappingPublicationRecord(
   record.integration_surface_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.atomic_memory_order_mapping = atomic_memory_order_mapping;
   record.deterministic_atomic_memory_order_mapping =
@@ -111,8 +111,8 @@ BuildObjc3SemaAtomicVectorMappingPublicationRecord(
           record.atomic_vector_mapping_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.integration_surface_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.atomic_memory_order_mapping_ready &&
       record.vector_type_lowering_ready && record.mapping_summaries_ready;
   return record;
@@ -126,7 +126,7 @@ BuildObjc3SemaTypeMetadataMappingReadinessRecord(
   record.integration_surface_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.globals_total = surface.globals_total;
   record.functions_total = surface.functions_total;
@@ -172,8 +172,8 @@ BuildObjc3SemaTypeMetadataMappingReadinessRecord(
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
       Objc3SemaOwnerIsExplicit(
           record.atomic_vector_mapping_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.type_metadata_publication_ready &&
       record.type_metadata_handoff_ready && record.cardinality_consistent &&
       record.atomic_memory_order_mapping_ready &&

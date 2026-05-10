@@ -5,13 +5,13 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/positive"
   ],
-  "support_boundary": "canonical rejection owns any recovery positive row that looks like support but is old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate acceptance, runner-only, workflow-label-only, native-.m-as-Objective-C-3 support, dispatch-ir-as-source support, missing upstream phase ownership, or directory-label-only support.",
+  "support_boundary": "canonical rejection owns any recovery positive row that looks like support but is old-mode, gate, retired route, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate acceptance, runner-only, workflow-label-only, native-.m-as-Objective-C-3 support, dispatch-ir-as-source support, missing upstream phase ownership, or directory-label-only support.",
   "phase_support_claim_authority": false,
   "selectors": [
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*legacy*",
@@ -40,5 +40,5 @@
     "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt:provenance-only-unless-canonical-owner-claims"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate-acceptance, runner-only, workflow-label-only, native-.m-as-Objective-C-3 support, dispatch-ir-as-source support, directory-label-only, and missing-upstream recovery positive claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, gate, retired route, compatibility, generated-only, evidence-log, migration-only, unsupported, alternate-acceptance, runner-only, workflow-label-only, native-.m-as-Objective-C-3 support, dispatch-ir-as-source support, directory-label-only, and missing-upstream recovery positive claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

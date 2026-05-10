@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "parser",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "parser conformance owns grammar acceptance, grammar rejection, mode selection, feature-test macros, source mapping, and parser-facing diagnostics only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
+  "support_boundary": "parser conformance owns grammar acceptance, grammar rejection, mode selection, feature-test macros, source mapping, and parser-facing diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, or prose-only provenance",
   "owned_buckets": [
     "parser",
     "diagnostics"
@@ -34,5 +34,5 @@
     }
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "retired mode spellings, old-mode parser rows, parser fallback toggles, parser shims, compatibility parser rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, dashboard-only parser rows, and prose-only parser rows are canonical parser rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "retired mode spellings, old-mode parser rows, parser retired route toggles, parser gates, compatibility parser rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, dashboard-only parser rows, and prose-only parser rows are canonical parser rejection, strict-error, or provenance-only evidence"
 }

@@ -14,5 +14,5 @@
     "runtime_wall_clock:output_root"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated artifacts, package staging, telemetry packets, normalized report values, generated-only IR rows, evidence-log IR rows, migration-only IR rows, timing-only IR rows, cache-only IR rows, wrapper-only IR rows, local-only IR rows, cross-machine IR rows, foreign-baseline IR rows, shim/fallback artifact paths, old-mode IR rows, and compatibility outputs cannot convert into canonical IR support"
+  "retired_surface_rule": "generated artifacts, package staging, telemetry packets, normalized report values, generated-only IR rows, evidence-log IR rows, migration-only IR rows, timing-only IR rows, cache-only IR rows, wrapper-only IR rows, local-only IR rows, cross-machine IR rows, foreign-baseline IR rows, gate/retired-route artifact paths, old-mode IR rows, and compatibility outputs cannot convert into canonical IR support"
 }

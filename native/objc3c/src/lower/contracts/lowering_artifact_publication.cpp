@@ -39,7 +39,7 @@ bool Objc3LoweringArtifactPlanPublicationOwnerIsReady(
   return Objc3LoweringStrictOwnerModelIsReady(
       plan.publication_owner,
       plan.publication_owner_model,
-      plan.strict_no_fallback,
+      plan.strict_no_retired_route,
       plan.strict_no_compatibility);
 }
 
@@ -61,7 +61,7 @@ std::string Objc3LoweringArtifactPlanReplayKey(
       << Objc3LoweringOwnerReplayKey(
              plan.publication_owner,
              plan.publication_owner_model,
-             plan.strict_no_fallback,
+             plan.strict_no_retired_route,
              plan.strict_no_compatibility);
   return out.str();
 }

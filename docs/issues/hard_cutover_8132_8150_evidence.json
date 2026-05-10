@@ -2005,7 +2005,7 @@
           "6a2b0336f",
           "df2577005"
         ],
-        "owner_boundary": "parser profiles, AST/type surfaces, block/signature/scope owners, and ObjC reference support are compiler ownership evidence; old-mode and parser fallback remain rejection evidence"
+        "owner_boundary": "parser profiles, AST/type surfaces, block/signature/scope owners, and ObjC reference support are compiler ownership evidence; old-mode and parser retired route remain rejection evidence"
       },
       {
         "issues": [
@@ -2057,7 +2057,7 @@
           "9cf3601b5",
           "4307f5156"
         ],
-        "owner_boundary": "runtime state, dispatch, concurrency, block, storage, ARC, selector/keypath, and snapshot owners are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
+        "owner_boundary": "runtime state, dispatch, concurrency, block, storage, ARC, selector/keypath, and snapshot owners are runtime acceptance evidence; retired route dispatch remains strict-error evidence"
       },
       {
         "issues": [
@@ -2102,7 +2102,7 @@
           "3dcf928fe",
           "531b53843"
         ],
-        "owner_boundary": "contract, config, diagnostic lookup, pipeline result, workflow payload, and deterministic publication owners classify canonical and rejected states without fallback support"
+        "owner_boundary": "contract, config, diagnostic lookup, pipeline result, workflow payload, and deterministic publication owners classify canonical and rejected states without retired route support"
       },
       {
         "issues": [
@@ -2218,7 +2218,7 @@
           "9ad72ee8a",
           "1afa7c1ae"
         ],
-        "owner_boundary": "runtime image metadata, dispatch fast-path, method resolution table, cache snapshot, builtin lookup, class-chain resolution, dispatch status, runtime public ABI records, class metadata, class graph snapshot, dispatch state snapshot, protocol conformance snapshot/query, image registration API, property/storage reflection owners, and runtime fixture anchors are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
+        "owner_boundary": "runtime image metadata, dispatch fast-path, method resolution table, cache snapshot, builtin lookup, class-chain resolution, dispatch status, runtime public ABI records, class metadata, class graph snapshot, dispatch state snapshot, protocol conformance snapshot/query, image registration API, property/storage reflection owners, and runtime fixture anchors are runtime acceptance evidence; retired route dispatch remains strict-error evidence"
       },
       {
         "issues": [
@@ -2263,7 +2263,7 @@
           "a61477b96",
           "647e47739"
         ],
-        "owner_boundary": "JSON writers, telemetry/schema guidance, IO/process owners, schema validation, developer tooling documents, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/inputs/ordering, artifact-claim metadata, and pipeline handoff own IO/schema/artifact evidence without fallback support"
+        "owner_boundary": "JSON writers, telemetry/schema guidance, IO/process owners, schema validation, developer tooling documents, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/inputs/ordering, artifact-claim metadata, and pipeline handoff own IO/schema/artifact evidence without retired route support"
       },
       {
         "issues": [
@@ -2617,7 +2617,7 @@
         "commits": [
           "6efdaf8f9"
         ],
-        "owner_boundary": "runtime dispatch lowering contracts refresh lowering and deep handoff evidence while fallback behavior remains rejection or strict-error evidence"
+        "owner_boundary": "runtime dispatch lowering contracts refresh lowering and deep handoff evidence while retired route behavior remains rejection or strict-error evidence"
       }
     ]
   },
@@ -2662,9 +2662,9 @@
   },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
-    "compatibility_shim": "rejected by semantic fixture metadata",
-    "parser_fallback": "rejected by parser fixture metadata",
-    "runtime_fallback": "strict-error lowering, IR, runtime, and e2e fixtures",
+    "compatibility_gate": "rejected by semantic fixture metadata",
+    "parser_retired_route": "rejected by parser fixture metadata",
+    "runtime_retired_route": "strict-error lowering, IR, runtime, and e2e fixtures",
     "migration_lane": "absent from public support and not a positive behavior fixture"
   },
   "issues": [
@@ -2689,7 +2689,7 @@
     {
       "issue": "#8133",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Strict typed runtime dispatch has local result-owner, selector/keypath/cache/state, and dispatch-wrapper evidence; fallback behavior is strict-error fixture evidence.",
+      "closeout_summary": "Strict typed runtime dispatch has local result-owner, selector/keypath/cache/state, and dispatch-wrapper evidence; retired route behavior is strict-error fixture evidence.",
       "local_commits": [
         "d8552e07a",
         "d53083a92",
@@ -2709,7 +2709,7 @@
     {
       "issue": "#8134",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Parser, lexer, token, and AST ownership splits are indexed, with old-mode and parser fallback flags represented as rejection fixtures.",
+      "closeout_summary": "Parser, lexer, token, and AST ownership splits are indexed, with old-mode and parser retired route flags represented as rejection fixtures.",
       "local_commits": [
         "28a65a27a",
         "b0f031ef5",
@@ -2724,7 +2724,7 @@
       "index_evidence": [
         "tests/native/parser/positive/canonical_module_main.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ]
     },
     {
@@ -2743,14 +2743,14 @@
       ],
       "index_evidence": [
         "tests/native/sema/types/typed_i32_bool_flow.objc3",
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ]
     },
     {
       "issue": "#8136",
       "status_for_tracker": "evidence-ready",
-      "closeout_summary": "Lowering owner splits are locally evidenced, and runtime dispatch fallback is documented as rejection or strict-error behavior.",
+      "closeout_summary": "Lowering owner splits are locally evidenced, and runtime dispatch retired route is documented as rejection or strict-error behavior.",
       "local_commits": [
         "73ce6b57f",
         "f69c6388f",
@@ -2765,7 +2765,7 @@
       ],
       "index_evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3"
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
       ]
     },
     {

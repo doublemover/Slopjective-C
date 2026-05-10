@@ -15,7 +15,7 @@
     "primary_axis": "behavior owner before compile manifest, runtime-registration manifest, runtime-registration descriptor, runtime metadata record, dispatch table record, property synthesis record, or ivar layout record",
     "support_authority": "object-model artifact rows are provenance until lowering, IR, runtime, or e2e owners claim behavior against canonical fixtures and probes",
     "positive_support_from_artifact": false,
-    "retired_surface_rule": "generated reports, descriptor-only rows, manifest-only rows, metadata-only rows, dispatch-table-record-only rows, property-synthesis-evidence-log rows, ivar-layout-snapshot-only rows, shim, fallback, old-mode, and compatibility artifacts are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "generated reports, descriptor-only rows, manifest-only rows, metadata-only rows, dispatch-table-record-only rows, property-synthesis-evidence-log rows, ivar-layout-snapshot-only rows, gate, retired route, old-mode, and compatibility artifacts are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "compile_manifest_surface_keys": [
     "runtime_realization_lowering_reflection_artifact_surface",

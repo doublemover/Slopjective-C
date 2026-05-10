@@ -33,7 +33,7 @@ def action_audience_contract_payload() -> dict[str, object]:
         "operator_prefixes": list(OPERATOR_PREFIXES),
         "maintainer_prefixes": list(MAINTAINER_PREFIXES),
         "hidden_internal_public_split_allowed": False,
-        "unknown_audience_fallback_allowed": False,
+        "unknown_audience_retired_route_allowed": False,
         "public_contract": True,
     }
 

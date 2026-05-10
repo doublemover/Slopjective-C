@@ -69,12 +69,12 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
-    fallback_root = (
+    retired_route_root = (
         ROOT / "tmp" / "reports" / "runtime" / "runnable-release-candidate-conformance" / "live-case"
     )
-    fallback_root.mkdir(parents=True, exist_ok=True)
+    retired_route_root.mkdir(parents=True, exist_ok=True)
     clangxx = runtime_acceptance.find_clangxx()
-    with tempfile.TemporaryDirectory(dir=fallback_root) as tmp_dir:
+    with tempfile.TemporaryDirectory(dir=retired_route_root) as tmp_dir:
         run_dir = Path(tmp_dir)
         results = [
             runtime_acceptance.check_claimable_surface_residual_non_claimable_gaps_source_surface_case(

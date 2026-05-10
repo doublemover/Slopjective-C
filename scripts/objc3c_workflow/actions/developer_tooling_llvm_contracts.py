@@ -205,7 +205,7 @@ LLVM_TOOL_CAPABILITY_OWNER_CONTRACTS: Final[
         unsupported_claims=(
             "hosted LLVM availability",
             "hosted source parity",
-            "language-server execution fallback",
+            "language-server execution retired route",
         ),
         requires_hosted_probe_summary=False,
         fails_closed_without_live_capability=True,
@@ -237,7 +237,7 @@ LLVM_TOOL_CAPABILITY_OWNER_CONTRACTS: Final[
         unsupported_claims=(
             "parity success when the hosted route was skipped",
             "local-only source parity as hosted capability proof",
-            "fallback language-server parity",
+            "retired route language-server parity",
         ),
         requires_hosted_probe_summary=True,
         fails_closed_without_live_capability=True,

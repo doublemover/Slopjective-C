@@ -1,5 +1,5 @@
 # Control-flow receiver + mixed bool/i32 keyword dispatch markers.
-define i32 @fallback()
+define i32 @retired-route()
 define i32 @main()
 @.objc3.sel.0 = private unnamed_addr constant [24 x i8] c"fold:with:then:finally:\00", align 1
 br i1 %t0, label %cond_true_0, label %cond_false_1

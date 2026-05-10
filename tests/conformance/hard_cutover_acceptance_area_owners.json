@@ -38,9 +38,9 @@
       "behavior_fixtures": [
         "tests/native/parser/positive/canonical_module_main.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
-      "retired_surface_disposition": "old-mode literal aliases and parser fallback flags are parser rejections"
+      "retired_surface_disposition": "old-mode literal aliases and parser retired route flags are parser rejections"
     },
     {
       "area": "semantic_diagnostics",
@@ -62,7 +62,7 @@
       ],
       "behavior_fixtures": [
         "tests/native/sema/types/typed_i32_bool_flow.objc3",
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
         "tests/conformance/diagnostics/manifest.json"
       ],
@@ -85,10 +85,10 @@
       ],
       "behavior_fixtures": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
       ],
-      "retired_surface_disposition": "runtime fallback lowering and unresolved runtime calls are strict-error evidence"
+      "retired_surface_disposition": "runtime retired route lowering and unresolved runtime calls are strict-error evidence"
     },
     {
       "area": "runtime_dispatch_registration",
@@ -111,7 +111,7 @@
         "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
         "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
       ],
-      "retired_surface_disposition": "dispatch fallback and unknown receiver behavior are runtime strict errors"
+      "retired_surface_disposition": "dispatch retired route and unknown receiver behavior are runtime strict errors"
     },
     {
       "area": "runtime_storage_reflection_public_abi",
@@ -212,7 +212,7 @@
         "docs/support/evidence_map.json",
         "tests/tooling/test_objc3c_shared_json_schema.py"
       ],
-      "retired_surface_disposition": "schemas and artifact contracts classify unsupported states without creating fallback support"
+      "retired_surface_disposition": "schemas and artifact contracts classify unsupported states without creating retired route support"
     },
     {
       "area": "workflow_hygiene_command_surface",
@@ -251,8 +251,8 @@
       ],
       "behavior_fixtures": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3"
       ],
       "retired_surface_disposition": "retired behavior is rejection, strict-error, or absent; positive fixtures remain canonical only"

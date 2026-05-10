@@ -37,8 +37,8 @@
     "forbidden_positive_name_tokens": [
       "old_mode",
       "old-mode",
-      "shim",
-      "fallback",
+      "gate",
+      "retired-route",
       "compatibility",
       "migration"
     ]
@@ -51,7 +51,7 @@
       "native_behavior_fixtures": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "behavior_focus": "grammar acceptance, grammar rejection, mode spelling, and source span stability",
       "hard_cutover_rule": "parser positives use canonical Objective-C 3.0 spellings; retired mode and feature-toggle spellings are diagnostic fixtures"
@@ -61,7 +61,7 @@
       "manifest": "tests/conformance/semantic/manifest.json",
       "owned_fixture_root": "tests/conformance/semantic",
       "native_behavior_fixtures": [
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
@@ -73,12 +73,12 @@
       "manifest": "tests/conformance/lowering_abi/manifest.json",
       "owned_fixture_root": "tests/conformance/lowering_abi",
       "native_behavior_fixtures": [
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
       ],
       "behavior_focus": "runtime-facing lowering contracts, ABI metadata, and optimization-invariant behavior",
-      "hard_cutover_rule": "lowering fixtures may assert ABI stability but must not introduce alternate shim ABIs or fallback lowering paths"
+      "hard_cutover_rule": "lowering fixtures may assert ABI stability but must not introduce alternate gate ABIs or retired route lowering paths"
     },
     {
       "boundary": "ir_artifact",
@@ -89,7 +89,7 @@
         "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3"
       ],
       "behavior_focus": "IR, object, manifest, and registration artifact truth gates",
-      "hard_cutover_rule": "IR and artifact fixtures must expose canonical manifest contracts and reject downgraded or fallback artifact provenance"
+      "hard_cutover_rule": "IR and artifact fixtures must expose canonical manifest contracts and reject downgraded or retired route artifact provenance"
     },
     {
       "boundary": "runtime_e2e",

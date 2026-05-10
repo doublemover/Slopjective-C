@@ -33,7 +33,7 @@ def action_category_contract_payload() -> dict[str, object]:
         "contract_id": ACTION_CATEGORY_CONTRACT_ID,
         "owner_surface": ACTION_CATEGORY_OWNER_SURFACE,
         "canonical_categories": list(CANONICAL_ACTION_CATEGORIES),
-        "unknown_category_fallback_allowed": False,
+        "unknown_category_retired_route_allowed": False,
         "public_contract": True,
     }
 

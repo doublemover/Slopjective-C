@@ -17,5 +17,5 @@
     "authoritative_interop_surface_keys:runtime_packaging_bridge_loader_artifact_surface"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated bridge payloads, package artifacts, runtime-import artifacts, module replay rows, FFI metadata rows, and replay preservation rows cannot convert compatibility, shim, fallback, or old-mode labels into canonical IR support"
+  "retired_surface_rule": "generated bridge payloads, package artifacts, runtime-import artifacts, module replay rows, FFI metadata rows, and replay preservation rows cannot convert compatibility, gate, retired route, or old-mode labels into canonical IR support"
 }

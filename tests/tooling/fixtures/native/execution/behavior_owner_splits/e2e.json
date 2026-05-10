@@ -15,5 +15,5 @@
     "positive/registration_reset_replay_runtime_entrypoints.meta.json"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "positive execution sidecars must not be cited as shim, fallback, compatibility, migration, alternate runtime acceptance, or evidence-log support"
+  "retired_surface_rule": "positive execution sidecars must not be cited as gate, retired route, compatibility, migration, alternate runtime acceptance, or evidence-log support"
 }

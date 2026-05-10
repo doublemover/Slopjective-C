@@ -9,7 +9,7 @@
     "primary_axis": "behavior phase before public C API runner, helper, result lifecycle, artifact accessor, status summary, ABI version, public-private partition, generated artifact, generated-only row, evidence-log row, migration-only row, compatibility row, or retired-surface claim",
     "positive_rule": "frontend C API rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; public ABI shape, helper contracts, runner summaries, and provenance rows are contracts, not behavior support by themselves",
     "provenance_rule": "runner summaries, emitted artifact paths, diagnostics paths, manifests, IR/object outputs, runtime metadata binaries, header phrases, source snippets, contract rows, generated-only rows, evidence-log rows, and migration-only rows are provenance or contract evidence until a phase owner claims behavior",
-    "retired_surface_rule": "fallback, shim, compatibility, old-mode, evidence-log, generated-only, generated-artifact-only, migration-only, null-invalid-input-as-success, public-private partition bypass, ABI version bypass, borrowed-view lifetime misuse, and stage-summary mismatch claims are canonical rejection, strict-error, or provenance-only evidence"
+    "retired_surface_rule": "retired-route, gate, compatibility, old-mode, evidence-log, generated-only, generated-artifact-only, migration-only, null-invalid-input-as-success, public-private partition bypass, ABI version bypass, borrowed-view lifetime misuse, and stage-summary mismatch claims are canonical rejection, strict-error, or provenance-only evidence"
   },
   "owner_splits": [
     {

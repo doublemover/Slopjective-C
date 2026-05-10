@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/package_ecosystem/*.json"
   ],
-  "support_boundary": "package-ecosystem provenance owns JSON owner-contract inventories, runbook paths, stdlib workspace paths, package surface paths, application architecture fixture paths, release/package channel runbook paths, schema paths, owner split module paths, workflow implementation anchor paths, validation implementation anchor paths, generated artifact roots, generated report roots, report slot names, workspace ids, materialize action labels, validation action labels, package source labels, registry layer labels, generated output paths, required action labels, successor milestone labels, blocker labels, non-goal labels, forbidden dependency source labels, retired acceptance labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "package-ecosystem provenance owns JSON owner-contract inventories, runbook paths, stdlib workspace paths, package surface paths, application architecture fixture paths, release/package channel runbook paths, schema paths, owner split module paths, workflow implementation anchor paths, validation implementation anchor paths, generated artifact roots, generated report roots, report slot names, workspace ids, materialize action labels, validation action labels, package source labels, registry layer labels, generated output paths, required action labels, successor milestone labels, blocker labels, non-goal labels, forbidden dependency source labels, retired acceptance labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/package_ecosystem",
@@ -65,11 +65,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "package-ecosystem provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, package authoring, dependency resolution, lockfile, mirror, registry, hosted service, package manager, network restore, release operation, package channel, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, source surface paths, workspace labels, registry layer labels, generated output labels, required action labels, blocker labels, non-goal labels, forbidden source labels, retired acceptance labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "package-ecosystem provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, package authoring, dependency resolution, lockfile, mirror, registry, hosted service, package manager, network restore, release operation, package channel, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, source surface paths, workspace labels, registry layer labels, generated output labels, required action labels, blocker labels, non-goal labels, forbidden source labels, retired acceptance labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

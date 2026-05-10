@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/governance_annualization/w2_escalation_missing_owner.json",
     "tests/tooling/fixtures/governance_annualization/w2_exception_expired.json"
   ],
-  "support_boundary": "canonical rejection owns governance-annualization rows that look like support but are missing-field, quorum-fail, W2-deadline-regression, missing-escalation-owner, expired-exception, generated-only, evidence-log, migration-only, old-mode, shim, fallback, compatibility, wrapper-only, runner-only, workflow-label-only, timestamp-only, or filename-only. These rows are rejection/absent-support evidence, not positive annualization truth.",
+  "support_boundary": "canonical rejection owns governance-annualization rows that look like support but are missing-field, quorum-fail, W2-deadline-regression, missing-escalation-owner, expired-exception, generated-only, evidence-log, migration-only, old-mode, gate, retired route, compatibility, wrapper-only, runner-only, workflow-label-only, timestamp-only, or filename-only. These rows are rejection/absent-support evidence, not positive annualization truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -25,8 +25,8 @@
     "rejection:active-exception-expired-without-renewal",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -39,5 +39,5 @@
     "*wrapper_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "missing-field rows, failed quorum rows, deadline-regression rows, missing-owner escalation rows, expired-exception rows, old-mode annualization rows, shim rows, fallback rows, compatibility rows, migration-only rows, evidence-log rows, generated-only rows, wrapper-only rows, runner-only rows, workflow-label-only rows, and alternate acceptance annualization claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing-field rows, failed quorum rows, deadline-regression rows, missing-owner escalation rows, expired-exception rows, old-mode annualization rows, gate rows, retired route rows, compatibility rows, migration-only rows, evidence-log rows, generated-only rows, wrapper-only rows, runner-only rows, workflow-label-only rows, and alternate acceptance annualization claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

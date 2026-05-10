@@ -22,5 +22,5 @@
     "publication_windows.packet_deadline_utc:2026-03-01T16:00:00Z"
   ],
   "canonical_anchor": "tests/tooling/fixtures/governance_annualization/baseline_ok.json",
-  "retired_surface_rule": "missing-field positives, quorum-fail positives, W2 deadline-regression positives, missing-owner escalation positives, expired-exception positives, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode annualization rows, shim annualization rows, fallback annualization rows, compatibility annualization rows, migration-only rows, wrapper-only e2e rows, and filename-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing-field positives, quorum-fail positives, W2 deadline-regression positives, missing-owner escalation positives, expired-exception positives, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode annualization rows, gate annualization rows, retired route annualization rows, compatibility annualization rows, migration-only rows, wrapper-only e2e rows, and filename-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

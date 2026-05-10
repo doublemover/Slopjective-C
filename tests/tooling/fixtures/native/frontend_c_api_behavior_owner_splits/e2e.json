@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
     "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
   ],
-  "support_boundary": "e2e ownership covers runner executable summaries, compile status, process exit code, emitted artifact routing, and public C API runner result publication only after lower phase owners claim behavior and only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, or compatibility provenance",
+  "support_boundary": "e2e ownership covers runner executable summaries, compile status, process exit code, emitted artifact routing, and public C API runner result publication only after lower phase owners claim behavior and only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, or compatibility provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "runner:artifacts/bin/objc3c-frontend-c-api-runner.exe",
@@ -22,5 +22,5 @@
     "fail_closed_reasons:failing compile left result.success set"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "runner success without matching status, evidence-log runner summaries, generated-only rows, generated summary-only support, fallback execution, shimmed execution, old-mode execution, migration-only execution rows, compatibility execution claims, and semantic-skipped-as-success are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "runner success without matching status, evidence-log runner summaries, generated-only rows, generated summary-only support, retired route execution, gatemed execution, old-mode execution, migration-only execution rows, compatibility execution claims, and semantic-skipped-as-success are canonical rejection, strict-error, or provenance-only evidence"
 }

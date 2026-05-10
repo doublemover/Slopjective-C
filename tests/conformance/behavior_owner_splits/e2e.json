@@ -3,7 +3,7 @@
   "catalog": "objc3-conformance-behavior-owner-split",
   "owner_phase": "e2e",
   "source_surface": "tests/conformance/corpus_surface.json",
-  "support_boundary": "e2e conformance owns deterministic runnable corpus coverage, example parity, module roundtrip execution, package-stage evidence, and release-claim executable proof only when the row is not generated-only, evidence-log, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, prose-only, or claim-policy-only provenance",
+  "support_boundary": "e2e conformance owns deterministic runnable corpus coverage, example parity, module roundtrip execution, package-stage evidence, and release-claim executable proof only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, prose-only, or claim-policy-only provenance",
   "owned_buckets": [
     "module_roundtrip",
     "examples"
@@ -38,5 +38,5 @@
     }
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "negative execution, retired behavior, compatibility wording, fallback execution, shimmed execution, old-mode execution, generated-only runnable rows, evidence-log runnable rows, migration-only execution rows, dashboard-only release claims, prose-only release claims, claim-policy-only rows, and alternate acceptance paths remain rejection, strict-error, tracking-only, or provenance-only evidence, never runnable compatibility support"
+  "retired_surface_rule": "negative execution, retired behavior, compatibility wording, retired route execution, gatemed execution, old-mode execution, generated-only runnable rows, evidence-log runnable rows, migration-only execution rows, dashboard-only release claims, prose-only release claims, claim-policy-only rows, and alternate acceptance paths remain rejection, strict-error, tracking-only, or provenance-only evidence, never runnable compatibility support"
 }

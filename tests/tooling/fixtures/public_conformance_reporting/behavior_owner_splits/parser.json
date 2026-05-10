@@ -12,5 +12,5 @@
     "checked_in_roots:tests/conformance"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser acceptance, parser fallback flags, shim parser labels, compatibility parser summaries, generated-only parser inventories, dashboard-only parser support, scorecard-only parser support, badge-only parser support, and evidence-log parser claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser acceptance, parser retired route flags, gate parser labels, compatibility parser summaries, generated-only parser inventories, dashboard-only parser support, scorecard-only parser support, badge-only parser support, and evidence-log parser claims are canonical rejection, strict-error, or provenance-only evidence"
 }

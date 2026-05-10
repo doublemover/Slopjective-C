@@ -15,7 +15,7 @@ BuildObjc3SemaAsyncBlockMessageParityValidationReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   const auto &await_summary =
       surface.await_lowering_suspension_state_lowering_summary;
@@ -333,8 +333,8 @@ BuildObjc3SemaAsyncBlockMessageParityValidationReadinessRecord(
           record.async_block_message_parity_validation_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_validation_count == 7u &&
       record.passed_validation_count == record.required_validation_count &&
       record.failed_validation_count == 0u;

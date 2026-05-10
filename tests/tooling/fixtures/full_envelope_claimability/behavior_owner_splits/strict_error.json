@@ -71,8 +71,8 @@
     "required_release_artifact_field:channel_catalog",
     "required_release_artifact_field:trust_report_json",
     "required_schema:schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -80,5 +80,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/full_envelope_claimability",
-  "retired_surface_rule": "missing evidence reports, wrong report contract ids, missing dashboard fields, missing public summary fields, missing acceptance matrix families, missing release artifact fields, missing schemas, unsupported surfaces marked supported, candidate/preview promotion to production strength, public conformance blockers, performance blockers, release publication blockers, distribution trust blockers, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing evidence reports, wrong report contract ids, missing dashboard fields, missing public summary fields, missing acceptance matrix families, missing release artifact fields, missing schemas, unsupported surfaces marked supported, candidate/preview promotion to production strength, public conformance blockers, performance blockers, release publication blockers, distribution trust blockers, tmp-as-source claims, evidence-log publication, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

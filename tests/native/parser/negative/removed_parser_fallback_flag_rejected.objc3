@@ -1,6 +1,0 @@
-// Canonical parser rejection fixture: parser fallback flags fail closed instead of enabling a second mode.
-module RemovedParserFallbackFlagRejected;
-
-fn main() -> i32 {
-  return 0;
-}

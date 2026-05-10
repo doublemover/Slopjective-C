@@ -8,13 +8,13 @@ def runtime_closure_forbidden_claim_contracts_are_owner_typed() -> None:
     contracts, by_shape = runtime_closure_forbidden_claims_by_shape()
 
     assert set(by_shape) == set(RUNTIME_CLOSURE_FORBIDDEN_CLAIM_SHAPES)
-    assert by_shape["fallback-runtime-behavior"]["policy_field"] == (
-        "fallback_runtime_semantics_allowed"
+    assert by_shape["retired-route-runtime-behavior"]["policy_field"] == (
+        "retired_route_runtime_semantics_allowed"
     )
     assert by_shape["evidence-log-runtime-closure"]["policy_field"] == (
         "evidence_log_executable_proof_claims_allowed"
     )
-    assert by_shape["compatibility-shim-runtime-closure"]["policy_field"] == (
+    assert by_shape["compatibility-gate-runtime-closure"]["policy_field"] == (
         "compatibility_runtime_semantics_allowed"
     )
     assert by_shape["wrapper-only-runnable-action"]["policy_field"] == (

@@ -19,7 +19,7 @@
     "primary_axis": "behavior owner before actor isolation row, sendability row, executor hop row, mailbox row, replay/race-guard row, private snapshot, probe payload snapshot, generated report, cross-module replay row, or successor transport row",
     "support_authority": "actor isolation, sendability, hop, mailbox, and cross-module replay support requires sema, lowering, runtime, or e2e owner assignment over canonical fixtures and probes",
     "positive_support_from_probe_payload": false,
-    "retired_surface_rule": "distributed actor transport, external executor integration, stdlib actor-shaped parity, cross-module claims without manifest/runtime-registration replay proof, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, fallback actor rows, shim actor rows, old-mode isolation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "distributed actor transport, external executor integration, stdlib actor-shaped parity, cross-module claims without manifest/runtime-registration replay proof, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, retired route actor rows, gate actor rows, old-mode isolation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "actor_models": [
     "actor-isolation-entry-nonisolated-entry-and-hop-semantics-remain-runtime-owned-behavior-backed-by-private-helper-entrypoints-and-testing-snapshots",

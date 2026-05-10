@@ -51,7 +51,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/conformance/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "old-mode, shim, fallback, compatibility, unsupported, known-open, generated-only, evidence-log, migration-only, dashboard-only, prose-only, schema-only, workflow-only, tmp-artifact-only, claim-policy-only, and alternate acceptance surfaces remain rejection, strict-error, tracking-only, or provenance-only evidence"
+      "boundary": "old-mode, gate, retired route, compatibility, unsupported, known-open, generated-only, evidence-log, migration-only, dashboard-only, prose-only, schema-only, workflow-only, tmp-artifact-only, claim-policy-only, and alternate acceptance surfaces remain rejection, strict-error, tracking-only, or provenance-only evidence"
     },
     {
       "phase": "conformance_corpus_provenance",

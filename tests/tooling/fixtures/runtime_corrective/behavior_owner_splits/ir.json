@@ -20,5 +20,5 @@
     "required_artifacts:module.obj"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "hand-authored LL, sidecar-only manifests, uncoupled compile output, proof bundles without truthfulness envelopes, generated-only IR rows, evidence-log IR rows, migration-only IR rows, runner-only IR rows, package-only IR rows, unlinked-probe proof, replay-text-only proof, catalog-only closeout, shim/fallback artifact paths, old-mode IR rows, and compatibility outputs are provenance-only, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "hand-authored LL, sidecar-only manifests, uncoupled compile output, proof bundles without truthfulness envelopes, generated-only IR rows, evidence-log IR rows, migration-only IR rows, runner-only IR rows, package-only IR rows, unlinked-probe proof, replay-text-only proof, catalog-only closeout, gate/retired-route artifact paths, old-mode IR rows, and compatibility outputs are provenance-only, canonical rejection, strict-error, or absent-support evidence"
 }

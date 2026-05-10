@@ -28,5 +28,5 @@
     "authoritative_probe_paths:tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "public runtime ABI widening, fallback runtime behavior, compatibility shim runtime closure, old-mode runtime behavior, proof-only helper claims, private-snapshot-only proof, stack-only byref success, evidence-log runtime closure, and non-runtime-backed property/error/concurrency interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "public runtime ABI widening, retired route runtime behavior, compatibility gate runtime closure, old-mode runtime behavior, proof-only helper claims, private-snapshot-only proof, stack-only byref success, evidence-log runtime closure, and non-runtime-backed property/error/concurrency interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

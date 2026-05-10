@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/bootstrap_readiness/hard_fail_*",
     "tests/tooling/fixtures/bootstrap_readiness/malformed_issues_json"
   ],
-  "support_boundary": "canonical rejection owns bootstrap readiness rows that look like support but are legacy, compatibility-shaped, malformed, hard-fail, generated-only, evidence-log, migration-only, old-mode, shim, fallback, wrapper-only, runner-only, workflow-label-only, or directory-label-only. The legacy blockers array payload is kept out of positive readiness truth even when it carries an expected snapshot.",
+  "support_boundary": "canonical rejection owns bootstrap readiness rows that look like support but are legacy, compatibility-shaped, malformed, hard-fail, generated-only, evidence-log, migration-only, old-mode, gate, retired route, wrapper-only, runner-only, workflow-label-only, or directory-label-only. The legacy blockers array payload is kept out of positive readiness truth even when it carries an expected snapshot.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -17,8 +17,8 @@
     "legacy_payload:open_blockers_array",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*legacy*",
@@ -34,5 +34,5 @@
     "*runner_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "legacy blocker payload rows, old-mode bootstrap, shim bootstrap, fallback bootstrap, compatibility bootstrap, migration-only bootstrap, evidence-log bootstrap, generated-only bootstrap, wrapper-only bootstrap, runner-only bootstrap, and alternate acceptance bootstrap claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "legacy blocker payload rows, old-mode bootstrap, gate bootstrap, retired route bootstrap, compatibility bootstrap, migration-only bootstrap, evidence-log bootstrap, generated-only bootstrap, wrapper-only bootstrap, runner-only bootstrap, and alternate acceptance bootstrap claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

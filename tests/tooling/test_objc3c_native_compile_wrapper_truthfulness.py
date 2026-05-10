@@ -51,7 +51,7 @@ def test_compile_wrapper_self_audit_pins_truth_result_artifact_status_owners() -
         "status_owner": "objc3c-native-compile-wrapper-status",
         "truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
         "provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
-        "no_fallback_or_evidence_log_claims": True,
+        "no_retired_route_or_evidence_log_claims": True,
     }
 
 

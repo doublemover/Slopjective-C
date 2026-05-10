@@ -16,5 +16,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser spellings, compatibility parser flags, parser shims, parser fallbacks, generated source inventories, and source-only reflection truth claims are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser spellings, compatibility parser flags, parser gates, parser retired routes, generated source inventories, and source-only reflection truth claims are canonical rejection, strict-error, or provenance-only evidence"
 }

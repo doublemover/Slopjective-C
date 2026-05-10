@@ -22,7 +22,7 @@
       "e2e"
     ],
     "canonical_rejection_owner": "canonical_rejection",
-    "legacy_positive_residue_disposition": "legacy-looking, fallback-looking, shim-looking, unsupported, or compatibility-looking fixture surfaces are canonical rejection candidates until indexed as positives with no diagnostic code and no retired-surface tag",
+    "legacy_positive_residue_disposition": "legacy-looking, retired-route-looking, gate-looking, unsupported, or compatibility-looking fixture surfaces are canonical rejection candidates until indexed as positives with no diagnostic code and no retired-surface tag",
     "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
     "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
     "phase_split_indexes": [
@@ -151,7 +151,7 @@
       "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
     },
     {
-      "path": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
+      "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
       "behavior_family": "negative",
@@ -159,7 +159,7 @@
       "retired_surface_tags": [
         "old-mode"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
     },
     {
       "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
@@ -194,7 +194,7 @@
       "expected_diagnostic_code": "O3S221"
     },
     {
-      "path": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+      "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "errors",
@@ -202,7 +202,7 @@
       "retired_surface_tags": [
         "runtime-adapter"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
     },
     {
       "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
@@ -342,7 +342,7 @@
       "expected_diagnostic_code": "link.unresolved_symbol"
     },
     {
-      "path": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "lowering",
       "behavior_family": "errors",
@@ -350,7 +350,7 @@
       "retired_surface_tags": [
         "runtime-dispatch"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
     },
     {
       "path": "tests/native/ir/module/basic_i32_return_main.objc3",

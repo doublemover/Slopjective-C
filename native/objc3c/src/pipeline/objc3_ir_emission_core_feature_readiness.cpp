@@ -5,13 +5,13 @@ namespace {
 bool ResolveObjc3IREmissionCoreFeatureReadiness(
     bool ready,
     const std::string &failure_reason,
-    const char *fallback_reason,
+    const char *retired_route_reason,
     std::string &reason) {
   if (ready) {
     reason.clear();
     return true;
   }
-  reason = failure_reason.empty() ? fallback_reason : failure_reason;
+  reason = failure_reason.empty() ? retired_route_reason : failure_reason;
   return false;
 }
 

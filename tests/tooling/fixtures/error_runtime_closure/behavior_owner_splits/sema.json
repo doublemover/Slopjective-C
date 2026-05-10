@@ -18,5 +18,5 @@
     "claim_narrowing_constraints:no-evidence-only-cleanup-ordering-model"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "compatibility-positive bridge semantics, evidence-only cleanup ordering, parser recovery-only promotion, public ABI widening, unsupported async/interop closure, fallback result-bridge semantics, and semantic shim claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "compatibility-positive bridge semantics, evidence-only cleanup ordering, parser recovery-only promotion, public ABI widening, unsupported async/interop closure, retired route result-bridge semantics, and semantic gate claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

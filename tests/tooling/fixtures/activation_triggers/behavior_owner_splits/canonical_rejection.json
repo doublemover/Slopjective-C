@@ -21,8 +21,8 @@
     "drift_class:missing_required_command",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -33,5 +33,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "drift rows, old-mode activation, shim activation, fallback activation, compatibility activation, migration-only activation, evidence-log activation, generated-only activation, wrapper-only activation, and alternate acceptance activation claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "drift rows, old-mode activation, gate activation, retired route activation, compatibility activation, migration-only activation, evidence-log activation, generated-only activation, wrapper-only activation, and alternate acceptance activation claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -18,5 +18,5 @@
     "concurrency/actor_executor_contract.meta.json:fixture_kind=positive"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "positive runtime truth is limited to hand-authored canonical runtime fixtures with retired_positive_surface=false; dispatch strict errors, unresolved symbols, reports, generated artifacts, migration rows, old-mode rows, shim rows, and fallback rows are not positive runtime support"
+  "retired_surface_rule": "positive runtime truth is limited to hand-authored canonical runtime fixtures with retired_positive_surface=false; dispatch strict errors, unresolved symbols, reports, generated artifacts, migration rows, old-mode rows, gate rows, and retired route rows are not positive runtime support"
 }

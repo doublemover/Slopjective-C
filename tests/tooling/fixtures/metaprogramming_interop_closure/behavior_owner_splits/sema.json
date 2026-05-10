@@ -15,5 +15,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "unsupported property behavior combinations, unsupported foreign loader claims, compatibility shim gates, old-mode interop expectations, fallback FFI metadata, and wider interop stability claims are semantic diagnostics, canonical rejection, strict-error, or provenance evidence"
+  "retired_surface_rule": "unsupported property behavior combinations, unsupported foreign loader claims, compatibility gates, old-mode interop expectations, retired route FFI metadata, and wider interop stability claims are semantic diagnostics, canonical rejection, strict-error, or provenance evidence"
 }

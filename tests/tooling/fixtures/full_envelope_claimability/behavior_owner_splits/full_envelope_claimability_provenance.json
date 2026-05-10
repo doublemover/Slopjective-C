@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/full_envelope_claimability/*.json"
   ],
-  "support_boundary": "full-envelope claimability provenance owns JSON policy inventories, runbook paths, summary implementation anchors, report paths, schema paths, public claim surface paths, runtime boundary runbook paths, checked-in surface paths, evidence family labels, support class labels, support window labels, rollout class labels, claim class labels, public claim class labels, surface ids, demotion trigger labels, release blocker labels, required field names, successor milestone labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "full-envelope claimability provenance owns JSON policy inventories, runbook paths, summary implementation anchors, report paths, schema paths, public claim surface paths, runtime boundary runbook paths, checked-in surface paths, evidence family labels, support class labels, support window labels, rollout class labels, claim class labels, public claim class labels, surface ids, demotion trigger labels, release blocker labels, required field names, successor milestone labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/full_envelope_claimability",
@@ -61,11 +61,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "full-envelope claimability provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, support matrix, production strength, rollout readiness, dashboard publication, release candidate evidence, release blocker, public claim, acceptance, or compatibility behavior; policies, reports, artifacts, scripts, schemas, runbooks, public surfaces, support labels, claim labels, surface labels, demotion labels, blocker labels, field labels, successor labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "full-envelope claimability provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, support matrix, production strength, rollout readiness, dashboard publication, release candidate evidence, release blocker, public claim, acceptance, or compatibility behavior; policies, reports, artifacts, scripts, schemas, runbooks, public surfaces, support labels, claim labels, surface labels, demotion labels, blocker labels, field labels, successor labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

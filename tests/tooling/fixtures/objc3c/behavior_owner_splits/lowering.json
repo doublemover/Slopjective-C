@@ -18,5 +18,5 @@
     "validation_autoreleasepool_scope_contract/**"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "runtime dispatch fallback, alternate ABI lowering paths, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, replay-only lowering rows, and generated-output-only lowering rows are strict-error, rejection, or provenance-only evidence"
+  "retired_surface_rule": "runtime dispatch retired route, alternate ABI lowering paths, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, replay-only lowering rows, and generated-output-only lowering rows are strict-error, rejection, or provenance-only evidence"
 }

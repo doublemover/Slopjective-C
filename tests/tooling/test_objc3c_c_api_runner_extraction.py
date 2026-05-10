@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from objc3c_c_api_runner_extraction_behavior import (
     assert_bonus_experience_boundary_surface,
-    assert_c_shim_compile_path,
+    assert_c_gate_compile_path,
     assert_contract_tracks_summary_ownership_fields,
     assert_fail_closed_stage_and_result_accessor_drift,
     assert_observability_surface,
@@ -14,8 +14,8 @@ from objc3c_c_api_runner_extraction_json import load_c_api_runner_contract
 from objc3c_c_api_runner_extraction_sources import runner_source_text
 
 
-def test_c_api_runner_uses_c_shim_compile_path() -> None:
-    assert_c_shim_compile_path(runner_source_text())
+def test_c_api_runner_uses_c_gate_compile_path() -> None:
+    assert_c_gate_compile_path(runner_source_text())
 
 
 def test_c_api_runner_reports_summary_and_cli_contract() -> None:

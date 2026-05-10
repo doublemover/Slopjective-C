@@ -21,12 +21,12 @@ inline constexpr const char *kObjc3RuntimePublicRegistrationApiOwner =
 inline constexpr const char *kObjc3RuntimePublicDispatchDiagnosticsOwner =
     "native-runtime-public-dispatch-diagnostics-owner";
 inline constexpr const char *kObjc3RuntimeFailClosedOwnershipModel =
-    "runtime-owned-hard-cutover-no-fallback";
+    "runtime-owned-hard-cutover-no-retired-route";
 inline constexpr std::uint64_t kObjc3RuntimeRegistrationTableAbiVersion = 2;
 inline constexpr std::uint64_t kObjc3RuntimeRegistrationTablePointerFieldCount =
     12;
 
-inline bool RuntimeFallbackPathsAreAllowed() {
+inline bool RuntimeRetiredRoutePathsAreAllowed() {
   return false;
 }
 
@@ -42,7 +42,7 @@ inline bool RuntimeOwnerSplitContractIsReady() {
          kObjc3RuntimeFailClosedOwnershipModel[0] != '\0' &&
          kObjc3RuntimeRegistrationTableAbiVersion == 2 &&
          kObjc3RuntimeRegistrationTablePointerFieldCount == 12 &&
-         !RuntimeFallbackPathsAreAllowed();
+         !RuntimeRetiredRoutePathsAreAllowed();
 }
 
 }  // namespace objc3c::runtime

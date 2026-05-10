@@ -3,7 +3,7 @@
   "catalog": "objc3c-public-conformance-reporting-behavior-owner-split",
   "owner_phase": "lowering",
   "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
-  "support_boundary": "lowering ownership is delegated to upstream conformance and release-evidence anchors; public conformance reports, generated summaries, dashboards, scorecards, badges, tmp artifacts, and workflow labels do not define lowering support or fallback lowering acceptance",
+  "support_boundary": "lowering ownership is delegated to upstream conformance and release-evidence anchors; public conformance reports, generated summaries, dashboards, scorecards, badges, tmp artifacts, and workflow labels do not define lowering support or retired route lowering acceptance",
   "phase_support_claim_authority": false,
   "selectors": [
     "source_families:upstream-conformance-evidence",
@@ -12,5 +12,5 @@
     "source_paths:schemas/objc3-conformance-evidence-bundle-v1.schema.json"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback lowering, shim lowering, old-mode lowering, compatibility lowering summaries, generated-only lowering support, generated-evidence-log lowering support, dashboard-only lowering support, badge-only lowering support, and public scorecard-only lowering support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "retired route lowering, gate lowering, old-mode lowering, compatibility lowering summaries, generated-only lowering support, generated-evidence-log lowering support, dashboard-only lowering support, badge-only lowering support, and public scorecard-only lowering support are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

@@ -11,12 +11,12 @@ bool Objc3TypedSemaToLoweringBoundaryIsReady(
          Objc3LoweringStrictOwnerModelIsReady(
              boundary.typed_semantic_handoff_owner,
              boundary.strict_contract_owner_model,
-             boundary.strict_no_fallback,
+             boundary.strict_no_retired_route,
              boundary.strict_no_compatibility) &&
          Objc3LoweringStrictOwnerModelIsReady(
              boundary.lowering_consumer_owner,
              boundary.strict_contract_owner_model,
-             boundary.strict_no_fallback,
+             boundary.strict_no_retired_route,
              boundary.strict_no_compatibility);
 }
 
@@ -59,7 +59,7 @@ std::string Objc3TypedSemaToLoweringBoundaryReplayKey(
       << Objc3LoweringOwnerReplayKey(
              boundary.typed_semantic_handoff_owner,
              boundary.strict_contract_owner_model,
-             boundary.strict_no_fallback,
+             boundary.strict_no_retired_route,
              boundary.strict_no_compatibility);
   return out.str();
 }

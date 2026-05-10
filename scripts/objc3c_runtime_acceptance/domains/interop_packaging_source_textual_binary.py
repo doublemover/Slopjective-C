@@ -124,7 +124,7 @@ def check_textual_binary_interface_parity_source_surface_case(
         ("module.interop-bridge.modulemap", "modulemap artifact path"),
         ("ffiInbound", "primary foreign callable"),
         ("ffiHeaderBridge", "header-only foreign callable"),
-        ("BridgeProviderShim", "C++ bridge annotation"),
+        ("BridgeProviderGate", "C++ bridge annotation"),
         ("BridgeProvider.forward", "Swift bridge annotation"),
     ):
         expect(

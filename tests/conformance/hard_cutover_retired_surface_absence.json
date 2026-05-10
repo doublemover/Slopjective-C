@@ -15,8 +15,8 @@
   "forbidden_positive_surface_tokens": [
     "old-mode",
     "old_mode",
-    "shim",
-    "fallback",
+    "gate",
+    "retired-route",
     "compat",
     "compatibility",
     "migration"
@@ -74,37 +74,37 @@
       ]
     },
     {
-      "surface": "removed parser fallback flag",
+      "surface": "removed parser retired route flag",
       "status": "rejected",
       "evidence": [
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "diagnostic_codes": [
-        "OBJC3-E-REMOVED-FALLBACK-FLAG"
+        "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
       ]
     },
     {
       "surface": "removed retired adapter gate",
       "status": "rejected",
       "evidence": [
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3"
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3"
       ],
       "diagnostic_codes": [
-        "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
+        "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
       ]
     },
     {
-      "surface": "removed runtime dispatch fallback flag",
+      "surface": "removed runtime dispatch retired route flag",
       "status": "strict-error",
       "evidence": [
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3"
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
       ],
       "diagnostic_codes": [
-        "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
+        "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
       ]
     },
     {
-      "surface": "non-nil runtime dispatch fallback linkage",
+      "surface": "non-nil runtime dispatch retired route linkage",
       "status": "strict-error",
       "evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
@@ -118,7 +118,7 @@
       ]
     },
     {
-      "surface": "unknown receiver runtime dispatch fallback",
+      "surface": "unknown receiver runtime dispatch retired route",
       "status": "strict-error",
       "evidence": [
         "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",

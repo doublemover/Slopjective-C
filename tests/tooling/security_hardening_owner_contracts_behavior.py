@@ -74,7 +74,7 @@ def assert_security_hardening_source_and_workflow_forbid_evidence_log_security_c
             owner_contract,
             (
                 "evidence_log_allowed",
-                "fallback_claims_allowed",
+                "retired_route_claims_allowed",
                 "generated_report_claims_allowed",
                 "wrapper_only_security_actions_allowed",
                 "local_tabletop_capability_truth_allowed",
@@ -98,7 +98,7 @@ def assert_security_hardening_domain_contracts_pin_specific_claim_owners() -> No
         "macro_provenance_owner": "security-hardening-macro-provenance",
         "runtime_acceptance_owner": "security-hardening-runtime",
         "evidence_log_security_proof_allowed": False,
-        "fallback_macro_trust_allowed": False,
+        "retired_route_macro_trust_allowed": False,
         "trust_bypass_for_missing_provenance_allowed": False,
         "wrapper_only_macro_security_action_allowed": False,
     }
@@ -106,16 +106,16 @@ def assert_security_hardening_domain_contracts_pin_specific_claim_owners() -> No
         "local_tabletop_capability_truth_allowed"
     ] is False
     assert response_drill["drill_truth_contract"][
-        "fallback_release_publication_after_drill_failure_allowed"
+        "retired_route_release_publication_after_drill_failure_allowed"
     ] is False
     assert runtime_contract["runtime_owner_contract"][
-        "runtime_fallback_acceptance_allowed"
+        "runtime_retired_route_acceptance_allowed"
     ] is False
     assert runtime_contract["runtime_owner_contract"][
         "trust_bypass_for_missing_runtime_case_allowed"
     ] is False
     assert release_key_policy["release_key_owner_contract"][
-        "fallback_update_trust_allowed"
+        "retired_route_update_trust_allowed"
     ] is False
     assert release_key_policy["release_key_owner_contract"][
         "trust_bypass_for_unsigned_payload_allowed"

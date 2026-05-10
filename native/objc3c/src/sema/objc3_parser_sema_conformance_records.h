@@ -114,8 +114,8 @@ struct Objc3ParserSemaConformanceEvidenceRecord {
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
   std::string parser_sema_contract_handoff_owner =
       kObjc3ParserSemaContractHandoffOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   std::size_t required_matrix_evidence_count = 30u;
   std::size_t passed_matrix_evidence_count = 0;
@@ -141,8 +141,8 @@ inline bool IsReadyObjc3ParserSemaConformanceEvidenceRecord(
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(
              record.parser_sema_contract_handoff_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.required_matrix_evidence_count == 30u &&
          record.passed_matrix_evidence_count ==
              record.required_matrix_evidence_count &&

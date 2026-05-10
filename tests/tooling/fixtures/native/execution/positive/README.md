@@ -16,7 +16,7 @@ The expected exit code must be deterministic.
 Execution-positive fixtures are e2e-owned success contracts. A filename that
 mentions a parser, semantic, lowering, or runtime concept is phase provenance
 for the corresponding canonical owner, but the positive claim remains a
-deterministic compile-link-run claim. It must not be cited as shim, fallback,
+deterministic compile-link-run claim. It must not be cited as gate, retired route,
 compatibility, migration, or alternate runtime acceptance support.
 
 Optional meta sidecar schema:

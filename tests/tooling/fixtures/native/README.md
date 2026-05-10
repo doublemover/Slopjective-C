@@ -23,7 +23,7 @@ diagnostic expectations.
 - `library_cli_parity/` and `parity_baseline/`: fixture data for native
   command/library parity and baseline comparison. These may record external
   observations only as provenance for canonical fixtures; they must not define
-  interoperability, drop-in compatibility, fallback acceptance, or alternate
+  interoperability, drop-in compatibility, retired route acceptance, or alternate
   success paths.
 
 ## Owner Split Boundaries
@@ -40,7 +40,7 @@ coverage:
   evidence.
 - runtime owns live dispatch/status failures and runtime-backed behavior.
 - e2e owns deterministic compile-link-run positives.
-- canonical_rejection owns legacy-looking, fallback-looking, shim-looking,
+- canonical_rejection owns legacy-looking, retired-route-looking, gate-looking,
   unsupported, or compatibility-looking surfaces that must remain non-positive.
 
 The `recovery/positive`, `execution/positive`, `execution/negative`, and

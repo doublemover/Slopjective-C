@@ -10,7 +10,7 @@
     "primary_axis": "behavior owner before runtime acceptance suite, runtime acceptance report, public workflow report, linked probe row, generated report, compile artifact, replay manifest, proof bundle, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
     "support_authority": "acceptance workload rows can cite support only through behavior owner splits; suite names, report paths, harness paths, linked-probe summaries, generated reports, and proof artifacts cannot define positive behavior by themselves",
     "report_rule": "required tmp reports are generated acceptance provenance and cannot define positive behavior; generated-only, evidence-log, migration-only, runner-only, sidecar-only, unlinked-probe, replay-text-only, and catalog-only acceptance rows stay provenance or rejection",
-    "retired_surface_rule": "unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows map to canonical_rejection or runtime_corrective_provenance"
+    "retired_surface_rule": "unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows map to canonical_rejection or runtime_corrective_provenance"
   },
   "suite_ids": [
     "runtime-acceptance",
@@ -47,7 +47,7 @@
       "e2e",
       "canonical_rejection"
     ],
-    "support_boundary": "synthesized accessor acceptance ties semantic property ownership, lowering helper selection, and runtime-backed execution; fallback storage claims are rejection evidence",
+    "support_boundary": "synthesized accessor acceptance ties semantic property ownership, lowering helper selection, and runtime-backed execution; retired route storage claims are rejection evidence",
     "authoritative_fixture_paths": [
       "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
       "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",

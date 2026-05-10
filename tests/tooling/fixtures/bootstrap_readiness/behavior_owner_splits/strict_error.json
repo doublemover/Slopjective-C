@@ -22,8 +22,8 @@
     "hard_fail_class:line_alias_mismatch",
     "hard_fail_class:metadata_pair_mismatch",
     "hard_fail_class:unsorted_rows",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*legacy-as-positive*",
@@ -31,5 +31,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "malformed JSON, hard-fail open-blocker rows, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, legacy-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "malformed JSON, hard-fail open-blocker rows, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, legacy-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

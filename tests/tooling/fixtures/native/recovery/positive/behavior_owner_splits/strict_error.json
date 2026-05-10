@@ -5,13 +5,13 @@
   "source_contracts": [
     "tests/tooling/fixtures/native/recovery/positive"
   ],
-  "support_boundary": "strict-error ownership covers recovery positive overclaims that must fail closed: fallback or shim acceptance presented as positive behavior, legacy .m probes presented as Objective-C 3 source truth, dispatch-ir markers presented as source truth, generated/evidence-log rows promoted as support, e2e execution-only rows promoted as source support, missing paired IR expectations promoted as IR truth, unsupported runtime dispatch, invalid nil receiver semantics, and incompatible alias/nullability/protocol qualifier support claims.",
+  "support_boundary": "strict-error ownership covers recovery positive overclaims that must fail closed: retired route or gate acceptance presented as positive behavior, legacy .m probes presented as Objective-C 3 source truth, dispatch-ir markers presented as source truth, generated/evidence-log rows promoted as support, e2e execution-only rows promoted as source support, missing paired IR expectations promoted as IR truth, unsupported runtime dispatch, invalid nil receiver semantics, and incompatible alias/nullability/protocol qualifier support claims.",
   "phase_support_claim_authority": false,
   "selectors": [
-    "*fallback-as-positive*",
-    "*fallback_as_positive*",
-    "*shim-as-positive*",
-    "*shim_as_positive*",
+    "*retired-route-as-positive*",
+    "*retired_route_as_positive*",
+    "*gate-as-positive*",
+    "*gate_as_positive*",
     "*legacy-m-as-objc3*",
     "*legacy_m_as_objc3*",
     "*dispatch-ir-as-source*",
@@ -34,5 +34,5 @@
     "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "fallback-as-positive, shim-as-positive, legacy-.m-as-Objective-C-3, dispatch-ir-as-source, generated-as-support, report-as-support, e2e-only-as-source, missing-IR-expectation-as-IR-truth, unsupported runtime dispatch, invalid nil receiver semantics, and invalid alias signature claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "retired-route-as-positive, gate-as-positive, legacy-.m-as-Objective-C-3, dispatch-ir-as-source, generated-as-support, report-as-support, e2e-only-as-source, missing-IR-expectation-as-IR-truth, unsupported runtime dispatch, invalid nil receiver semantics, and invalid alias signature claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

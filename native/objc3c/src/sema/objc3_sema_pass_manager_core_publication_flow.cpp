@@ -20,7 +20,7 @@ BuildObjc3SemaCoreSemanticParityPublicationReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.semantic_diagnostics_ready = deterministic_semantic_diagnostics;
   record.type_metadata_handoff_ready = deterministic_type_metadata_handoff;
@@ -344,8 +344,8 @@ BuildObjc3SemaCoreSemanticParityPublicationReadinessRecord(
           record.core_semantic_parity_publication_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_publication_count == 12u &&
       record.passed_publication_count == record.required_publication_count &&
       record.failed_publication_count == 0u;

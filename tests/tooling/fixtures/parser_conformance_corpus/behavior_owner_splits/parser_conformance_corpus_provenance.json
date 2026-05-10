@@ -37,11 +37,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "parser conformance corpus provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, diagnostic, or compatibility behavior; README prose, manifest rows, case ids, diagnostic labels, fixture path labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "parser conformance corpus provenance never defines positive parser, sema, lowering, IR, runtime, e2e, acceptance, diagnostic, or compatibility behavior; README prose, manifest rows, case ids, diagnostic labels, fixture path labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/extension_registry_compat_contract/*/readme.md",
     "tests/tooling/fixtures/extension_registry_compat_contract/*/package.md"
   ],
-  "support_boundary": "extension registry compatibility provenance owns schema JSON inventory, README/package inventory, schema id labels, acceptance gate labels, issue/package labels, matrix ids, validator ids, waiver ids, escalation ids, dependency ids, command ids, evidence ids, failure taxonomy ids, publication gate ids, validation transcript text, compatibility taxonomy labels, drift labels, hard-fail labels, invalid-UTF8 labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, wrapper labels, runner labels, workflow labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "extension registry compatibility provenance owns schema JSON inventory, README/package inventory, schema id labels, acceptance gate labels, issue/package labels, matrix ids, validator ids, waiver ids, escalation ids, dependency ids, command ids, evidence ids, failure taxonomy ids, publication gate ids, validation transcript text, compatibility taxonomy labels, drift labels, hard-fail labels, invalid-UTF8 labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, wrapper labels, runner labels, workflow labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/extension_registry_compat_contract",
@@ -38,11 +38,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "extension registry compatibility provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, acceptance, public compatibility, or capability behavior; schemas, README/package text, validation transcripts, compatibility taxonomy labels, drift rows, hard-fail rows, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, wrapper rows, runner rows, workflow labels, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "extension registry compatibility provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, acceptance, public compatibility, or capability behavior; schemas, README/package text, validation transcripts, compatibility taxonomy labels, drift rows, hard-fail rows, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, wrapper rows, runner rows, workflow labels, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

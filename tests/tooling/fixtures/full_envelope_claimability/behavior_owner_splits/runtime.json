@@ -23,5 +23,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime claimability rows, shim runtime claimability rows, fallback runtime claimability rows, compatibility runtime claimability rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, runtime-surface-label-only support, runbook-label-only support, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime claimability rows, gate runtime claimability rows, retired route runtime claimability rows, compatibility runtime claimability rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, runtime-surface-label-only support, runbook-label-only support, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

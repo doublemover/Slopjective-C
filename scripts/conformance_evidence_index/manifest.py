@@ -81,7 +81,7 @@ def infer_profile_release(
     *,
     rel_path: str,
     payload: dict[str, Any] | None,
-    release_fallback: str | None,
+    release_retired_route: str | None,
     strict_generated_at: bool,
 ) -> tuple[str, str, str, str, str | None, str | None, str | None]:
     manifest_kind = "generic-json"
@@ -182,7 +182,7 @@ def infer_profile_release(
     if profile is None:
         profile = UNKNOWN_PROFILE
     if release is None:
-        release = release_fallback or UNKNOWN_RELEASE
+        release = release_retired_route or UNKNOWN_RELEASE
 
     return (
         profile,

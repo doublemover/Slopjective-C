@@ -31,10 +31,10 @@ struct Objc3TypedSemaToLoweringBoundary {
   std::string typed_semantic_handoff_owner = kObjc3TypedSemanticHandoffOwner;
   std::string lowering_consumer_owner =
       kObjc3LoweringSemanticBoundaryConsumerOwner;
-  std::string strict_contract_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string strict_contract_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   bool owner_split_explicit = false;
   bool sema_to_lowering_owner_contract_recorded = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool ready = false;
   std::string replay_key;

@@ -3,7 +3,7 @@
   "catalog": "canonical-native-behavior-outcome-split",
   "behavior_outcome": "canonical_strict_error_behavior",
   "source_manifest": "tests/fixtures/canonical/manifest.json",
-  "owner_rule": "runtime-dispatch and unresolved runtime surfaces are strict-error evidence, never fallback or compatibility support",
+  "owner_rule": "runtime-dispatch and unresolved runtime surfaces are strict-error evidence, never retired route or compatibility support",
   "fixtures": [
     {
       "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3",
@@ -36,14 +36,14 @@
       "expected_diagnostic_code": "link.unresolved_symbol"
     },
     {
-      "path": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
       "owner_phase": "lowering",
       "behavior_family": "errors",
       "fixture_kind": "strict-error",
       "retired_surface_tags": [
         "runtime-dispatch"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
     },
     {
       "path": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
@@ -117,5 +117,5 @@
       "expected_diagnostic_code": "O3RT002"
     }
   ],
-  "retired_surface_rule": "all entries are non-positive strict-error evidence for runtime dispatch, removed fallback, unresolved symbol, or runtime adapter residues"
+  "retired_surface_rule": "all entries are non-positive strict-error evidence for runtime dispatch, removed retired route, unresolved symbol, or runtime adapter residues"
 }

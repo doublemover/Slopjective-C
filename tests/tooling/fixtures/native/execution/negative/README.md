@@ -5,7 +5,7 @@ Each negative execution fixture is a pair of files sharing a basename:
 - `<name>.objc3`: source fixture compiled by the execution smoke harness.
 - `<name>.meta.json`: deterministic failure expectations for that fixture.
 
-These fixtures are hard-cutover rejection contracts. A legacy, fallback,
+These fixtures are hard-cutover rejection contracts. A legacy, retired route,
 unsupported, or compatibility-looking basename does not imply a preserved
 compatibility path; the sidecar must describe the canonical compile, link, or
 run failure.
@@ -19,7 +19,7 @@ Owner boundaries are behavior-first:
 - runtime-owned cases fail at run stage with strict `O3RT*` dispatch/status
   diagnostics.
 - canonical-rejection cases cover retired modes, unsupported runnable claims,
-  compatibility-looking names, shim-looking names, and fallback-looking names.
+  compatibility-looking names, gate-looking names, and retired-route-looking names.
   They must stay non-positive even when the source file parses.
 
 ## Sidecar schema (`<name>.meta.json`)
@@ -122,7 +122,7 @@ Field notes:
 
 ## Runtime-dispatch fixture notes
 
-- `message_send_runtime_dispatch_strict_error.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics; it is not a positive fallback fixture.
+- `message_send_runtime_dispatch_strict_error.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics; it is not a positive retired route fixture.
 - `message_send_six_args_custom_cap.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics while preserving the custom message-argument cap.
 - `runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` on non-nil message-send lowering.
 - `nil_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` when a mutable receiver is reassigned from runtime-unknown value and lowering retains dispatch linkage.

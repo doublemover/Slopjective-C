@@ -45,7 +45,7 @@
     "tests/native/sema/ownership/strong_id_assignment.objc3",
     "tests/native/sema/objc/objc_interface_method_contract.objc3",
     "tests/native/sema/control_flow/definite_return_if_else.objc3",
-    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+    "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
     "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
   ],
   "retired_surface_rule": "retired adapter gates and unsupported feature claims are semantic diagnostics, not opt-in support"

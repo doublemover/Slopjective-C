@@ -111,7 +111,7 @@ def build_format_summary(
         "changed": changed,
         "source_line_count": source_line_count,
         "formatted_line_count": formatted_line_count,
-        "fallback_reason": reason,
+        "retired_route_reason": reason,
     }
 
 

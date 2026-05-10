@@ -35,7 +35,7 @@ std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
   descriptor.StringField(
       "fail_closed_ownership_model",
       objc3c::runtime::kObjc3RuntimeFailClosedOwnershipModel);
-  descriptor.BoolField("fallback_path_allowed", false);
+  descriptor.BoolField("retired_route_path_allowed", false);
   descriptor.StringField("registration_manifest_contract_id",
                          inputs.registration_manifest_contract_id);
   descriptor.StringField("source_surface_contract_id",

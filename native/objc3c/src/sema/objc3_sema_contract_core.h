@@ -954,7 +954,7 @@ inline constexpr const char *kObjc3InteropInteropSemanticModelSurfacePath =
 inline constexpr const char *kObjc3InteropInteropSemanticModelRule =
     "foreign-import-swift-cpp-facing-annotation-surfaces-now-freeze-one-deterministic-sema-model-over-existing-ownership-error-async-and-actor-interaction-profiles-while-ffi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
 inline constexpr const char *kObjc3InteropInteropSemanticModelDeferredRule =
-    "ffi-abi-lowering-runtime-bridge-shims-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-runtime-lanes";
+    "ffi-abi-lowering-runtime-bridge-gates-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3InteropInteropSemanticModelSummary {
   std::string contract_id = kObjc3InteropInteropSemanticModelContractId;
@@ -1031,7 +1031,7 @@ inline constexpr const char
         "declaration-only-foreign-c-surfaces-import-module-requires-foreign-and-implementation-annotation-rejections-are-now-live-fail-closed-sema-rules-while-ffi-abi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3InteropInteropRuntimeParitySummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-runtime-lanes";
+        "ffi-abi-lowering-runtime-bridge-gates-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3InteropInteropRuntimeParitySummary {
   std::string contract_id = kObjc3InteropInteropRuntimeParitySummaryContractId;
@@ -1091,10 +1091,10 @@ inline constexpr const char
         "frontend.pipeline.semantic_surface.objc_interop_cpp_ownership_throws_and_async_interactions";
 inline constexpr const char
     *kObjc3InteropCppInteropInteractionSummaryRule =
-        "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
+        "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-gates-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3InteropCppInteropInteractionSummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-runtime-lanes";
+        "ffi-abi-lowering-runtime-bridge-gates-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3InteropCppInteropInteractionSummary {
   std::string contract_id = kObjc3InteropCppInteropInteractionSummaryContractId;
@@ -1154,10 +1154,10 @@ inline constexpr const char
         "frontend.pipeline.semantic_surface.objc_interop_swift_metadata_and_isolation_mapping";
 inline constexpr const char
     *kObjc3InteropSwiftInteropIsolationSummaryRule =
-        "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
+        "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-gates-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3InteropSwiftInteropIsolationSummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-runtime-lanes";
+        "ffi-abi-lowering-runtime-bridge-gates-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3InteropSwiftInteropIsolationSummary {
   std::string contract_id = kObjc3InteropSwiftInteropIsolationSummaryContractId;

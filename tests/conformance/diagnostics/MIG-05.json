@@ -1,6 +1,6 @@
 {
   "id": "MIG-05",
-  "title": "Rewrite nullable receiver sends to explicit nil-guard when scalar fallback is required",
+  "title": "Rewrite nullable receiver sends to explicit nil-guard when scalar retired route is required",
   "feature": "migrator nullable-send rewrite to guard-style safe idiom",
   "bucket": "diagnostics",
   "profile": "strict",

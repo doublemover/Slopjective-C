@@ -30,5 +30,5 @@
     "payloads.md:Validation, push, GitHub issue edits, and remote closeout remain outside this local-only payload"
   ],
   "canonical_anchor": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
-  "retired_surface_rule": "closure readiness never converts local evidence-ready labels, docs-only refreshes, generated summaries, evidence-log rows, validation-not-run state, GitHub-not-called state, push-not-performed state, remote-deferred state, shim claims, fallback claims, compatibility claims, or old-mode claims into remote closure"
+  "retired_surface_rule": "closure readiness never converts local evidence-ready labels, docs-only refreshes, generated summaries, evidence-log rows, validation-not-run state, GitHub-not-called state, push-not-performed state, remote-deferred state, gate claims, retired route claims, compatibility claims, or old-mode claims into remote closure"
 }

@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
-  "support_boundary": "runtime performance rows that mention strict dispatch, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, cache-only fast paths, timing-only evidence, runner-only evidence, package-only evidence, counter-only evidence, generated-only outputs, evidence-log outputs, migration-only rows, or alternate acceptance are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "runtime performance rows that mention strict dispatch, unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, cache-only fast paths, timing-only evidence, runner-only evidence, package-only evidence, counter-only evidence, generated-only outputs, evidence-log outputs, migration-only rows, or alternate acceptance are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "workloads:dispatch-cache",
@@ -13,9 +13,9 @@
     "measured_fields:strict_error_second_dispatch_path",
     "required_packet_fields:counter_snapshot",
     "runtime_acceptance_report:tmp/reports/runtime/acceptance/summary.json",
-    "*fallback*",
+    "*retired-route*",
     "*compatibility*",
-    "*shim*",
+    "*gate*",
     "*old_mode*",
     "*old-mode*",
     "*legacy*",
@@ -39,5 +39,5 @@
     "*counter_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, unresolved-dispatch, strict-dispatch, cache-only, timing-only, runner-only, package-only, counter-only, generated-only, evidence-log, migration-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, gate, retired route, compatibility, unsupported, unresolved-dispatch, strict-dispatch, cache-only, timing-only, runner-only, package-only, counter-only, generated-only, evidence-log, migration-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

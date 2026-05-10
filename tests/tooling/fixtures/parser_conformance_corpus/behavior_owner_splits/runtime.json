@@ -15,5 +15,5 @@
     "upstream_owner_required:tests/native/runtime"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "old-mode runtime rows, shim runtime rows, fallback runtime rows, compatibility runtime rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, parser-corpus-only runtime claims, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime rows, gate runtime rows, retired route runtime rows, compatibility runtime rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, parser-corpus-only runtime claims, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

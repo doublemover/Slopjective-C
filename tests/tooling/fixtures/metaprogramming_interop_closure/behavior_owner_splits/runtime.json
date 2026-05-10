@@ -16,5 +16,5 @@
     "report_paths:tmp/reports/runtime/acceptance/summary.json"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "public runtime ABI widening, package-loader fallback, shim runtime entrypoints, unsupported property behavior runtime completion, unsupported bridge ecosystems, fallback FFI metadata, stale runtime acceptance, and evidence-log runtime proof remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "public runtime ABI widening, package-loader retired route, gate runtime entrypoints, unsupported property behavior runtime completion, unsupported bridge ecosystems, retired route FFI metadata, stale runtime acceptance, and evidence-log runtime proof remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

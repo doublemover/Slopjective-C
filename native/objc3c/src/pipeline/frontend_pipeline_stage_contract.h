@@ -21,8 +21,8 @@ inline constexpr const char *kFrontendPipelineDiagnosticHandoffOwner =
     "native.frontend.pipeline.diagnostic-handoff";
 inline constexpr const char *kFrontendPipelineBackendHandoffOwner =
     "native.frontend.pipeline.backend-handoff";
-inline constexpr const char *kFrontendPipelineNoFallbackOwnerModel =
-    "strict-hard-cutover-no-fallback-no-compatibility-shim";
+inline constexpr const char *kFrontendPipelineNoRetiredRouteOwnerModel =
+    "strict-hard-cutover-no-retired-route-no-compatibility-gate";
 
 enum class StageId : std::uint8_t {
   Lex = 0,
@@ -76,7 +76,7 @@ struct DiagnosticRecord {
 struct DiagnosticsEnvelope {
   StageId stage = StageId::Lex;
   std::string diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
-  std::string owner_model = kFrontendPipelineNoFallbackOwnerModel;
+  std::string owner_model = kFrontendPipelineNoRetiredRouteOwnerModel;
   std::vector<DiagnosticRecord> diagnostics;
   std::size_t note_count = 0;
   std::size_t warning_count = 0;
@@ -95,9 +95,9 @@ struct StageResult {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
   std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
   std::string diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
-  std::string owner_model = kFrontendPipelineNoFallbackOwnerModel;
+  std::string owner_model = kFrontendPipelineNoRetiredRouteOwnerModel;
   bool owner_split_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   DiagnosticsEnvelope diagnostics;
   std::string failure_reason;

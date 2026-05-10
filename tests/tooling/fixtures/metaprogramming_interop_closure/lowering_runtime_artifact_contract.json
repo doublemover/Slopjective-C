@@ -15,7 +15,7 @@
     "primary_axis": "behavior owner before generated report, runtime-import artifact, cache snapshot, synthesized artifact, or module replay row",
     "support_authority": "lowering/runtime artifacts bind provenance for host-cache, synthesized-accessor, runtime-import, and replay evidence; they require lowering, IR, or runtime behavior owner assignment before support is cited",
     "positive_support_from_artifact": false,
-    "retired_surface_rule": "generated evidence-log, generated artifact-only, module-replay-only, cache-only, fallback lowering, shim lowering, and old-mode lowering rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "generated evidence-log, generated artifact-only, module-replay-only, cache-only, retired route lowering, gate lowering, and old-mode lowering rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "canonical_surfaces": [
     "runtime_metaprogramming_lowering_host_cache_surface",

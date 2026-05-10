@@ -37,7 +37,7 @@ Support-claim contract is separate from projection mechanics: only
 `implemented` rows with `support_claims` in the `objc3c.behavior.*` namespace
 may become public Objective-C 3.0 behavior claims. `rejected`, `reserved`, and
 `internal` rows are negative, unavailable, schema, workflow, report, or owner
-truth only. Retired terms, compatibility/fallback wording, registry facades,
+truth only. Retired terms, compatibility/retired-route wording, registry facades,
 direct helper commands, and generated reports cannot supply missing support
 claims.
 

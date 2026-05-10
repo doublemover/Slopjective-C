@@ -14,7 +14,7 @@ BuildObjc3SemaControlBindingParityValidationReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.unwind_cleanup_ready =
       deterministic_unwind_cleanup_handoff &&
@@ -363,8 +363,8 @@ BuildObjc3SemaControlBindingParityValidationReadinessRecord(
           record.control_binding_parity_validation_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.required_validation_count == 6u &&
       record.passed_validation_count == record.required_validation_count &&
       record.failed_validation_count == 0u;

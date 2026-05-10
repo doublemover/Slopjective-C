@@ -13,5 +13,5 @@
     "source_paths:scripts/publish_objc3c_external_repro_corpus.py"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "runtime fallback, shimmed runtime acceptance, old-mode runtime readiness, compatibility runtime summaries, blocked external evidence, quarantined runtime evidence, generated-only runtime readiness, generated-evidence-log runtime readiness, scorecard-only runtime readiness, badge-only runtime readiness, dashboard-only runtime readiness, and evidence-log runtime readiness are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "runtime retired route, gatemed runtime acceptance, old-mode runtime readiness, compatibility runtime summaries, blocked external evidence, quarantined runtime evidence, generated-only runtime readiness, generated-evidence-log runtime readiness, scorecard-only runtime readiness, badge-only runtime readiness, dashboard-only runtime readiness, and evidence-log runtime readiness are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

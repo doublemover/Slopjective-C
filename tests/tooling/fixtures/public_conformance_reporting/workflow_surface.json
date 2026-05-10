@@ -59,12 +59,12 @@
     "tmp/artifacts/public-conformance/badge/public-conformance-badge.json",
     "tmp/artifacts/public-conformance/report/public-conformance-report.md"
   ],
-  "artifact_path_behavior_boundary": "tmp public conformance artifacts are provenance-only and cannot promote evidence-log, generated-only, dashboard-only, scorecard-only, badge-only, provisional, blocked, quarantined, fallback, shim, old-mode, workflow-label-only, or compatibility evidence to claim-ready support",
+  "artifact_path_behavior_boundary": "tmp public conformance artifacts are provenance-only and cannot promote evidence-log, generated-only, dashboard-only, scorecard-only, badge-only, provisional, blocked, quarantined, retired route, gate, old-mode, workflow-label-only, or compatibility evidence to claim-ready support",
   "behavior_boundary": {
     "primary_axis": "behavior owner before workflow action, child report, tmp artifact, scorecard, badge, public summary, public status, or public claim language",
     "support_authority": "public conformance workflow rows are routing/provenance until e2e owner assignment is backed by upstream parser, sema, lowering, IR, and runtime evidence owners",
     "positive_support_from_report": false,
-    "retired_surface_rule": "workflow-label-only success, evidence-log readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, provisional-as-claim-ready, blocked/quarantined promotion, fallback workflows, shim workflows, old-mode commands, and compatibility workflows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "workflow-label-only success, evidence-log readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, provisional-as-claim-ready, blocked/quarantined promotion, retired route workflows, gate workflows, old-mode commands, and compatibility workflows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "child_report_contracts": {
     "tmp/reports/public-conformance/source-surface-summary.json": "objc3c.public_conformance_reporting.source.surface.summary.v1",

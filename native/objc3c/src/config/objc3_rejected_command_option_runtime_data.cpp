@@ -7,18 +7,18 @@ namespace {
 
 constexpr std::array<CommandOptionState, kRejectedRuntimeCommandOptionDataCount>
     kRejectedRuntimeCommandOptions = {{
-        {"--objc3-runtime-shim-dispatch", RemovedCommandOptionOwner::kRuntime,
+        {"--objc3-runtime-gate-dispatch", RemovedCommandOptionOwner::kRuntime,
          FeatureState::Rejected, "O3R001",
-         "Retired runtime shim dispatch flags are rejected; dispatch must be strict and typed."},
-        {"--objc3-runtime-fallback", RemovedCommandOptionOwner::kRuntime,
+         "Retired runtime gate dispatch flags are rejected; dispatch must be strict and typed."},
+        {"--objc3-runtime-retired-route", RemovedCommandOptionOwner::kRuntime,
          FeatureState::Rejected, "O3R001",
-         "Retired runtime fallback flags are rejected; unresolved dispatch is a structured error."},
-        {"--objc3-allow-fallbacks", RemovedCommandOptionOwner::kRuntime,
+         "Retired runtime retired route flags are rejected; unresolved dispatch is a structured error."},
+        {"--objc3-allow-retired-routes", RemovedCommandOptionOwner::kRuntime,
          FeatureState::Rejected, "O3C001",
-         "Retired fallback-enabling command switches are rejected by the canonical frontend."},
-        {"--objc3-enable-shims", RemovedCommandOptionOwner::kRuntime,
+         "Retired retired-route-enabling command switches are rejected by the canonical frontend."},
+        {"--objc3-enable-gates", RemovedCommandOptionOwner::kRuntime,
          FeatureState::Rejected, "O3C001",
-         "Retired shim-enabling command switches are rejected by the canonical frontend."},
+         "Retired gate-enabling command switches are rejected by the canonical frontend."},
     }};
 
 }  // namespace

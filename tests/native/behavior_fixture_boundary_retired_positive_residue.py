@@ -64,8 +64,8 @@ def test_positive_fixture_lexical_residue_hits_are_documented() -> None:
     retired_terms = (
         "old-mode",
         "old_mode",
-        "shim",
-        "fallback",
+        "gate",
+        "retired-route",
         "compatibility",
         "migration",
         "legacy",

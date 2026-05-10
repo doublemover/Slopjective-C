@@ -37,5 +37,5 @@
     "*validation-packet-only*"
   ],
   "canonical_anchor": "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
-  "retired_surface_rule": "generated replay provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, generated-output-only, generator-output-only, replay-only, validation-packet-only, shim, fallback, old-mode, compatibility, and migration-only replay rows stay provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "generated replay provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; generated-only, evidence-log, generated-output-only, generator-output-only, replay-only, validation-packet-only, gate, retired route, old-mode, compatibility, and migration-only replay rows stay provenance, canonical rejection, strict-error, or absent-support evidence"
 }

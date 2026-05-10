@@ -63,8 +63,8 @@
     "supported_host_claim_owner:platform-hardening-support-source",
     "toolchain_archive_claim_owner:platform-hardening-build-package-validation",
     "toolchain_archive_claim_requires_owner:true",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*migration-as-support*",
@@ -72,5 +72,5 @@
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/tooling/fixtures/packaging_channels",
-  "retired_surface_rule": "missing checked-in channel sources, missing rollback or receipt contracts, non-derived package channel artifacts, absent platform support matrix, skipped source/schema checks, missing bridge child actions, evidence-log workflow summaries, missing manifest fields, missing receipt fields, unsupported host success, missing digest parity, network-dependent offline bundles, installer-only metadata bypassing release manifests, tmp-as-source claims, evidence-log publication, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing checked-in channel sources, missing rollback or receipt contracts, non-derived package channel artifacts, absent platform support matrix, skipped source/schema checks, missing bridge child actions, evidence-log workflow summaries, missing manifest fields, missing receipt fields, unsupported host success, missing digest parity, network-dependent offline bundles, installer-only metadata bypassing release manifests, tmp-as-source claims, evidence-log publication, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

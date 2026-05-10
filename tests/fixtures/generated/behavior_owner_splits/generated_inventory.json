@@ -27,5 +27,5 @@
     "*migration-only*"
   ],
   "canonical_anchor": "tests/fixtures/generated/manifest.json",
-  "retired_surface_rule": "generated inventory rows are provenance-only and cannot create behavior support, compatibility acceptance, fallback support, migration support, evidence-log support, or generated-output-only support"
+  "retired_surface_rule": "generated inventory rows are provenance-only and cannot create behavior support, compatibility acceptance, retired route support, migration support, evidence-log support, or generated-output-only support"
 }

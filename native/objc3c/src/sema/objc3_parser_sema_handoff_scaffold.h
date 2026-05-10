@@ -571,7 +571,7 @@ BuildObjc3ParserSemaHandoffScaffoldReadinessRecord(
   record.parser_sema_contract_handoff_owner =
       scaffold.owner_record.parser_sema_contract_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.owner_record_ready =
       IsReadyObjc3ParserSemaHandoffOwnerRecord(scaffold.owner_record);
@@ -599,8 +599,8 @@ BuildObjc3ParserSemaHandoffScaffoldReadinessRecord(
       Objc3SemaOwnerIsExplicit(
           record.parser_sema_conformance_evidence_owner) &&
       Objc3SemaOwnerIsExplicit(record.parser_sema_contract_readiness_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.owner_record_ready && record.snapshot_evidence_ready &&
       record.snapshot_normalization_ready &&
       record.canonical_rejection_ready &&

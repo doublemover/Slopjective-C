@@ -1,29 +1,29 @@
 module optionalFlowBindingRefinement;
 
-fn choosePresent(maybeValue: id?, fallback: id) -> i32 {
+fn choosePresent(maybeValue: id?, retired route: id) -> i32 {
   if let chosen = maybeValue {
-    let resolved = maybeValue ?? fallback;
+    let resolved = maybeValue ?? retired route;
     return chosen + resolved;
   } else {
-    return fallback;
+    return retired route;
   }
 }
 
-fn chooseGuard(maybeValue: id?, fallback: id) -> i32 {
+fn chooseGuard(maybeValue: id?, retired route: id) -> i32 {
   guard let ready = maybeValue else {
-    return fallback;
+    return retired route;
   }
 
-  let resolved = maybeValue ?? fallback;
+  let resolved = maybeValue ?? retired route;
   let sent = [nil? description];
   return ready + resolved + sent;
 }
 
-fn chooseRefined(maybeValue: id?, fallback: id) -> i32 {
+fn chooseRefined(maybeValue: id?, retired route: id) -> i32 {
   if (maybeValue != nil) {
     return maybeValue;
   } else {
-    return fallback;
+    return retired route;
   }
 }
 

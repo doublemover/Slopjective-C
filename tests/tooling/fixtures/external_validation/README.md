@@ -20,5 +20,5 @@ public action inventory, integrated child ordering, and child report contracts.
 `owner_contracts.json` is the machine-readable trust boundary for the public
 actions. Accepted intake entries are the only capability-truth source. Candidate,
 quarantined, rejected, local-only, and evidence-log evidence cannot publish a
-capability claim, and there is no fallback trust route outside the intake,
+capability claim, and there is no retired route trust route outside the intake,
 quarantine, artifact, and workflow owners.

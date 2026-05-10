@@ -32,13 +32,13 @@
       "expected_diagnostic_code": "O3S221"
     },
     {
-      "path": "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+      "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
       "behavior_family": "errors",
       "fixture_kind": "negative",
       "retired_surface_tags": [
         "runtime-adapter"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-SHIM"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
     },
     {
       "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",

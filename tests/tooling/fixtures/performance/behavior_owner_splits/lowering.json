@@ -14,5 +14,5 @@
     "public_commands:compile_objc3c"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback lowering paths, wrapper-only compile actions, compatibility-lowering performance claims, shim lowering rows, old-mode lowering rows, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, timing-only lowering rows, cache-only lowering rows, local-only lowering rows, cross-machine lowering rows, and foreign-baseline lowering rows remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "retired route lowering paths, wrapper-only compile actions, compatibility-lowering performance claims, gate lowering rows, old-mode lowering rows, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, timing-only lowering rows, cache-only lowering rows, local-only lowering rows, cross-machine lowering rows, and foreign-baseline lowering rows remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -39,7 +39,7 @@
     "tests/native/lowering/statements/if_else_statement_lowering.objc3",
     "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
     "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
-    "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3"
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
   ],
-  "retired_surface_rule": "removed runtime fallback flags and non-nil dispatch fallback linkage stay strict-error or rejection evidence"
+  "retired_surface_rule": "removed runtime retired route flags and non-nil dispatch retired route linkage stay strict-error or rejection evidence"
 }

@@ -2,7 +2,7 @@
 
 This directory documents deterministic validation fixtures for extension
 registry transition and rejection governance. Historical `compatibility_*`
-field names are fixture keys only; they are not public support, fallback, or
+field names are fixture keys only; they are not public support, retired route, or
 alias contracts.
 
 ## 1. Scope and Artifacts

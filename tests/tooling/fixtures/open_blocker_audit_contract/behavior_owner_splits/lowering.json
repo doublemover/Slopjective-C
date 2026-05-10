@@ -15,5 +15,5 @@
     "upstream_owner_required:tests/native/lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "old-mode lowering audit, shim lowering audit, fallback lowering audit, compatibility lowering audit, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, and audit expected-output rows promoted as lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode lowering audit, gate lowering audit, retired route lowering audit, compatibility lowering audit, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, and audit expected-output rows promoted as lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

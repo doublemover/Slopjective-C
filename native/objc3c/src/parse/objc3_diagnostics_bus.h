@@ -12,11 +12,11 @@ struct Objc3FrontendDiagnosticsBus {
   std::vector<std::string> parser;
   std::vector<std::string> semantic;
   std::string owner_contract_id = std::string(kObjc3DiagnosticOwnerContractId);
-  std::string owner_model = std::string(kObjc3DiagnosticNoFallbackOwnerModel);
+  std::string owner_model = std::string(kObjc3DiagnosticNoRetiredRouteOwnerModel);
   std::string parser_stage_owner = std::string(kObjc3ParserDiagnosticStageOwner);
   std::string sema_stage_owner = std::string(kObjc3SemaDiagnosticStageOwner);
-  bool fallback_allowed = false;
-  bool compatibility_shim_allowed = false;
+  bool retired_route_allowed = false;
+  bool compatibility_gate_allowed = false;
   bool recovery_counts_as_success = false;
 
   [[nodiscard]] bool empty() const { return lexer.empty() && parser.empty() && semantic.empty(); }
@@ -25,10 +25,10 @@ struct Objc3FrontendDiagnosticsBus {
 
   [[nodiscard]] bool hard_cutover_owned() const {
     return owner_contract_id == kObjc3DiagnosticOwnerContractId &&
-           owner_model == kObjc3DiagnosticNoFallbackOwnerModel &&
+           owner_model == kObjc3DiagnosticNoRetiredRouteOwnerModel &&
            Objc3DiagnosticOwnerIsExplicit(parser_stage_owner) &&
            Objc3DiagnosticOwnerIsExplicit(sema_stage_owner) &&
-           !fallback_allowed && !compatibility_shim_allowed &&
+           !retired_route_allowed && !compatibility_gate_allowed &&
            !recovery_counts_as_success &&
            Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kParser) &&
            Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kSemantic);

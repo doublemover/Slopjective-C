@@ -65,14 +65,14 @@
       "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-MODE"
     },
     {
-      "path": "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3",
+      "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
       "behavior_family": "negative",
       "fixture_kind": "rejection",
       "retired_surface_tags": [
         "old-mode"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
     }
   ],
-  "retired_surface_rule": "legacy literal aliases plus removed parser mode and fallback flags are parser rejections"
+  "retired_surface_rule": "legacy literal aliases plus removed parser mode and retired route flags are parser rejections"
 }

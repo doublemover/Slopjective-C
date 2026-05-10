@@ -65,14 +65,14 @@
       "expected_diagnostic_code": "link.unresolved_symbol"
     },
     {
-      "path": "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
       "behavior_family": "errors",
       "fixture_kind": "strict-error",
       "retired_surface_tags": [
         "runtime-dispatch"
       ],
-      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-FALLBACK"
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
     }
   ],
-  "retired_surface_rule": "runtime-dispatch fallback lowering remains strict-error or removed-flag rejection evidence"
+  "retired_surface_rule": "runtime-dispatch retired route lowering remains strict-error or removed-flag rejection evidence"
 }

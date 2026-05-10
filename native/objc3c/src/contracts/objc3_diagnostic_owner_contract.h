@@ -8,8 +8,8 @@
 
 inline constexpr std::string_view kObjc3DiagnosticOwnerContractId =
     "objc3c.native.diagnostic.owner-split.hard-cutover.v1";
-inline constexpr std::string_view kObjc3DiagnosticNoFallbackOwnerModel =
-    "strict-hard-cutover-no-fallback-no-compatibility-shim";
+inline constexpr std::string_view kObjc3DiagnosticNoRetiredRouteOwnerModel =
+    "strict-hard-cutover-no-retired-route-no-compatibility-gate";
 
 inline constexpr std::string_view kObjc3LexerDiagnosticCatalogOwner =
     "native.frontend.lexer.diagnostic-catalog";
@@ -49,9 +49,9 @@ struct Objc3DiagnosticStageOwnerContract {
   std::string_view stage_owner;
   std::string_view fixit_owner;
   std::string_view recovery_owner;
-  std::string_view owner_model = kObjc3DiagnosticNoFallbackOwnerModel;
-  bool fallback_allowed = false;
-  bool compatibility_shim_allowed = false;
+  std::string_view owner_model = kObjc3DiagnosticNoRetiredRouteOwnerModel;
+  bool retired_route_allowed = false;
+  bool compatibility_gate_allowed = false;
   bool legacy_positive_allowed = false;
   bool recovery_counts_as_success = false;
 };
@@ -106,8 +106,8 @@ inline bool Objc3DiagnosticStageOwnerContractIsHardCutover(
          Objc3DiagnosticOwnerIsExplicit(contract.stage_owner) &&
          Objc3DiagnosticOwnerIsExplicit(contract.fixit_owner) &&
          Objc3DiagnosticOwnerIsExplicit(contract.recovery_owner) &&
-         contract.owner_model == kObjc3DiagnosticNoFallbackOwnerModel &&
-         !contract.fallback_allowed && !contract.compatibility_shim_allowed &&
+         contract.owner_model == kObjc3DiagnosticNoRetiredRouteOwnerModel &&
+         !contract.retired_route_allowed && !contract.compatibility_gate_allowed &&
          !contract.legacy_positive_allowed &&
          !contract.recovery_counts_as_success;
 }

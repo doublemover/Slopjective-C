@@ -14,7 +14,7 @@ Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
       UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family);
   plan.owns_dispatch_result = Objc3LoweringStrictOwnerModelIsReady(
       plan.dispatch_result_owner, plan.dispatch_result_owner_model,
-      plan.strict_no_fallback, plan.strict_no_compatibility);
+      plan.strict_no_retired_route, plan.strict_no_compatibility);
   plan.hard_cutover_dispatch_target =
       plan.uses_canonical_runtime_entrypoint &&
       plan.dispatch_symbol ==

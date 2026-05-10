@@ -9,23 +9,23 @@
 struct Objc3IRRuntimeDispatchCallRequest {
   std::string result_value;
   std::string result_owner = kObjc3IRRuntimeDispatchResultOwner;
-  std::string result_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string result_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string dispatch_symbol;
   std::string receiver;
   std::string selector_ptr;
   std::vector<std::string> args;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 
 struct Objc3IRDirectDispatchCallRequest {
   std::string result_value;
   std::string result_owner = kObjc3IRDirectDispatchResultOwner;
-  std::string result_owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  std::string result_owner_model = kObjc3LoweringNoRetiredRouteOwnerModel;
   std::string callee_symbol;
   std::vector<std::string> args;
   std::size_t explicit_arg_count = 0;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };
 

@@ -15,5 +15,5 @@
     "upstream_owner_required:tests/native/ir"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, and planning-policy-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, gate IR rows, retired route IR rows, compatibility IR rows, and planning-policy-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

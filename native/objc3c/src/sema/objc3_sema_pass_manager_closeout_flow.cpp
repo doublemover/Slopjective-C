@@ -10,7 +10,7 @@ BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
   Objc3SemaParityCloseoutPublicationReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.pass_manager_executed = pass_manager_executed;
   record.parser_sema_contract_ready = readiness.parser_sema_contract_ready;
@@ -36,8 +36,8 @@ BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
           record.typed_semantic_handoff_publication_owner) &&
       Objc3SemaOwnerIsExplicit(
           record.parser_sema_contract_readiness_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.pass_manager_executed &&
       IsReadyObjc3SemaParityCloseoutReadinessInputs(readiness);
   return record;
@@ -52,7 +52,7 @@ BuildObjc3SemaCloseoutSurfaceReadinessRecord(
   Objc3SemaCloseoutSurfaceReadinessRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.parser_sema_contract_ready = readiness.parser_sema_contract_ready;
   record.parser_sema_conformance_evidence_ready =
@@ -95,8 +95,8 @@ BuildObjc3SemaCloseoutSurfaceReadinessRecord(
       Objc3SemaOwnerIsExplicit(
           record.parity_closeout_publication_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       IsReadyObjc3SemaCloseoutSurfaceReadinessInputs(readiness);
   return record;
 }

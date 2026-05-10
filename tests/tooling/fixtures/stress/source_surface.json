@@ -51,7 +51,7 @@
     {
       "phase": "canonical_rejection",
       "path": "tests/tooling/fixtures/stress/behavior_owner_splits/canonical_rejection.json",
-      "boundary": "stress fallback, shim, old-mode, migration, generated-only, evidence-log, compatibility, unsupported, strict-error, and alternate acceptance claims"
+      "boundary": "stress retired route, gate, old-mode, migration, generated-only, evidence-log, compatibility, unsupported, strict-error, and alternate acceptance claims"
     },
     {
       "phase": "stress_fixture_provenance",

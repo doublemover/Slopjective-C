@@ -24,7 +24,7 @@
       "strict_or_rejection_evidence": [
         "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
         "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-        "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
       ],
       "owner_index_area": "parser_lexer_ast",
       "issues": [
@@ -32,7 +32,7 @@
         "#8134",
         "#8146"
       ],
-      "retired_surface_disposition": "parser old-mode spellings and fallback flags are parser rejections"
+      "retired_surface_disposition": "parser old-mode spellings and retired route flags are parser rejections"
     },
     {
       "phase": "sema",
@@ -52,7 +52,7 @@
         "tests/native/sema/control_flow/definite_return_if_else.objc3"
       ],
       "strict_or_rejection_evidence": [
-        "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
         "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
         "tests/native/sema/types/assignment_unknown_target_rejected.objc3"
@@ -83,7 +83,7 @@
       "strict_or_rejection_evidence": [
         "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
         "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
-        "tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
         "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch.objc3"
       ],
       "owner_index_area": "lowering_and_ir",
@@ -92,7 +92,7 @@
         "#8137",
         "#8147"
       ],
-      "retired_surface_disposition": "runtime fallback lowering stays strict-error or removed-flag rejection evidence"
+      "retired_surface_disposition": "runtime retired route lowering stays strict-error or removed-flag rejection evidence"
     },
     {
       "phase": "ir",
@@ -116,7 +116,7 @@
         "#8137",
         "#8147"
       ],
-      "retired_surface_disposition": "unresolved runtime helper/call evidence is strict-error, not fallback support"
+      "retired_surface_disposition": "unresolved runtime helper/call evidence is strict-error, not retired route support"
     },
     {
       "phase": "runtime",
@@ -165,7 +165,7 @@
         "#8143",
         "#8144"
       ],
-      "retired_surface_disposition": "runtime dispatch fallback is strict-error behavior; storage/reflection/public ABI probes are canonical owner evidence only"
+      "retired_surface_disposition": "runtime dispatch retired route is strict-error behavior; storage/reflection/public ABI probes are canonical owner evidence only"
     },
     {
       "phase": "e2e",

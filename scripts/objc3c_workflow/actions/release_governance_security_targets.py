@@ -30,7 +30,7 @@ SECURITY_HARDENING_HARD_CUTOVER_GUARDRAILS: tuple[tuple[str, object], ...] = (
     ("evidence_log_security_proof_allowed", False),
     ("generated_report_capability_truth_allowed", False),
     ("local_tabletop_capability_truth_allowed", False),
-    ("fallback_claims_allowed", False),
+    ("retired_route_claims_allowed", False),
     ("trust_bypass_claims_allowed", False),
     ("wrapper_only_security_actions_allowed", False),
     ("security_positive_claim_requires_source_contract", True),
@@ -76,7 +76,7 @@ class SecurityHardeningTarget:
             "evidence_log_security_proof_allowed",
             "generated_report_capability_truth_allowed",
             "local_tabletop_capability_truth_allowed",
-            "fallback_claims_allowed",
+            "retired_route_claims_allowed",
             "trust_bypass_claims_allowed",
             "wrapper_only_security_actions_allowed",
         )
@@ -121,7 +121,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
         ),
         forbidden_claims=(
             "evidence-log macro trust proof",
-            "fallback macro package trust",
+            "retired route macro package trust",
             "trust bypass for missing provenance",
             "wrapper-only macro security action",
         ),
@@ -142,7 +142,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
             "local-only tabletop as capability truth",
             "evidence-log response readiness proof",
             "unowned disclosure override",
-            "fallback release publication after drill failure",
+            "retired route release publication after drill failure",
         ),
     ),
     "runtime_hardening_owner": SecurityHardeningOwnerContract(
@@ -156,7 +156,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
         ),
         forbidden_claims=(
             "runtime hardening without runnable evidence",
-            "runtime fallback acceptance",
+            "runtime retired route acceptance",
             "trust bypass for missing runtime case",
             "wrapper-only runtime security action",
         ),
@@ -182,7 +182,7 @@ SECURITY_HARDENING_DOMAIN_OWNER_CONTRACTS: dict[str, SecurityHardeningOwnerContr
             "automatic key rotation",
             "hosted revocation",
             "signed-installer trust",
-            "fallback update trust",
+            "retired route update trust",
             "trust bypass for unsigned payload",
         ),
     ),

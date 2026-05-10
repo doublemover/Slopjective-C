@@ -20,12 +20,12 @@ typedef struct objc3_runtime_dispatch_i32_result {
   const char *diagnostic_message;
   /*
    * Runtime-owned provenance fields for the diagnostic and fail-closed
-   * ownership model. fallback_path_allowed is a fixed runtime contract flag,
+   * ownership model. retired_route_path_allowed is a fixed runtime contract flag,
    * not a compatibility escape hatch.
    */
   const char *diagnostic_owner_model;
   const char *fail_closed_ownership_model;
-  int fallback_path_allowed;
+  int retired_route_path_allowed;
 } objc3_runtime_dispatch_i32_result;
 
 #ifdef __cplusplus

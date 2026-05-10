@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/security_hardening/*.json"
   ],
-  "support_boundary": "security-hardening provenance owns JSON owner-contract inventories, boundary inventories, runbook paths, schema path labels, script anchors, native code path references, native fixture path references, public action labels, workflow labels, package bridge labels, upstream policy links, required report paths, required artifact paths, machine-owned output roots, incident/degraded/blocking condition labels, successor issue labels, gap/non-claim labels, generated artifact labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "security-hardening provenance owns JSON owner-contract inventories, boundary inventories, runbook paths, schema path labels, script anchors, native code path references, native fixture path references, public action labels, workflow labels, package bridge labels, upstream policy links, required report paths, required artifact paths, machine-owned output roots, incident/degraded/blocking condition labels, successor issue labels, gap/non-claim labels, generated artifact labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/security_hardening",
@@ -50,11 +50,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "security hardening provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release, distribution, platform, package, advisory publication, key custody, macro trust, runtime hardening, response readiness, supply-chain, or security capability behavior; owner contracts, reports, artifacts, scripts, schemas, native path references, public actions, workflow labels, blocked/degraded condition labels, non-claims, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, wrapper rows, runner rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "security hardening provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, release, distribution, platform, package, advisory publication, key custody, macro trust, runtime hardening, response readiness, supply-chain, or security capability behavior; owner contracts, reports, artifacts, scripts, schemas, native path references, public actions, workflow labels, blocked/degraded condition labels, non-claims, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, wrapper rows, runner rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

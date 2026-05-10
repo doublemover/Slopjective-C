@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "removed_parser_fallback_flag_rejected.objc3",
+  "fixture": "removed_parser_retired_route_flag_rejected.objc3",
   "origin": "hand-authored",
   "owner_phase": "parser",
   "diagnostic_owner_contract": {
@@ -9,33 +9,33 @@
     "stage_owner": "native.frontend.parser.diagnostic-stage",
     "fixit_owner": "native.frontend.parser.diagnostic-fixit",
     "recovery_owner": "native.frontend.parser.diagnostic-recovery",
-    "owner_model": "strict-hard-cutover-no-fallback-no-compatibility-shim",
+    "owner_model": "strict-hard-cutover-no-retired-route-no-compatibility-gate",
     "recovery_counts_as_success": false
   },
   "behavior_family": "negative",
   "fixture_kind": "rejection",
   "retired_surface_tags": [
     "old-mode",
-    "fallback"
+    "retired-route"
   ],
   "boundary": {
     "canonical_behavior_source": true,
     "behavior_contract": "canonical-rejection",
     "retired_positive_surface": true,
-    "fallback_allowed": false,
-    "shim_allowed": false
+    "retired_route_allowed": false,
+    "gate_allowed": false
   },
   "expected": {
     "stage": "parse",
-    "diagnostic_code": "OBJC3-E-REMOVED-FALLBACK-FLAG",
+    "diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
     "required_tokens": [
-      "OBJC3-E-REMOVED-FALLBACK-FLAG",
-      "parser fallback feature toggles are removed"
+      "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "parser retired route feature toggles are removed"
     ]
   },
   "execution": {
     "native_compile_args": [
-      "-fobjc3-parser-fallback=on",
+      "-fobjc3-parser-retired-route=on",
       "-fsyntax-only"
     ]
   }

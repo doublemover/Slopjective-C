@@ -8,11 +8,11 @@
   "selectors": [
     "entries.surface=legacy-literal-aliases",
     "entries.surface=removed-compatibility-mode-flag",
-    "entries.surface=removed-parser-fallback-flag",
+    "entries.surface=removed-parser-retired-route-flag",
     "entries.retired_tag=old-mode",
     "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
     "tests/native/parser/negative/removed_compatibility_mode_flag_rejected.objc3",
-    "tests/native/parser/negative/removed_parser_fallback_flag_rejected.objc3"
+    "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
   ],
   "canonical_anchor": "tests/native/parser/negative",
   "retired_surface_rule": "old-mode literals and removed parser or compatibility mode flags are canonical parser rejection evidence, not compatibility support"

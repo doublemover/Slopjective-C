@@ -7,10 +7,10 @@
   "summary_implementation_anchor": "scripts/build_object_model_closure_workload_summary.py",
   "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
   "workload_boundary_policy": {
-    "primary_axis": "behavior owner before loader workload, cross-module replay, category/protocol map row, public workflow label, report row, or fallback dispatch expectation",
+    "primary_axis": "behavior owner before loader workload, cross-module replay, category/protocol map row, public workflow label, report row, or retired route dispatch expectation",
     "support_authority": "loader/category/protocol workload rows are provenance until parser, runtime, and e2e owners claim fixture parsing, runtime registration, dispatch/object inspection, and replay behavior together",
     "positive_support_from_workload_map": false,
-    "retired_surface_rule": "workflow-label-only, evidence-log, generated-evidence-log, fallback dispatch, old-mode loader, shim loader, compatibility loader, and milestone-local alternate acceptance rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "workflow-label-only, evidence-log, generated-evidence-log, retired route dispatch, old-mode loader, gate loader, compatibility loader, and milestone-local alternate acceptance rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "workloads": [
     {
@@ -41,7 +41,7 @@
         "e2e",
         "object_model_provenance"
       ],
-      "support_boundary": "category attachment and merged dispatch remain runtime/e2e support only for canonical fixtures; unresolved dispatch fallback remains strict-error evidence",
+      "support_boundary": "category attachment and merged dispatch remain runtime/e2e support only for canonical fixtures; unresolved dispatch retired route remains strict-error evidence",
       "required_case_ids": [
         "canonical-dispatch",
         "canonical-sample-set"
@@ -65,7 +65,7 @@
         "canonical_rejection",
         "object_model_provenance"
       ],
-      "support_boundary": "protocol conformance and aggregate query coherence are semantic/runtime claims; universal selector success and unresolved dispatch miss fallback are canonical rejection or strict-error evidence",
+      "support_boundary": "protocol conformance and aggregate query coherence are semantic/runtime claims; universal selector success and unresolved dispatch miss retired route are canonical rejection or strict-error evidence",
       "required_case_ids": [
         "realization-lookup-reflection-runtime",
         "dispatch-fast-path"

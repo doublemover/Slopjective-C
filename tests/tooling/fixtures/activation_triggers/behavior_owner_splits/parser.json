@@ -14,5 +14,5 @@
     "upstream_owner_required:tests/native/parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser activation, shim parser activation, fallback parser activation, compatibility parser activation, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from activation snapshots are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser activation, gate parser activation, retired route parser activation, compatibility parser activation, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from activation snapshots are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

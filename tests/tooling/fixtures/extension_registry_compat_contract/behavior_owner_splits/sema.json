@@ -15,5 +15,5 @@
     "semantic_like_terms:compatibility_matrix,lifecycle_state,waiver_policy are governance labels only"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "old-mode sema registry rows, compatibility sema rows, shim sema rows, fallback sema rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and compatibility taxonomy labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode sema registry rows, compatibility sema rows, gate sema rows, retired route sema rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and compatibility taxonomy labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

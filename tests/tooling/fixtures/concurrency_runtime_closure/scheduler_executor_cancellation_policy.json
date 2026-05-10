@@ -18,7 +18,7 @@
     "primary_axis": "behavior owner before scheduler/executor/cancellation row, task-group workload row, actor executor row, private snapshot, probe payload snapshot, generated report, public workflow label, or successor fairness/transport row",
     "support_authority": "scheduler, executor, and cancellation support requires sema, runtime, or e2e owner assignment over canonical fixtures and probes",
     "positive_support_from_probe_payload": false,
-    "retired_surface_rule": "scheduler fairness, distributed actor transport, external executor integration, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, workflow-label-only rows, fallback scheduler rows, shim executor rows, old-mode cancellation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "scheduler fairness, distributed actor transport, external executor integration, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, workflow-label-only rows, retired route scheduler rows, gate executor rows, old-mode cancellation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "workload_rules": [
     "executor selection, cancellation polling, cancellation callbacks, and executor hops are supported only through the current private runtime helper cluster and shared acceptance evidence",

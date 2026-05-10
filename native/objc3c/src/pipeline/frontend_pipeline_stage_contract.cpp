@@ -81,7 +81,7 @@ bool FrontendPipelineOwnerIsExplicit(const std::string &owner) {
 }
 
 bool FrontendPipelineOwnerModelIsStrict(const std::string &owner_model) {
-  return owner_model == kFrontendPipelineNoFallbackOwnerModel;
+  return owner_model == kFrontendPipelineNoRetiredRouteOwnerModel;
 }
 
 bool StageResultOwnerSplitIsReady(const StageResult &result) {
@@ -89,7 +89,7 @@ bool StageResultOwnerSplitIsReady(const StageResult &result) {
          FrontendPipelineOwnerIsExplicit(result.stage_output_owner) &&
          FrontendPipelineOwnerIsExplicit(result.diagnostic_handoff_owner) &&
          FrontendPipelineOwnerModelIsStrict(result.owner_model) &&
-         result.strict_no_fallback && result.strict_no_compatibility;
+         result.strict_no_retired_route && result.strict_no_compatibility;
 }
 
 std::string StageResultOwnerReplayKey(const StageResult &result) {
@@ -97,8 +97,8 @@ std::string StageResultOwnerReplayKey(const StageResult &result) {
          ";stage_output_owner=" + result.stage_output_owner +
          ";diagnostic_handoff_owner=" + result.diagnostic_handoff_owner +
          ";owner_model=" + result.owner_model +
-         ";strict_no_fallback=" +
-         (result.strict_no_fallback ? "true" : "false") +
+         ";strict_no_retired_route=" +
+         (result.strict_no_retired_route ? "true" : "false") +
          ";strict_no_compatibility=" +
          (result.strict_no_compatibility ? "true" : "false") +
          ";owner_split_explicit=" +
@@ -111,7 +111,7 @@ DiagnosticsEnvelope BuildDiagnosticsEnvelope(
   DiagnosticsEnvelope envelope;
   envelope.stage = stage;
   envelope.diagnostic_handoff_owner = kFrontendPipelineDiagnosticHandoffOwner;
-  envelope.owner_model = kFrontendPipelineNoFallbackOwnerModel;
+  envelope.owner_model = kFrontendPipelineNoRetiredRouteOwnerModel;
   envelope.diagnostics = std::move(diagnostics);
   for (const DiagnosticRecord &diagnostic : envelope.diagnostics) {
     switch (diagnostic.severity) {

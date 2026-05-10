@@ -65,7 +65,7 @@ void AppendRuntimeMetadataPropertyRecords(
         property.effective_setter_selector;
     property_record.accessor_ownership_profile =
         property.accessor_ownership_profile;
-    objc3c::support::ApplyPropertyOwnershipProfileFallback(property_record,
+    objc3c::support::ApplyPropertyOwnershipProfileRetiredRoute(property_record,
                                                            false);
     objc3c::support::RebuildPropertyAccessorOwnershipProfileIfNeeded(
         property_record);

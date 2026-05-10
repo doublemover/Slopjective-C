@@ -17,7 +17,7 @@
     "primary_axis": "behavior owner before ARC lifetime insertion policy row, helper traffic row, weak/current-property helper row, autoreleasepool row, private debug snapshot, generated report, or successor interaction row",
     "support_authority": "ARC automation support requires sema, lowering, or runtime owner assignment over canonical fixtures and probes",
     "positive_support_from_snapshot": false,
-    "retired_surface_rule": "evidence-only sidecars, private-snapshot-only rows, source-only ARC truth, fallback ARC helper traffic, compatibility ARC shims, old-mode ownership claims, public ABI widening, and successor interaction widening are provenance, canonical rejection, strict-error, or absent-support evidence"
+    "retired_surface_rule": "evidence-only sidecars, private-snapshot-only rows, source-only ARC truth, retired route ARC helper traffic, compatibility ARC gates, old-mode ownership claims, public ABI widening, and successor interaction widening are provenance, canonical rejection, strict-error, or absent-support evidence"
   },
   "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [

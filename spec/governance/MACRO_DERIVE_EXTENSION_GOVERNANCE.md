@@ -45,7 +45,7 @@ Every derive/macro extension shall be assigned exactly one stage at all times.
 
 ### 2.4 Deprecated {#mdx-gov-2-4}
 
-- Feature remains explicitly listed while scheduled for retirement, but no fallback or alias support is created.
+- Feature remains explicitly listed while scheduled for retirement, but no retired route or alias support is created.
 - New functionality is forbidden; only fixes, diagnostics, and replacement guidance are allowed.
 - Deprecation diagnostics and fix-its are required.
 - Removal is allowed only after the minimum deprecation window in Section 7.4.

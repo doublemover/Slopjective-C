@@ -86,8 +86,8 @@ inline constexpr const char *kObjc3SemaCloseoutSurfaceReadinessOwner =
     "native.frontend.sema.closeout-surface-readiness";
 inline constexpr const char *kObjc3SemaCloseoutSignoffOwner =
     "native.frontend.sema.closeout-signoff";
-inline constexpr const char *kObjc3SemaNoFallbackOwnerModel =
-    "strict-hard-cutover-no-fallback-no-compatibility-shim";
+inline constexpr const char *kObjc3SemaNoRetiredRouteOwnerModel =
+    "strict-hard-cutover-no-retired-route-no-compatibility-gate";
 
 enum class Objc3SemaPassId {
   BuildIntegrationSurface = 0,
@@ -160,9 +160,9 @@ struct Objc3SemaPassFlowSummary {
   std::string diagnostic_catalog_owner = std::string(::kObjc3SemaDiagnosticCatalogOwner);
   std::string diagnostic_fixit_owner = std::string(::kObjc3SemaDiagnosticFixitOwner);
   std::string diagnostic_recovery_owner = std::string(::kObjc3SemaDiagnosticRecoveryOwner);
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
   bool owner_split_explicit = false;
-  bool strict_no_fallback = true;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool recovery_counts_as_success = false;
   bool replay_key_deterministic = false;
@@ -178,13 +178,13 @@ inline bool Objc3SemaOwnerSplitIsReady(
     const std::string &typed_semantic_handoff_owner,
     const std::string &diagnostic_handoff_owner,
     const std::string &owner_model,
-    bool strict_no_fallback,
+    bool strict_no_retired_route,
     bool strict_no_compatibility) {
   return Objc3SemaOwnerIsExplicit(stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(typed_semantic_handoff_owner) &&
          Objc3SemaOwnerIsExplicit(diagnostic_handoff_owner) &&
-         owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         strict_no_fallback && strict_no_compatibility &&
+         owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         strict_no_retired_route && strict_no_compatibility &&
          Objc3DiagnosticStageIsHardCutover(Objc3FrontendDiagnosticStage::kSemantic);
 }
 
@@ -224,7 +224,7 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
              summary.typed_semantic_handoff_owner,
              summary.diagnostic_handoff_owner,
              summary.owner_model,
-             summary.strict_no_fallback,
+             summary.strict_no_retired_route,
              summary.strict_no_compatibility) &&
          !summary.recovery_counts_as_success &&
          summary.replay_key_deterministic &&

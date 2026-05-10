@@ -13,7 +13,7 @@
     "tests/tooling/fixtures/parser_conformance_corpus/reject_post_comma_nondecl.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3"
   ],
-  "support_boundary": "canonical rejection owns the rejected parser conformance cases A010-C002 through A010-C009. These fixtures are hard-cutover parser diagnostic evidence for noncanonical pointer parameter type syntax, malformed parameter punctuation, extern without fn, duplicate pure and throws modifiers, and misplaced pure after fn. They are not retired-source acceptance, compatibility acceptance, fallback acceptance, or alternate parser support.",
+  "support_boundary": "canonical rejection owns the rejected parser conformance cases A010-C002 through A010-C009. These fixtures are hard-cutover parser diagnostic evidence for noncanonical pointer parameter type syntax, malformed parameter punctuation, extern without fn, duplicate pure and throws modifiers, and misplaced pure after fn. They are not retired-source acceptance, compatibility acceptance, retired route acceptance, or alternate parser support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -37,8 +37,8 @@
     "reject_reason:misplaced-qualifier",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -49,5 +49,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "rejected parser corpus cases, old-mode parser rows, shim parser rows, fallback parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "rejected parser corpus cases, old-mode parser rows, gate parser rows, retired route parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

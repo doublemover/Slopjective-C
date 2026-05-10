@@ -1,0 +1,10 @@
+// Canonical sema rejection fixture: compatibility gates never authorize semantic positives.
+module RemovedCompatibilityGateRejected;
+
+@interface GatemedBox : NSObject
+- (id)value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

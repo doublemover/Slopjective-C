@@ -51,12 +51,12 @@ function Is-ExecutableReplaySmokeCandidate {
 function Resolve-FixtureId {
   param(
     [object]$Payload,
-    [string]$FallbackId
+    [string]$RetiredRouteId
   )
   if ((Has-Property -Object $Payload -Name "fixture_id") -and ($Payload.fixture_id -is [string]) -and ($Payload.fixture_id.Trim().Length -gt 0)) {
     return $Payload.fixture_id.Trim()
   }
-  return $FallbackId
+  return $RetiredRouteId
 }
 
 function Require-Id {
@@ -120,7 +120,7 @@ foreach ($bucket in $BucketMinima.Keys) {
       continue
     }
 
-    $fixtureId = Resolve-FixtureId -Payload $payload -FallbackId $file.BaseName
+    $fixtureId = Resolve-FixtureId -Payload $payload -RetiredRouteId $file.BaseName
     $AllFixtureIds.Add($fixtureId) | Out-Null
 
     if (Is-ExecutableFixture -Payload $payload) {

@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/performance_governance/*.json"
   ],
-  "support_boundary": "performance-governance provenance owns JSON policy inventories, runbook paths, source surface paths, checked-in source paths, build script anchors, schema paths, action ids, report roots, artifact roots, release evidence paths, upstream report paths, budget ids, metric ids, source fields, threshold values, lab profile ids, machine profile field names, owner ids, breach ids, waiver registry rows, claim status labels, forbidden evidence labels, explicit non-goal labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "performance-governance provenance owns JSON policy inventories, runbook paths, source surface paths, checked-in source paths, build script anchors, schema paths, action ids, report roots, artifact roots, release evidence paths, upstream report paths, budget ids, metric ids, source fields, threshold values, lab profile ids, machine profile field names, owner ids, breach ids, waiver registry rows, claim status labels, forbidden evidence labels, explicit non-goal labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/performance_governance",
@@ -55,12 +55,12 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*wrapper-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "performance-governance provenance never defines positive parser, sema, lowering, IR, runtime, benchmark performance, claimability dashboard, release, acceptance, or public behavior; policies, reports, artifacts, scripts, schemas, runbooks, source paths, budget ids, metric ids, threshold labels, owner ids, waiver labels, breach labels, action labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, local-only rows, wrapper-only rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "performance-governance provenance never defines positive parser, sema, lowering, IR, runtime, benchmark performance, claimability dashboard, release, acceptance, or public behavior; policies, reports, artifacts, scripts, schemas, runbooks, source paths, budget ids, metric ids, threshold labels, owner ids, waiver labels, breach labels, action labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, local-only rows, wrapper-only rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

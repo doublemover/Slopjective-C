@@ -8,7 +8,7 @@ BuildObjc3SemaCoreSemanticSummaryReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.interface_implementation_symbols_ready =
       surface.interface_implementation_summary.interface_method_symbols ==
@@ -84,8 +84,8 @@ BuildObjc3SemaCoreSemanticSummaryReadinessRecord(
           record.core_semantic_summary_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.interface_implementation_symbols_ready &&
       record.interface_implementation_handoff_ready &&
       record.protocol_category_composition_symbols_ready &&
@@ -103,7 +103,7 @@ BuildObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.selector_normalization_ready =
       surface.deterministic_selector_normalization_handoff &&
@@ -210,8 +210,8 @@ BuildObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
           record.selector_property_type_annotation_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.selector_normalization_ready &&
       record.property_attribute_ready &&
       record.type_annotation_surface_ready;
@@ -226,7 +226,7 @@ BuildObjc3SemaTypeBoundarySummaryReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.lightweight_generic_constraint_ready =
       surface.deterministic_lightweight_generic_constraint_handoff &&
@@ -328,8 +328,8 @@ BuildObjc3SemaTypeBoundarySummaryReadinessRecord(
       Objc3SemaOwnerIsExplicit(record.type_boundary_summary_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.lightweight_generic_constraint_ready &&
       record.nullability_flow_warning_precision_ready &&
       record.protocol_qualified_object_type_ready;
@@ -344,7 +344,7 @@ BuildObjc3SemaModuleTypeAbiSummaryReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.variance_bridge_cast_ready =
       surface.deterministic_variance_bridge_cast_handoff &&
@@ -426,8 +426,8 @@ BuildObjc3SemaModuleTypeAbiSummaryReadinessRecord(
           record.module_type_abi_summary_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.variance_bridge_cast_ready &&
       record.generic_metadata_abi_ready && record.module_import_graph_ready;
   return record;
@@ -441,7 +441,7 @@ BuildObjc3SemaModuleBoundarySummaryReadinessRecord(
   record.stage_input_owner = input.stage_input_owner;
   record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.namespace_collision_shadowing_ready =
       surface.deterministic_namespace_collision_shadowing_handoff &&
@@ -566,8 +566,8 @@ BuildObjc3SemaModuleBoundarySummaryReadinessRecord(
           record.module_boundary_summary_readiness_owner) &&
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.namespace_collision_shadowing_ready &&
       record.public_private_api_partition_ready &&
       record.incremental_module_cache_invalidation_ready;

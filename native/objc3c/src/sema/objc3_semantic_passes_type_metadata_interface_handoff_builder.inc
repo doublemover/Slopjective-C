@@ -18,7 +18,7 @@
       [](Objc3SemanticPropertyTypeMetadata &property_metadata) {
         const objc3c::support::Objc3PropertyOwnershipProfileKind
             ownership_profile_kind =
-                objc3c::support::ApplyPropertyOwnershipProfileFallback(
+                objc3c::support::ApplyPropertyOwnershipProfileRetiredRoute(
                     property_metadata, false);
         if (ownership_profile_kind ==
             objc3c::support::Objc3PropertyOwnershipProfileKind::kWeak) {

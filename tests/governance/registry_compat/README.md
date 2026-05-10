@@ -14,7 +14,7 @@ registry compatibility governance.
 Compatibility outcomes use three deterministic values:
 
 - `pass`: compatible and publishable.
-- `conditional`: compatible only with explicit fallback/migration notes.
+- `conditional`: compatible only with explicit retired-route/migration notes.
 - `fail`: incompatible; publish is blocked.
 
 Required matrix IDs:

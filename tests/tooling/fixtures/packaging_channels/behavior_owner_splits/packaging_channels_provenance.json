@@ -5,7 +5,7 @@
   "source_contracts": [
     "tests/tooling/fixtures/packaging_channels/*.json"
   ],
-  "support_boundary": "packaging-channels provenance owns JSON owner-contract inventories, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, implementation anchor labels, machine-owned output roots, platform ids, host os/arch labels, channel ids, required tool labels, installer runtime requirement labels, manifest field names, receipt field names, upstream action labels, workflow child labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, old-mode labels, shim labels, fallback labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
+  "support_boundary": "packaging-channels provenance owns JSON owner-contract inventories, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source path labels, implementation anchor labels, machine-owned output roots, platform ids, host os/arch labels, channel ids, required tool labels, installer runtime requirement labels, manifest field names, receipt field names, upstream action labels, workflow child labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, old-mode labels, gate labels, retired route labels, compatibility labels, migration labels, and owner-split routing rows as provenance only.",
   "phase_support_claim_authority": false,
   "selectors": [
     "directory_boundary:tests/tooling/fixtures/packaging_channels",
@@ -57,11 +57,11 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "packaging-channels provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, package channels, installer, package-manager, signing, network updater, platform support, archive, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, public actions, channel labels, platform labels, tool labels, installer requirement labels, required field labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, old-mode rows, shim rows, fallback rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
+  "retired_surface_rule": "packaging-channels provenance never defines positive parser, sema, lowering, IR, runtime, native e2e, package channels, installer, package-manager, signing, network updater, platform support, archive, acceptance, or compatibility behavior; owner contracts, reports, artifacts, scripts, schemas, runbooks, public actions, channel labels, platform labels, tool labels, installer requirement labels, required field labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, old-mode rows, gate rows, retired route rows, compatibility rows, migration rows, generated rows, report rows, and routing rows remain provenance, canonical rejection, strict-error, or absent-support evidence"
 }

@@ -19,5 +19,5 @@
     "provenance_only:tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, native .m IR claims, dispatch-ir marker claims without canonical Objective-C 3 source pairing, and directory-label-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, gate IR rows, retired route IR rows, compatibility IR rows, native .m IR claims, dispatch-ir marker claims without canonical Objective-C 3 source pairing, and directory-label-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

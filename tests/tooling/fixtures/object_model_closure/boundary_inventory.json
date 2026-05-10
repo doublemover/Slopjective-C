@@ -11,13 +11,13 @@
     "primary_axis": "behavior phase before object identity, property synthesis, ivar binding/layout, runtime metadata, dispatch/object inspection, loader workload, generated report, compile artifact, private query snapshot, public command surface, or closure/provenance row",
     "support_authority": "object-model closure rows are source, workload, runtime query, artifact, acceptance, command, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
     "generated_report_rule": "generated reports, compile manifests, runtime-registration descriptors, private query snapshots, dispatch/object inspection dumps, property/ivar layout snapshots, workflow labels, and packaged proof summaries cannot define canonical support",
-    "retired_surface_rule": "unresolved dispatch fallback, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, shim, fallback, old-mode, migration-only, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, and milestone-local alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "retired_surface_rule": "unresolved dispatch retired route, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, gate, retired route, old-mode, migration-only, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, and milestone-local alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
     "evidence_boundary_rule": "object identity, property synthesis, ivar binding/layout, runtime metadata registration, dispatch/object inspection, cross-module loader replay, generated compile artifacts, private query snapshots, public workflows, and closure/provenance rows are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
   },
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "evidence_log_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "generated_report_claims_allowed": false,
     "behavior_owner_split_required": true,
     "canonical_rejection_owner": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
@@ -39,7 +39,7 @@
         "scripts/check_object_model_closure_live_property_reflection.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "object_model_runtime_owner": {
@@ -52,14 +52,14 @@
         "object_model_provenance"
       ],
       "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
-      "support_boundary": "runtime object-model support requires lowering/runtime owner assignment for realization, dispatch, property/ivar layout, runtime metadata, and object inspection; dispatch fallback, public ABI widening, evidence-log runtime proof, and query-only inspection stay rejection/provenance",
+      "support_boundary": "runtime object-model support requires lowering/runtime owner assignment for realization, dispatch, property/ivar layout, runtime metadata, and object inspection; dispatch retired route, public ABI widening, evidence-log runtime proof, and query-only inspection stay rejection/provenance",
       "summary_implementation_anchor": "scripts/build_object_model_closure_runtime_implementation_summary.py",
       "check_implementation_anchors": [
         "scripts/check_object_model_closure_live_runtime.py",
         "scripts/check_object_model_closure_realization_lowering.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "object_model_artifact_owner": {
@@ -77,7 +77,7 @@
         "scripts/check_object_model_closure_property_reflection_artifact.py"
       ],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "object_model_workload_owner": {
@@ -95,7 +95,7 @@
       "summary_implementation_anchor": "scripts/build_object_model_closure_workload_summary.py",
       "check_implementation_anchors": [],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     },
     "object_model_executable_proof_owner": {
@@ -112,7 +112,7 @@
       "summary_implementation_anchor": "scripts/build_object_model_closure_executable_proof_summary.py",
       "check_implementation_anchors": [],
       "evidence_log_allowed": false,
-      "fallback_claims_allowed": false,
+      "retired_route_claims_allowed": false,
       "generated_report_claims_allowed": false
     }
   },
@@ -231,7 +231,7 @@
   ],
   "explicit_non_goals": [
     "no-public-runtime-abi-widening",
-    "no-claim-that-unresolved-dispatch-miss-fallback-is-part-of-supported-object-model-closure",
+    "no-claim-that-unresolved-dispatch-miss-retired-route-is-part-of-supported-object-model-closure",
     "no-source-only-or-probe-local-reflection-truth-outside-runtime-owned-query-state",
     "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-query-snapshots-dispatch-inspection-dumps-property-layout-snapshots-workflow-labels-or-closure-provenance-rows",
     "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"

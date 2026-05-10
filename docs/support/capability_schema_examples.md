@@ -175,13 +175,13 @@ Rules shown by this policy:
     "internal"
   ],
   "public_behavior_claim_namespace": "objc3c.behavior.*",
-  "no_alias_or_fallback_claim_sources": [
+  "no_alias_or_retired_route_claim_sources": [
     "retired surface terms",
     "retired mode labels",
     "workflow registry facades",
     "direct helper commands",
     "generated reports without matching implemented rows",
-    "compatibility or fallback wording"
+    "compatibility or retired route wording"
   ],
   "owner_only_states": [
     "rejected",
@@ -199,7 +199,7 @@ Rules shown by this contract:
 - The matrix schema enforces the state gate: implemented rows require
   `support_claims`, while rejected, reserved, and internal rows cannot carry
   them.
-- Alias, compatibility, fallback, registry-facade, helper-command, and
+- Alias, compatibility, retired route, registry-facade, helper-command, and
   evidence-log wording cannot become public behavior support.
 - Owner-only rows can explain where truth lives without widening the supported
   language surface.

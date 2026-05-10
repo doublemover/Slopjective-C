@@ -18,5 +18,5 @@
     "actor_models:sendability-and-isolation-claims-stay-grounded-in-live-lowering-probes-executor-contract-probes-and-packaged-runnable-e2e-evidence"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "stdlib narrative parity, scheduler fairness, external executor transport, distributed actor transport, compatibility-positive semantics, fallback concurrency semantics, shim actor semantics, old-mode task or actor claims, source-only semantic truth, and unsupported ARC/error/interop interaction claims remain diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "stdlib narrative parity, scheduler fairness, external executor transport, distributed actor transport, compatibility-positive semantics, retired route concurrency semantics, gate actor semantics, old-mode task or actor claims, source-only semantic truth, and unsupported ARC/error/interop interaction claims remain diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

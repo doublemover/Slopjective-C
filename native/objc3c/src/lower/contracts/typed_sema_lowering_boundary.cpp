@@ -15,12 +15,12 @@ Objc3TypedSemaToLoweringBoundary Objc3BuildTypedSemaToLoweringBoundary(
   boundary.owner_split_explicit = Objc3LoweringStrictOwnerModelIsReady(
       boundary.typed_semantic_handoff_owner,
       boundary.strict_contract_owner_model,
-      boundary.strict_no_fallback,
+      boundary.strict_no_retired_route,
       boundary.strict_no_compatibility) &&
       Objc3LoweringStrictOwnerModelIsReady(
           boundary.lowering_consumer_owner,
           boundary.strict_contract_owner_model,
-          boundary.strict_no_fallback,
+          boundary.strict_no_retired_route,
           boundary.strict_no_compatibility);
   boundary.sema_to_lowering_owner_contract_recorded =
       boundary.owner_split_explicit;

@@ -29,6 +29,6 @@ evidence. Parser rejections own `O3P*`, sema rejections own `O3S*`, and
 runtime-dispatch residues stay non-positive unless the canonical runtime owner
 indexes them as strict errors.
 
-Legacy-looking, fallback-looking, shim-looking, unsupported, or
+Legacy-looking, retired-route-looking, gate-looking, unsupported, or
 compatibility-looking cases must remain rejection metadata or be absent from the
 positive surface.

@@ -34,13 +34,13 @@
     "claim_status:blocked",
     "waiver:expired",
     "waiver:unowned",
-    "*fallback-as-positive*",
-    "*shim-as-positive*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
     "*old-mode-as-positive*",
     "*compat-as-positive*",
     "*generated-as-support*",
     "*report-as-support*"
   ],
   "canonical_anchor": "tests/native/e2e/negative_execution",
-  "retired_surface_rule": "missing source contracts, missing implementation anchors, missing schemas, non-replayable publications, tmp-as-source runtime evidence, expired waivers, unowned exceptions, unknown drift, missing proposal ownership/classification/demotion/evidence, claims wider than evidence, budget growth without measured evidence, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "missing source contracts, missing implementation anchors, missing schemas, non-replayable publications, tmp-as-source runtime evidence, expired waivers, unowned exceptions, unknown drift, missing proposal ownership/classification/demotion/evidence, claims wider than evidence, budget growth without measured evidence, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

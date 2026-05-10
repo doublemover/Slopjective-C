@@ -46,7 +46,7 @@
     "evidence_log_security_proof_allowed": false,
     "generated_report_capability_truth_allowed": false,
     "local_tabletop_capability_truth_allowed": false,
-    "fallback_claims_allowed": false,
+    "retired_route_claims_allowed": false,
     "trust_bypass_claims_allowed": false,
     "wrapper_only_security_actions_allowed": false,
     "security_positive_claim_requires_source_contract": true,

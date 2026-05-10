@@ -52,10 +52,10 @@
     "*claim_policy_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "conformance corpus provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or release-claim behavior; corpus surface rows, bucket rows, manifest inventory rows, coverage maps, workflow labels, report paths, tmp artifacts, schema pointers, docs/tutorial pointers, generated-only rows, evidence-log rows, shim, fallback, old-mode, migration-only, compatibility, dashboard-only, prose-only, schema-only, workflow-only, tmp-artifact-only, and claim-policy-only rows remain provenance, canonical rejection, strict-error, known-open, or tracking-only evidence"
+  "retired_surface_rule": "conformance corpus provenance never defines positive parser, sema, lowering, IR, runtime, e2e, or release-claim behavior; corpus surface rows, bucket rows, manifest inventory rows, coverage maps, workflow labels, report paths, tmp artifacts, schema pointers, docs/tutorial pointers, generated-only rows, evidence-log rows, gate, retired route, old-mode, migration-only, compatibility, dashboard-only, prose-only, schema-only, workflow-only, tmp-artifact-only, and claim-policy-only rows remain provenance, canonical rejection, strict-error, known-open, or tracking-only evidence"
 }

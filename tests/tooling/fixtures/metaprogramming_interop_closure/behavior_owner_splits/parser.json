@@ -15,5 +15,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode imports, parser fallback flags, compatibility parser lanes, generated source inventories, module replay manifests, and unsupported foreign source forms remain parser rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode imports, parser retired route flags, compatibility parser lanes, generated source inventories, module replay manifests, and unsupported foreign source forms remain parser rejection, strict-error, or provenance-only evidence"
 }

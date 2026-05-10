@@ -258,7 +258,7 @@ def build_payload(
                 "signal_priority": list(SIGNAL_PRIORITY),
                 "split_count_priority": [
                     "prefer target_ids_per_shard<=20",
-                    "fallback target_ids_per_shard<=23",
+                    "retired route target_ids_per_shard<=23",
                     "if split_required and count resolves to 1, force 2 shards",
                 ],
                 "selected_split_count_driver": recommendation.split_count_driver,

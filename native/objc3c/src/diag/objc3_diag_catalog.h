@@ -17,7 +17,7 @@ struct NativeDiagCodeCatalogEntry {
   unsigned max_ordinal = 999;
   std::string_view catalog_owner = kObjc3DiagnosticOwnerContractId;
   bool legacy_positive_allowed = false;
-  bool fallback_allowed = false;
+  bool retired_route_allowed = false;
 };
 
 const NativeDiagCodeCatalogEntry *FindNativeDiagCodeCatalogEntry(

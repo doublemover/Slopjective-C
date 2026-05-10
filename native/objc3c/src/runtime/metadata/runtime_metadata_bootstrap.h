@@ -60,7 +60,7 @@ struct Objc3RuntimeBootstrapApiSummary {
   bool deterministic_reset_expansion_not_yet_landed = false;
   bool ready_for_registrar_implementation = false;
   bool public_metadata_ownership_explicit = true;
-  bool fallback_path_allowed = false;
+  bool retired_route_path_allowed = false;
   std::string support_library_core_feature_replay_key;
   std::string support_library_link_wiring_replay_key;
   std::string replay_key;
@@ -106,7 +106,7 @@ inline bool IsReadyObjc3RuntimeBootstrapApiSummary(
          summary.deterministic_reset_expansion_not_yet_landed &&
          summary.ready_for_registrar_implementation &&
          summary.public_metadata_ownership_explicit &&
-         !summary.fallback_path_allowed &&
+         !summary.retired_route_path_allowed &&
          objc3c::runtime::RuntimeOwnerSplitContractIsReady() &&
          !summary.support_library_core_feature_replay_key.empty() &&
          !summary.support_library_link_wiring_replay_key.empty() &&

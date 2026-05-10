@@ -207,7 +207,7 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.receiver = lowered.receiver;
     request.selector_ptr = selector_ptr;
     request.args = lowered.args;
-    request.strict_no_fallback = plan.strict_no_fallback;
+    request.strict_no_retired_route = plan.strict_no_retired_route;
     request.strict_no_compatibility = plan.strict_no_compatibility;
     if (!Objc3IRRuntimeDispatchCallRequestOwnsResult(request)) {
       failure_reason =

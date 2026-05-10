@@ -7,27 +7,27 @@
     "tests/tooling/fixtures/performance_governance/owner_contracts.json",
     "tests/tooling/fixtures/performance_governance/source_surface.json"
   ],
-  "support_boundary": "canonical rejection owns performance-governance rows that look like support but are explicitly local-only, evidence-log, unsupported-benchmark-shaped, compatibility-fallback-shaped, wrapper-only, spreadsheet-only, hand-edited badge/dashboard, benchmark-source-outside-owned-surfaces, generated-only, migration-only, old-mode, shim, fallback, compatibility, runner-only, workflow-label-only, dashboard-only, or badge-only. These rows are rejection/absent-support evidence, not positive performance governance truth.",
+  "support_boundary": "canonical rejection owns performance-governance rows that look like support but are explicitly local-only, evidence-log, unsupported-benchmark-shaped, compatibility-retired-route-shaped, wrapper-only, spreadsheet-only, hand-edited badge/dashboard, benchmark-source-outside-owned-surfaces, generated-only, migration-only, old-mode, gate, retired route, compatibility, runner-only, workflow-label-only, dashboard-only, or badge-only. These rows are rejection/absent-support evidence, not positive performance governance truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
     "forbidden_evidence_class:local-only-performance-evidence",
     "forbidden_evidence_class:evidence-log-performance-evidence",
     "forbidden_evidence_class:unsupported-benchmark-claim",
-    "forbidden_evidence_class:compatibility-fallback-performance-claim",
+    "forbidden_evidence_class:compatibility-retired-route-performance-claim",
     "forbidden_evidence_class:wrapper-only-action-surface",
     "explicit_non_goal:no local-only performance evidence",
     "explicit_non_goal:no evidence-log performance evidence",
     "explicit_non_goal:no unsupported benchmark claims",
-    "explicit_non_goal:no compatibility or fallback performance claim",
+    "explicit_non_goal:no compatibility or retired route performance claim",
     "explicit_non_goal:no wrapper-only action surface",
     "explicit_non_goal:no spreadsheet-only publication path",
     "explicit_non_goal:no hand-edited performance badge or dashboard status",
     "explicit_non_goal:no benchmark source outside the existing performance, compiler-throughput, and runtime-performance surfaces",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -43,5 +43,5 @@
     "*badge-only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "local-only evidence, evidence-log evidence, unsupported benchmark claims, compatibility-fallback performance claims, wrapper-only action surfaces, spreadsheet-only publication, hand-edited badge/dashboard status, unowned benchmark source claims, old-mode rows, shim rows, fallback rows, compatibility rows, migration-only rows, generated-only rows, evidence-log rows, runner-only rows, workflow-label-only rows, dashboard-only rows, badge-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "local-only evidence, evidence-log evidence, unsupported benchmark claims, compatibility-retired-route performance claims, wrapper-only action surfaces, spreadsheet-only publication, hand-edited badge/dashboard status, unowned benchmark source claims, old-mode rows, gate rows, retired route rows, compatibility rows, migration-only rows, generated-only rows, evidence-log rows, runner-only rows, workflow-label-only rows, dashboard-only rows, badge-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

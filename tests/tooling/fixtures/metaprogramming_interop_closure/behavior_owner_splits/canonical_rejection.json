@@ -4,11 +4,11 @@
   "owner_phase": "canonical_rejection",
   "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
   "interop_policy": "tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json",
-  "support_boundary": "metaprogramming and interop rows that mention compatibility, shim, fallback, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, generated-only, evidence-log, generated-evidence-log, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, or cache-only evidence are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "metaprogramming and interop rows that mention compatibility, gate, retired route, old-mode, migration-only, unsupported property behavior, unsupported foreign loader topology, public ABI widening, stale acceptance, generated-only, evidence-log, generated-evidence-log, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, or cache-only evidence are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "hard_cutover_source_owner_contract:evidence_log_allowed=false",
-    "hard_cutover_source_owner_contract:fallback_claims_allowed=false",
+    "hard_cutover_source_owner_contract:retired_route_claims_allowed=false",
     "hard_cutover_source_owner_contract:generated_report_claims_allowed=false",
     "authoritative_interop_surface_keys:runtime_mixed_image_compatibility_interop_semantics_surface",
     "authoritative_interop_surface_keys:runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
@@ -17,8 +17,8 @@
     "explicit_non_goals:claiming unsupported property-behavior combinations as runtime complete",
     "explicit_non_goals:claiming unsupported foreign loader topologies or unsupported bridge ecosystems as live",
     "*compatibility*",
-    "*fallback*",
-    "*shim*",
+    "*retired-route*",
+    "*gate*",
     "*old_mode*",
     "*old-mode*",
     "*legacy*",
@@ -42,5 +42,5 @@
     "*stale*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "compatibility, shim, fallback, old-mode, unsupported, public-ABI-widening, stale-acceptance, generated-only, evidence-log, generated-evidence-log, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, cache-only, migration-only, and foreign-baseline support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "compatibility, gate, retired route, old-mode, unsupported, public-ABI-widening, stale-acceptance, generated-only, evidence-log, generated-evidence-log, module-replay-only, FFI-metadata-only, closure-error-summary-only, package-only, cache-only, migration-only, and foreign-baseline support claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

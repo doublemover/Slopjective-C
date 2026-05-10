@@ -18,8 +18,8 @@ struct Objc3SemaParityCloseoutPublicationReadinessRecord {
       kObjc3SemaTypedSemanticHandoffPublicationOwner;
   std::string parser_sema_contract_readiness_owner =
       kObjc3ParserSemaContractReadinessOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool pass_manager_executed = false;
   bool parser_sema_contract_ready = false;
@@ -46,8 +46,8 @@ inline bool IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
              record.typed_semantic_handoff_publication_owner) &&
          Objc3SemaOwnerIsExplicit(
              record.parser_sema_contract_readiness_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.pass_manager_executed && record.parser_sema_contract_ready &&
          record.pass_flow_summary_ready && record.publication_records_ready &&
          record.diagnostics_publication_ready &&
@@ -64,8 +64,8 @@ struct Objc3SemaParityValidationRecord {
       kObjc3SemaPassManagerPublicationOwner;
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool pass_manager_executed = false;
   bool parser_sema_contract_ready = false;
@@ -85,8 +85,8 @@ inline bool IsReadyObjc3SemaParityValidationRecord(
          Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
          Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.pass_manager_executed && record.parser_sema_contract_ready &&
          record.pass_flow_summary_ready && record.publication_records_ready &&
          record.diagnostics_publication_ready &&
@@ -110,7 +110,7 @@ inline Objc3SemaParityValidationRecord BuildObjc3SemaParityValidationRecord(
   Objc3SemaParityValidationRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.pass_manager_executed = pass_manager_executed;
   record.parser_sema_contract_ready = parser_sema_contract_ready;
@@ -126,8 +126,8 @@ inline Objc3SemaParityValidationRecord BuildObjc3SemaParityValidationRecord(
       Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
       Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.pass_manager_executed && record.parser_sema_contract_ready &&
       record.pass_flow_summary_ready && record.publication_records_ready &&
       record.diagnostics_publication_ready &&
@@ -161,8 +161,8 @@ struct Objc3SemaCloseoutSignoffRecord {
       kObjc3SemaPassManagerPublicationOwner;
   std::string type_metadata_publication_owner =
       kObjc3SemaTypeMetadataPublicationOwner;
-  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
-  bool strict_no_fallback = true;
+  std::string owner_model = kObjc3SemaNoRetiredRouteOwnerModel;
+  bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
   bool parity_validation_ready = false;
   bool parser_sema_closeout_ready = false;
@@ -182,8 +182,8 @@ inline bool IsReadyObjc3SemaCloseoutSignoffRecord(
          Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
          Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
          Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+         record.strict_no_retired_route && record.strict_no_compatibility &&
          record.parity_validation_ready && record.parser_sema_closeout_ready &&
          record.pass_manager_publication_ready &&
          record.type_metadata_publication_ready &&
@@ -205,7 +205,7 @@ inline Objc3SemaCloseoutSignoffRecord BuildObjc3SemaCloseoutSignoffRecord(
   Objc3SemaCloseoutSignoffRecord record;
   record.stage_input_owner = input.stage_input_owner;
   record.owner_model = input.owner_model;
-  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_retired_route = input.strict_no_retired_route;
   record.strict_no_compatibility = input.strict_no_compatibility;
   record.parity_validation_ready = parity_validation_ready;
   record.parser_sema_closeout_ready = parser_sema_closeout_ready;
@@ -221,8 +221,8 @@ inline Objc3SemaCloseoutSignoffRecord BuildObjc3SemaCloseoutSignoffRecord(
       Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
       Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
       Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
-      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
-      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.owner_model == kObjc3SemaNoRetiredRouteOwnerModel &&
+      record.strict_no_retired_route && record.strict_no_compatibility &&
       record.parity_validation_ready && record.parser_sema_closeout_ready &&
       record.pass_manager_publication_ready &&
       record.type_metadata_publication_ready &&

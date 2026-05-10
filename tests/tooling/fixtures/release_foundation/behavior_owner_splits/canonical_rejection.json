@@ -9,7 +9,7 @@
     "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
     "tests/tooling/fixtures/release_foundation/release_payload_policy.json"
   ],
-  "support_boundary": "canonical rejection owns release-foundation rows that look like support but are explicitly out of scope, unsupported, manual-only, installer-shaped, package-manager-shaped, signing-service-shaped, cross-host/cross-platform overclaims, network-hosted registry claims, generated-only, evidence-log, old-mode, shim, fallback, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals, non-claims, rejected distribution claims, and manual-only input rows are rejection/absent-support evidence, not positive release capability truth.",
+  "support_boundary": "canonical rejection owns release-foundation rows that look like support but are explicitly out of scope, unsupported, manual-only, installer-shaped, package-manager-shaped, signing-service-shaped, cross-host/cross-platform overclaims, network-hosted registry claims, generated-only, evidence-log, old-mode, gate, retired route, compatibility, migration-only, runner-only, workflow-label-only, or directory-label-only. Explicit non-goals, non-claims, rejected distribution claims, and manual-only input rows are rejection/absent-support evidence, not positive release capability truth.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -30,8 +30,8 @@
     "audited_channel:system-installer:status=deferred",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*",
     "*compat*",
     "*migration-only*",
@@ -42,5 +42,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "second installer-shaped payloads, hand-maintained digest manifests, release bypassing runnable package manifest, system installer claims, package-manager publication, signing/notarization service trust, cross-host binary identity, cross-platform reproducibility, network-hosted release registry, manual digest lists, hand-written attestations, manual payload lists, old-mode release rows, shim release rows, fallback release rows, compatibility release rows, migration-only rows, generated-only rows, evidence-log rows, unsupported release positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "second installer-shaped payloads, hand-maintained digest manifests, release bypassing runnable package manifest, system installer claims, package-manager publication, signing/notarization service trust, cross-host binary identity, cross-platform reproducibility, network-hosted release registry, manual digest lists, hand-written attestations, manual payload lists, old-mode release rows, gate release rows, retired route release rows, compatibility release rows, migration-only rows, generated-only rows, evidence-log rows, unsupported release positives, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

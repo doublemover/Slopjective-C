@@ -38,10 +38,10 @@
     "*migration_only*",
     "*old-mode*",
     "*old_mode*",
-    "*shim*",
-    "*fallback*",
+    "*gate*",
+    "*retired-route*",
     "*compatibility*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
-  "retired_surface_rule": "stress fixture provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; source-surface rows, manifest rows, workflow labels, generated-only rows, evidence-log rows, shim, fallback, old-mode, migration-only, compatibility, tmp-artifact-only, replay-output-only, and report-output-only rows remain provenance, canonical rejection, or strict-error evidence"
+  "retired_surface_rule": "stress fixture provenance never defines positive parser, sema, lowering, IR, runtime, or e2e behavior; source-surface rows, manifest rows, workflow labels, generated-only rows, evidence-log rows, gate, retired route, old-mode, migration-only, compatibility, tmp-artifact-only, replay-output-only, and report-output-only rows remain provenance, canonical rejection, or strict-error evidence"
 }

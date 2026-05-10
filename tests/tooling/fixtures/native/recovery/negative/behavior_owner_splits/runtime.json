@@ -21,5 +21,5 @@
     "diagnostic_code:O3S208"
   ],
   "canonical_anchor": "tests/native/runtime/dispatch",
-  "retired_surface_rule": "old-mode runtime recovery, compatibility runtime recovery, shim runtime recovery, fallback runtime recovery, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, wrapper-only runtime rows, unsupported runtime dispatch, runner-only runtime claims, and directory-label-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode runtime recovery, compatibility runtime recovery, gate runtime recovery, retired route runtime recovery, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, wrapper-only runtime rows, unsupported runtime dispatch, runner-only runtime claims, and directory-label-only runtime claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

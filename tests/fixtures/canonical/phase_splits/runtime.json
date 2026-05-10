@@ -84,5 +84,5 @@
       "expected_diagnostic_code": ""
     }
   ],
-  "retired_surface_rule": "runtime dispatch fallback and unresolved dispatch symbols are strict errors"
+  "retired_surface_rule": "runtime dispatch retired route and unresolved dispatch symbols are strict errors"
 }

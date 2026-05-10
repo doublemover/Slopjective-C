@@ -20,5 +20,5 @@
     "tooling_surface:formatter-source-pair"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser tooling, shim parser tooling, fallback parser tooling, compatibility parser tooling, generated-only parser rows, evidence-log parser rows, migration-only parser rows, editor-only shadow parser claims, and parser claims derived only from JSON owner contracts are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser tooling, gate parser tooling, retired route parser tooling, compatibility parser tooling, generated-only parser rows, evidence-log parser rows, migration-only parser rows, editor-only shadow parser claims, and parser claims derived only from JSON owner contracts are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -16,5 +16,5 @@
     "authoritative_fixture_paths:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "compatibility shim gates, unsupported ownership claims, semantic recovery positives, storage-global fallback claims, old-mode semantic rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, runner-only semantic rows, sidecar-only semantic proof, unlinked semantic probes, and catalog-only acceptance rows stay semantic diagnostics, canonical rejection, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "compatibility gates, unsupported ownership claims, semantic recovery positives, storage-global retired route claims, old-mode semantic rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, runner-only semantic rows, sidecar-only semantic proof, unlinked semantic probes, and catalog-only acceptance rows stay semantic diagnostics, canonical rejection, absent-support, or provenance-only evidence"
 }

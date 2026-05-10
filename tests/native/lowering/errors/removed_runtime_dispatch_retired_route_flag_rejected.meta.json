@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "fixture": "removed_runtime_dispatch_fallback_flag_rejected.objc3",
+  "fixture": "removed_runtime_dispatch_retired_route_flag_rejected.objc3",
   "origin": "hand-authored",
   "owner_phase": "lowering",
   "behavior_family": "errors",
@@ -15,16 +15,16 @@
   },
   "expected": {
     "stage": "compile",
-    "diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
+    "diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
     "required_tokens": [
-      "OBJC3-E-REMOVED-RUNTIME-FALLBACK",
-      "runtime dispatch fallback ABI selection is removed"
+      "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "runtime dispatch retired route ABI selection is removed"
     ]
   },
   "execution": {
     "native_compile_args": [
       "-fobjc-version=3",
-      "-fobjc3-runtime-dispatch-fallback=on",
+      "-fobjc3-runtime-dispatch-retired-route=on",
       "-emit-llvm"
     ]
   }

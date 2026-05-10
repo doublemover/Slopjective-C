@@ -7,7 +7,7 @@
     "support_authority": false,
     "primary_axis": "runtime performance artifact before behavior support, evidence-log row, generated-only row, migration-only row, cache proof, runner proof, timing packet, counter snapshot, or package artifact",
     "generated_rule": "benchmark summaries, integration summaries, runnable end-to-end summaries, packet roots, counter snapshots, tmp artifacts, generated-only rows, evidence-log rows, migration-only rows, timing-only rows, cache-only rows, runner-only rows, package-only rows, and counter-only rows are generated/provenance-only evidence",
-    "retired_surface_rule": "artifact rows that mention fallback, shim, compatibility, old-mode, unsupported, unresolved dispatch, strict dispatch, alternate acceptance, generated-only, evidence-log, migration-only, timing-only, cache-only, runner-only, package-only, or counter-only semantics map to canonical_rejection or runtime_performance_provenance"
+    "retired_surface_rule": "artifact rows that mention retired route, gate, compatibility, old-mode, unsupported, unresolved dispatch, strict dispatch, alternate acceptance, generated-only, evidence-log, migration-only, timing-only, cache-only, runner-only, package-only, or counter-only semantics map to canonical_rejection or runtime_performance_provenance"
   },
   "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
   "report_root": "tmp/reports/runtime-performance",

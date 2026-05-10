@@ -16,5 +16,5 @@
     "tests/native/parser/positive/objc_property_surface.objc3"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "legacy literal aliases, old-mode parser flags, removed compatibility mode flags, and fallback parser flags remain parser rejection evidence"
+  "retired_surface_rule": "legacy literal aliases, old-mode parser flags, removed compatibility mode flags, and retired route parser flags remain parser rejection evidence"
 }

@@ -18,5 +18,5 @@
     "upstream_owner_required:tests/native/parser"
   ],
   "canonical_anchor": "tests/native/parser",
-  "retired_surface_rule": "old-mode parser governance rows, shim parser governance rows, fallback parser governance rows, compatibility parser governance rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, issue-template-only parser claims, review-class-only parser claims, and JSON-contract-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "old-mode parser governance rows, gate parser governance rows, retired route parser governance rows, compatibility parser governance rows, generated-only parser rows, evidence-log parser rows, migration-only parser rows, issue-template-only parser claims, review-class-only parser claims, and JSON-contract-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

@@ -36,7 +36,7 @@ int ReplayRegisteredImagesForTestingUnlocked(
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   state.bootstrap_replay_owner = kObjc3RuntimeBootstrapReplayOwner;
   state.runtime_owner_split_explicit = RuntimeOwnerSplitContractIsReady();
-  state.fallback_path_allowed = RuntimeFallbackPathsAreAllowed();
+  state.retired_route_path_allowed = RuntimeRetiredRoutePathsAreAllowed();
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();
   state.last_replayed_translation_unit_identity_key.clear();

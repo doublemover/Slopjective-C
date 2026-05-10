@@ -13,7 +13,7 @@ Closeout evidence is split by `evidence_owner_splits.json` into canonical
 accepted evidence, canonical rejection/strict-error evidence,
 provenance/report/generated evidence, and closure-readiness ownership. Accepted
 evidence must point to committed branch source, docs, tests, or checked-in owner
-surfaces. Shim, fallback, compatibility, old-mode, unsupported,
+surfaces. Gate, retired route, compatibility, old-mode, unsupported,
 missing-upstream, alternate-acceptance, and retired-source-lane rows are
 rejection, strict-error, or absent-support evidence. Docs-only refreshes, local
 scans, generated summaries, tmp reports, evidence-log rows, validation-not-run,
@@ -171,8 +171,8 @@ commits that landed after the first docs commit.
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
 | `#8132`, `#8134`, `#8146`, `#8147` | `f1df8b644`, `86c31c6dc`, `f5619d174`, `11c20dec5`, `18e1f247b`, `cd5358bf6`, `1e1f314a8`, `bcf43808c`, `388a72716`, `fb54d008b`, `e1576ff03`, `64bf96d9b`, `578ade056`, `6a2b0336f`, `df2577005` | Parser, AST, ObjC reference, type, and frontend surfaces have newer owner evidence; retired parser/old-mode surfaces remain rejection evidence. |
-| `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime fallback remains removed or strict-error behavior. |
-| `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe`, `9cf3601b5`, `4307f5156` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch fallback stays strict-error evidence. |
+| `#8136`, `#8137`, `#8147` | `399984eeb`, `c7339d28b`, `8e9465994` | Lowering handoff, message-send lowering, and deterministic IR publication have newer owner evidence; runtime retired route remains removed or strict-error behavior. |
+| `#8133`, `#8143`, `#8147` | `8e7c9282d`, `87843840e`, `c11f3f403`, `bfbd99e34`, `77b4993cb`, `5767392ca`, `b1f019d23`, `236ff7a40`, `d0c187589`, `62247aec2`, `a16fd3725`, `bbf4a35da`, `f6366fb68`, `043a855c6`, `5aa53baa5`, `869c7aa51`, `dead8d47f`, `476b54e16`, `8c500be1b`, `a9675d948`, `166f0d1d6`, `17617d941`, `2f0ef73a4`, `f4a067c57`, `377d2abbc`, `f03cba094`, `3dcf928fe`, `9cf3601b5`, `4307f5156` | Runtime error, state, concurrency, block, storage, ARC, selector/keypath, and snapshot owners have newer evidence; dispatch retired route stays strict-error evidence. |
 | `#8138`, `#8140`, `#8141`, `#8148` | `295b34b5a`, `a1d25ca68`, `3b1b9e789`, `8550309ea`, `3a14d3d9a`, `7cdb5e824`, `19b753126`, `f0f063934`, `13269c328`, `5cc21d8b1`, `54026487c`, `e43df52d1`, `d6d0cb785`, `c89daee3d`, `0ef0131d3`, `17ce89a87`, `4219dd9e9`, `2af7ffd1b`, `a7a353c87`, `8e9465994`, `3dcf928fe`, `c8060c3e3`, `531b53843`, `6d6fa804d` | Driver, frontend, publication, public C API, config, contracts, pipeline, and JSON/schema surfaces have newer owner evidence; none create helper-command or compatibility support. |
 | `#8135`, `#8142`, `#8144`, `#8145`, `#8149`, `#8150` | `5af6c1b64`, `f1f2d999f`, `fda259576`, `372de733d`, `2b62a9872`, `d76f9e53a`, `e426ab91d`, `0ef6dd41f`, `8ec96d428`, `71d3e8c4c`, `2b4b66526`, `01a58e0ab`, `0da6806ec`, `4b41eeefc`, `9d337d188`, `7dc527d4e`, `ffe9b387d`, `0fb5ce0a0`, `699408fb7`, `a7a353c87`, `a16fd3725`, `1f419a98c`, `beeb1b22c`, `531b53843`, `c8060c3e3`, `3d90deeaf` | Support helpers, diagnostics, stdlib/support truth, retired fixture contracts, workflow, hygiene, and control-plane surfaces have newer branch evidence; validation, push, and remote issue updates remain deferred. |
 
@@ -181,7 +181,7 @@ commits that landed after the first docs commit.
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
 | `#8132`, `#8134`, `#8136`, `#8137`, `#8146`, `#8147` | `d63a55535`, `9d53be5fb`, `0f1933ab3`, `0ab5fb9ae`, `9f897ba25`, `78dbcb9c3`, `03ffe9df8` | Compiler/parser/frontend/lowering/IR evidence now includes static hard-cut expectations, canonical literal handoff, typed sema-to-lowering handoff, parser include-owner paths, artifact-claim IR metadata, pipeline result handoff, and tooling split expectations. |
-| `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac`, `df0106f0a`, `a4e529621`, `5eb5ea497`, `9ad72ee8a`, `1afa7c1ae` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, image registration API owners, method class-chain resolution owners, dispatch status helpers, runtime public ABI records, and property/storage reflection snapshot ownership; fallback dispatch remains strict-error evidence. |
+| `#8133`, `#8143`, `#8147` | `ddee73e25`, `0da123b82`, `074736203`, `bc75578aa`, `d0cb959fe`, `3712b7a32`, `334382bba`, `543dec411`, `c1b56d77f`, `96b65d03b`, `9074073ac`, `df0106f0a`, `a4e529621`, `5eb5ea497`, `9ad72ee8a`, `1afa7c1ae` | Runtime evidence now includes image class metadata ownership, dispatch fast-path seeding, method resolution tables, method cache snapshots, builtin lookup ownership, class metadata term cleanup, class graph snapshots, dispatch state snapshots, protocol conformance snapshots/query owners, image registration API owners, method class-chain resolution owners, dispatch status helpers, runtime public ABI records, and property/storage reflection snapshot ownership; retired route dispatch remains strict-error evidence. |
 | `#8139`, `#8140`, `#8141`, `#8143` | `c1cf8f7b6`, `937878ddd`, `03ffe9df8`, `6acb1d390`, `e6269dc67`, `5eb5ea497`, `f4af3437c` | Public frontend/API evidence now includes tightened frontend C API contracts, consolidated result accessors, native driver CLI ownership, C API runner source-test expectations, runtime public ABI records, driver CLI split owner tests, and tooling split expectations without adding compatibility wrappers. |
 | `#8138`, `#8148` | `328bd8fe9`, `3bfc42ea5`, `34bb8547b`, `68865ee06`, `545e4159f`, `6017b3968`, `018f6aa84`, `a23c7d97a`, `e1842acf8`, `7b914509f`, `9f897ba25`, `78dbcb9c3`, `54e81ff4a`, `d0ba8050e`, `c2b6b5209`, `e03ec059c`, `a61477b96`, `647e47739` | IO/JSON/schema/artifact evidence now includes JSON value writers, telemetry command constraints, schema retired-term guidance, schema contract-table ownership, IO string/process owners, schema validation owners, developer tooling dump/playground owners, dashboard renderers, conformance artifact adapters/input owners, runtime registration manifest/artifact builder owners, cross-module runtime link plan owners/input/ordering, artifact-claim metadata, and pipeline handoff. |
 | `#8135`, `#8138`, `#8145`, `#8148`, `#8150` | `bad575206`, `8fd99d3e`, `34bb8547b`, `68865ee06`, `dfe365b2e`, `8457e4728`, `720c366a5`, `f38134a38`, `110c07879` | Diagnostic/config/capability truth evidence now includes diagnostic render/sink owner collapse, config state owner collapse, canonical config tooling expectations, public/native docs ownership, spec hard-cutover prose, prose planning overlays, and schema guidance that keeps retired compatibility terms out of public support claims. |
@@ -209,7 +209,7 @@ commits that landed after the first docs commit.
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
 | `#8142`, `#8144`, `#8149`, `#8150` | `c26e133a5`, `8f4e91f1f`, `6ef6ab779` | Stress workflow, external validation, and public test orchestration owner splits now refresh workflow/control-plane evidence. They stay under the same npm bridge and do not assert validation. |
-| `#8144`, `#8145`, `#8150` | `f737d848e`, `0350f4a4a` | Behavior fixture boundary contracts and positive fixture lexical residue docs now refresh retired-surface evidence. Residue remains lexical/symbol evidence only, not support for shim, fallback, migration, old-mode, or compatibility behavior. |
+| `#8144`, `#8145`, `#8150` | `f737d848e`, `0350f4a4a` | Behavior fixture boundary contracts and positive fixture lexical residue docs now refresh retired-surface evidence. Residue remains lexical/symbol evidence only, not support for gate, retired route, migration, old-mode, or compatibility behavior. |
 
 ## Post-`0350f4a4a` Local Owner Refresh
 
@@ -222,7 +222,7 @@ commits that landed after the first docs commit.
 
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
-| `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `f2c3dc1ea` | Runtime dispatch support owners now cover receiver identity, dispatch resolution state/target, method cache/class-chain snapshots, destroy-plan, borrowed-string, and builtin-method boundaries. Fallback dispatch remains strict-error evidence. |
+| `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `f2c3dc1ea` | Runtime dispatch support owners now cover receiver identity, dispatch resolution state/target, method cache/class-chain snapshots, destroy-plan, borrowed-string, and builtin-method boundaries. RetiredRoute dispatch remains strict-error evidence. |
 | `#8136`, `#8137`, `#8138`, `#8147`, `#8148`, `#8150` | `9b61442c4` | Parse/lowering readiness artifact and diagnostic key owners now refresh lowering, IR/deep handoff, pipeline, artifact, and schema evidence. |
 | `#8138`, `#8142`, `#8149` | `2fb0664e0` | Bonus tooling inspection/template owner splits now refresh internal developer-tooling workflow evidence without adding public direct-helper support. |
 
@@ -233,7 +233,7 @@ commits that landed after the first docs commit.
 | `#8133`, `#8143`, `#8144`, `#8145`, `#8150` | `34411837b` | Runtime strict-error fixture renames refresh conformance indexes and retired-surface matrices while preserving strict-error classification for unsupported dispatch. |
 | `#8138`, `#8142`, `#8149` | `c36b89616` | LLVM developer-tooling owner splits refresh internal tooling workflow evidence under the public command boundary. |
 | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `b4f3a295f` | Runtime image registration table record, shape, and walk owners refresh runtime image registration and public runtime contract evidence. |
-| `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed fallback behavior remains rejection or strict-error evidence. |
+| `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed retired route behavior remains rejection or strict-error evidence. |
 
 ## Post-`98d10a61c` Local Owner Refresh
 
@@ -361,7 +361,7 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `87f958c8c`, `d61aad21e`, `bd3905d5c`, `28a65a27a`, `fb443536f`,
 `7e743549d`.
 
-Retired-surface state: internal architecture evidence only; no shim, fallback,
+Retired-surface state: internal architecture evidence only; no gate, retired route,
 compatibility mode, or retired-source lane is claimed as public behavior.
 
 ## #8133
@@ -372,14 +372,14 @@ method-resolution, builtin-lookup, class graph snapshot, dispatch state
 snapshot, protocol conformance snapshot/query, and image registration API
 ownership commits, plus method class-chain resolution and dispatch status helper
 splits, runtime public ABI records, and property/storage reflection snapshot ownership.
-Runtime fallback behavior is represented as strict-error fixture evidence.
+Runtime retired route behavior is represented as strict-error fixture evidence.
 
 Evidence: `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`,
 `tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3`,
 commits `d8552e07a`, `d53083a92`, `6d10280d0`, `790be44b6`, `8c35392ea`,
 `228d345b9`, `61ccee955`.
 
-Retired-surface state: runtime dispatch fallback is strict-error behavior, not a
+Retired-surface state: runtime dispatch retired route is strict-error behavior, not a
 positive acceptance lane.
 
 ## #8134
@@ -394,7 +394,7 @@ commits `28a65a27a`, `b0f031ef5`, `87f9a36af`, `29111e0c3`, `2d70b8e34`,
 `1a130de7a`, `a91172c62`, `ffca53ae0`, `1d135dbf5`, `7e743549d`,
 `e435cdea9`, `e04c6cf4a`.
 
-Retired-surface state: old-mode and parser fallback flags are explicit rejection
+Retired-surface state: old-mode and parser retired route flags are explicit rejection
 fixtures.
 
 ## #8135
@@ -404,7 +404,7 @@ publication, frontend ownership, diagnostic catalog table, diagnostic owner
 collapse, and config removed-option owner commits.
 
 Evidence: `tests/native/sema/types/typed_i32_bool_flow.objc3`,
-`tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3`,
+`tests/native/sema/errors/removed_compatibility_gate_rejected.objc3`,
 `tests/native/sema/concurrency/throws_feature_claim_rejected.objc3`, commits
 `121c069aa`, `8b103d250`, `112256a5a`, `232997ba4`, `8dead58b3`.
 
@@ -419,11 +419,11 @@ control-flow lowering commits, plus typed sema-to-lowering and pipeline result
 handoff ownership.
 
 Evidence: `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3`,
-`tests/native/lowering/errors/removed_runtime_dispatch_fallback_flag_rejected.objc3`,
+`tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3`,
 commits `73ce6b57f`, `f69c6388f`, `5464aa831`, `f42bd035f`, `668456c12`,
 `68f793396`.
 
-Retired-surface state: runtime fallback lowering is rejection or strict-error
+Retired-surface state: runtime retired route lowering is rejection or strict-error
 evidence only.
 
 ## #8137
@@ -457,7 +457,7 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `ffb2a715d`.
 
 Retired-surface state: internal support ownership does not create public
-fallback or migration support.
+retired route or migration support.
 
 ## #8139
 
@@ -471,7 +471,7 @@ commits `1877caeb7`, `df28562af`, `445494349`, `2e6b613b8`, `1e26582d3`,
 `87f958c8c`.
 
 Retired-surface state: target topology is internal and exposes no public
-fallback lane.
+retired route lane.
 
 ## #8140
 
@@ -624,7 +624,7 @@ commits `01cf17064`, `3e95c4d73`, `a94330b26`, `6afa3278f`, `972d97906`,
 `a87b2c92e`, `709148d75`, `22b8bb1c3`, `ffb2a715d`.
 
 Retired-surface state: schemas classify unsupported states; they do not create
-fallback support.
+retired route support.
 
 ## #8149
 
