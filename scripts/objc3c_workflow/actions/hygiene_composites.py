@@ -12,7 +12,9 @@ from .native_build_paths import BUILD_PS1
 
 
 def _run_steps(actions: Sequence[str]) -> int:
-    from scripts.objc3c_workflow.action_dispatch import execute_registered_action
+    from scripts.objc3c_workflow.action_execution_dispatch import (
+        execute_registered_action,
+    )
 
     for action in actions:
         rc = execute_registered_action(action, [])

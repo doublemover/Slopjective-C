@@ -25,7 +25,7 @@ def npm_bridge_action_offset(normalized: Sequence[str]) -> int | None:
 
 
 def execute_nested_action(action: str, rest: list[str]) -> int:
-    from .action_dispatch import execute_registered_action
+    from .action_execution_dispatch import execute_registered_action
 
     return execute_registered_action(action, rest)
 

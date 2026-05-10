@@ -4,14 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ..action_execution_dispatch import execute_registered_action
 from ..environment import ROOT
 from .developer_tooling_paths import PUBLIC_WORKFLOW_REPORT_ROOT
-
-
-def execute_registered_action(action: str, rest: list[str]) -> int:
-    from scripts.objc3c_workflow.action_dispatch import execute_registered_action as execute
-
-    return execute(action, rest)
 
 
 def ensure_bonus_artifact_source() -> int:
@@ -23,4 +18,3 @@ def ensure_bonus_artifact_source() -> int:
 
 def bonus_tool_integration_report_path() -> Path:
     return PUBLIC_WORKFLOW_REPORT_ROOT / "bonus-tool-integration.json"
-

@@ -11,9 +11,9 @@ from .argument_request_model import (
     ListActionsRequest,
     WorkflowRequest,
 )
-from .request_handler_actions import (
+from .request_handler_action_execution import handle_execute_action_request
+from .request_handler_action_queries import (
     handle_describe_action_request,
-    handle_execute_action_request,
     handle_list_actions_request,
 )
 from .request_handler_package_scripts import handle_describe_package_script_request

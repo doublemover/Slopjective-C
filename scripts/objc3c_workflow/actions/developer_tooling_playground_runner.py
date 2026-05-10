@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 
+from ..action_execution_dispatch import execute_registered_action
 from ..commands import run
 from ..environment import ROOT
 from .developer_tooling_paths import (
@@ -13,12 +14,6 @@ from .developer_tooling_paths import (
     FORMAT_OBJC3C_SOURCE_PY,
     FRONTEND_C_API_RUNNER_EXE,
 )
-
-
-def execute_registered_action(action: str, rest: list[str]) -> int:
-    from scripts.objc3c_workflow.action_dispatch import execute_registered_action as execute
-
-    return execute(action, rest)
 
 
 def playground_subprocess_env() -> dict[str, str]:
