@@ -216,6 +216,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_ir_emission_completion.cpp
   objc3_frontend_artifact_ir_emission_completion.h
   objc3_frontend_artifact_lowering_contracts.h
+  objc3_frontend_artifact_lowering_handoff_block_manifest_fields.cpp
+  objc3_frontend_artifact_lowering_handoff_block_manifest_fields.h
   objc3_frontend_artifact_lowering_handoff_manifest_fields.cpp
   objc3_frontend_artifact_lowering_handoff_manifest_fields.h
   objc3_frontend_artifact_lowering_replay_manifest.cpp
