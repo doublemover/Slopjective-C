@@ -1,5 +1,7 @@
 #pragma once
 
+#include "artifacts/objc3_frontend_artifact_runtime_installation_manifest.h"
+
 #include <iosfwd>
 #include <string>
 
@@ -56,14 +58,6 @@ void WriteRuntimeMultiImageStartupOrderingSourceSurface(
     const Objc3RuntimeBootstrapFailureRestartSemanticsSummary
         &runtime_bootstrap_failure_restart_semantics,
     const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api,
-    const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics);
-
-void WriteRuntimeInstallationAbiSurface(
-    std::ostream &manifest,
-    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api);
-
-void WriteRuntimeLoaderLifecycleSurface(
-    std::ostream &manifest,
     const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics);
 
 }  // namespace objc3::artifacts::frontend
