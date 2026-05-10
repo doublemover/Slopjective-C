@@ -4,9 +4,58 @@
 #include <sstream>
 
 #include "io/json/json_writer.h"
-#include "lower/objc3_lowering_contract.h"
 
 namespace objc3::artifacts::evidence {
+namespace {
+
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingThrowsAbiPropagationLoweringContractId =
+        "objc3c.error_handling.throws.abi.propagation.lowering.v1";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayContractId =
+        "objc3c.error_handling.result.and.bridging.artifact.replay.v1";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySourceModel =
+        "error_handling-lowering-replay-keys-survive-object-emission-manifest-emission-and-emitted-sidecar-artifacts";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayModel =
+        "provider-and-consumer-sidecar-artifacts-preserve-result-and-bridge-replay-packets-for-separate-compilation-proof";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayFailClosedModel =
+        "missing-or-drifted-result-bridge-replay-sidecars-disable-separate-compilation-proof";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_error_handling_result_and_bridging_artifact_replay";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayImportArtifactMemberName =
+        "objc_error_handling_result_and_bridging_artifact_replay";
+inline constexpr const char
+    *kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayArtifactSuffix =
+        ".error_handling-error-replay.json";
+
+std::string BuildArtifactErrorHandlingResultAndBridgingReplaySummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayContractId
+      << ";source_contract="
+      << kObjc3ArtifactErrorHandlingThrowsAbiPropagationLoweringContractId
+      << ";source_model="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySourceModel
+      << ";replay_model="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayModel
+      << ";surface_path="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySurfacePath
+      << ";artifact_member="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayImportArtifactMemberName
+      << ";artifact_suffix="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayArtifactSuffix
+      << ";fail_closed_model="
+      << kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayFailClosedModel
+      << ";follow_on_surface=objc3c.errors.resultbridging.artifactsurface.v1";
+  return out.str();
+}
+
+}  // namespace
 
 ErrorHandlingResultAndBridgingArtifactReplayEvidence
 BuildErrorHandlingResultAndBridgingArtifactReplayEvidence(
@@ -21,19 +70,19 @@ BuildErrorHandlingResultAndBridgingArtifactReplayEvidence(
         &imported_runtime_module_surfaces) {
   ErrorHandlingResultAndBridgingArtifactReplayEvidence evidence;
   evidence.contract_id =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayContractId;
   evidence.source_contract_id =
-      kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId;
+      kObjc3ArtifactErrorHandlingThrowsAbiPropagationLoweringContractId;
   evidence.surface_path =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplaySurfacePath;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySurfacePath;
   evidence.import_artifact_member_name =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplayImportArtifactMemberName;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayImportArtifactMemberName;
   evidence.source_model =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplaySourceModel;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplaySourceModel;
   evidence.replay_model =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplayModel;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayModel;
   evidence.fail_closed_model =
-      kObjc3ErrorHandlingResultAndBridgingArtifactReplayFailClosedModel;
+      kObjc3ArtifactErrorHandlingResultAndBridgingArtifactReplayFailClosedModel;
   evidence.error_handling_replay_key = error_handling_replay_key;
   evidence.throws_replay_key = throws_replay_key;
   evidence.result_like_replay_key = result_like_replay_key;
@@ -83,7 +132,7 @@ BuildErrorHandlingResultAndBridgingArtifactReplayEvidence(
       evidence.imported_module_names_lexicographic.size() ==
           imported_error_handling_module_count;
   std::ostringstream replay_key;
-  replay_key << Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary()
+  replay_key << BuildArtifactErrorHandlingResultAndBridgingReplaySummary()
              << ";binary_artifact_replay_ready="
              << (evidence.binary_artifact_replay_ready ? "true" : "false")
              << ";runtime_import_artifact_ready="
