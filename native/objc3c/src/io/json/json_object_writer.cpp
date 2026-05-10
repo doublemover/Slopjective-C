@@ -10,19 +10,6 @@
 
 namespace objc3::io::json {
 
-JsonObjectWriter::JsonObjectWriter(std::ostream &out) : out_(out) {
-  out_ << '{';
-}
-
-void JsonObjectWriter::BeginField(std::string_view name) {
-  if (!first_) {
-    out_ << ',';
-  }
-  first_ = false;
-  objc3::io::WriteJsonString(out_, name);
-  out_ << ':';
-}
-
 void JsonObjectWriter::StringField(std::string_view name,
                                    std::string_view value) {
   BeginField(name);
@@ -79,14 +66,6 @@ void JsonObjectWriter::RawJsonField(std::string_view name,
                                 parsed.error->Format());
   }
   ValueField(name, parsed.value);
-}
-
-void JsonObjectWriter::End() {
-  if (ended_) {
-    return;
-  }
-  out_ << '}';
-  ended_ = true;
 }
 
 }  // namespace objc3::io::json
