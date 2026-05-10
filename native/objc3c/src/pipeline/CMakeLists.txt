@@ -131,6 +131,8 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation_evidence_interop.cpp
   runtime_import_preservation_evidence_metaprogramming.cpp
   runtime_import_preservation_evidence_runtime_artifacts.cpp
+  runtime_import_preservation_evidence_runtime_artifacts_block_ownership.cpp
+  runtime_import_preservation_evidence_runtime_artifacts_storage_reflection.cpp
   runtime_import_preservation_evidence_runtime_language.cpp
   runtime_import_preservation_packaging.cpp
   runtime_import_preservation.cpp
@@ -182,6 +184,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_manifest_preservation.h
   runtime_import_packaging_peer_artifacts.h
   runtime_import_preservation_owners.h
+  runtime_import_preservation_runtime_artifact_evidence_owners.h
   runtime_import_record_parsing.h
   runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
