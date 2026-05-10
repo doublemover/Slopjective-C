@@ -55,7 +55,9 @@ add_library(objc3c_json STATIC
   json/json_schema_subschema.cpp
   json/json_schema_validation.cpp
   json/json_schema_type.cpp
+  json/json_schema_type_array_contract_validation.cpp
   json/json_schema_type_contract_validation.cpp
+  json/json_schema_type_name_contract_validation.cpp
   json/json_schema_type_names.cpp
   json/json_schema_unique_items_contract_validation.cpp
   json/json_schema_unsupported_annotation_keyword_contracts.cpp
