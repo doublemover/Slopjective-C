@@ -26,9 +26,11 @@ add_library(objc3c_sema_contract_flow STATIC
   objc3_sema_pass_manager_dispatch_runtime_arc_validation_flow.cpp
   objc3_sema_pass_manager_intermodule_flow.cpp
   objc3_sema_pass_manager_module_publication_flow.cpp
+  objc3_sema_pass_manager_module_summary_readiness.cpp
   objc3_sema_pass_manager_parser_contract_flow.cpp
   objc3_sema_pass_manager_parser_publication_flow.cpp
   objc3_sema_pass_manager_summary_readiness.cpp
+  objc3_sema_pass_manager_type_summary_readiness.cpp
   objc3_sema_pass_manager_type_metadata_flow.cpp
   objc3_sema_pass_manager_unsafe_error_validation_flow.cpp
 )
