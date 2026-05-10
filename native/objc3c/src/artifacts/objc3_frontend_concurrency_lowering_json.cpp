@@ -4,13 +4,42 @@
 #include <string>
 
 #include "io/objc3_json.h"
-#include "lower/contracts/concurrency_task_runtime_helper_contracts.h"
 
 namespace objc3::artifacts::frontend {
 namespace {
 
 using objc3::io::EscapeJsonString;
 
+inline constexpr const char
+    *kArtifactConcurrencyTaskRuntimeLoweringContractId =
+        "objc3c.concurrency.task.runtime.lowering.contract.v1";
+inline constexpr const char
+    *kArtifactConcurrencyTaskRuntimeLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_concurrency_task_runtime_lowering_contract";
+inline constexpr const char
+    *kArtifactConcurrencyTaskRuntimeAbiCompletionContractId =
+        "objc3c.concurrency.task.runtime.abi.completion.v1";
+inline constexpr const char
+    *kArtifactConcurrencyTaskRuntimeAbiCompletionSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_concurrency_task_group_and_runtime_abi_completion";
+inline constexpr const char *kArtifactRuntimeSpawnTaskI32Symbol =
+    "objc3_runtime_spawn_task_i32";
+inline constexpr const char *kArtifactRuntimeEnterTaskGroupScopeI32Symbol =
+    "objc3_runtime_enter_task_group_scope_i32";
+inline constexpr const char *kArtifactRuntimeAddTaskGroupTaskI32Symbol =
+    "objc3_runtime_add_task_group_task_i32";
+inline constexpr const char *kArtifactRuntimeWaitTaskGroupNextI32Symbol =
+    "objc3_runtime_wait_task_group_next_i32";
+inline constexpr const char *kArtifactRuntimeCancelTaskGroupI32Symbol =
+    "objc3_runtime_cancel_task_group_i32";
+inline constexpr const char *kArtifactRuntimeTaskIsCancelledI32Symbol =
+    "objc3_runtime_task_is_cancelled_i32";
+inline constexpr const char *kArtifactRuntimeTaskOnCancelI32Symbol =
+    "objc3_runtime_task_on_cancel_i32";
+inline constexpr const char *kArtifactRuntimeExecutorHopI32Symbol =
+    "objc3_runtime_executor_hop_i32";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringTaskModel =
     "task-creation-cancellation-polls-and-task-group-artifacts-now-lower-through-explicit-replay-stable-lane-contracts";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringExecutorModel =
@@ -92,9 +121,9 @@ std::string BuildConcurrencyTaskRuntimeLoweringContractJson(
   std::ostringstream out;
   out << "{"
       << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeLoweringContractId)
+      << EscapeJsonString(kArtifactConcurrencyTaskRuntimeLoweringContractId)
       << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeLoweringSurfacePath)
+      << EscapeJsonString(kArtifactConcurrencyTaskRuntimeLoweringSurfacePath)
       << "\",\"semantic_contract_id\":\""
       << EscapeJsonString(
              kObjc3ConcurrencyTaskExecutorCancellationSemanticModelContractId)
@@ -177,11 +206,12 @@ std::string BuildConcurrencyTaskRuntimeAbiCompletionJson(
   std::ostringstream out;
   out << "{"
       << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId)
+      << EscapeJsonString(kArtifactConcurrencyTaskRuntimeAbiCompletionContractId)
       << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath)
+      << EscapeJsonString(
+             kArtifactConcurrencyTaskRuntimeAbiCompletionSurfacePath)
       << "\",\"lowering_contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeLoweringContractId)
+      << EscapeJsonString(kArtifactConcurrencyTaskRuntimeLoweringContractId)
       << "\",\"artifact_model\":\""
       << EscapeJsonString(kObjc3ConcurrencyTaskRuntimeAbiCompletionArtifactModel)
       << "\",\"runtime_proof_model\":\""
@@ -196,20 +226,22 @@ std::string BuildConcurrencyTaskRuntimeAbiCompletionJson(
       << ",\"runtime_snapshot_symbol\":\""
       << EscapeJsonString("objc3_runtime_copy_task_runtime_state_for_testing")
       << "\",\"helper_symbols\":["
-      << "\"" << EscapeJsonString(kObjc3RuntimeSpawnTaskI32Symbol) << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeEnterTaskGroupScopeI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeSpawnTaskI32Symbol) << "\","
+      << "\""
+      << EscapeJsonString(kArtifactRuntimeEnterTaskGroupScopeI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeAddTaskGroupTaskI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeAddTaskGroupTaskI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeWaitTaskGroupNextI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeWaitTaskGroupNextI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeCancelTaskGroupI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeCancelTaskGroupI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeTaskIsCancelledI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeTaskIsCancelledI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeTaskOnCancelI32Symbol)
+      << "\"" << EscapeJsonString(kArtifactRuntimeTaskOnCancelI32Symbol)
       << "\","
-      << "\"" << EscapeJsonString(kObjc3RuntimeExecutorHopI32Symbol) << "\""
+      << "\"" << EscapeJsonString(kArtifactRuntimeExecutorHopI32Symbol)
+      << "\""
       << "]}";
   return out.str();
 }
