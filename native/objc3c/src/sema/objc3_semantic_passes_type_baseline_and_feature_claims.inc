@@ -3,6 +3,7 @@
 #include "sema/objc3_semantic_context.h"
 #include "sema/objc3_semantic_constant_evaluator.h"
 #include "sema/objc3_semantic_feature_claims.h"
+#include "sema/objc3_semantic_generic_argument_relations.h"
 #include "sema/objc3_semantic_pass_helpers.h"
 #include "sema/objc3_semantic_symbol_lookup.h"
 #include "sema/objc3_semantic_type_factory.h"
