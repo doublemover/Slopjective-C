@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract/happy"
+  ],
+  "support_boundary": "e2e/tooling ownership covers the accepted open blocker audit contract happy path only: runner identity, contract id/version, input root and effective root, include/exclude scope, generated timestamp/source labels, output artifact paths, extractor command argv recording, extractor exit code and byte counts, zero open blockers snapshot, final_status ok, and final_exit_code 0. Hard-fail drift scenarios are not positive audit support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/open_blocker_audit_contract/happy",
+    "expected_contract:runner=open-blocker-audit-runner/v0.1",
+    "expected_contract:contract_id=open-blocker-audit-runner",
+    "expected_contract:contract_version=v0.1",
+    "expected_contract:extract_exit_code=0",
+    "expected_contract:open_blocker_count=0",
+    "expected_contract:final_status=ok",
+    "expected_contract:final_exit_code=0",
+    "expected_contract:extract_open_blockers_snapshot_json.argv"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/open_blocker_audit_contract",
+  "retired_surface_rule": "hard-fail drift rows, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode audit rows, shim audit rows, fallback audit rows, compatibility audit rows, migration-only audit rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

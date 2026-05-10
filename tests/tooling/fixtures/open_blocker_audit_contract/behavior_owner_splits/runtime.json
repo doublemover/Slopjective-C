@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract"
+  ],
+  "support_boundary": "runtime ownership is non-positive for open blocker audit contract fixtures. Audit runner, extractor command, output directory, final status, final exit code, byte counts, and open blocker count are tooling contract state, not native runtime dispatch, storage, object-model, or ABI behavior support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:open_blocker_audit_contract",
+    "tooling_terms:runner,extract_exit_code,final_status,final_exit_code,stdout_bytes,stderr_bytes,open_blocker_count",
+    "compiler_phase_boundary:no-runtime-positive-truth",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime audit, compatibility runtime audit, shim runtime audit, fallback runtime audit, generated-only runtime rows, report-only runtime rows, migration-only runtime rows, runner-label-only runtime claims, and audit status rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

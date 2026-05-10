@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/open_blocker_audit_summary.json",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/inputs/open_blockers.snapshot.json",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/extract_open_blockers.log",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/expected_exit_code.txt",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/expected_final_status.txt",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/expected_final_exit_code.txt",
+    "tests/tooling/fixtures/open_blocker_audit_contract/*/expected_stderr.txt"
+  ],
+  "split_policy": {
+    "primary_axis": "tooling/e2e audit contract behavior before fixture directory label, summary JSON, snapshot JSON, extractor log, expected status file, hard-fail drift row, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "open blocker audit contract positives are limited to the hand-authored happy audit-runner contract owned by the e2e/tooling owner; parser, sema, lowering, IR, and runtime phases get no positive compiler behavior from this fixture family",
+    "canonical_rejection_rule": "old-mode audit contracts, compatibility-shaped contract rows, shim/fallback rows, generated-only rows, report-only rows, migration-only rows, wrapper-only rows, runner-only rows, and directory-label-only claims are non-positive rejection or provenance evidence",
+    "strict_error_rule": "hard_fail_* contract drift scenarios own fail-closed strict errors for log contract drift, snapshot parity key order drift, status/exit mismatch, and summary schema drift",
+    "provenance_rule": "summary JSON, snapshot JSON, extractor logs, expected stderr, expected exit-code, expected final-status, expected final-exit-code, runner argv, source labels, generated-at labels, path labels, and byte-count rows are fixture provenance unless the e2e/tooling owner claims the scenario boundary",
+    "retired_surface_rule": "old-mode audit, compatibility audit, shim audit, fallback audit, generated-only audit, report-only audit, migration-only audit, wrapper-only audit, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "open_blocker_audit_contract_provenance",
+      "path": "tests/tooling/fixtures/open_blocker_audit_contract/behavior_owner_splits/open_blocker_audit_contract_provenance.json"
+    }
+  ]
+}
