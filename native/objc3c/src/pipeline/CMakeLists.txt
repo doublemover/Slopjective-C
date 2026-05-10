@@ -87,6 +87,9 @@ add_library(objc3c_pipeline STATIC
   runtime_import_frontend_closure_boundary.cpp
   objc3_runtime_import_surface_cross_module_readiness.cpp
   objc3_runtime_import_surface_packaging_readiness.cpp
+  runtime_import_link_plan_construction.cpp
+  runtime_import_link_plan_linker_response.cpp
+  runtime_import_link_plan_paths.cpp
   runtime_import_json_helpers.cpp
   runtime_import_json_helpers_accessors.cpp
   runtime_import_json_helpers_parser_values.cpp
@@ -138,6 +141,7 @@ add_library(objc3c_pipeline STATIC
   parse_lowering_artifact_keys.h
   parse_lowering_diagnostic_keys.h
   runtime_import_json_helpers.h
+  runtime_import_link_plan.h
   runtime_import_packaging_peer_artifacts.h
   runtime_import_preservation_owners.h
   runtime_import_record_parsing.h
