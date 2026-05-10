@@ -14,6 +14,7 @@
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_conformance_report_plan.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_metadata.h"
 #include "artifacts/objc3_frontend_artifact_concurrency_runtime_manifest_surfaces.h"
@@ -76,7 +77,6 @@
 #include "artifacts/objc3_frontend_module_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_bootstrap_artifacts.h"
-#include "artifacts/objc3_frontend_runtime_capability_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_descriptor_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_ingest_binary_artifacts.h"
@@ -187,8 +187,6 @@ using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceJson;
 using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceReplayKey;
 using objc3::artifacts::frontend::
     BuildObjc3FrontendArtifactInitialPostPipelineFailure;
-using objc3::artifacts::frontend::BuildPublicConformanceReportJson;
-using objc3::artifacts::frontend::BuildRuntimeCapabilityReportJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyActorIsolationSendabilityEnforcementSummaryJson;
 using objc3::artifacts::frontend::
@@ -266,10 +264,6 @@ using objc3::artifacts::frontend::
     BuildToolingDiagnosticsMigratorSourceInventorySummaryJson;
 using objc3::artifacts::frontend::
     BuildToolingFeatureSpecificFixitSynthesisSummaryJson;
-using objc3::artifacts::frontend::
-    BuildToolingLegacyCanonicalMigrationSemanticsSummary;
-using objc3::artifacts::frontend::
-    BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson;
 using objc3::artifacts::frontend::
     BuildToolingMigrationCanonicalizationSourceCompletionSummaryJson;
 using objc3::artifacts::frontend::BuildConcurrencyAsyncSourceClosureSummaryJson;
@@ -350,26 +344,6 @@ using objc3::artifacts::frontend::
     BuildRuntimeBlockOwnershipArtifactPreservationSummaryJson;
 using objc3::artifacts::frontend::
     BuildRuntimeStorageReflectionArtifactPreservationSummaryJson;
-using objc3::artifacts::reports::
-    BuildFrontendCompatibilityStrictnessClaimSemanticsSummary;
-using objc3::artifacts::reports::
-    BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson;
-using objc3::artifacts::reports::
-    BuildToolingCorpusShardingReleaseEvidencePackagingSummary;
-using objc3::artifacts::reports::
-    BuildToolingCorpusShardingReleaseEvidencePackagingSummaryJson;
-using objc3::artifacts::reports::
-    BuildToolingFeatureAwareConformanceReportEmissionSummary;
-using objc3::artifacts::reports::
-    BuildToolingFeatureAwareConformanceReportEmissionSummaryJson;
-using objc3::artifacts::reports::
-    BuildToolingMachineReadableConformanceReportContractSummary;
-using objc3::artifacts::reports::
-    BuildToolingMachineReadableConformanceReportContractSummaryJson;
-using objc3::artifacts::reports::
-    BuildVersionedConformanceReportLoweringSummary;
-using objc3::artifacts::reports::
-    BuildVersionedConformanceReportLoweringSummaryJson;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
@@ -781,42 +755,40 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &runtime_bootstrap_failure_restart_semantics =
           runtime_registration_plan
               .runtime_bootstrap_failure_restart_semantics;
-  const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
-      frontend_compatibility_strictness_claim_semantics =
-          BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
-              pipeline_result.sema_parity_surface
-                  .compatibility_strictness_claim_semantics_summary);
-  const Objc3ToolingLegacyCanonicalMigrationSemanticsSummary
-      tooling_legacy_canonical_migration_semantics_summary =
-          BuildToolingLegacyCanonicalMigrationSemanticsSummary(
-              frontend_compatibility_strictness_claim_semantics,
-              tooling_feature_specific_fixit_synthesis_summary);
-  const Objc3VersionedConformanceReportLoweringSummary
-      versioned_conformance_report_lowering =
-          BuildVersionedConformanceReportLoweringSummary(
-              options, pipeline_result,
-              frontend_compatibility_strictness_claim_semantics);
-  const Objc3ToolingMachineReadableConformanceReportContractSummary
-      tooling_machine_readable_conformance_report_contract_summary =
-          BuildToolingMachineReadableConformanceReportContractSummary(
-              tooling_legacy_canonical_migration_semantics_summary,
-              versioned_conformance_report_lowering);
-  const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
-      tooling_feature_aware_conformance_report_emission_summary =
-          BuildToolingFeatureAwareConformanceReportEmissionSummary(
-              tooling_feature_specific_fixit_synthesis_summary,
-              tooling_legacy_canonical_migration_semantics_summary,
-              tooling_machine_readable_conformance_report_contract_summary);
-  const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
-      tooling_corpus_sharding_release_evidence_packaging_summary =
-          BuildToolingCorpusShardingReleaseEvidencePackagingSummary(
-              tooling_feature_aware_conformance_report_emission_summary);
-  if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
-          versioned_conformance_report_lowering)) {
+  const objc3::artifacts::frontend::Objc3FrontendArtifactConformanceReportPlan
+      conformance_report_plan =
+          objc3::artifacts::frontend::
+              BuildObjc3FrontendArtifactConformanceReportPlan(
+                  options, pipeline_result,
+                  tooling_feature_specific_fixit_synthesis_summary);
+  if (!conformance_report_plan.post_pipeline_failure.empty()) {
     record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: incomplete versioned conformance-report lowering summary");
+        conformance_report_plan.post_pipeline_failure.code.c_str(),
+        conformance_report_plan.post_pipeline_failure.message);
   }
+  const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+      &frontend_compatibility_strictness_claim_semantics =
+          conformance_report_plan
+              .frontend_compatibility_strictness_claim_semantics;
+  const Objc3ToolingLegacyCanonicalMigrationSemanticsSummary
+      &tooling_legacy_canonical_migration_semantics_summary =
+          conformance_report_plan
+              .tooling_legacy_canonical_migration_semantics_summary;
+  const Objc3VersionedConformanceReportLoweringSummary
+      &versioned_conformance_report_lowering =
+          conformance_report_plan.versioned_conformance_report_lowering;
+  const Objc3ToolingMachineReadableConformanceReportContractSummary
+      &tooling_machine_readable_conformance_report_contract_summary =
+          conformance_report_plan
+              .tooling_machine_readable_conformance_report_contract_summary;
+  const Objc3ToolingFeatureAwareConformanceReportEmissionSummary
+      &tooling_feature_aware_conformance_report_emission_summary =
+          conformance_report_plan
+              .tooling_feature_aware_conformance_report_emission_summary;
+  const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
+      &tooling_corpus_sharding_release_evidence_packaging_summary =
+          conformance_report_plan
+              .tooling_corpus_sharding_release_evidence_packaging_summary;
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -4466,40 +4438,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   control_flow_control_flow_safety_lowering_replay_key)
            << ",\"objc_type_system_type_semantic_model\":"
            << BuildTypeSystemTypeSemanticModelSummaryJson(
-                  type_system_type_semantic_model_summary)
-           // semantic freeze anchor: sema publishes the fail-closed
-           // legality boundary that classifies live compatibility selections,
-           // source-only claim downgrades, and strictness/macro claim
-           // rejections before lowering and conformance gates consume them.
-           << ",\"objc_compatibility_strictness_claim_semantics\":"
-           << BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
-                  frontend_compatibility_strictness_claim_semantics)
-           << ",\"objc_tooling_legacy_canonical_migration_semantics\":"
-           << BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
-                  tooling_legacy_canonical_migration_semantics_summary)
-           << ",\"objc_tooling_machine_readable_conformance_report_contract\":"
-           << BuildToolingMachineReadableConformanceReportContractSummaryJson(
-                  tooling_machine_readable_conformance_report_contract_summary)
-           << ",\"objc_tooling_feature_aware_conformance_report_emission\":"
-           << BuildToolingFeatureAwareConformanceReportEmissionSummaryJson(
-                  tooling_feature_aware_conformance_report_emission_summary)
-           << ",\"objc_tooling_corpus_sharding_release_evidence_packaging\":"
-           << BuildToolingCorpusShardingReleaseEvidencePackagingSummaryJson(
-                  tooling_corpus_sharding_release_evidence_packaging_summary)
-           // lowering freeze anchor: lane-C lowers the existing
-           // runnable/source-only/unsupported truth packets into one emitted
-           // machine-readable conformance sidecar instead of reconstructing
-           // capability claims from docs or release evidence later.
-           << ",\"objc_versioned_conformance_report_lowering_contract\":"
-           << BuildVersionedConformanceReportLoweringSummaryJson(
-                  versioned_conformance_report_lowering)
-           // runtime capability reporting anchor: lane-C must
-           // publish the truthful machine-readable runtime/public capability
-           // payload inside the semantic surface so later driver publication
-           // and release tooling consume one canonical schema.
-           << ",\"objc_runtime_capability_report\":"
-           << BuildRuntimeCapabilityReportJson(
-                  versioned_conformance_report_lowering);
+                  type_system_type_semantic_model_summary);
+  objc3::artifacts::frontend::
+      WriteObjc3FrontendArtifactConformanceReportManifestSurfaces(
+          manifest, conformance_report_plan);
   WriteExecutableRuntimeMetadataManifestSurfaces(
       manifest, executable_metadata_source_graph,
       runtime_metadata_source_to_section_matrix,
