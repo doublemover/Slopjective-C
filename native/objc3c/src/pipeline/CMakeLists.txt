@@ -140,6 +140,8 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation_serialized_metadata.cpp
   runtime_import_record_parsing.cpp
   runtime_import_record_parsing_source_records.cpp
+  runtime_import_record_parsing_source_records_declarations.cpp
+  runtime_import_record_parsing_source_records_members.cpp
   runtime_import_record_parsing_serialized_payload.cpp
   runtime_import_type_system_preservation.cpp
   runtime_import_type_system_preservation_generic.cpp
@@ -186,6 +188,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation_owners.h
   runtime_import_preservation_runtime_artifact_evidence_owners.h
   runtime_import_record_parsing.h
+  runtime_import_record_parsing_source_record_owners.h
   runtime_import_type_system_preservation.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
   objc3_final_readiness_gate_surface_owners.h
