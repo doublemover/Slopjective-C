@@ -6,6 +6,7 @@ import subprocess
 from collections.abc import Callable
 from typing import Any
 
+from .github_commands import close_issue_args, list_open_issue_json_args
 from .models import IssueRef
 from .paths import ROOT
 
@@ -64,9 +65,7 @@ def fetch_open_spt_issues(
     *,
     gh_json_runner: Callable[[list[str]], Any] = run_gh_json,
 ) -> dict[str, IssueRef]:
-    payload = gh_json_runner(
-        ["issue", "list", "--state", "open", "--limit", "2000", "--json", "number,title,url"]
-    )
+    payload = gh_json_runner(list_open_issue_json_args())
     return issue_refs_from_payload(payload, task_id_pattern)
 
 
@@ -76,7 +75,7 @@ def close_issue(
     *,
     command_runner: Callable[[list[str]], subprocess.CompletedProcess[str]] = run_cmd,
 ) -> None:
-    proc = command_runner(["gh", "issue", "close", str(number), "--comment", comment])
+    proc = command_runner(close_issue_args(number, comment))
     if proc.returncode != 0:
         detail = proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
         raise RuntimeError(f"failed to close issue #{number}: {detail}")
