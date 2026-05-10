@@ -57,6 +57,7 @@ target_link_libraries(objc3c_artifacts_evidence PUBLIC
 )
 
 add_library(objc3c_artifacts_interop STATIC
+  interop/interop_bridge_artifact_json.cpp
   interop/interop_bridge_artifacts.cpp
   interop/interop_bridge_artifacts.h
 )
