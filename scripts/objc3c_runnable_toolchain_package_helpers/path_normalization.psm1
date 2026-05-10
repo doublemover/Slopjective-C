@@ -1,0 +1,60 @@
+Set-StrictMode -Version Latest
+
+function Get-RepoRelativePathCompat {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPath
+  )
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
+  if (Test-Path -LiteralPath $TargetPath) {
+    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  }
+  else {
+    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
+  }
+
+  if ($resolvedRoot.EndsWith('\\') -or $resolvedRoot.EndsWith('/')) {
+    $rootWithSeparator = $resolvedRoot
+  }
+  else {
+    $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+  }
+
+  $relativePath = $null
+  $getRelativeMethod = [System.IO.Path].GetMethod("GetRelativePath", [Type[]]@([string], [string]))
+  if ($null -ne $getRelativeMethod) {
+    $relativePath = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
+  }
+  else {
+    $rootUri = New-Object System.Uri($rootWithSeparator)
+    $targetUri = New-Object System.Uri($resolvedTarget)
+    $relativeUri = $rootUri.MakeRelativeUri($targetUri)
+    $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
+  }
+
+  return $relativePath.Replace('\\', '/')
+}
+
+function Resolve-PackageRoot {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [string]$RequestedRoot
+  )
+
+  if ([string]::IsNullOrWhiteSpace($RequestedRoot)) {
+    $runId = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
+    return (Join-Path $RepoRoot (Join-Path "tmp/pkg/objc3c-native-runnable-toolchain" $runId))
+  }
+
+  if ([System.IO.Path]::IsPathRooted($RequestedRoot)) {
+    return [System.IO.Path]::GetFullPath($RequestedRoot)
+  }
+
+  return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $RequestedRoot))
+}
+
+Export-ModuleMember -Function @(
+  "Get-RepoRelativePathCompat",
+  "Resolve-PackageRoot"
+)
