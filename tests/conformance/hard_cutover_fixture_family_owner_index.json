@@ -1190,6 +1190,40 @@
       "retired_disposition": "packaging channels owner contracts, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source labels, implementation anchors, machine-owned output roots, platform ids, host os/arch labels, channel ids, required tool labels, installer runtime requirement labels, manifest field names, receipt field names, upstream action labels, workflow child labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, and owner-split routing rows are resolved through behavior-first phase indexes and packaging channels provenance before any package-channel row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in release-foundation-derived channel manifests, portable-archive/local-installer/offline-bundle channel ids, windows-x64 support, package-runnable-toolchain payload derivation, package channel and platform support matrix actions, machine-generated install receipts, deterministic rollback, offline bootstrap without network, payload digest parity with the runnable package, required manifest/receipt fields, and fail-closed package-channel workflow ordering, while package-manager publication, auto-update services, signing/notarization claims, unsupported host success, second compiler payloads, hand-curated install trees, installer-only metadata bypassing the release manifest, system-wide install, network bootstrap, cross-platform installer parity, missing checked-in channel sources, missing rollback or receipt contracts, non-derived package-channel artifacts, absent platform support matrix, skipped source/schema checks, missing bridge child actions, report-only workflow summaries, missing manifest fields, missing receipt fields, missing payload digest parity, network-dependent offline bundles, tmp-as-source claims, old-mode packaging rows, shim packaging rows, fallback packaging rows, compatibility packaging rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only channel checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "package_ecosystem_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "package_ecosystem_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/package_ecosystem_provenance.json"
+      ],
+      "retired_disposition": "package ecosystem owner contracts, runbook paths, stdlib workspace paths, package surface paths, application architecture fixture paths, release/package channel runbook paths, schema paths, owner split module paths, workflow implementation anchors, validation implementation anchors, generated artifact roots, generated report roots, report slot names, workspace ids, materialize action labels, validation action labels, package source labels, registry layer labels, generated output paths, required action labels, successor milestone labels, blocker labels, non-goal labels, forbidden dependency source labels, retired acceptance labels, and owner-split routing rows are resolved through behavior-first phase indexes and package ecosystem provenance before any package row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in package/workspace source authority, package authoring from stdlib/showcase/application surfaces, deterministic provenance-bearing local locks, offline mirrors derived from the current lock graph, local registry metadata generated from lock and mirror evidence, public objc3c package workflow replay, and release-operation integration that consumes package ecosystem artifacts as generated local evidence, while hosted package registry services, hosted registry availability, package-manager parity, network-backed dependency resolution, implicit network fetches, unpinned hosted registry references, system package manager publication, manual sidecar manifests, manual package manifests outside checked-in contracts and generated artifacts, tmp-only source authority, second compiler payloads, second package layouts, second install workflows, retired source/surface acceptance, wrapper-only publication, report-only publication, missing checked-in package source contracts, absent public package workflow actions, generated package evidence outside package ecosystem artifact roots, hosted registry claims without local package evidence, artifacts without schemas, package publication actions without owner contracts, missing dependency provenance, ambiguous package identity, unstable lock ordering or digest input sets, public workflow replay failure, workspace sources missing from checked-in package surfaces, absent lock replay paths, mirror indexes not derived from the current lock graph, network access during offline mirror validation, unlocked package identities in publication metadata, hand-authored registry indexes, release/update metadata drift from package ecosystem evidence, mirror/local registry package-id drift, old-mode package rows, shim package rows, fallback package rows, compatibility package rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only package checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "platform_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits",

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-package-ecosystem-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json"
+  ],
+  "split_policy": {
+    "primary_axis": "package-ecosystem behavior before fixture directory label, generated artifact path, tmp report path, schema path, script anchor, public action label, package bridge label, workspace label, package id label, lockfile label, mirror label, registry layer label, report slot label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "package-ecosystem positives are limited to hand-authored checked-in contracts for package/workspace source authority, package authoring from stdlib/showcase/application surfaces, deterministic provenance-bearing local locks, offline mirrors derived from the current lock graph, local registry metadata generated from lock and mirror evidence, public objc3c workflow replay, and release-operation integration that consumes package ecosystem artifacts only as generated local evidence",
+    "canonical_rejection_rule": "hosted package registry services, hosted registry availability, package-manager parity, network-backed dependency resolution, implicit network fetches, unpinned hosted registry references, system package manager publication, manual sidecar manifests, manual package manifests outside checked-in contracts and generated artifacts, tmp-only source authority, second compiler payloads, second package layouts, second install workflows, retired source/surface acceptance, wrapper-only publication, report-only publication, generated-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing checked-in package source contracts, absent public package workflow actions, generated package evidence outside package ecosystem artifact roots, hosted registry claims without local package evidence, artifacts without schemas, package publication actions without owner contracts, wrapper-only publication actions, missing dependency provenance, ambiguous package identity, unstable lock ordering or digest input sets, public workflow replay failure, workspace sources missing from checked-in package surfaces, absent lock replay paths, mirror indexes not derived from the current lock graph, network access during offline mirror validation, unlocked package identities in publication metadata, hand-authored registry indexes, release/update metadata drift from package ecosystem evidence, mirror/local registry package-id drift, and report/generated rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, stdlib workspace paths, package surface paths, application architecture fixture paths, release/package channel runbook paths, schema paths, owner split module paths, workflow implementation anchor paths, validation implementation anchor paths, generated artifact roots, generated report roots, report slot names, workspace ids, materialize action labels, validation action labels, registry layer labels, generated output paths, required action labels, successor milestone labels, blocker labels, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode package ecosystem rows, shim package ecosystem rows, fallback package ecosystem rows, compatibility package ecosystem rows, migration-only rows, generated-only rows, report-only rows, manual-only package rows, hosted registry positives, package-manager positives, network dependency positives, second payload/layout/install positives, runner-only success, workflow-label-only success, wrapper-only package checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "package_ecosystem_provenance",
+      "path": "tests/tooling/fixtures/package_ecosystem/behavior_owner_splits/package_ecosystem_provenance.json"
+    }
+  ]
+}
