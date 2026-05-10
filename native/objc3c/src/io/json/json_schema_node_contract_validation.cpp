@@ -4,7 +4,7 @@
 #include "io/json/json_schema_applicator_contract_validation.h"
 #include "io/json/json_schema_assertion_contract_validation.h"
 #include "io/json/json_schema_composition_contract_validation.h"
-#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_node_contract_guard_validation.h"
 #include "io/json/json_schema_ref_contract_validation.h"
 #include "io/json/json_schema_unsupported_keyword_contracts.h"
 
@@ -14,9 +14,7 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
                                     const JsonValue &schema,
                                     const std::string &schema_path,
                                     JsonSchemaResult &result) {
-  if (!schema.IsObject()) {
-    AddJsonSchemaContractError(result, "invalid_schema_node", schema_path,
-                               "schema node must be a JSON object");
+  if (!ValidateJsonSchemaNodeContractGuard(schema, schema_path, result)) {
     return;
   }
   ValidateJsonSchemaUnsupportedKeywordContracts(schema, schema_path, result);
