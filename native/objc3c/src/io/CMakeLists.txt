@@ -46,6 +46,9 @@ add_library(objc3c_json STATIC
   json/json_schema_numeric_minimum_maximum_contract_validation.cpp
   json/json_schema_numeric_nonnegative_contract_validation.cpp
   json/json_schema_object_additional_properties_validation.cpp
+  json/json_schema_object_additional_properties_keyword_validation.cpp
+  json/json_schema_object_additional_properties_schema_validation.cpp
+  json/json_schema_object_additional_properties_unexpected_validation.cpp
   json/json_schema_object_properties_validation.cpp
   json/json_schema_object_required_validation.cpp
   json/json_schema_object_validation.cpp

@@ -1,7 +1,8 @@
 #include "io/json/json_schema_object_additional_properties_validation.h"
 
-#include "io/json/json_schema_errors.h"
-#include "io/json/json_schema_validation.h"
+#include "io/json/json_schema_object_additional_properties_keyword_validation.h"
+#include "io/json/json_schema_object_additional_properties_schema_validation.h"
+#include "io/json/json_schema_object_additional_properties_unexpected_validation.h"
 
 namespace objc3::io::json {
 
@@ -14,12 +15,8 @@ void ValidateJsonSchemaAdditionalProperties(const JsonValue &schema_root,
                                             JsonSchemaResult &result) {
   const JsonValue *additional_properties = schema.Find("additionalProperties");
   if (additional_properties != nullptr && payload.IsObject()) {
-    if (!additional_properties->IsBool() &&
-        !additional_properties->IsObject()) {
-      AddJsonSchemaContractError(
-          result, "invalid_additional_properties",
-          JsonSchemaKeywordPath(schema_path, "additionalProperties"),
-          "additionalProperties must be false, true, or a schema object");
+    if (!ValidateJsonSchemaAdditionalPropertiesKeyword(
+            *additional_properties, schema_path, result)) {
       return;
     }
     for (const auto &[key, value] : payload.AsObject()) {
@@ -29,21 +26,14 @@ void ValidateJsonSchemaAdditionalProperties(const JsonValue &schema_root,
       if (declared_property) {
         continue;
       }
-      if (additional_properties->IsBool() && !additional_properties->AsBool()) {
-        AddJsonSchemaPayloadError(
-            result, "unexpected_property",
-            JsonInstancePropertyPath(instance_path, key),
-            JsonSchemaKeywordPath(schema_path, "additionalProperties"),
-            "unexpected property " + key);
+      if (ValidateJsonSchemaUnexpectedAdditionalProperty(
+              *additional_properties, key, instance_path, schema_path,
+              result)) {
         continue;
       }
-      if (additional_properties->IsObject()) {
-        ValidateJsonSchemaNode(schema_root, *additional_properties, value,
-                               JsonInstancePropertyPath(instance_path, key),
-                               JsonSchemaKeywordPath(schema_path,
-                                                     "additionalProperties"),
-                               result);
-      }
+      ValidateJsonSchemaAdditionalPropertySchema(
+          schema_root, *additional_properties, value, key, instance_path,
+          schema_path, result);
     }
   }
 }
