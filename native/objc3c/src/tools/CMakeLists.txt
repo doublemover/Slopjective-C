@@ -128,6 +128,9 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_stage_selection.cpp
   objc3c_frontend_c_api_runner_stage_shape.cpp
   objc3c_frontend_c_api_runner_stage_trace_json.cpp
+  objc3c_frontend_c_api_runner_stage_trace_json_artifacts.cpp
+  objc3c_frontend_c_api_runner_stage_trace_json_compile_session.cpp
+  objc3c_frontend_c_api_runner_stage_trace_json_summary.cpp
   objc3c_frontend_c_api_runner_status_mapping.cpp
   objc3c_frontend_c_api_runner_summary_io.cpp
   objc3c_frontend_c_api_runner_summary_json.cpp
