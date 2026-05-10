@@ -6,7 +6,6 @@
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_error_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_semantic_artifacts.h"
-#include "sema/model/frontend_concurrency_symbol_graph_summaries.h"
 
 namespace objc3::artifacts::frontend {
 

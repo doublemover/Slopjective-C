@@ -3,7 +3,6 @@
 #include <ostream>
 
 #include "artifacts/objc3_frontend_source_closure_artifacts.h"
-#include "sema/model/frontend_linkage_summaries.h"
 
 namespace objc3::artifacts::frontend {
 
