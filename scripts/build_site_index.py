@@ -26,8 +26,8 @@ ALLOWED_SRC_FILES: set[str] = {
 REQUIRED_POLICY_TOKENS: tuple[str, ...] = (
     "`site/index.md` is generated output",
     "Manual edits are unsupported.",
-    "`python scripts/build_site_index.py`",
-    "`python scripts/build_site_index.py --check`",
+    "`npm run objc3c -- build-site`",
+    "`npm run objc3c -- check-site`",
     "`site/src/index.contract.json`",
     "`site/src/index.body.md`",
 )
@@ -185,7 +185,7 @@ def check_drift() -> int:
         print("site-index-check: FAIL", file=sys.stderr)
         print(f"- missing generated output: {config.output_path}", file=sys.stderr)
         print(
-            "- Regenerate with: python scripts/build_site_index.py",
+            "- Regenerate with: npm run objc3c -- build-site",
             file=sys.stderr,
         )
         return 1
@@ -200,7 +200,7 @@ def check_drift() -> int:
             file=sys.stderr,
         )
         print(
-            "- Regenerate with: python scripts/build_site_index.py",
+            "- Regenerate with: npm run objc3c -- build-site",
             file=sys.stderr,
         )
         diff_preview = format_diff(actual, expected)

@@ -7,8 +7,6 @@
 - Generated output: `site/index.md`
 - Generator action: `npm run objc3c -- build-site`
 - Drift-check action: `npm run objc3c -- check-site`
-- Canonical generator: `python scripts/build_site_index.py`
-- Canonical drift check: `python scripts/build_site_index.py --check`
 - Manual edits are unsupported.
 - CI must fail when generated output drifts from canonical inputs.
 
