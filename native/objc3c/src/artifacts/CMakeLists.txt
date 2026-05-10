@@ -329,6 +329,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_semantic_lowering_plan.h
   objc3_frontend_artifact_semantic_summary_manifest_surfaces.cpp
   objc3_frontend_artifact_semantic_summary_manifest_surfaces.h
+  objc3_frontend_artifact_semantic_surface_manifest.cpp
+  objc3_frontend_artifact_semantic_surface_manifest.h
   objc3_frontend_artifact_source_closure_manifest_surfaces.cpp
   objc3_frontend_artifact_source_closure_manifest_surfaces.h
   objc3_frontend_artifact_source_linkage_metadata.cpp
