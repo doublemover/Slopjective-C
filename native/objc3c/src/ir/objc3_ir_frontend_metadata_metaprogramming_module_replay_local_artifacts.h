@@ -1,0 +1,10 @@
+#pragma once
+
+#include <cstddef>
+#include <string>
+
+struct Objc3IRFrontendMetaprogrammingModuleReplayLocalArtifactsMetadata {
+  std::string lowering_metaprogramming_module_interface_replay_preservation_key;
+  std::size_t metaprogramming_module_replay_local_derive_method_count = 0;
+  std::size_t metaprogramming_module_replay_local_macro_artifact_count = 0;
+};
