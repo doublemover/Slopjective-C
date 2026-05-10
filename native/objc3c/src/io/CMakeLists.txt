@@ -38,6 +38,8 @@ add_library(objc3c_json STATIC
   json/json_schema_any_of_composition_contract_validation.cpp
   json/json_schema_any_of_candidate_validation.cpp
   json/json_schema_any_of_keyword_validation.cpp
+  json/json_schema_any_of_match_validation.cpp
+  json/json_schema_any_of_mismatch_validation.cpp
   json/json_schema_any_of_validation.cpp
   json/json_schema_applicator_additional_properties_contract_validation.cpp
   json/json_schema_applicator_contract_validation.cpp
