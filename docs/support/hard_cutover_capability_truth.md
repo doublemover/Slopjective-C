@@ -12,10 +12,12 @@ Authoritative inputs:
 - `docs/support/evidence_map.md`
 - `docs/support/capability_claim_responsibility.md`
 - `scripts/objc3c_shared/schema_registry.py`
+- `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
 Schema ownership is not mirrored under `docs/support`. Consumers validate the
-matrix and evidence map through registry-owned schema IDs:
-`objc3c-capability-matrix-v1` and `objc3c-capability-evidence-map-v1`.
+matrix and evidence map through registry-owned schema IDs and artifact-owned
+publication records: `objc3c-capability-matrix-v1` and
+`objc3c-capability-evidence-map-v1`.
 
 Projection rule: markdown files, site pages, and runbooks are projections of
 the JSON matrix and evidence map. They may clarify reader expectations, but they
@@ -72,6 +74,11 @@ negative-evidence surfaces:
 
 They classify retired-surface residue and generated-output row inventory;
 they do not define alternate old-surface support or create evidence-log claims.
+
+Capability matrix and evidence-map schema publication is narrower than the
+general schema registry: `capability_support_schema_records.cpp` owns the
+artifact-facing records for the two support data files and their markdown
+projections, so docs do not restate those schema identities independently.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They

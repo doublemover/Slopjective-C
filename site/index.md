@@ -57,7 +57,7 @@ Use this page in three passes:
 | inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
 | inspect hard-cutover support boundaries                  | [hard-cutover capability boundaries](../docs/support/hard_cutover_capability_truth.md)           |
 | inspect capability claim responsibility                   | [capability claim responsibility](../docs/support/capability_claim_responsibility.md)            |
-| inspect machine-readable capability boundaries           | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), and [schema registry](../scripts/objc3c_shared/schema_registry.py) |
+| inspect machine-readable capability boundaries           | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), [schema registry](../scripts/objc3c_shared/schema_registry.py), and [artifact schema records](../native/objc3c/src/artifacts/json/capability_support_schema_records.cpp) |
 | inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
 ## Reader Promises <a id="toc-reader-promises"></a>

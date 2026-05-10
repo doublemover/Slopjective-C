@@ -5,6 +5,7 @@
   "support_matrix_path": "docs/support/capability_matrix.json",
   "evidence_map_path": "docs/support/evidence_map.json",
   "schema_registry_path": "scripts/objc3c_shared/schema_registry.py",
+  "capability_schema_records_path": "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp",
   "schema_ids": [
     "objc3c-capability-matrix-v1",
     "objc3c-capability-evidence-map-v1"

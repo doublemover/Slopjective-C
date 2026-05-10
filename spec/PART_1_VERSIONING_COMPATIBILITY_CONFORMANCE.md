@@ -20,10 +20,12 @@ Public support ownership lives in:
 - `docs/support/evidence_map.md`
 - `docs/support/capability_claim_responsibility.md`
 - `scripts/objc3c_shared/schema_registry.py`
+- `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
 Any claim in this part is subordinate to those capability and evidence
 surfaces. The capability matrix and evidence map schemas are selected by shared
-registry ids, not by schema fragments in this part.
+registry ids and artifact-owned support schema records, not by schema fragments
+in this part.
 
 Public command ownership lives in `package.json` and
 `scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
@@ -236,7 +238,8 @@ The machine-readable support contract is:
 - evidence data: `docs/support/evidence_map.json`
 - evidence schema id: `objc3c-capability-evidence-map-v1`
 - claim responsibility: `docs/support/capability_claim_responsibility.md`
-- schema owner: `scripts/objc3c_shared/schema_registry.py`
+- schema owners: `scripts/objc3c_shared/schema_registry.py` and
+  `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
 
 Docs, spec prose, and site pages must not introduce a status state beyond
 `implemented`, `rejected`, `reserved`, or `internal`.
