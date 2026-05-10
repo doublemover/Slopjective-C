@@ -410,6 +410,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_ownership_capture_list_family_artifact_json.cpp
   objc3_frontend_ownership_system_extension_lowering_artifact_json.cpp
   objc3_frontend_ownership_borrowed_retainable_abi_artifact_json.cpp
+  objc3_frontend_ownership_semantic_block_source_artifacts.cpp
   objc3_frontend_ownership_semantic_artifacts.cpp
   objc3_frontend_ownership_semantic_artifacts.h
   objc3_frontend_parser_diagnostic_artifacts.cpp
