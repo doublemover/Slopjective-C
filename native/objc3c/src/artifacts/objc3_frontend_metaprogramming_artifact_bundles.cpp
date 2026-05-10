@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ast/objc3_ast_declarations.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

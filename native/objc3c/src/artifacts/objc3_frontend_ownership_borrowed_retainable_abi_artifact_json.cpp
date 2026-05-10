@@ -4,6 +4,8 @@
 #include <string>
 
 #include "io/objc3_json.h"
+#include "lower/contracts/ownership_system_extension_contracts.h"
+#include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

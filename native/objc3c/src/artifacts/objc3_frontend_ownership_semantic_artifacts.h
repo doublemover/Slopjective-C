@@ -2,11 +2,7 @@
 
 #include <string>
 
-#include "lower/contracts/block_abi_lowering_contract_records.h"
-#include "lower/contracts/block_source_closure_contracts.h"
-#include "lower/contracts/lowering_arc_contracts.h"
-#include "lower/contracts/ownership_system_extension_contracts.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 

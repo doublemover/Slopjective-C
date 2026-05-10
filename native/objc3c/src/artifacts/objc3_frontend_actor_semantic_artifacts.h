@@ -2,8 +2,7 @@
 
 #include <string>
 
-#include "lower/contracts/concurrency_actor_contracts.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -4,13 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
-#include "lower/contracts/metaprogramming_expansion_lowering_contracts.h"
-#include "lower/contracts/metaprogramming_replay_preservation_contracts.h"
-#include "lower/contracts/metaprogramming_runtime_cache_contracts.h"
-#include "pipeline/objc3_frontend_types.h"
-#include "pipeline/objc3_runtime_import_surface.h"
-#include "pipeline/results/compile_options.h"
+#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
 
 struct Objc3Program;
 
@@ -18,19 +12,19 @@ namespace objc3::artifacts::frontend {
 
 struct Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary {
   std::string contract_id =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationContractId;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationContractId;
   std::string source_contract_id =
-      kObjc3MetaprogrammingSynthesizedArtifactEmissionContractId;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationSourceContractId;
   std::string surface_path =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationSurfacePath;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationSurfacePath;
   std::string import_artifact_member_name =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationImportArtifactMemberName;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationImportArtifactMemberName;
   std::string source_model =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationSourceModel;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationSourceModel;
   std::string preservation_model =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationModel;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationModel;
   std::string fail_closed_model =
-      kObjc3MetaprogrammingModuleInterfaceReplayPreservationFailClosedModel;
+      kObjc3ArtifactMetaprogrammingModuleInterfaceReplayPreservationFailClosedModel;
   std::string replay_key;
   std::string expansion_lowering_replay_key;
   std::string synthesized_emission_replay_key;
@@ -53,25 +47,25 @@ struct Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary {
 
 struct Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary {
   std::string contract_id =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId;
   std::string source_contract_id =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId;
   std::string surface_path =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath;
   std::string import_artifact_member_name =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName;
   std::string host_executable_relative_path =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
   std::string cache_root_relative_path =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
   std::string host_model =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel;
   std::string toolchain_model =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel;
   std::string cache_model =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel;
   std::string fail_closed_model =
-      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel;
+      kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel;
   std::string replay_key;
   std::string metaprogramming_replay_key;
   std::size_t local_macro_artifact_count = 0;

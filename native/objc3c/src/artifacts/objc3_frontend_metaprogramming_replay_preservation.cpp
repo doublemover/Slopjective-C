@@ -7,6 +7,12 @@
 
 #include "io/json/json_writer.h"
 #include "io/objc3_json.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_bundles.h"
+#include "lower/contracts/metaprogramming_expansion_lowering_contracts.h"
+#include "lower/contracts/metaprogramming_replay_preservation_contracts.h"
+#include "lower/contracts/metaprogramming_runtime_cache_contracts.h"
+#include "pipeline/objc3_runtime_import_surface.h"
+#include "pipeline/results/compile_options.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

@@ -6,6 +6,10 @@
 #include <vector>
 
 #include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
+#include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_runtime_import_surface.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

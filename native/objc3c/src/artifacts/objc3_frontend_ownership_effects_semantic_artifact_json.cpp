@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "io/objc3_json.h"
+#include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

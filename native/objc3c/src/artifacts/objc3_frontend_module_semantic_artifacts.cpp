@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "pipeline/objc3_frontend_types.h"
+
 namespace objc3::artifacts::frontend {
 
 Objc3ModuleImportGraphLoweringContract BuildModuleImportGraphLoweringContract(

@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "lower/contracts/error_handling_result_bridging_contracts.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+#include "pipeline/objc3_frontend_types.h"
+
 namespace objc3::artifacts::frontend {
 
 Objc3ThrowsPropagationLoweringContract
