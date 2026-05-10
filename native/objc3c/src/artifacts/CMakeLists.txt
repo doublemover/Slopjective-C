@@ -202,6 +202,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_property_atomicity_manifest.h
   objc3_frontend_artifact_runtime_bootstrap_metadata.cpp
   objc3_frontend_artifact_runtime_bootstrap_metadata.h
+  objc3_frontend_artifact_runtime_block_abi_manifest.cpp
+  objc3_frontend_artifact_runtime_block_abi_manifest.h
   objc3_frontend_artifact_runtime_block_manifest.cpp
   objc3_frontend_artifact_runtime_block_manifest.h
   objc3_frontend_artifact_runtime_concurrency_manifest.cpp
