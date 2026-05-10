@@ -2,18 +2,28 @@
 from __future__ import annotations
 
 import argparse
-import json
 import hashlib
+import json
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
 
 from objc3c_tooling.json_io import load_json_object
 from objc3c_tooling.paths import display_path as repo_rel, resolve_repo_path
-from objc3c_tooling.reports import expected_json_report
-from objc3c_tooling.reports import markdown_table
 from objc3c_tooling.reports import write_report_outputs
+
+try:
+    from support_classification_contracts import (
+        ContractError,
+        SupportClassificationSource,
+        build_support_classification_report,
+    )
+except ModuleNotFoundError:
+    from scripts.support_classification_contracts import (
+        ContractError,
+        SupportClassificationSource,
+        build_support_classification_report,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTRACT = (
@@ -39,36 +49,6 @@ DEFAULT_MD_OUT = (
     / "support_classification_summary.md"
 )
 
-SUMMARY_CONTRACT_ID = "objc3c.support.classification.generator.summary.v1"
-CANONICAL_SUPPORT_CLASSES = {
-    "supported": {
-        "claim_class": "production-claimable",
-        "fail_closed": False,
-        "release_blocking": False,
-    },
-    "experimental": {
-        "claim_class": "preview-or-candidate-only",
-        "fail_closed": False,
-        "release_blocking": False,
-    },
-    "unsupported": {
-        "claim_class": "fail-closed",
-        "fail_closed": True,
-        "release_blocking": False,
-    },
-    "release-blocking": {
-        "claim_class": "blocked",
-        "fail_closed": True,
-        "release_blocking": True,
-    },
-}
-
-
-class ContractError(RuntimeError):
-    pass
-
-
-
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
@@ -84,296 +64,21 @@ def stable_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def require_list(contract: dict[str, Any], key: str) -> list[Any]:
-    value = contract.get(key)
-    if not isinstance(value, list):
-        raise ContractError(f"contract field `{key}` must be a list")
-    return value
+def path_exists(path_text: str) -> bool:
+    return resolve_repo_path(path_text).exists()
 
 
-def require_string(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not value:
-        raise ContractError(f"{label} must be a non-empty string")
-    return value
-
-
-def validate_support_classes(contract: dict[str, Any]) -> set[str]:
-    rows = require_list(contract, "support_classes")
-    classes: set[str] = set()
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            raise ContractError(f"support_classes[{index}] must be an object")
-        support_class = require_string(row.get("class"), f"support_classes[{index}].class")
-        require_string(row.get("meaning"), f"support_classes[{index}].meaning")
-        if support_class not in CANONICAL_SUPPORT_CLASSES:
-            raise ContractError(
-                f"unknown support class `{support_class}` in support_classes[{index}]"
-            )
-        classes.add(support_class)
-    missing = set(CANONICAL_SUPPORT_CLASSES) - classes
-    if missing:
-        raise ContractError(f"missing canonical support classes: {sorted(missing)}")
-    return classes
-
-
-def validate_evidence_families(contract: dict[str, Any]) -> set[str]:
-    rows = require_list(contract, "evidence_families")
-    families: set[str] = set()
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            raise ContractError(f"evidence_families[{index}] must be an object")
-        family = require_string(row.get("family"), f"evidence_families[{index}].family")
-        require_string(row.get("report"), f"evidence_families[{index}].report")
-        require_string(
-            row.get("required_contract_id"),
-            f"evidence_families[{index}].required_contract_id",
-        )
-        if family in families:
-            raise ContractError(f"duplicate evidence family `{family}`")
-        families.add(family)
-    return families
-
-
-def validate_surface_paths(paths: list[Any], row_label: str) -> list[str]:
-    out: list[str] = []
-    for index, raw_path in enumerate(paths):
-        path_text = require_string(raw_path, f"{row_label}.checked_in_surfaces[{index}]")
-        if path_text.startswith("tmp/") or path_text.startswith("tmp\\"):
-            raise ContractError(
-                f"{row_label}.checked_in_surfaces[{index}] must not use tmp as source truth"
-            )
-        path = resolve_repo_path(path_text)
-        if not path.exists():
-            raise ContractError(f"missing checked-in surface path `{path_text}`")
-        out.append(path_text.replace("\\", "/"))
-    return out
-
-
-def classify_surfaces(
-    contract: dict[str, Any],
-    support_classes: set[str],
-    evidence_families: set[str],
-) -> list[dict[str, Any]]:
-    rows = require_list(contract, "support_matrix")
-    classifications: list[dict[str, Any]] = []
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            raise ContractError(f"support_matrix[{index}] must be an object")
-        row_label = f"support_matrix[{index}]"
-        surface = require_string(row.get("surface"), f"{row_label}.surface")
-        current_class = require_string(row.get("current_class"), f"{row_label}.current_class")
-        if current_class not in support_classes:
-            raise ContractError(
-                f"{row_label}.current_class `{current_class}` is not a defined support class"
-            )
-        checked_in_surfaces = validate_surface_paths(
-            require_list(row, "checked_in_surfaces"), row_label
-        )
-        required_families = [
-            require_string(family, f"{row_label}.required_evidence_families[{family_index}]")
-            for family_index, family in enumerate(require_list(row, "required_evidence_families"))
-        ]
-        unknown_families = sorted(set(required_families) - evidence_families)
-        if unknown_families:
-            raise ContractError(
-                f"{row_label} references unknown evidence families: {unknown_families}"
-            )
-        policy = CANONICAL_SUPPORT_CLASSES[current_class]
-        classifications.append(
-            {
-                "surface": surface,
-                "current_class": current_class,
-                "claim_class": policy["claim_class"],
-                "fail_closed": policy["fail_closed"],
-                "release_blocking": policy["release_blocking"],
-                "required_evidence_families": required_families,
-                "checked_in_surfaces": checked_in_surfaces,
-            }
-        )
-    return classifications
-
-
-def validate_demotion_triggers(
-    contract: dict[str, Any],
-    support_classes: set[str],
-    evidence_families: set[str],
-) -> list[dict[str, Any]]:
-    rows = require_list(contract, "demotion_triggers")
-    triggers: list[dict[str, Any]] = []
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            raise ContractError(f"demotion_triggers[{index}] must be an object")
-        trigger = require_string(row.get("trigger"), f"demotion_triggers[{index}].trigger")
-        demotes_to = require_string(
-            row.get("demotes_to"), f"demotion_triggers[{index}].demotes_to"
-        )
-        if demotes_to not in support_classes:
-            raise ContractError(
-                f"demotion trigger `{trigger}` targets unknown class `{demotes_to}`"
-            )
-        required_families = [
-            require_string(family, f"demotion_triggers[{index}].required_families[{i}]")
-            for i, family in enumerate(require_list(row, "required_families"))
-        ]
-        unknown_families = sorted(set(required_families) - evidence_families)
-        if unknown_families:
-            raise ContractError(
-                f"demotion trigger `{trigger}` references unknown evidence families: {unknown_families}"
-            )
-        triggers.append(
-            {
-                "trigger": trigger,
-                "demotes_to": demotes_to,
-                "required_families": required_families,
-            }
-        )
-    return triggers
-
-
-def validate_public_claim_surfaces(contract: dict[str, Any]) -> list[str]:
-    surfaces: list[str] = []
-    for index, raw_path in enumerate(require_list(contract, "public_claim_surfaces")):
-        path_text = require_string(raw_path, f"public_claim_surfaces[{index}]")
-        if path_text.startswith("tmp/") or path_text.startswith("tmp\\"):
-            raise ContractError(
-                f"public_claim_surfaces[{index}] must not use tmp as source truth"
-            )
-        path = resolve_repo_path(path_text)
-        if not path.exists():
-            raise ContractError(f"missing public claim surface `{path_text}`")
-        surfaces.append(path_text.replace("\\", "/"))
-    return surfaces
-
-
-def build_summary(contract_path: Path) -> dict[str, Any]:
-    contract = load_json(contract_path)
-    support_classes = validate_support_classes(contract)
-    evidence_families = validate_evidence_families(contract)
-    classifications = classify_surfaces(contract, support_classes, evidence_families)
-    demotion_triggers = validate_demotion_triggers(
-        contract, support_classes, evidence_families
-    )
-    public_claim_surfaces = validate_public_claim_surfaces(contract)
-
-    runbook = require_string(contract.get("runbook"), "runbook")
-    summary_script = require_string(contract.get("summary_script"), "summary_script")
-    for path_text, label in ((runbook, "runbook"), (summary_script, "summary_script")):
-        path = resolve_repo_path(path_text)
-        if not path.exists():
-            raise ContractError(f"{label} path is missing: `{path_text}`")
-
-    class_counts = Counter(row["current_class"] for row in classifications)
-    source_truth_paths = sorted(
-        {
-            repo_rel(contract_path),
-            runbook.replace("\\", "/"),
-            "scripts/build_objc3c_support_classification.py",
-            summary_script.replace("\\", "/"),
-            *public_claim_surfaces,
-            *(
-                surface
-                for row in classifications
-                for surface in row["checked_in_surfaces"]
-            ),
-        }
-    )
-    tmp_source_truth_paths = [
-        path_text
-        for path_text in source_truth_paths
-        if path_text.startswith("tmp/") or path_text.startswith("tmp\\")
-    ]
-    fail_closed_surfaces = [
-        row["surface"] for row in classifications if row["fail_closed"]
-    ]
-    release_blocking_surfaces = [
-        row["surface"] for row in classifications if row["release_blocking"]
-    ]
-
-    status = "PASS"
-    checks = {
-        "canonical_support_classes_defined": set(CANONICAL_SUPPORT_CLASSES)
-        == support_classes,
-        "all_classifications_use_known_classes": all(
-            row["current_class"] in support_classes for row in classifications
-        ),
-        "all_required_evidence_families_are_declared": all(
-            set(row["required_evidence_families"]).issubset(evidence_families)
-            for row in classifications
-        ),
-        "demotion_targets_are_known_classes": all(
-            row["demotes_to"] in support_classes for row in demotion_triggers
-        ),
-        "source_truth_excludes_tmp": not tmp_source_truth_paths,
-        "has_supported_surface": class_counts["supported"] > 0,
-        "has_fail_closed_surface": bool(fail_closed_surfaces),
-    }
-    if not all(checks.values()):
-        status = "FAIL"
-
-    return {
-        "contract_id": SUMMARY_CONTRACT_ID,
-        "status": status,
-        "source_contract_id": contract["contract_id"],
-        "source_contract_path": repo_rel(contract_path),
-        "source_contract_sha256": stable_digest(contract_path),
-        "runbook": runbook.replace("\\", "/"),
-        "summary_script": "scripts/build_objc3c_support_classification.py",
-        "legacy_support_matrix_summary_script": summary_script.replace("\\", "/"),
-        "support_classes": sorted(support_classes),
-        "support_class_count": len(support_classes),
-        "evidence_families": sorted(evidence_families),
-        "evidence_family_count": len(evidence_families),
-        "classification_count": len(classifications),
-        "class_counts": dict(sorted(class_counts.items())),
-        "classifications": classifications,
-        "demotion_triggers": demotion_triggers,
-        "public_claim_surfaces": public_claim_surfaces,
-        "source_truth_paths": source_truth_paths,
-        "tmp_source_truth_paths": tmp_source_truth_paths,
-        "fail_closed_surfaces": fail_closed_surfaces,
-        "release_blocking_surfaces": release_blocking_surfaces,
-        "checks": checks,
-    }
-
-
-def render_markdown(summary: dict[str, Any]) -> str:
-    rows = markdown_table(
-        ["Surface", "Class", "Claim Class", "Required Evidence"],
-        [
-            [
-                row["surface"],
-                row["current_class"],
-                row["claim_class"],
-                ", ".join(row["required_evidence_families"]) or "none",
-            ]
-            for row in summary["classifications"]
-        ],
-    )
-    classification_table = "\n".join(rows)
-    return (
-        "# Objective-C 3.0 Support Classification Summary\n\n"
-        f"- Contract: `{summary['source_contract_id']}`\n"
-        f"- Status: `{summary['status']}`\n"
-        f"- Support classes: `{summary['support_class_count']}`\n"
-        f"- Evidence families: `{summary['evidence_family_count']}`\n"
-        f"- Classified surfaces: `{summary['classification_count']}`\n"
-        f"- Source truth excludes tmp: `{summary['checks']['source_truth_excludes_tmp']}`\n\n"
-        "## Class Counts\n\n"
-        + "\n".join(
-            f"- `{key}`: `{value}`" for key, value in summary["class_counts"].items()
-        )
-        + "\n\n"
-        "## Surface Classifications\n\n"
-        f"{classification_table}\n"
-    )
-
-
-def write_outputs(summary: dict[str, Any], json_out: Path, md_out: Path) -> None:
+def write_outputs(
+    summary: dict[str, Any],
+    markdown: str,
+    json_out: Path,
+    md_out: Path,
+) -> None:
     write_report_outputs(
         summary=summary,
         json_path=json_out,
         markdown_path=md_out,
-        markdown=render_markdown(summary),
+        markdown=markdown,
         sort_keys=False,
     )
 
@@ -394,21 +99,34 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
     contract_path = args.contract if args.contract.is_absolute() else ROOT / args.contract
-    json_out = args.summary_json if args.summary_json.is_absolute() else ROOT / args.summary_json
+    json_out = (
+        args.summary_json
+        if args.summary_json.is_absolute()
+        else ROOT / args.summary_json
+    )
     md_out = args.summary_md if args.summary_md.is_absolute() else ROOT / args.summary_md
     try:
-        summary = build_summary(contract_path)
+        source = SupportClassificationSource(
+            contract=load_json(contract_path),
+            contract_path=repo_rel(contract_path),
+            contract_sha256=stable_digest(contract_path),
+        )
+        report = build_support_classification_report(source, path_exists=path_exists)
     except ContractError as exc:
         print(f"support classification contract error: {exc}", file=sys.stderr)
         return 1
 
-    next_json = expected_json_report(summary, sort_keys=False)
-    next_md = render_markdown(summary)
     if args.check:
         mismatches = []
-        if not json_out.is_file() or json_out.read_text(encoding="utf-8") != next_json:
+        if (
+            not json_out.is_file()
+            or json_out.read_text(encoding="utf-8") != report.json_report
+        ):
             mismatches.append(repo_rel(json_out))
-        if not md_out.is_file() or md_out.read_text(encoding="utf-8") != next_md:
+        if (
+            not md_out.is_file()
+            or md_out.read_text(encoding="utf-8") != report.markdown
+        ):
             mismatches.append(repo_rel(md_out))
         if mismatches:
             print(
@@ -417,10 +135,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 1
     else:
-        write_outputs(summary, json_out, md_out)
+        write_outputs(report.summary, report.markdown, json_out, md_out)
 
-    print(json.dumps(summary, indent=2))
-    return 0 if summary["status"] == "PASS" else 1
+    print(report.console_json)
+    return 0 if report.status == "PASS" else 1
 
 
 if __name__ == "__main__":
