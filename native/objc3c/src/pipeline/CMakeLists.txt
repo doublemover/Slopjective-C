@@ -75,6 +75,11 @@ add_library(objc3c_pipeline STATIC
   frontend_runtime_metadata_source_record_helpers_declarations.cpp
   frontend_runtime_metadata_source_record_helpers_members.cpp
   frontend_runtime_metadata_source_record_helpers_ordering.cpp
+  frontend_source_closure_replay_keys_concurrency.cpp
+  frontend_source_closure_replay_keys_core.cpp
+  frontend_source_closure_replay_keys_metaprogramming_interop.cpp
+  frontend_source_closure_replay_keys_ownership_dispatch.cpp
+  frontend_source_closure_replay_keys_tooling_symbol_graph.cpp
   frontend_type_system_source_closure_helpers.cpp
   frontend_tooling_source_completion_helpers.cpp
   readiness/objc3_final_readiness_gate_advanced_keys.cpp
@@ -128,6 +133,7 @@ add_library(objc3c_pipeline STATIC
   frontend_error_handling_source_closure_helpers.h
   frontend_interop_source_closure_helpers.h
   frontend_ownership_source_closure_helpers.h
+  frontend_source_closure_replay_keys.h
   frontend_pipeline_defaults.h
   frontend_pipeline_orchestration_owners.h
   frontend_pipeline_result_contract.h
