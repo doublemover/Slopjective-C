@@ -11,4 +11,5 @@
 #include "parse/objc3_parser_core_statements.inc"
 #include "parse/objc3_parser_core_expression_precedence.inc"
 #include "parse/objc3_parser_core_block_literal_expressions.inc"
+#include "parse/objc3_parser_core_primary_message_expressions.inc"
 #include "parse/objc3_parser_core_blocks_and_expressions.inc"
