@@ -6,8 +6,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.paths import repo_rel
+from stdlib_surface.architecture import validate_architecture_surfaces
 from stdlib_surface.artifacts import validate_module_artifacts
 from stdlib_surface.commands import validate_command_surfaces
 from stdlib_surface.contracts import validate_document_headers
@@ -68,72 +68,20 @@ def main() -> int:
     if artifact_error is not None:
         return fail(artifact_error)
 
-    architecture_live_paths = core_architecture.get("live_paths")
-    if not isinstance(architecture_live_paths, list) or not architecture_live_paths:
-        return fail("core architecture missing live_paths")
-    for raw_path in architecture_live_paths:
-        if not isinstance(raw_path, str) or not raw_path:
-            return fail("core architecture live_paths entry malformed")
-        path = ROOT / raw_path
-        if not path.exists():
-            return fail(f"core architecture live path missing: {raw_path}")
-
-    advanced_live_paths = advanced_architecture.get("live_paths")
-    if not isinstance(advanced_live_paths, list) or not advanced_live_paths:
-        return fail("advanced architecture missing live_paths")
-    for raw_path in advanced_live_paths:
-        if not isinstance(raw_path, str) or not raw_path:
-            return fail("advanced architecture live_paths entry malformed")
-        path = ROOT / raw_path
-        if not path.exists():
-            return fail(f"advanced architecture live path missing: {raw_path}")
-
-    architecture_api_families = core_architecture.get("api_families")
-    if not isinstance(architecture_api_families, dict) or not architecture_api_families:
-        return fail("core architecture missing api_families")
-    inventory_modules_by_name = {module_surface.module: module_surface for module_surface in module_surfaces}
-    for module_name, families in architecture_api_families.items():
-        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
-            return fail(f"core architecture referenced unknown module {module_name}")
-        if not isinstance(families, list) or not families:
-            return fail(f"core architecture api_families malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
-        if manifest_payload.get("api_families") != families:
-            return fail(f"module manifest api_families drifted for {module_name}")
-    architecture_required_exports = core_architecture.get("required_exports")
-    if not isinstance(architecture_required_exports, dict) or not architecture_required_exports:
-        return fail("core architecture missing required_exports")
-    for module_name, required_exports in architecture_required_exports.items():
-        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
-            return fail(f"core architecture required_exports referenced unknown module {module_name}")
-        if not isinstance(required_exports, list) or not required_exports:
-            return fail(f"core architecture required_exports malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
-        if manifest_payload.get("exports") != required_exports:
-            return fail(f"module manifest exports drifted for {module_name}")
-
-    if not isinstance(advanced_api_families, dict) or not advanced_api_families:
-        return fail("advanced architecture missing api_families")
-    for module_name, families in advanced_api_families.items():
-        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
-            return fail(f"advanced architecture referenced unknown module {module_name}")
-        if not isinstance(families, list) or not families:
-            return fail(f"advanced architecture api_families malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
-        if manifest_payload.get("api_families") != families:
-            return fail(f"module manifest advanced api_families drifted for {module_name}")
-
-    advanced_required_exports = advanced_architecture.get("required_exports")
-    if not isinstance(advanced_required_exports, dict) or not advanced_required_exports:
-        return fail("advanced architecture missing required_exports")
-    for module_name, required_exports in advanced_required_exports.items():
-        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
-            return fail(f"advanced architecture required_exports referenced unknown module {module_name}")
-        if not isinstance(required_exports, list) or not required_exports:
-            return fail(f"advanced architecture required_exports malformed for {module_name}")
-        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name].manifest)
-        if manifest_payload.get("exports") != required_exports:
-            return fail(f"module manifest advanced exports drifted for {module_name}")
+    architecture_error, architecture_validation = validate_architecture_surfaces(
+        root=ROOT,
+        core_architecture=core_architecture,
+        advanced_architecture=advanced_architecture,
+        module_surfaces=module_surfaces,
+        advanced_api_families=advanced_api_families,
+    )
+    if architecture_error is not None:
+        return fail(architecture_error)
+    if architecture_validation is None:
+        raise RuntimeError("stdlib surface architecture validation did not return a payload")
+    architecture_api_families = architecture_validation.api_families
+    architecture_required_exports = architecture_validation.required_exports
+    advanced_required_exports = architecture_validation.advanced_required_exports
 
     semantic_policy_error, semantic_policy_validation = validate_semantic_policy(
         semantic_policy=semantic_policy,
