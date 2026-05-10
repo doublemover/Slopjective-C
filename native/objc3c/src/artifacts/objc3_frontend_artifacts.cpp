@@ -6723,69 +6723,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           runtime_translation_unit_registration_manifest,
           runtime_registration_descriptor_frontend_closure,
           runtime_bootstrap_lowering, runtime_bootstrap_semantics);
-  manifest << "  \"runtime_multi_image_startup_ordering_source_surface\":{\"contract_id\":\""
-           << kObjc3RuntimeMultiImageStartupOrderingSourceSurfaceContractId
-           << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
-           << "\",\"registration_manifest_artifact\":\""
-           << runtime_translation_unit_registration_manifest
-                  .manifest_artifact_relative_path
-           << "\",\"registration_descriptor_artifact\":\""
-           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
-           << "\",\"bootstrap_legality_semantics_contract_id\":\""
-           << runtime_bootstrap_legality_semantics.contract_id
-           << "\",\"bootstrap_failure_restart_contract_id\":\""
-           << runtime_bootstrap_failure_restart_semantics.contract_id
-           << "\",\"bootstrap_api_contract_id\":\""
-           << runtime_bootstrap_api.contract_id
-           << "\",\"bootstrap_reset_contract_id\":\""
-           << kObjc3RuntimeBootstrapResetContractId
-           << "\",\"bootstrap_registrar_contract_id\":\""
-           << kObjc3RuntimeBootstrapRegistrarContractId
-           << "\",\"archive_static_link_replay_corpus_contract_id\":\""
-           << kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId
-           << "\",\"public_header_path\":\""
-           << runtime_bootstrap_api.public_header_path
-           << "\",\"internal_header_path\":\""
-           << kObjc3RuntimeBootstrapInternalHeaderPath
-           << "\",\"registration_entrypoint_symbol\":\""
-           << runtime_bootstrap_api.registration_entrypoint_symbol
-           << "\",\"state_snapshot_symbol\":\""
-           << runtime_bootstrap_api.state_snapshot_symbol
-           << "\",\"reset_for_testing_symbol\":\""
-           << runtime_bootstrap_api.reset_for_testing_symbol
-           << "\",\"replay_registered_images_symbol\":\""
-           << runtime_bootstrap_failure_restart_semantics
-                  .replay_registered_images_symbol
-           << "\",\"reset_replay_state_snapshot_symbol\":\""
-           << runtime_bootstrap_failure_restart_semantics
-                  .reset_replay_state_snapshot_symbol
-           << "\",\"translation_unit_identity_key\":\""
-           << runtime_bootstrap_legality_semantics.translation_unit_identity_key
-           << "\",\"translation_unit_registration_order_ordinal\":"
-           << runtime_bootstrap_legality_semantics
-                  .translation_unit_registration_order_ordinal
-           << ",\"duplicate_registration_status_code\":"
-           << runtime_bootstrap_semantics.duplicate_registration_status_code
-           << ",\"out_of_order_status_code\":"
-           << runtime_bootstrap_semantics.out_of_order_status_code
-           << ",\"duplicate_install_diagnostic_model\":\""
-           << kObjc3RuntimeBootstrapDuplicateInstallDiagnosticModel
-           << "\",\"out_of_order_install_diagnostic_model\":\""
-           << kObjc3RuntimeBootstrapOutOfOrderDiagnosticModel
-           << "\",\"last_rejected_module_name_field\":\""
-           << kObjc3RuntimeBootstrapRejectedModuleNameField
-           << "\",\"last_rejected_translation_unit_identity_key_field\":\""
-           << kObjc3RuntimeBootstrapRejectedTranslationUnitIdentityKeyField
-           << "\",\"next_expected_registration_order_field\":\""
-           << kObjc3RuntimeBootstrapNextExpectedRegistrationOrderField
-           << "\",\"last_successful_registration_order_field\":\""
-           << kObjc3RuntimeBootstrapLastSuccessfulRegistrationOrderField
-           << "\",\"last_rejected_registration_order_field\":\""
-           << kObjc3RuntimeBootstrapLastRejectedRegistrationOrderField
-           << "\",\"requires_linked_runtime_probe\":true"
-           << ",\"requires_real_compile_output\":true"
-           << "},\n";
+  objc3::artifacts::frontend::
+      WriteRuntimeMultiImageStartupOrderingSourceSurface(
+          manifest, runtime_state_publication_emit_prefix,
+          runtime_translation_unit_registration_manifest,
+          runtime_registration_descriptor_frontend_closure,
+          runtime_bootstrap_legality_semantics,
+          runtime_bootstrap_failure_restart_semantics, runtime_bootstrap_api,
+          runtime_bootstrap_semantics);
   manifest << "  \"runtime_object_model_realization_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
