@@ -2,7 +2,7 @@
 
 #include <ostream>
 
-#include "lower/contracts/type_system_generic_lowering_contract_records.h"
+#include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
 
 namespace objc3::artifacts::frontend {
 

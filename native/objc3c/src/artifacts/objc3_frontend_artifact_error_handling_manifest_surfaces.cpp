@@ -3,8 +3,7 @@
 #include <ostream>
 
 #include "artifacts/evidence/error_handling_replay_evidence.h"
-#include "lower/contracts/error_handling_result_bridging_contracts.h"
-#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+#include "artifacts/objc3_frontend_error_semantic_artifacts.h"
 
 namespace objc3::artifacts::frontend {
 
