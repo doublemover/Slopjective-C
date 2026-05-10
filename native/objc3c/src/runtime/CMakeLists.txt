@@ -211,16 +211,20 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   metadata/runtime_realized_records.h
   objc3_runtime.cpp
   public/objc3_runtime_api.h
+  public/objc3_runtime_artifact_contract.h
+  public/objc3_runtime_diagnostic_contract.h
   public/objc3_runtime_dispatch_diagnostics.cpp
   public/objc3_runtime_dispatch_diagnostics.h
   public/objc3_runtime_dispatch_result.h
   public/objc3_runtime_dispatch_status.h
+  public/objc3_runtime_ownership_contract.h
   public/objc3_runtime_registration.h
   public/objc3_runtime_registration_status.h
   public/objc3_runtime_result.h
   public/objc3_runtime_result_code_contract.h
   public/objc3_runtime_result_contract.cpp
   public/objc3_runtime_result_contract.h
+  public/objc3_runtime_result_entrypoint_contract.h
   public/objc3_runtime_result_materialization_contract.h
   public/objc3_runtime_result_message_contract.h
   public/objc3_runtime_result_status_contract.h
@@ -229,6 +233,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_ownership.cpp
   public/objc3_runtime_result_ownership.h
   public/objc3_runtime_selector.h
+  public/objc3_runtime_string_contract.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_lookup.cpp
