@@ -82,6 +82,8 @@ add_library(objc3c_json STATIC
   json/json_schema_object_additional_properties_schema_validation.cpp
   json/json_schema_object_additional_properties_undeclared_traversal_validation.cpp
   json/json_schema_object_additional_properties_unexpected_validation.cpp
+  json/json_schema_object_properties_shape_validation.cpp
+  json/json_schema_object_properties_traversal_validation.cpp
   json/json_schema_object_properties_validation.cpp
   json/json_schema_object_required_entry_validation.cpp
   json/json_schema_object_required_keyword_validation.cpp
