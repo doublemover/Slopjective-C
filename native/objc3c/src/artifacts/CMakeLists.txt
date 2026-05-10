@@ -240,6 +240,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_property_atomicity_manifest.h
   objc3_frontend_artifact_runtime_bootstrap_manifest.cpp
   objc3_frontend_artifact_runtime_bootstrap_manifest.h
+  objc3_frontend_artifact_runtime_bootstrap_private_manifest_fields.cpp
+  objc3_frontend_artifact_runtime_bootstrap_private_manifest_fields.h
   objc3_frontend_artifact_runtime_bootstrap_metadata.cpp
   objc3_frontend_artifact_runtime_bootstrap_metadata.h
   objc3_frontend_artifact_runtime_block_abi_manifest.cpp

@@ -50,6 +50,7 @@
 #include "artifacts/objc3_frontend_artifact_ownership_release_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_bootstrap_private_manifest_fields.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_manifest_fields.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
@@ -4113,133 +4114,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // one canonical packet that later image-walk and reset-expansion
            // issues must preserve exactly.
            << ",\"objc_runtime_bootstrap_api_contract\":"
-           << BuildRuntimeBootstrapApiSummaryJson(runtime_bootstrap_api)
-           // bootstrap-registrar anchor: the semantic surface now
-           // publishes the private staging hook and runtime image-walk policy
-           // that extend the emitted startup path without widening the frozen
-           // D001 public runtime API.
-           << ",\"objc_runtime_bootstrap_registrar_contract\":{"
-           << "\"contract_id\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarContractId)
-           << "\",\"surface_path\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarSurfacePath)
-           << "\",\"bootstrap_api_contract_id\":\""
-           << EscapeJsonString(runtime_bootstrap_api.contract_id)
-           << "\",\"bootstrap_lowering_contract_id\":\""
-           << EscapeJsonString(runtime_bootstrap_lowering.contract_id)
-           << "\",\"internal_header_path\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapInternalHeaderPath)
-           << "\",\"stage_registration_table_symbol\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapStageRegistrationTableSymbol)
-           << "\",\"image_walk_snapshot_symbol\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapImageWalkSnapshotSymbol)
-           << "\",\"image_walk_model\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapImageWalkModel)
-           << "\",\"discovery_root_validation_model\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapDiscoveryRootValidationModel)
-           << "\",\"selector_pool_interning_model\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapSelectorPoolInterningModel)
-           << "\",\"realization_staging_model\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapRealizationStagingModel)
-           << "\",\"fail_closed\":true"
-           << ",\"ready\":"
-           << ((IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api) &&
-                IsReadyObjc3RuntimeBootstrapLoweringSummary(
-                    runtime_bootstrap_lowering))
-                   ? "true"
-                   : "false")
-           << "}"
-           // bootstrap-reset anchor: the semantic surface now
-           // publishes the private deterministic reset/replay hooks that allow
-           // same-process smoke harnesses to clear live runtime state, zero the
-           // retained image-local init cells, and replay retained startup
-           // images in canonical registration order without widening the frozen
-           // D001 public runtime API.
-           << ",\"objc_runtime_bootstrap_reset_contract\":{"
-           << "\"contract_id\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapResetContractId)
-           << "\",\"surface_path\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapResetSurfacePath)
-           << "\",\"bootstrap_api_contract_id\":\""
-           << EscapeJsonString(runtime_bootstrap_api.contract_id)
-           << "\",\"bootstrap_registrar_contract_id\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarContractId)
-           << "\",\"internal_header_path\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapInternalHeaderPath)
-           << "\",\"replay_registered_images_symbol\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol)
-           << "\",\"reset_replay_state_snapshot_symbol\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol)
-           << "\",\"reset_lifecycle_model\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapResetLifecycleModel)
-           << "\",\"replay_order_model\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapReplayOrderModel)
-           << "\",\"image_local_init_state_reset_model\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapImageLocalInitStateResetModel)
-           << "\",\"bootstrap_catalog_retention_model\":\""
-           << EscapeJsonString(kObjc3RuntimeBootstrapCatalogRetentionModel)
-           << "\",\"fail_closed\":true"
-           << ",\"ready\":"
-           << ((IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api) &&
-                IsReadyObjc3RuntimeBootstrapLoweringSummary(
-                    runtime_bootstrap_lowering))
-                   ? "true"
-                   : "false")
-           << "}"
-           // archive/static-link bootstrap replay corpus anchor:
-           // lane-C now publishes the retained-archive replay proof surface
-           // that ties the merge model to the live replay
-           // runtime and the emitted C002 registration-descriptor/image-root
-           // lowering boundary.
-           << ",\"objc_runtime_bootstrap_archive_static_link_replay_corpus\":{"
-           << "\"contract_id\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId)
-           << "\",\"archive_static_link_discovery_contract_id\":\""
-           << EscapeJsonString(kObjc3RuntimeArchiveStaticLinkDiscoveryContractId)
-           << "\",\"bootstrap_failure_restart_contract_id\":\""
-           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics.contract_id)
-           << "\",\"bootstrap_lowering_contract_id\":\""
-           << EscapeJsonString(runtime_bootstrap_lowering.contract_id)
-           << "\",\"registration_descriptor_lowering_contract_id\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId)
-           << "\",\"corpus_model\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel)
-           << "\",\"binary_proof_model\":\""
-           << EscapeJsonString(
-                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel)
-           << "\",\"merge_model\":\""
-           << EscapeJsonString(kObjc3RuntimeArchiveStaticLinkMergeModel)
-           << "\",\"translation_unit_identity_key\":\""
-           << EscapeJsonString(translation_unit_identity_key)
-           << "\",\"registration_descriptor_identifier\":\""
-           << EscapeJsonString(runtime_registration_descriptor_frontend_closure
-                                   .registration_descriptor_identifier)
-           << "\",\"image_root_identifier\":\""
-           << EscapeJsonString(runtime_registration_descriptor_frontend_closure
-                                   .image_root_identifier)
-           << "\",\"replay_registered_images_symbol\":\""
-           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics
-                                   .replay_registered_images_symbol)
-           << "\",\"reset_replay_state_snapshot_symbol\":\""
-           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics
-                                   .reset_replay_state_snapshot_symbol)
-           << "\",\"ready\":"
-           << ((IsReadyObjc3RuntimeBootstrapFailureRestartSemanticsSummary(
-                    runtime_bootstrap_failure_restart_semantics) &&
-                IsReadyObjc3RuntimeBootstrapLoweringSummary(
-                    runtime_bootstrap_lowering))
-                   ? "true"
-                   : "false")
-           << "}"
+           << BuildRuntimeBootstrapApiSummaryJson(runtime_bootstrap_api);
+  objc3::artifacts::frontend::WriteRuntimeBootstrapPrivateManifestFields(
+      manifest, runtime_bootstrap_api, runtime_bootstrap_lowering,
+      runtime_bootstrap_failure_restart_semantics,
+      runtime_registration_descriptor_frontend_closure,
+      translation_unit_identity_key);
+  manifest
            // bootstrap-invariant anchor: lane-B freezes duplicate
            // registration, realization order, failure mode, and image-local
            // initialization semantics against the live A002 registration
