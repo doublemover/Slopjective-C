@@ -43,6 +43,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_contract_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_typed_bundles.h"
+#include "artifacts/objc3_frontend_artifact_runtime_state_manifest.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
@@ -6706,47 +6707,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   objc3::artifacts::frontend::WriteStorageAccessorRuntimeAbiSurface(
       manifest, runtime_bootstrap_api, runtime_link_host_link_contract,
       property_synthesis_ivar_binding_contract);
-  manifest << "  \"runtime_state_publication_surface\":{\"contract_id\":\""
-           << kObjc3RuntimeStatePublicationSurfaceContractId
-           << "\",\"publication_surface_kind\":"
-           << "\"compile-manifest-plus-registration-manifest\""
-           << ",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
-           << "\",\"registration_manifest_artifact\":\""
-           << runtime_translation_unit_registration_manifest
-                  .manifest_artifact_relative_path
-           << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
-           << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
-           << "\",\"runtime_support_library_archive_relative_path\":\""
-           << runtime_translation_unit_registration_manifest
-                  .runtime_support_library_archive_relative_path
-           << "\",\"registration_entrypoint_symbol\":\""
-           << runtime_translation_unit_registration_manifest
-                  .registration_entrypoint_symbol
-           << "\",\"runtime_state_snapshot_symbol\":\""
-           << runtime_bootstrap_semantics.runtime_state_snapshot_symbol
-           << "\",\"public_runtime_abi_boundary\":[\""
-           << kObjc3RuntimeSupportLibraryRegisterImageSymbol << "\",\""
-           << kObjc3RuntimeSupportLibraryLookupSelectorSymbol << "\",\""
-           << kObjc3RuntimeSupportLibraryDispatchI32Symbol << "\",\""
-           << kObjc3RuntimeSupportLibraryResetForTestingSymbol
-           << "\"],\"class_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.class_descriptor_count
-           << ",\"protocol_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.protocol_descriptor_count
-           << ",\"category_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.category_descriptor_count
-           << ",\"property_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.property_descriptor_count
-           << ",\"ivar_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.ivar_descriptor_count
-           << ",\"total_descriptor_count\":"
-           << runtime_translation_unit_registration_manifest.total_descriptor_count
-           << ",\"publication_requires_coupled_registration_manifest\":true"
-           << ",\"publication_requires_real_compile_output\":true"
-           << "},\n";
+  objc3::artifacts::frontend::WriteRuntimeStatePublicationSurface(
+      manifest, runtime_state_publication_emit_prefix,
+      runtime_translation_unit_registration_manifest, runtime_bootstrap_semantics);
   manifest << "  \"runtime_bootstrap_registration_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimeBootstrapRegistrationSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
