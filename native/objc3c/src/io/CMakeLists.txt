@@ -18,6 +18,7 @@ add_library(objc3c_json STATIC
   json/json_parser_cursor.cpp
   json/json_parser_cursor_error.cpp
   json/json_parser_cursor_token_delegation.cpp
+  json/json_parser_cursor_whitespace.cpp
   json/json_parser_document.cpp
   json/json_parser_literal_token.cpp
   json/json_parser_number_digit_run_token.cpp

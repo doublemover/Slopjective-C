@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "io/json/json_parser_cursor_error.h"
+#include "io/json/json_parser_cursor_whitespace.h"
 
 namespace objc3::io::json {
 
@@ -27,13 +28,7 @@ const std::optional<JsonError> &JsonParserCursor::error() const {
 }
 
 void JsonParserCursor::SkipWhitespace() {
-  while (cursor_ < text_.size()) {
-    const char ch = text_[cursor_];
-    if (ch != ' ' && ch != '\t' && ch != '\r' && ch != '\n') {
-      return;
-    }
-    ++cursor_;
-  }
+  SkipJsonParserWhitespace(text_, cursor_);
 }
 
 bool JsonParserCursor::Consume(char expected) {
