@@ -61,6 +61,17 @@ bool PopulateImportedTypeSystemProtocolContractEvidence(
     Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error);
 
+bool ParseRuntimeMetadataSourceRecordSetContents(
+    const RuntimeImportJsonValue::Object &root,
+    const std::string &declarations_name,
+    Objc3RuntimeMetadataSourceRecordSet &record_set,
+    std::string &error);
+
+bool ParseSerializedRuntimeMetadataReusePayloadContents(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error);
+
 bool PopulateSerializedRuntimeMetadataReuse(
     const RuntimeImportJsonValue::Object &root,
     Objc3ImportedRuntimeModuleSurface &surface,

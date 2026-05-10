@@ -52,6 +52,8 @@ add_library(objc3c_pipeline STATIC
   runtime_import_preservation_readiness.cpp
   runtime_import_preservation_serialized_metadata.cpp
   runtime_import_record_parsing.cpp
+  runtime_import_record_parsing_source_records.cpp
+  runtime_import_record_parsing_serialized_payload.cpp
   runtime_import_type_system_preservation.cpp
   runtime_import_type_system_preservation_generic.cpp
   runtime_import_type_system_preservation_nullability.cpp
