@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-#include "sema/objc3_semantic_passes.h"
+struct Objc3SemanticTypeMetadataHandoff;
 
 namespace objc3::artifacts::json {
 
