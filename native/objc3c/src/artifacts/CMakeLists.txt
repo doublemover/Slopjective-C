@@ -207,6 +207,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_interop_manifest_surfaces.h
   objc3_frontend_artifact_interop_metadata.cpp
   objc3_frontend_artifact_interop_metadata.h
+  objc3_frontend_artifact_ir_application.cpp
+  objc3_frontend_artifact_ir_application.h
   objc3_frontend_artifact_ir_emission_completion.cpp
   objc3_frontend_artifact_ir_emission_completion.h
   objc3_frontend_artifact_lowering_contracts.h

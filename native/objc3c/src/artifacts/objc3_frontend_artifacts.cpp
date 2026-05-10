@@ -34,6 +34,7 @@
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_interop_manifest_surfaces.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
+#include "artifacts/objc3_frontend_artifact_ir_application.h"
 #include "artifacts/objc3_frontend_artifact_ir_emission_completion.h"
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
 #include "artifacts/objc3_frontend_artifact_lowering_replay_manifest.h"
@@ -4198,182 +4199,28 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_bootstrap_api, runtime_bootstrap_semantics,
       runtime_bootstrap_lowering);
 
-  if (objc3::artifacts::frontend::FinalizeObjc3FrontendPostPipelineFailure(
-          bundle, options, post_pipeline_failure)) {
-    return bundle;
-  }
-
-  if (!options.emit_ir && !options.emit_object) {
-    return bundle;
-  }
-
-  Objc3IRFrontendMetadata ir_frontend_metadata;
-  objc3::artifacts::frontend::ApplyObjc3FrontendSourceLinkageMetadata(
-      ir_frontend_metadata, options, versioned_conformance_report_lowering,
-      pipeline_result.canonical_literal_rejection_counts,
-      interface_implementation_summary, protocol_category_summary,
-      class_protocol_category_linking_summary, selector_normalization_summary,
-      property_attribute_summary);
-  objc3::artifacts::frontend::ApplyObjc3ObjectDispatchMetadataIrApplication(
-      ir_frontend_metadata,
-      objc3::artifacts::frontend::BuildObjc3ObjectDispatchMetadataApplication(
-          property_synthesis_ivar_binding_replay_key,
-          property_synthesis_ivar_binding_snapshot,
-          id_class_sel_object_pointer_typecheck_replay_key,
-          id_class_sel_object_pointer_typecheck_snapshot,
-          dispatch_surface_classification_replay_key,
-          dispatch_surface_classification_snapshot,
-          message_send_selector_lowering_replay_key,
-          message_send_selector_lowering_snapshot,
-          dispatch_abi_marshalling_replay_key,
-          dispatch_abi_marshalling_snapshot,
-          nil_receiver_semantics_foldability_replay_key,
-          nil_receiver_semantics_foldability_snapshot,
-          super_dispatch_method_family_replay_key,
-          super_dispatch_method_family_snapshot,
-          runtime_link_host_link_replay_key,
-          runtime_link_host_link_snapshot));
-  objc3::artifacts::frontend::ApplyObjc3FrontendConcurrencyMetadata(
-      ir_frontend_metadata, concurrency_async_continuation_lowering_replay_key,
-      concurrency_async_continuation_lowering_contract,
-      concurrency_await_lowering_suspension_state_lowering_replay_key,
-      concurrency_await_lowering_suspension_state_lowering_contract,
-      concurrency_actor_isolation_sendability_lowering_replay_key,
-      concurrency_actor_isolation_sendability_lowering_contract,
-      concurrency_actor_lowering_metadata_replay_key,
-      concurrency_actor_lowering_metadata_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendMetaprogrammingMetadata(
-      ir_frontend_metadata, metaprogramming_expansion_lowering_replay_key,
-      metaprogramming_expansion_lowering_contract,
-      metaprogramming_synthesized_artifact_emission_replay_key,
-      metaprogramming_synthesized_artifact_emission_contract,
-      metaprogramming_derived_method_bundles,
-      metaprogramming_macro_artifact_bundles,
-      metaprogramming_property_behavior_artifact_bundles,
-      metaprogramming_module_interface_replay_preservation_summary);
-  objc3::artifacts::frontend::ApplyObjc3FrontendInteropMetadata(
-      ir_frontend_metadata, interop_interop_lowering_replay_key,
-      interop_interop_lowering_contract,
-      interop_foreign_call_lifetime_lowering_replay_key,
-      interop_foreign_call_lifetime_lowering_contract,
-      interop_ffi_metadata_interface_preservation_replay_key,
-      interop_ffi_metadata_interface_preservation_contract,
-      interop_header_module_bridge_generation_summary);
-  objc3::artifacts::frontend::ApplyObjc3DispatchMetadataIrApplication(
-      ir_frontend_metadata,
-      objc3::artifacts::frontend::BuildObjc3DispatchMetadataApplication(
-          dispatch_dispatch_control_lowering_replay_key,
-          dispatch_dispatch_control_lowering_snapshot,
-          dispatch_dispatch_metadata_interface_preservation_snapshot));
-  objc3::artifacts::frontend::ApplyObjc3FrontendOwnershipMetadata(
-      ir_frontend_metadata, ownership_system_extension_lowering_replay_key,
-      ownership_system_extension_lowering_contract,
-      ownership_borrowed_retainable_abi_completion_replay_key,
-      ownership_system_extension_source_closure_summary,
-      ownership_retainable_c_family_source_completion_summary);
-  objc3::artifacts::frontend::ApplyObjc3FrontendConcurrencyRuntimeMetadata(
-      ir_frontend_metadata,
-      concurrency_task_runtime_interop_cancellation_lowering_replay_key,
-      concurrency_task_runtime_interop_cancellation_lowering_contract,
-      concurrency_concurrency_replay_race_guard_lowering_replay_key,
-      concurrency_concurrency_replay_race_guard_lowering_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendArcOwnershipMetadata(
-      ir_frontend_metadata, ownership_qualifier_lowering_replay_key,
-      ownership_qualifier_lowering_contract,
-      retain_release_operation_lowering_replay_key,
-      retain_release_operation_lowering_contract,
-      autoreleasepool_scope_lowering_replay_key,
-      autoreleasepool_scope_lowering_contract,
-      weak_unowned_semantics_lowering_replay_key,
-      weak_unowned_semantics_lowering_contract,
-      arc_diagnostics_fixit_lowering_replay_key,
-      arc_diagnostics_fixit_lowering_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendBlockMetadata(
-      ir_frontend_metadata, block_literal_capture_lowering_replay_key,
-      block_literal_capture_lowering_contract,
-      block_source_model_completion_replay_key,
-      block_source_model_completion_contract,
-      block_source_storage_annotation_replay_key,
-      block_source_storage_annotation_contract,
-      block_abi_invoke_trampoline_lowering_replay_key,
-      block_abi_invoke_trampoline_lowering_contract,
-      block_storage_escape_lowering_replay_key,
-      block_storage_escape_lowering_contract,
-      block_copy_dispose_lowering_replay_key,
-      block_copy_dispose_lowering_contract,
-      block_determinism_perf_baseline_lowering_replay_key,
-      block_determinism_perf_baseline_lowering_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendTypeSystemMetadata(
-      ir_frontend_metadata,
-      lightweight_generic_constraint_lowering_replay_key,
-      lightweight_generic_constraint_lowering_contract,
-      nullability_flow_warning_precision_lowering_replay_key,
-      nullability_flow_warning_precision_lowering_contract,
-      protocol_qualified_object_type_lowering_replay_key,
-      protocol_qualified_object_type_lowering_contract,
-      variance_bridge_cast_lowering_replay_key,
-      variance_bridge_cast_lowering_contract,
-      generic_metadata_abi_lowering_replay_key,
-      generic_metadata_abi_lowering_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendModuleMetadata(
-      ir_frontend_metadata,
-      module_import_graph_lowering_replay_key,
-      module_import_graph_lowering_contract,
-      namespace_collision_shadowing_lowering_replay_key,
-      namespace_collision_shadowing_lowering_contract,
-      public_private_api_partition_lowering_replay_key,
-      public_private_api_partition_lowering_contract,
-      incremental_module_cache_invalidation_lowering_replay_key,
-      incremental_module_cache_invalidation_lowering_contract,
-      cross_module_conformance_lowering_replay_key,
-      cross_module_conformance_lowering_contract);
-  objc3::artifacts::frontend::ApplyObjc3FrontendErrorMetadata(
-      ir_frontend_metadata,
-      throws_propagation_lowering_replay_key,
-      throws_propagation_lowering_contract,
-      error_handling_throws_abi_propagation_lowering_replay_key,
-      result_like_lowering_replay_key,
-      result_like_lowering_contract,
-      ns_error_bridging_lowering_replay_key,
-      ns_error_bridging_lowering_contract,
-      unwind_cleanup_lowering_replay_key,
-      unwind_cleanup_lowering_contract,
-      error_handling_result_and_bridging_artifact_replay_summary);
-  objc3::artifacts::frontend::ApplyObjc3FrontendSemanticClosureMetadata(
-      ir_frontend_metadata, object_pointer_nullability_generics_summary,
-      symbol_graph_scope_resolution_summary,
-      pipeline_result.sema_parity_surface
-          .deterministic_interface_implementation_handoff,
-      interface_implementation_summary, protocol_category_summary,
-      class_protocol_category_linking_summary, selector_normalization_summary,
-      property_attribute_summary);
-  objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeMetadataContractMetadata(
-      ir_frontend_metadata, runtime_metadata_source_ownership,
-      runtime_export_legality, runtime_export_enforcement,
-      runtime_metadata_section_abi, runtime_metadata_section_publication,
-      executable_metadata_typed_lowering_handoff, input_path,
-      bundle.parse_lowering_readiness_surface.parse_artifact_replay_key,
-      bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key);
-  objc3::artifacts::frontend::
-      ApplyObjc3FrontendFinalRuntimeAndReadinessMetadata(
-          ir_frontend_metadata, bundle,
-          executable_metadata_typed_lowering_handoff,
-          runtime_metadata_section_publication,
-          runtime_metadata_object_inspection,
-          executable_metadata_debug_projection,
-          runtime_support_library, runtime_support_library_core_feature,
-          runtime_support_library_link_wiring,
-          ownership_aware_lowering_behavior_scaffold,
-          pipeline_result.ir_emission_completeness_scaffold,
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
-          ir_emission_core_feature_impl_surface);
-  if (!objc3::artifacts::frontend::CompleteObjc3FrontendArtifactIREmission(
-          bundle, pipeline_result, options, program, ir_frontend_metadata,
-          Objc3RuntimeDispatchLoweringAbiBoundarySummary(
-              runtime_dispatch_lowering_abi_contract),
-          message_send_selector_lowering_contract.message_send_sites)) {
-    return bundle;
-  }
+  objc3::artifacts::frontend::FinalizeObjc3FrontendArtifactIrApplication({
+      .bundle = bundle,
+      .input_path = input_path,
+      .pipeline_result = pipeline_result,
+      .options = options,
+      .program = program,
+      .post_pipeline_failure = post_pipeline_failure,
+      .ir_emission_core_feature_impl_surface =
+          ir_emission_core_feature_impl_surface,
+      .conformance_report_plan = conformance_report_plan,
+      .semantic_lowering_plan = semantic_lowering_plan,
+      .core_lowering_plan = core_lowering_plan,
+      .ownership_aware_lowering_plan = ownership_aware_lowering_plan,
+      .block_lowering_plan = block_lowering_plan,
+      .type_system_lowering_plan = type_system_lowering_plan,
+      .runtime_import_plan = runtime_import_plan,
+      .module_lowering_plan = module_lowering_plan,
+      .error_lowering_plan = error_lowering_plan,
+      .interop_lowering_plan = interop_lowering_plan,
+      .artifact_preservation_plan = artifact_preservation_plan,
+      .runtime_metadata_plan = runtime_metadata_plan,
+      .runtime_registration_plan = runtime_registration_plan});
 
   return bundle;
 }
