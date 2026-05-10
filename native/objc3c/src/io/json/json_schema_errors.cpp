@@ -1,16 +1,8 @@
 #include "io/json/json_schema_errors.h"
 
-#include <sstream>
 #include <utility>
 
 namespace objc3::io::json {
-
-std::string JsonSchemaIssue::Format() const {
-  std::ostringstream out;
-  out << domain << "." << code << " instance=" << instance_path
-      << " schema=" << schema_path << ": " << message;
-  return out.str();
-}
 
 void AppendJsonSchemaIssue(JsonSchemaResult &result, JsonSchemaIssue issue) {
   result.errors.push_back(std::move(issue));
