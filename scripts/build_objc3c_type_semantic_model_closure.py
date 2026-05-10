@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import shutil
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +8,9 @@ from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import canonical_json
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.validation import contains_all
+from objc3c_type_semantic_model_closure.compiler import diagnostic_matches
+from objc3c_type_semantic_model_closure.compiler import nested_semantic_model
+from objc3c_type_semantic_model_closure.compiler import run_compiler
 from objc3c_type_semantic_model_closure.reporting import SUMMARY_FIELDS
 from objc3c_type_semantic_model_closure.reporting import expected_report_outputs
 from objc3c_type_semantic_model_closure.reporting import write_outputs
@@ -189,85 +190,6 @@ def rel(path: Path) -> str:
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
-
-
-
-
-def run_compiler(source: Path, out_dir: Path, extra_args: list[str] | None = None) -> dict[str, Any]:
-    if not COMPILER.is_file():
-        raise SystemExit(f"missing native compiler at {rel(COMPILER)}; run scripts/build_objc3c_native.ps1 first")
-    if out_dir.exists():
-        shutil.rmtree(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    command = [str(COMPILER), str(source), "--out-dir", str(out_dir), "--emit-prefix", "module"]
-    if extra_args:
-        command.extend(extra_args)
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    diagnostics_path = out_dir / "module.diagnostics.json"
-    manifest_path = out_dir / "module.manifest.json"
-    llvm_ir_path = out_dir / "module.ll"
-    diagnostics = []
-    if diagnostics_path.is_file():
-        diagnostics = load_json(diagnostics_path).get("diagnostics", [])
-    manifest = None
-    if manifest_path.is_file():
-        manifest = load_json(manifest_path)
-    return {
-        "source": rel(source),
-        "out_dir": rel(out_dir),
-        "runtime_import_surface_path": rel(out_dir / "module.runtime-import-surface.json") if (out_dir / "module.runtime-import-surface.json").is_file() else None,
-        "exit_code": completed.returncode,
-        "stdout": completed.stdout.strip(),
-        "stderr": completed.stderr.strip(),
-        "diagnostics_path": rel(diagnostics_path) if diagnostics_path.is_file() else None,
-        "manifest_path": rel(manifest_path) if manifest_path.is_file() else None,
-        "llvm_ir_path": rel(llvm_ir_path) if llvm_ir_path.is_file() else None,
-        "diagnostics": diagnostics,
-        "manifest": manifest,
-    }
-
-
-def find_type_semantic_model_manifest(node: Any) -> dict[str, Any] | None:
-    if isinstance(node, dict):
-        if set(SUMMARY_FIELDS).issubset(node.keys()):
-            return node
-        for value in node.values():
-            found = find_type_semantic_model_manifest(value)
-            if found is not None:
-                return found
-    elif isinstance(node, list):
-        for value in node:
-            found = find_type_semantic_model_manifest(value)
-            if found is not None:
-                return found
-    return None
-
-
-def nested_semantic_model(manifest: dict[str, Any] | None) -> dict[str, Any] | None:
-    if not isinstance(manifest, dict):
-        return None
-    node: Any = manifest
-    for key in ["frontend", "pipeline", "semantic_surface", "objc_type_system_type_semantic_model"]:
-        if not isinstance(node, dict) or key not in node:
-            return find_type_semantic_model_manifest(manifest)
-        node = node[key]
-    return node if isinstance(node, dict) else find_type_semantic_model_manifest(manifest)
-
-
-def diagnostic_matches(diagnostics: list[dict[str, Any]], code: str, line: int, column: int) -> bool:
-    return any(
-        diag.get("code") == code
-        and int(diag.get("line", -1)) == line
-        and int(diag.get("column", -1)) == column
-        for diag in diagnostics
-    )
 
 
 def compile_positive_summary(run: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, bool]]:
@@ -613,13 +535,15 @@ def write_drifted_protocol_contract_surface(provider_run: dict[str, Any]) -> Pat
 
 
 def build_summary() -> dict[str, Any]:
-    positive_run = run_compiler(POSITIVE_FIXTURE, TMP_ROOT / "positive")
-    nested_generic_positive_run = run_compiler(NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
-    generic_variance_positive_run = run_compiler(GENERIC_VARIANCE_POSITIVE_FIXTURE, TMP_ROOT / "positive-generic-variance")
-    protocol_generic_positive_run = run_compiler(PROTOCOL_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-protocol-generic")
+    positive_run = run_compiler(ROOT, COMPILER, POSITIVE_FIXTURE, TMP_ROOT / "positive")
+    nested_generic_positive_run = run_compiler(ROOT, COMPILER, NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
+    generic_variance_positive_run = run_compiler(ROOT, COMPILER, GENERIC_VARIANCE_POSITIVE_FIXTURE, TMP_ROOT / "positive-generic-variance")
+    protocol_generic_positive_run = run_compiler(ROOT, COMPILER, PROTOCOL_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-protocol-generic")
     cross_module_nullability_drift_surface = write_drifted_nullability_contract_surface(positive_run)
     cross_module_protocol_drift_surface = write_drifted_protocol_contract_surface(positive_run)
     cross_module_nullability_consumer_run = run_compiler(
+        ROOT,
+        COMPILER,
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "positive-cross-module-nullability-consumer",
         [
@@ -630,6 +554,8 @@ def build_summary() -> dict[str, Any]:
         ],
     )
     cross_module_nullability_drift_run = run_compiler(
+        ROOT,
+        COMPILER,
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "negative-cross-module-nullability-drift",
         [
@@ -640,6 +566,8 @@ def build_summary() -> dict[str, Any]:
         ],
     )
     cross_module_protocol_drift_run = run_compiler(
+        ROOT,
+        COMPILER,
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "negative-cross-module-protocol-drift",
         [
@@ -651,6 +579,8 @@ def build_summary() -> dict[str, Any]:
     )
     cross_module_generic_drift_surface = write_drifted_generic_contract_surface(protocol_generic_positive_run)
     cross_module_generic_consumer_run = run_compiler(
+        ROOT,
+        COMPILER,
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "positive-cross-module-generic-consumer",
         [
@@ -661,6 +591,8 @@ def build_summary() -> dict[str, Any]:
         ],
     )
     cross_module_generic_drift_run = run_compiler(
+        ROOT,
+        COMPILER,
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "negative-cross-module-generic-drift",
         [
@@ -670,18 +602,18 @@ def build_summary() -> dict[str, Any]:
             "2",
         ],
     )
-    negative_run = run_compiler(NEGATIVE_FIXTURE, TMP_ROOT / "negative-duplicate-protocol")
-    nullability_negative_run = run_compiler(NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow")
-    protocol_method_nullability_negative_run = run_compiler(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability")
-    protocol_property_nullability_negative_run = run_compiler(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-property-nullability")
-    unknown_protocol_composition_negative_run = run_compiler(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-unknown-protocol-composition")
-    protocol_qualified_unknown_message_negative_run = run_compiler(PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-qualified-unknown-message")
-    typed_object_receiver_unknown_message_negative_run = run_compiler(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-typed-object-receiver-unknown-message")
-    generic_constraint_violation_negative_run = run_compiler(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-constraint-violation")
-    generic_substitution_unknown_message_negative_run = run_compiler(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-substitution-unknown-message")
-    nested_generic_constraint_violation_negative_run = run_compiler(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation")
-    generic_invariant_assignment_negative_run = run_compiler(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-invariant-assignment")
-    protocol_generic_unknown_protocol_negative_run = run_compiler(PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-generic-unknown-protocol")
+    negative_run = run_compiler(ROOT, COMPILER, NEGATIVE_FIXTURE, TMP_ROOT / "negative-duplicate-protocol")
+    nullability_negative_run = run_compiler(ROOT, COMPILER, NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow")
+    protocol_method_nullability_negative_run = run_compiler(ROOT, COMPILER, PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability")
+    protocol_property_nullability_negative_run = run_compiler(ROOT, COMPILER, PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-property-nullability")
+    unknown_protocol_composition_negative_run = run_compiler(ROOT, COMPILER, UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-unknown-protocol-composition")
+    protocol_qualified_unknown_message_negative_run = run_compiler(ROOT, COMPILER, PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-qualified-unknown-message")
+    typed_object_receiver_unknown_message_negative_run = run_compiler(ROOT, COMPILER, TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-typed-object-receiver-unknown-message")
+    generic_constraint_violation_negative_run = run_compiler(ROOT, COMPILER, GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-constraint-violation")
+    generic_substitution_unknown_message_negative_run = run_compiler(ROOT, COMPILER, GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-substitution-unknown-message")
+    nested_generic_constraint_violation_negative_run = run_compiler(ROOT, COMPILER, NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation")
+    generic_invariant_assignment_negative_run = run_compiler(ROOT, COMPILER, GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-invariant-assignment")
+    protocol_generic_unknown_protocol_negative_run = run_compiler(ROOT, COMPILER, PROTOCOL_GENERIC_UNKNOWN_PROTOCOL_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-generic-unknown-protocol")
     model, positive_checks = compile_positive_summary(positive_run)
     nested_generic_positive_checks = compile_nested_generic_positive_summary(nested_generic_positive_run)
     generic_variance_positive_checks = compile_generic_variance_positive_summary(generic_variance_positive_run)
