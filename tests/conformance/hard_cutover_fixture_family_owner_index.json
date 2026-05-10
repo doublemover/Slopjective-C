@@ -1292,6 +1292,40 @@
       "retired_disposition": "full-envelope claimability dashboard blocker policy contracts, negative policy fixtures, report fixture paths, runbook paths, summary implementation anchors, required report names, required report contract ids, report status labels, report field labels, rollout class labels, release blocker ids, dashboard summary paths, public summary paths, required dashboard field names, required public summary field names, source-owned decision field names, blocking public claim class labels, blocking rollout class labels, artifact path labels, and owner-split routing rows are resolved through behavior-first phase indexes and dashboard blocker provenance before any dashboard blocker row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in required report contract coverage, stable/candidate/preview rollout class policy, source-owned dashboard/public summary decision fields, dashboard release-blocker projection, performance-claim-not-ready blocker evaluation, and production-strength claim blocking when dashboard/public summaries remain preview-only or candidate-scoped, while production-strength public claims for preview-only or candidate-scoped summaries, claimability support inferred from report presence alone, generated-report-only release readiness, report-only production strength, missing-dashboard-projection acceptance, missing-required-report acceptance, manually edited dashboard status, missing dashboard_release_blocker_projection, missing required report contract ids, missing dashboard summary fields, missing public summary fields, missing source-owned decision fields, performance claim_ready=false, performance release_status=blocked, dashboard release blocker not projected into public summary, old-mode dashboard blocker rows, shim dashboard blocker rows, fallback dashboard blocker rows, compatibility dashboard blocker rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only dashboard checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "full_envelope_claimability_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "full_envelope_claimability_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/full_envelope_claimability_provenance.json"
+      ],
+      "retired_disposition": "full-envelope claimability policy contracts, runbook paths, summary implementation anchors, report paths, schema paths, public claim surface paths, runtime boundary runbook paths, checked-in surface paths, evidence family labels, support class labels, support window labels, rollout class labels, claim class labels, public claim class labels, surface ids, demotion trigger labels, release blocker labels, required field names, successor milestone labels, and owner-split routing rows are resolved through behavior-first phase indexes and full-envelope claimability provenance before any claimability row is cited as support; compiler phase positives are non-positive for this family and e2e/tooling positives are limited to hand-authored checked-in support-class taxonomy, support matrix surface classification, evidence-family coverage, production-strength/candidate/preview claim policy, release-blocker rollout policy, stability rollout readiness, soak/external validation requirements, dashboard/public summary contract shape, release candidate evidence fields, and public claim surface coverage, while production-strength claims outside stable support windows, candidate-scoped claims treated as stable, preview-only claims treated as production strength, unsupported runtime ABI widening and foreign topology positives, support inferred from report presence alone, public claim surfaces without required evidence families, manual support matrix rows, generated-report-only claimability, report-only production strength, missing or failing integrated evidence, missing required evidence-family reports, wrong report contract ids, missing required dashboard fields, missing required public summary fields, missing required acceptance matrix families, missing required release artifact fields, missing required schemas, unsupported surfaces marked supported, public conformance blockers, performance blockers, release publication blockers, distribution trust blockers, old-mode claimability rows, shim claimability rows, fallback claimability rows, compatibility claimability rows, migration-only rows, generated-only rows, report-only rows, runner-only success, workflow-label-only success, wrapper-only claimability checks, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "platform_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits",

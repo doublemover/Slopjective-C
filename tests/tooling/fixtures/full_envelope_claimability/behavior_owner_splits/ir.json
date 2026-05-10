@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability"
+  ],
+  "support_boundary": "IR ownership is non-positive for this full-envelope claimability family. The family contains JSON claimability policy fixtures, generated summary path labels, report path labels, schema labels, and markdown artifact labels only, with no checked-in IR or dispatch-IR output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/full_envelope_claimability/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/full_envelope_claimability/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:full_envelope_claimability",
+    "artifact_label:full-envelope-claimability-report",
+    "schema_path:schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
+    "compiler_phase_boundary:no-ir-positive-truth-from-full-envelope-claimability-contracts",
+    "upstream_owner_required:tests/native/ir"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, report-only IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, artifact-path-only IR claims, and claimability-report-only IR support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
