@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_property_decl_nodes.h"
 
 bool Objc3PropertyDeclHasRuntimeBackedStorage(
     const Objc3PropertyDecl &property);

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast_declarations.h"
+#include "ast/objc3_ast_property_decl_nodes.h"
 
 std::string BuildObjcMethodLookupSymbol(const Objc3MethodDecl &method);
 std::string BuildObjcMethodOverrideLookupSymbol(const Objc3MethodDecl &method);
