@@ -17,7 +17,7 @@ RuntimeTypedDispatchResult InvokeRuntimeMethodImplementation(
     case RuntimeMethodReturnKind::ClassReference:
     case RuntimeMethodReturnKind::SelectorReference:
     case RuntimeMethodReturnKind::ProtocolReference:
-      return InvokeIntCompatibleRuntimeMethodSignature(
+      return InvokeI32RuntimeMethodSignature(
           implementation, return_kind, parameter_count, a0, a1, a2, a3);
     case RuntimeMethodReturnKind::Bool:
       return InvokeBoolRuntimeMethodSignature(

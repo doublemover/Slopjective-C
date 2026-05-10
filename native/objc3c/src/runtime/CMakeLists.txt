@@ -118,6 +118,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_class_chain_resolution.h
   dispatch/method_cache.cpp
   dispatch/method_cache.h
+  dispatch/method_cache_resolution.cpp
+  dispatch/method_cache_resolution.h
   dispatch/method_cache_snapshots.cpp
   dispatch/method_resolution_tables.cpp
   dispatch/method_resolution_tables.h
