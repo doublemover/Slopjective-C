@@ -5,6 +5,7 @@
 #include "sema/objc3_semantic_feature_claims.h"
 #include "sema/objc3_semantic_generic_argument_relations.h"
 #include "sema/objc3_semantic_pass_helpers.h"
+#include "sema/objc3_semantic_signature_compatibility.h"
 #include "sema/objc3_semantic_symbol_lookup.h"
 #include "sema/objc3_semantic_type_factory.h"
 #include "sema/objc3_semantic_type_predicates.h"

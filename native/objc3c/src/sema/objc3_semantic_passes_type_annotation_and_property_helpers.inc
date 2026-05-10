@@ -105,19 +105,6 @@ static std::vector<std::string> BuildGenericArgumentsLexicographic(
   return values;
 }
 
-static bool AreEquivalentProtocolCompositions(bool lhs_has_composition,
-                                              const std::vector<std::string> &lhs_names,
-                                              bool rhs_has_composition,
-                                              const std::vector<std::string> &rhs_names) {
-  if (lhs_has_composition != rhs_has_composition) {
-    return false;
-  }
-  if (!lhs_has_composition) {
-    return true;
-  }
-  return lhs_names == rhs_names;
-}
-
 static bool IsCompoundAssignmentOperator(const std::string &op) {
   return op == "+=" || op == "-=" || op == "*=" || op == "/=" || op == "%=" || op == "&=" || op == "|=" ||
          op == "^=" || op == "<<=" || op == ">>=";
