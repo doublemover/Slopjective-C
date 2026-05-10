@@ -6,196 +6,10 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+Import-Module (Join-Path $PSScriptRoot "objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
-
-function Get-RepoRelativePathCompat {
-  param(
-    [Parameter(Mandatory = $true)][string]$RootPath,
-    [Parameter(Mandatory = $true)][string]$TargetPath
-  )
-
-  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
-  if (Test-Path -LiteralPath $TargetPath) {
-    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
-  }
-  else {
-    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
-  }
-
-  if ($resolvedRoot.EndsWith('\\') -or $resolvedRoot.EndsWith('/')) {
-    $rootWithSeparator = $resolvedRoot
-  }
-  else {
-    $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
-  }
-
-  $relativePath = $null
-  $getRelativeMethod = [System.IO.Path].GetMethod("GetRelativePath", [Type[]]@([string], [string]))
-  if ($null -ne $getRelativeMethod) {
-    $relativePath = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
-  }
-  else {
-    $rootUri = New-Object System.Uri($rootWithSeparator)
-    $targetUri = New-Object System.Uri($resolvedTarget)
-    $relativeUri = $rootUri.MakeRelativeUri($targetUri)
-    $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
-  }
-
-  return $relativePath.Replace('\\', '/')
-}
-
-function Resolve-PackageRoot {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [string]$RequestedRoot
-  )
-
-  if ([string]::IsNullOrWhiteSpace($RequestedRoot)) {
-    $runId = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
-    return (Join-Path $RepoRoot (Join-Path "tmp/pkg/objc3c-native-runnable-toolchain" $runId))
-  }
-
-  if ([System.IO.Path]::IsPathRooted($RequestedRoot)) {
-    return [System.IO.Path]::GetFullPath($RequestedRoot)
-  }
-
-  return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $RequestedRoot))
-}
-
-function Assert-RepoFile {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [Parameter(Mandatory = $true)][string]$RelativePath
-  )
-
-  $fullPath = Join-Path $RepoRoot ($RelativePath.Replace('/', '\\'))
-  if (!(Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-    throw "runnable toolchain package FAIL: missing required file $RelativePath"
-  }
-
-  return $fullPath
-}
-
-function Copy-RepoRelativeFile {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [Parameter(Mandatory = $true)][string]$PackageRoot,
-    [Parameter(Mandatory = $true)][string]$RelativePath
-  )
-
-  $sourcePath = Assert-RepoFile -RepoRoot $RepoRoot -RelativePath $RelativePath
-  $destinationPath = Join-Path $PackageRoot ($RelativePath.Replace('/', '\\'))
-  $destinationDir = Split-Path -Parent $destinationPath
-  New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-  Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
-  return $destinationPath
-}
-
-function Get-RepoRelativeExecutionFixtureFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $fixtureRoot = Join-Path $RepoRoot "tests/tooling/fixtures/native/execution"
-  if (!(Test-Path -LiteralPath $fixtureRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing execution fixture root $fixtureRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $fixtureRoot -Recurse -File |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativeStdlibFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $stdlibRoot = Join-Path $RepoRoot "stdlib"
-  if (!(Test-Path -LiteralPath $stdlibRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing stdlib root $stdlibRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $stdlibRoot -Recurse -File |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativeConformanceFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $conformanceRoot = Join-Path $RepoRoot "tests/conformance"
-  if (!(Test-Path -LiteralPath $conformanceRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing conformance root $conformanceRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $conformanceRoot -Recurse -File |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativeNativeDocsFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $docsRoot = Join-Path $RepoRoot "docs/objc3c-native"
-  if (!(Test-Path -LiteralPath $docsRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing native docs root $docsRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $docsRoot -Recurse -File |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativePythonToolingFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $toolingRoot = Join-Path $RepoRoot "scripts/objc3c_tooling"
-  if (!(Test-Path -LiteralPath $toolingRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing Python tooling root $toolingRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $toolingRoot -Recurse -File -Filter "*.py" |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativeRuntimeAcceptanceFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $acceptanceRoot = Join-Path $RepoRoot "scripts/objc3c_runtime_acceptance"
-  if (!(Test-Path -LiteralPath $acceptanceRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing runtime acceptance package root $acceptanceRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $acceptanceRoot -Recurse -File -Filter "*.py" |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
-
-function Get-RepoRelativeRecoveryPositiveFiles {
-  param([Parameter(Mandatory = $true)][string]$RepoRoot)
-
-  $recoveryRoot = Join-Path $RepoRoot "tests/tooling/fixtures/native/recovery/positive"
-  if (!(Test-Path -LiteralPath $recoveryRoot -PathType Container)) {
-    throw "runnable toolchain package FAIL: missing recovery-positive root $recoveryRoot"
-  }
-
-  return @(
-    Get-ChildItem -LiteralPath $recoveryRoot -Recurse -File |
-      Sort-Object -Property FullName |
-      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
-  )
-}
 
 if (!(Test-Path -LiteralPath $buildScript -PathType Leaf)) {
   throw "runnable toolchain package FAIL: missing build script $buildScript"
@@ -537,27 +351,18 @@ foreach ($outputPath in @($packagedNativeExecutablePath, $packagedFrontendRunner
 $repoSupercleanSurfaceRelativePath = "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
 $repoSupercleanSurfacePath = Join-Path $packageRoot ($repoSupercleanSurfaceRelativePath.Replace('/', '\'))
 $repoSupercleanSurfacePayload = Get-Content -LiteralPath $repoSupercleanSurfacePath -Raw | ConvertFrom-Json -AsHashtable
-if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces")) {
-  throw "runnable toolchain package FAIL: missing bonus_experience_surfaces in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surface")) {
-  throw "runnable toolchain package FAIL: missing performance_benchmark_surface in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("runtime_performance_surface")) {
-  throw "runnable toolchain package FAIL: missing runtime_performance_surface in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("compiler_throughput_surface")) {
-  throw "runnable toolchain package FAIL: missing compiler_throughput_surface in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("conformance_corpus_surface")) {
-  throw "runnable toolchain package FAIL: missing conformance_corpus_surface in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface")) {
-  throw "runnable toolchain package FAIL: missing stdlib_foundation_surface in $repoSupercleanSurfaceRelativePath"
-}
-if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_program_surface")) {
-  throw "runnable toolchain package FAIL: missing stdlib_program_surface in $repoSupercleanSurfaceRelativePath"
-}
+Assert-RequiredPackageSurfaceKeys `
+  -Payload $repoSupercleanSurfacePayload `
+  -RelativePath $repoSupercleanSurfaceRelativePath `
+  -RequiredKeys @(
+    "bonus_experience_surfaces",
+    "performance_benchmark_surface",
+    "runtime_performance_surface",
+    "compiler_throughput_surface",
+    "conformance_corpus_surface",
+    "stdlib_foundation_surface",
+    "stdlib_program_surface"
+  )
 
 $stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
 $stdlibLoweringImportSurfacePath = Join-Path $packageRoot ($stdlibLoweringImportSurfaceRelativePath.Replace('/', '\'))
