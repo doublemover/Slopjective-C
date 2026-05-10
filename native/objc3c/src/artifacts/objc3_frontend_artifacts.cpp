@@ -1,5 +1,6 @@
 #include "artifacts/objc3_frontend_artifacts.h"
 
+#include "artifacts/objc3_frontend_artifacts_runtime_manifest_surfaces.h"
 #include "artifacts/objc3_runtime_state_publication_paths.h"
 
 #include <cctype>
@@ -6147,189 +6148,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "},\n";
-  const auto runtime_state_publication_paths =
-      objc3::artifacts::frontend::BuildRuntimeStatePublicationPaths(
-          runtime_translation_unit_registration_manifest
-              .manifest_artifact_relative_path);
-  const std::string &runtime_state_publication_emit_prefix =
-      runtime_state_publication_paths.emit_prefix;
-  const auto accessor_storage_lowering_metadata_summary =
-      BuildAccessorStorageLoweringMetadataSummary(runtime_metadata_source_records);
-  const auto executable_accessor_layout_lowering_summary =
-      BuildExecutableAccessorLayoutLoweringSummary(
-          executable_metadata_source_graph);
-  objc3::artifacts::frontend::
-      WriteDispatchAndSynthesizedAccessorLoweringSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_link_host_link_contract, options,
-          runtime_support_library_link_wiring,
-          dispatch_surface_classification_contract,
-          message_send_selector_lowering_contract,
-          property_synthesis_ivar_binding_contract,
-          accessor_storage_lowering_metadata_summary,
-          runtime_metadata_section_publication);
-  objc3::artifacts::frontend::WriteDispatchAccessorRuntimeAbiSurface(
-      manifest, runtime_link_host_link_contract,
-      property_synthesis_ivar_binding_contract,
+  objc3::artifacts::frontend::WriteObjc3FrontendRuntimeManifestSurfaces(
+      manifest, runtime_translation_unit_registration_manifest,
+      runtime_metadata_source_records, executable_metadata_source_graph,
+      runtime_link_host_link_contract, options,
+      runtime_support_library_link_wiring,
       dispatch_surface_classification_contract,
-      message_send_selector_lowering_contract);
-  objc3::artifacts::frontend::WriteStorageAccessorRuntimeAbiSurface(
-      manifest, runtime_bootstrap_api, runtime_link_host_link_contract,
-      property_synthesis_ivar_binding_contract);
-  objc3::artifacts::frontend::WriteRuntimeStatePublicationSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest, runtime_bootstrap_semantics);
-  objc3::artifacts::frontend::
-      WriteRuntimeBootstrapRegistrationSourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_registration_descriptor_image_root_source_surface,
-          runtime_bootstrap_lowering, runtime_bootstrap_legality_semantics);
-  objc3::artifacts::frontend::
-      WriteRuntimeBootstrapLoweringRegistrationArtifactSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_lowering, runtime_bootstrap_semantics);
-  objc3::artifacts::frontend::
-      WriteRuntimeMultiImageStartupOrderingSourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_legality_semantics,
-          runtime_bootstrap_failure_restart_semantics, runtime_bootstrap_api,
-          runtime_bootstrap_semantics);
-  objc3::artifacts::frontend::
-      WriteRuntimeObjectModelRealizationSourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimePropertyIvarStorageAccessorSourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::WriteRuntimeBlockArcUnifiedSourceSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::
-      WriteRuntimeOwnershipTransferCaptureFamilySourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::WriteRuntimeBlockArcLoweringHelperSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::WriteRuntimeBlockArcRuntimeAbiSurface(
-      manifest, runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimePropertyIvarAccessorReflectionImplementationSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteExecutablePropertyAccessorLayoutLoweringSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          executable_accessor_layout_lowering_summary,
-          runtime_metadata_section_publication);
-  objc3::artifacts::frontend::WriteExecutableIvarLayoutEmissionSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      executable_accessor_layout_lowering_summary,
-      runtime_metadata_section_publication);
-  objc3::artifacts::frontend::
-      WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          executable_accessor_layout_lowering_summary,
-          runtime_metadata_section_publication);
-  objc3::artifacts::frontend::
-      WriteRuntimePropertyAtomicitySynthesisReflectionSourceSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::
-      WriteRuntimeRealizationLoweringReflectionArtifactSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::
-      WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_metadata_section_publication,
-          message_send_selector_lowering_contract);
-  objc3::artifacts::frontend::WriteRuntimeObjectModelAbiQuerySurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
+      message_send_selector_lowering_contract,
+      property_synthesis_ivar_binding_contract,
+      runtime_metadata_section_publication, runtime_bootstrap_api,
+      runtime_bootstrap_semantics,
       runtime_registration_descriptor_frontend_closure,
-      runtime_bootstrap_api);
-  objc3::artifacts::frontend::WriteRuntimeUnifiedConcurrencySourceSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::
-      WriteRuntimeAsyncTaskActorNormalizationCompletionSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::
-      WriteRuntimeUnifiedConcurrencyLoweringMetadataSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::WriteRuntimeUnifiedConcurrencyRuntimeAbiSurface(
-      manifest, runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimeRealizationLookupReflectionImplementationSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure);
-  objc3::artifacts::frontend::WriteRuntimeReflectionQuerySurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      runtime_registration_descriptor_frontend_closure,
-      runtime_bootstrap_api);
-  objc3::artifacts::frontend::WriteRuntimeRealizationLookupSemanticsSurface(
-      manifest, runtime_state_publication_emit_prefix,
-      runtime_translation_unit_registration_manifest,
-      runtime_registration_descriptor_frontend_closure,
-      runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimeClassMetaclassProtocolRealizationSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimeCategoryAttachmentMergedDispatchSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimeReflectionVisibilityCoherenceDiagnosticsSurface(
-          manifest, runtime_state_publication_emit_prefix,
-          runtime_translation_unit_registration_manifest,
-          runtime_registration_descriptor_frontend_closure,
-          runtime_bootstrap_api);
-  objc3::artifacts::frontend::WriteRuntimeInstallationAbiSurface(
-      manifest, runtime_bootstrap_api);
-  objc3::artifacts::frontend::WriteRuntimeLoaderLifecycleSurface(
-      manifest, runtime_bootstrap_semantics);
-  objc3::artifacts::frontend::WriteRuntimeReleaseCandidateClaimAbiSurface(
-      manifest, runtime_bootstrap_api);
-  objc3::artifacts::frontend::
-      WriteRuntimeFinalReleaseEvidenceDescaffoldingImplementationSurface(
-          manifest, runtime_bootstrap_api);
+      runtime_registration_descriptor_image_root_source_surface,
+      runtime_bootstrap_lowering, runtime_bootstrap_legality_semantics,
+      runtime_bootstrap_failure_restart_semantics);
   objc3::artifacts::frontend::WriteLoweringReplayManifestEntries(
       manifest,
       {{"lowering_id_class_sel_object_pointer_typecheck",
