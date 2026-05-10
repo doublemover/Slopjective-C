@@ -6,6 +6,8 @@
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
+struct Objc3FrontendArtifactBundle;
+
 namespace objc3::artifacts::frontend {
 
 struct Objc3FrontendArtifactPostPipelineFailure {
@@ -23,5 +25,11 @@ BuildObjc3FrontendArtifactInitialPostPipelineFailure(
     const Objc3IREmissionCoreFeatureImplementationSurface
         &ir_emission_core_feature_impl_surface,
     bool metadata_only_ir_emission_mode);
+
+bool FinalizeObjc3FrontendPostPipelineFailure(
+    Objc3FrontendArtifactBundle &bundle,
+    const Objc3FrontendOptions &options,
+    const std::string &post_pipeline_failure_code,
+    const std::string &post_pipeline_failure_message);
 
 }  // namespace objc3::artifacts::frontend

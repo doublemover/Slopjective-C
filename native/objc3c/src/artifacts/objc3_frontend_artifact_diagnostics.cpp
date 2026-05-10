@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include "artifacts/objc3_frontend_artifacts.h"
+#include "diag/objc3_diag_utils.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
@@ -408,6 +410,26 @@ BuildObjc3FrontendArtifactInitialPostPipelineFailure(
   }
 
   return recorder.failure();
+}
+
+bool FinalizeObjc3FrontendPostPipelineFailure(
+    Objc3FrontendArtifactBundle &bundle,
+    const Objc3FrontendOptions &options,
+    const std::string &post_pipeline_failure_code,
+    const std::string &post_pipeline_failure_message) {
+  if (post_pipeline_failure_code.empty()) {
+    return false;
+  }
+
+  if (!options.emit_ir && !options.emit_object) {
+    return true;
+  }
+
+  bundle.post_pipeline_diagnostics = {
+      MakeDiag(1, 1, post_pipeline_failure_code,
+               post_pipeline_failure_message)};
+  bundle.diagnostics = bundle.post_pipeline_diagnostics;
+  return true;
 }
 
 }  // namespace objc3::artifacts::frontend

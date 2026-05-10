@@ -90,7 +90,6 @@
 #include "artifacts/objc3_frontend_type_system_semantic_artifacts.h"
 #include "artifacts/reports/frontend_conformance_report_contracts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
-#include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"
 #include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
@@ -6394,13 +6393,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
 
-  if (!post_pipeline_failure_code.empty()) {
-    if (!options.emit_ir && !options.emit_object) {
-      return bundle;
-    }
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1, 1, post_pipeline_failure_code, post_pipeline_failure_message)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+  if (objc3::artifacts::frontend::FinalizeObjc3FrontendPostPipelineFailure(
+          bundle, options, post_pipeline_failure_code,
+          post_pipeline_failure_message)) {
     return bundle;
   }
 
