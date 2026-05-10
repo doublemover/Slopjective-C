@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness"
+  ],
+  "support_boundary": "lowering ownership is non-positive for bootstrap readiness fixtures. This family does not contain lowering source fixtures or lowering expectations; accepted readiness scenarios prove tooling readiness behavior only, not compiler lowering behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/bootstrap_readiness/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/bootstrap_readiness/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:bootstrap_readiness",
+    "compiler_phase_boundary:no-lowering-positive-truth",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering bootstrap, shim lowering bootstrap, fallback lowering bootstrap, compatibility lowering bootstrap, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, and readiness expected-output rows promoted as lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

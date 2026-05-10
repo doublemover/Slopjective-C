@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness"
+  ],
+  "support_boundary": "IR ownership is non-positive for bootstrap readiness fixtures. The family has no Objective-C 3 IR expectations, dispatch IR markers, or canonical IR outputs; JSON and markdown expected outputs are tooling fixture provenance, not IR behavior truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/bootstrap_readiness/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/bootstrap_readiness/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:bootstrap_readiness",
+    "compiler_phase_boundary:no-ir-positive-truth",
+    "upstream_owner_required:tests/native/ir"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, report-only IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, and bootstrap expected-output rows promoted as IR support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

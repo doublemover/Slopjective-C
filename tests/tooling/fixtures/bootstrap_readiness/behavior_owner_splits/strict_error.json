@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness/malformed_issues_json",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_*"
+  ],
+  "support_boundary": "strict-error ownership covers bootstrap readiness fail-closed scenarios: malformed issues JSON, open-blocker declared-count mismatch, duplicate blocker rows, line alias mismatch, metadata pair mismatch, unsorted blocker rows, generated/report rows promoted as support, and legacy/compatibility payloads promoted as positive readiness support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/bootstrap_readiness/malformed_issues_json",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_count_mismatch",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_duplicate_rows",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_line_alias_mismatch",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_metadata_pair_mismatch",
+    "tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_unsorted_rows",
+    "hard_fail_class:malformed_json",
+    "hard_fail_class:count_mismatch",
+    "hard_fail_class:duplicate_rows",
+    "hard_fail_class:line_alias_mismatch",
+    "hard_fail_class:metadata_pair_mismatch",
+    "hard_fail_class:unsorted_rows",
+    "*fallback-as-positive*",
+    "*shim-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*legacy-as-positive*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "malformed JSON, hard-fail open-blocker rows, fallback-as-positive, shim-as-positive, old-mode-as-positive, compatibility-as-positive, legacy-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

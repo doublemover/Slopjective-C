@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness/all_zero",
+    "tests/tooling/fixtures/bootstrap_readiness/open_issues_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_milestones_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_catalog_tasks_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_blockers_only",
+    "tests/tooling/fixtures/bootstrap_readiness/canonical_blockers_snapshot"
+  ],
+  "support_boundary": "e2e/tooling ownership covers accepted bootstrap readiness behavior only: all-zero readiness, open issue blocking, open milestone blocking, open catalog task blocking, open blocker blocking, canonical blockers snapshot output, readiness_state calculation, intake_recommendation calculation, blocking_dimensions calculation, and expected JSON/markdown report rendering. Legacy blocker array payloads, malformed JSON, and hard-fail rows are not positive readiness truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/bootstrap_readiness/all_zero",
+    "tests/tooling/fixtures/bootstrap_readiness/open_issues_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_milestones_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_catalog_tasks_only",
+    "tests/tooling/fixtures/bootstrap_readiness/open_blockers_only",
+    "tests/tooling/fixtures/bootstrap_readiness/canonical_blockers_snapshot",
+    "expected_contract:issues_open_count",
+    "expected_contract:milestones_open_count",
+    "expected_contract:catalog_open_task_count",
+    "expected_contract:blockers_open_count",
+    "expected_contract:readiness_state",
+    "expected_contract:intake_recommendation",
+    "expected_contract:blocking_dimensions"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/bootstrap_readiness",
+  "retired_surface_rule": "legacy blocker array payloads, runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, old-mode bootstrap rows, shim bootstrap rows, fallback bootstrap rows, compatibility bootstrap rows, migration-only bootstrap rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
