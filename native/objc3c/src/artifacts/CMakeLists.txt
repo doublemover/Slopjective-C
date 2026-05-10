@@ -78,6 +78,7 @@ add_library(objc3c_artifacts_frontend_runtime STATIC
   objc3_frontend_runtime_import_artifacts.cpp
   objc3_frontend_runtime_import_artifacts.h
   objc3_frontend_runtime_import_preservation_summary_json.cpp
+  objc3_frontend_runtime_import_reuse_record_set.cpp
   objc3_frontend_runtime_import_serialized_lowering.cpp
   objc3_runtime_import_preservation_artifact_builders.cpp
   objc3_runtime_import_preservation_artifact_builders.h
