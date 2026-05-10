@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-platform-hardening-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/platform_hardening"
+  ],
+  "support_boundary": "IR ownership is non-positive for this platform-hardening family. The family contains JSON platform/package policy fixtures, generated artifact labels, and report path labels only, with no checked-in IR or dispatch-IR output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/platform_hardening/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/platform_hardening/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:platform_hardening",
+    "artifact_label:objc3c-platform-support-matrix",
+    "compiler_phase_boundary:no-ir-positive-truth-from-platform-hardening-contracts",
+    "upstream_owner_required:tests/native/ir"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, report-only IR rows, migration-only IR rows, old-mode IR rows, shim IR rows, fallback IR rows, compatibility IR rows, artifact-path-only IR claims, and platform-report-only IR support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

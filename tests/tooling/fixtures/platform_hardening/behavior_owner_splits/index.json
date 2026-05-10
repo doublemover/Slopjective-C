@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-platform-hardening-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+    "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
+    "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
+    "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
+    "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
+    "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
+  ],
+  "split_policy": {
+    "primary_axis": "platform-hardening behavior before fixture directory label, generated artifact path, tmp report path, script anchor, schema path, public action label, package bridge label, channel label, toolchain probe label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "platform-hardening positives are limited to hand-authored checked-in contracts for strict windows-x64 platform support, checked-in package channels, package/install validation, toolchain range replay bounded by release evidence, and packaged smoke command surface",
+    "canonical_rejection_rule": "non-windows-x64 support, cross-platform parity, system package manager publication, signed/notarized installer trust, multi-host install matrix, cross-host archive support, all-LLVM-version claims, unsupported-channel claims, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "unsupported host build/package/install/publication flows, missing required tier tools, support-tier overclaims, package validation failures, current host outside checked-in support matrix, install matrix rollback loss, missing native executable, release operations widening host/toolchain claims, missing source-owned owner policy, missing platform matrix publication surface, and reports/artifacts promoted as source truth own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, policy contract paths, script anchors, schema paths, generated artifact paths, tmp report paths, public action labels, package bridge labels, owner names, platform ids, tier ids, channel ids, required tool labels, required field labels, blocker labels, successor issue labels, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode platform hardening, shim platform hardening, fallback platform hardening, compatibility platform hardening, migration-only rows, generated-only rows, report-only rows, tool-probe-only support, report-only support, runner-only success, workflow-label-only success, wrapper-only platform checks, unsupported-host positives, widened package/channel/toolchain positives, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "platform_hardening_provenance",
+      "path": "tests/tooling/fixtures/platform_hardening/behavior_owner_splits/platform_hardening_provenance.json"
+    }
+  ]
+}

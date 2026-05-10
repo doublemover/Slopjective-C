@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-platform-hardening-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/platform_hardening"
+  ],
+  "support_boundary": "parser ownership is non-positive for this platform-hardening family. Platform ids, tier ids, package channel names, public action labels, tool names, JSON owner contracts, generated artifact paths, and report paths do not define Objective-C 3 parser support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:platform_hardening",
+    "platform_id:windows-x64",
+    "tier_id:tier-1",
+    "channel:portable-archive",
+    "compiler_phase_boundary:no-parser-positive-truth-from-platform-hardening-contracts",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser platform rows, shim parser platform rows, fallback parser platform rows, compatibility parser platform rows, migration-only parser rows, generated-only parser rows, report-only parser rows, JSON-contract-only parser claims, and platform-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
