@@ -78,40 +78,4 @@
                   handoff.error_diagnostics_recovery_summary.gate_blocked_sites ==
               handoff.error_diagnostics_recovery_summary
                   .error_diagnostics_recovery_sites &&
-          handoff.result_like_lowering_summary.deterministic &&
-          handoff.result_like_lowering_summary.result_like_sites ==
-              result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.result_success_sites ==
-              result_like_lowering_summary.result_success_sites &&
-          handoff.result_like_lowering_summary.result_failure_sites ==
-              result_like_lowering_summary.result_failure_sites &&
-          handoff.result_like_lowering_summary.result_branch_sites ==
-              result_like_lowering_summary.result_branch_sites &&
-          handoff.result_like_lowering_summary.result_payload_sites ==
-              result_like_lowering_summary.result_payload_sites &&
-          handoff.result_like_lowering_summary.normalized_sites ==
-              result_like_lowering_summary.normalized_sites &&
-          handoff.result_like_lowering_summary.branch_merge_sites ==
-              result_like_lowering_summary.branch_merge_sites &&
-          handoff.result_like_lowering_summary.contract_violation_sites ==
-              result_like_lowering_summary.contract_violation_sites &&
-          handoff.result_like_lowering_summary.result_success_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.result_failure_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.result_branch_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.result_payload_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.normalized_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.branch_merge_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.contract_violation_sites <=
-              handoff.result_like_lowering_summary.result_like_sites &&
-          handoff.result_like_lowering_summary.result_success_sites +
-                  handoff.result_like_lowering_summary.result_failure_sites ==
-              handoff.result_like_lowering_summary.normalized_sites &&
-          handoff.result_like_lowering_summary.normalized_sites +
-                  handoff.result_like_lowering_summary.branch_merge_sites ==
-              handoff.result_like_lowering_summary.result_like_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_result_like_lowering.inc"
