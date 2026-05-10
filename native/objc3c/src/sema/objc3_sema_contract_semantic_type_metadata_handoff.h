@@ -1,0 +1,80 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "sema/objc3_sema_contract_semantic_type_metadata_records.h"
+#include "sema/objc3_sema_contract_type_handoff_boundary.h"
+
+// lowering-handoff anchor: this typed metadata handoff is the
+// canonical sema-to-lowering schema input for executable metadata graph
+// lowering freeze packets and must remain deterministic and replayable.
+// typed-lowering anchor: the concrete lowering-ready metadata graph
+// packet consumes this same deterministic sema metadata surface so the typed
+// handoff stays schema-stable between manifest publication and later lowering.
+// debug-projection anchor: the manifest/IR inspection matrix replays
+// this same typed sema surface so operators inspect one deterministic schema
+// before runtime section emission lands.
+// runtime-ingest packaging anchor: the manifest packaging boundary
+// must carry this same typed sema surface forward verbatim, so runtime ingest
+// packaging never invents a second schema between lane-C publication and
+// later section emission/startup registration.
+struct Objc3SemanticTypeMetadataHandoff {
+  std::vector<std::string> global_names_lexicographic;
+  std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;
+  std::vector<Objc3SemanticInterfaceTypeMetadata> interfaces_lexicographic;
+  std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
+  Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
+  Objc3PropertyAttributeSummary property_attribute_summary;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
+  Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
+  Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
+  Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
+  Objc3ModuleImportGraphSummary module_import_graph_summary;
+  Objc3NamespaceCollisionShadowingSummary namespace_collision_shadowing_summary;
+  Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary;
+  Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
+  Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
+  Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
+  Objc3AsyncContinuationSummary async_continuation_summary;
+  Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
+  Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
+  Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
+  Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
+  Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  std::vector<Objc3BlockLiteralCaptureSiteMetadata> block_literal_capture_sites_lexicographic;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  std::vector<Objc3BlockAbiInvokeTrampolineSiteMetadata> block_abi_invoke_trampoline_sites_lexicographic;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
+  std::vector<Objc3BlockStorageEscapeSiteMetadata> block_storage_escape_sites_lexicographic;
+  Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
+  std::vector<Objc3BlockCopyDisposeSiteMetadata> block_copy_dispose_sites_lexicographic;
+  Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
+  std::vector<Objc3BlockDeterminismPerfBaselineSiteMetadata> block_determinism_perf_baseline_sites_lexicographic;
+  Objc3BlockDeterminismPerfBaselineSummary block_determinism_perf_baseline_summary;
+  std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  Objc3RuntimeLinkHostLinkSummary runtime_link_host_link_summary;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
+  std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
+  Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
+};
