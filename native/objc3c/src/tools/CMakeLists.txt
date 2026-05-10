@@ -68,6 +68,7 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_dump_payloads_runtime_inspector.cpp
   objc3c_frontend_c_api_runner_dump_payloads_stage_trace.cpp
   objc3c_frontend_c_api_runner_dump_payloads_summary.cpp
+  objc3c_frontend_c_api_runner_dump_publication.cpp
   objc3c_frontend_c_api_runner_invocation.cpp
   objc3c_frontend_c_api_runner_observability_json.cpp
   objc3c_frontend_c_api_runner_observability_json_artifacts.cpp

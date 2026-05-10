@@ -17,14 +17,9 @@ bool PublishFrontendCApiRunnerSessionResult(
   }
 
   if (ShouldEmitFrontendCApiRunnerDumpActions(options)) {
-    EmitFrontendCApiRunnerDumpActions(
-        options,
-        summary_path,
-        *session_result.compile_result,
-        session_result.status,
-        session_result.public_result.diagnostics.result_error_message,
-        session_result.artifact_paths.runtime_metadata_binary,
-        session_result.json);
+    const FrontendCApiRunnerDumpPublication dump_publication =
+        BuildFrontendCApiRunnerDumpPublication(summary_path, session_result);
+    EmitFrontendCApiRunnerDumpActions(options, dump_publication);
   } else {
     std::cout << "wrote summary: " << summary_path.generic_string() << "\n";
   }

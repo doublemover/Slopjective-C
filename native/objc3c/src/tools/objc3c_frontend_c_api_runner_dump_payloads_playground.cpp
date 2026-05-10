@@ -5,12 +5,11 @@
 void AppendFrontendCApiRunnerPlaygroundReproDumpPayload(
     std::vector<std::string> &payloads,
     const FrontendCApiRunnerOptions &options,
-    const std::filesystem::path &summary_path,
-    const objc3c_frontend_c_compile_result_t &result) {
+    const FrontendCApiRunnerDumpPublication &publication) {
   if (options.dump_playground_repro_json) {
     payloads.push_back(BuildFrontendCApiRunnerPlaygroundReproJson(
         options,
-        result,
-        summary_path));
+        FrontendCApiRunnerDumpCompileResult(publication),
+        publication.summary_path));
   }
 }

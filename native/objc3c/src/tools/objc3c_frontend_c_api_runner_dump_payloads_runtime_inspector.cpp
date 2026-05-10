@@ -5,9 +5,11 @@
 void AppendFrontendCApiRunnerRuntimeInspectorDumpPayload(
     std::vector<std::string> &payloads,
     const FrontendCApiRunnerOptions &options,
-    const objc3c_frontend_c_compile_result_t &result) {
+    const FrontendCApiRunnerDumpPublication &publication) {
   if (options.dump_runtime_inspector_json) {
     payloads.push_back(
-        BuildFrontendCApiRunnerRuntimeInspectorJson(options, result));
+        BuildFrontendCApiRunnerRuntimeInspectorJson(
+            options,
+            FrontendCApiRunnerDumpCompileResult(publication)));
   }
 }

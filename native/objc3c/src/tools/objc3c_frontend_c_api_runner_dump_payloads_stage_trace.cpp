@@ -5,8 +5,9 @@
 void AppendFrontendCApiRunnerStageTraceDumpPayload(
     std::vector<std::string> &payloads,
     const FrontendCApiRunnerOptions &options,
-    const objc3c_frontend_c_compile_result_t &result) {
+    const FrontendCApiRunnerDumpPublication &publication) {
   if (options.dump_stage_trace_json) {
-    payloads.push_back(BuildFrontendCApiRunnerStageTraceJson(result));
+    payloads.push_back(BuildFrontendCApiRunnerStageTraceJson(
+        FrontendCApiRunnerDumpCompileResult(publication)));
   }
 }

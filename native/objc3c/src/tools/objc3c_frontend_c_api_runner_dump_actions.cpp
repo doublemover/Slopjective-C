@@ -14,21 +14,11 @@ bool ShouldEmitFrontendCApiRunnerDumpActions(
 
 void EmitFrontendCApiRunnerDumpActions(
     const FrontendCApiRunnerOptions &options,
-    const std::filesystem::path &summary_path,
-    const objc3c_frontend_c_compile_result_t &result,
-    objc3c_frontend_c_status_t status,
-    const std::string &result_error_message,
-    const std::string &runtime_metadata_binary_path_text,
-    const std::string &summary_json) {
+    const FrontendCApiRunnerDumpPublication &publication) {
   FrontendCApiRunnerDumpEmitter emitter;
   for (const std::string &payload : BuildFrontendCApiRunnerDumpPayloads(
            options,
-           summary_path,
-           result,
-           status,
-           result_error_message,
-           runtime_metadata_binary_path_text,
-           summary_json)) {
+           publication)) {
     emitter.EmitJsonPayload(payload);
   }
 }

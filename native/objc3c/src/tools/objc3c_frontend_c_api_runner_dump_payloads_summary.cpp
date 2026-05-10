@@ -3,8 +3,8 @@
 void SeedFrontendCApiRunnerSummaryDumpPayload(
     std::vector<std::string> &payloads,
     const FrontendCApiRunnerOptions &options,
-    const std::string &summary_json) {
+    const FrontendCApiRunnerDumpPublication &publication) {
   if (options.dump_summary_json) {
-    payloads.push_back(summary_json);
+    payloads.push_back(publication.summary_json);
   }
 }
