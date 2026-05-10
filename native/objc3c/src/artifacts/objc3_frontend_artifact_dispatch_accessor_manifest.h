@@ -17,7 +17,6 @@ struct Objc3RuntimeRegistrationDescriptorFrontendClosureSummary;
 namespace objc3::artifacts::frontend {
 
 struct Objc3AccessorStorageLoweringMetadataSummary;
-struct Objc3ExecutableAccessorLayoutLoweringSummary;
 
 void WriteDispatchAndSynthesizedAccessorLoweringSurface(
     std::ostream &manifest,
@@ -72,36 +71,6 @@ void WriteRuntimePropertyIvarAccessorReflectionImplementationSurface(
     const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
         &runtime_registration_descriptor_frontend_closure,
     const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api);
-
-void WriteExecutablePropertyAccessorLayoutLoweringSurface(
-    std::ostream &manifest,
-    const std::string &runtime_state_publication_emit_prefix,
-    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
-        &runtime_translation_unit_registration_manifest,
-    const Objc3ExecutableAccessorLayoutLoweringSummary
-        &executable_accessor_layout_lowering_summary,
-    const Objc3RuntimeMetadataSectionPublicationSummary
-        &runtime_metadata_section_publication);
-
-void WriteExecutableIvarLayoutEmissionSurface(
-    std::ostream &manifest,
-    const std::string &runtime_state_publication_emit_prefix,
-    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
-        &runtime_translation_unit_registration_manifest,
-    const Objc3ExecutableAccessorLayoutLoweringSummary
-        &executable_accessor_layout_lowering_summary,
-    const Objc3RuntimeMetadataSectionPublicationSummary
-        &runtime_metadata_section_publication);
-
-void WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
-    std::ostream &manifest,
-    const std::string &runtime_state_publication_emit_prefix,
-    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
-        &runtime_translation_unit_registration_manifest,
-    const Objc3ExecutableAccessorLayoutLoweringSummary
-        &executable_accessor_layout_lowering_summary,
-    const Objc3RuntimeMetadataSectionPublicationSummary
-        &runtime_metadata_section_publication);
 
 void WriteRuntimePropertyAtomicitySynthesisReflectionSourceSurface(
     std::ostream &manifest,

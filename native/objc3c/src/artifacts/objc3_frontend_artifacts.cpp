@@ -24,6 +24,7 @@
 #include "artifacts/objc3_frontend_artifact_dispatch_metadata.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_error_metadata.h"
+#include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"

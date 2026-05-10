@@ -146,6 +146,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_artifact_error_lowering_plan.h
   objc3_frontend_artifact_error_metadata.cpp
   objc3_frontend_artifact_error_metadata.h
+  objc3_frontend_artifact_executable_accessor_layout_manifest.cpp
+  objc3_frontend_artifact_executable_accessor_layout_manifest.h
   objc3_frontend_artifact_function_manifest.cpp
   objc3_frontend_artifact_function_manifest.h
   objc3_frontend_artifact_interop_lowering_plan.cpp
