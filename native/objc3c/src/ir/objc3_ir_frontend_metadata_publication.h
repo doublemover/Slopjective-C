@@ -6,6 +6,7 @@
 
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_publication_concurrency.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_support.h"
 
 struct Objc3RuntimeMetadataLayoutPolicy;
 struct Objc3IRRuntimeMetadataSymbols;
@@ -24,9 +25,6 @@ void EmitObjc3IRFrontendCoreMetadataPublication(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
 
 void EmitObjc3IRRuntimeMetadataBoundaryNodes(
-    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
-
-void EmitObjc3IRRuntimeSupportMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
 
 void EmitObjc3IRRuntimeMetadataObjectPublicationNodes(
