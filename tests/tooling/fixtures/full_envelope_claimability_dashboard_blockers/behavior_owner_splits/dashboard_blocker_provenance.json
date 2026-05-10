@@ -32,7 +32,7 @@
     "published_sbom:tmp/artifacts/release-foundation/sbom.json",
     "published_attestation:tmp/artifacts/release-foundation/attestation.json",
     "update_manifest_path:tmp/artifacts/release-operations/update-manifest.json",
-    "upgrade_support_report:tmp/artifacts/release-operations/upgrade-support-report.json",
+    "upgrade_support_report:checked_outputs/release-operations/upgrade-report.json",
     "channel_catalog:tmp/artifacts/release-operations/channel-catalog.json",
     "rollout_class:stable",
     "rollout_class:candidate",

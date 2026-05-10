@@ -10,7 +10,7 @@
     "native/objc3c/src/sema/objc3_sema_pass_manager.cpp::SemaPassManager",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp::ResolveGlobalInitializerValues",
     "scripts/build_objc3c_manifest_object_ir_truth_gate.py",
-    "reports/claimability/manifest-object-ir-truth-gate/manifest_object_ir_truth_gate_summary.json",
+    "checked_outputs/claimability/manifest-object-ir-gate/manifest_object_ir_gate_summary.json",
     "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
   ],
   "implementation_anchor": "scripts/build_objc3c_manifest_object_ir_truth_gate.py --check",

@@ -5,7 +5,7 @@
   "upgrade_support_report": "schemas/objc3c-upgrade-support-report-v1.schema.json",
   "publication_artifacts": {
     "update_manifest": "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "upgrade_support_report": "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+    "upgrade_support_report": "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
     "channel_catalog": "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   },
   "summary_reports": {

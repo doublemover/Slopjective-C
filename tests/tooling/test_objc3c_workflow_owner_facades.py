@@ -120,7 +120,8 @@ FORBIDDEN_FACADE_IMPLEMENTATION_IMPORTS = (
 )
 RETIRED_REGISTRY_IMPORTS = (
     "from ..registry import",
-    "from scripts.objc3c_workflow.registry import",
+    "from scripts.objc3c_workflow."
+    "registry import",
     "ACTION_SPECS",
 )
 

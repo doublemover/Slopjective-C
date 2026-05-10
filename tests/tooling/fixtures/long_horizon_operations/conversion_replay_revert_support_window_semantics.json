@@ -28,7 +28,7 @@
   ],
   "generated_inputs": [
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+    "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   ],
   "support_window_rules": [

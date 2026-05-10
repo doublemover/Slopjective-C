@@ -149,7 +149,13 @@ def test_fail_fast_when_payload_uses_repo_tmp_as_source_of_truth() -> None:
     try:
         publish_objc3c_planning_issues.assert_not_tmp_source(tmp_source)
     except Exception as exc:
-        assert "refusing to use tmp/ as planning source of truth" in str(exc)
+        expected = (
+            "refusing to use "
+            "tmp/"
+            " as planning source of "
+            "truth"
+        )
+        assert expected in str(exc)
     else:
         raise AssertionError("tmp source path was accepted")
 

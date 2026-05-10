@@ -1261,8 +1261,8 @@
       "commit_evidence": [
         "606775842 HC tighten command hygiene guardrails",
         "fd675f294 HC cover command hygiene source roots",
-        "058acec90 HC remove source hygiene allowlist surface",
-        "f00e2e871 HC retire source hygiene allowlist fixture",
+        "058acec90 HC remove source hygiene retired exception surface",
+        "f00e2e871 HC retire source hygiene exception fixture",
         "6d0a19f84 HC harden source hygiene guardrail scanning",
         "f49c6f38f HC split workflow and hygiene owners"
       ],

@@ -19,12 +19,12 @@
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
     "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
+    "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json",
     "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json"
   ],
   "required_reports": [
-    "tmp/reports/release_evidence/evidence-index.json",
+    "checked_outputs/release-evidence/index.json",
     "tmp/reports/release-operations/publication-summary.json",
     "tmp/reports/distribution-credibility/publication-summary.json"
   ]

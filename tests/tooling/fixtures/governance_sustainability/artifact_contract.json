@@ -52,7 +52,7 @@
       "blocker_projection": "claim_audit.blocker_metadata.metadata_publication"
     }
   },
-  "evidence_artifact": "tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json",
+  "evidence_artifact": "checked_outputs/governance-sustainability/governance-sustainability-contract.json",
   "publication_artifacts": [
     "tmp/artifacts/governance-sustainability/stewardship-publication.json",
     "tmp/artifacts/governance-sustainability/extension-review-publication.json"
@@ -79,9 +79,9 @@
     "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
     "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
     "tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json",
-    "tmp/reports/governance-sustainability/evidence-summary.json",
+    "checked_outputs/governance-sustainability/evidence-summary.json",
     "tmp/reports/governance-sustainability/publication-summary.json",
-    "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json"
+    "checked_outputs/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json"
   ],
   "package_bridge": "objc3c",
   "required_actions": [

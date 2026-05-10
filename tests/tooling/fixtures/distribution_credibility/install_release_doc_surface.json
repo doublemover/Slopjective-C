@@ -15,7 +15,7 @@
     "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
     "tmp/reports/package-channels/end-to-end-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
-    "tmp/reports/release_evidence/evidence-index.json"
+    "checked_outputs/release-evidence/index.json"
   ],
   "claim_boundary": "distribution credibility claims must stay consistent with the checked-in install docs and machine-owned release artifacts"
 }

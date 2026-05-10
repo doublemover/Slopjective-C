@@ -58,7 +58,7 @@
     "expected_rollout_class:stable",
     "expected_rollout_class:candidate",
     "expected_rollout_class:preview",
-    "required_source_summary:tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
+    "required_source_summary:checked_outputs/full-envelope-claimability/support-matrix/support_matrix_summary.json",
     "required_source_summary:tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",
     "required_source_summary:tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json",
     "required_source_summary:tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json",

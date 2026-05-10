@@ -4,7 +4,7 @@
   "required_upstream_reports": [
     "tmp/reports/package-channels/end-to-end-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
-    "tmp/reports/release_evidence/evidence-index.json"
+    "checked_outputs/release-evidence/index.json"
   ],
   "required_drill_steps": [
     "stage-package-channels",
@@ -34,7 +34,7 @@
     "required_reports": [
       "tmp/reports/package-channels/end-to-end-summary.json",
       "tmp/reports/release-operations/end-to-end-summary.json",
-      "tmp/reports/release_evidence/evidence-index.json"
+      "checked_outputs/release-evidence/index.json"
     ],
     "evidence_log_allowed": false,
     "wrapper_only_allowed": false,

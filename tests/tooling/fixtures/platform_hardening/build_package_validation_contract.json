@@ -3,7 +3,7 @@
   "surface_kind": "build-package-validation-contract",
   "milestone": "M326",
   "issue": "M326-C002",
-  "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "support_matrix_artifact": "checked_outputs/platform-hardening/objc3c-platform-support-matrix.json",
   "summary_action": "validate-platform-hardening",
   "summary_command": "npm run objc3c -- validate-platform-hardening",
   "summary_implementation_anchor": "scripts/check_platform_hardening_build_package_validation.py",

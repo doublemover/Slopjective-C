@@ -120,14 +120,14 @@ def test_long_horizon_rendering_preserves_console_contract(tmp_path: Path) -> No
             "Published",
             (),
             {
-                "summary_path": "tmp/reports/long-horizon-operations/evidence-summary.json",
-                "artifact_path": "tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json",
+                "summary_path": "checked_outputs/long-horizon-operations/evidence-summary.json",
+                "artifact_path": "checked_outputs/long-horizon-operations/long-horizon-operations-contract.json",
             },
         )(),
     )
 
     assert lines == [
-        "summary_path: tmp/reports/long-horizon-operations/evidence-summary.json",
-        "artifact_path: tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json",
+        "summary_path: checked_outputs/long-horizon-operations/evidence-summary.json",
+        "artifact_path: checked_outputs/long-horizon-operations/long-horizon-operations-contract.json",
         "objc3c-long-horizon-evidence: FAIL",
     ]

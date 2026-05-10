@@ -50,19 +50,19 @@
   "generated_artifacts": [
     {
       "artifact_id": "operations_evidence",
-      "path": "tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json",
+      "path": "checked_outputs/long-horizon-operations/long-horizon-operations-contract.json",
       "schema": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
     },
     {
       "artifact_id": "operator_publication",
-      "path": "tmp/artifacts/long-horizon-operations/support-window-publication.json",
+      "path": "checked_outputs/long-horizon-operations/support-window-publication.json",
       "schema": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
     }
   ],
   "generated_reports": [
     "tmp/reports/long-horizon-operations/boundary-inventory-summary.json",
-    "tmp/reports/long-horizon-operations/deprecation-support-policy-summary.json",
-    "tmp/reports/long-horizon-operations/conversion-replay-revert-support-window-summary.json",
+    "checked_outputs/long-horizon-operations/deprecation-support-policy-summary.json",
+    "checked_outputs/long-horizon-operations/conversion-replay-revert-support-window-summary.json",
     "tmp/reports/long-horizon-operations/aging-regression-release-cadence-summary.json",
     "tmp/reports/long-horizon-operations/artifact-contract-summary.json"
   ],

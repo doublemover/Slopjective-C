@@ -60,7 +60,7 @@
   "generated_artifacts": [
     {
       "artifact_id": "adoption_legibility_evidence",
-      "path": "tmp/artifacts/adoption-legibility/adoption-legibility-evidence.json",
+      "path": "checked_outputs/adoption-legibility/adoption-legibility-contract.json",
       "schema": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json"
     },
     {
