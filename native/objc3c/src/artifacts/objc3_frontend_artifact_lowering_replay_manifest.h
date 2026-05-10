@@ -48,4 +48,37 @@ void WriteObjc3FrontendDispatchReplayManifestEntries(
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring);
 
+void WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
+    std::ostream &manifest,
+    const std::string &ownership_qualifier_lowering_replay_key,
+    const Objc3OwnershipQualifierLoweringContract
+        &ownership_qualifier_lowering_contract,
+    const std::string &retain_release_operation_lowering_replay_key,
+    const Objc3RetainReleaseOperationLoweringContract
+        &retain_release_operation_lowering_contract,
+    const std::string &autoreleasepool_scope_lowering_replay_key,
+    const Objc3AutoreleasePoolScopeLoweringContract
+        &autoreleasepool_scope_lowering_contract,
+    const std::string &weak_unowned_semantics_lowering_replay_key,
+    const Objc3WeakUnownedSemanticsLoweringContract
+        &weak_unowned_semantics_lowering_contract,
+    const std::string &arc_diagnostics_fixit_lowering_replay_key,
+    const Objc3ArcDiagnosticsFixitLoweringContract
+        &arc_diagnostics_fixit_lowering_contract,
+    const std::string &block_literal_capture_lowering_replay_key,
+    const Objc3BlockLiteralCaptureLoweringContract
+        &block_literal_capture_lowering_contract,
+    const std::string &block_abi_invoke_trampoline_lowering_replay_key,
+    const Objc3BlockAbiInvokeTrampolineLoweringContract
+        &block_abi_invoke_trampoline_lowering_contract,
+    const std::string &block_storage_escape_lowering_replay_key,
+    const Objc3BlockStorageEscapeLoweringContract
+        &block_storage_escape_lowering_contract,
+    const std::string &block_copy_dispose_lowering_replay_key,
+    const Objc3BlockCopyDisposeLoweringContract
+        &block_copy_dispose_lowering_contract,
+    const std::string &block_determinism_perf_baseline_lowering_replay_key,
+    const Objc3BlockDeterminismPerfBaselineLoweringContract
+        &block_determinism_perf_baseline_lowering_contract);
+
 }  // namespace objc3::artifacts::frontend

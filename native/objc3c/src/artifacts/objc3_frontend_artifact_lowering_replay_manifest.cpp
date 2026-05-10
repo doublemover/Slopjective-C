@@ -83,4 +83,77 @@ void WriteObjc3FrontendDispatchReplayManifestEntries(
            << "\",\n";
 }
 
+void WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
+    std::ostream &manifest,
+    const std::string &ownership_qualifier_lowering_replay_key,
+    const Objc3OwnershipQualifierLoweringContract
+        &ownership_qualifier_lowering_contract,
+    const std::string &retain_release_operation_lowering_replay_key,
+    const Objc3RetainReleaseOperationLoweringContract
+        &retain_release_operation_lowering_contract,
+    const std::string &autoreleasepool_scope_lowering_replay_key,
+    const Objc3AutoreleasePoolScopeLoweringContract
+        &autoreleasepool_scope_lowering_contract,
+    const std::string &weak_unowned_semantics_lowering_replay_key,
+    const Objc3WeakUnownedSemanticsLoweringContract
+        &weak_unowned_semantics_lowering_contract,
+    const std::string &arc_diagnostics_fixit_lowering_replay_key,
+    const Objc3ArcDiagnosticsFixitLoweringContract
+        &arc_diagnostics_fixit_lowering_contract,
+    const std::string &block_literal_capture_lowering_replay_key,
+    const Objc3BlockLiteralCaptureLoweringContract
+        &block_literal_capture_lowering_contract,
+    const std::string &block_abi_invoke_trampoline_lowering_replay_key,
+    const Objc3BlockAbiInvokeTrampolineLoweringContract
+        &block_abi_invoke_trampoline_lowering_contract,
+    const std::string &block_storage_escape_lowering_replay_key,
+    const Objc3BlockStorageEscapeLoweringContract
+        &block_storage_escape_lowering_contract,
+    const std::string &block_copy_dispose_lowering_replay_key,
+    const Objc3BlockCopyDisposeLoweringContract
+        &block_copy_dispose_lowering_contract,
+    const std::string &block_determinism_perf_baseline_lowering_replay_key,
+    const Objc3BlockDeterminismPerfBaselineLoweringContract
+        &block_determinism_perf_baseline_lowering_contract) {
+  WriteLoweringReplayManifestEntries(
+      manifest,
+      {{"lowering_ownership_qualifier", ownership_qualifier_lowering_replay_key,
+        kObjc3OwnershipQualifierLoweringLaneContract,
+        ownership_qualifier_lowering_contract.deterministic},
+       {"lowering_retain_release_operation",
+        retain_release_operation_lowering_replay_key,
+        kObjc3RetainReleaseOperationLoweringLaneContract,
+        retain_release_operation_lowering_contract.deterministic},
+       {"lowering_autoreleasepool_scope",
+        autoreleasepool_scope_lowering_replay_key,
+        kObjc3AutoreleasePoolScopeLoweringLaneContract,
+        autoreleasepool_scope_lowering_contract.deterministic},
+       {"lowering_weak_unowned_semantics",
+        weak_unowned_semantics_lowering_replay_key,
+        kObjc3WeakUnownedSemanticsLoweringLaneContract,
+        weak_unowned_semantics_lowering_contract.deterministic},
+       {"lowering_arc_diagnostics_fixit",
+        arc_diagnostics_fixit_lowering_replay_key,
+        kObjc3ArcDiagnosticsFixitLoweringLaneContract,
+        arc_diagnostics_fixit_lowering_contract.deterministic},
+       {"lowering_block_literal_capture",
+        block_literal_capture_lowering_replay_key,
+        kObjc3BlockLiteralCaptureLoweringLaneContract,
+        block_literal_capture_lowering_contract.deterministic},
+       {"lowering_block_abi_invoke_trampoline",
+        block_abi_invoke_trampoline_lowering_replay_key,
+        kObjc3BlockAbiInvokeTrampolineLoweringLaneContract,
+        block_abi_invoke_trampoline_lowering_contract.deterministic},
+       {"lowering_block_storage_escape", block_storage_escape_lowering_replay_key,
+        kObjc3BlockStorageEscapeLoweringLaneContract,
+        block_storage_escape_lowering_contract.deterministic},
+       {"lowering_block_copy_dispose", block_copy_dispose_lowering_replay_key,
+        kObjc3BlockCopyDisposeLoweringLaneContract,
+        block_copy_dispose_lowering_contract.deterministic},
+       {"lowering_block_determinism_perf_baseline",
+        block_determinism_perf_baseline_lowering_replay_key,
+        kObjc3BlockDeterminismPerfBaselineLoweringLaneContract,
+        block_determinism_perf_baseline_lowering_contract.deterministic}});
+}
+
 }  // namespace objc3::artifacts::frontend
