@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-release-foundation-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json",
+    "tests/tooling/fixtures/release_foundation/distribution_audit.json",
+    "tests/tooling/fixtures/release_foundation/distribution_trust_model.json",
+    "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+    "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
+    "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
+    "tests/tooling/fixtures/release_foundation/schema_surface.json",
+    "tests/tooling/fixtures/release_foundation/source_surface.json",
+    "tests/tooling/fixtures/release_foundation/workflow_surface.json"
+  ],
+  "split_policy": {
+    "primary_axis": "release-foundation behavior before fixture directory label, generated artifact path, tmp report path, schema path, script anchor, public action label, package bridge label, artifact class label, payload family label, old-mode label, shim label, fallback label, compatibility label, or migration label",
+    "positive_rule": "release-foundation positives are limited to hand-authored checked-in contracts for the repo-local staged runnable toolchain bundle, release manifest, SBOM, attestation, provenance publication, source/schematic surface checks, and validate-release-foundation workflow",
+    "canonical_rejection_rule": "second installer-shaped payloads, hand-maintained digest manifests, release claims bypassing the runnable package manifest, system installer claims, package-manager publication, notarization/signing-service trust, cross-platform reproducibility guarantees, network-hosted release registries, manual digest lists, hand-written attestations, manually curated payload lists, generated-only rows, report-only rows, migration-only rows, old-mode rows, shim rows, fallback rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing runnable package manifest, missing required payload fields, missing required payload prefixes, missing release manifest/SBOM/attestation schema surface, missing source stamps, dirty or unstaged payload claims, manual-only inputs, tmp outputs promoted as source truth, report-only publication, and release evidence wider than the selected runnable package own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, schema paths, script anchors, public action labels, package bridge labels, artifact class ids, payload family labels, source stamp field names, digest field names, generated artifact paths, tmp report paths, tmp package roots, upstream surface paths, report contract ids, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode release foundation, shim release foundation, fallback release foundation, compatibility release foundation, migration-only rows, generated-only rows, report-only rows, manual-only release rows, installer-shaped positives, package-manager positives, signing-service positives, cross-host parity positives, network registry positives, runner-only success, workflow-label-only success, wrapper-only release checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "release_foundation_provenance",
+      "path": "tests/tooling/fixtures/release_foundation/behavior_owner_splits/release_foundation_provenance.json"
+    }
+  ]
+}
