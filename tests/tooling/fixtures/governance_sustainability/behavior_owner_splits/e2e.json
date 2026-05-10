@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-sustainability-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability/artifact_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+    "tests/tooling/fixtures/governance_sustainability/schema_surface.json",
+    "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/waiver_registry.json"
+  ],
+  "support_boundary": "e2e/governance ownership covers the shipped governance-sustainability workflow contract only: validate-governance-sustainability, publish-governance-sustainability, measured budget surfaces, waiver registry limits, sustainable progress status model, maintainer review checks, extension review classes, proposal template requirements, schema-surface checks, stewardship metadata publication, and anti-regression reporting. Generated reports, tmp artifacts, proposal samples, and workflow labels alone do not define support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "public_action:validate-governance-sustainability",
+    "public_action:publish-governance-sustainability",
+    "package_bridge:objc3c",
+    "owner:waiver_owner",
+    "owner:budget_owner",
+    "owner:stewardship_owner",
+    "owner:extension_review_owner",
+    "owner:sustainable_progress_owner",
+    "owner:publication_owner",
+    "review_check:task-hygiene",
+    "review_check:repo-superclean",
+    "review_check:dependency-boundaries",
+    "review_check:governance-inventory",
+    "review_check:governance-policy",
+    "review_check:governance-maintainer-review",
+    "review_check:extension-review-policy",
+    "claim_status:stable",
+    "claim_status:caution",
+    "claim_status:blocked",
+    "proposal_template:governance-new-work-proposal-template-v3"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/governance_sustainability",
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-report-only success, report-only e2e support, policy-only substitute for executable review evidence, proposal-sample-only support, wrapper-only governance actions, old-mode governance workflow rows, shim governance workflow rows, fallback governance workflow rows, compatibility governance workflow rows, migration-only governance workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

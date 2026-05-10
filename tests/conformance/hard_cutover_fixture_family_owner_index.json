@@ -1088,6 +1088,40 @@
       "retired_disposition": "concurrency runtime closure owner contracts, scheduler/executor policy, task lifecycle contracts, actor isolation contracts, private helper ABI snapshots, continuation/task/actor probe payload snapshots, runtime acceptance summaries, runnable concurrency conformance/e2e reports, compile manifests, runtime-registration descriptors, public commands, workflow labels, generated reports, machine-owned report roots, and packaged proof labels are resolved through behavior-first phase indexes and concurrency runtime provenance before any concurrency row is cited as support; fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, public runtime ABI widening, wrapper-only runnable actions, workflow-label-only rows, stdlib actor-shaped narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop overclaims, and cross-module claims without manifest/runtime-registration replay proof remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
+      "family": "governance_sustainability_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits",
+      "acceptance_area": "capability_docs_and_stdlib_truth",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "strict_error",
+        "governance_sustainability_provenance"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/strict_error.json",
+        "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/governance_sustainability_provenance.json"
+      ],
+      "retired_disposition": "governance sustainability owner contracts, budget inventories, waiver registries, stewardship semantics, maintainer review contracts, extension review policies, proposal templates, proposal samples, runbook paths, docs paths, schema paths, tmp report paths, tmp artifact paths, script anchors, command strings, public action labels, package bridge labels, owner-section names, publication projections, blocker projections, generated report paths, evidence schema labels, issue label names, successor issue labels, and execution-order sample rows are resolved through behavior-first phase indexes and governance sustainability provenance before any governance row is cited as support; compiler phase positives are non-positive for this family and governance e2e positives are limited to hand-authored validate/publish governance workflow, budget, waiver, stewardship, maintainer review, extension review, schema surface, and anti-regression contracts, while hosted community infrastructure, registry moderation service, policy-only substitute for executable review evidence, replacement release/security/adoption claims, deprecated roots, milestone-named workflows, checker wrapper tests, lane readiness runners, legacy aliases, numeric milestone checker references, missing source contracts, missing implementation anchors, schema omissions, non-replayable publication artifacts, runtime evidence depending on tmp, expired or unowned waivers, unknown surface drift, missing proposal packets, missing owner/backup, missing support-boundary classification, missing demotion paths, old-mode governance rows, shim governance rows, fallback governance rows, compatibility governance rows, generated-only rows, report-only rows, migration-only rows, runner-only success, workflow-label-only success, proposal-sample-only support, and generated/report rows promoted as support remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
+    },
+    {
       "family": "security_hardening_owner_split_indexes",
       "kind": "behavior_phase_split_index_family",
       "source": "tests/tooling/fixtures/security_hardening/behavior_owner_splits",

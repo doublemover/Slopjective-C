@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-sustainability-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability"
+  ],
+  "support_boundary": "lowering ownership is non-positive for this governance-sustainability family. Governance budgets, review classes, runbook links, schema links, report paths, generated artifact paths, and workflow labels do not contain checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/governance_sustainability/**/*-lowering.expect.txt",
+    "tooling_fixture_family:governance_sustainability",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-governance-contracts",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering governance rows, shim lowering governance rows, fallback lowering governance rows, compatibility lowering governance rows, generated-only lowering rows, report-only lowering rows, migration-only lowering rows, and governance-contract-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}
