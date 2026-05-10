@@ -1,0 +1,426 @@
+#pragma once
+
+#include "pipeline/readiness/objc3_parse_lowering_failure_reason_readiness.h"
+
+namespace objc3_parse_lowering_failure_reason_readiness_detail {
+
+inline const char *FindTypedSemaLoweringSurfaceFailureReason(
+    const Objc3ParseLoweringReadinessSurface &surface) {
+  if (!surface.semantic_integration_surface_built) {
+    return "semantic integration surface not built";
+  }
+
+  if (!surface.semantic_diagnostics_deterministic) {
+    return "semantic diagnostics handoff is not deterministic";
+  }
+
+  if (!surface.semantic_type_metadata_deterministic) {
+    return "semantic type metadata handoff is not deterministic";
+  }
+
+  if (!surface.protocol_category_deterministic) {
+    return "protocol/category handoff is not deterministic";
+  }
+
+  if (!surface.class_protocol_category_linking_deterministic) {
+    return "class/protocol/category linking handoff is not deterministic";
+  }
+
+  if (!surface.selector_normalization_deterministic) {
+    return "selector normalization handoff is not deterministic";
+  }
+
+  if (!surface.property_attribute_deterministic) {
+    return "property attribute handoff is not deterministic";
+  }
+
+  if (!surface.symbol_graph_deterministic) {
+    return "symbol graph handoff is not deterministic";
+  }
+
+  if (!surface.scope_resolution_deterministic) {
+    return "scope resolution handoff is not deterministic";
+  }
+
+  if (!surface.object_pointer_type_handoff_deterministic) {
+    return "object pointer/nullability handoff is not deterministic";
+  }
+
+  if (!surface.typed_handoff_key_deterministic) {
+    return "typed sema-to-lowering handoff key is not deterministic";
+  }
+
+  if (!surface.typed_sema_core_feature_consistent) {
+    return "typed sema-to-lowering core feature contract is inconsistent";
+  }
+
+  if (!surface.typed_sema_core_feature_expansion_consistent) {
+    return "typed sema-to-lowering core feature expansion is inconsistent";
+  }
+
+  if (surface.typed_sema_core_feature_expansion_key.empty()) {
+    return "typed sema-to-lowering core feature expansion key is empty";
+  }
+
+  if (!surface.typed_sema_edge_case_compatibility_consistent) {
+    return "typed sema-to-lowering edge-case compatibility is inconsistent";
+  }
+
+  if (!surface.typed_sema_edge_case_compatibility_ready) {
+    return "typed sema-to-lowering edge-case compatibility is not ready";
+  }
+
+  if (surface.typed_sema_edge_case_compatibility_key.empty()) {
+    return "typed sema-to-lowering edge-case compatibility key is empty";
+  }
+
+  if (!surface.typed_sema_edge_case_expansion_consistent) {
+    return "typed sema-to-lowering edge-case expansion is inconsistent";
+  }
+
+  if (!surface.typed_sema_edge_case_robustness_ready) {
+    return "typed sema-to-lowering edge-case robustness is not ready";
+  }
+
+  if (surface.typed_sema_edge_case_robustness_key.empty()) {
+    return "typed sema-to-lowering edge-case robustness key is empty";
+  }
+
+  if (!surface.typed_sema_diagnostics_hardening_consistent) {
+    return "typed sema-to-lowering diagnostics hardening is inconsistent";
+  }
+
+  if (!surface.typed_sema_diagnostics_hardening_ready) {
+    return "typed sema-to-lowering diagnostics hardening is not ready";
+  }
+
+  if (surface.typed_sema_diagnostics_hardening_key.empty()) {
+    return "typed sema-to-lowering diagnostics hardening key is empty";
+  }
+
+  if (!surface.typed_sema_recovery_determinism_consistent) {
+    return "typed sema-to-lowering recovery/determinism is inconsistent";
+  }
+
+  if (!surface.typed_sema_recovery_determinism_ready) {
+    return "typed sema-to-lowering recovery/determinism is not ready";
+  }
+
+  if (surface.typed_sema_recovery_determinism_key.empty()) {
+    return "typed sema-to-lowering recovery/determinism key is empty";
+  }
+
+  if (!surface.typed_sema_conformance_matrix_consistent) {
+    return "typed sema-to-lowering conformance matrix is inconsistent";
+  }
+
+  if (!surface.typed_sema_conformance_matrix_ready) {
+    return "typed sema-to-lowering conformance matrix is not ready";
+  }
+
+  if (surface.typed_sema_conformance_matrix_key.empty()) {
+    return "typed sema-to-lowering conformance matrix key is empty";
+  }
+
+  if (!surface.typed_sema_conformance_corpus_consistent) {
+    return "typed sema-to-lowering conformance corpus is inconsistent";
+  }
+
+  if (!surface.typed_sema_conformance_corpus_ready) {
+    return "typed sema-to-lowering conformance corpus is not ready";
+  }
+
+  if (surface.typed_sema_conformance_corpus_key.empty()) {
+    return "typed sema-to-lowering conformance corpus key is empty";
+  }
+
+  if (!surface.typed_sema_performance_quality_guardrails_consistent) {
+    return "typed sema-to-lowering performance/quality guardrails are inconsistent";
+  }
+
+  if (!surface.typed_sema_performance_quality_guardrails_ready) {
+    return "typed sema-to-lowering performance/quality guardrails are not ready";
+  }
+
+  if (surface.typed_sema_performance_quality_guardrails_key.empty()) {
+    return "typed sema-to-lowering performance/quality guardrails key is empty";
+  }
+
+  if (!surface.typed_sema_cross_lane_integration_consistent) {
+    return "typed sema-to-lowering cross-lane integration is inconsistent";
+  }
+
+  if (!surface.typed_sema_cross_lane_integration_ready) {
+    return "typed sema-to-lowering cross-lane integration is not ready";
+  }
+
+  if (surface.typed_sema_cross_lane_integration_key.empty()) {
+    return "typed sema-to-lowering cross-lane integration key is empty";
+  }
+
+  if (!surface.typed_sema_docs_runbook_sync_consistent) {
+    return "typed sema-to-lowering docs/runbook synchronization is inconsistent";
+  }
+
+  if (!surface.typed_sema_docs_runbook_sync_ready) {
+    return "typed sema-to-lowering docs/runbook synchronization is not ready";
+  }
+
+  if (surface.typed_sema_docs_runbook_sync_key.empty()) {
+    return "typed sema-to-lowering docs/runbook synchronization key is empty";
+  }
+
+  if (!surface.typed_sema_release_candidate_replay_dry_run_consistent) {
+    return "typed sema-to-lowering release-candidate replay dry-run is inconsistent";
+  }
+
+  if (!surface.typed_sema_release_candidate_replay_dry_run_ready) {
+    return "typed sema-to-lowering release-candidate replay dry-run is not ready";
+  }
+
+  if (surface.typed_sema_release_candidate_replay_dry_run_key.empty()) {
+    return "typed sema-to-lowering release-candidate replay dry-run key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_core_shard1_consistent) {
+    return "typed sema-to-lowering advanced core shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_core_shard1_ready) {
+    return "typed sema-to-lowering advanced core shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_core_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced core shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_edge_compatibility_shard1_consistent) {
+    return "typed sema-to-lowering advanced edge compatibility shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_edge_compatibility_shard1_ready) {
+    return "typed sema-to-lowering advanced edge compatibility shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_edge_compatibility_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced edge compatibility shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_diagnostics_shard1_consistent) {
+    return "typed sema-to-lowering advanced diagnostics shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_diagnostics_shard1_ready) {
+    return "typed sema-to-lowering advanced diagnostics shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_diagnostics_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced diagnostics shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_conformance_shard1_consistent) {
+    return "typed sema-to-lowering advanced conformance shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_conformance_shard1_ready) {
+    return "typed sema-to-lowering advanced conformance shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_conformance_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced conformance shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_integration_shard1_consistent) {
+    return "typed sema-to-lowering advanced integration shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_integration_shard1_ready) {
+    return "typed sema-to-lowering advanced integration shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_integration_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced integration shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_performance_shard1_consistent) {
+    return "typed sema-to-lowering advanced performance shard 1 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_performance_shard1_ready) {
+    return "typed sema-to-lowering advanced performance shard 1 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_performance_shard1_key.empty()) {
+    return "typed sema-to-lowering advanced performance shard 1 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_core_shard2_consistent) {
+    return "typed sema-to-lowering advanced core shard 2 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_core_shard2_ready) {
+    return "typed sema-to-lowering advanced core shard 2 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_core_shard2_key.empty()) {
+    return "typed sema-to-lowering advanced core shard 2 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_edge_compatibility_shard2_consistent) {
+    return "typed sema-to-lowering advanced edge compatibility shard 2 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_edge_compatibility_shard2_ready) {
+    return "typed sema-to-lowering advanced edge compatibility shard 2 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_edge_compatibility_shard2_key.empty()) {
+    return "typed sema-to-lowering advanced edge compatibility shard 2 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_diagnostics_shard2_consistent) {
+    return "typed sema-to-lowering advanced diagnostics shard 2 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_diagnostics_shard2_ready) {
+    return "typed sema-to-lowering advanced diagnostics shard 2 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_diagnostics_shard2_key.empty()) {
+    return "typed sema-to-lowering advanced diagnostics shard 2 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_conformance_shard2_consistent) {
+    return "typed sema-to-lowering advanced conformance shard 2 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_conformance_shard2_ready) {
+    return "typed sema-to-lowering advanced conformance shard 2 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_conformance_shard2_key.empty()) {
+    return "typed sema-to-lowering advanced conformance shard 2 key is empty";
+  }
+
+  if (!surface.typed_sema_advanced_integration_shard2_consistent) {
+    return "typed sema-to-lowering advanced integration shard 2 is inconsistent";
+  }
+
+  if (!surface.typed_sema_advanced_integration_shard2_ready) {
+    return "typed sema-to-lowering advanced integration shard 2 is not ready";
+  }
+
+  if (surface.typed_sema_advanced_integration_shard2_key.empty()) {
+    return "typed sema-to-lowering advanced integration shard 2 key is empty";
+  }
+
+  if (!surface.typed_sema_integration_closeout_signoff_consistent) {
+    return "typed sema-to-lowering integration closeout/sign-off is inconsistent";
+  }
+
+  if (!surface.typed_sema_integration_closeout_signoff_ready) {
+    return "typed sema-to-lowering integration closeout/sign-off is not ready";
+  }
+
+  if (surface.typed_sema_integration_closeout_signoff_key.empty()) {
+    return "typed sema-to-lowering integration closeout/sign-off key is empty";
+  }
+
+  return nullptr;
+}
+
+inline const char *FindTypedSemaLoweringAlignmentFailureReason(
+    const Objc3TypedSemaLoweringReadinessRecord
+        &typed_sema_lowering_readiness) {
+  if (!typed_sema_lowering_readiness.typed_edge_case_compatibility_alignment) {
+    return "typed sema-to-lowering edge-case compatibility drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_edge_case_robustness_alignment) {
+    return "typed sema-to-lowering edge-case robustness drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_diagnostics_hardening_alignment) {
+    return "typed sema-to-lowering diagnostics hardening drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_recovery_determinism_alignment) {
+    return "typed sema-to-lowering recovery/determinism drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_conformance_matrix_alignment) {
+    return "typed sema-to-lowering conformance matrix drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_conformance_corpus_alignment) {
+    return "typed sema-to-lowering conformance corpus drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_performance_quality_guardrails_alignment) {
+    return "typed sema-to-lowering performance/quality guardrails drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_cross_lane_integration_alignment) {
+    return "typed sema-to-lowering cross-lane integration drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_docs_runbook_sync_alignment) {
+    return "typed sema-to-lowering docs/runbook synchronization drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_release_candidate_replay_dry_run_alignment) {
+    return "typed sema-to-lowering release-candidate replay dry-run drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_core_shard1_alignment) {
+    return "typed sema-to-lowering advanced core shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_edge_compatibility_shard1_alignment) {
+    return "typed sema-to-lowering advanced edge compatibility shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_diagnostics_shard1_alignment) {
+    return "typed sema-to-lowering advanced diagnostics shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_conformance_shard1_alignment) {
+    return "typed sema-to-lowering advanced conformance shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_integration_shard1_alignment) {
+    return "typed sema-to-lowering advanced integration shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_performance_shard1_alignment) {
+    return "typed sema-to-lowering advanced performance shard 1 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_core_shard2_alignment) {
+    return "typed sema-to-lowering advanced core shard 2 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_edge_compatibility_shard2_alignment) {
+    return "typed sema-to-lowering advanced edge compatibility shard 2 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_diagnostics_shard2_alignment) {
+    return "typed sema-to-lowering advanced diagnostics shard 2 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_conformance_shard2_alignment) {
+    return "typed sema-to-lowering advanced conformance shard 2 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_advanced_integration_shard2_alignment) {
+    return "typed sema-to-lowering advanced integration shard 2 drifted from parse/lowering readiness";
+  }
+
+  if (!typed_sema_lowering_readiness.typed_integration_closeout_signoff_alignment) {
+    return "typed sema-to-lowering integration closeout/sign-off drifted from parse/lowering readiness";
+  }
+
+  return nullptr;
+}
+
+}  // namespace objc3_parse_lowering_failure_reason_readiness_detail
