@@ -8,6 +8,7 @@ from pathlib import Path
 
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.paths import repo_rel
+from stdlib_surface.contracts import validate_document_headers
 
 from check_stdlib_surface_model import (
     CanonicalModuleSurface,
@@ -35,7 +36,6 @@ def main() -> int:
             return fail(f"{surface_input.missing_message}: {repo_rel(surface_input.path)}")
 
     documents = StdlibSurfaceDocuments.load(PATHS)
-    workspace = documents.workspace
     inventory = documents.inventory
     stability_policy = documents.stability_policy
     package_surface = documents.package_surface
@@ -47,126 +47,9 @@ def main() -> int:
     program_surface = documents.program_surface
     spec_text = documents.spec_text
 
-    if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
-        return fail("workspace contract_id drifted")
-    if workspace.get("schema_version") != 1:
-        return fail("workspace schema_version drifted")
-    if workspace.get("module_inventory") != "stdlib/module_inventory.json":
-        return fail("workspace module_inventory path drifted")
-    if workspace.get("stability_policy") != "stdlib/stability_policy.json":
-        return fail("workspace stability_policy path drifted")
-    if workspace.get("package_surface") != "stdlib/package_surface.json":
-        return fail("workspace package_surface path drifted")
-    if workspace.get("core_architecture") != "stdlib/core_architecture.json":
-        return fail("workspace core_architecture path drifted")
-    if workspace.get("advanced_architecture") != "stdlib/advanced_architecture.json":
-        return fail("workspace advanced_architecture path drifted")
-    if workspace.get("semantic_policy") != "stdlib/semantic_policy.json":
-        return fail("workspace semantic_policy path drifted")
-    if workspace.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
-        return fail("workspace lowering_import_surface path drifted")
-    if workspace.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
-        return fail("workspace advanced_helper_package_surface path drifted")
-    if workspace.get("program_surface") != "stdlib/program_surface.json":
-        return fail("workspace program_surface path drifted")
-    if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
-        return fail("workspace core_runbook path drifted")
-    if workspace.get("advanced_runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
-        return fail("workspace advanced_runbook path drifted")
-    if workspace.get("program_runbook") != "docs/runbooks/objc3c_stdlib_program.md":
-        return fail("workspace program_runbook path drifted")
-    if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
-        return fail("module inventory contract_id drifted")
-    if inventory.get("schema_version") != 1:
-        return fail("module inventory schema_version drifted")
-    if inventory.get("spec_contract") != "spec/STANDARD_LIBRARY_CONTRACT.md":
-        return fail("module inventory spec_contract drifted")
-    if stability_policy.get("contract_id") != "objc3c.stdlib.stability_policy.v1":
-        return fail("stability policy contract_id drifted")
-    if stability_policy.get("schema_version") != 1:
-        return fail("stability policy schema_version drifted")
-    if package_surface.get("contract_id") != "objc3c.stdlib.package_surface.v1":
-        return fail("package surface contract_id drifted")
-    if package_surface.get("schema_version") != 1:
-        return fail("package surface schema_version drifted")
-    if package_surface.get("workspace_contract") != "stdlib/workspace.json":
-        return fail("package surface workspace_contract drifted")
-    if package_surface.get("module_inventory") != "stdlib/module_inventory.json":
-        return fail("package surface module_inventory drifted")
-    if package_surface.get("stability_policy") != "stdlib/stability_policy.json":
-        return fail("package surface stability_policy drifted")
-    if package_surface.get("core_architecture") != "stdlib/core_architecture.json":
-        return fail("package surface core_architecture drifted")
-    if package_surface.get("advanced_architecture") != "stdlib/advanced_architecture.json":
-        return fail("package surface advanced_architecture drifted")
-    if package_surface.get("semantic_policy") != "stdlib/semantic_policy.json":
-        return fail("package surface semantic_policy drifted")
-    if package_surface.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
-        return fail("package surface lowering_import_surface drifted")
-    if package_surface.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
-        return fail("package surface advanced_helper_package_surface drifted")
-    if package_surface.get("program_surface") != "stdlib/program_surface.json":
-        return fail("package surface program_surface drifted")
-    if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
-        return fail("package surface machine_output_root drifted")
-    if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
-        return fail("package surface machine_report_root drifted")
-    if package_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
-        return fail("package surface package_stage_root drifted")
-    if package_surface.get("import_model") != "compiler-visible-module-declarations-map-to-canonical-spec-module-ids":
-        return fail("package surface import_model drifted")
-    if core_architecture.get("contract_id") != "objc3c.stdlib.core_architecture.v1":
-        return fail("core architecture contract_id drifted")
-    if core_architecture.get("schema_version") != 1:
-        return fail("core architecture schema_version drifted")
-    if core_architecture.get("workspace_contract") != "stdlib/workspace.json":
-        return fail("core architecture workspace_contract drifted")
-    if core_architecture.get("runbook") != "docs/runbooks/objc3c_stdlib_core.md":
-        return fail("core architecture runbook drifted")
-    if core_architecture.get("scope") != "foundation-utility-text-data-collections-option-result-surface":
-        return fail("core architecture scope drifted")
-    if advanced_architecture.get("contract_id") != "objc3c.stdlib.advanced_architecture.v1":
-        return fail("advanced architecture contract_id drifted")
-    if advanced_architecture.get("schema_version") != 1:
-        return fail("advanced architecture schema_version drifted")
-    if advanced_architecture.get("workspace_contract") != "stdlib/workspace.json":
-        return fail("advanced architecture workspace_contract drifted")
-    if advanced_architecture.get("foundation_contract") != "stdlib/core_architecture.json":
-        return fail("advanced architecture foundation_contract drifted")
-    if advanced_architecture.get("runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
-        return fail("advanced architecture runbook drifted")
-    if advanced_architecture.get("scope") != "advanced-helper-concurrency-reflection-interop-runtime-composition-surface":
-        return fail("advanced architecture scope drifted")
-    if semantic_policy.get("contract_id") != "objc3c.stdlib.semantic_policy.v1":
-        return fail("semantic policy contract_id drifted")
-    if semantic_policy.get("schema_version") != 1:
-        return fail("semantic policy schema_version drifted")
-    if semantic_policy.get("workspace_contract") != "stdlib/workspace.json":
-        return fail("semantic policy workspace_contract drifted")
-    if semantic_policy.get("core_architecture") != "stdlib/core_architecture.json":
-        return fail("semantic policy core_architecture drifted")
-    if semantic_policy.get("advanced_architecture") != "stdlib/advanced_architecture.json":
-        return fail("semantic policy advanced_architecture drifted")
-    if lowering_import_surface.get("contract_id") != "objc3c.stdlib.lowering_import_surface.v1":
-        return fail("lowering/import surface contract_id drifted")
-    if lowering_import_surface.get("schema_version") != 1:
-        return fail("lowering/import surface schema_version drifted")
-    if lowering_import_surface.get("workspace_contract") != "stdlib/workspace.json":
-        return fail("lowering/import surface workspace_contract drifted")
-    if lowering_import_surface.get("package_surface") != "stdlib/package_surface.json":
-        return fail("lowering/import surface package_surface drifted")
-    if lowering_import_surface.get("module_inventory") != "stdlib/module_inventory.json":
-        return fail("lowering/import surface module_inventory drifted")
-    if lowering_import_surface.get("smoke_runner") != "scripts/run_objc3c_stdlib_workspace_smoke.py":
-        return fail("lowering/import surface smoke_runner drifted")
-    if lowering_import_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
-        return fail("lowering/import surface machine_output_root drifted")
-    if lowering_import_surface.get("machine_report_root") != "tmp/reports/stdlib":
-        return fail("lowering/import surface machine_report_root drifted")
-    if lowering_import_surface.get("materialized_workspace_root") != "tmp/artifacts/stdlib/workspace":
-        return fail("lowering/import surface materialized_workspace_root drifted")
-    if lowering_import_surface.get("smoke_artifact_root") != "tmp/artifacts/stdlib/smoke":
-        return fail("lowering/import surface smoke_artifact_root drifted")
+    document_header_error = validate_document_headers(documents)
+    if document_header_error is not None:
+        return fail(document_header_error)
 
     canonical_modules = inventory.get("canonical_modules")
     if not isinstance(canonical_modules, list) or not canonical_modules:
