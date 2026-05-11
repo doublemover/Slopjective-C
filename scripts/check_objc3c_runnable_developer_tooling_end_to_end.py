@@ -3,253 +3,113 @@
 
 from __future__ import annotations
 
-import re
-import shutil
-import subprocess
-from datetime import datetime, timezone
+import sys
 from pathlib import Path
-from typing import Any, Sequence
-from objc3c_tooling.paths import normalize_rel_path, repo_rel
-from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
-from scripts.objc3c_workflow.public_command_api import public_workflow_command
-from objc3c_tooling.subprocesses import run_capture
-from objc3c_tooling.public_workflow_output import extract_output_value
-from objc3c_tooling.public_workflow_output import extract_report_paths
-
 
 ROOT = Path(__file__).resolve().parents[1]
-PWSH = shutil.which("pwsh") or "pwsh"
-PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
-CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "developer_tooling" / "packaged_cli_to_editor_contract.json"
-REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "runnable-developer-tooling-e2e" / "summary.json"
-SUMMARY_CONTRACT_ID = "objc3c.runtime.runnable.developer.tooling.e2e.summary.v1"
-PACKAGE_CONTRACT_ID = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
+SCRIPT_ROOT = ROOT / "scripts"
+for import_root in (ROOT, SCRIPT_ROOT):
+    import_root_text = str(import_root)
+    if import_root_text not in sys.path:
+        sys.path.insert(0, import_root_text)
 
-
-def expect(condition: bool, message: str) -> None:
-    if not condition:
-        raise RuntimeError(message)
-
-
-
-
-
-
-
-
-def extract_last_output_value(stdout: str, key: str) -> str | None:
-    prefix = f"{key}:"
-    value: str | None = None
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            value = line.split(":", 1)[1].strip()
-    return value
-
-def package_path(package_root: Path, relative_path: str) -> Path:
-    return package_root / normalize_rel_path(relative_path)
-
-
-def main() -> int:
-    contract = load_json(CONTRACT_PATH)
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    package_root = ROOT / "tmp" / "pkg" / "objc3c-developer-tooling-e2e" / run_id
-    manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
-
-    package_result = run_capture(
-        [
-            PWSH,
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(PACKAGE_PS1),
-            "-PackageRoot",
-            str(package_root),
-        ],
-        cwd=ROOT,
+try:
+    from scripts.check_objc3c_runnable_developer_tooling_end_to_end import (
+        CONTRACT_PATH,
+        PACKAGE_CONTRACT_ID,
+        PACKAGE_PS1,
+        PWSH,
+        REPORT_PATH,
+        ROOT,
+        RUNNER_PATH,
+        SUMMARY_CONTRACT_ID,
+        build_summary_payload,
+        expect,
+        extract_last_output_value,
+        extract_output_value,
+        extract_report_paths,
+        load_and_validate_manifest,
+        load_json,
+        main,
+        normalize_rel_path,
+        package_path,
+        public_workflow_command,
+        repo_rel,
+        run_capture,
+        run_format_check,
+        run_inspect_editor_tooling_check,
+        run_integrated_validation_check,
+        run_package_command,
+        run_workspace_check,
+        validate_manifest_contract,
+        write_json_file,
+        write_summary,
     )
-    if package_result.returncode != 0:
-        raise RuntimeError("runnable toolchain package command failed")
-
-    manifest = load_json(manifest_path)
-    expect(
-        manifest.get("contract_id") == PACKAGE_CONTRACT_ID,
-        "runnable toolchain package manifest published the wrong contract id",
-    )
-
-    for field in contract["manifest_fields"]:
-        value = manifest.get(field)
-        expect(value not in (None, "", []), f"package manifest did not publish {field}")
-
-    for field in (
-        "developer_tooling_runbook",
-        "developer_tooling_boundary_inventory",
-        "developer_tooling_editor_surface_schema",
-        "developer_tooling_navigation_contract",
-        "developer_tooling_formatter_debug_contract",
-        "developer_tooling_workspace_contract",
-        "developer_tooling_packaged_contract",
-        "developer_tooling_example_source",
-        "developer_tooling_negative_source",
-        "developer_tooling_formatter_source",
-        "developer_tooling_expected_formatted_source",
-    ):
-        candidate = package_path(package_root, str(manifest[field]))
-        expect(candidate.is_file(), f"packaged runnable toolchain missing {field} at {manifest[field]}")
-
-    scripts = manifest.get("developer_tooling_scripts", {})
-    expect(isinstance(scripts, dict), "package manifest did not publish developer_tooling_scripts")
-    for script_name, relative_path in scripts.items():
-        expect(isinstance(relative_path, str) and relative_path, f"package manifest script entry {script_name} is empty")
-        expect(package_path(package_root, relative_path).is_file(), f"packaged runnable toolchain missing developer tooling script {script_name} at {relative_path}")
-
-    command_surfaces = manifest.get("command_surfaces", {})
-    expect(isinstance(command_surfaces, dict), "package manifest did not publish command_surfaces")
-    for command_name in contract["required_command_surfaces"]:
-        expect(command_name in command_surfaces, f"package manifest missing developer tooling command surface: {command_name}")
-
-    public_actions = manifest.get("developer_tooling_public_actions", [])
-    package_bridge = str(contract["package_bridge"])
-    manifest_package_bridge = manifest.get("package_bridge")
-    for action in contract["public_actions"]:
-        expect(action in public_actions, f"package manifest missing developer tooling public action: {action}")
-    expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}")
-
-    hello_source = package_path(package_root, str(manifest["developer_tooling_example_source"]))
-    format_source = package_path(package_root, str(manifest["developer_tooling_formatter_source"]))
-    expected_formatted_source = package_path(package_root, str(manifest["developer_tooling_expected_formatted_source"]))
-
-    inspect_result = run_capture(
-        public_workflow_command("inspect-editor-tooling", str(hello_source)),
-        cwd=package_root,
-    )
-    if inspect_result.returncode != 0:
-        raise RuntimeError("packaged inspect-editor-tooling failed")
-    dump_path_text = extract_output_value(inspect_result.stdout, "dump_path")
-    expect(bool(dump_path_text), "packaged inspect-editor-tooling did not publish dump_path")
-    editor_surface = load_json(package_root / normalize_rel_path(str(dump_path_text)))
-    debug_payload = editor_surface.get("debug", {})
-    navigation_payload = editor_surface.get("navigation", {})
-    formatter_payload = editor_surface.get("formatter", {})
-    expect(formatter_payload.get("supported") is True, "packaged editor surface did not report formatter support")
-    expect(debug_payload.get("supported") is True, "packaged editor surface did not report debug support")
-    expect(
-        debug_payload.get("debugger_model") == contract["expected_debugger_model"],
-        "packaged editor surface debugger model drifted",
-    )
-    expect(
-        debug_payload.get("statement_level_stepping") is (not contract["expected_fail_closed_statement_stepping"]),
-        "packaged editor surface stepping availability drifted",
-    )
-    expect(navigation_payload.get("available") is True, "packaged editor surface did not publish navigation availability")
-    expect(int(debug_payload.get("declaration_breakpoint_anchor_count", 0)) >= 3, "packaged editor surface did not publish enough breakpoint anchors")
-
-    format_result = run_capture(
-        public_workflow_command("format-objc3c", str(format_source)),
-        cwd=package_root,
-    )
-    if format_result.returncode != 0:
-        raise RuntimeError("packaged format-objc3c failed")
-    format_summary_path_text = extract_output_value(format_result.stdout, "summary_path")
-    expect(bool(format_summary_path_text), "packaged format-objc3c did not publish summary_path")
-    format_summary = load_json(package_root / normalize_rel_path(str(format_summary_path_text)))
-    expected_formatted_text = expected_formatted_source.read_text(encoding="utf-8")
-    packaged_formatted_output = package_root / normalize_rel_path(str(format_summary.get("formatted_output_path", "")))
-    expect(packaged_formatted_output.is_file(), "packaged formatter did not publish formatted_output_path")
-    expect(
-        packaged_formatted_output.read_text(encoding="utf-8") == expected_formatted_text,
-        "packaged formatter output drifted from the checked-in canonical formatted fixture",
+except ModuleNotFoundError:
+    from check_objc3c_runnable_developer_tooling_end_to_end import (
+        CONTRACT_PATH,
+        PACKAGE_CONTRACT_ID,
+        PACKAGE_PS1,
+        PWSH,
+        REPORT_PATH,
+        ROOT,
+        RUNNER_PATH,
+        SUMMARY_CONTRACT_ID,
+        build_summary_payload,
+        expect,
+        extract_last_output_value,
+        extract_output_value,
+        extract_report_paths,
+        load_and_validate_manifest,
+        load_json,
+        main,
+        normalize_rel_path,
+        package_path,
+        public_workflow_command,
+        repo_rel,
+        run_capture,
+        run_format_check,
+        run_inspect_editor_tooling_check,
+        run_integrated_validation_check,
+        run_package_command,
+        run_workspace_check,
+        validate_manifest_contract,
+        write_json_file,
+        write_summary,
     )
 
-    workspace_result = run_capture(
-        public_workflow_command("materialize-playground-workspace", str(hello_source)),
-        cwd=package_root,
-    )
-    if workspace_result.returncode != 0:
-        raise RuntimeError("packaged materialize-playground-workspace failed")
-    workspace_path_text = extract_output_value(workspace_result.stdout, "workspace_path")
-    expect(bool(workspace_path_text), "packaged materialize-playground-workspace did not publish workspace_path")
-    workspace = load_json(package_root / normalize_rel_path(str(workspace_path_text)))
-    workspace_editor_tooling = workspace.get("editor_tooling", {})
-    expect(isinstance(workspace_editor_tooling, dict), "packaged workspace did not publish editor_tooling")
-    expect(
-        workspace_editor_tooling.get("debugger_model") == contract["expected_debugger_model"],
-        "packaged workspace debugger model drifted",
-    )
-    expect(
-        workspace_editor_tooling.get("statement_level_stepping") is (not contract["expected_fail_closed_statement_stepping"]),
-        "packaged workspace stepping availability drifted",
-    )
-    for action in ("inspect-editor-tooling", "format-objc3c", "validate-developer-tooling"):
-        expect(action in workspace.get("public_actions", []), f"packaged workspace missing public action {action}")
 
-    integrated_result = run_capture(
-        public_workflow_command("validate-developer-tooling"),
-        cwd=package_root,
-    )
-    if integrated_result.returncode != 0:
-        raise RuntimeError("packaged validate-developer-tooling failed")
-    integrated_summary_path_text = extract_last_output_value(integrated_result.stdout, "summary_path")
-    expect(bool(integrated_summary_path_text), "packaged validate-developer-tooling did not publish summary_path")
-    integrated_summary = load_json(package_root / normalize_rel_path(str(integrated_summary_path_text)))
-    expect(integrated_summary.get("ok") is True, "packaged developer-tooling integration summary did not report ok=true")
-
-    payload = {
-        "contract_id": SUMMARY_CONTRACT_ID,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "PASS",
-        "runner_path": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
-        "package_manifest_path": repo_rel(manifest_path),
-        "package_root": repo_rel(package_root),
-        "packaged_editor_surface_path": repo_rel(package_root / normalize_rel_path(str(dump_path_text))),
-        "packaged_formatter_summary_path": repo_rel(package_root / normalize_rel_path(str(format_summary_path_text))),
-        "packaged_workspace_path": repo_rel(package_root / normalize_rel_path(str(workspace_path_text))),
-        "packaged_integration_summary_path": repo_rel(package_root / normalize_rel_path(str(integrated_summary_path_text))),
-        "packaged_public_actions": public_actions,
-        "package_bridge": package_bridge,
-        "packaged_package_bridge": manifest_package_bridge,
-        "child_report_paths": [
-            *extract_report_paths(package_result.stdout),
-            *extract_report_paths(inspect_result.stdout),
-            *extract_report_paths(format_result.stdout),
-            *extract_report_paths(workspace_result.stdout),
-            *extract_report_paths(integrated_result.stdout),
-        ],
-        "steps": [
-            {
-                "action": "package-runnable-toolchain",
-                "exit_code": package_result.returncode,
-                "package_root": extract_output_value(package_result.stdout, "package_root"),
-                "manifest": extract_output_value(package_result.stdout, "manifest"),
-            },
-            {
-                "action": "inspect-editor-tooling",
-                "exit_code": inspect_result.returncode,
-                "dump_path": dump_path_text,
-            },
-            {
-                "action": "format-objc3c",
-                "exit_code": format_result.returncode,
-                "summary_path": format_summary_path_text,
-            },
-            {
-                "action": "materialize-playground-workspace",
-                "exit_code": workspace_result.returncode,
-                "workspace_path": workspace_path_text,
-            },
-            {
-                "action": "validate-developer-tooling",
-                "exit_code": integrated_result.returncode,
-                "summary_path": integrated_summary_path_text,
-            },
-        ],
-    }
-
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(REPORT_PATH, payload)
-    print(f"summary_path: {repo_rel(REPORT_PATH)}")
-    return 0
+__all__ = [
+    "CONTRACT_PATH",
+    "PACKAGE_CONTRACT_ID",
+    "PACKAGE_PS1",
+    "PWSH",
+    "REPORT_PATH",
+    "ROOT",
+    "RUNNER_PATH",
+    "SUMMARY_CONTRACT_ID",
+    "build_summary_payload",
+    "expect",
+    "extract_last_output_value",
+    "extract_output_value",
+    "extract_report_paths",
+    "load_and_validate_manifest",
+    "load_json",
+    "main",
+    "normalize_rel_path",
+    "package_path",
+    "public_workflow_command",
+    "repo_rel",
+    "run_capture",
+    "run_format_check",
+    "run_inspect_editor_tooling_check",
+    "run_integrated_validation_check",
+    "run_package_command",
+    "run_workspace_check",
+    "validate_manifest_contract",
+    "write_json_file",
+    "write_summary",
+]
 
 
 if __name__ == "__main__":
