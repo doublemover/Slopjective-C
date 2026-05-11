@@ -20,66 +20,20 @@ foreach ($modulePath in @(
   Import-Module $modulePath -Force -DisableNameChecking
 }
 
-function Assert-FrontendCoreCompileArgsImpl {
-  param(
-    [object]$ParsedArgs,
-    [hashtable]$AllowedBackends,
-    [string]$ArtifactPath
-  )
+$coreCompileArgRoot = Join-Path $PSScriptRoot "evaluation_core_compile_args"
+$coreCompileArgModules = @(
+  "token_readers.psm1",
+  "state_assertions.psm1",
+  "assertion.psm1"
+)
 
-  $state = New-FrontendCoreCompileArgGuardState
-  $compileArgs = @(Read-FrontendFeatureCompileArgs -ParsedArgs $ParsedArgs)
-
-  for ($i = 0; $i -lt $compileArgs.Count; $i++) {
-    $token = [string]$compileArgs[$i]
-    if ($token -eq "--objc3-ir-object-backend") {
-      Assert-FrontendFeatureCompileArgHasNextValue -CompileArgs $compileArgs -Index $i -FlagName "--objc3-ir-object-backend"
-      $i++
-      $state.requested_backend = [string]$compileArgs[$i]
-      Assert-FrontendFeatureCompileArgValueNotEmpty -FlagName "--objc3-ir-object-backend" -Value $state.requested_backend
-      continue
-    }
-    if ($token.StartsWith("--objc3-ir-object-backend=", [System.StringComparison]::Ordinal)) {
-      $state.requested_backend = $token.Substring("--objc3-ir-object-backend=".Length)
-      Assert-FrontendFeatureCompileArgValueNotEmpty -FlagName "--objc3-ir-object-backend" -Value $state.requested_backend
-      continue
-    }
-    if ($token -eq "--objc3-route-backend-from-capabilities") {
-      $state.uses_capability_routing = $true
-      continue
-    }
-    if ($token.StartsWith("--objc3-route-backend-from-capabilities=", [System.StringComparison]::Ordinal)) {
-      $routeBoolean = $token.Substring("--objc3-route-backend-from-capabilities=".Length)
-      $state.uses_capability_routing = ConvertTo-FrontendFeatureBooleanFlagValue `
-        -FlagName "--objc3-route-backend-from-capabilities" `
-        -Value $routeBoolean
-      continue
-    }
-    if ($token -eq "--llvm-capabilities-summary") {
-      Assert-FrontendFeatureCompileArgHasNextValue -CompileArgs $compileArgs -Index $i -FlagName "--llvm-capabilities-summary"
-      $i++
-      $summaryPath = [string]$compileArgs[$i]
-      Assert-FrontendFeatureCompileArgValueNotEmpty -FlagName "--llvm-capabilities-summary" -Value $summaryPath
-      $state.has_capability_summary = $true
-      continue
-    }
-    if ($token.StartsWith("--llvm-capabilities-summary=", [System.StringComparison]::Ordinal)) {
-      $summaryPath = $token.Substring("--llvm-capabilities-summary=".Length)
-      Assert-FrontendFeatureCompileArgValueNotEmpty -FlagName "--llvm-capabilities-summary" -Value $summaryPath
-      $state.has_capability_summary = $true
-      continue
-    }
+foreach ($coreCompileArgModule in $coreCompileArgModules) {
+  $coreCompileArgModulePath = Join-Path $coreCompileArgRoot $coreCompileArgModule
+  if (!(Test-Path -LiteralPath $coreCompileArgModulePath -PathType Leaf)) {
+    Write-Error "native compile frontend feature guard core compile helper missing at $coreCompileArgModulePath"
+    exit 2
   }
-
-  if (-not [string]::IsNullOrWhiteSpace($state.requested_backend)) {
-    $normalizedRequestedBackend = Normalize-FrontendFeatureBackendKey -Value $state.requested_backend
-    if (-not $AllowedBackends.ContainsKey($normalizedRequestedBackend)) {
-      Stop-FrontendFeatureGuard "requested --objc3-ir-object-backend '$($state.requested_backend)' is not allowed by frontend core feature expansion in $ArtifactPath"
-    }
-  }
-  Assert-FrontendFeatureCapabilityRoutingHasSummary `
-    -UsesCapabilityRouting $state.uses_capability_routing `
-    -HasCapabilitySummary $state.has_capability_summary
+  . $coreCompileArgModulePath
 }
 
 Export-ModuleMember -Function "Assert-FrontendCoreCompileArgsImpl"
