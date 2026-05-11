@@ -1,0 +1,90 @@
+from __future__ import annotations
+
+from typing import Any
+
+from .constants import EXPECTED_EXAMPLE_IDS
+from .examples import showcase_example_ids
+
+
+def validate_portfolio_contract(payload: dict[str, Any]) -> str | None:
+    if payload.get("contract_id") != "objc3c.showcase.portfolio.surface.v1":
+        return "unexpected contract_id"
+    if payload.get("schema_version") != 1:
+        return "unexpected schema_version"
+    if payload.get("showcase_root") != "showcase":
+        return "showcase_root drifted"
+    if payload.get("machine_output_root") != "tmp/artifacts/showcase":
+        return "machine_output_root drifted"
+    if payload.get("machine_report_root") != "tmp/reports/showcase":
+        return "machine_report_root drifted"
+    if payload.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
+        return "package_stage_root drifted"
+
+    entrypoints = payload.get("public_entrypoints")
+    if entrypoints != {
+        "build_native": "build:objc3c-native",
+        "compile_example": "compile:objc3c",
+        "check_surface": "check:showcase:surface",
+        "validate_showcase": "test:showcase",
+        "validate_runnable_showcase": "test:showcase:e2e",
+        "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain",
+        "execution_smoke": "test:objc3c:execution-smoke",
+        "execution_replay": "test:objc3c:execution-replay-proof",
+    }:
+        return "public_entrypoints drifted"
+
+    build_run_package_surface = payload.get("build_run_package_surface")
+    if build_run_package_surface != {
+        "emit_prefix": "module",
+        "workspace_layout": "checked-in showcase directories rooted at showcase/<example-id>",
+        "artifact_root": "tmp/artifacts/showcase",
+        "report_root": "tmp/reports/showcase",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+        "build_native_entrypoint": "build:objc3c-native",
+        "compile_entrypoint": "compile:objc3c",
+        "surface_check_entrypoint": "check:showcase:surface",
+        "integrated_validation_entrypoint": "test:showcase",
+        "packaged_validation_entrypoint": "test:showcase:e2e",
+        "package_entrypoint": "package:objc3c-native:runnable-toolchain",
+        "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
+        "execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+    }:
+        return "build_run_package_surface drifted"
+    tutorial_build_run_verify_surface = payload.get("tutorial_build_run_verify_surface")
+    if tutorial_build_run_verify_surface != {
+        "getting_started_readme": "docs/tutorials/getting_started.md",
+        "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
+        "migration_readme": "docs/tutorials/objc2_to_objc3_migration.md",
+        "build_native_entrypoint": "build:objc3c-native",
+        "compile_entrypoint": "compile:objc3c",
+        "surface_check_entrypoint": "check:showcase:surface",
+        "integrated_validation_entrypoint": "test:showcase",
+        "packaged_validation_entrypoint": "test:showcase:e2e",
+        "artifact_root": "tmp/artifacts/showcase",
+        "report_root": "tmp/reports/showcase",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+    }:
+        return "tutorial_build_run_verify_surface drifted"
+    if payload.get("guided_walkthrough_manifest") != "showcase/tutorial_walkthrough.json":
+        return "guided_walkthrough_manifest drifted"
+    runtime_presentation_surface = payload.get("runtime_presentation_surface")
+    if runtime_presentation_surface != {
+        "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
+        "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
+        "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
+        "integrated_validation_entrypoint": "test:showcase",
+        "packaged_validation_entrypoint": "test:showcase:e2e",
+        "shared_execution_smoke_entrypoint": "test:objc3c:execution-smoke",
+        "shared_execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+        "presentation_readme": "showcase/README.md",
+    }:
+        return "runtime_presentation_surface drifted"
+
+    examples = payload.get("examples")
+    if not isinstance(examples, list) or len(examples) != 3:
+        return "examples inventory drifted"
+
+    ids = showcase_example_ids(examples)
+    if ids != EXPECTED_EXAMPLE_IDS:
+        return "example ids drifted"
+    return None
