@@ -1,33 +1,21 @@
-#!/usr/bin/env python3
-"""Stable entrypoint for generated site/index.md build and drift checks."""
+"""Builder package for generated site/index.md."""
 
 from __future__ import annotations
 
-import sys as _sys
-from pathlib import Path as _Path
-
-_SCRIPTS_DIR = _Path(__file__).resolve().parent
-if str(_SCRIPTS_DIR) not in _sys.path:
-    _sys.path.insert(0, str(_SCRIPTS_DIR))
-
-from build_site_index import (  # noqa: E402
+from .cli import build_index, build_parser, check_drift, main
+from .config import load_contract_config
+from .constants import (
     ALLOWED_SRC_FILES,
     CONFIG_PATH,
     POLICY_README_PATH,
     REQUIRED_POLICY_TOKENS,
     ROOT,
     SRC_DIR,
-    ContractConfig,
-    build_index,
-    build_parser,
-    check_drift,
-    digest,
+)
+from .models import ContractConfig
+from .rendering import digest, format_diff, render_expected, render_markdown_source
+from .validation import (
     find_unknown_src_files,
-    format_diff,
-    load_contract_config,
-    main,
-    render_expected,
-    render_markdown_source,
     validate_contract_inputs,
     validate_policy_readme,
 )
@@ -53,7 +41,3 @@ __all__ = [
     "validate_contract_inputs",
     "validate_policy_readme",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
