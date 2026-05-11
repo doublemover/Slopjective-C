@@ -1,12 +1,6 @@
-#!/usr/bin/env python3
-"""Public facade for platform-hardening contracts shared by workflow scripts."""
+"""Platform-hardening contract package exports."""
 
 from __future__ import annotations
-
-from pathlib import Path as _Path
-
-__path__ = [str(_Path(__file__).with_suffix(""))]
-__package__ = __name__
 
 from .constants import (
     PLATFORM_HARDENING_OWNER_FIELDS,
@@ -87,8 +81,6 @@ from .source_surface_catalog import (
     UPDATE_MANIFEST_PATH,
     UPGRADE_SUPPORT_REPORT_PATH,
 )
-
-del _Path
 
 __all__ = [
     "ARTIFACT_CONTRACT_SUMMARY_PATH",
