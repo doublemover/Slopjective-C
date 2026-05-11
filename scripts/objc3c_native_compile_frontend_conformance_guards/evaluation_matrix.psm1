@@ -18,6 +18,21 @@ foreach ($modulePath in @(
   Import-Module $modulePath -Force -DisableNameChecking
 }
 
+$matrixEvaluationRoot = Join-Path $PSScriptRoot "evaluation_matrix"
+$matrixEvaluationModules = @(
+  "acceptance_rows.psm1",
+  "rejection_rows.psm1"
+)
+
+foreach ($matrixEvaluationModule in $matrixEvaluationModules) {
+  $matrixEvaluationModulePath = Join-Path $matrixEvaluationRoot $matrixEvaluationModule
+  if (!(Test-Path -LiteralPath $matrixEvaluationModulePath -PathType Leaf)) {
+    Write-Error "native compile frontend conformance matrix evaluation helper missing at $matrixEvaluationModulePath"
+    exit 2
+  }
+  . $matrixEvaluationModulePath
+}
+
 function Invoke-FrontendConformanceMatrixEvaluationImpl {
   param(
     [string]$ArtifactPath,
@@ -71,71 +86,6 @@ function Invoke-FrontendConformanceMatrixEvaluationImpl {
     profile_key = $invocationProfileKey
     case_id = [string]$acceptanceProfileSet[$invocationProfileKey]
   }
-}
-
-function Assert-FrontendConformanceMatrixAcceptanceRows {
-  param(
-    [object[]]$Rows,
-    [int]$AcceptanceProfileCount,
-    [string]$ArtifactPath
-  )
-
-  $acceptanceProfileSet = @{}
-  foreach ($row in $Rows) {
-    $caseId = [string]$row.case_id
-    $profileKey = [string]$row.profile_key
-    $expectedResult = [string]$row.expected_result
-    if ([string]::IsNullOrWhiteSpace($caseId) -or [string]::IsNullOrWhiteSpace($profileKey)) {
-      Stop-FrontendConformanceGuard "frontend conformance matrix acceptance rows must define case_id and profile_key in $ArtifactPath"
-    }
-    if ($expectedResult -ne "accept") {
-      Stop-FrontendConformanceGuard "frontend conformance matrix acceptance row '$caseId' must declare expected_result='accept' in $ArtifactPath"
-    }
-    if ($acceptanceProfileSet.ContainsKey($profileKey)) {
-      Stop-FrontendConformanceGuard "frontend conformance matrix duplicate acceptance profile '$profileKey' in $ArtifactPath"
-    }
-    $acceptanceProfileSet[$profileKey] = $caseId
-  }
-  if ($AcceptanceProfileCount -ne $Rows.Count) {
-    Stop-FrontendConformanceGuard "frontend conformance matrix acceptance_profile_count mismatch in $ArtifactPath"
-  }
-
-  $expectedProfileSet = New-FrontendConformanceExpectedProfileSet
-  foreach ($expectedProfile in $expectedProfileSet.Keys) {
-    if (-not $acceptanceProfileSet.ContainsKey($expectedProfile)) {
-      Stop-FrontendConformanceGuard "frontend conformance matrix missing acceptance profile '$expectedProfile' in $ArtifactPath"
-    }
-  }
-
-  return $acceptanceProfileSet
-}
-
-function Assert-FrontendConformanceMatrixRejectionRows {
-  param(
-    [object[]]$Rows,
-    [int]$RejectionProfileCount,
-    [string]$ArtifactPath
-  )
-
-  if ($RejectionProfileCount -ne $Rows.Count) {
-    Stop-FrontendConformanceGuard "frontend conformance matrix rejection_profile_count mismatch in $ArtifactPath"
-  }
-
-  $rejectDiagnosticSet = @{}
-  foreach ($row in $Rows) {
-    $caseId = [string]$row.case_id
-    $expectedResult = [string]$row.expected_result
-    $requiredDiagnostic = [string]$row.required_diagnostic
-    if ([string]::IsNullOrWhiteSpace($caseId) -or [string]::IsNullOrWhiteSpace($requiredDiagnostic)) {
-      Stop-FrontendConformanceGuard "frontend conformance matrix rejection rows must define case_id and required_diagnostic in $ArtifactPath"
-    }
-    if ($expectedResult -ne "reject") {
-      Stop-FrontendConformanceGuard "frontend conformance matrix rejection row '$caseId' must declare expected_result='reject' in $ArtifactPath"
-    }
-    $rejectDiagnosticSet[$requiredDiagnostic] = $true
-  }
-
-  return $rejectDiagnosticSet
 }
 
 Export-ModuleMember -Function "Invoke-FrontendConformanceMatrixEvaluationImpl"
