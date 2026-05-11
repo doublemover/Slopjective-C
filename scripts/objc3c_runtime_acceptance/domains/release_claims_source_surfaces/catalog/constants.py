@@ -1,0 +1,242 @@
+"""Release-claims source-surface catalog constants."""
+
+from __future__ import annotations
+
+from ....runtime_contract_release import (
+    RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+    RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+    RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+    RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
+)
+
+
+CLAIMABLE_SURFACE_RESIDUAL_CASE_ID = (
+    "claimable-surface-residual-non-claimable-gaps-source-surface"
+)
+STRICT_PROFILE_FEATURE_CLAIM_CASE_ID = "strict-profile-feature-claim-source-surface"
+CLAIMABILITY_SEMANTICS_RELEASE_POLICY_CASE_ID = (
+    "claimability-semantics-release-policy"
+)
+STRICT_PROFILE_CLAIM_IMPLEMENTATION_CASE_ID = (
+    "strict-profile-claim-implementation"
+)
+
+MANIFEST_ARTIFACT = "<emit-prefix>.manifest.json"
+CONFORMANCE_REPORT_ARTIFACT = "<emit-prefix>.objc3-conformance-report.json"
+CONFORMANCE_PUBLICATION_ARTIFACT = (
+    "<emit-prefix>.objc3-conformance-publication.json"
+)
+CONFORMANCE_VALIDATION_ARTIFACT = "<emit-prefix>.objc3-conformance-validation.json"
+ADVANCED_FEATURE_GATE_ARTIFACT = "<emit-prefix>.objc3-advanced-feature-gate.json"
+RELEASE_CANDIDATE_MATRIX_ARTIFACT = (
+    "<emit-prefix>.objc3-release-candidate-matrix.json"
+)
+
+CLAIMABLE_RESIDUAL_COMPILE_ARTIFACTS = (
+    MANIFEST_ARTIFACT,
+    CONFORMANCE_REPORT_ARTIFACT,
+    CONFORMANCE_PUBLICATION_ARTIFACT,
+    ADVANCED_FEATURE_GATE_ARTIFACT,
+    RELEASE_CANDIDATE_MATRIX_ARTIFACT,
+)
+STRICT_PROFILE_FEATURE_CLAIM_COMPILE_ARTIFACTS = (
+    CONFORMANCE_REPORT_ARTIFACT,
+    CONFORMANCE_PUBLICATION_ARTIFACT,
+    ADVANCED_FEATURE_GATE_ARTIFACT,
+    RELEASE_CANDIDATE_MATRIX_ARTIFACT,
+)
+CLAIMABILITY_POLICY_COMPILE_ARTIFACTS = (
+    CONFORMANCE_REPORT_ARTIFACT,
+    CONFORMANCE_PUBLICATION_ARTIFACT,
+    CONFORMANCE_VALIDATION_ARTIFACT,
+    ADVANCED_FEATURE_GATE_ARTIFACT,
+    RELEASE_CANDIDATE_MATRIX_ARTIFACT,
+)
+STRICT_PROFILE_IMPLEMENTATION_COMPILE_ARTIFACTS = (
+    CONFORMANCE_REPORT_ARTIFACT,
+    CONFORMANCE_PUBLICATION_ARTIFACT,
+    CONFORMANCE_VALIDATION_ARTIFACT,
+)
+
+CONFORMANCE_REPORT_LOWERING_CONTRACT_ID = (
+    "objc3c.versioned.conformance.report.lowering.v1"
+)
+STRICTNESS_CLAIM_SEMANTICS_CONTRACT_ID = (
+    "objc3c.compatibility.strictness.claim.semantics.v1"
+)
+FEATURE_CLAIM_TRUTH_SURFACE_CONTRACT_ID = (
+    "objc3c.feature.claim.strictness.truth.surface.v1"
+)
+RUNTIME_CAPABILITY_REPORTING_CONTRACT_ID = (
+    "objc3c.runtime.capability.reporting.v1"
+)
+CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID = (
+    "objc3c.driver.conformance.report.publication.v1"
+)
+ADVANCED_FEATURE_GATE_CONTRACT_ID = (
+    "objc3c.tooling.integrated.advanced.feature.gate.v1"
+)
+RELEASE_CANDIDATE_MATRIX_CONTRACT_ID = (
+    "objc3c.tooling.release.candidate.execution.matrix.v1"
+)
+CONFORMANCE_CLAIM_OPERATIONS_CONTRACT_ID = (
+    "objc3c.toolchain.conformance.claim.operations.v1"
+)
+
+CLAIMABLE_RESIDUAL_SOURCE_CONTRACT_IDS = (
+    CONFORMANCE_REPORT_LOWERING_CONTRACT_ID,
+    STRICTNESS_CLAIM_SEMANTICS_CONTRACT_ID,
+    FEATURE_CLAIM_TRUTH_SURFACE_CONTRACT_ID,
+    RUNTIME_CAPABILITY_REPORTING_CONTRACT_ID,
+    CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID,
+    ADVANCED_FEATURE_GATE_CONTRACT_ID,
+    RELEASE_CANDIDATE_MATRIX_CONTRACT_ID,
+)
+STRICT_PROFILE_FEATURE_CLAIM_SOURCE_CONTRACT_IDS = (
+    RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+    CONFORMANCE_REPORT_LOWERING_CONTRACT_ID,
+    STRICTNESS_CLAIM_SEMANTICS_CONTRACT_ID,
+    FEATURE_CLAIM_TRUTH_SURFACE_CONTRACT_ID,
+    CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID,
+    ADVANCED_FEATURE_GATE_CONTRACT_ID,
+    RELEASE_CANDIDATE_MATRIX_CONTRACT_ID,
+)
+CLAIMABILITY_POLICY_SOURCE_CONTRACT_IDS = (
+    RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
+    CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID,
+    CONFORMANCE_CLAIM_OPERATIONS_CONTRACT_ID,
+    ADVANCED_FEATURE_GATE_CONTRACT_ID,
+    RELEASE_CANDIDATE_MATRIX_CONTRACT_ID,
+)
+STRICT_PROFILE_IMPLEMENTATION_SOURCE_CONTRACT_IDS = (
+    RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+    CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID,
+    CONFORMANCE_CLAIM_OPERATIONS_CONTRACT_ID,
+    RUNTIME_CAPABILITY_REPORTING_CONTRACT_ID,
+)
+
+DRIVER_OBJC3_PATH = "native/objc3c/src/driver/objc3_objc3_path.cpp"
+MANIFEST_ARTIFACTS_CODE_PATH = (
+    "native/objc3c/src/io/objc3_manifest_artifacts.cpp"
+)
+PROCESS_CODE_PATH = "native/objc3c/src/io/objc3_process.cpp"
+FRONTEND_ARTIFACTS_CODE_PATH = (
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
+)
+FRONTEND_ANCHOR_CODE_PATH = (
+    "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp"
+)
+RELEASE_CLAIM_MATRIX_SCRIPT_PATH = "scripts/publish_release_runtime_claim_matrix.py"
+
+CLAIMABLE_RESIDUAL_CODE_PATHS = (
+    DRIVER_OBJC3_PATH,
+    MANIFEST_ARTIFACTS_CODE_PATH,
+    PROCESS_CODE_PATH,
+    FRONTEND_ARTIFACTS_CODE_PATH,
+    RELEASE_CLAIM_MATRIX_SCRIPT_PATH,
+)
+STRICT_PROFILE_FEATURE_CLAIM_CODE_PATHS = (
+    DRIVER_OBJC3_PATH,
+    PROCESS_CODE_PATH,
+    FRONTEND_ARTIFACTS_CODE_PATH,
+    RELEASE_CLAIM_MATRIX_SCRIPT_PATH,
+)
+CLAIMABILITY_POLICY_CODE_PATHS = (
+    DRIVER_OBJC3_PATH,
+    PROCESS_CODE_PATH,
+    FRONTEND_ANCHOR_CODE_PATH,
+)
+STRICT_PROFILE_IMPLEMENTATION_CODE_PATHS = (
+    DRIVER_OBJC3_PATH,
+    PROCESS_CODE_PATH,
+    FRONTEND_ARTIFACTS_CODE_PATH,
+)
+
+CLAIMABLE_RESIDUAL_SOURCE_FIELDS = (
+    "module.objc3-conformance-report.json.runnable_feature_claim_ids",
+    "module.objc3-conformance-report.json.source_only_feature_claim_ids",
+    "module.objc3-conformance-report.json.unsupported_feature_claim_ids",
+    "module.objc3-conformance-report.json.runtime_capability_report.claimed_profile_ids",
+    (
+        "module.objc3-conformance-report.json.runtime_capability_report."
+        "not_claimed_profile_ids"
+    ),
+    "module.objc3-conformance-publication.json.selected_profile",
+    "module.objc3-conformance-publication.json.rejected_profile_ids",
+    "module.objc3-advanced-feature-gate.json.targeted_profile_ids",
+    "module.objc3-release-candidate-matrix.json.targeted_profile_ids",
+)
+STRICT_PROFILE_FEATURE_CLAIM_SOURCE_FIELDS = (
+    (
+        "module.objc3-conformance-report.json.feature_claim_truth_surface."
+        "supported_selection_surface_ids"
+    ),
+    (
+        "module.objc3-conformance-report.json.feature_claim_truth_surface."
+        "unsupported_selection_surface_ids"
+    ),
+    (
+        "module.objc3-conformance-report.json."
+        "compatibility_strictness_claim_semantics.rejection_model"
+    ),
+    (
+        "module.objc3-conformance-report.json."
+        "compatibility_strictness_claim_semantics.fail_closed"
+    ),
+    "module.objc3-conformance-publication.json.supported_profile_ids",
+    "module.objc3-conformance-publication.json.rejected_profile_ids",
+    (
+        "module.objc3-conformance-publication.json."
+        "advanced_feature_targeted_profile_ids"
+    ),
+    "module.objc3-advanced-feature-gate.json.targeted_profile_ids",
+    "module.objc3-release-candidate-matrix.json.targeted_profile_ids",
+)
+
+__all__ = [
+    "ADVANCED_FEATURE_GATE_ARTIFACT",
+    "ADVANCED_FEATURE_GATE_CONTRACT_ID",
+    "CLAIMABILITY_POLICY_CODE_PATHS",
+    "CLAIMABILITY_POLICY_COMPILE_ARTIFACTS",
+    "CLAIMABILITY_POLICY_SOURCE_CONTRACT_IDS",
+    "CLAIMABILITY_SEMANTICS_RELEASE_POLICY_CASE_ID",
+    "CLAIMABLE_RESIDUAL_CODE_PATHS",
+    "CLAIMABLE_RESIDUAL_COMPILE_ARTIFACTS",
+    "CLAIMABLE_RESIDUAL_SOURCE_CONTRACT_IDS",
+    "CLAIMABLE_RESIDUAL_SOURCE_FIELDS",
+    "CLAIMABLE_SURFACE_RESIDUAL_CASE_ID",
+    "CONFORMANCE_CLAIM_OPERATIONS_CONTRACT_ID",
+    "CONFORMANCE_PUBLICATION_ARTIFACT",
+    "CONFORMANCE_REPORT_ARTIFACT",
+    "CONFORMANCE_REPORT_LOWERING_CONTRACT_ID",
+    "CONFORMANCE_REPORT_PUBLICATION_CONTRACT_ID",
+    "CONFORMANCE_VALIDATION_ARTIFACT",
+    "DRIVER_OBJC3_PATH",
+    "FEATURE_CLAIM_TRUTH_SURFACE_CONTRACT_ID",
+    "FRONTEND_ANCHOR_CODE_PATH",
+    "FRONTEND_ARTIFACTS_CODE_PATH",
+    "MANIFEST_ARTIFACT",
+    "MANIFEST_ARTIFACTS_CODE_PATH",
+    "PROCESS_CODE_PATH",
+    "RELEASE_CANDIDATE_MATRIX_ARTIFACT",
+    "RELEASE_CANDIDATE_MATRIX_CONTRACT_ID",
+    "RELEASE_CLAIMABLE_SURFACE_FIXTURE",
+    "RELEASE_CLAIM_MATRIX_SCRIPT_PATH",
+    "RUNTIME_CAPABILITY_REPORTING_CONTRACT_ID",
+    "RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID",
+    "RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID",
+    "RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID",
+    "RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID",
+    "STRICTNESS_CLAIM_SEMANTICS_CONTRACT_ID",
+    "STRICT_PROFILE_CLAIM_IMPLEMENTATION_CASE_ID",
+    "STRICT_PROFILE_FEATURE_CLAIM_CASE_ID",
+    "STRICT_PROFILE_FEATURE_CLAIM_CODE_PATHS",
+    "STRICT_PROFILE_FEATURE_CLAIM_COMPILE_ARTIFACTS",
+    "STRICT_PROFILE_FEATURE_CLAIM_SOURCE_CONTRACT_IDS",
+    "STRICT_PROFILE_FEATURE_CLAIM_SOURCE_FIELDS",
+    "STRICT_PROFILE_IMPLEMENTATION_CODE_PATHS",
+    "STRICT_PROFILE_IMPLEMENTATION_COMPILE_ARTIFACTS",
+    "STRICT_PROFILE_IMPLEMENTATION_SOURCE_CONTRACT_IDS",
+]

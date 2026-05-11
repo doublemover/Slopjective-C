@@ -1,0 +1,22 @@
+"""Release-claims source-surface definitions."""
+
+from __future__ import annotations
+
+from .assembly import assemble_release_claim_source_surface_catalog
+from .release_claim_groups import RELEASE_CLAIM_GROUPS
+
+
+(
+    CLAIMABLE_RESIDUAL_SOURCE_SURFACE,
+    STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE,
+    CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SOURCE_SURFACE,
+    STRICT_PROFILE_CLAIM_IMPLEMENTATION_SOURCE_SURFACE,
+) = assemble_release_claim_source_surface_catalog(RELEASE_CLAIM_GROUPS)
+
+
+__all__ = [
+    "CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SOURCE_SURFACE",
+    "CLAIMABLE_RESIDUAL_SOURCE_SURFACE",
+    "STRICT_PROFILE_CLAIM_IMPLEMENTATION_SOURCE_SURFACE",
+    "STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE",
+]

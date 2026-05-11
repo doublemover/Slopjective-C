@@ -1,21 +1,17 @@
-"""Release-claims source-surface catalog facade."""
+"""Release-claims source-surface catalog public API."""
 
 from __future__ import annotations
 
-from pathlib import Path
-
-
-_HELPER_MODULE_DIR = Path(__file__).with_suffix("")
-__path__ = [str(_HELPER_MODULE_DIR)]
-
-from .catalog.public_api import (  # noqa: E402
+from .constants import (
     CLAIMABILITY_SEMANTICS_RELEASE_POLICY_CASE_ID,
-    CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SOURCE_SURFACE,
-    CLAIMABLE_RESIDUAL_SOURCE_SURFACE,
     CLAIMABLE_SURFACE_RESIDUAL_CASE_ID,
     STRICT_PROFILE_CLAIM_IMPLEMENTATION_CASE_ID,
-    STRICT_PROFILE_CLAIM_IMPLEMENTATION_SOURCE_SURFACE,
     STRICT_PROFILE_FEATURE_CLAIM_CASE_ID,
+)
+from .source_surfaces import (
+    CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SOURCE_SURFACE,
+    CLAIMABLE_RESIDUAL_SOURCE_SURFACE,
+    STRICT_PROFILE_CLAIM_IMPLEMENTATION_SOURCE_SURFACE,
     STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE,
 )
 
