@@ -1,20 +1,11 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$conformanceGuardRoot = $PSScriptRoot
-$scriptRoot = Split-Path $conformanceGuardRoot -Parent
-$compileToolchainModule = Join-Path $scriptRoot "objc3c_native_compile_toolchain.psm1"
-$conformanceGuardConfigModule = Join-Path $conformanceGuardRoot "config.psm1"
-$conformanceGuardEvaluationModule = Join-Path $conformanceGuardRoot "evaluation.psm1"
-$conformanceGuardNormalizationModule = Join-Path $conformanceGuardRoot "normalization.psm1"
+$conformanceOrchestrationRoot = Join-Path $PSScriptRoot "orchestration"
+. (Join-Path $conformanceOrchestrationRoot "dependencies.psm1")
+. (Join-Path $conformanceOrchestrationRoot "guard_runner.psm1")
 
-foreach ($modulePath in @($compileToolchainModule, $conformanceGuardConfigModule, $conformanceGuardEvaluationModule, $conformanceGuardNormalizationModule)) {
-  if (!(Test-Path -LiteralPath $modulePath -PathType Leaf)) {
-    Write-Error "native compile frontend conformance guard dependency module missing at $modulePath"
-    exit 2
-  }
-  Import-Module $modulePath -Force -DisableNameChecking
-}
+Import-FrontendConformanceGuardDependencies -ConformanceGuardRoot $PSScriptRoot
 
 function Invoke-FrontendConformanceMatrixGuard {
   param(
@@ -24,14 +15,19 @@ function Invoke-FrontendConformanceMatrixGuard {
     [string[]]$EffectiveCompileArgs
   )
 
-  $matrixPath = Resolve-FrontendConformanceMatrixPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $config = Get-FrontendConformanceMatrixGuardConfig
-  $payload = Read-FrontendConformanceJsonArtifact -Path $matrixPath -ArtifactName $config.artifact_name
-  Invoke-FrontendConformanceMatrixEvaluation `
-    -ArtifactPath $matrixPath `
-    -Payload $payload `
-    -ParsedArgs $ParsedArgs `
-    -EffectiveCompileArgs $EffectiveCompileArgs
+  Invoke-FrontendConformanceArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Config (Get-FrontendConformanceMatrixGuardConfig) `
+    -PathResolver { param($RepoRoot, $BuildResult) Resolve-FrontendConformanceMatrixPath -RepoRoot $RepoRoot -BuildResult $BuildResult } `
+    -Evaluation {
+      param($ArtifactPath, $Payload)
+      Invoke-FrontendConformanceMatrixEvaluation `
+        -ArtifactPath $ArtifactPath `
+        -Payload $Payload `
+        -ParsedArgs $ParsedArgs `
+        -EffectiveCompileArgs $EffectiveCompileArgs
+    }
 }
 
 function Invoke-FrontendConformanceCorpusGuard {
@@ -41,13 +37,18 @@ function Invoke-FrontendConformanceCorpusGuard {
     [string]$InvocationProfileKey
   )
 
-  $corpusPath = Resolve-FrontendConformanceCorpusPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $config = Get-FrontendConformanceCorpusGuardConfig
-  $payload = Read-FrontendConformanceJsonArtifact -Path $corpusPath -ArtifactName $config.artifact_name
-  Invoke-FrontendConformanceCorpusEvaluation `
-    -ArtifactPath $corpusPath `
-    -Payload $payload `
-    -InvocationProfileKey $InvocationProfileKey
+  Invoke-FrontendConformanceArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Config (Get-FrontendConformanceCorpusGuardConfig) `
+    -PathResolver { param($RepoRoot, $BuildResult) Resolve-FrontendConformanceCorpusPath -RepoRoot $RepoRoot -BuildResult $BuildResult } `
+    -Evaluation {
+      param($ArtifactPath, $Payload)
+      Invoke-FrontendConformanceCorpusEvaluation `
+        -ArtifactPath $ArtifactPath `
+        -Payload $Payload `
+        -InvocationProfileKey $InvocationProfileKey
+    }
 }
 
 function Invoke-FrontendIntegrationCloseoutGuard {
@@ -56,12 +57,17 @@ function Invoke-FrontendIntegrationCloseoutGuard {
     [object]$BuildResult
   )
 
-  $closeoutPath = Resolve-FrontendIntegrationCloseoutPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $config = Get-FrontendIntegrationCloseoutGuardConfig
-  $payload = Read-FrontendConformanceJsonArtifact -Path $closeoutPath -ArtifactName $config.artifact_name
-  Invoke-FrontendIntegrationCloseoutEvaluation `
-    -ArtifactPath $closeoutPath `
-    -Payload $payload
+  Invoke-FrontendConformanceArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Config (Get-FrontendIntegrationCloseoutGuardConfig) `
+    -PathResolver { param($RepoRoot, $BuildResult) Resolve-FrontendIntegrationCloseoutPath -RepoRoot $RepoRoot -BuildResult $BuildResult } `
+    -Evaluation {
+      param($ArtifactPath, $Payload)
+      Invoke-FrontendIntegrationCloseoutEvaluation `
+        -ArtifactPath $ArtifactPath `
+        -Payload $Payload
+    }
 }
 
 Export-ModuleMember -Function @(
