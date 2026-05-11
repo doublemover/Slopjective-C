@@ -1,24 +1,16 @@
-#!/usr/bin/env python3
-"""Validate the checked-in performance-governance source surface."""
+"""Performance-governance source-surface checker package facade."""
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
-_SCRIPT_ROOT = _ROOT / "scripts"
-for _import_root in (_ROOT, _SCRIPT_ROOT):
-    _import_root_text = str(_import_root)
-    if _import_root_text not in sys.path:
-        sys.path.insert(0, _import_root_text)
-
 from objc3c_shared.json_io import load_json_object as load_json
 from objc3c_shared.json_io import write_report_json
 from objc3c_tooling.paths import repo_rel
 
-from scripts.check_performance_governance_source_surface.config import SourceSurfaceConfig
-from scripts.check_performance_governance_source_surface.constants import (
+from .config import SourceSurfaceConfig
+from .constants import (
     EXPECTED_BUILD_SCRIPTS,
     EXPECTED_CHECKED_IN_ROOTS,
     EXPECTED_CHECKED_IN_SOURCES,
@@ -35,20 +27,12 @@ from scripts.check_performance_governance_source_surface.constants import (
     SUMMARY_CONTRACT_ID,
     SUMMARY_PATH,
 )
-from scripts.check_performance_governance_source_surface.runner import run
-from scripts.check_performance_governance_source_surface.validation import fail as _fail
-from scripts.check_performance_governance_source_surface.validation import (
-    require_exact_list as _require_exact_list,
-)
-from scripts.check_performance_governance_source_surface.validation import (
-    require_exact_owner_split as _require_exact_owner_split,
-)
-from scripts.check_performance_governance_source_surface.validation import (
-    require_exact_path as _require_exact_path,
-)
-from scripts.check_performance_governance_source_surface.validation import (
-    require_path as _require_path,
-)
+from .runner import run
+from .validation import fail as _fail
+from .validation import require_exact_list as _require_exact_list
+from .validation import require_exact_owner_split as _require_exact_owner_split
+from .validation import require_exact_path as _require_exact_path
+from .validation import require_path as _require_path
 
 
 def fail(message: str) -> int:
@@ -143,7 +127,3 @@ __all__ = [
     "sys",
     "write_report_json",
 ]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
