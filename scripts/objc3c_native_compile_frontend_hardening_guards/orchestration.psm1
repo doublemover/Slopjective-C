@@ -23,22 +23,31 @@ foreach ($modulePath in @(
   Import-Module $modulePath -Force -DisableNameChecking
 }
 
+$hardeningOrchestrationRoot = Join-Path $PSScriptRoot "orchestration"
+$hardeningOrchestrationModules = @(
+  "artifact_definitions.psm1",
+  "guard_runner.psm1"
+)
+
+foreach ($hardeningOrchestrationModule in $hardeningOrchestrationModules) {
+  $hardeningOrchestrationModulePath = Join-Path $hardeningOrchestrationRoot $hardeningOrchestrationModule
+  if (!(Test-Path -LiteralPath $hardeningOrchestrationModulePath -PathType Leaf)) {
+    Write-Error "native compile frontend hardening orchestration helper missing at $hardeningOrchestrationModulePath"
+    exit 2
+  }
+  . $hardeningOrchestrationModulePath
+}
+
 function Invoke-FrontendEdgeRobustnessGuard {
   param(
     [string]$RepoRoot,
     [object]$BuildResult
   )
 
-  $rules = Get-FrontendEdgeRobustnessGuardRules
-  $robustnessPath = Resolve-FrontendEdgeRobustnessPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $payload = Read-FrontendHardeningGuardJsonArtifact -Path $robustnessPath -ArtifactName $rules.artifact_name
-
-  Assert-FrontendEdgeRobustnessPayload `
-    -Payload $payload `
-    -Rules $rules `
-    -ArtifactPath $robustnessPath
-
-  return New-FrontendHardeningGuardReport -PropertyName $rules.report_key -ArtifactPath $robustnessPath
+  Invoke-FrontendHardeningArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Definition (Get-FrontendHardeningEdgeRobustnessDefinition)
 }
 
 function Invoke-FrontendDiagnosticsHardeningGuard {
@@ -47,16 +56,10 @@ function Invoke-FrontendDiagnosticsHardeningGuard {
     [object]$BuildResult
   )
 
-  $rules = Get-FrontendDiagnosticsHardeningGuardRules
-  $diagnosticsPath = Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $payload = Read-FrontendHardeningGuardJsonArtifact -Path $diagnosticsPath -ArtifactName $rules.artifact_name
-
-  Assert-FrontendDiagnosticsHardeningPayload `
-    -Payload $payload `
-    -Rules $rules `
-    -ArtifactPath $diagnosticsPath
-
-  return New-FrontendHardeningGuardReport -PropertyName $rules.report_key -ArtifactPath $diagnosticsPath
+  Invoke-FrontendHardeningArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Definition (Get-FrontendHardeningDiagnosticsDefinition)
 }
 
 function Invoke-FrontendRecoveryDeterminismHardeningGuard {
@@ -65,16 +68,10 @@ function Invoke-FrontendRecoveryDeterminismHardeningGuard {
     [object]$BuildResult
   )
 
-  $rules = Get-FrontendRecoveryDeterminismHardeningGuardRules
-  $recoveryPath = Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $RepoRoot -BuildResult $BuildResult
-  $payload = Read-FrontendHardeningGuardJsonArtifact -Path $recoveryPath -ArtifactName $rules.artifact_name
-
-  Assert-FrontendRecoveryDeterminismHardeningPayload `
-    -Payload $payload `
-    -Rules $rules `
-    -ArtifactPath $recoveryPath
-
-  return New-FrontendHardeningGuardReport -PropertyName $rules.report_key -ArtifactPath $recoveryPath
+  Invoke-FrontendHardeningArtifactGuard `
+    -RepoRoot $RepoRoot `
+    -BuildResult $BuildResult `
+    -Definition (Get-FrontendHardeningRecoveryDeterminismDefinition)
 }
 
 Export-ModuleMember -Function @(
