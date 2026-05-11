@@ -1,0 +1,40 @@
+"""Discovery constants for seed matrix parsing and source selection."""
+
+from __future__ import annotations
+
+from ..config import (
+    BATCH_TABLE_COLUMNS,
+    CLASS_RANK,
+    DATE_RE,
+    EDGE_ID_RE,
+    EDGE_TABLE_COLUMNS,
+    PRIORITY_TABLE_COLUMNS,
+    SEED_ID_RE,
+    SEED_TABLE_COLUMNS,
+    WAVE_ID_RE,
+    WAVE_TABLE_COLUMNS,
+)
+
+MATRIX_SOURCE_SUFFIX = ".md"
+MATRIX_SOURCE_TABLES = (
+    SEED_TABLE_COLUMNS,
+    EDGE_TABLE_COLUMNS,
+    WAVE_TABLE_COLUMNS,
+    BATCH_TABLE_COLUMNS,
+    PRIORITY_TABLE_COLUMNS,
+)
+
+__all__ = [
+    "BATCH_TABLE_COLUMNS",
+    "CLASS_RANK",
+    "DATE_RE",
+    "EDGE_ID_RE",
+    "EDGE_TABLE_COLUMNS",
+    "MATRIX_SOURCE_SUFFIX",
+    "MATRIX_SOURCE_TABLES",
+    "PRIORITY_TABLE_COLUMNS",
+    "SEED_ID_RE",
+    "SEED_TABLE_COLUMNS",
+    "WAVE_ID_RE",
+    "WAVE_TABLE_COLUMNS",
+]

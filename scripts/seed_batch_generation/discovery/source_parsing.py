@@ -1,8 +1,9 @@
-"""Markdown discovery and parsing for seed matrix inputs."""
+"""Markdown source parsing for seed matrix inputs."""
 
 from __future__ import annotations
 
-from .config import (
+from ..models import BatchRow, EdgeRow, ParseError, PriorityRow, SeedRow
+from .constants import (
     BATCH_TABLE_COLUMNS,
     CLASS_RANK,
     DATE_RE,
@@ -14,7 +15,6 @@ from .config import (
     WAVE_ID_RE,
     WAVE_TABLE_COLUMNS,
 )
-from .models import BatchRow, EdgeRow, ParseError, PriorityRow, SeedMatrix, SeedRow
 
 
 def sanitize_cell(value: str) -> str:
@@ -241,15 +241,3 @@ def parse_priority_rows(lines: list[str]) -> dict[str, PriorityRow]:
             tier=row[8],
         )
     return parsed
-
-
-def parse_seed_matrix(source_text: str) -> SeedMatrix:
-    lines = source_text.splitlines()
-    return SeedMatrix(
-        snapshot_date=parse_snapshot_date(lines),
-        seeds=parse_seed_rows(lines),
-        edges=parse_edge_rows(lines),
-        waves=parse_wave_rows(lines),
-        batches=parse_batch_rows(lines),
-        priorities=parse_priority_rows(lines),
-    )
