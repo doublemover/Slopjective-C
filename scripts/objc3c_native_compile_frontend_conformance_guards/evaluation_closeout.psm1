@@ -16,6 +16,20 @@ foreach ($modulePath in @(
   Import-Module $modulePath -Force -DisableNameChecking
 }
 
+$closeoutEvaluationRoot = Join-Path $PSScriptRoot "evaluation_closeout"
+$closeoutEvaluationModules = @(
+  "closeout_gate.psm1"
+)
+
+foreach ($closeoutEvaluationModule in $closeoutEvaluationModules) {
+  $closeoutEvaluationModulePath = Join-Path $closeoutEvaluationRoot $closeoutEvaluationModule
+  if (!(Test-Path -LiteralPath $closeoutEvaluationModulePath -PathType Leaf)) {
+    Write-Error "native compile frontend conformance closeout evaluation helper missing at $closeoutEvaluationModulePath"
+    exit 2
+  }
+  . $closeoutEvaluationModulePath
+}
+
 function Invoke-FrontendIntegrationCloseoutEvaluationImpl {
   param(
     [string]$ArtifactPath,
@@ -40,33 +54,6 @@ function Invoke-FrontendIntegrationCloseoutEvaluationImpl {
 
   return [pscustomobject]@{
     integration_closeout_path = $ArtifactPath
-  }
-}
-
-function Assert-FrontendIntegrationCloseoutGate {
-  param(
-    [object]$CloseoutGate,
-    [object]$Config,
-    [string]$ArtifactPath
-  )
-
-  if ($null -eq $CloseoutGate) {
-    Stop-FrontendConformanceGuard "frontend integration closeout closeout_gate metadata missing in $ArtifactPath"
-  }
-  if (-not [bool]$CloseoutGate.build_integration_gate_signoff) {
-    Stop-FrontendConformanceGuard "frontend integration closeout build_integration_gate_signoff must be true in $ArtifactPath"
-  }
-  if (-not [bool]$CloseoutGate.invocation_profile_gate_signoff) {
-    Stop-FrontendConformanceGuard "frontend integration closeout invocation_profile_gate_signoff must be true in $ArtifactPath"
-  }
-  if (-not [bool]$CloseoutGate.corpus_coverage_gate_signoff) {
-    Stop-FrontendConformanceGuard "frontend integration closeout corpus_coverage_gate_signoff must be true in $ArtifactPath"
-  }
-  if ([int]$CloseoutGate.deterministic_fail_closed_exit_code -ne $Config.deterministic_fail_closed_exit_code) {
-    Stop-FrontendConformanceGuard "frontend integration closeout deterministic_fail_closed_exit_code must be 2 in $ArtifactPath"
-  }
-  if ([int]$CloseoutGate.acceptance_corpus_count -le 0 -or [int]$CloseoutGate.rejection_corpus_count -le 0) {
-    Stop-FrontendConformanceGuard "frontend integration closeout acceptance/rejection corpus counts must be positive in $ArtifactPath"
   }
 }
 
