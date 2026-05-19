@@ -1,7 +1,16 @@
-"""Runtime acceptance case factory facade."""
+"""Authoritative runtime acceptance case factory ordering."""
 
 from __future__ import annotations
 
+from objc3c_runtime_acceptance.case_factory_block_arc import (
+    build_block_arc_case_factories,
+)
+from objc3c_runtime_acceptance.case_factory_concurrency_errors import (
+    build_concurrency_case_factories,
+)
+from objc3c_runtime_acceptance.case_factory_concurrency_errors import (
+    build_error_case_factories,
+)
 from objc3c_runtime_acceptance.case_factory_foundation import (
     build_core_case_factories,
 )
@@ -10,15 +19,6 @@ from objc3c_runtime_acceptance.case_factory_foundation import (
 )
 from objc3c_runtime_acceptance.case_factory_foundation import (
     build_registration_case_factories,
-)
-from objc3c_runtime_acceptance.case_factory_concurrency_errors import (
-    build_concurrency_case_factories,
-)
-from objc3c_runtime_acceptance.case_factory_concurrency_errors import (
-    build_error_case_factories,
-)
-from objc3c_runtime_acceptance.case_factory_block_arc import (
-    build_block_arc_case_factories,
 )
 from objc3c_runtime_acceptance.case_factory_interop import (
     build_interop_packaging_case_factories,
@@ -60,6 +60,4 @@ def build_all_case_factories(context: CaseFactoryContext) -> LabeledCaseFactorie
     ]
 
 
-__all__ = [
-    "build_all_case_factories",
-]
+__all__ = ["build_all_case_factories"]

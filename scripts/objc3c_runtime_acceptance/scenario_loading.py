@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
-from objc3c_runtime_acceptance.case_catalog import build_case_factories
-from objc3c_runtime_acceptance.case_catalog import load_runtime_acceptance_domains
+from objc3c_runtime_acceptance.cases import RuntimeAcceptanceDomains
+from objc3c_runtime_acceptance.cases import build_case_factories
+from objc3c_runtime_acceptance.cases import load_runtime_acceptance_domains
 from objc3c_runtime_acceptance.case_factory_types import LabeledCaseFactories
 from objc3c_runtime_acceptance.execution import filter_case_factories
 from objc3c_runtime_acceptance.suite_catalog import available_suite_payload

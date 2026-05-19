@@ -9,6 +9,31 @@ from pathlib import Path
 from .paths import ROOT
 from .progress_state import get_acceptance_progress
 
+ELEVATION_REQUIRED_WINERROR = 740
+ELEVATION_REQUIRED_EXIT_CODE = 740
+
+
+def is_elevation_required_launch_error(error: OSError) -> bool:
+    return getattr(error, "winerror", None) == ELEVATION_REQUIRED_WINERROR
+
+
+def elevation_required_completed_process(
+    command: list[str],
+    error: OSError,
+) -> subprocess.CompletedProcess[str]:
+    executable = command[0] if command else "<empty-command>"
+    stderr = (
+        "runtime acceptance process launch failed: WinError 740 "
+        "(ERROR_ELEVATION_REQUIRED) while launching "
+        f"{executable}: {error}\n"
+    )
+    return subprocess.CompletedProcess(
+        command,
+        ELEVATION_REQUIRED_EXIT_CODE,
+        stdout="",
+        stderr=stderr,
+    )
+
 
 def run_command(
     command: list[str],
@@ -20,14 +45,19 @@ def run_command(
     if env:
         subprocess_env = os.environ.copy()
         subprocess_env.update(env)
-    return subprocess.run(
-        command,
-        cwd=str(cwd),
-        env=subprocess_env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            command,
+            cwd=str(cwd),
+            env=subprocess_env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as error:
+        if is_elevation_required_launch_error(error):
+            return elevation_required_completed_process(command, error)
+        raise
 
 
 def run(
@@ -50,4 +80,11 @@ def run(
     return result
 
 
-__all__ = ["run", "run_command"]
+__all__ = [
+    "ELEVATION_REQUIRED_EXIT_CODE",
+    "ELEVATION_REQUIRED_WINERROR",
+    "elevation_required_completed_process",
+    "is_elevation_required_launch_error",
+    "run",
+    "run_command",
+]

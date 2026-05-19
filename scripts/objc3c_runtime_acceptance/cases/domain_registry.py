@@ -1,28 +1,23 @@
-"""Runtime acceptance domain loading and case catalog facade."""
+"""Runtime acceptance domain module registry."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
-
-from objc3c_runtime_acceptance.case_factories import build_all_case_factories
-from objc3c_runtime_acceptance.case_factory_types import CaseFactory
-from objc3c_runtime_acceptance.case_factory_types import CaseFactoryContext
+from types import ModuleType
 
 
 @dataclass(frozen=True)
 class RuntimeAcceptanceDomains:
-    release_claims: Any
-    block_arc: Any
-    compiler_artifacts: Any
-    concurrency: Any
-    errors: Any
-    interop_packaging: Any
-    metaprogramming: Any
-    object_model: Any
-    registration: Any
-    storage_reflection: Any
+    release_claims: ModuleType
+    block_arc: ModuleType
+    compiler_artifacts: ModuleType
+    concurrency: ModuleType
+    errors: ModuleType
+    interop_packaging: ModuleType
+    metaprogramming: ModuleType
+    object_model: ModuleType
+    registration: ModuleType
+    storage_reflection: ModuleType
 
 
 def load_runtime_acceptance_domains() -> RuntimeAcceptanceDomains:
@@ -51,23 +46,4 @@ def load_runtime_acceptance_domains() -> RuntimeAcceptanceDomains:
     )
 
 
-def build_case_factories(
-    domains: RuntimeAcceptanceDomains,
-    *,
-    clangxx: str,
-    run_dir: Path,
-) -> list[tuple[str, CaseFactory]]:
-    return build_all_case_factories(
-        CaseFactoryContext(
-            domains=domains,
-            clangxx=clangxx,
-            run_dir=run_dir,
-        )
-    )
-
-
-__all__ = [
-    "RuntimeAcceptanceDomains",
-    "build_case_factories",
-    "load_runtime_acceptance_domains",
-]
+__all__ = ["RuntimeAcceptanceDomains", "load_runtime_acceptance_domains"]

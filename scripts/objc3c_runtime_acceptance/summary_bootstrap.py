@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
+from objc3c_runtime_acceptance.cases import RuntimeAcceptanceDomains
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.domains.probe_helpers import (
     build_runtime_bootstrap_lowering_registration_artifact_surface,

@@ -10,7 +10,7 @@ from .compile_backends import compile_command
 from .compile_truth import write_compile_output_provenance
 from .process_execution import run
 from .progress_state import get_acceptance_progress
-from .runtime_artifact_registry import ACCEPTANCE_ARTIFACT_REGISTRY
+from .registry import ACCEPTANCE_ARTIFACT_REGISTRY
 
 
 def run_fixture_compile(

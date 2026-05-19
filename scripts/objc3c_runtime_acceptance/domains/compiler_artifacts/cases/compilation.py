@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from objc3c_runtime_acceptance.fixture_compilation import run_fixture_compile
-from objc3c_runtime_acceptance.runtime_artifact_registry import (
+from objc3c_runtime_acceptance.registry import (
     ACCEPTANCE_ARTIFACT_REGISTRY,
 )
 

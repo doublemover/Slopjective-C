@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.runtime_contract_commands import (
+from objc3c_runtime_acceptance.commands import (
     RUNTIME_ACCEPTANCE_COMMAND,
     VALIDATE_RUNTIME_ARCHITECTURE_COMMAND,
 )

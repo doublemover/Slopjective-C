@@ -132,7 +132,7 @@ REPORT_ASSEMBLY_OWNER_CONTRACT = RuntimeAcceptanceOwnerContract(
 ARTIFACT_EVIDENCE_OWNER_CONTRACT = RuntimeAcceptanceOwnerContract(
     contract_id=RUNTIME_ACCEPTANCE_ARTIFACT_EVIDENCE_CONTRACT_ID,
     owner_surface=ARTIFACT_EVIDENCE_OWNER_SURFACE,
-    owner_modules=("summary_base", "runtime_artifact_registry"),
+    owner_modules=("summary_base", "registry"),
     owned_decisions=(
         "native compiler artifact evidence publication",
         "runtime library artifact evidence publication",
