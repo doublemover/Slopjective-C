@@ -9,6 +9,12 @@ function Read-RunnableToolchainPackageJsonHashtable {
   )
 
   $payloadPath = Join-Path $PackageRoot ($RelativePath.Replace('/', '\'))
+  if (!(Test-Path -LiteralPath $payloadPath -PathType Leaf)) {
+    if ($RelativePath -eq "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json") {
+      throw "runnable toolchain package FAIL: missing generated repo superclean surface $RelativePath; package staging must run scripts/build_objc3c_native.ps1 before manifest generation"
+    }
+    throw "runnable toolchain package FAIL: missing package JSON payload $RelativePath"
+  }
   return Get-Content -LiteralPath $payloadPath -Raw | ConvertFrom-Json -AsHashtable
 }
 

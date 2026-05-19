@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
-
 from ..environment import ROOT
 from .developer_tooling_bonus_artifacts import (
     bonus_tool_integration_report_path,
@@ -12,22 +10,14 @@ from .developer_tooling_bonus_artifacts import (
 )
 from .developer_tooling_bonus_inputs import (
     load_bonus_surface_inputs as _load_bonus_surface_inputs,
-    missing_bonus_source_message,
 )
 from .developer_tooling_bonus_payload import bonus_tool_payload as _bonus_tool_payload
-from .developer_tooling_paths import REPO_SUPERCLEAN_SOURCE_OF_TRUTH
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = _ensure_bonus_artifact_source()
     if rc != 0:
         return rc
-    if not REPO_SUPERCLEAN_SOURCE_OF_TRUTH.is_file():
-        print(
-            missing_bonus_source_message(),
-            file=sys.stderr,
-        )
-        return 1
 
     try:
         payload = _bonus_tool_payload(_load_bonus_surface_inputs())

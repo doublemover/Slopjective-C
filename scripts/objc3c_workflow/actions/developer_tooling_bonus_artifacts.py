@@ -4,15 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..action_execution_dispatch import execute_registered_action
-from ..environment import ROOT
+from .developer_tooling_bonus_inputs import ensure_bonus_source_of_truth
 from .developer_tooling_paths import PUBLIC_WORKFLOW_REPORT_ROOT
 
 
 def ensure_bonus_artifact_source() -> int:
-    native_main = ROOT / "native" / "objc3c" / "src" / "main.cpp"
-    if native_main.is_file():
-        return execute_registered_action("build-native-contracts", [])
+    ensure_bonus_source_of_truth()
     return 0
 
 

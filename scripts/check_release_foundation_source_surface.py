@@ -9,6 +9,7 @@ from pathlib import Path
 from objc3c_shared.json_io import load_json_object as load_json
 from objc3c_shared.json_io import write_report_json
 from objc3c_tooling.paths import repo_rel
+from scripts.check_repo_superclean_surface_model import write_surface_payload
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_foundation" / "source_surface.json"
@@ -53,6 +54,9 @@ EXPECTED_UPSTREAM_SURFACES = (
     "spec/conformance/release_evidence_gate_maintenance.md",
     "docs/runbooks/objc3c_public_command_surface.md",
     "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+)
+GENERATED_UPSTREAM_SURFACES = frozenset(
+    {"tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"}
 )
 
 EXPECTED_BUILD_SCRIPTS = (
@@ -102,6 +106,17 @@ def require_existing_path(path: str, label: str) -> bool:
     target = ROOT / path
     if not target.exists():
         fail(f"{label} referenced missing path {path}")
+        return False
+    return True
+
+
+def ensure_generated_upstream_surface(path: str) -> bool:
+    target = ROOT / path
+    if path not in GENERATED_UPSTREAM_SURFACES or target.exists():
+        return True
+    write_surface_payload(target)
+    if not target.is_file():
+        fail(f"generated upstream surface writer did not produce {path}")
         return False
     return True
 
@@ -182,6 +197,8 @@ def main() -> int:
         ("build_scripts", build_scripts),
     ):
         for raw_path in items:
+            if list_name == "upstream_surfaces" and not ensure_generated_upstream_surface(raw_path):
+                return 1
             if not require_existing_path(raw_path, list_name):
                 return 1
             checked_paths.append(raw_path)
