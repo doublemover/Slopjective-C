@@ -10,8 +10,11 @@ bool RetainRuntimeBlockHandleUnlocked(RuntimeState &state, int block_handle) {
       FindRuntimeBlockRecordUnlocked(state, block_handle));
 }
 
-bool ReleaseRuntimeBlockHandleUnlocked(RuntimeState &state, int block_handle) {
-  return ReleaseRuntimeBlockRecordUnlocked(state, block_handle);
+bool ReleaseRuntimeBlockHandleUnlocked(
+    RuntimeState &state, int block_handle,
+    std::vector<RuntimeBlockRecord> *records_to_dispose) {
+  return ReleaseRuntimeBlockRecordUnlocked(state, block_handle,
+                                           records_to_dispose);
 }
 
 }  // namespace objc3c::runtime

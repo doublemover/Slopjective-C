@@ -132,9 +132,6 @@ bool PromoteRuntimeBlockPointerCaptures(RuntimeState &state,
   if (!PromotePointerCaptureCellsIntoRuntimeOwnedStorage(state, record)) {
     return false;
   }
-  if (record.copy_helper != nullptr) {
-    record.copy_helper(record.storage_words.data());
-  }
   return true;
 }
 

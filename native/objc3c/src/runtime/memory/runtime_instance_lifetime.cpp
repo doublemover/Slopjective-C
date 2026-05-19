@@ -81,7 +81,9 @@ int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
   return receiver_identity;
 }
 
-void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
+void DestroyRuntimeInstanceUnlocked(
+    RuntimeState &state, int receiver,
+    std::vector<RuntimeBlockRecord> *records_to_dispose) {
   const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
     return;
@@ -97,7 +99,7 @@ void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
   const std::vector<int> owned_values_to_release =
       RuntimeInstanceOwnedValuesToReleaseUnlocked(state, instance);
   for (int stored_value : owned_values_to_release) {
-    ReleaseRuntimeValueUnlocked(state, stored_value);
+    ReleaseRuntimeValueUnlocked(state, stored_value, records_to_dispose);
   }
 }
 

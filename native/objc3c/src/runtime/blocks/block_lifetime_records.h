@@ -1,7 +1,9 @@
 #pragma once
 
-#include "runtime/blocks/block_runtime_records.h"
+#include "runtime/blocks/block_lifetime.h"
 #include "runtime/state/runtime_state_records.h"
+
+#include <utility>
 
 namespace objc3c::runtime {
 
@@ -32,14 +34,10 @@ inline bool RuntimeBlockRecordRemainsLiveAfterRelease(
   return true;
 }
 
-inline void DisposeRuntimeBlockRecord(RuntimeBlockRecord &record) {
-  if (record.dispose_helper != nullptr && !record.storage_words.empty()) {
-    record.dispose_helper(record.storage_words.data());
-  }
-}
-
 inline bool ReleaseRuntimeBlockRecordUnlocked(RuntimeState &state,
-                                              int block_handle) {
+                                              int block_handle,
+                                              std::vector<RuntimeBlockRecord>
+                                                  *records_to_dispose) {
   const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
   if (block_it == state.runtime_blocks_by_handle.end()) {
     return false;
@@ -50,7 +48,11 @@ inline bool ReleaseRuntimeBlockRecordUnlocked(RuntimeState &state,
     return true;
   }
 
-  DisposeRuntimeBlockRecord(record);
+  if (records_to_dispose != nullptr) {
+    records_to_dispose->push_back(std::move(record));
+  } else {
+    DisposeRuntimeBlockRecord(record);
+  }
   state.runtime_blocks_by_handle.erase(block_it);
   return true;
 }

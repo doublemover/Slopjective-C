@@ -1,5 +1,6 @@
 #include "runtime/memory/arc.h"
 
+#include "runtime/blocks/block_lifetime.h"
 #include "runtime/memory/arc_debug_events.h"
 #include "runtime/memory/autorelease_pool.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
@@ -21,8 +22,13 @@ extern "C" int objc3_runtime_retain_i32(int value) {
 extern "C" int objc3_runtime_release_i32(int value) {
   objc3c::runtime::RecordRuntimeArcReleaseCall(value);
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  objc3c::runtime::ReleaseRuntimeValueUnlocked(state, value);
+  std::vector<objc3c::runtime::RuntimeBlockRecord> records_to_dispose;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    objc3c::runtime::ReleaseRuntimeValueUnlocked(state, value,
+                                                 &records_to_dispose);
+  }
+  objc3c::runtime::DisposeRuntimeBlockRecords(records_to_dispose);
   return value;
 }
 
@@ -47,9 +53,14 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
     return;
   }
   objc3c::runtime::RuntimeState &state = objc3c::runtime::ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  for (auto it = values.rbegin(); it != values.rend(); ++it) {
-    objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue(*it);
-    objc3c::runtime::ReleaseRuntimeValueUnlocked(state, *it);
+  std::vector<objc3c::runtime::RuntimeBlockRecord> records_to_dispose;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    for (auto it = values.rbegin(); it != values.rend(); ++it) {
+      objc3c::runtime::RecordRuntimeAutoreleasePoolDrainedValue(*it);
+      objc3c::runtime::ReleaseRuntimeValueUnlocked(state, *it,
+                                                   &records_to_dispose);
+    }
   }
+  objc3c::runtime::DisposeRuntimeBlockRecords(records_to_dispose);
 }

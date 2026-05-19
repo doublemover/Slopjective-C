@@ -65,6 +65,7 @@
   "authoritative_probe_paths": [
     "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
     "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
     "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
     "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
@@ -76,6 +77,8 @@
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
     "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+    "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+    "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3",
     "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
     "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
     "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
@@ -113,6 +116,19 @@
         "M320-C001",
         "M320-D001",
         "M320-E001"
+      ]
+    },
+    {
+      "gap_id": "issue-8033-owned-capture-runtime-proof-landed",
+      "summary": "Escaping owned-object block copy/dispose behavior now has durable fixtures plus a live runtime probe that proves promotion-time retain, post-local-release invocation, final-dispose release, and stale-handle rejection without widening the public runtime ABI.",
+      "evidence_references": [
+        "tests/tooling/fixtures/block_arc_closure/issue_8033_escaping_owned_object_copy_dispose_evidence.json",
+        "tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
+        "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3",
+        "tests/tooling/fixtures/native/execution/negative/escaping_owned_object_block_conflicting_capture.objc3"
+      ],
+      "successor_issue_codes": [
+        "OC3-T09-003"
       ]
     },
     {

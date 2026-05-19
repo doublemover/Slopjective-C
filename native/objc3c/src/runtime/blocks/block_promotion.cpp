@@ -1,6 +1,7 @@
 #include "runtime/blocks/block_promotion.h"
 
 #include "runtime/blocks/block_handle_allocation.h"
+#include "runtime/blocks/block_lifetime.h"
 #include "runtime/blocks/block_record.h"
 #include "runtime/blocks/block_promotion_plan.h"
 #include "runtime/blocks/block_runtime_records.h"
@@ -58,15 +59,29 @@ int PromoteRuntimeBlockI32(const void *storage,
   debug_state.last_promote_has_pointer_capture_storage =
       has_pointer_capture_storage != 0 ? 1 : 0;
   RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  const int block_handle = AllocateRuntimeBlockHandleUnlocked(state);
   RuntimeBlockRecord record;
-  if (!BuildRuntimeBlockRecord(state, block_handle, storage, storage_size_bytes,
-                               has_pointer_capture_storage, &record)) {
-    return 0;
+  int block_handle = 0;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    block_handle = AllocateRuntimeBlockHandleUnlocked(state);
+    if (!BuildRuntimeBlockRecord(state, block_handle, storage,
+                                 storage_size_bytes,
+                                 has_pointer_capture_storage, &record)) {
+      return 0;
+    }
+  }
+  if (record.copy_helper != nullptr && !record.storage_words.empty()) {
+    record.copy_helper(record.storage_words.data());
   }
   CaptureRuntimeBlockDescriptorDebugFields(debug_state, record);
-  state.runtime_blocks_by_handle.emplace(block_handle, std::move(record));
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    if (!RuntimeBlockHandleIsAvailableUnlocked(state, block_handle)) {
+      DisposeRuntimeBlockRecord(record);
+      return 0;
+    }
+    state.runtime_blocks_by_handle.emplace(block_handle, std::move(record));
+  }
   debug_state.last_promoted_block_handle = block_handle;
   return block_handle;
 }

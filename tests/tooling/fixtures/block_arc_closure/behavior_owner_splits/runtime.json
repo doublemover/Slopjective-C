@@ -23,6 +23,7 @@
     "private_runtime_abi_boundary:objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
     "authoritative_probe_paths:tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/block_runtime_owned_capture_lifetime_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
     "authoritative_probe_paths:tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"

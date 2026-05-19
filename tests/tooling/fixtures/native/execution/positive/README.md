@@ -13,6 +13,10 @@ Each positive execution fixture is a pair of files sharing a basename:
 
 The expected exit code must be deterministic.
 
+## Block ARC fixture notes
+
+- `escaping_owned_object_block_copy_dispose.objc3` returns `17` and prepares issue #8033 evidence for an escaping block that combines implicit owned-object capture, explicit weak capture, and byref state under ARC mode. This is fixture preparation only; runtime support claims remain owned by the block ARC implementation and executable proof lanes.
+
 Execution-positive fixtures are e2e-owned success contracts. A filename that
 mentions a parser, semantic, lowering, or runtime concept is phase provenance
 for the corresponding canonical owner, but the positive claim remains a

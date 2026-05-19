@@ -5,6 +5,7 @@
 #include "runtime/dispatch/dispatch_status.h"
 #include "runtime/dispatch/method_invocation.h"
 #include "runtime/dispatch/typed_dispatch_result.h"
+#include "runtime/blocks/block_lifetime.h"
 #include "runtime/memory/arc_value_lifetime.h"
 #include "runtime/memory/dispatch_frame_state.h"
 #include "runtime/state/runtime_state_records.h"
@@ -21,10 +22,14 @@ void ReleaseDispatchFrameAutoreleaseValues(RuntimeState &state) {
   if (autorelease_values.empty()) {
     return;
   }
-  std::lock_guard<std::mutex> lock(state.mutex);
-  for (int value : autorelease_values) {
-    ReleaseRuntimeValueUnlocked(state, value);
+  std::vector<RuntimeBlockRecord> records_to_dispose;
+  {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    for (int value : autorelease_values) {
+      ReleaseRuntimeValueUnlocked(state, value, &records_to_dispose);
+    }
   }
+  DisposeRuntimeBlockRecords(records_to_dispose);
 }
 
 RuntimeTypedDispatchResult CompleteStrictInvocationResult(

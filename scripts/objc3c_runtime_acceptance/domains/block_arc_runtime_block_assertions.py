@@ -37,6 +37,34 @@ _BYREF_FORWARDING_SUMMARY_FIELDS = {
     "byref_destroyed_value_sum": "byref_forwarding_destroyed_value_sum",
 }
 
+_OWNED_CAPTURE_LIFETIME_SUMMARY_FIELDS = {
+    "handle": "owned_capture_lifetime_probe_handle",
+    "owned_capture_value": "owned_capture_lifetime_value",
+    "initial_capture_found": "owned_capture_lifetime_initial_found",
+    "initial_capture_retain_count": "owned_capture_lifetime_initial_retain_count",
+    "copy_count_after_promotion": "owned_capture_lifetime_copy_count_after_promotion",
+    "owned_capture_retain_count_after_promotion": "owned_capture_lifetime_retain_count_after_promotion",
+    "last_retained_owned_capture": "owned_capture_lifetime_last_retained_value",
+    "after_promotion_capture_found": "owned_capture_lifetime_after_promotion_found",
+    "after_promotion_capture_retain_count": "owned_capture_lifetime_after_promotion_retain_count",
+    "release_original_owner_result": "owned_capture_lifetime_release_original_owner_result",
+    "after_original_release_capture_found": "owned_capture_lifetime_after_original_release_found",
+    "after_original_release_capture_retain_count": "owned_capture_lifetime_after_original_release_retain_count",
+    "invoke_result": "owned_capture_lifetime_invoke_result",
+    "retain_block_result": "owned_capture_lifetime_retain_block_result",
+    "release_retained_block_result": "owned_capture_lifetime_release_retained_block_result",
+    "dispose_count_before_final_release": "owned_capture_lifetime_dispose_count_before_final_release",
+    "owned_capture_release_count_before_final_release": "owned_capture_lifetime_release_count_before_final_release",
+    "final_release_result": "owned_capture_lifetime_final_release_result",
+    "dispose_count_after_final_release": "owned_capture_lifetime_dispose_count_after_final_release",
+    "owned_capture_release_count_after_final_release": "owned_capture_lifetime_release_count_after_final_release",
+    "last_released_owned_capture": "owned_capture_lifetime_last_released_value",
+    "after_final_release_capture_found": "owned_capture_lifetime_after_final_release_found",
+    "after_final_release_capture_retain_count": "owned_capture_lifetime_after_final_release_retain_count",
+    "post_release_callback_count": "owned_capture_lifetime_post_release_callback_count",
+    "invoke_after_release_result": "owned_capture_lifetime_invoke_after_release_result",
+}
+
 _OPTIONAL_BYREF_FORWARDING_FIELD_PREFIX_PAIRS = (
     ("stack_forwarding", "heap_forwarding"),
     ("stack_forwarded", "heap_forwarded"),
@@ -62,6 +90,15 @@ def byref_forwarding_probe_summary(payload: dict[str, Any]) -> dict[str, Any]:
         if _is_optional_byref_forwarding_field(field):
             summary[f"byref_forwarding_{field}"] = payload.get(field)
     return summary
+
+
+def owned_capture_lifetime_probe_summary(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        summary_field: payload.get(payload_field)
+        for payload_field, summary_field in _OWNED_CAPTURE_LIFETIME_SUMMARY_FIELDS.items()
+    }
 
 
 def _expect_optional_stack_heap_forwarding_fields(
@@ -239,10 +276,78 @@ def assert_byref_forwarding_probe_payload(payload: dict[str, Any]) -> None:
     )
 
 
+def assert_owned_capture_lifetime_probe_payload(payload: dict[str, Any]) -> None:
+    handle = payload.get("handle")
+    owned_capture = payload.get("owned_capture_value")
+    expect(
+        isinstance(handle, int) and handle > 0,
+        "expected owned-capture lifetime probe to publish a positive runtime block handle",
+    )
+    expect(
+        isinstance(owned_capture, int) and owned_capture > 0,
+        "expected owned-capture lifetime probe to publish a positive captured runtime object",
+    )
+    expect(
+        payload.get("initial_capture_found") == 1
+        and payload.get("initial_capture_retain_count") == 1,
+        "expected owned-capture lifetime probe to start with one live local object owner",
+    )
+    expect(
+        payload.get("copy_count_after_promotion") == 1
+        and payload.get("owned_capture_retain_count_after_promotion") == 1,
+        "expected owned-capture lifetime probe to retain the captured object exactly once during block promotion",
+    )
+    expect(
+        payload.get("last_retained_owned_capture") == owned_capture
+        and payload.get("after_promotion_capture_found") == 1
+        and payload.get("after_promotion_capture_retain_count") == 2,
+        "expected owned-capture lifetime probe to keep the promoted capture live with local plus block ownership",
+    )
+    expect(
+        payload.get("release_original_owner_result") == owned_capture
+        and payload.get("after_original_release_capture_found") == 1
+        and payload.get("after_original_release_capture_retain_count") == 1,
+        "expected owned-capture lifetime probe to keep the capture live after releasing the original owner",
+    )
+    expect(
+        payload.get("invoke_result") == 110,
+        "expected owned-capture lifetime probe to invoke through the runtime-owned captured object after local release",
+    )
+    expect(
+        payload.get("retain_block_result") == handle
+        and payload.get("release_retained_block_result") == handle,
+        "expected owned-capture lifetime probe to retain and release the block handle without disposing captures early",
+    )
+    expect(
+        payload.get("dispose_count_before_final_release") == 0
+        and payload.get("owned_capture_release_count_before_final_release") == 0,
+        "expected owned-capture lifetime probe to defer dispose and captured-object release until final block release",
+    )
+    expect(
+        payload.get("final_release_result") == handle
+        and payload.get("dispose_count_after_final_release") == 1
+        and payload.get("owned_capture_release_count_after_final_release") == 1,
+        "expected owned-capture lifetime probe to dispose the block and release the captured object on final release",
+    )
+    expect(
+        payload.get("last_released_owned_capture") == owned_capture
+        and payload.get("after_final_release_capture_found") == 0
+        and payload.get("after_final_release_capture_retain_count") == 0,
+        "expected owned-capture lifetime probe to destroy the captured object after final block release",
+    )
+    expect(
+        payload.get("post_release_callback_count") == 0
+        and payload.get("invoke_after_release_result") == 0,
+        "expected owned-capture lifetime probe to reject stale post-release block invocation without calling the thunk",
+    )
+
+
 __all__ = [
     "assert_byref_forwarding_probe_payload",
+    "assert_owned_capture_lifetime_probe_payload",
     "assert_byref_runtime_fixture",
     "byref_forwarding_probe_summary",
+    "owned_capture_lifetime_probe_summary",
     "assert_nonowning_runtime_fixture",
     "assert_owned_runtime_fixture",
 ]

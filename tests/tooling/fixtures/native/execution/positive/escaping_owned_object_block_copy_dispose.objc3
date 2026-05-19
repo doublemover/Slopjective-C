@@ -1,0 +1,21 @@
+module EscapingOwnedObjectBlockCopyDisposeExec;
+
+fn materializeEscapingCopy(handle: i32) -> i32 {
+  return 1;
+}
+
+fn helper(owner: id, weakPeer: __weak id) -> i32 {
+  let counter = 2;
+  let closure = ^[__block counter, weak weakPeer] (i32 add) {
+    counter = counter + add;
+    if (owner == weakPeer) {
+      return counter + owner;
+    }
+    return counter;
+  };
+  return closure(3) + materializeEscapingCopy(closure);
+}
+
+fn main() -> i32 {
+  return helper(11, 11);
+}

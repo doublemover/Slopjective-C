@@ -135,6 +135,10 @@ Field notes:
 - `unsupported_feature_claim_arc_parameter_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC parameter ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
 - `unsupported_feature_claim_arc_return_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC return ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
 
+## Block ARC fixture notes
+
+- `escaping_owned_object_block_conflicting_capture.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S301`) for conflicting explicit capture ownership modes on the same object identifier. It is issue #8033 fixture preparation and does not establish runtime support by itself.
+
 ## Prototype fixture notes
 
 - `prototype_signature_mismatch.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S206`).
