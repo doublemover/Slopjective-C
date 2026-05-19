@@ -8,8 +8,8 @@ from pathlib import Path
 from check_repo_superclean_surface_model import (
     SurfaceReportWriter,
     load_surface_payload,
-    missing_surface_report,
     validate_surface_payload,
+    write_surface_payload,
 )
 
 
@@ -20,7 +20,7 @@ SURFACE_PATH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_s
 def main() -> int:
     writer = SurfaceReportWriter()
     if not SURFACE_PATH.is_file():
-        return writer.write(missing_surface_report(SURFACE_PATH))
+        write_surface_payload(SURFACE_PATH)
 
     payload = load_surface_payload(SURFACE_PATH)
     return writer.write(validate_surface_payload(payload))

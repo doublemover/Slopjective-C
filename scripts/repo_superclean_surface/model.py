@@ -17,6 +17,20 @@ class SurfaceField:
 
 
 @dataclass(frozen=True)
+class FrontendContractArtifact:
+    name: str
+    family: str
+    artifact_path: str
+
+    def as_payload(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "family": self.family,
+            "artifact_path": self.artifact_path,
+        }
+
+
+@dataclass(frozen=True)
 class SurfaceReport:
     checker_name: str
     errors: tuple[str, ...]
@@ -41,8 +55,16 @@ class SurfaceReportWriter:
 @dataclass(frozen=True)
 class RepoSupercleanSurfaceModel:
     fields: tuple[SurfaceField, ...]
-    frontend_contract_artifact_names: tuple[str, ...]
+    frontend_contract_artifacts: tuple[FrontendContractArtifact, ...]
     explicit_non_goals: tuple[str, ...]
+
+    def expected_payload(self) -> dict[str, Any]:
+        payload = {field.name: field.expected for field in self.fields}
+        payload["frontend_contract_artifacts"] = [
+            artifact.as_payload() for artifact in self.frontend_contract_artifacts
+        ]
+        payload["explicit_non_goals"] = list(self.explicit_non_goals)
+        return payload
 
     def validate(self, payload: Mapping[str, Any]) -> SurfaceReport:
         errors: list[str] = []
@@ -50,15 +72,13 @@ class RepoSupercleanSurfaceModel:
             if payload.get(field.name) != field.expected:
                 errors.append(field.drift_message)
 
-        frontend_contract_artifacts = payload.get("frontend_contract_artifacts", [])
+        frontend_contract_artifacts = payload.get("frontend_contract_artifacts")
+        expected_artifacts = [
+            artifact.as_payload() for artifact in self.frontend_contract_artifacts
+        ]
         if not (isinstance(frontend_contract_artifacts, list) and frontend_contract_artifacts):
             errors.append("frontend_contract_artifacts missing")
-        artifact_names = [
-            entry.get("name")
-            for entry in frontend_contract_artifacts
-            if isinstance(entry, dict)
-        ]
-        if artifact_names != list(self.frontend_contract_artifact_names):
+        elif frontend_contract_artifacts != expected_artifacts:
             errors.append("frontend contract artifact inventory drifted")
 
         if payload.get("explicit_non_goals") != list(self.explicit_non_goals):
@@ -69,6 +89,7 @@ class RepoSupercleanSurfaceModel:
 
 __all__ = [
     "CHECKER_NAME",
+    "FrontendContractArtifact",
     "RepoSupercleanSurfaceModel",
     "SurfaceField",
     "SurfaceReport",

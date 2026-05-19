@@ -4,12 +4,15 @@ from __future__ import annotations
 
 if __package__:
     from .repo_superclean_surface.contracts import (
+        build_surface_payload,
         load_surface_payload,
         missing_surface_report,
         validate_surface_payload,
+        write_surface_payload,
     )
     from .repo_superclean_surface.model import (
         CHECKER_NAME,
+        FrontendContractArtifact,
         RepoSupercleanSurfaceModel,
         SurfaceField,
         SurfaceReport,
@@ -17,12 +20,15 @@ if __package__:
     )
 else:
     from repo_superclean_surface.contracts import (
+        build_surface_payload,
         load_surface_payload,
         missing_surface_report,
         validate_surface_payload,
+        write_surface_payload,
     )
     from repo_superclean_surface.model import (
         CHECKER_NAME,
+        FrontendContractArtifact,
         RepoSupercleanSurfaceModel,
         SurfaceField,
         SurfaceReport,
@@ -32,11 +38,14 @@ else:
 
 __all__ = [
     "CHECKER_NAME",
+    "FrontendContractArtifact",
     "RepoSupercleanSurfaceModel",
     "SurfaceField",
     "SurfaceReport",
     "SurfaceReportWriter",
+    "build_surface_payload",
     "load_surface_payload",
     "missing_surface_report",
     "validate_surface_payload",
+    "write_surface_payload",
 ]

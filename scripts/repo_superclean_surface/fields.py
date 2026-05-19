@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .core_fields import CORE_SURFACE_FIELDS
 from .experience_fields import EXPERIENCE_SURFACE_FIELDS
-from .model import RepoSupercleanSurfaceModel, SurfaceField
+from .model import FrontendContractArtifact, RepoSupercleanSurfaceModel, SurfaceField
 from .performance_fields import PERFORMANCE_SURFACE_FIELDS
 from .release_fields import RELEASE_SURFACE_FIELDS
 from .stdlib_fields import STDLIB_SURFACE_FIELDS
@@ -69,17 +69,57 @@ REPO_SUPERCLEAN_SURFACE_MODEL = RepoSupercleanSurfaceModel(
             "conformance_corpus_surface drifted",
         ),
     ),
-    frontend_contract_artifact_names=(
-        "frontend_source_graph",
-        "frontend_invocation_lock",
-        "frontend_core_feature_expansion",
-        "frontend_edge_compat",
-        "frontend_edge_robustness",
-        "frontend_diagnostics_hardening",
-        "frontend_recovery_determinism_hardening",
-        "frontend_conformance_matrix",
-        "frontend_conformance_corpus",
-        "frontend_integration_closeout",
+    frontend_contract_artifacts=(
+        FrontendContractArtifact(
+            "frontend_source_graph",
+            "source-derived",
+            "tmp/artifacts/objc3c-native/frontend_source_graph.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_invocation_lock",
+            "binary-derived",
+            "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_core_feature_expansion",
+            "binary-derived",
+            "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_edge_compat",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_edge_compat.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_edge_robustness",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_edge_robustness.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_diagnostics_hardening",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_recovery_determinism_hardening",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_conformance_matrix",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_conformance_corpus",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
+        ),
+        FrontendContractArtifact(
+            "frontend_integration_closeout",
+            "closeout-derived",
+            "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
+        ),
     ),
     explicit_non_goals=(
         "no milestone-coded command names",
