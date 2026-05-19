@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-dashboard-blockers-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers"
+  ],
+  "support_boundary": "IR ownership is non-positive for this dashboard-blocker family. The family contains dashboard blocker policy fixtures, report fixtures, generated summary path labels, and report path labels only, with no checked-in IR or dispatch-IR output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/full_envelope_claimability_dashboard_blockers/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:full_envelope_claimability_dashboard_blockers",
+    "artifact_label:dashboard-summary",
+    "artifact_label:public-summary",
+    "compiler_phase_boundary:no-ir-positive-truth-from-dashboard-blocker-contracts",
+    "upstream_owner_required:tests/native/ir"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, gate IR rows, retired route IR rows, compatibility IR rows, artifact-path-only IR claims, and dashboard-evidence-log IR support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

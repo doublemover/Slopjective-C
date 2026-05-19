@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 VALIDATE_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-performance-governance.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "performance-governance" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.performance.governance.integration.summary.v1"
@@ -46,7 +46,7 @@ def ensure_validate_report() -> dict[str, Any]:
         if report.get("status") == "PASS":
             return report
     completed = subprocess.run(
-        [sys.executable, str(RUNNER), "validate-performance-governance"],
+        public_workflow_command("validate-performance-governance"),
         cwd=ROOT,
         check=False,
         text=True,

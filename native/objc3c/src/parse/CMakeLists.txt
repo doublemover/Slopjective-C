@@ -1,0 +1,101 @@
+add_library(objc3c_parse_profiles STATIC
+  objc3_message_send_dispatch_abi_profiles.cpp
+  objc3_message_send_form_profiles.cpp
+  objc3_message_send_runtime_profiles.cpp
+  objc3_parser_actor_isolation_sendability_profiles.cpp
+  objc3_parser_async_continuation_profiles.cpp
+  objc3_parser_await_suspension_profiles.cpp
+  objc3_parser_borrowed_attribute_profiles.cpp
+  objc3_parser_concurrency_replay_race_guard_profiles.cpp
+  objc3_parser_error_diagnostics_recovery_profiles.cpp
+  objc3_parser_error_bridge_attribute_profiles.cpp
+  objc3_parser_inline_asm_intrinsic_profiles.cpp
+  objc3_parser_interop_profiles.cpp
+  objc3_parser_ns_error_bridging_profiles.cpp
+  objc3_parser_profile_helpers.cpp
+  objc3_parser_profile_symbol_walk.cpp
+  objc3_parser_result_like_profiles.cpp
+  objc3_parser_statement_profiles.cpp
+  objc3_parser_task_runtime_cancellation_profiles.cpp
+  objc3_parser_unsafe_pointer_profiles.cpp
+  objc3_parser_unwind_cleanup_profiles.cpp
+  objc3_type_feature_profiles.cpp
+  objc3_type_generic_profiles.cpp
+)
+target_sources(objc3c_parse_profiles PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_message_send_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_actor_isolation_sendability_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_async_continuation_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_await_suspension_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_concurrency_replay_race_guard_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_error_diagnostics_recovery_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_inline_asm_intrinsic_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_ns_error_bridging_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_profile_helpers.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_profile_symbol_walk.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_result_like_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_statement_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_task_runtime_cancellation_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_unsafe_pointer_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_parser_unwind_cleanup_profiles.h
+  ${CMAKE_CURRENT_LIST_DIR}/objc3_type_feature_profiles.h
+)
+objc3c_apply_build_defaults(objc3c_parse_profiles)
+objc3c_apply_llvm_direct_config(objc3c_parse_profiles)
+target_link_libraries(objc3c_parse_profiles PUBLIC
+  objc3c_ast
+  objc3c_support_ascii
+  objc3c_token
+)
+
+add_library(objc3c_parse STATIC
+  objc3_ast_builder.cpp
+  objc3_ast_builder_contract.cpp
+  objc3_diagnostic_grammar_hooks_edge_case_consistency_surface.cpp
+  objc3_diagnostic_grammar_hooks_core_feature.cpp
+  objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.cpp
+  objc3_diagnostic_source_precision_scaffold.cpp
+  objc3_parse_phase_io.cpp
+  objc3_parse_support.cpp
+  objc3_parser_attribute_profiles.cpp
+  objc3_parser_attributes.cpp
+  objc3_parser_assignment_statement_nodes.cpp
+  objc3_parser_block_literal_source.cpp
+  ../parser/frontend/objc3_parser_type_projection.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_concurrency.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_core.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_error.cpp
+  ../parser/frontend/objc3_parser_type_projection_method_unsafe.cpp
+  ../parser/frontend/objc3_parser_type_projection_property.cpp
+  objc3_parser_core.cpp
+  objc3_parser_core_inline_asm_finalizers.cpp
+  objc3_parser_cstyle_type_classifier.cpp
+  objc3_parser_cstyle_type_parser.cpp
+  objc3_parser_cursor.cpp
+  objc3_parser_declaration_surface.cpp
+  objc3_parser_diagnostic_builder.cpp
+  objc3_parser_expression_nodes.cpp
+  objc3_parser_expression_statement_nodes.cpp
+  objc3_parser_expression_surface.cpp
+  objc3_parser_literal_expression_nodes.cpp
+  objc3_parser_loop_control_statement_nodes.cpp
+  objc3_parser_recovery_boundaries.cpp
+  objc3_parser_rejection_diagnostics.cpp
+  objc3_parser_recovery.cpp
+  objc3_parser_statement_surface.cpp
+  objc3_parser_token_metadata.cpp
+  objc3_parser_unary_expression_nodes.cpp
+  objc3_parser.cpp
+  ../parser/frontend/objc3_parser_type_projection.h
+  objc3_parser_contract_types.h
+  objc3_parser_core_inline_asm_finalizers.h
+)
+objc3c_apply_build_defaults(objc3c_parse)
+objc3c_apply_llvm_direct_config(objc3c_parse)
+target_link_libraries(objc3c_parse PUBLIC
+  objc3c_ast
+  objc3c_lex
+  objc3c_diag
+  objc3c_parse_profiles
+  objc3c_support
+)

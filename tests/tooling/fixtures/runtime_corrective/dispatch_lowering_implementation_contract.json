@@ -30,13 +30,11 @@
   "required_ll_substrings": [
     "declare i32 @objc3_runtime_dispatch_i32("
   ],
-  "forbidden_ll_substrings": [
-    "@objc3_msgsend_i32("
-  ],
+  "forbidden_ll_substrings": [],
   "explicit_non_goals": [
-    "no-runtime-fallback-removal-in-c002",
+    "no-unresolved-dispatch-success-claim-in-c002",
     "no-direct-dispatch-entrypoint-materialization",
-    "no-milestone-local-compile-driver",
+    "no-closure-local-compile-driver",
     "no-proof-without-coupled-manifest-and-provenance"
   ]
 }

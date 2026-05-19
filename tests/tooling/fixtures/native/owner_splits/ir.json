@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "ir",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "IR fixtures own module, function, metadata, and runtime-call emission contracts",
+  "positive_support_authority": "tests/native/ir/{module,function,metadata,runtime_calls}",
+  "negative_support_authority": "tests/native/ir/runtime_calls",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "selectors": [
+        "*-ir.expect.txt",
+        "synthesized_ast_ir_*.objc3",
+        "typed_keypath_artifact_positive.objc3"
+      ],
+      "disposition": "IR expectation provenance for accepted canonical source forms"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/*.objc3",
+      "selectors": [
+        "*ir_*",
+        "*artifact_positive.objc3",
+        "artifact_replay_producer.objc3"
+      ],
+      "disposition": "IR or artifact-shape evidence only"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/ir/module/basic_i32_return_main.objc3",
+    "tests/native/ir/function/helper_function_emission.objc3",
+    "tests/native/ir/function/block_literal_helper_function_contract.objc3",
+    "tests/native/ir/metadata/module_metadata_name.objc3",
+    "tests/native/ir/metadata/actor_executor_metadata_contract.objc3",
+    "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3",
+    "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+  ],
+  "retired_surface_rule": "runtime helper call residues are strict linkage diagnostics, not retired route support"
+}

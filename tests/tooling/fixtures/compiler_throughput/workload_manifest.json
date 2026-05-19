@@ -1,54 +1,112 @@
 {
   "contract_id": "objc3c.compiler.throughput.workload.manifest.v1",
   "schema_version": 1,
+  "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
+  "workload_boundary_policy": {
+    "primary_axis": "behavior owner before workload kind, workflow label, cache mode, generated artifact, evidence-log row, migration-only row, package artifact, or runner bucket",
+    "support_authority": "workloads are measurement and provenance rows; canonical support must be cited through owner_splits and never through workload names alone",
+    "generated_artifact_rule": "docs, command-surface, reports, cache proof, perf summary, runner package, generated-only, evidence-log, and migration-only workloads are generated or provenance-only unless a phase owner claims behavior",
+    "retired_surface_rule": "retired-route, gate, old-mode, compatibility, unsupported, alternate acceptance, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, generated-only, evidence-log, and migration-only rows map to canonical_rejection or compiler_throughput_provenance"
+  },
   "workloads": [
     {
       "workload_id": "compile-cold-wrapper",
       "kind": "compile",
-      "entrypoint": "compile-objc3c",
+      "workflow_action": "compile-objc3c",
+      "command": "npm run objc3c -- compile-objc3c",
       "cache_mode": "cold",
       "source": "tests/tooling/fixtures/native/hello.objc3",
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "whole-compiler timing only; phase support is owned by parser, sema, lowering, IR, and e2e split indexes",
       "objective": "measure one live wrapper-driven compile without cache reuse"
     },
     {
       "workload_id": "compile-cache-hit-wrapper",
       "kind": "compile",
-      "entrypoint": "compile-objc3c",
+      "workflow_action": "compile-objc3c",
+      "command": "npm run objc3c -- compile-objc3c",
       "cache_mode": "warm-hit",
       "source": "tests/tooling/fixtures/native/hello.objc3",
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "cache-hit timing and artifact provenance only; cache reuse is not a compatibility support claim",
       "objective": "measure truthful wrapper cache restoration with compile-output provenance preserved"
     },
     {
       "workload_id": "incremental-cache-invalidation",
       "kind": "compile",
-      "entrypoint": "compile-objc3c",
+      "workflow_action": "compile-objc3c",
+      "command": "npm run objc3c -- compile-objc3c",
       "cache_mode": "invalidation-aware",
       "source": "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+      "owner_phases": [
+        "sema",
+        "ir",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "macro-host and import cache invalidation provenance only; stale-cache, retired route, or recovery-positive behavior maps to canonical rejection",
       "objective": "measure cache reuse and invalidation over a source that already publishes macro-host and import surfaces"
     },
     {
       "workload_id": "macro-host-cache-publication",
       "kind": "runtime-acceptance-subsurface",
-      "entrypoint": "test-runtime-acceptance",
+      "workflow_action": "test-runtime-acceptance",
+      "command": "npm run objc3c -- test-runtime-acceptance",
       "fixture": "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+      "owner_phases": [
+        "runtime",
+        "ir",
+        "canonical_rejection"
+      ],
+      "support_boundary": "runtime-acceptance subsurface only; macro-host cache publication cannot establish retired route or alternate runtime support",
       "objective": "keep macro-host cache publication tied to the live runtime-acceptance path"
     },
     {
       "workload_id": "native-docs-generation",
       "kind": "docs",
-      "entrypoint": "build-native-docs",
+      "workflow_action": "build-native-docs",
+      "command": "npm run objc3c -- build-native-docs",
+      "owner_phases": [
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "generated documentation provenance only; docs generation cannot define behavior support",
       "objective": "measure the checked-in native docs generator instead of synthetic markdown transforms"
     },
     {
       "workload_id": "command-surface-generation",
       "kind": "docs",
-      "entrypoint": "build-public-command-surface",
+      "workflow_action": "build-public-command-surface",
+      "command": "npm run objc3c -- build-public-command-surface",
+      "owner_phases": [
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "generated command-surface provenance only; command rendering cannot create compatibility support",
       "objective": "measure the generated operator-facing command appendix"
     },
     {
       "workload_id": "tier-overlap-audit",
       "kind": "runner-validation",
-      "entrypoint": "test-nightly",
+      "workflow_action": "test-nightly",
+      "command": "npm run objc3c -- test-nightly",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "runner ownership and duplicate-loop evidence only; overlap rows that mention recovery or retired route stay rejection/provenance",
       "objective": "keep heavyweight suite ownership explicit so duplicate recovery-negative loops can be removed"
     }
   ]

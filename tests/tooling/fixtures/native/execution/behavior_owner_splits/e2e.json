@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-tooling-native-execution-metadata-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_family": "tests/tooling/fixtures/native/execution",
+  "support_boundary": "e2e ownership covers deterministic positive execution fixtures whose source, optional meta sidecar, and exitcode sidecar form a compile-link-run contract; phase-looking names are provenance for lower owners",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "positive/README.md:Execution-positive fixtures are e2e-owned success contracts",
+    "positive/*.exitcode.txt",
+    "positive/message_send_direct_nil_receiver_elision.meta.json",
+    "positive/message_send_direct_nil_receiver_keyword_elision.meta.json",
+    "positive/message_send_nil_receiver_short_circuit.meta.json",
+    "positive/class_metaclass_root_runtime_dispatch.meta.json",
+    "positive/registration_reset_replay_runtime_entrypoints.meta.json"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "positive execution sidecars must not be cited as gate, retired route, compatibility, migration, alternate runtime acceptance, or evidence-log support"
+}

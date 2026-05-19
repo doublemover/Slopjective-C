@@ -4,7 +4,16 @@
   "milestone": "M322",
   "issue": "M322-B001",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
-  "summary_script": "scripts/build_concurrency_runtime_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_semantic_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "runtime",
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_unified_concurrency_source_surface",
     "runtime_async_task_actor_normalization_completion_surface",
@@ -20,7 +29,8 @@
   "claim_narrowing_constraints": [
     "public claims stay narrower than the private runtime-owned helper ABI and snapshot evidence",
     "scheduler fairness and external executor transport remain out of scope until dedicated runtime evidence lands",
-    "stdlib actor-shaped or helper-oriented narratives must not be promoted to runnable parity claims without runtime proof"
+    "stdlib actor-shaped or helper-oriented narratives must not be promoted to runnable parity claims without runtime proof",
+    "semantic-model-source-lists-private-helper-snapshots-probe-payloads-generated-reports-manifests-descriptors-and-workflow-labels-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "unified-concurrency-runtime-architecture",
@@ -34,7 +44,10 @@
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/continuation_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
     "stdlib/advanced_helper_package_surface.json",

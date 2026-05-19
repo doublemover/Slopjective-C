@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "semantic ownership covers sema stage status, diagnostics counts, result error text, and fail-closed semantic result reporting only after canonical semantic owners claim the underlying behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "required_stage_fields:sema",
+    "required_stage_summary_fields:diagnostics_total",
+    "required_stage_summary_fields:diagnostics_notes",
+    "required_stage_summary_fields:diagnostics_warnings",
+    "required_stage_summary_fields:diagnostics_errors",
+    "required_stage_summary_fields:diagnostics_fatals",
+    "required_helpers:objc3c_frontend_c_result_error_message",
+    "required_helpers:objc3c_frontend_c_result_error_message_view",
+    "required_helpers:objc3c_frontend_c_owned_result_error_message",
+    "required_helpers:objc3c_frontend_c_owned_result_error_message_view"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "semantic gate gates, semantic retired route gates, old-mode semantic inputs, compatibility-positive diagnostics, generated-only diagnostics, evidence-log diagnostics, migration-only semantic rows, skipped sema reported as support, and missing or empty result-owned error strings are canonical rejection, strict-error, or provenance-only evidence"
+}

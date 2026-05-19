@@ -11,19 +11,14 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/block_arc_closure/block_arc_lowering_runtime_abi_contract.json`
 - `tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_block_arc_closure_boundary_inventory_summary.py`
-- `python scripts/build_block_arc_closure_semantic_summary.py`
-- `python scripts/build_block_arc_closure_arc_policy_summary.py`
-- `python scripts/build_block_arc_closure_byref_summary.py`
-- `python scripts/build_block_arc_closure_lowering_abi_summary.py`
-- `python scripts/check_block_arc_closure_escaping_block_lowering.py`
-- `python scripts/check_block_arc_closure_arc_lifetime_lowering.py`
-- `python scripts/build_block_arc_closure_executable_proof_summary.py`
-- `python scripts/check_block_arc_closure_live_block_runtime.py`
-- `python scripts/check_block_arc_closure_live_arc_runtime.py`
-- `python scripts/check_objc3c_runnable_block_arc_end_to_end.py`
+- `npm run objc3c -- test-runtime-acceptance-block-arc`
+- `npm run objc3c -- validate-block-arc-conformance`
+- `npm run objc3c -- validate-runnable-block-arc`
+
+Helper implementations are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -53,17 +48,17 @@ Byref promotion, copy/dispose, and forwarding implementation:
 
 - byref forwarding remains supported only through the runtime-owned promotion, invoke, and final-release path
 - dispose is deferred until final release and invoke-after-release stays fail-closed
-- byref closure claims are grounded in the live runtime probes and packaged block/ARC execution path, not in proof-only sidecars
+- byref closure claims are grounded in the live runtime probes and packaged block/ARC execution path, not in evidence-only sidecars
 
 Lowering and runtime ABI contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
+- the block/ARC compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-block-arc`
 - the four required block/ARC surfaces are `runtime_block_arc_unified_source_surface`, `runtime_ownership_transfer_capture_family_source_surface`, `runtime_block_arc_lowering_helper_surface`, and `runtime_block_arc_runtime_abi_surface`
-- milestone-local checks must consume those emitted surfaces instead of recreating parallel manifest truth
+- release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone remains `test:objc3c:block-arc-conformance` and `test:objc3c:runnable-block-arc`
+- the block/ARC public command surface is `npm run objc3c -- validate-block-arc-conformance` and `npm run objc3c -- validate-runnable-block-arc`
 - the public workflow surface remains `validate-block-arc-conformance` and `validate-runnable-block-arc`
 - block and ARC closure still relies on private runtime-owned helper and snapshot surfaces; the public runtime header is not widened by this milestone
 
@@ -71,7 +66,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection
 - claims that ARC automation is complete outside the emitted helper/lifetime surfaces already covered by compile-coupled proof
-- milestone-local block/ARC scaffolding parallel to the shared runtime acceptance and runnable package path
+- release-scope block/ARC scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims about error or concurrency interaction beyond the existing runtime-owned helper and cleanup surfaces
 
 Follow-on tracks:
@@ -84,17 +79,20 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/blocks/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - sema and lowering:
-  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/sema/`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
+  - `native/objc3c/src/artifacts/`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_block_arc_conformance.py`
-  - `scripts/check_objc3c_runnable_block_arc_end_to_end.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- test-runtime-acceptance-block-arc`
+  - `npm run objc3c -- validate-block-arc-conformance`
+  - `npm run objc3c -- validate-runnable-block-arc`
+  - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`
   - `docs/objc3c-native.md`

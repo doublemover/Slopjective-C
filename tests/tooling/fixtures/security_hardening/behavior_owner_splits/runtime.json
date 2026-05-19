@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-security-hardening-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/owner_contracts.json"
+  ],
+  "support_boundary": "runtime ownership covers only the hand-authored runtime hardening contract and the runtime acceptance case identity it routes to canonical runtime owners: runtime library, installation lifecycle, dispatch fast path, property execution, block helper execution, error/runtime integration, concurrency runtime completion, metaprogramming cache runtime integration, and package-loading interop runtime implementation. Tmp reports and artifact paths are required evidence labels, not standalone runtime truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "runtime_case_id:runtime-library",
+    "runtime_case_id:installation-lifecycle",
+    "runtime_case_id:dispatch-fast-path",
+    "runtime_case_id:property-execution",
+    "runtime_case_id:block-helper-runtime-execution",
+    "runtime_case_id:live-error-runtime-integration",
+    "runtime_case_id:async-task-actor-normalization-completion",
+    "runtime_case_id:live-unified-concurrency-runtime-implementation",
+    "runtime_case_id:live-metaprogramming-cache-runtime-integration",
+    "runtime_case_id:live-package-loading-interop-runtime-implementation",
+    "required_validate_action:test-runtime-acceptance",
+    "required_validate_action:validate-runnable-release-candidate",
+    "required_validate_action:validate-release-candidate-conformance",
+    "owner:security-hardening-runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime hardening without runnable evidence, runtime retired route acceptance, trust bypass for missing runtime cases, wrapper-only runtime security actions, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, old-mode runtime rows, gate runtime rows, retired route runtime rows, compatibility runtime rows, and tmp-evidence-log runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

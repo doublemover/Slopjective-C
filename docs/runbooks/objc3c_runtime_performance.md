@@ -13,9 +13,9 @@ Use it when changing:
 - runtime performance summaries, regression artifacts, and packaged validation
 
 Downstream runtime-performance work must stay on the existing runtime library, runtime
-acceptance helpers, public workflow runner, and runnable toolchain package
-surfaces listed here. Do not add a milestone-local runtime benchmark harness,
-standalone spreadsheet flow, or synthetic performance proof path.
+acceptance helpers, `npm run objc3c -- <action>` bridge, and runnable toolchain package
+surfaces listed here. Do not add a release-scope runtime benchmark harness,
+standalone spreadsheet flow, or synthetic performance evidence path.
 
 ## Runtime Hot-Path Taxonomy
 
@@ -26,7 +26,7 @@ The current truthful runtime-performance workload families are:
     replay behavior through the live runtime bootstrap path
 - `dispatch-cache`
   - objective: measure selector lookup, method-cache seeding, cache-hit
-    dispatch, and deterministic fallback dispatch through
+    dispatch, and strict dispatch error through
     `objc3_runtime_dispatch_i32`
 - `reflection-query`
   - objective: measure realized class/property/protocol reflection queries
@@ -44,16 +44,18 @@ The current bottleneck map is:
 
 - startup registration:
   - `objc3_runtime_register_image`
-  - `TryWalkRegistrationTableUnlocked`
-  - `RebuildRealizedClassGraphUnlocked`
-  - `SeedDispatchIntentFastPathCacheUnlocked`
+  - `native/objc3c/src/runtime/images/registration.{h,cpp}`
+  - `native/objc3c/src/runtime/classes/class_graph.{h,cpp}`
+  - `native/objc3c/src/runtime/dispatch/method_cache.{h,cpp}`
 - selector lookup and dispatch:
   - `LookupSelectorUnlocked`
-  - `MaterializeSelectorLookupEntryUnlocked`
-  - `ResolveMethodSlowPathUnlocked`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/dispatch/`
   - `objc3_runtime_dispatch_i32`
 - reflection and ownership:
-  - `FindRuntimePropertyAccessorByNameUnlocked`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
   - `objc3_runtime_copy_property_entry_for_testing`
   - `objc3_runtime_copy_object_model_query_state_for_testing`
   - `objc3_runtime_bind_current_property_context_for_testing`
@@ -86,9 +88,9 @@ Allowed optimization moves:
 
 Disallowed optimization moves:
 
-- no alternate dispatch entrypoint, benchmark-only runtime shim, or synthetic
+- no alternate dispatch entrypoint, benchmark-only runtime adapter, or synthetic
   property/reflection path
-- no widening of `native/objc3c/src/runtime/objc3_runtime.h` just to expose
+- no widening of `native/objc3c/src/runtime/public/objc3_runtime_api.h` just to expose
   performance counters
 - no sidecar-only timing report with no coupled runtime probe result
 - no claim that a cache fast path is active unless the runtime snapshot state
@@ -97,18 +99,27 @@ Disallowed optimization moves:
 ## Exact Live Implementation Paths
 
 - runtime library:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
   - `native/objc3c/src/runtime/ARCHITECTURE.md`
 - compile/build/runtime harness:
-  - `scripts/build_objc3c_native.ps1`
+  - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/benchmark_objc3c_runtime_performance.py`
   - `scripts/check_objc3c_runtime_performance_integration.py`
   - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/objc3c_public_workflow_runner.py`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- benchmark-runtime-performance`
+  - `npm run objc3c -- validate-runtime-performance`
+  - `npm run objc3c -- validate-runnable-runtime-performance`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - package bridge: `npm run objc3c -- <action>`
+  - `npm run objc3c -- package-runnable-toolchain`
 - authoritative live runtime probes:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
@@ -137,26 +148,24 @@ Disallowed optimization moves:
 ## Exact Live Commands
 
 - build the native runtime surface before measuring:
-  - `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-  - `npm run build:objc3c-native`
+  - `npm run objc3c -- build-native-binaries`
 - inspect the live runtime boundary already used by developer tooling:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
-  - `npm run inspect:objc3c:runtime`
+  - `npm run objc3c -- inspect-runtime-inspector`
 - benchmark the runtime hot-path surface:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance`
-  - `npm run inspect:objc3c:runtime-performance`
+  - `npm run objc3c -- benchmark-runtime-performance`
 - validate the integrated runtime-performance surface:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-performance`
-  - `npm run test:objc3c:runtime-performance`
+  - `npm run objc3c -- validate-runtime-performance`
 - validate the staged runnable runtime-performance surface:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance`
-  - `npm run test:objc3c:runnable-runtime-performance`
+  - `npm run objc3c -- validate-runnable-runtime-performance`
+
+Helper implementations remain action-registry anchors for the public
+commands above.
 
 ## Explicit Non-Goals
 
-- no benchmark-only runtime shim or alternate dispatch entrypoint
+- no benchmark-only runtime adapter or alternate dispatch entrypoint
 - no sidecar-only performance claim without a coupled runtime probe or snapshot
 - no hidden optimization toggle that bypasses the checked-in runtime path
 - no second public runtime ABI just for performance measurement
-- no milestone-local probe copies when an existing runtime probe already covers
+- no release-scope probe copies when an existing runtime probe already covers
   the workload

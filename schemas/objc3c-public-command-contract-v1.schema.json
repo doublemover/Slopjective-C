@@ -1,23 +1,29 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/schemas/objc3c-public-command-contract-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-public-command-contract-v1.schema.json",
   "title": "Objective-C 3 Public Command Contract v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-public-command-contract-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c-public-command-contract-v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "public-command-contract"
+  },
   "type": "object",
   "required": [
     "contract_id",
     "issue",
     "runner_mode",
     "runner_path",
-    "package_script_count",
+    "package_bridge_count",
     "workflow_action_count",
-    "public_script_count",
     "internal_action_count",
-    "operator_script_count",
-    "maintainer_script_count",
-    "unmapped_scripts",
-    "extra_runner_public_scripts",
+    "operator_action_count",
+    "maintainer_action_count",
+    "missing_package_bridge",
+    "unexpected_package_bridges",
     "actions",
-    "package_scripts"
+    "package_bridges"
   ],
   "properties": {
     "contract_id": {
@@ -33,7 +39,7 @@
     "runner_path": {
       "type": "string"
     },
-    "package_script_count": {
+    "package_bridge_count": {
       "type": "integer",
       "minimum": 0
     },
@@ -41,29 +47,25 @@
       "type": "integer",
       "minimum": 0
     },
-    "public_script_count": {
-      "type": "integer",
-      "minimum": 0
-    },
     "internal_action_count": {
       "type": "integer",
       "minimum": 0
     },
-    "operator_script_count": {
+    "operator_action_count": {
       "type": "integer",
       "minimum": 0
     },
-    "maintainer_script_count": {
+    "maintainer_action_count": {
       "type": "integer",
       "minimum": 0
     },
-    "unmapped_scripts": {
+    "missing_package_bridge": {
       "type": "array",
       "items": {
         "type": "string"
       }
     },
-    "extra_runner_public_scripts": {
+    "unexpected_package_bridges": {
       "type": "array",
       "items": {
         "type": "string"
@@ -75,10 +77,10 @@
         "$ref": "#/$defs/action"
       }
     },
-    "package_scripts": {
+    "package_bridges": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/package_script"
+        "$ref": "#/$defs/package_bridge"
       }
     }
   },
@@ -87,23 +89,27 @@
       "type": "object",
       "required": [
         "action",
+        "command",
         "summary",
         "backend",
-        "public_scripts",
+        "implementation_anchor",
         "pass_through_args",
         "mode",
         "runner_path",
-        "audience",
         "category"
       ],
       "properties": {
         "action": { "type": "string" },
-        "summary": { "type": "string" },
-        "backend": { "type": "string" },
-        "public_scripts": {
-          "type": "array",
-          "items": { "type": "string" }
+        "command": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
         },
+        "summary": { "type": "string" },
+        "backend": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
+        "implementation_anchor": { "type": "string" },
         "validation_tier": { "type": "string" },
         "guarantee_owner": { "type": "string" },
         "pass_through_args": { "type": "boolean" },
@@ -115,20 +121,22 @@
         },
         "category": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "package_script": {
+    "package_bridge": {
       "type": "object",
       "required": [
-        "package_script",
+        "package_bridge",
         "action",
+        "command",
+        "summary",
         "audience",
         "category",
         "backend",
         "runner_path"
       ],
       "properties": {
-        "package_script": { "type": "string" },
+        "package_bridge": { "type": "string" },
         "action": { "type": "string" },
         "summary": { "type": "string" },
         "audience": {
@@ -136,15 +144,22 @@
           "enum": ["operator", "maintainer", "internal"]
         },
         "category": { "type": "string" },
-        "backend": { "type": "string" },
+        "backend": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
+        "command": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
         "validation_tier": { "type": "string" },
         "guarantee_owner": { "type": "string" },
         "pass_through_args": { "type": "boolean" },
         "mode": { "type": "string" },
         "runner_path": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

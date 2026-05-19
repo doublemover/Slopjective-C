@@ -34,6 +34,18 @@
       ]
     },
     {
+      "name": "hard_cutover_retired_mode_and_parser_retired_route_rejections",
+      "feature": "retired mode spellings and parser retired route toggles are canonical parser rejections",
+      "files": [
+        "HC-LEGACY-01.json",
+        "HC-LEGACY-02.json"
+      ],
+      "hard_cutover": {
+        "positive_fixture_policy": "no retired mode, retired adapter, alternate acceptance path, or retired-source lane parser positives",
+        "replacement_behavior": "stable parser diagnostics with canonical Objective-C 3 mode fix-it or no-fix strict rejection"
+      }
+    },
+    {
       "name": "issue_80_async_await_grammar",
       "feature": "async and await grammar acceptance/rejection",
       "issue": 80,

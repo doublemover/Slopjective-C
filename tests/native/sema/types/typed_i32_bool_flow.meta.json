@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "fixture": "typed_i32_bool_flow.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "diagnostic_owner_contract": {
+    "contract_id": "objc3c.native.diagnostic.owner-split.hard-cutover.v1",
+    "catalog_owner": "native.frontend.sema.diagnostic-catalog",
+    "stage_owner": "native.frontend.sema.diagnostic-stage",
+    "fixit_owner": "native.frontend.sema.diagnostic-fixit",
+    "recovery_owner": "native.frontend.sema.diagnostic-recovery",
+    "owner_model": "strict-hard-cutover-no-retired-route-no-compatibility-gate",
+    "recovery_counts_as_success": false
+  },
+  "behavior_family": "types",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false,
+    "retired_route_allowed": false,
+    "gate_allowed": false
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": []
+  }
+}

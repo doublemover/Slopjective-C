@@ -26,11 +26,13 @@ They describe the live native frontend, not historical milestone closeouts.
   - public project explanation and implementation status
 - `docs/objc3c-native.md`
   - implementation-facing narrative over the live native frontend/runtime surface
-- `docs/reference/legacy_spec_anchor_index.md`
-  - compatibility redirects only, not primary onboarding
+- `docs/support/capability_matrix.md`
+  - current support boundary with executable evidence links
 
-Do not move machine-owned packet inventories, `tmp/` proof paths, or archived
+Do not move machine-owned packet inventories, transient output paths, or archived
 milestone closeout material into these fragments.
+The user-facing package entrypoints come from `package.json`; fragments should
+name those package-owned routes instead of introducing parallel command names.
 
 ## Live Code Paths For Documentation Work
 
@@ -46,36 +48,42 @@ adding sidecar scaffolding:
   - `CONTRIBUTING.md`
   - `site/index.md`
 - doc build/check path:
-  - `npm run build:docs:native`
-  - `npm run check:docs:native`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- check-native-docs`
 - site index build path:
-  - `npm run build:site`
-  - `npm run check:site`
+  - `npm run objc3c -- build-site`
+  - `npm run objc3c -- check-site`
 - public command surface build/check path:
-  - `npm run build:docs:commands`
-  - `npm run check:docs:commands`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- check-public-command-surface`
+- public command budget path:
+  - `npm run objc3c -- check-public-command-budget`
+- reader-facing documentation surface validation:
+  - `npm run objc3c -- check-documentation-surface`
+  - `npm run objc3c -- validate-documentation-surface`
 
 ## Canonical Naming And Path Rules
 
 Use these naming rules when downstream cleanup work renames or consolidates
 repo surfaces:
 
-- user-facing package entrypoints come from `package.json` and map directly to
-  `scripts/objc3c_public_workflow_runner.py`
+- user-facing package entrypoints come from the `package.json` `objc3c`
+  script:
+  `npm run objc3c -- <action>`
 - checked-in generated docs keep one source root each:
   - `site/index.md` <= `site/src/`
   - `docs/objc3c-native.md` <= `docs/objc3c-native/src/`
-  - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json` +
-    `scripts/objc3c_public_workflow_runner.py`
+  - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json`
+    public command surface: `npm run objc3c -- <action>`
 - implementation paths stay under `native/objc3c/`, `scripts/`, and `tests/`
 - transient outputs stay under `tmp/`
 - published binaries and libraries stay under `artifacts/`
 
 Explicit non-goals for naming cleanup:
 
-- inventing second source-of-truth directories,
-- promoting `tmp/` or `artifacts/` paths into canonical doc inputs,
-- reintroducing milestone-coded, stage-coded, or compatibility-alias names as
+- inventing duplicate owner directories,
+- promoting transient output paths into documentation owner inputs,
+- reintroducing milestone-coded, stage-coded, or retired alias names as
   first-class command surfaces.
 
 ## Generated Doc And Machine-Appendix Surface
@@ -85,18 +93,21 @@ These surfaces are generated and must stay tied to their canonical inputs:
 - human-facing generated implementation doc:
   - output: `docs/objc3c-native.md`
   - sources: `docs/objc3c-native/src/*.md`
-  - generator: `python scripts/build_objc3c_native_docs.py`
+  - generator action: `npm run objc3c -- build-native-docs`
 - human-facing generated public site:
   - output: `site/index.md`
   - sources: `site/src/index.body.md`, `site/src/index.contract.json`
-  - generator: `python scripts/build_site_index.py`
+  - generator action: `npm run objc3c -- build-site`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
-  - sources: `package.json`, `scripts/objc3c_public_workflow_runner.py`, `scripts/build_objc3c_public_command_contract.py`
-  - build/check: `npm run build:docs:commands` / `npm run check:docs:commands`
+  - sources: `package.json`, `scripts/objc3c_workflow/action_catalog.py`,
+    `scripts/build_objc3c_public_command_contract.py`
+  - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
+  - command-budget check: `npm run objc3c -- check-public-command-budget`
 
-Generated proof and report outputs under `tmp/` are evidence, not canonical
-documentation sources.
+Generated proof and report outputs are transient artifacts, not canonical
+documentation sources. Capability claims stay owned by the capability matrix and
+evidence map.
 
 Explicit non-goals for this fragment tree:
 
@@ -120,10 +131,16 @@ Explicit non-goals for this fragment tree:
 ## Include Rules
 
 - Keep these fragments focused on the current live surface.
+- Keep large `35-runtime-architecture.md` additions under its section-owner
+  groups instead of adding unknown fragment files.
 - Put historical planning and closeout material under `tmp/archive/`.
 - Avoid milestone-coded sections and issue-era command chains here.
+- Do not reintroduce workflow registry facades, adapter layers, old source
+  modes, or direct helper commands as supported public paths.
 
 ## Contract Validation
 
-- Rebuild: `python scripts/build_objc3c_native_docs.py`
-- Drift check: `python scripts/build_objc3c_native_docs.py --check`
+- Rebuild: `npm run objc3c -- build-native-docs`
+- Drift check: `npm run objc3c -- check-native-docs`
+- Reader surface check: `npm run objc3c -- check-documentation-surface`
+- Full docs workflow validation: `npm run objc3c -- validate-documentation-surface`

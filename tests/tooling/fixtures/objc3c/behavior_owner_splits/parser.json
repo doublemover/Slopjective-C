@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-replay-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_root": "tests/tooling/fixtures/objc3c",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "parser replay provenance covers generated diagnostics and recovery artifacts whose first failing owner is parse or source-form rejection; fixture generation metadata, generated module outputs, evidence-log rows, migration-only rows, and generated-output-only rows do not create parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "validation_error_diagnostics_recovery_contract/M185-D001.json",
+    "validation_error_diagnostics_recovery_contract/replay_run_*/module.*",
+    "*diagnostics_recovery* parser-origin payload rows"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode spellings, parser retired route names, generated-only parser rows, evidence-log parser rows, migration-only parser rows, replay-only parser rows, and generated-output-only parser rows remain parser rejection provenance, not generated support"
+}

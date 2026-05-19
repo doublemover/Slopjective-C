@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3-abi-2025Q4.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3-abi-2025Q4.schema.json",
   "title": "Objective-C 3 ABI Manifest (2025Q4)",
   "description": "Schema fragment for ABI manifest payloads keyed by manifest_schema=objc3-abi-2025Q4.",
   "type": "object",
@@ -15,7 +15,7 @@
     "target_triples",
     "symbol_policy_id",
     "mangling_policy_id",
-    "metadata_compatibility",
+    "metadata_contract",
     "artifacts"
   ],
   "properties": {
@@ -59,7 +59,7 @@
     "mangling_policy_id": {
       "$ref": "#/$defs/policyId"
     },
-    "metadata_compatibility": {
+    "metadata_contract": {
       "$ref": "#/$defs/metadataCompatibility"
     },
     "artifacts": {
@@ -71,8 +71,8 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Non-normative extension metadata. Keys must not shadow required fields.",
-      "additionalProperties": true
+      "description": "Non-normative extension metadata is closed in hard-cutover manifests; use a versioned schema field instead of retired sidecars.",
+      "additionalProperties": false
     }
   },
   "$defs": {
@@ -123,7 +123,7 @@
         "producer_schema_minor",
         "minimum_importer_schema_major",
         "minimum_importer_schema_minor",
-        "compatibility_mode",
+        "schema_policy",
         "required_capabilities"
       ],
       "properties": {
@@ -143,12 +143,9 @@
           "type": "integer",
           "minimum": 0
         },
-        "compatibility_mode": {
+        "schema_policy": {
           "type": "string",
-          "enum": [
-            "strict",
-            "forward-compatible"
-          ]
+          "const": "strict"
         },
         "required_capabilities": {
           "type": "array",
@@ -162,7 +159,7 @@
         {
           "if": {
             "properties": {
-              "compatibility_mode": {
+              "schema_policy": {
                 "const": "strict"
               }
             }

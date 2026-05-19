@@ -12,7 +12,8 @@
     "scripts/build_objc3c_manifest_object_ir_truth_gate.py",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
   ],
-  "source": "// RUN: python scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3CycleA : OC3CycleB\n@property int a;\n@end\n@interface OC3CycleB : OC3CycleA\n@property int b;\n@end\n@implementation OC3CycleA\n@end\n@implementation OC3CycleB\n@end\n",
+  "implementation_anchor": "scripts/build_objc3c_manifest_object_ir_truth_gate.py --check",
+  "source": "// IMPLEMENTATION-ANCHOR: scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3CycleA : OC3CycleB\n@property int a;\n@end\n@interface OC3CycleB : OC3CycleA\n@property int b;\n@end\n@implementation OC3CycleA\n@end\n@implementation OC3CycleB\n@end\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [
@@ -40,7 +41,7 @@
             "Cyclic interface inheritance emits deterministic O3P150 and O3S260 diagnostics before a manifest, IR, or object artifact is accepted as a claim source",
             "The truth-gate report performs two negative compiler runs and verifies deterministic diagnostic output",
             "Rejected input does not produce module.manifest.json, module.ll, or module.obj in the checked negative scratch runs",
-            "tmp/artifacts may be used only as regenerated scratch output; all truth-gate source inputs and committed reports remain outside tmp/"
+            "Scratch artifacts may be regenerated only outside the checked source inputs and committed report contracts"
           ]
         }
       ],

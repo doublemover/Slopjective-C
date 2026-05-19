@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
+from package_ecosystem_contracts import package_ecosystem_owner_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,21 +55,19 @@ def main() -> int:
     manifest = load_json(manifest_path)
     package_surface = manifest.get("package_ecosystem_surface", {})
     public_actions = manifest.get("package_ecosystem_public_actions", [])
-    public_scripts = manifest.get("package_ecosystem_public_scripts", [])
+    manifest_package_bridge = manifest.get("package_bridge")
     expect(isinstance(package_surface, dict), "package manifest missing package_ecosystem_surface", failures)
     for action in ("build-package-lock", "validate-package-authoring", "validate-package-mirror", "validate-runnable-package-ecosystem"):
         expect(action in public_actions, f"package manifest missing public action {action}", failures)
-    for script in ("build:objc3c:package-lock", "test:objc3c:package-authoring", "test:objc3c:package-mirror", "test:objc3c:package-ecosystem:e2e"):
-        expect(script in public_scripts, f"package manifest missing public script {script}", failures)
+    expect(manifest_package_bridge == "objc3c", "package manifest missing objc3c package bridge", failures)
 
-    packaged_runner = package_root / "scripts" / "objc3c_public_workflow_runner.py"
     packaged_authoring = run_capture(
-        [sys.executable, str(packaged_runner), "validate-package-authoring"],
+        public_workflow_command("validate-package-authoring"),
         cwd=package_root,
     )
     expect(packaged_authoring.returncode == 0, "packaged package authoring workflow failed", failures)
     packaged_mirror = run_capture(
-        [sys.executable, str(packaged_runner), "validate-package-mirror"],
+        public_workflow_command("validate-package-mirror"),
         cwd=package_root,
     )
     expect(packaged_mirror.returncode == 0, "packaged package mirror workflow failed", failures)
@@ -78,7 +78,7 @@ def main() -> int:
     expect(mirror_summary.get("status") == "PASS", "packaged mirror reproducibility summary did not report PASS", failures)
     expect(mirror_summary.get("network_policy") == "no-network-during-validation", "packaged mirror network policy drifted", failures)
     expect(
-        mirror_summary.get("hosted_registry_support") == "deferred-release-blocking-if-claimed",
+        mirror_summary.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed",
         "packaged hosted registry support claim drifted",
         failures,
     )
@@ -86,11 +86,22 @@ def main() -> int:
     payload = {
         "contract_id": "objc3c.package_ecosystem.runnable.end_to_end.summary.v1",
         "status": "PASS" if not failures else "FAIL",
+        "owner_policy": package_ecosystem_owner_payload(),
+        "blocker_metadata": {
+            "blocker_owner": "package-ecosystem-blockers",
+            "blocking_conditions": [
+                "packaged package authoring workflow failed",
+                "packaged mirror workflow failed",
+                "runnable package manifest missing package ecosystem owner surface",
+                "packaged hosted registry claim did not fail closed",
+            ],
+        },
         "package_root": repo_rel(package_root),
         "manifest_path": repo_rel(manifest_path),
         "package_ecosystem_surface": package_surface,
         "package_ecosystem_public_actions": public_actions,
-        "package_ecosystem_public_scripts": public_scripts,
+        "package_bridge": "objc3c",
+        "packaged_package_bridge": manifest_package_bridge,
         "failures": failures,
         "packaged_reports": {
             "authoring_summary": repo_rel(package_root / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"),

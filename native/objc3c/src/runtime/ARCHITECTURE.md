@@ -15,24 +15,25 @@ Owned code paths:
 - compile publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - installation and registration:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
 - selector lookup and dispatch:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - property, storage, and ownership execution:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - acceptance and replay reporting:
+  - `scripts.objc3c_workflow`
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- <action>`
 
 Allowed subsystem dependencies:
 
@@ -46,7 +47,7 @@ Forbidden subsystem shortcuts:
 
 - acceptance or replay reporting must not claim runtime execution from sidecars alone
 - selector or property execution must not bypass installation through alternate loader state
-- compile publication must not widen the public runtime ABI outside `native/objc3c/src/runtime/objc3_runtime.h`
+- compile publication must not widen the public runtime ABI outside `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - milestone-specific closeout helpers must not become runtime subsystem dependencies
 
 Bootstrap registration source of truth:
@@ -122,7 +123,7 @@ Metaprogramming package/provenance source of truth:
 - later semantic expansion, lowering, cache integration, and runtime hook work
   must extend that emitted source-completion boundary instead of reconstructing
   package/provenance visibility or synthesized declaration state from sidecars
-  or milestone-local notes
+  or release-scope notes
 
 Metaprogramming semantic source of truth:
 
@@ -161,10 +162,10 @@ Metaprogramming lowering and host-cache source of truth:
   , `tests/tooling/fixtures/native/synthesized_ast_ir_macro_positive.objc3`,
   `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`,
   and `tests/tooling/fixtures/native/macro_host_process_provider.objc3`, plus
-  the proof path `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
+  the evidence path `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
 - later executable expansion, packaged cache reuse, and runtime host work must
   extend that emitted lowering/output boundary instead of reconstructing it
-  from sidecar manifests or milestone-local notes
+  from sidecar manifests or release-scope notes
 
 Cross-module metaprogramming artifact preservation source of truth:
 
@@ -179,7 +180,7 @@ Cross-module metaprogramming artifact preservation source of truth:
   `tests/tooling/fixtures/native/preservation_consumer.objc3`
 - later packaged replay and runtime host integration work must extend that
   emitted preservation boundary instead of reconstructing imported
-  metaprogramming facts from local-only manifests or milestone-local notes
+  metaprogramming facts from local-only manifests or release-scope notes
 
 Metaprogramming runtime ABI and cache source of truth:
 
@@ -210,7 +211,7 @@ Metaprogramming cache runtime integration implementation source of truth:
   code paths, the real provider/consumer fixtures
   `tests/tooling/fixtures/native/macro_host_process_provider.objc3` and
   `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`, and the
-  proof path `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+  evidence path `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
 - later runnable metaprogramming conformance and packaged validation work must
   extend that emitted implementation boundary instead of inventing synthetic
   cache-materialization proofs or host/runtime integration sidecars
@@ -227,7 +228,7 @@ Unified concurrency runtime architecture source of truth:
 - that same surface must freeze the private continuation/task/actor runtime
   helper boundary in `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   and `native/objc3c/src/runtime/objc3_runtime.cpp` without widening the public
-  runtime ABI beyond `native/objc3c/src/runtime/objc3_runtime.h`
+  runtime ABI beyond `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - later lowering, runtime ABI, actor mailbox, executor, and runnable
   validation work must extend that emitted surface instead of inferring
   concurrency source truth from probe-local notes, sidecar-only manifests, or
@@ -297,7 +298,7 @@ Block/ARC unified source of truth:
 - later ownership transfer, capture-family, generalized ARC insertion, block
   helper/runtime implementation, and runnable block-ARC validation work must
   extend that emitted surface rather than inferring runtime truth from sidecar
-  probes, ad hoc IR inspection, or milestone-local notes
+  probes, ad hoc IR inspection, or release-scope notes
 - escaping byref and owned capture block values now compile through that same
   emitted source/lowering/runtime chain, with `block_runtime_byref_forwarding_probe.cpp`
   as the executable forwarding proof rather than a deferred semantic rejection
@@ -343,7 +344,7 @@ Property/ivar/storage/accessor source of truth:
   consume
 - later storage legality, synthesis, lowering, runtime realization, and
   storage/reflection conformance work must extend that emitted surface rather
-  than inventing semantics from milestone-local notes, sidecar-only metadata,
+  than inventing semantics from release-scope notes, sidecar-only metadata,
   or lowering-owned re-derivation
 
 Property atomicity/synthesis/reflection source of truth:
@@ -432,7 +433,7 @@ Cross-module realized-metadata replay preservation source of truth:
   derived from emitted runtime registration manifests
 - later runtime ABI, lookup, and end-to-end conformance work must consume that
   emitted link-plan boundary instead of reconstructing cross-image replay truth
-  from ad hoc probe payloads or milestone-local notes
+  from ad hoc probe payloads or release-scope notes
 
 Object-model runtime ABI and query surface source of truth:
 
@@ -499,7 +500,7 @@ Class/metaclass/protocol realization source of truth:
   protocol-conformance query symbols that the live executable probes consume
 - later category attachment, merged dispatch resolution, and runnable
   conformance work must extend that emitted surface instead of reconstructing
-  class lineage or protocol truth from milestone-local notes or synthetic
+  class lineage or protocol truth from release-scope notes or synthetic
   summaries
 
 Category attachment and merged dispatch source of truth:
@@ -529,7 +530,7 @@ Reflection visibility and runtime coherence diagnostics source of truth:
   consume
 - later reflection hardening and property/runtime consistency work must extend
   that emitted surface instead of reconstructing coherence guarantees from ad
-  hoc probe payloads, milestone-local summaries, or source-only manifests
+  hoc probe payloads, release-scope summaries, or source-only manifests
 
 Bootstrap legality and installation semantics:
 
@@ -553,6 +554,6 @@ Bootstrap legality and installation semantics:
   anchor must point at the discovery root, and the discovery root must close
   over the class/protocol/category/property/ivar descriptor roots before any
   image-walk state is published
-- the shared proof path for those guarantees is
+- the shared evidence path for those guarantees is
   `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`,
   exercised through `python scripts/check_objc3c_runtime_acceptance.py`

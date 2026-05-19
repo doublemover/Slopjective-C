@@ -7,7 +7,9 @@ for extension identifiers used in derive and macro governance.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
+- `scripts/objc3c_shared/schema_registry.py`
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
 - `spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`
 - `spec/governance/macro_derive_extension_charter_v1.md`
 
@@ -72,7 +74,7 @@ Namespace class and lifecycle state MUST be coherent.
 | --------------- | ------------------------------------------------------------- | ------------------------------------ |
 | `experimental`  | `NS-02`, `NS-03`                                              | `NS-01`                              |
 | `provisional`   | `NS-02` canonical, optional future public pre-allocation note | `NS-01` canonical assignment         |
-| `stable`        | `NS-01` canonical, optional vendor alias with migration note  | `NS-03` canonical                    |
+| `stable`        | `NS-01` canonical with no vendor alias support path           | `NS-03` canonical                    |
 | `deprecated`    | Previously published canonical namespace only                 | Namespace reassignment or ID reuse   |
 | `retired`       | Tombstone-only retention of published ID                      | ID reuse or deletion of audit record |
 
@@ -161,12 +163,12 @@ Rejected examples:
 
 ## 10. Downstream Contract
 
-| Consumer                         | Required input from this policy                              |
-| -------------------------------- | ------------------------------------------------------------ |
-| `C-08` vendor conformance claims | Namespace class validity and lifecycle compatibility checks. |
-| `C-11` extension registry        | Canonical ID class and collision-free publication contract.  |
-| `C-05` lifecycle policy          | State-dependent namespace restrictions.                      |
+| Consumer                         | Required input from this policy                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
+| `C-08` vendor conformance claims | Namespace class validity and lifecycle-state checks tied to capability/evidence rows.   |
+| `C-11` extension registry        | Canonical ID class, collision-free publication contract, and schema-registry ownership. |
+| `C-05` lifecycle policy          | State-dependent namespace restrictions.                                                 |
 
 Schema-level permissiveness MUST NOT override this policy. If a schema accepts an
-identifier that violates Section 2 through Section 4, this policy remains
-authoritative and the identifier is invalid.
+identifier that violates Section 2 through Section 4, the shared schema registry,
+capability matrix, and evidence map still reject the identifier as unsupported.

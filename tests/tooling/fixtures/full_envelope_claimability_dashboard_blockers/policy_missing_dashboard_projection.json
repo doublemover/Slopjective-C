@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.full_envelope.claimability.release.blocker.rollout.policy.v1",
-  "summary_script": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+  "summary_implementation_anchor": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
   "required_reports": [
     {
       "name": "performance-governance",

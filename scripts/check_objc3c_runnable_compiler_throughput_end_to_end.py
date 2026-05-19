@@ -64,15 +64,15 @@ def main() -> int:
     summary_schema = package_root / normalize_rel_path(str(compiler_surface["summary_schema"]))
 
     expect(
-        command_surfaces.get("inspect_compiler_throughput") == "npm run inspect:objc3c:compiler-throughput",
+        command_surfaces.get("inspect_compiler_throughput") == "npm run objc3c -- benchmark-compiler-throughput",
         "package manifest missing inspect_compiler_throughput command surface",
     )
     expect(
-        command_surfaces.get("compiler_throughput") == "npm run test:objc3c:compiler-throughput",
+        command_surfaces.get("compiler_throughput") == "npm run objc3c -- validate-compiler-throughput",
         "package manifest missing compiler_throughput command surface",
     )
     expect(
-        command_surfaces.get("compiler_throughput_e2e") == "npm run test:objc3c:runnable-compiler-throughput",
+        command_surfaces.get("compiler_throughput_e2e") == "npm run objc3c -- validate-runnable-compiler-throughput",
         "package manifest missing compiler_throughput_e2e command surface",
     )
 

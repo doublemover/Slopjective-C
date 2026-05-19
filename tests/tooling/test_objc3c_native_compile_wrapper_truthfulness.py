@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,17 @@ FIXTURE = (
     / "native"
     / "synthesized_accessor_property_lowering_positive.objc3"
 )
+SELF_AUDIT_SCRIPT = ROOT / "scripts" / "check_objc3c_compile_wrapper_self_audit.py"
+SELF_AUDIT_SPEC = importlib.util.spec_from_file_location(
+    "check_objc3c_compile_wrapper_self_audit", SELF_AUDIT_SCRIPT
+)
+if SELF_AUDIT_SPEC is None or SELF_AUDIT_SPEC.loader is None:
+    raise RuntimeError("Unable to load scripts/check_objc3c_compile_wrapper_self_audit.py")
+check_objc3c_compile_wrapper_self_audit = importlib.util.module_from_spec(
+    SELF_AUDIT_SPEC
+)
+sys.modules[SELF_AUDIT_SPEC.name] = check_objc3c_compile_wrapper_self_audit
+SELF_AUDIT_SPEC.loader.exec_module(check_objc3c_compile_wrapper_self_audit)
 
 
 def _find_pwsh() -> str | None:
@@ -25,6 +38,21 @@ def _find_pwsh() -> str | None:
         if resolved:
             return resolved
     return None
+
+
+def test_compile_wrapper_self_audit_pins_truth_result_artifact_status_owners() -> None:
+    assert check_objc3c_compile_wrapper_self_audit.SELF_AUDIT_CONTRACT_ID == (
+        "objc3c.native.compile.wrapper.self_audit.v1"
+    )
+    assert check_objc3c_compile_wrapper_self_audit.wrapper_truth_owner_contract() == {
+        "wrapper_truth_owner": "objc3c-native-compile-wrapper-truth",
+        "result_owner": "objc3c-native-compile-wrapper-result",
+        "artifact_owner": "objc3c-native-compile-wrapper-artifact",
+        "status_owner": "objc3c-native-compile-wrapper-status",
+        "truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
+        "provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
+        "no_retired_route_or_evidence_log_claims": True,
+    }
 
 
 def test_compile_wrapper_emits_truthful_compile_output_envelope(tmp_path: Path) -> None:

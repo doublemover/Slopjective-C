@@ -6,6 +6,24 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_CLAIM_CANDIDATE_SCOPED,
+        PUBLIC_CLAIM_PREVIEW_ONLY,
+        PUBLIC_CLAIM_PRODUCTION_STRENGTH,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_CLASSES,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_CLAIM_CANDIDATE_SCOPED,
+        PUBLIC_CLAIM_PREVIEW_ONLY,
+        PUBLIC_CLAIM_PRODUCTION_STRENGTH,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_CLASSES,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
@@ -49,6 +67,10 @@ def main() -> int:
         for window in policy_contract["support_windows"]
         for support_class in window["allowed_support_classes"]
     }
+    support_window_claim_classes = {
+        window["window"]: window["public_claim_class"]
+        for window in policy_contract["support_windows"]
+    }
 
     checks = {
         "summary_script_link_matches": policy_contract["summary_script"] == "scripts/build_full_envelope_claimability_claim_policy_summary.py",
@@ -70,6 +92,16 @@ def main() -> int:
         "preview_window_excludes_supported_claims": all(
             window["window"] != "preview" or "supported" not in window["allowed_support_classes"]
             for window in policy_contract["support_windows"]
+        ),
+        "support_windows_match_owner_rollout_classes": set(support_window_claim_classes) == set(ROLLOUT_CLASSES),
+        "support_windows_emit_public_claim_classes": support_window_claim_classes == {
+            "stable": PUBLIC_CLAIM_PRODUCTION_STRENGTH,
+            "candidate": PUBLIC_CLAIM_CANDIDATE_SCOPED,
+            "preview": PUBLIC_CLAIM_PREVIEW_ONLY,
+        },
+        "support_windows_name_release_contracts": all(
+            path in policy_contract["required_release_contract_reports"]
+            for path in (RELEASE_OPERATIONS_SUMMARY, DISTRIBUTION_CREDIBILITY_SUMMARY)
         ),
     }
 

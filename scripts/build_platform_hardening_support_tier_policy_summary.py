@@ -1,39 +1,35 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from objc3c_tooling.json_io import write_json_file
 import json
-from pathlib import Path
-from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-POLICY_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
-SUPPORTED_PLATFORMS_PATH = ROOT / "tests/tooling/fixtures/packaging_channels/supported_platforms.json"
-PLATFORM_RUNBOOK = ROOT / "docs/runbooks/objc3c_platform_hardening.md"
-PACKAGING_RUNBOOK = ROOT / "docs/runbooks/objc3c_packaging_channels.md"
-RELEASE_RUNBOOK = ROOT / "docs/runbooks/objc3c_release_operations.md"
-OUT_DIR = ROOT / "tmp/reports/platform-hardening/support-tier-policy"
-JSON_OUT = OUT_DIR / "support_tier_policy_summary.json"
-MD_OUT = OUT_DIR / "support_tier_policy_summary.md"
-
-
-def expect(condition: bool, message: str) -> None:
-    if not condition:
-        raise RuntimeError(message)
-
-
-def read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    expect(isinstance(payload, dict), f"JSON object expected at {path}")
-    return payload
+from platform_hardening_contracts import (
+    PACKAGING_RUNBOOK_PATH,
+    PLATFORM_RUNBOOK_PATH,
+    RELEASE_RUNBOOK_PATH,
+    SUPPORT_TIER_POLICY_PATH,
+    SUPPORT_TIER_POLICY_SUMMARY_PATH,
+    SUPPORTED_PLATFORMS_PATH,
+    load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
+    write_json,
+    write_markdown_summary,
+)
 
 
 def main() -> int:
-    policy = read_json(POLICY_PATH)
-    supported_platforms = read_json(SUPPORTED_PLATFORMS_PATH)
-    platform_runbook_text = PLATFORM_RUNBOOK.read_text(encoding="utf-8")
-    packaging_runbook_text = PACKAGING_RUNBOOK.read_text(encoding="utf-8")
-    release_runbook_text = RELEASE_RUNBOOK.read_text(encoding="utf-8")
+    policy = load_json_object(SUPPORT_TIER_POLICY_PATH)
+    owner_policy = require_platform_hardening_owner_policy(policy, surface_name="platform support tier policy")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        policy,
+        surface_name="platform support tier policy",
+        required_blockers=("support tier claim outside checked-in platform ids",),
+    )
+    supported_platforms = load_json_object(SUPPORTED_PLATFORMS_PATH)
+    platform_runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
+    packaging_runbook_text = PACKAGING_RUNBOOK_PATH.read_text(encoding="utf-8")
+    release_runbook_text = RELEASE_RUNBOOK_PATH.read_text(encoding="utf-8")
 
     tiers = policy["tiers"]
     tier_index = {entry["tier_id"]: entry for entry in tiers}
@@ -60,21 +56,24 @@ def main() -> int:
         "tier_2_platform_count": len(tier_index["tier-2"]["platform_ids"]),
         "experimental_platform_count": len(tier_index["experimental"]["platform_ids"]),
         "forbidden_claim_count": len(policy["forbidden_claims"]),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "checks": checks,
     }
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    write_json_file(JSON_OUT, payload)
-    MD_OUT.write_text(
-        "# Platform Support Tier Policy Summary\n\n"
-        f"- Contract: `{payload['source_contract_id']}`\n"
-        f"- Tiers: `{payload['tier_count']}`\n"
-        f"- Tier 1 platforms: `{payload['tier_1_platform_count']}`\n"
-        f"- Tier 2 platforms: `{payload['tier_2_platform_count']}`\n"
-        f"- Experimental platforms: `{payload['experimental_platform_count']}`\n"
-        f"- Forbidden claims: `{payload['forbidden_claim_count']}`\n"
-        f"- Status: `{payload['status']}`\n",
-        encoding="utf-8",
+    write_json(SUPPORT_TIER_POLICY_SUMMARY_PATH, payload)
+    write_markdown_summary(
+        SUPPORT_TIER_POLICY_SUMMARY_PATH.with_suffix(".md"),
+        "Platform Support Tier Policy Summary",
+        (
+            ("Contract", payload["source_contract_id"]),
+            ("Tiers", payload["tier_count"]),
+            ("Tier 1 platforms", payload["tier_1_platform_count"]),
+            ("Tier 2 platforms", payload["tier_2_platform_count"]),
+            ("Experimental platforms", payload["experimental_platform_count"]),
+            ("Forbidden claims", payload["forbidden_claim_count"]),
+            ("Status", payload["status"]),
+        ),
     )
     print(json.dumps(payload, indent=2))
     return 0 if payload["status"] == "PASS" else 1

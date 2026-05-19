@@ -24,7 +24,7 @@
           "start": { "line": 3, "column": 3 },
           "end": { "line": 3, "column": 28 }
         },
-        "message": "manifest schema_version is not compatible with required runtime/abi schema",
+        "message": "manifest schema_version does not match the required runtime/abi schema",
         "fixits": []
       }
     ],

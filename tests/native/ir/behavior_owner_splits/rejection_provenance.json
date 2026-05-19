@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-ir-behavior-family-owner-split",
+  "owner_boundary": "rejection_provenance",
+  "source_family": "tests/native/ir",
+  "support_boundary": "rejection/provenance ownership covers IR non-nil runtime helper strict link failures, retired dispatch tags, and any generated-only, evidence-log, migration-only, old-mode, gate, or retired route IR claims",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+    "runtime_calls/non_nil_receiver_runtime_call_contract.meta.json",
+    "runtime_calls/non_nil_receiver_runtime_call_contract.meta.json:behavior_contract=canonical-strict-error",
+    "runtime_calls/non_nil_receiver_runtime_call_contract.meta.json:retired_surface_tags=runtime-dispatch",
+    "runtime_calls/non_nil_receiver_runtime_call_contract.meta.json:boundary.retired_positive_surface=true",
+    "runtime_calls/non_nil_receiver_runtime_call_contract.meta.json:execution.runtime_dispatch_symbol=objc3_runtime_dispatch_i32",
+    "*old-mode*",
+    "*compatibility-gate*",
+    "*gate*",
+    "*retired-route*",
+    "*generated-only*",
+    "*evidence-log*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.meta.json",
+  "retired_surface_rule": "old-mode, compatibility-gate, retired route, generated-only, evidence-log, and migration-only IR surfaces are canonical strict-error, rejection, or provenance-only evidence, never positive IR behavior truth"
+}

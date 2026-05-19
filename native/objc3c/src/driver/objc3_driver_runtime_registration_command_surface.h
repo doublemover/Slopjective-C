@@ -1,0 +1,8 @@
+#pragma once
+
+struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs;
+struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;
+
+void PopulateObjc3DriverRuntimeRegistrationCommandSurfaceInputs(
+    Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary &summary);

@@ -3,8 +3,19 @@
   "schema_version": 1,
   "report_root": "tmp/reports/distribution-credibility",
   "artifact_root": "tmp/artifacts/distribution-credibility",
+  "source_surface_summary": "tmp/reports/distribution-credibility/source-surface-summary.json",
+  "schema_surface_summary": "tmp/reports/distribution-credibility/schema-surface-summary.json",
   "dashboard_summary": "tmp/reports/distribution-credibility/dashboard-summary.json",
   "publication_summary": "tmp/reports/distribution-credibility/publication-summary.json",
+  "integration_summary": "tmp/reports/distribution-credibility/integration-summary.json",
+  "end_to_end_summary": "tmp/reports/distribution-credibility/end-to-end-summary.json",
+  "dashboard_artifact": "tmp/artifacts/distribution-credibility/dashboard/distribution-credibility-dashboard.json",
   "trust_report_json": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
-  "trust_report_markdown": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.md"
+  "trust_report_markdown": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.md",
+  "artifact_claim_policy": {
+    "evidence_log_allowed": false,
+    "wrapper_only_allowed": false,
+    "required_owner_contract_module": "scripts/objc3c_workflow/actions/release_governance_distribution_credibility_owner_contracts.py",
+    "trust_report_boundary": "trust report artifacts must be generated from source, schema, dashboard, release-drill, and release-evidence owner contracts"
+  }
 }

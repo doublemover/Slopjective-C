@@ -16,7 +16,7 @@
       ],
       "validation_commands": [
         "python -m pytest tests/tooling -q",
-        "python scripts/spec_lint.py\t--glob docs/reference/**/*.md"
+        "npm run objc3c -- lint-spec\t--glob docs/reference/**/*.md"
       ],
       "execution_status": "open",
       "execution_status_rationale": "Contract validation in progress.",

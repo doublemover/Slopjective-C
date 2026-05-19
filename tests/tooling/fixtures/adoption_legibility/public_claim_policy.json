@@ -1,13 +1,20 @@
 {
   "contract_id": "objc3c.adoption_legibility.public_claim_policy.v1",
   "schema_version": 1,
+  "owner_section": "candidate_claims",
+  "owner_contract": {
+    "owner": "public_claim_owner",
+    "artifact_section": "candidate_claims",
+    "publication_projection": "evaluator_publication.candidate_claim_classes",
+    "blocker_projection": "claim_audit.blocker_metadata.public_claim_policy"
+  },
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/performance_governance/claim_policy.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
-    "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+    "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
   ],
   "claim_classes": [
     {
@@ -31,14 +38,14 @@
       ]
     },
     {
-      "claim_id": "incremental-objc2-migration",
-      "allowed_scope": "same-major incremental migration with generated compatibility, package-lock, rollback, and tutorial evidence",
-      "support_class": "same-major-migration",
+      "claim_id": "incremental-objc2-conversion",
+      "allowed_scope": "same-major adoption orientation with checked-in porting examples, package-lock evidence, revert-risk inventory, and tutorial evidence",
+      "support_class": "same-major-porting-orientation",
       "requires_evidence": [
-        "objc2-migration-guide",
-        "release-compatibility-policy",
+        "objc2-conversion-guide",
+        "release-risk-policy",
         "package-lock-workflow",
-        "long-horizon-migration-rollback"
+        "long-horizon-revert-risk-inventory"
       ],
       "required_reference_surfaces": [
         "docs/tutorials/objc2_to_objc3_migration.md",
@@ -65,25 +72,41 @@
       ]
     }
   ],
+  "hard_cutover_truthfulness": {
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
+    "manual_adoption_metrics_allowed": false,
+    "requires_owner_contracts": [
+      "public_claim_owner",
+      "adoption_comparison_owner",
+      "adoption_replay_owner",
+      "publication_owner"
+    ],
+    "claim_boundary": "adoption wording may describe evidence-linked evaluator paths and porting orientation only; it must not claim retired source acceptance, automatic conversion, alternate old-surface support, or adoption volume"
+  },
   "fail_closed_conditions": [
     "claim omits a checked-in evidence surface",
-    "claim says or implies cross-major migration safety",
+    "claim says or implies cross-major conversion safety",
+    "claim says or implies retired-source conversion support",
+    "claim says or implies alternate support for retired Objective-C 2 behavior",
     "claim says or implies hosted registry, package-manager parity, or IDE marketplace parity",
     "claim says or implies performance leadership without release-ready performance governance status",
-    "claim says or implies full source compatibility with Objective-C 2",
+    "claim says or implies full retired-source acceptance for Objective-C 2",
     "claim uses hand-maintained adoption counts",
     "claim relies on private maintainer context to evaluate fit"
   ],
   "forbidden_claims": [
     "drop-in Objective-C 2 replacement",
-    "zero-risk migration",
+    "zero-risk conversion",
     "forever compatible",
     "performance leader",
     "package-manager parity",
     "hosted registry available",
     "IDE marketplace ready",
-    "automatic cross-major migration",
-    "manual adoption metric"
+    "automatic cross-major conversion",
+    "manual adoption metric",
+    "retired-source conversion support",
+    "alternate retired-behavior support path"
   ],
   "required_publication_fields": [
     "claim_id",
@@ -93,6 +116,16 @@
     "deferred_behavior",
     "last_generated_utc"
   ],
+  "publication_guardrails": {
+    "metadata_projection": "evaluator_publication.candidate_claim_classes",
+    "forbidden_claim_projection": "evaluator_publication.forbidden_claims",
+    "release_blocker_field": "claim_audit.release_blockers",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.public_claim_policy",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "deferred_behavior_policy": {
     "must_be_named": true,
     "must_link_successor_surface": true,

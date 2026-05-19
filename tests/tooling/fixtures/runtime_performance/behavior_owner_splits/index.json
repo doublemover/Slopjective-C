@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before hot-path workload, acceptance case, timing row, cache row, report packet, counter snapshot, generated artifact, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
+    "positive_rule": "runtime performance rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; timing rows, cache rows, report packets, counter snapshots, tmp packages, acceptance summaries, and provenance rows are not behavior support by themselves",
+    "provenance_rule": "benchmark summaries, integration summaries, runnable summaries, packet roots, counter snapshots, runtime acceptance reports, workload rows, source-surface rows, artifact-surface rows, optimization-policy rows, generated-only rows, evidence-log rows, migration-only rows, cache-only rows, timing-only rows, and runner-only rows are provenance-only until a phase owner claims behavior",
+    "retired_surface_rule": "retired-route, gate, compatibility, old-mode, unsupported, unresolved dispatch, strict-dispatch, alternate acceptance, cache-only, timing-only, runner-only, generated-only, evidence-log, migration-only, package-only, and counter-only claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime behavior, runtime public C API path rows, dispatch probe rows, runtime acceptance report rows, and performance timing/cache/report rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "runtime_performance_provenance",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime_performance_provenance.json"
+    }
+  ]
+}

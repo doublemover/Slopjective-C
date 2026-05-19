@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-positive-residue-audit",
+  "source_basis": "read-only text inspection over tests/native, tests/fixtures, tests/tooling/fixtures/native, tests/conformance, and docs/issues on 2026-05-09",
+  "validation": "not run",
+  "result": "no remaining retired mode, retired adapter, alternate acceptance path, or retired-source lane positive expectation was found that requires conversion",
+  "conversion_policy": {
+    "true_retired_positive": "rename or move to canonical rejection/strict-error fixture metadata",
+    "lexical_false_positive": "document why the token is ordinary source text and not a compatibility support claim",
+    "negative_fixture": "keep retained names only when the sidecar or index states rejection/strict-error behavior"
+  },
+  "intentional_negative_residue_policy": {
+    "preserve_detector_pattern_ids": true,
+    "rule": "negative-looking compat, gate, retired route, old-mode, and migration tokens remain allowed only when the fixture or index explicitly records rejection, strict-error, absent-support, or lexical false-positive disposition",
+    "owner_index": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json"
+  },
+  "intentional_negative_detector_pattern_ids": [
+    {
+      "pattern_id": "O3C002",
+      "surface": "old-mode literal aliases",
+      "boundary": "parser and e2e rejection evidence"
+    },
+    {
+      "pattern_id": "O3C001",
+      "surface": "removed retired mode flag",
+      "boundary": "parser rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "surface": "removed parser retired route flag",
+      "boundary": "parser rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "surface": "removed compatibility gate",
+      "boundary": "semantic rejection evidence"
+    },
+    {
+      "pattern_id": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "surface": "removed runtime dispatch retired route flag",
+      "boundary": "lowering strict-error evidence"
+    },
+    {
+      "pattern_id": "link.unresolved_symbol",
+      "surface": "non-nil runtime dispatch typed projection linkage",
+      "boundary": "lowering, ir, and runtime strict-error evidence"
+    },
+    {
+      "pattern_id": "O3RT002",
+      "surface": "unknown receiver runtime dispatch",
+      "boundary": "runtime and e2e strict-error evidence"
+    }
+  ],
+  "confirmed_rejections": [
+    "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+    "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+    "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+    "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+    "tests/tooling/fixtures/native/compatibility_alias_without_object_return_rejected.objc3",
+    "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
+    "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+    "tests/tooling/fixtures/native/property_setter_selector_compatibility_negative.objc3"
+  ],
+  "absent_retired_positive_paths": [
+    "tests/tooling/fixtures/native/legacy_canonical_migration_positive.objc3",
+    "tests/tooling/fixtures/native/legacy_canonical_migration_negative.objc3",
+    "tests/tooling/fixtures/native/frontend_migration_canonicalization_positive.objc3",
+    "tests/tooling/fixtures/native/execution/positive/objc_literal_aliases_globals.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/objc_literal_aliases_globals.objc3"
+  ],
+  "documented_lexical_positive_hits": [
+    {
+      "path": "tests/tooling/fixtures/native/dispatch_intent_source_closure_positive.objc3",
+      "token": "retired-routePath",
+      "classification": "ordinary selector spelling inside a dispatch-intent source fixture",
+      "disposition": "not a runtime retired route acceptance path"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
+      "token": "retired-route",
+      "classification": "ordinary helper function name in canonical control-flow behavior",
+      "disposition": "not a compatibility retired route mode"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
+      "token": "retired-route",
+      "classification": "ordinary parameter name in canonical return-path behavior",
+      "disposition": "not a retired route mode"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/return_paths_ok.objc3",
+      "token": "retired-route",
+      "classification": "ordinary parameter name in canonical return-path behavior",
+      "disposition": "not a retired route mode"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
+      "token": "retired-route",
+      "classification": "ordinary local value in static-branch return behavior",
+      "disposition": "not retired route execution support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
+      "token": "retired-route",
+      "classification": "ordinary local value in unselected static switch behavior",
+      "disposition": "not retired route execution support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
+      "token": "retired-route",
+      "classification": "ordinary optional-flow retired route value in canonical semantics",
+      "disposition": "not a retired mode or retired-source lane"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/optional_binding_send_coalescing_keypath_positive.objc3",
+      "token": "retired-route",
+      "classification": "ordinary nil-coalescing value in canonical optional behavior",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
+      "token": "retired-route",
+      "classification": "ordinary nil-coalescing value in canonical type semantic model evidence",
+      "disposition": "not retired route execution support"
+    },
+    {
+      "path": "tests/conformance/semantic/M01-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M02-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M03-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M04-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M05-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M05-B011.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M06-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M07-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M07-B011.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M08-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/conformance/semantic/M09-B001.json",
+      "token": "retired-route",
+      "classification": "ordinary branch return value in a semantic nullability positive/negative paired fixture",
+      "disposition": "not compatibility retired route support"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+      "token": "BridgeProviderGate",
+      "classification": "foreign bridge symbol name in interop packaging evidence",
+      "disposition": "not a retired adapter feature gate"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+      "token": "BridgeProviderGate",
+      "classification": "foreign bridge symbol name in header-module evidence",
+      "disposition": "not a retired adapter feature gate"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
+      "token": "SemanticBridgeGate",
+      "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
+      "disposition": "not a retired adapter feature gate"
+    },
+    {
+      "path": "tests/conformance/semantic/XMOD-8015-01.json",
+      "token": "SemanticBridgeGate",
+      "classification": "foreign bridge symbol name in cross-module diagnostics evidence",
+      "disposition": "not a retired adapter feature gate"
+    }
+  ]
+}

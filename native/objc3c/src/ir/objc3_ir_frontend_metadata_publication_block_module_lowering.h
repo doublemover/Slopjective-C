@@ -1,0 +1,5 @@
+#pragma once
+
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_block.h"
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_type_module.h"
+#include "ir/objc3_ir_frontend_metadata_publication_block_module_lowering_module_governance.h"

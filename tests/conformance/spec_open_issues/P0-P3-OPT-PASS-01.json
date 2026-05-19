@@ -1,7 +1,7 @@
 {
   "id": "P0-P3-OPT-PASS-01",
-  "title": "Accept canonical optional spelling and permitted alias migration path",
-  "feature": "part3 optional spelling and alias policy canonical path",
+  "title": "Accept canonical optional spelling only",
+  "feature": "part3 optional spelling canonical-only policy",
   "bucket": "spec_open_issues",
   "profile": "strict",
   "profile_scope": "core|strict|strict-concurrency|strict-system",

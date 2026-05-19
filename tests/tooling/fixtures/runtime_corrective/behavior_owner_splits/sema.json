@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "semantic ownership covers realized dispatch models, synthesized accessor property semantics, ARC/storage ownership, and fixture provenance consumed by corrective runtime probes only when canonical semantic owners claim the behavior; generated reports, acceptance reports, proof bundles, replay manifests, compile artifacts, source-owner contract rows, evidence-log rows, migration-only rows, runner-only rows, and counter-only rows do not widen semantic support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:runtime_corrective_dispatch_owner",
+    "source_owner_contracts:runtime_corrective_accessor_owner",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/realized_dispatch_semantic_model.json",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/synthesized_accessor_semantic_model.json",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "compatibility gates, unsupported ownership claims, semantic recovery positives, storage-global retired route claims, old-mode semantic rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, runner-only semantic rows, sidecar-only semantic proof, unlinked semantic probes, and catalog-only acceptance rows stay semantic diagnostics, canonical rejection, absent-support, or provenance-only evidence"
+}

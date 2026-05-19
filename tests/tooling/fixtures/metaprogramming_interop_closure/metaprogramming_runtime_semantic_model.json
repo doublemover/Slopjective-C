@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-B001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
   "canonical_surfaces": [
     "runtime_metaprogramming_source_surface",
     "runtime_metaprogramming_package_provenance_source_surface",
@@ -23,7 +23,8 @@
   "claim_narrowing_constraints": [
     "public claims stay narrower than the private metaprogramming runtime ABI/cache snapshots and runtime-import artifacts",
     "package loading through the public runtime header remains fail-closed until deliberate ABI widening lands",
-    "unsupported macro execution topologies and unsupported property-behavior combinations remain diagnostic-backed and fail-closed"
+    "unsupported macro execution topologies and unsupported property-behavior combinations remain diagnostic-backed and fail-closed",
+    "metaprogramming expansion summaries, synthesized artifacts, module replay, cache snapshots, runtime-import artifacts, and generated reports are provenance until claimed by a canonical behavior owner"
   ],
   "authoritative_case_ids": [
     "metaprogramming-source-surface",
@@ -39,9 +40,9 @@
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "native/objc3c/src/io/objc3_process.cpp",
     "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
     "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py",

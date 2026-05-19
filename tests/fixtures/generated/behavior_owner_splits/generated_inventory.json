@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-boundary-provenance-owner-split",
+  "owner_boundary": "generated_inventory",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "generated inventory ownership covers manifest rows, allowed generated roots, generator labels, replay artifact paths, provenance labels, origin labels, fixture generation metadata, validation payload ids, evidence-log rows, generated-output-only rows, and migration-only rows only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "boundary.kind=generated-contract-artifacts",
+    "boundary.allowed_path_roots:tests/tooling/fixtures/objc3c",
+    "boundary.source_of_truth=generator-output",
+    "boundary.hand_edit_policy=generated fixtures are provenance artifacts, not canonical behavior expectations",
+    "boundary.positive_fixture_policy=generated artifacts never define positive native behavior",
+    "boundary.provenance_owner_split_index=tests/fixtures/generated/behavior_owner_splits/index.json",
+    "fixtures[].origin=generated",
+    "fixtures[].generator=scripts/build_objc3c_native.ps1",
+    "fixtures[].provenance=frontend contract artifact generation",
+    "fixtures[].behavior_boundary=generated-provenance-only",
+    "fixtures[].owner=generated-fixture-provenance",
+    "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
+    "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json",
+    "validation_*/M*.json",
+    "validation_*/replay_run_*/module.ll",
+    "validation_*/replay_run_*/module.manifest.json",
+    "*evidence-log*",
+    "*generated-output-only*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/fixtures/generated/manifest.json",
+  "retired_surface_rule": "generated inventory rows are provenance-only and cannot create behavior support, compatibility acceptance, retired route support, migration support, evidence-log support, or generated-output-only support"
+}

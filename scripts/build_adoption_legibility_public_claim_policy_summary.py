@@ -12,9 +12,9 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "public_claim_policy.json"
 BOUNDARY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "boundary_inventory.json"
-RELEASE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
+RELEASE_UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_support_claim_policy.json"
 PERFORMANCE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "claim_policy.json"
-LONG_HORIZON_DEPRECATION_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_compatibility_policy.json"
+LONG_HORIZON_DEPRECATION_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_support_policy.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "public-claim-policy-summary.json"
 
 
@@ -28,7 +28,7 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 def main() -> int:
     policy = load_json(POLICY_PATH)
     boundary = load_json(BOUNDARY_PATH)
-    release_claim_policy = load_json(RELEASE_CLAIM_POLICY)
+    release_upgrade_claim_policy = load_json(RELEASE_UPGRADE_CLAIM_POLICY)
     performance_claim_policy = load_json(PERFORMANCE_CLAIM_POLICY)
     long_horizon_policy = load_json(LONG_HORIZON_DEPRECATION_POLICY)
     failures: list[str] = []
@@ -60,8 +60,8 @@ def main() -> int:
             expect(raw_path in boundary_surfaces, f"{claim_id} surface {raw_path} is not in the boundary inventory", failures)
 
     forbidden_claims = [str(claim).lower() for claim in policy.get("forbidden_claims", [])]
-    release_forbidden = [str(claim).lower() for claim in release_claim_policy.get("forbidden_claims", [])]
-    expect(any("cross-major" in claim for claim in forbidden_claims + release_forbidden), "cross-major migration must fail closed", failures)
+    release_forbidden = [str(claim).lower() for claim in release_upgrade_claim_policy.get("forbidden_claims", [])]
+    expect(any("cross-major" in claim for claim in forbidden_claims + release_forbidden), "cross-major conversion must fail closed", failures)
     expect(any("forever compatible" in claim for claim in forbidden_claims), "forever compatibility must be forbidden", failures)
     expect(any("performance" in claim for claim in forbidden_claims), "performance overclaim guardrail missing", failures)
 
@@ -91,7 +91,7 @@ def main() -> int:
         "status": "PASS" if not failures else "FAIL",
         "policy": repo_rel(POLICY_PATH),
         "boundary_inventory": repo_rel(BOUNDARY_PATH),
-        "release_claim_policy": repo_rel(RELEASE_CLAIM_POLICY),
+        "release_upgrade_claim_policy": repo_rel(RELEASE_UPGRADE_CLAIM_POLICY),
         "performance_claim_policy": repo_rel(PERFORMANCE_CLAIM_POLICY),
         "long_horizon_deprecation_policy": repo_rel(LONG_HORIZON_DEPRECATION_POLICY),
         "claim_class_count": len(claim_classes) if isinstance(claim_classes, list) else 0,

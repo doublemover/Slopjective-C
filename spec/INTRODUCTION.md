@@ -11,18 +11,22 @@ Objective‑C 3.0 is a modernization of Objective‑C focused on:
 - **Composable concurrency**: upgrade from “blocks + conventions” to structured `async/await`, cancellation, and actor isolation.
 - **Ergonomics without magic**: reduce boilerplate through language-supported patterns (optionals, Result/throws, key paths, derives/macros) that still lower to transparent, testable behavior.
 - **System-library excellence**: make Apple platform “library-defined subsets” (CoreFoundation, libdispatch, XPC, IOKit/Mach handles) safer and more ergonomic through first-class annotations and diagnostics.
-- **Incremental adoption**: preserve existing ABI and interoperability, and provide an opt-in path that does not require rewriting codebases.
+- **Canonical adoption**: keep one Objective-C 3.0 language surface, preserve explicit ABI and interoperability boundaries, and reject old source-mode selection as a compatibility mechanism.
 
 This draft is written to be implementable primarily in **Clang/LLVM**, with minimal required runtime changes. Where runtime support is needed, it is specified as small libraries or well-defined hooks.
 
 ## 2. Guiding design principles {#intro-2}
 
-### 2.1 Compatibility boundaries are explicit {#intro-2-1}
+### 2.1 Canonical boundaries are explicit {#intro-2-1}
 
-Objective‑C 3.0 uses a **language mode** (and optional conformance “strictness” levels) so that:
+Objective‑C 3.0 uses one canonical language surface. Conformance profiles and
+capability rows describe support status, diagnostics, and evidence; they do not
+select a compatibility dialect.
 
-- existing Objective‑C remains valid without surprise behavior changes;
-- new defaults (nonnull-by-default, stricter diagnostics) are only enabled when explicitly selected.
+- unsupported older spellings are rejected through canonical diagnostics unless
+  the capability matrix marks an explicit interop surface implemented;
+- safety defaults and stricter diagnostics are part of canonical Objective‑C 3.0
+  inputs rather than an opt-in legacy dialect.
 
 ### 2.2 New syntax must map to existing concepts {#intro-2-2}
 
@@ -48,7 +52,7 @@ The language shall accommodate:
 
 ### 2.5 Tooling is part of the spec {#intro-2-5}
 
-Objective‑C 3.0 is not just grammar: it includes required diagnostics, fix-its, and a conformance test suite model. A feature that cannot be audited and migrated is not “done”.
+Objective‑C 3.0 is not just grammar: it includes required diagnostics, fix-its, and a conformance test suite model. A feature that cannot be audited and validated with evidence is not “done”.
 
 ## 3. Non-goals (important) {#intro-3}
 
@@ -72,12 +76,31 @@ Objective‑C 3.0 does not aim to:
 
 Each part is a separate Markdown file. The system-programming chapter ([Part 8](#part-8)) is intentionally detailed because it anchors “library-defined subset” accommodation, but it is only one part of a broader specification.
 
-## 6. Open issues and expected iteration {#intro-6}
+## 6. Capability status and expected iteration {#intro-6}
 
-This is a working draft. Each part includes “Open Issues” subsections for unresolved syntax bikeshedding and deeper ABI questions. The goal is to converge by:
+This is a working draft. The current support boundary is
+`docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, and
+`docs/support/capability_claim_responsibility.md`; each implemented capability
+must link executable evidence. Spec sections may describe future language shape,
+but public support claims only count when the capability matrix marks the
+surface implemented and the evidence map carries the matching row.
 
-- shipping implementable subsets early (nullability defaults, defer, Result/?, capture lists),
-- then layering bigger features (async/await, actors, macros).
+The current command boundary is the single `package.json` bridge:
+`npm run objc3c -- <action>`. Actions are owned by
+`scripts/objc3c_workflow/action_catalog.py`; spec prose must not advertise
+retired command surfaces or direct helper commands as public workflow surface.
+
+The current implementation evidence boundary is split across native compiler
+modules, runtime C API headers, and checked-in JSON/schema owners. Compiler
+module decomposition, public C runtime result types, and shared schema helpers
+are evidence surfaces until a capability row marks a behavior implemented.
+
+The goal is to converge by:
+
+- marking implementable subsets with evidence as they become real,
+- keeping unsupported syntax rejected through canonical diagnostics,
+- then widening the capability matrix only after async/await, actors, macros, or
+  other larger features have executable support.
 
 ## v0.3 update {#intro-v0-3-update}
 
@@ -113,6 +136,6 @@ This is a deliberate step toward a spec that can be implemented in Clang/LLVM wi
 
 This pass makes the draft more “engineer-ready” by tightening the boundary between **source semantics** and **cross-module implementation reality**:
 
-- Adds **[MODULE_METADATA_AND_ABI_TABLES.md](#d)**: the normative module metadata surface, ABI-affecting boundaries, compatibility rules, and a truthful summary of current implementation status.
+- Adds **[MODULE_METADATA_AND_ABI_TABLES.md](#d)**: the normative module metadata surface, ABI-affecting boundaries, importer validation rules, and a truthful summary of current implementation status.
 - Tightens the meaning of `await`: it is required for **any potentially suspending operation**, including cross-executor and cross-actor access (even when the callee is not explicitly `async`), aligning the surface model with implementable executor/actor hops.
 - Expands C with more concrete lowering obligations where separate compilation would otherwise be ambiguous.

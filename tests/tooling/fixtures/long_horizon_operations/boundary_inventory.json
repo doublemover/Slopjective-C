@@ -3,9 +3,17 @@
   "schema_version": 1,
   "milestone": "M328",
   "runbook": "docs/runbooks/objc3c_long_horizon_operations.md",
+  "owner_split": {
+    "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
+    "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
+    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
+    "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
+    "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py"
+  },
   "working_scope": [
-    "compatibility maintenance policy over release, package, and canonical application workflows",
-    "migration replay and rollback evidence generated from checked-in surfaces",
+    "support-window maintenance policy over release, package, and canonical application workflows",
+    "conversion replay and revert evidence generated from checked-in surfaces",
     "soak and aging-regression evidence that remains replayable under tmp/reports/",
     "operator-visible support-window publication and long-horizon workflow entrypoints"
   ],
@@ -13,8 +21,8 @@
     "hosted package registry service",
     "network-backed dependency resolution",
     "background auto-update daemon",
-    "cross-major compatibility claims without generated migration evidence",
-    "manual compatibility waivers as a substitute for generated evidence"
+    "cross-major support claims without generated conversion evidence",
+    "manual support waivers as a substitute for generated evidence"
   ],
   "substrate_runbooks": [
     "docs/runbooks/objc3c_release_operations.md",
@@ -26,7 +34,7 @@
   "substrate_fixture_surfaces": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
@@ -34,7 +42,7 @@
     "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
     "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
   ],
-  "substrate_scripts": [
+  "substrate_implementation_anchors": [
     "scripts/build_objc3c_update_manifest.py",
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
@@ -46,22 +54,24 @@
     "scripts/check_objc3c_performance_governance_integration.py",
     "scripts/check_objc3c_distribution_credibility_integration.py"
   ],
-  "required_existing_public_scripts": [
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:performance-governance",
-    "test:objc3c:distribution-credibility"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-performance-governance",
+    "validate-distribution-credibility"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/long-horizon-operations/",
     "tmp/artifacts/long-horizon-operations/"
   ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata",
   "successor_surfaces": [
     "M331 production-readiness support and operations evidence",
     "M332 final full-envelope stability and claimability closeout"

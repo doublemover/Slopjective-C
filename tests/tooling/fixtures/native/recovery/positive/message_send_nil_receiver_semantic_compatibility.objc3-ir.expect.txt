@@ -1,7 +1,0 @@
-# Nil receiver semantic-compatibility lowering markers.
-define i32 @main()
-store i32 0, ptr %sent.addr.
-icmp eq i32 %t3, 0
-zext i1 %t4 to i32
-if_then_
-ret i32 %t10

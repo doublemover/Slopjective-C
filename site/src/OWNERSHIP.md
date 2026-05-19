@@ -6,29 +6,36 @@ This file defines source ownership for generated `site/index.md`.
 
 - Source directory: `site/src/`
 - Generated output: `site/index.md`
-- Generator: `python scripts/build_site_index.py`
+- Generator action: `npm run objc3c -- build-site`
 
 ## Source Ownership Matrix
 
-| Source file                 | Responsibility                                                 | Primary owner    | Backup owner     |
-| --------------------------- | -------------------------------------------------------------- | ---------------- | ---------------- |
-| `index.contract.json`       | Generator contract, canonical input/output paths, front matter | compiler/docs    | compiler/tooling |
-| `index.body.md`             | Curated public-facing site content and stable public anchors   | compiler/docs    | spec/maintainers |
-| `README.md`                 | Generated-only policy and contributor guidance                 | compiler/docs    | compiler/release |
+| Source file           | Responsibility                                                 | Primary owner | Backup owner     |
+| --------------------- | -------------------------------------------------------------- | ------------- | ---------------- |
+| `index.contract.json` | Generator contract, canonical input/output paths, front matter | compiler/docs | compiler/tooling |
+| `index.body.md`       | Curated public-facing site content and stable public anchors   | compiler/docs | spec/maintainers |
+| `README.md`           | Generated-only policy and contributor guidance                 | compiler/docs | compiler/release |
 
 ## Update Workflow
 
 1. Update `site/src/index.contract.json` only when generator contract changes.
 1. Update the curated site content under `site/src/index.body.md` as needed.
-1. Run `python scripts/build_site_index.py` to regenerate `site/index.md`.
-1. Run `python scripts/build_site_index.py --check` and require pass.
+1. Run `npm run objc3c -- build-site` to regenerate `site/index.md`.
+1. Run `npm run objc3c -- check-site` and require pass.
 
 ## Review Policy
 
-- Manual edits to `site/index.md` are unsupported.
+- Direct changes to `site/index.md` must match owner-input updates and
+  regeneration evidence.
 - Contract or policy changes in `site/src/*` require `compiler/docs` review.
 - Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
+- Command examples must use the public npm action surface,
+  `npm run objc3c -- <action>`, and must not introduce retired package-script
+  names.
+- Capability status changes must cite `docs/support/capability_matrix.*`,
+  `docs/support/evidence_map.md`, and
+  `docs/support/capability_claim_responsibility.md`.
 
 ## Generated Surface Boundary
 
@@ -37,17 +44,18 @@ Treat these as the live documentation-generation surfaces:
 - human-facing generated site:
   - `site/src/index.body.md`
   - `site/src/index.contract.json`
-  - `python scripts/build_site_index.py`
+  - `npm run objc3c -- build-site`
   - `site/index.md`
 - human-facing generated native implementation doc:
   - `docs/objc3c-native/src/*.md`
-  - `python scripts/build_objc3c_native_docs.py`
+  - `npm run objc3c -- build-native-docs`
   - `docs/objc3c-native.md`
 - machine-facing generated operator appendix:
   - `package.json`
-  - `scripts/objc3c_public_workflow_runner.py`
-  - `python scripts/render_objc3c_public_command_surface.py`
+  - public npm action surface: `npm run objc3c -- <action>`
+  - action catalog: `scripts/objc3c_workflow/action_catalog.py`
+  - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
-`tmp/reports/` and `tmp/artifacts/` remain generated proof/evidence outputs, not
-canonical documentation sources.
+Generated report and artifact directories remain transient output roots, not
+documentation owner inputs.

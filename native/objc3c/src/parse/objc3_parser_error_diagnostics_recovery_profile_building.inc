@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_error_diagnostics_recovery_profile_building_site_count_arithmetic.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_profile_building_profile_model_initialization.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_profile_building_recovery_gate_classification.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_profile_building_contract_normalization.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_profile_building_profile_publication.inc"

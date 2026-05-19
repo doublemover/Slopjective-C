@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-conformance-corpus-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3",
+    "tests/tooling/fixtures/parser_conformance_corpus/manifest.json"
+  ],
+  "support_boundary": "parser ownership covers the single accepted canonical parser fixture in this family: accept_void_pointer_param.objc3 with manifest case A010-C001 and expect=accept. It proves canonical Objective-C 3 function declaration parsing with a void pointer parameter and a simple return body. Rejected fixtures, diagnostic-code labels, README prose, and manifest inventory rows are not positive parser support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "case_id:A010-C001",
+    "path:accept_void_pointer_param.objc3",
+    "expect:accept",
+    "syntax_surface:c-style-function-definition",
+    "syntax_surface:void-pointer-parameter",
+    "syntax_surface:return-statement",
+    "canonical_behavior_source:true"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "parser positives in this corpus are limited to accept_void_pointer_param.objc3; rejected parser fixtures, old-mode parser rows, gate parser rows, retired route parser rows, compatibility parser rows, migration-only parser rows, generated-only parser rows, evidence-log parser rows, and legacy-looking positives are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

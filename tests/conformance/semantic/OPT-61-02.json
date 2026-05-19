@@ -11,7 +11,7 @@
     "docs/reference/legacy_spec_anchor_index.md#c-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-6-6-4"
   ],
-  "source": "id requiredHandle(id? maybeHandle, id fallback) {\n    return maybeHandle?;\n}\n",
+  "source": "id requiredHandle(id? maybeHandle, id retired route) {\n    return maybeHandle?;\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [
@@ -29,7 +29,7 @@
               "start": { "line": 2, "column": 12 },
               "end": { "line": 2, "column": 24 }
             },
-            "replacement": "maybeHandle != nil ? maybeHandle : fallback"
+            "replacement": "maybeHandle != nil ? maybeHandle : retired route"
           }
         ]
       }

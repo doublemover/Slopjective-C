@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,9 +32,11 @@ def main() -> int:
       if not path.exists():
         missing_paths.append(raw)
 
-    public_scripts = [str(name) for name in contract["public_scripts"]]
-    public_actions = [str(name) for name in contract["public_actions"]]
-    missing_public_scripts = [name for name in public_scripts if name not in package_scripts]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    registered_actions = set(public_workflow_action_names())
+    missing_actions = [name for name in required_actions if name not in registered_actions]
 
     tooling_test_count = len(list((ROOT / "tests" / "tooling").glob("test_*.py")))
     showcase_workspace_count = len(list((ROOT / "showcase").glob("*/workspace.json")))
@@ -41,23 +44,24 @@ def main() -> int:
 
     payload = {
         "contract_id": "objc3c.application.architecture.testing.first_party_testing_semantics.summary.v1",
-        "status": "PASS" if not missing_paths and not missing_public_scripts else "FAIL",
+        "status": "PASS" if not missing_paths and package_bridge_exists and not missing_actions else "FAIL",
         "testing_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "testing_layer_count": len(contract["testing_layers"]),
         "checked_in_fixture_root_count": len(contract["checked_in_fixture_roots"]),
         "generated_output_root_count": len(contract["generated_output_roots"]),
-        "public_action_count": len(public_actions),
-        "public_script_count": len(public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "tooling_test_count": tooling_test_count,
         "showcase_workspace_count": showcase_workspace_count,
         "tutorial_doc_count": tutorial_doc_count,
-        "public_actions": public_actions,
-        "public_scripts": public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
         "testing_layers": contract["testing_layers"],
         "fixture_rules": contract["fixture_rules"],
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "non_goals": contract["non_goals"],
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

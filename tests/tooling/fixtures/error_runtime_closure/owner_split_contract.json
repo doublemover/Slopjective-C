@@ -1,0 +1,159 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.owner_split_contract.v1",
+  "surface_kind": "error-runtime-closure-owner-split",
+  "family": "error_runtime_closure",
+  "boundary_inventory": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "owner_policy": {
+    "source_authority": "checked-in-runtime-closure-owner-contracts",
+    "missing_artifact_behavior": "fail-closed",
+    "evidence_log_allowed": false,
+    "retired_route_allowed": false,
+    "compatibility_gates_allowed": false,
+    "generated_reports_are_source": false,
+    "public_claims_require_executable_proof": true,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/error_runtime_provenance.json"
+  },
+  "closure_publication_contract": {
+    "source_owner_role": "semantic_model_owner",
+    "runtime_owner_role": "runtime_abi_owner",
+    "executable_proof_owner_role": "executable_proof_owner",
+    "claim_publication_mode": "checked-in-owner-contract-plus-executable-proof",
+    "missing_artifact_behavior": "fail-closed",
+    "evidence_log_executable_proof_claims_allowed": false,
+    "retired_route_runtime_semantics_allowed": false,
+    "compatibility_runtime_semantics_allowed": false,
+    "wrapper_only_runnable_actions_allowed": false
+  },
+  "role_contracts": {
+    "semantic_model_owner": {
+      "owner": "error-runtime-propagation-unwind-cleanup-semantic-model",
+      "source": "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "runtime",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_semantic_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "lowering_abi_owner": {
+      "owner": "error-runtime-throws-and-cleanup-lowering-abi",
+      "source": "tests/tooling/fixtures/error_runtime_closure/throws_abi_helper_semantics_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "runtime",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_throws_abi_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "runtime_abi_owner": {
+      "owner": "error-runtime-private-helper-abi",
+      "source": "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_executable_proof_summary.py",
+      "claim_scope": "private-helper-abi-only"
+    },
+    "executable_proof_owner": {
+      "owner": "error-runtime-runnable-proof-gate",
+      "source": "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+      "behavior_owner_phases": [
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_executable_proof_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "artifact_owner": {
+      "owner": "error-runtime-lowering-artifact-replay",
+      "source": "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json",
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "error_runtime_provenance",
+        "canonical_rejection"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_artifact_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "boundary_inventory_owner": {
+      "owner": "error-runtime-closure-boundary-inventory",
+      "source": "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "scheduler_task_lifecycle_owner": {
+      "owner": "error-runtime-scheduler-task-interaction-successor-boundary",
+      "source": "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+      "behavior_owner_phases": [
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+      "claim_scope": "successor-boundary-no-current-scheduler-claim"
+    },
+    "bridge_policy_owner": {
+      "owner": "error-runtime-bridged-error-cross-module-policy",
+      "source": "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json",
+      "behavior_owner_phases": [
+        "sema",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+      "claim_scope": "current-runtime-closure"
+    },
+    "provenance_owner": {
+      "owner": "error-runtime-closure-provenance",
+      "source": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/error_runtime_provenance.json",
+      "behavior_owner_phases": [
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+      "claim_scope": "provenance-only-no-positive-behavior"
+    }
+  },
+  "hard_cutover_requirements": [
+    "no-retired-route-runtime-closure-claims",
+    "no-evidence-log-runtime-closure-publication",
+    "no-generated-report-as-source-authority",
+    "runtime-closure-publication-requires-checked-in-owner-contract",
+    "cross-module-bridge-claims-require-runtime-registration-replay-proof"
+  ],
+  "blocked_claim_shapes": [
+    "retired-route-runtime-behavior",
+    "evidence-log-runtime-closure",
+    "compatibility-gate-runtime-closure",
+    "public-runtime-abi-widening-without-source-owner",
+    "generated-evidence-log-source-truth"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/error-runtime-closure",
+    "tmp/reports/runtime/runnable-error-conformance",
+    "tmp/reports/runtime/runnable-error-e2e"
+  ]
+}

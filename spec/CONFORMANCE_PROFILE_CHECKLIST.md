@@ -17,7 +17,7 @@ A conformance claim applies to the **toolchain bundle**:
 - runtime support (Objective‑C runtime + concurrency runtime hooks where applicable),
 - standard libraries/modules required by the language features,
 - interface emission + module metadata support,
-- diagnostics and migration tooling requirements.
+- diagnostics, canonicalization fix-its, and rejection evidence requirements.
 
 ### E.1.2 Tags {#e-1-2}
 
@@ -79,7 +79,7 @@ A toolchain claiming **ObjC 3.0 v1 Core** shall:
 A toolchain claiming **ObjC 3.0 v1 Strict** shall:
 
 - support strictness selection ([Part 1](#part-1)) and treat “strict-ill‑formed” constructs as errors,
-- provide the required diagnostics and fix-its for migration ([Part 12](#part-12)),
+- provide the required diagnostics and fix-its for rejected noncanonical source forms ([Part 12](#part-12)),
 - ensure canonical spellings are emitted in textual interfaces ([B](#b), [Part 2](#part-2), [Part 12](#part-12)).
 
 ### E.2.3 ObjC 3.0 v1 Strict Concurrency {#e-2-3}
@@ -200,22 +200,26 @@ M270-A002 implementation note:
   `objc_nonisolated` callable annotations as real parser/frontend capability
 
 M271-A001 implementation note:
+
 - the frontend now admits `objc_resource(...)` local annotations, borrowed
   pointer qualifiers, borrowed-return relation attributes, and explicit block
   capture lists as real parser/frontend capability before later `M271` legality
   and lowering lanes
 
 M271-A002 implementation note:
+
 - the frontend now admits cleanup-hook locals, local resource sugar, and all
   explicit block capture item modes before later `M271` semantic and lowering
   work
 
 M271-A003 implementation note:
+
 - the frontend now admits retainable C-family callable annotations and the
-  canonical compatibility aliases before later `M271` legality and runtime
+  imported ownership attributes before later `M271` legality and runtime
   integration work
-  
+
 M271-B001 implementation note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model`
 - the truthful lane-B packet consumes the `M271-A001` through `M271-A003`
@@ -224,6 +228,7 @@ M271-B001 implementation note:
   runnable actor runtime behavior remain later `M270` work
 
 M271-B002 implementation note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
 - live sema now fails closed on non-resource `move` capture, use-after-move of
@@ -231,6 +236,7 @@ M271-B002 implementation note:
   `M271` escape, legality, lowering, and runtime work
 
 M271-B003 implementation note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis`
 - live sema now fails closed on borrowed pointers passed to parameters not
@@ -239,14 +245,16 @@ M271-B003 implementation note:
   retainable-family, lowering, and runtime work
 
 M271-B004 implementation note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
 - live sema now fails closed on duplicate explicit captures, weak/unowned
   explicit captures on non-object bindings, conflicting retainable-family
-  annotations, and compatibility aliases without a supporting object return
+  annotations, and imported ownership attributes without a supporting object return
   before later `M271` lowering and runtime work
 
 M271-D001 implementation note:
+
 - Part 8 runtime/helper proof now freezes one truthful reuse boundary over the
   private ARC/autorelease helper cluster plus memory-management / ARC-debug
   snapshots
@@ -254,12 +262,14 @@ M271-D001 implementation note:
   slice and packaged runtime archive rather than a new Part 8 runtime subsystem
 
 M271-D002 implementation note:
+
 - the supported Part 8 fixture path now links and executes through the emitted
   cleanup/resource body and the same private ARC/autorelease helper cluster
 - live probes now observe both direct cleanup execution and retainable-family
   helper traffic on the same runnable path
 
 M271-E001 strict system conformance gate note:
+
 - lane-E now freezes the current runnable Part 8 slice on top of
   `M271-A003`, `M271-B004`, `M271-C003`, and `M271-D002`
 - the truthful runnable proof remains the linked `M271-D002` `helperSurface`
@@ -268,6 +278,7 @@ M271-E001 strict system conformance gate note:
 - the runnable matrix closeout remains `M271-E002`
 
 M271-E002 runnable system-extension closeout note:
+
 - the milestone closeout now replays the published `M271-A003` through
   `M271-E001` proof chain and freezes one explicit runnable matrix for the
   already-landed Part 8 slice
@@ -443,12 +454,14 @@ M270-E002 runnable actor/isolation closeout note:
 
 A serious conformance claim should ship with:
 
-- a public machine-readable conformance report (JSON required; YAML optional) listing claimed profiles, optional feature sets, versions, and known deviations,
+- a public machine-readable conformance report in JSON listing claimed profiles, optional feature sets, versions, and known deviations,
 - CI proofs that:
   - module interfaces round-trip (emit → import) without semantic loss,
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
   - runtime contracts for `throws` and `async` behave correctly under optimization,
-- migration tooling notes for large codebases (warning groups, fix-its, staged adoption).
+- canonicalization notes for rejected legacy spelling inputs, including warning
+  groups and fix-its, without claiming staged adoption as another accepted
+  language mode.
 
 ## M264 frontend claim truth packet (implementation note)
 
@@ -477,7 +490,8 @@ frontend currently accepts and advertises:
 
 That surface must keep the current state explicit:
 
-- language-version / compatibility / migration-assist selection are live
+- language-version and canonical rejection selection are live
+- retired compatibility selections fail closed and are not support claims
 - strictness / strict-concurrency selection remain unsupported
 - feature-macro claim publication remains unsupported
 
@@ -494,7 +508,7 @@ classifies the currently live truth surface:
 
 That packet must keep the semantic classification explicit:
 
-- compatibility mode and migration-assist combinations are valid live selections
+- canonical-only mode and canonical rejection combinations are valid live selections
 - source-only recognized claims remain downgraded and never promote to runnable
 - strictness / strict-concurrency selection remain rejected
 - feature-macro publication remains suppressed
@@ -580,7 +594,7 @@ The native toolchain must also expose explicit operator commands for the
 already-emitted conformance sidecars:
 
 - `--emit-objc3-conformance`
-- `--emit-objc3-conformance-format <json|yaml>`
+- `--emit-objc3-conformance-format <json>`
 - `--validate-objc3-conformance <report.json>`
 
 Current truthful support:
@@ -596,11 +610,11 @@ Current truthful support:
 
 ## M264 versioning and conformance truth gate (implementation note)
 
-The lane-E gate for this milestone freezes one integrated truth boundary:
+The lane-E gate freezes one integrated evidence boundary:
 
 - claimed profile remains `core`
-- compatibility selection remains live
-- migration assist remains live
+- retired compatibility selection remains fail-closed
+- canonical rejection remains live
 - strictness and strict concurrency remain fail-closed
 - feature-macro claims remain suppressed
 - runtime/public capability reports remain a truthful projection of the lowered
@@ -618,8 +632,9 @@ the shipped surface.
 That closeout matrix must keep the current truth explicit:
 
 - claimed profile remains `core`
-- compatibility modes remain `canonical|legacy`
-- migration assist remains live
+- canonical-only mode remains the only live mode; retired legacy selection
+  remains fail-closed
+- canonical rejection remains live
 - strict, strict-concurrency, and strict-system remain unclaimed and fail
   closed
 - feature-macro publication remains suppressed
@@ -669,10 +684,13 @@ The advanced runnable tranche now has one explicit frontend inventory packet:
 
 Current truthful scope:
 
+- migration-named packet IDs in this section are diagnostic/canonicalization
+  inventories; they do not create a retired-source lane that accepts retired
+  source forms
 - the packet aggregates the already-landed Part 6 through Part 11 source
   closure/completion packets
 - legacy migration-hint counters for `yes` / `no` / `null` are included when
-  migration assist is enabled
+  canonical rejection is enabled
 - lexer-owned legacy `YES` / `NO` / `NULL` canonicalization now has a dedicated
   frontend completion packet for deterministic fix-it and migrator candidate
   planning
@@ -685,7 +703,7 @@ Current truthful scope:
   families
 - legacy/canonical migration semantics now publish
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
-  over the live canonical-mode migration-assist rejection path
+  over the live canonical-mode canonical rejection rejection path
 - Part 12 machine-readable report contract now publishes
   `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
   over the existing versioned conformance sidecar and runtime capability path
@@ -711,4 +729,3 @@ Current truthful scope:
 - feature-specific fix-it synthesis, migrator rewrite application, and
   machine-readable conformance reports now have a published milestone-closeout
   matrix for the advanced feature tranche
-

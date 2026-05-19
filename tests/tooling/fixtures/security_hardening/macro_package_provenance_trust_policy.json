@@ -6,8 +6,8 @@
   "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/io/objc3_process.cpp",
     "scripts/check_objc3c_runtime_acceptance.py"
   ],
@@ -16,6 +16,17 @@
     "objc_macro_package",
     "objc_macro_provenance"
   ],
+  "provenance_owner_contract": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "macro_metadata_owner": "security-hardening-macro-provenance",
+    "macro_package_identity_owner": "security-hardening-macro-provenance",
+    "macro_provenance_owner": "security-hardening-macro-provenance",
+    "runtime_acceptance_owner": "security-hardening-runtime",
+    "evidence_log_security_proof_allowed": false,
+    "retired_route_macro_trust_allowed": false,
+    "trust_bypass_for_missing_provenance_allowed": false,
+    "wrapper_only_macro_security_action_allowed": false
+  },
   "required_enforcement_flags": [
     "metadata_completeness_enforced",
     "sandbox_namespace_enforced",
@@ -40,6 +51,10 @@
   "non_claims": [
     "no remote package-signing verification claim",
     "no general hostile-macro execution claim",
-    "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces"
+    "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces",
+    "no evidence-log macro provenance proof",
+    "no retired route macro trust path",
+    "no trust bypass when package or provenance metadata is missing",
+    "no wrapper-only macro security action capability"
   ]
 }

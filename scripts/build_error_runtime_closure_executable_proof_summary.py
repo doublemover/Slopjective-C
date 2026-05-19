@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,6 @@ JSON_OUT = OUT_DIR / "executable_proof_abi_summary.json"
 MD_OUT = OUT_DIR / "executable_proof_abi_summary.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_error_runtime_closure.md"
 PACKAGE_JSON_PATH = ROOT / "package.json"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
 COMMAND_SURFACE_PATH = ROOT / "docs/runbooks/objc3c_public_command_surface.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 CONFORMANCE_REPORT = ROOT / "tmp/reports/runtime/runnable-error-conformance/summary.json"
@@ -28,7 +28,6 @@ def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     package_text = PACKAGE_JSON_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
     command_surface_text = COMMAND_SURFACE_PATH.read_text(encoding="utf-8")
     runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
     conformance_report = read_json(CONFORMANCE_REPORT)
@@ -43,9 +42,9 @@ def main() -> int:
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
-        "runbook_mentions_public_command_boundary": "test:objc3c:error-conformance" in runbook_text and "test:objc3c:runnable-error" in runbook_text,
+        "runbook_mentions_public_command_boundary": "npm run objc3c -- validate-error-conformance" in runbook_text and "npm run objc3c -- validate-runnable-error" in runbook_text,
         "package_json_preserves_public_commands": all(command in package_text for command in contract["public_commands"]),
-        "workflow_preserves_public_actions": all(action in workflow_text for action in contract["public_workflows"]),
+        "workflow_preserves_public_actions": public_workflow_has_action_identifiers(contract["public_workflows"]),
         "command_surface_documents_public_commands": all(command in command_surface_text for command in contract["public_commands"]) and all(action in command_surface_text for action in contract["public_workflows"]),
         "runtime_exports_private_error_abi_boundary": all(symbol in runtime_text for symbol in contract["private_runtime_abi_boundary"]),
         "conformance_report_passes": conformance_report.get("status") == "PASS",

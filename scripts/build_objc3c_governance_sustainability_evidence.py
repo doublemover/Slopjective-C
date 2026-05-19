@@ -5,30 +5,37 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import python_script_command
+
+try:
+    from governance_sustainability_evidence_contracts import (
+        GovernanceSustainabilityEvidenceInputs,
+        build_governance_sustainability_evidence_payloads,
+    )
+except ModuleNotFoundError:
+    from scripts.governance_sustainability_evidence_contracts import (
+        GovernanceSustainabilityEvidenceInputs,
+        build_governance_sustainability_evidence_payloads,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
 ARTIFACT_CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "artifact_contract.json"
+WAIVER_REGISTRY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
 INTEGRATION_CHECK = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
 EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "governance-sustainability-evidence.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "evidence-summary.json"
-SELF_GENERATED_REPORTS = {
-    "tmp/reports/governance-sustainability/evidence-summary.json",
-    "tmp/reports/governance-sustainability/publication-summary.json",
-    "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json",
-}
-
-
 
 
 def ensure_integration() -> None:
     result = subprocess.run(
-        [sys.executable, str(INTEGRATION_CHECK)],
+        python_script_command(INTEGRATION_CHECK),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -52,108 +59,33 @@ def load_optional_summary(relative_path: str) -> dict[str, Any]:
 def main() -> int:
     ensure_integration()
     contract = load_json(ARTIFACT_CONTRACT_PATH)
+    waiver_registry = load_json(WAIVER_REGISTRY_PATH)
     generated_reports = [str(path) for path in contract.get("generated_reports", [])]
     report_payloads = {path: load_optional_summary(path) for path in generated_reports}
 
-    budget_inventory = report_payloads.get("tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json", {})
-    policy = report_payloads.get("tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json", {})
-    maintainer_review = report_payloads.get("tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json", {})
-    extension_policy = report_payloads.get("tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json", {})
-    extension_workflow = report_payloads.get("tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json", {})
-    stewardship = report_payloads.get("tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json", {})
-    budget_enforcement = report_payloads.get("tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json", {})
-    anti_regression = report_payloads.get("tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json", {})
-    integration = report_payloads.get("tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json", {})
-
-    failures: list[str] = []
-    for path, payload in report_payloads.items():
-        if path in SELF_GENERATED_REPORTS:
-            continue
-        if not payload:
-            failures.append(f"missing generated report {path}")
-        elif payload.get("status") not in (None, "PASS") or payload.get("ok") is False:
-            failures.append(f"generated report not passing: {path}")
-    if budget_enforcement.get("status") != "PASS":
-        failures.append("budget enforcement is not PASS")
-    if integration.get("status") != "PASS":
-        failures.append("integration summary is not PASS")
-
-    measured = budget_inventory.get("measured", {}) if isinstance(budget_inventory.get("measured"), dict) else {}
-    claim_audit = {
-        "support_state": "stable-governance-process",
-        "release_blockers": failures,
-        "demoted_or_out_of_scope_claims": [
-            "hosted community infrastructure",
-            "hosted registry moderation",
-            "prose-only governance approval",
-        ],
-        "measured_budget_state": {
-            "package_script_count": measured.get("package_script_count"),
-            "package_script_budget": measured.get("package_script_budget"),
-            "public_workflow_action_count": measured.get("public_workflow_action_count"),
-            "live_check_script_count": measured.get("live_check_script_count"),
-        },
-    }
-
-    evidence = {
-        "contract_id": "objc3c.governance.sustainability.evidence.v1",
-        "schema_version": 1,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "PASS" if not failures else "FAIL",
-        "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
-        "source_contracts": contract.get("source_contracts", []),
-        "generated_reports": generated_reports,
-        "publication_artifacts": contract.get("publication_artifacts", []),
-        "budget": {
-            "inventory_summary": budget_inventory,
-            "enforcement_summary": budget_enforcement,
-            "anti_regression_summary": anti_regression,
-        },
-        "extension_review": {
-            "policy_summary": extension_policy,
-            "workflow_summary": extension_workflow,
-        },
-        "stewardship": {
-            "semantics_summary": stewardship,
-            "maintainer_review_summary": maintainer_review,
-            "policy_summary": policy,
-        },
-        "public_workflow": {
-            "integration_summary": integration,
-            "public_actions": [
-                "validate-governance-sustainability",
-                "publish-governance-sustainability",
-            ],
-            "public_scripts": [
-                "test:objc3c:governance-sustainability",
-                "publish:objc3c:governance-sustainability",
-            ],
-        },
-        "claim_audit": claim_audit,
-        "failures": failures,
-    }
+    payloads = build_governance_sustainability_evidence_payloads(
+        GovernanceSustainabilityEvidenceInputs(
+            contract=contract,
+            waiver_registry=waiver_registry,
+            generated_reports=generated_reports,
+            report_payloads=report_payloads,
+            artifact_contract_path=repo_rel(ARTIFACT_CONTRACT_PATH),
+            evidence_artifact_path=repo_rel(EVIDENCE_ARTIFACT),
+        )
+    )
 
     EVIDENCE_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(EVIDENCE_ARTIFACT, evidence)
-
-    summary = {
-        "contract_id": "objc3c.governance.sustainability.evidence.summary.v1",
-        "status": evidence["status"],
-        "runner_path": "scripts/build_objc3c_governance_sustainability_evidence.py",
-        "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
-        "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
-        "source_contract_count": len(evidence["source_contracts"]),
-        "generated_report_count": len(generated_reports),
-        "publication_artifact_count": len(evidence["publication_artifacts"]),
-        "release_blocker_count": len(failures),
-        "failures": failures,
-    }
+    write_json_file(EVIDENCE_ARTIFACT, payloads.evidence)
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(SUMMARY_PATH, summary)
+    write_json_file(SUMMARY_PATH, payloads.summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"evidence_artifact: {repo_rel(EVIDENCE_ARTIFACT)}")
-    print("objc3c-governance-sustainability-evidence: PASS" if not failures else "objc3c-governance-sustainability-evidence: FAIL")
-    return 0 if not failures else 1
+    print(
+        "objc3c-governance-sustainability-evidence: PASS"
+        if not payloads.failures
+        else "objc3c-governance-sustainability-evidence: FAIL"
+    )
+    return 0 if not payloads.failures else 1
 
 
 if __name__ == "__main__":

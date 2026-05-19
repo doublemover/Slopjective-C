@@ -1,0 +1,2 @@
+#include "sema/objc3_semantic_passes_body_validation_core_unsafe_pointer_diagnostics.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_inline_asm_intrinsics.inc"

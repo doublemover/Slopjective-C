@@ -1,0 +1,15 @@
+#pragma once
+
+struct Objc3IRModuleBodyOrchestrationCallbacks;
+struct Objc3IRModuleBodyOrchestrationOptions;
+struct Objc3IREmitterServiceContextCallbacks;
+struct Objc3IREmitterServiceContextState;
+
+Objc3IRModuleBodyOrchestrationOptions
+BuildObjc3IREmitterModuleBodyOrchestrationOptions(
+    const Objc3IREmitterServiceContextState &state);
+
+Objc3IRModuleBodyOrchestrationCallbacks
+BuildObjc3IREmitterModuleBodyOrchestrationCallbacks(
+    const Objc3IREmitterServiceContextState &state,
+    const Objc3IREmitterServiceContextCallbacks &callbacks);

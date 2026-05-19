@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-behavior-family-owner-split",
+  "owner_boundary": "rejection_provenance",
+  "source_family": "tests/native/parser",
+  "support_boundary": "rejection/provenance ownership covers parser old-mode literals, removed compatibility flags, removed parser retired route flags, and any generated-only, evidence-log, or migration-only parser claims",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "negative/legacy_boolean_and_null_aliases_rejected.meta.json",
+    "negative/legacy_null_literal_alias_rejected.meta.json",
+    "negative/legacy_yes_literal_alias_rejected.meta.json",
+    "negative/legacy_no_literal_alias_rejected.meta.json",
+    "negative/removed_retired_mode_flag_rejected.meta.json",
+    "negative/removed_parser_retired_route_flag_rejected.meta.json",
+    "negative/*.meta.json:boundary.behavior_contract=canonical-rejection",
+    "negative/*.meta.json:boundary.retired_positive_surface=true",
+    "negative/*.meta.json:boundary.retired_route_allowed=false",
+    "negative/*.meta.json:boundary.gate_allowed=false",
+    "*old-mode*",
+    "*compatibility-gate*",
+    "*retired-route*",
+    "*generated-only*",
+    "*evidence-log*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/native/parser/negative",
+  "retired_surface_rule": "old-mode, compatibility-gate, retired route, generated-only, evidence-log, and migration-only parser surfaces are canonical rejection or provenance-only evidence, never positive parser behavior truth"
+}

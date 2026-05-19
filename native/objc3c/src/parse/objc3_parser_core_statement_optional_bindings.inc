@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_statement_optional_bindings_model.inc"
+
+#include "parse/objc3_parser_core_statement_optional_bindings_binding_clause.inc"
+
+#include "parse/objc3_parser_core_statement_optional_bindings_binding_clause_list.inc"
+
+#include "parse/objc3_parser_core_statement_optional_bindings_guard_condition_clauses.inc"

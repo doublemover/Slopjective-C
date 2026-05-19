@@ -1,0 +1,6 @@
+// Canonical runtime dispatch fixture: nonzero constant receivers strict-error instead of fabricating a value.
+module RuntimeDispatchNonzeroConstantReceiverDispatchStrictError;
+
+fn main() -> i32 {
+  return [(3 + 4) ping];
+}

@@ -3,27 +3,37 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import write_report_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "source_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "source-surface-summary.json"
+SURFACE_CONTRACT_ID = "objc3c.release.operations.source.surface.v1"
+SUMMARY_CONTRACT_ID = "objc3c.release.operations.source.surface.summary.v1"
 
 EXPECTED_CONTRACT_IDS = {
     "versioning_model": "objc3c.release.operations.versioning.model.v1",
     "upgrade_path_surface": "objc3c.release.operations.upgrade.path.surface.v1",
-    "compatibility_claim_policy": "objc3c.release.operations.compatibility.claim.policy.v1",
+    "upgrade_claim_policy": "objc3c.release.operations.upgrade.claim.policy.v1",
     "update_channel_policy": "objc3c.release.operations.update.channel.policy.v1",
-    "fallback_diagnostics_policy": "objc3c.release.operations.fallback.diagnostics.policy.v1",
+    "fail_closed_diagnostics_policy": "objc3c.release.operations.fail_closed.diagnostics.policy.v1",
     "metadata_surface": "objc3c.release.operations.metadata.surface.v1",
     "schema_surface": "objc3c.release.operations.schema.surface.v1",
     "workflow_surface": "objc3c.release.operations.workflow.surface.v1",
 }
+
+RELEASE_OPERATIONS_ACTIONS = [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+]
 
 
 def fail(message: str) -> int:
@@ -37,7 +47,7 @@ def main() -> int:
     if not SOURCE_SURFACE.is_file():
         return fail(f"missing source surface {repo_rel(SOURCE_SURFACE)}")
     source_surface = load_json(SOURCE_SURFACE)
-    if source_surface.get("contract_id") != "objc3c.release.operations.source.surface.v1":
+    if source_surface.get("contract_id") != SURFACE_CONTRACT_ID:
         return fail("unexpected source surface contract_id")
     if source_surface.get("surface_kind") != "release-operations-source-surface":
         return fail("unexpected source surface kind")
@@ -79,15 +89,33 @@ def main() -> int:
                 return fail(f"{list_name} referenced missing path {raw_path}")
             checked_paths.append(raw_path)
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    owned_actions = source_surface.get("release_operations_owned_actions")
+    if owned_actions != RELEASE_OPERATIONS_ACTIONS:
+        return fail("release_operations_owned_actions drifted from public action contract")
+    public_actions = source_surface.get("public_actions")
+    if not isinstance(public_actions, list) or not set(RELEASE_OPERATIONS_ACTIONS).issubset(public_actions):
+        return fail("public_actions omitted a release-operations action")
+    workflow_surface = load_json(ROOT / source_surface["workflow_surface"])
+    if workflow_surface.get("release_operations_owned_actions") != RELEASE_OPERATIONS_ACTIONS:
+        return fail("workflow surface release-operations owner split drifted")
+    hard_cutover_policy = source_surface.get("hard_cutover_policy")
+    if not isinstance(hard_cutover_policy, dict):
+        return fail("hard_cutover_policy was missing")
+    if hard_cutover_policy.get("missing_artifact_behavior") != "fail-closed":
+        return fail("release operations missing-artifact behavior must be fail-closed")
+    if hard_cutover_policy.get("public_action_names") != "preserved":
+        return fail("public action name preservation policy drifted")
+
     summary = {
-        "contract_id": "objc3c.release.operations.source.surface.summary.v1",
+        "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "source_surface": repo_rel(SOURCE_SURFACE),
         "checked_path_count": len(sorted(set(checked_paths))),
         "checked_paths": sorted(set(checked_paths)),
+        "release_operations_owned_actions": RELEASE_OPERATIONS_ACTIONS,
+        "missing_artifact_behavior": hard_cutover_policy["missing_artifact_behavior"],
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("release-operations-source-surface: OK")
     return 0

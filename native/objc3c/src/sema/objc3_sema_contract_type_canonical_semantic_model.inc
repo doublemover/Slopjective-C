@@ -1,0 +1,46 @@
+struct Objc3TypeSystemTypeSemanticModelSummary {
+  std::string contract_id = "objc3c.type_system.type.semantic.model.v1";
+  std::string surface_path =
+      "frontend.pipeline.semantic_surface.objc_type_system_type_semantic_model";
+  std::string semantic_model =
+      "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
+  std::size_t optional_binding_sites = 0;
+  std::size_t optional_binding_clause_sites = 0;
+  std::size_t guard_binding_sites = 0;
+  std::size_t optional_send_sites = 0;
+  std::size_t nil_coalescing_sites = 0;
+  std::size_t optional_propagation_sites = 0;
+  std::size_t optional_flow_refinement_sites = 0;
+  std::size_t guard_binding_exit_enforcement_sites = 0;
+  std::size_t typed_keypath_literal_sites = 0;
+  std::size_t typed_keypath_self_root_sites = 0;
+  std::size_t typed_keypath_class_root_sites = 0;
+  std::size_t object_pointer_semantic_sites = 0;
+  std::size_t protocol_composition_semantic_sites = 0;
+  std::size_t generic_suffix_semantic_sites = 0;
+  std::size_t generic_erasure_semantic_sites = 0;
+  std::size_t nullability_suffix_semantic_sites = 0;
+  std::size_t nullability_semantic_sites = 0;
+  std::size_t canonical_type_entries = 0;
+  std::size_t canonical_object_type_entries = 0;
+  std::size_t canonical_protocol_qualified_entries = 0;
+  std::size_t canonical_generic_argument_entries = 0;
+  std::size_t canonical_nullable_entries = 0;
+  std::size_t canonical_nonnull_entries = 0;
+  std::size_t canonical_implicitly_unwrapped_entries = 0;
+  std::size_t canonical_null_resettable_entries = 0;
+  std::size_t canonical_unspecified_nullability_entries = 0;
+  std::size_t canonical_invalid_type_entries = 0;
+  std::size_t invalid_generic_suffix_semantic_sites = 0;
+  std::size_t invalid_nullability_suffix_semantic_sites = 0;
+  std::size_t invalid_protocol_composition_semantic_sites = 0;
+  std::size_t optional_binding_contract_violation_sites = 0;
+  std::size_t optional_send_contract_violation_sites = 0;
+  std::size_t optional_flow_contract_violation_sites = 0;
+  std::size_t typed_keypath_root_legality_violation_sites = 0;
+  std::size_t typed_keypath_member_path_contract_violation_sites = 0;
+  std::size_t typed_keypath_contract_violation_sites = 0;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+};

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-package-ecosystem-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/package_ecosystem"
+  ],
+  "support_boundary": "sema ownership is non-positive for this package-ecosystem family. Package identity, dependency edge ordering, lockfile provenance, local mirror semantics, and registry publication metadata are package ecosystem semantics, not Objective-C 3 semantic compiler truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:package_ecosystem",
+    "surface_kind:package-ecosystem-boundary-inventory",
+    "surface_kind:package-ecosystem-dependency-lock-policy",
+    "surface_kind:package-ecosystem-local-workspace-mirror-semantics",
+    "identity_model:canonical-module-id-plus-source-package-surface",
+    "compiler_phase_boundary:no-sema-positive-truth-from-package-ecosystem-contracts",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic package rows, gate semantic package rows, retired route semantic package rows, compatibility semantic package rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and package-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

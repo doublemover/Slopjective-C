@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt"
+  ],
+  "support_boundary": "IR ownership covers paired checked-in Objective-C 3 IR expectation files for recovery positive sources: function definitions, return values, selector constants, runtime dispatch calls, literal/global initializer IR, branch/control-flow IR, nil-elision markers, fast-path/non-fast-path dispatch markers, and accepted-source IR shape. Native lowering_dispatch/*.dispatch-ir.expect.txt marker files are provenance for legacy native dispatch-lowering markers unless a canonical IR owner explicitly claims them.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt",
+    "ir_surface:define_i32_main",
+    "ir_surface:selector_constants",
+    "ir_surface:objc3_runtime_dispatch_i32",
+    "ir_surface:nil_elision",
+    "ir_surface:branch_and_loop_control",
+    "ir_surface:literal_and_global_initializers",
+    "ir_surface:typed_bool_i32_flow",
+    "provenance_only:tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, gate IR rows, retired route IR rows, compatibility IR rows, native .m IR claims, dispatch-ir marker claims without canonical Objective-C 3 source pairing, and directory-label-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

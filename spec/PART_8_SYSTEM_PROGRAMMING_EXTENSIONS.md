@@ -224,9 +224,13 @@ Optional sugar (non-normative):
 
 - `@retainable_family(FamilyName, retain: RetainFn, release: ReleaseFn, autorelease: AutoFn?)`.
 
-### 8.4.3 Mapping to existing Clang attributes (normative compatibility) {#part-8-4-3}
+### 8.4.3 Mapping to existing Clang attributes (normative interop) {#part-8-4-3}
 
-A conforming implementation shall accept the following widely deployed Clang attributes as compatibility aliases when they represent equivalent semantics:
+A conforming implementation may recognize the following widely deployed Clang
+attributes as imported-source interop annotations when they represent
+equivalent semantics. Emitted Objective-C 3.0 interfaces shall use the canonical
+spellings; these imported attributes do not create a compatibility language
+mode or alternate public spelling surface:
 
 - `__attribute__((NSObject))` on typedefs for ObjC-integrated retainable family types,
 - ownership-transfer attributes on APIs returning/consuming family values:

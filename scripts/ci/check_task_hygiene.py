@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_JSON = ROOT / "package.json"
-PACKAGE_SCRIPT_BUDGET = 170
+PACKAGE_BRIDGE_BUDGET = 1
 REMOVED_FAMILY_PATTERNS = (
     r"^check:objc3c:m",
     r"^test:tooling:m",
@@ -32,6 +32,13 @@ LIVE_SCAN_ROOTS = [
 LEGACY_ALIAS_RE = re.compile(r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)")
 MILESTONE_WORKFLOW_RE = re.compile(r"^m\d+.*\.yml$")
 MILESTONE_CHECKER_REF_RE = re.compile(r"scripts/check_m\d")
+LIBRARY_CLI_PARITY_LL_METADATA = {
+    "artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "explicit_fixture_label": "fixture parity IR",
+}
 
 
 def iter_live_files():
@@ -46,6 +53,25 @@ def iter_live_files():
                 yield path
 
 
+def read_ll_comment_metadata(path: Path) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+    for line in path.read_text(encoding='utf-8', errors='ignore').splitlines()[:16]:
+        stripped = line.strip()
+        if not stripped.startswith(';'):
+            continue
+        body = stripped[1:].strip()
+        if ':' not in body:
+            continue
+        key, value = body.split(':', 1)
+        metadata[key.strip()] = value.strip()
+    return metadata
+
+
+def library_cli_parity_ll_is_labeled(path: Path) -> bool:
+    metadata = read_ll_comment_metadata(path)
+    return all(metadata.get(key) == value for key, value in LIBRARY_CLI_PARITY_LL_METADATA.items())
+
+
 def main() -> int:
     errors: list[str] = []
     payload = json.loads(PACKAGE_JSON.read_text(encoding='utf-8'))
@@ -57,10 +83,13 @@ def main() -> int:
     removed_hits = sorted(name for name in scripts if any(re.match(p, name) for p in REMOVED_FAMILY_PATTERNS))
     if removed_hits:
         errors.append(f'removed script families still present: {removed_hits}')
-    if len(scripts) > PACKAGE_SCRIPT_BUDGET:
+    package_bridge_count = 1 if "objc3c" in scripts else 0
+    if package_bridge_count > PACKAGE_BRIDGE_BUDGET:
         errors.append(
-            f'package script count exceeds budget: {len(scripts)} > {PACKAGE_SCRIPT_BUDGET}'
+            f'package bridge count exceeds budget: {package_bridge_count} > {PACKAGE_BRIDGE_BUDGET}'
         )
+    if "objc3c" not in scripts:
+        errors.append('objc3c package bridge must be live')
     if (ROOT / 'docs' / 'contracts').exists():
         errors.append('docs/contracts must not be live')
     if (ROOT / 'spec' / 'planning').exists():
@@ -97,8 +126,8 @@ def main() -> int:
         ROOT / 'tests/tooling/fixtures/native/library_cli_parity/library/module.ll',
     ]
     for stub in ll_stubs:
-        if stub.exists():
-            errors.append(f'stub ll fixture still live: {stub.relative_to(ROOT).as_posix()}')
+        if stub.exists() and not library_cli_parity_ll_is_labeled(stub):
+            errors.append(f'unlabeled stub ll fixture still live: {stub.relative_to(ROOT).as_posix()}')
     if errors:
         print('task-hygiene contract check failed:')
         for error in errors:

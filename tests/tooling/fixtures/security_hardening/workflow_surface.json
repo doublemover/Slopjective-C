@@ -5,13 +5,60 @@
   "publish_action": "publish-security-advisories",
   "validate_action": "validate-security-hardening",
   "end_to_end_action": "validate-security-hardening-end-to-end",
-  "public_scripts": [
-    "check:objc3c:security-hardening:surface",
-    "check:objc3c:security-hardening:schemas",
-    "inspect:objc3c:security-posture",
-    "publish:objc3c:security-advisories",
-    "test:objc3c:security-hardening",
-    "test:objc3c:security-hardening:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-security-hardening-surface",
+    "check-security-hardening-schema-surface",
+    "build-security-posture",
+    "publish-security-advisories",
+    "validate-security-hardening",
+    "validate-security-hardening-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "security-hardening-source",
+    "gate_owner": "security-hardening-gate",
+    "blocker_owner": "security-hardening-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-security-hardening-surface",
+      "check-security-hardening-schema-surface",
+      "build-security-posture",
+      "publish-security-advisories",
+      "validate-security-hardening",
+      "validate-security-hardening-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-operations",
+      "validate-distribution-credibility",
+      "validate-platform-hardening"
+    ],
+    "workflow_child_actions": [
+      "check-security-response-drill",
+      "check-security-runtime-hardening",
+      "check-security-hardening-surface",
+      "check-security-hardening-schema-surface",
+      "build-security-posture",
+      "publish-security-advisories"
+    ]
+  },
+  "hard_cutover_security_guardrails": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "evidence_log_security_proof_allowed": false,
+    "generated_report_capability_truth_allowed": false,
+    "local_tabletop_capability_truth_allowed": false,
+    "retired_route_claims_allowed": false,
+    "trust_bypass_claims_allowed": false,
+    "wrapper_only_security_actions_allowed": false,
+    "security_positive_claim_requires_source_contract": true,
+    "security_positive_claim_requires_runtime_or_release_evidence": true
+  },
+  "validation_child_actions": [
+    "check-security-response-drill",
+    "check-security-runtime-hardening",
+    "check-security-hardening-surface",
+    "check-security-hardening-schema-surface",
+    "build-security-posture",
+    "publish-security-advisories"
   ],
   "upstream_validate_actions": [
     "validate-release-operations",

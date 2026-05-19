@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "e2e",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "e2e ownership covers runnable-smoke support claims, smoke, feature_matrix, and negative_execution fixture families only after lower phase owners own their behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=e2e]",
+    "support_claim=objc3c.behavior.e2e.runnable-smoke",
+    "fixture_root=tests/native/e2e",
+    "required_families:smoke",
+    "required_families:feature_matrix",
+    "required_families:negative_execution",
+    "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "legacy literals, runtime dispatch misses, evidence-log e2e claims, migration-only acceptance, and generated-only runnable evidence remain negative execution, strict-error, or provenance-only evidence"
+}

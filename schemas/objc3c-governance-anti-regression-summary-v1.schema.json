@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
   "type": "object",
   "required": [
     "contract_id",
@@ -44,5 +44,5 @@
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

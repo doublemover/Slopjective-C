@@ -1,0 +1,6 @@
+// Canonical runtime error fixture: numeric zero receiver requires runtime dispatch linkage.
+module RuntimeErrorsNumericZeroDispatchUnresolvedSymbolStrictError;
+
+fn main() -> i32 {
+  return [0 ping];
+}

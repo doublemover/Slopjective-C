@@ -28,4 +28,4 @@ jobs:
         run: npm ci
 
       - name: Build full native objc3c closeout surface
-        run: npm run build:objc3c-native:full
+        run: npm run objc3c -- build-native-full

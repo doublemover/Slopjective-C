@@ -1,0 +1,9 @@
+  void ApplyMessageReceiverMetadataAnnotations(Expr &message) {
+#include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations_receiver_metadata_collection.inc"
+
+#include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations_selector_receiver_diagnostics.inc"
+
+#include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations_annotation_parsing.inc"
+
+#include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations_profile_publication.inc"
+  }

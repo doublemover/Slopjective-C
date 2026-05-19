@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json",
+    "tests/tooling/fixtures/full_envelope_claimability/production_strength_claim_policy.json",
+    "tests/tooling/fixtures/full_envelope_claimability/release_blocker_rollout_policy.json",
+    "tests/tooling/fixtures/full_envelope_claimability/release_candidate_evidence_contract.json",
+    "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json",
+    "tests/tooling/fixtures/full_envelope_claimability/stability_rollout_implementation_contract.json",
+    "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
+  ],
+  "split_policy": {
+    "primary_axis": "full-envelope claimability behavior before fixture directory label, report path, summary path, generated artifact path, schema path, script anchor, public claim surface label, support class label, evidence family label, surface label, rollout class label, support window label, dashboard field label, release artifact field label, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "full-envelope claimability positives are limited to hand-authored checked-in contracts for support-class taxonomy, support matrix surface classification, evidence-family coverage, production-strength/candidate/preview claim policy, release-blocker rollout policy, stability rollout readiness, soak/external validation requirements, dashboard/public summary contract shape, release candidate evidence fields, and public claim surface coverage",
+    "canonical_rejection_rule": "production-strength claims outside the stable window, candidate or preview claims promoted as production strength, unsupported runtime ABI widening and foreign topology claims, support inferred from report presence alone, public claim surfaces without required evidence families, manual support matrix rows, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing or failing integrated evidence, missing required evidence-family reports, wrong report contract ids, missing required dashboard fields, missing required public summary fields, missing required acceptance matrix families, missing required release artifact fields, missing required schema, unsupported surfaces marked supported, candidate-only release state treated as stable, preview-only support treated as production strength, release blockers triggered by public conformance/performance/release/distribution failures, and generated/report rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON policy contracts, runbook paths, summary implementation anchors, report paths, schema paths, public claim surface paths, runtime boundary runbook paths, checked-in surface paths, evidence family labels, support class labels, support window labels, rollout class labels, claim class labels, public claim class labels, surface ids, demotion trigger labels, release blocker labels, required field names, successor milestone labels, and owner-split routing rows remain provenance unless an owner split claims the claimability behavior boundary",
+    "retired_surface_rule": "old-mode claimability rows, gate claimability rows, retired route claimability rows, compatibility claimability rows, migration-only rows, generated-only rows, evidence-log rows, manual-only claim rows, production-strength overclaims, unsupported-surface positives, candidate/preview promoted-to-stable positives, runner-only success, workflow-label-only success, wrapper-only claimability checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "full_envelope_claimability_provenance",
+      "path": "tests/tooling/fixtures/full_envelope_claimability/behavior_owner_splits/full_envelope_claimability_provenance.json"
+    }
+  ]
+}

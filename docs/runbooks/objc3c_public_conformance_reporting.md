@@ -22,12 +22,25 @@ Use these checked-in surfaces directly:
 - checked-in schema and release-evidence anchors:
   - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
-  - `scripts/check_release_evidence.py`
+  - `npm run objc3c -- check-release-evidence`
+
+These schema anchors are owned by `scripts/objc3c_shared/schema_registry.py`;
+runbook prose and public reports cite the registry-backed files instead of
+copying schema fragments.
 
 Machine-owned public-reporting outputs must stay under:
 
 - `tmp/reports/public-conformance/`
 - `tmp/artifacts/public-conformance/`
+
+Owner-split source modules:
+
+- contract and path models:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py`
+- typed data models:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_models.py`
+- action payload fragments:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py`
 
 ## Architecture
 
@@ -53,10 +66,19 @@ following:
 - a checked-in corpus or external-validation contract
 - a machine-owned report emitted by the live workflow
 - a checked-in schema or release-evidence contract
-- a deterministic reporting script in `scripts/`
+- an action-catalog-owned deterministic report builder
 
 Public reporting must fail closed when upstream evidence is missing, stale,
 quarantined, or not traceable to a checked-in validation family.
+
+Capability language is strict:
+
+- `claim-ready` means all required upstream evidence owners report `PASS`, no
+  schema anchors are missing, and no hard blocks remain.
+- `provisional` means the report is publishable with explicit caution and
+  deductions.
+- `blocked` means the public artifact must state the blocking evidence and
+  cannot imply conformance readiness.
 
 ## Credibility And Stability Policy
 
@@ -88,9 +110,13 @@ Checked-in schema anchors:
 - dashboard status schema: `schemas/objc3-conformance-dashboard-status-v1.schema.json`
 - public scorecard schema: `schemas/objc3c-public-conformance-scorecard-v1.schema.json`
 - public summary schema: `schemas/objc3c-public-conformance-summary-v1.schema.json`
+- release-evidence bundle schema: `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The public report may widen fields later, but it must stay schema-shaped and
-traceable to checked-in contracts.
+traceable to registry-backed checked-in contracts. This runbook must not copy
+public-conformance JSON Schema fragments or treat generated public reports as
+support boundaries outside the capability matrix and evidence map.
 
 ## Explicit Non-Goals
 
@@ -111,15 +137,16 @@ Later public-conformance reporting work must stay on these paths:
   - `docs/runbooks/objc3c_conformance_corpus.md`
   - `docs/runbooks/objc3c_external_validation.md`
 - existing evidence generation and validation scripts:
-  - `scripts/generate_conformance_corpus_index.py`
-  - `scripts/check_objc3c_conformance_corpus_integration.py`
-  - `scripts/run_objc3c_external_validation_replay.py`
-  - `scripts/publish_objc3c_external_repro_corpus.py`
-  - `scripts/check_objc3c_external_validation_integration.py`
-  - `scripts/check_release_evidence.py`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-external-validation`
+  - `npm run objc3c -- test-external-validation-replay`
+  - `npm run objc3c -- publish-external-repro-corpus`
+  - `npm run objc3c -- validate-external-validation-integration`
+  - `npm run objc3c -- check-release-evidence`
 - checked-in schema surfaces:
   - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
+  - `scripts/objc3c_shared/schema_registry.py`
 
 Later work may widen scoring, schema, publication, and workflow coverage, but
 it must stay on this boundary.
@@ -127,14 +154,22 @@ it must stay on this boundary.
 ## Current Checked-In Source Surface
 
 - contract root: `tests/tooling/fixtures/public_conformance_reporting/`
-- source check: `python scripts/check_public_conformance_reporting_source_surface.py`
+- workflow surface:
+  `tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json`
+- action payload fragments:
+  `scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py`
+- source check: `npm run objc3c -- check-public-conformance-reporting-surface`
 - source summary: `tmp/reports/public-conformance/source-surface-summary.json`
-- schema check: `python scripts/check_public_conformance_schema_surface.py`
+- schema check: `npm run objc3c -- check-public-conformance-schema-surface`
 - schema summary: `tmp/reports/public-conformance/schema-surface-summary.json`
-- scorecard builder: `python scripts/build_objc3c_public_conformance_scorecard.py`
+- scorecard builder: `npm run objc3c -- build-public-conformance-scorecard`
 - scorecard summary: `tmp/reports/public-conformance/scorecard-summary.json`
-- publication builder: `python scripts/publish_objc3c_public_conformance_report.py`
+- publication builder: `npm run objc3c -- publish-public-conformance-report`
 - public summary: `tmp/reports/public-conformance/public-summary.json`
 - published scorecard artifact: `tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json`
 - published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
 - published Markdown report: `tmp/artifacts/public-conformance/report/public-conformance-report.md`
+
+Helper implementations are owned by the release-governance public-conformance
+action modules and exposed through the action catalog facade. They are not a
+separate public reporting command surface.

@@ -2,9 +2,12 @@
   "contract_id": "objc3c.application.architecture.testing.project_template_workspace_semantics.v1",
   "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
-  "template_materializer": "scripts/materialize_objc3c_project_template.py",
+  "template_materializer_action": "materialize-project-template",
+  "template_materializer_command": "npm run objc3c -- materialize-project-template",
+  "template_materializer_implementation_anchor": "scripts/materialize_objc3c_project_template.py",
   "playground_materializer_action": "materialize-playground-workspace",
-  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "playground_materializer_command": "npm run objc3c -- materialize-playground-workspace",
+  "workflow_runner": "scripts.objc3c_workflow",
   "template_contract_id": "objc3c.project.template.surface.v1",
   "template_harness_contract_id": "objc3c.project.template.demo.harness.v1",
   "playground_workspace_contract_id": "objc3c.playground.workspace.v1",
@@ -16,17 +19,12 @@
     "docs/tutorials/build_run_verify.md",
     "docs/tutorials/guided_walkthrough.md"
   ],
-  "public_actions": [
+  "package_bridge": "objc3c",
+  "required_actions": [
     "materialize-project-template",
     "materialize-playground-workspace",
     "benchmark-runtime-inspector",
     "inspect-bonus-tool-integration"
-  ],
-  "public_scripts": [
-    "build:objc3c:template",
-    "build:objc3c:playground",
-    "inspect:objc3c:bonus-tools",
-    "inspect:objc3c:benchmark"
   ],
   "generated_template_layout": {
     "root": "tmp/artifacts/project-template/<example-id>",
@@ -49,7 +47,7 @@
     "template and playground generation must agree on source roots, public actions, and report publication"
   ],
   "non_goals": [
-    "shipping a second template generator outside scripts/materialize_objc3c_project_template.py",
+    "shipping a second template generator outside the materialize-project-template action implementation anchor",
     "creating a hidden machine-owned workspace format that differs from the public runner path",
     "treating tmp outputs as authoritative source inputs"
   ]

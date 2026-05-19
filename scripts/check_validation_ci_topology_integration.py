@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from scripts.objc3c_workflow.public_command_api import WORKFLOW_MODULE, public_workflow_action_payload
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -13,50 +16,45 @@ REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integra
 TOPOLOGY_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
-WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-ACTION_MAP = {
-    'test:fast': 'test-fast',
-    'test:objc3c:full': 'test-full',
-    'test:objc3c:nightly': 'test-nightly',
-}
+TOPOLOGY_BUILDER = ROOT / 'scripts' / 'build_validation_ci_topology.py'
+PUBLIC_NPM_BRIDGE = 'npm run objc3c -- '
+EXPECTED_PACKAGE_BRIDGE_SCRIPT = ' '.join(('python', '-m', WORKFLOW_MODULE))
 
 
 
 
 def describe_action(action: str) -> dict[str, Any]:
-    result = subprocess.run(
-        ['python', str(WORKFLOW_RUNNER), '--describe', action],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return json.loads(result.stdout)
+    return public_workflow_action_payload(action)
+
+
+def ensure_topology() -> None:
+    if TOPOLOGY_PATH.is_file():
+        return
+    subprocess.run(python_script_command(TOPOLOGY_BUILDER), cwd=ROOT, check=True)
 
 
 def main() -> None:
+    ensure_topology()
     topology = load_json(TOPOLOGY_PATH)
     package_json = load_json(PACKAGE_JSON_PATH)
     scripts = package_json['scripts']
     rows = []
     failures: list[str] = []
 
+    if scripts != {'objc3c': EXPECTED_PACKAGE_BRIDGE_SCRIPT}:
+        failures.append('package.json must expose only the canonical objc3c npm bridge')
+
     for row in topology['topology']:
-        package_script = row['package_script']
-        action = ACTION_MAP[package_script]
-        package_command = scripts.get(package_script)
-        if package_command is None:
-            failures.append(f'missing package script: {package_script}')
-            continue
+        action = row['action']
+        public_command = row['public_command']
         description = describe_action(action)
-        public_scripts = description.get('public_scripts', [])
-        if package_script not in public_scripts:
-            failures.append(f'workflow describe for {action} does not publish public script {package_script}')
+        expected_public_command = f'{PUBLIC_NPM_BRIDGE}{action}'
+        if public_command != expected_public_command:
+            failures.append(f'topology command for {action} drifted: {public_command}')
         rows.append({
-            'package_script': package_script,
             'action': action,
-            'package_command': package_command,
+            'public_command': public_command,
             'validation_tier': description.get('validation_tier'),
             'guarantee_owner': description.get('guarantee_owner'),
             'family_count': row['family_count'],
@@ -84,7 +82,7 @@ def main() -> None:
         '## Aggregate entrypoints',
     ]
     for row in rows:
-        lines.append(f"- `{row['package_script']}` -> `{row['action']}`")
+        lines.append(f"- `{row['public_command']}` -> `{row['action']}`")
         lines.append(f"  - validation_tier: `{row['validation_tier']}`")
         lines.append(f"  - family_count: `{row['family_count']}`")
         lines.append(f"  - guarantee_owner: `{row['guarantee_owner']}`")

@@ -1,0 +1,6 @@
+// Canonical parser rejection fixture: removed retired-mode flags never select a positive old mode.
+module RemovedRetiredModeFlagRejected;
+
+fn main() -> i32 {
+  return 0;
+}

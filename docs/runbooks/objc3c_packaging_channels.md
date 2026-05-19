@@ -16,8 +16,11 @@ platform notarization/signing claim.
 
 The packaging-channel surface layers distribution channels on top of the release-foundation surface.
 The canonical payload remains the staged runnable toolchain bundle produced by
-`scripts/package_objc3c_runnable_toolchain.ps1` and described by the machine-
+`npm run objc3c -- package-runnable-toolchain` and described by the machine-
 owned release manifest, SBOM, and attestation artifacts.
+
+Packaging-channel commands route through `npm run objc3c -- <action>`; helper
+implementations are action-registry anchors only.
 
 Packaging channels are derived views over that payload:
 
@@ -33,7 +36,7 @@ can drift from the runnable package.
 
 ## Supported Platforms
 
-The supported platform surface for this milestone is intentionally narrow and
+The supported packaging-channel platform surface is intentionally narrow and
 tiered:
 
 - `Tier 1`
@@ -49,7 +52,7 @@ Supported channel matrix for `windows-x64`:
 - local installer image
 - offline air-gapped bootstrap bundle
 
-Non-goals for this milestone:
+Packaging-channel non-goals:
 
 - no Homebrew, apt, winget, Chocolatey, Scoop, or MSI publication claim
 - no daemonized updater
@@ -61,17 +64,17 @@ Non-goals for this milestone:
 The trusted packaging-channel boundary is:
 
 - checked-in contracts under `tests/tooling/fixtures/packaging_channels/`
-- checked-in generators under `scripts/`
+- action-catalog-owned generators
 - checked-in schemas under `schemas/`
 - machine-owned outputs under `tmp/artifacts/package-channels/`,
   `tmp/reports/package-channels/`, and `tmp/pkg/`
 
-No packaging-channel claim may depend on manual zip assembly, a hand-edited
-installer manifest, or an external registry snapshot.
+No packaging-channel claim may depend on ad hoc zip assembly, a checked-in
+installer manifest rewrite, or an external registry snapshot.
 
 ## Installer Behavior Policy
 
-Installer and bootstrap flows in this milestone must follow these rules:
+Installer and bootstrap flows in this packaging-channel surface must follow these rules:
 
 - installation is local-root only and must not claim a system-wide install
 - install, bootstrap, and rollback logic must be machine-generated from the
@@ -89,12 +92,12 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
-- archive compatibility claims must remain tied to the same `windows-x64`
+- archive support claims must remain tied to the same `windows-x64`
   runnable payload family; publishing a package does not imply cross-host reuse
 
 ## Workflow Surface
 
-The live packaging-channel workflow for this milestone must expose:
+The live packaging-channel workflow must expose:
 
 - a source-surface check
 - a schema-surface check
@@ -107,9 +110,9 @@ owned reports under `tmp/reports/package-channels/`.
 
 Current public platform-support entrypoints layered onto this surface:
 
-- `npm run inspect:objc3c:platform-matrix`
-- `npm run test:objc3c:platform-hardening`
-- `npm run test:objc3c:platform-hardening:e2e`
+- `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- validate-platform-hardening`
+- `npm run objc3c -- validate-platform-hardening-end-to-end`
 
 The package-channel manifest and summary must publish the same support-tier
 boundary as the machine-owned platform support matrix.

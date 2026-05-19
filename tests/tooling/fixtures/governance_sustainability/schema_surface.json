@@ -1,7 +1,10 @@
 {
   "contract_id": "objc3c.governance.sustainability.schema.surface.v1",
   "schema_version": 1,
-  "schema_check_script": "scripts/check_governance_sustainability_schema_surface.py",
+  "package_bridge": "objc3c",
+  "schema_check_action": "validate-governance-sustainability",
+  "schema_check_command": "npm run objc3c -- validate-governance-sustainability",
+  "schema_check_implementation_anchor": "scripts/check_governance_sustainability_schema_surface.py",
   "budget_summary_schema": "schemas/objc3c-governance-budget-summary-v1.schema.json",
   "anti_regression_summary_schema": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
   "governance_evidence_schema": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json"

@@ -4,12 +4,20 @@
   "milestone": "M323",
   "issue": "M323-B003",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/index.json",
+  "compatibility_boundary_policy": {
+    "primary_axis": "behavior owner before interop compatibility label, interop call, FFI metadata, module replay, bridge payload, or closure/error composition row",
+    "support_authority": "mixed-image and C/C++/Swift compatibility rows, interop calls, FFI metadata, bridge payloads, and closure/error composition rows are narrow packaged-proof provenance unless parser, sema, lowering, IR, runtime, and e2e owners claim behavior",
+    "positive_support_from_label": false,
+    "positive_support_from_metadata": false,
+    "retired_surface_rule": "compatibility, gate, retired route, old-mode, unsupported foreign loader topology, public package-loader ABI widening, FFI-metadata-only, closure-error-summary-only, and broader cross-language semantics map to canonical_rejection, strict-error, absent-support, or provenance-only evidence"
+  },
   "canonical_surfaces": [
     "runtime_cross_module_package_interop_source_surface",
     "runtime_textual_binary_interface_parity_source_surface",
-    "runtime_mixed_image_compatibility_interop_semantics_surface",
-    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "runtime_mixed_image_interop_semantics_surface",
+    "runtime_c_cpp_swift_bridge_semantics_surface",
     "runtime_import_version_feature_claim_diagnostics_surface",
     "runtime_packaging_bridge_loader_artifact_surface",
     "runtime_mixed_image_package_lowering_bridge_emission_surface",
@@ -19,20 +27,21 @@
   ],
   "semantic_models": [
     "supported-interop-claims-are-bounded-by-runtime-import-surfaces-cross-module-link-plans-and-private-runtime-snapshots-rather-than-a-widened-public-runtime-header",
-    "mixed-image-and-c-cpp-swift-bridge-compatibility-claims-are-live-only-for-the-current-packaged-provider-consumer-topology-and-canonical-bridge-artifact-set",
-    "ownership-error-and-async-compatibility-claims-stay-narrow-and-must-not-outrun-the-separately-proved-arc-error-and-concurrency-runtime-surfaces",
+    "mixed-image-and-c-cpp-swift-bridge-interop-stability-claims-are-live-only-for-the-current-packaged-provider-consumer-topology-and-canonical-bridge-artifact-set",
+    "ownership-error-and-async-interop-stability-claims-stay-narrow-and-must-not-outrun-the-separately-proved-arc-error-and-concurrency-runtime-surfaces",
     "unsupported-foreign-loader-topologies-public-package-loader-entrypoints-and-broader-cross-language-semantics-remain-fail-closed-or-comparison-only"
   ],
   "claim_narrowing_constraints": [
     "public-runtime-abi-widening-for-package-loader-or-bridge-helpers-remains-out-of-scope",
-    "interop-compatibility-claims-must-stay-narrower-than-the-current-packaged-mixed-image-proof-surface",
-    "ownership-error-and-async-boundary-claims-are-limited-to-guarded-composition-with-existing-runtime-evidence rather than general foreign-boundary completeness"
+    "interop-stability-claims-must-stay-narrower-than-the-current-packaged-mixed-image-proof-surface",
+    "ownership-error-and-async-boundary-claims-are-limited-to-guarded-composition-with-existing-runtime-evidence rather than general foreign-boundary completeness",
+    "FFI metadata rows, interop-call labels, generated bridge payloads, and closure/error composition summaries are provenance until claimed by canonical behavior owners"
   ],
   "authoritative_interop_case_ids": [
     "cross-module-runtime-package-interop-source-surface",
     "textual-binary-interface-parity-source-surface",
-    "mixed-image-compatibility-interop-semantics",
-    "c-cpp-swift-bridge-compatibility-semantics",
+    "mixed-image-interop-semantics",
+    "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
     "mixed-image-package-lowering-bridge-emission",
@@ -48,9 +57,10 @@
   "authoritative_code_paths": [
     "native/objc3c/src/io/objc3_process.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/images/registration_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_interop_conformance.py",
     "scripts/check_objc3c_runnable_interop_end_to_end.py"

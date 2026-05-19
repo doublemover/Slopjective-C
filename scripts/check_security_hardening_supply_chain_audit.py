@@ -2,28 +2,33 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.subprocesses import run_completed as run_step
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_step
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "supply_chain_audit_contract.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "supply-chain-audit-summary.json"
+TEMP_REPORT_ROOT = ROOT / "tmp" / "reports"
+TEMP_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts"
+RELEASE_EVIDENCE_INDEX = TEMP_REPORT_ROOT / "release_evidence" / "evidence-index.json"
+UPDATE_MANIFEST = TEMP_ARTIFACT_ROOT / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
+UPGRADE_SUPPORT_REPORT = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
+CHANNEL_CATALOG = TEMP_ARTIFACT_ROOT / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
+TRUST_REPORT = TEMP_ARTIFACT_ROOT / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 
 STEP_COMMANDS = {
-    "build_security_hardening_response_policy_summary": [sys.executable, "scripts/build_security_hardening_response_policy_summary.py"],
-    "build_security_hardening_macro_trust_policy_summary": [sys.executable, "scripts/build_security_hardening_macro_trust_policy_summary.py"],
-    "build_security_hardening_release_key_policy_summary": [sys.executable, "scripts/build_security_hardening_release_key_policy_summary.py"],
-    "check_release_evidence": [sys.executable, "scripts/check_release_evidence.py"],
-    "check_source_hygiene_authenticity": [sys.executable, "scripts/check_source_hygiene_authenticity.py"],
-    "publish_objc3c_release_provenance": [sys.executable, "scripts/publish_objc3c_release_provenance.py"],
-    "build_objc3c_update_manifest": [sys.executable, "scripts/build_objc3c_update_manifest.py"],
-    "publish_objc3c_release_operations_metadata": [sys.executable, "scripts/publish_objc3c_release_operations_metadata.py"],
-    "publish_objc3c_distribution_trust_report": [sys.executable, "scripts/publish_objc3c_distribution_trust_report.py"]
+    "build_security_hardening_response_policy_summary": python_script_command("scripts/build_security_hardening_response_policy_summary.py"),
+    "build_security_hardening_macro_trust_policy_summary": python_script_command("scripts/build_security_hardening_macro_trust_policy_summary.py"),
+    "build_security_hardening_release_key_policy_summary": python_script_command("scripts/build_security_hardening_release_key_policy_summary.py"),
+    "check_release_evidence": python_script_command("scripts/check_release_evidence.py"),
+    "check_source_hygiene_authenticity": python_script_command("scripts/check_source_hygiene_authenticity.py"),
+    "publish_objc3c_release_provenance": python_script_command("scripts/publish_objc3c_release_provenance.py"),
+    "build_objc3c_update_manifest": python_script_command("scripts/build_objc3c_update_manifest.py"),
+    "publish_objc3c_release_operations_metadata": python_script_command("scripts/publish_objc3c_release_operations_metadata.py"),
+    "publish_objc3c_distribution_trust_report": python_script_command("scripts/publish_objc3c_distribution_trust_report.py")
 }
 
 
@@ -68,16 +73,16 @@ def main() -> int:
         if not path.is_file():
             failures.append(f"missing required report {raw_path}")
 
-    release_evidence = read_json(ROOT / "tmp/reports/release_evidence/evidence-index.json") if (ROOT / "tmp/reports/release_evidence/evidence-index.json").is_file() else {}
-    update_manifest = read_json(ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json") if (ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json").is_file() else {}
-    compatibility_report = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json").is_file() else {}
-    channel_catalog = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json").is_file() else {}
-    trust_report = read_json(ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json") if (ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json").is_file() else {}
+    release_evidence = read_json(RELEASE_EVIDENCE_INDEX) if RELEASE_EVIDENCE_INDEX.is_file() else {}
+    update_manifest = read_json(UPDATE_MANIFEST) if UPDATE_MANIFEST.is_file() else {}
+    upgrade_support_report = read_json(UPGRADE_SUPPORT_REPORT) if UPGRADE_SUPPORT_REPORT.is_file() else {}
+    channel_catalog = read_json(CHANNEL_CATALOG) if CHANNEL_CATALOG.is_file() else {}
+    trust_report = read_json(TRUST_REPORT) if TRUST_REPORT.is_file() else {}
 
     checks = {
         "release_evidence_schema_matches": release_evidence.get("schema_id") == "objc3-conformance-evidence-index/v1",
         "update_manifest_has_platform_support_matrix": isinstance(update_manifest.get("platform_support_matrix"), str) and bool(update_manifest.get("platform_support_matrix")),
-        "compatibility_report_has_platform_support_matrix": isinstance(compatibility_report.get("platform_support_matrix"), str) and bool(compatibility_report.get("platform_support_matrix")),
+        "upgrade_support_report_has_platform_support_matrix": isinstance(upgrade_support_report.get("platform_support_matrix"), str) and bool(upgrade_support_report.get("platform_support_matrix")),
         "channel_catalog_has_platform_support_matrix": isinstance(channel_catalog.get("platform_support_matrix"), str) and bool(channel_catalog.get("platform_support_matrix")),
         "trust_report_passes": trust_report.get("status") == "PASS",
         "trust_report_references_release_operations": any("release-operations" in str(path) for path in trust_report.get("evidence_paths", [])),

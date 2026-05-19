@@ -1,23 +1,19 @@
-from __future__ import annotations
-
-import subprocess
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "scripts" / "build_objc3c_effects_ownership_semantic_model.py"
-SUMMARY = ROOT / "reports" / "claimability" / "effects-ownership-semantic-model" / "effects_ownership_semantic_model_summary.json"
+from build_objc3c_effects_ownership_semantic_model_artifact import (
+    assert_effects_ownership_semantic_model_summary_artifact_exists,
+)
+from build_objc3c_effects_ownership_semantic_model_runner import (
+    run_effects_ownership_semantic_model_check,
+)
 
 
-def test_effects_ownership_semantic_model_report_is_current() -> None:
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--check"],
-        cwd=ROOT,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
+def effects_ownership_semantic_model_report_is_current() -> None:
+    result = run_effects_ownership_semantic_model_check()
+
     assert result.returncode == 0, result.stdout + result.stderr
     assert "status: PASS" in result.stdout
-    assert SUMMARY.is_file()
+    assert_effects_ownership_semantic_model_summary_artifact_exists()
+
+
+test_effects_ownership_semantic_model_report_is_current = (
+    effects_ownership_semantic_model_report_is_current
+)

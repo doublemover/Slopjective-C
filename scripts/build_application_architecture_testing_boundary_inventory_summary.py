@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,23 +37,30 @@ def main() -> int:
     ]
     showcase_workspace_filesystem = sorted(repo_rel(path) for path in (ROOT / "showcase").glob("*/workspace.json"))
 
-    template_materializers = [str(path) for path in contract["template_materializers"]]
-    existing_testing_surfaces = [str(path) for path in contract["existing_testing_surfaces"]]
-    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
+    template_materializers = [
+        str(path) for path in contract["template_materializer_implementation_anchors"]
+    ]
+    existing_testing_surfaces = [
+        str(path) for path in contract["testing_surface_implementation_anchors"]
+    ]
+    required_actions = [str(name) for name in contract["required_actions"]]
+    package_bridge = str(contract["package_bridge"])
     package_scripts = package.get("scripts", {})
     if not isinstance(package_scripts, dict):
         raise RuntimeError("package.json scripts field drifted from an object")
+    registered_actions = set(public_workflow_action_names())
 
     missing_paths = [
         raw_path
         for raw_path in template_materializers + existing_testing_surfaces
         if not (ROOT / raw_path).is_file()
     ]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    missing_actions = [name for name in required_actions if name not in registered_actions]
+    package_bridge_exists = package_bridge in package_scripts
 
     payload = {
         "contract_id": "objc3c.application.architecture.testing.boundary.inventory.summary.v1",
-        "status": "PASS" if not missing_paths and not missing_public_scripts else "FAIL",
+        "status": "PASS" if not missing_paths and package_bridge_exists and not missing_actions else "FAIL",
         "boundary_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "showcase_example_count": len(showcase_examples) if isinstance(showcase_examples, list) else 0,
@@ -61,7 +69,8 @@ def main() -> int:
         "tutorial_doc_count": len(tutorial_docs),
         "template_materializer_count": len(template_materializers),
         "existing_testing_surface_count": len(existing_testing_surfaces),
-        "required_public_script_count": len(required_public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "direct_successor_milestone_count": len(contract["direct_successor_milestones"]),
         "stdlib_workspace_contract_id": stdlib_workspace.get("contract_id"),
         "showcase_workspace_manifests": showcase_workspace_manifests,
@@ -69,9 +78,11 @@ def main() -> int:
         "tutorial_docs": tutorial_docs,
         "template_materializers": template_materializers,
         "existing_testing_surfaces": existing_testing_surfaces,
-        "required_public_scripts": required_public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "working_scope": contract["working_scope"],
         "non_goals": contract["non_goals"],
         "direct_successor_milestones": contract["direct_successor_milestones"],

@@ -4,12 +4,18 @@
   "milestone": "M323",
   "issue": "M323-C002",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py",
+  "summary_implementation_anchor": "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py",
   "canonical_reports": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",
     "tmp/reports/runtime/runnable-metaprogramming-e2e/summary.json"
   ],
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before generated materialization report or synthesized accessor artifact",
+    "support_authority": "property-behavior materialization support requires sema, lowering, runtime, or e2e owner assignment over hand-authored fixtures",
+    "positive_support_from_report": false,
+    "retired_surface_rule": "generated materialization reports, synthesized-artifact-only rows, module replay rows, storage retired route rows, gate, retired route, old-mode, and unsupported property-behavior rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "authoritative_case_ids": [
     "metaprogramming-derive-property-behavior-semantics",
     "metaprogramming-executable-lowering",
@@ -32,9 +38,11 @@
     "storage_accessor_runtime_abi_surface"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
     "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py"

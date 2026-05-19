@@ -1,0 +1,73 @@
+"""Conformance corpus surface model checker entrypoint."""
+
+from __future__ import annotations
+
+if __package__:
+    from .conformance_corpus_surface_model import (
+        CHECKER_NAME,
+        EXPECTED_PRIMARY_BUCKETS,
+        EXPECTED_SUPPLEMENTAL_BUCKETS,
+        EXPECTED_WORKFLOW_SURFACE,
+        LONGITUDINAL_CONTRACT_ID,
+        SUMMARY_CONTRACT_ID,
+        SURFACE_CONTRACT_ID,
+        SURFACE_FIELDS,
+        ConformanceCorpusPaths,
+        ConformanceCorpusSurfaceModel,
+        ConformanceCorpusSurfaceReportWriter,
+        ConformanceCorpusSurfaceSummary,
+        ManifestBucketSummary,
+        RetainedSuiteSummary,
+        SurfaceField,
+        SurfaceValidationError,
+        load_longitudinal_suites,
+        load_manifest_payload,
+        load_surface,
+        main,
+    )
+else:
+    from conformance_corpus_surface_model import (
+        CHECKER_NAME,
+        EXPECTED_PRIMARY_BUCKETS,
+        EXPECTED_SUPPLEMENTAL_BUCKETS,
+        EXPECTED_WORKFLOW_SURFACE,
+        LONGITUDINAL_CONTRACT_ID,
+        SUMMARY_CONTRACT_ID,
+        SURFACE_CONTRACT_ID,
+        SURFACE_FIELDS,
+        ConformanceCorpusPaths,
+        ConformanceCorpusSurfaceModel,
+        ConformanceCorpusSurfaceReportWriter,
+        ConformanceCorpusSurfaceSummary,
+        ManifestBucketSummary,
+        RetainedSuiteSummary,
+        SurfaceField,
+        SurfaceValidationError,
+        load_longitudinal_suites,
+        load_manifest_payload,
+        load_surface,
+        main,
+    )
+
+__all__ = (
+    "CHECKER_NAME",
+    "EXPECTED_PRIMARY_BUCKETS",
+    "EXPECTED_SUPPLEMENTAL_BUCKETS",
+    "EXPECTED_WORKFLOW_SURFACE",
+    "LONGITUDINAL_CONTRACT_ID",
+    "SUMMARY_CONTRACT_ID",
+    "SURFACE_CONTRACT_ID",
+    "SURFACE_FIELDS",
+    "ConformanceCorpusPaths",
+    "ConformanceCorpusSurfaceModel",
+    "ConformanceCorpusSurfaceReportWriter",
+    "ConformanceCorpusSurfaceSummary",
+    "ManifestBucketSummary",
+    "RetainedSuiteSummary",
+    "SurfaceField",
+    "SurfaceValidationError",
+    "load_longitudinal_suites",
+    "load_manifest_payload",
+    "load_surface",
+    "main",
+)

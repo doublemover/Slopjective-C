@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_core_expression_precedence_conditional_logical.inc"
+#include "parse/objc3_parser_core_expression_precedence_bitwise_comparison.inc"
+#include "parse/objc3_parser_core_expression_precedence_arithmetic_unary.inc"
+#include "parse/objc3_parser_core_expression_precedence_postfix.inc"

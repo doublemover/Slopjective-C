@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_unwind_cleanup_site_collection_symbol_predicates.inc"
+
+#include "parse/objc3_parser_unwind_cleanup_site_collection_site_counters.inc"
+
+#include "parse/objc3_parser_unwind_cleanup_site_collection_symbol_collection.inc"
+
+#include "parse/objc3_parser_unwind_cleanup_site_collection_body_counting.inc"

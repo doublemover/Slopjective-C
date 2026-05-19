@@ -2,13 +2,13 @@
   "contract_id": "objc3c.stdlib.stability_policy.v1",
   "schema_version": 1,
   "evolution_model": "major-version-gated-additive-within-v1",
-  "compatibility_rules": [
+  "stability_rules": [
     "canonical module names remain stable within major version 1",
     "capability identifiers remain stable within major version 1",
     "new exported APIs may be added without renaming existing modules",
     "layering violations are rejected at the checked-in workspace boundary",
     "advanced helper families remain owned by their current canonical modules within major version 1",
-    "strict-system helper exposure remains profile-gated and cannot be widened into core claims without an explicit contract update"
+    "strict-system helper exposure remains profile-gated and cannot be widened into core imports without an explicit contract update"
   ],
   "family_ownership": {
     "objc3.concurrency": [
@@ -21,10 +21,10 @@
     ],
     "objc3.keypath": [
       "typed-keypath-application",
-      "typed-keypath-text-compatibility",
+      "typed-keypath-text-shape",
       "typed-keypath-metadata",
       "reflection-interop",
-      "runtime-composition-adapter"
+      "runtime-composition-token"
     ],
     "objc3.system": [
       "resource-cleanup",

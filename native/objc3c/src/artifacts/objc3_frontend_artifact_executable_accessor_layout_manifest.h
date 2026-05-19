@@ -1,0 +1,5 @@
+#pragma once
+
+#include "artifacts/objc3_frontend_artifact_executable_ivar_layout_manifest.h"
+#include "artifacts/objc3_frontend_artifact_executable_property_accessor_layout_manifest.h"
+#include "artifacts/objc3_frontend_artifact_executable_synthesized_accessor_manifest.h"

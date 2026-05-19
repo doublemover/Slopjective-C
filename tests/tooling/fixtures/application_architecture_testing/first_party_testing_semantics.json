@@ -2,8 +2,9 @@
   "contract_id": "objc3c.application.architecture.testing.first_party_testing_semantics.v1",
   "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
-  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
-  "public_actions": [
+  "workflow_runner": "scripts.objc3c_workflow",
+  "package_bridge": "objc3c",
+  "required_actions": [
     "validate-showcase",
     "validate-runnable-showcase",
     "validate-stdlib-program",
@@ -12,16 +13,6 @@
     "validate-runnable-developer-tooling",
     "materialize-project-template",
     "materialize-playground-workspace"
-  ],
-  "public_scripts": [
-    "test:showcase",
-    "test:showcase:e2e",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling",
-    "build:objc3c:template",
-    "build:objc3c:playground"
   ],
   "checked_in_fixture_roots": [
     "tests/tooling/fixtures",
@@ -39,10 +30,18 @@
     {
       "id": "checked_in_contract_and_unit",
       "owner": "tests/tooling and script-level assertions",
-      "entrypoints": [
-        "python -m pytest tests/tooling/test_materialize_objc3c_project_template.py",
-        "python scripts/check_documentation_surface.py",
-        "python scripts/check_repo_superclean_surface.py"
+      "actions": [
+        "check-documentation-surface",
+        "check-repo-superclean-surface"
+      ],
+      "commands": [
+        "npm run objc3c -- check-documentation-surface",
+        "npm run objc3c -- check-repo-superclean-surface"
+      ],
+      "implementation_anchors": [
+        "tests/tooling/test_materialize_objc3c_project_template.py",
+        "scripts/check_documentation_surface.py",
+        "scripts/check_repo_superclean_surface.py"
       ],
       "claim": "checked-in generators and contracts are coherent before any runnable packaging claim is made"
     },
@@ -50,9 +49,9 @@
       "id": "workspace_and_integration",
       "owner": "public workflow integration checks",
       "entrypoints": [
-        "npm run test:showcase",
-        "npm run test:stdlib:program",
-        "npm run test:objc3c:developer-tooling"
+        "npm run objc3c -- validate-showcase",
+        "npm run objc3c -- validate-stdlib-program",
+        "npm run objc3c -- validate-developer-tooling"
       ],
       "claim": "example workspaces, stdlib program surfaces, and developer-tooling drills agree on the user-visible workflow"
     },
@@ -60,9 +59,9 @@
       "id": "packaged_and_runnable",
       "owner": "runnable package and end-to-end validation",
       "entrypoints": [
-        "npm run test:showcase:e2e",
-        "npm run test:stdlib:program:e2e",
-        "npm run test:objc3c:runnable-developer-tooling"
+        "npm run objc3c -- validate-runnable-showcase",
+        "npm run objc3c -- validate-runnable-stdlib-program",
+        "npm run objc3c -- validate-runnable-developer-tooling"
       ],
       "claim": "the same user-facing path remains truthful after packaging and installation-style replay"
     }

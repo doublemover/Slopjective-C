@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-security-hardening-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/source_surface.json",
+    "tests/tooling/fixtures/security_hardening/workflow_surface.json",
+    "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
+    "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+    "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+    "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+  ],
+  "support_boundary": "e2e ownership covers the shipped security-hardening workflow contract only: source/schema surface checks, security posture construction, advisory publication, security-hardening validation, end-to-end security-hardening validation, response-drill linkage to platform/distribution/release evidence, installer/update key policy linkage, and supply-chain audit step ordering. Generated reports, tmp artifacts, and workflow labels alone do not define support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "public_action:check-security-hardening-surface",
+    "public_action:check-security-hardening-schema-surface",
+    "public_action:build-security-posture",
+    "public_action:publish-security-advisories",
+    "public_action:validate-security-hardening",
+    "public_action:validate-security-hardening-end-to-end",
+    "workflow_child_action:check-security-response-drill",
+    "workflow_child_action:check-security-runtime-hardening",
+    "upstream_validate_action:validate-release-operations",
+    "upstream_validate_action:validate-distribution-credibility",
+    "upstream_validate_action:validate-platform-hardening",
+    "package_bridge:objc3c",
+    "owner:security-hardening-source",
+    "owner:security-hardening-gate",
+    "owner:security-hardening-blockers"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/security_hardening",
+  "retired_surface_rule": "local-only tabletop capability truth, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only security actions, old-mode security workflow rows, gate security workflow rows, retired route security workflow rows, compatibility security workflow rows, migration-only security workflow rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

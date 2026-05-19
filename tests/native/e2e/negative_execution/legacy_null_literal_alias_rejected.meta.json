@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "fixture": "legacy_null_literal_alias_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "e2e",
+  "behavior_family": "negative_execution",
+  "fixture_kind": "rejection",
+  "retired_surface_tags": [
+    "old-mode"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "O3C002",
+    "required_tokens": [
+      "O3C002",
+      "legacy literal alias 'NULL' is rejected"
+    ]
+  }
+}

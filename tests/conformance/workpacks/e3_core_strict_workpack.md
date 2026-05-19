@@ -62,21 +62,24 @@ issues `#48` through `#79`, grouped by `E.3.1` through `E.3.6`.
 - Test IDs: `FTM-50-01`, `FTM-50-02`, `FTM-50-03`.
 - Dependencies: `#48`, `#51`.
 - Done criteria:
-  - Required feature macros are emitted with deterministic values by mode.
-  - `FTM-50-*` tests pass for permissive, strict, and strict-system runs.
+  - Required feature macros are emitted with deterministic canonical values.
+  - `FTM-50-*` tests pass for core, strict, and strict-system profile runs
+    without enabling retired permissive or retired modes.
 
 ### Issue #51: Strictness selection controls
 
 - Spec anchors: `#e-3-1`, `#part-1-5`, `#part-12-5-10`.
-- Objective: implement strictness mode selection equivalent to
-  `-fobjc3-strictness=permissive|strict|strict-system`.
+- Objective: implement strictness mode selection equivalent to the canonical
+  `-fobjc3-strictness=strict|strict-system` surface. Retired permissive and
+  compatibility spellings are strict errors in hard-cutover fixtures.
 - Required artifacts: driver/frontend flag wiring, mode propagation into
   semantic checks, diagnostics docs, matrix tests.
 - Test IDs: `SCM-01`, `SCM-02`, `SCM-03`, `SCM-04`, `STR-51-CLI-01`.
 - Dependencies: `#48`.
 - Done criteria:
-  - all three strictness values parse, propagate, and gate diagnostics
-    according to profile rules.
+  - canonical strictness values parse, propagate, and gate diagnostics
+    according to profile rules, while retired values fail with stable
+    diagnostic metadata.
   - `SCM-01`..`SCM-04` and `STR-51-CLI-01` pass in CI.
 
 ### Issue #52: Core/Strict backlog gap resolution
@@ -267,23 +270,25 @@ issues `#48` through `#79`, grouped by `E.3.1` through `E.3.6`.
 ### Issue #65: Generic methods/functions deferral gate
 
 - Spec anchors: `#e-3-3`, `#decisions-d-008`, `#part-3`.
-- Objective: defer generic methods/functions in v1, or gate them behind an
-  explicit extension flag.
-- Required artifacts: parser/semantic gate checks, extension-flag plumbing,
-  diagnostics docs, negative tests.
+- Objective: defer generic methods/functions in v1 and reject extension-flag
+  opt-in attempts as strict hard-cutover errors.
+- Required artifacts: parser/semantic gate checks, diagnostics docs, negative
+  tests for default use and removed opt-in flags.
 - Test IDs: `GEN-65-NEG-01`, `GEN-65-GATE-01`.
 - Dependencies: `#64`.
 - Done criteria:
-  - generic methods/functions are rejected by default in v1 mode.
-  - if extension mode exists, `GEN-65-GATE-01` proves opt-in behavior only.
+  - generic methods/functions are rejected in v1 mode.
+  - removed extension-mode flags fail closed and `GEN-65-GATE-01` proves the
+    rejection path instead of preserving a compatibility opt-in.
 
 ### Issue #66: Key path literal and typing support
 
 - Spec anchors: `#e-3-3`, `#part-3`.
-- Objective: implement key-path literal typing rules, or mark unsupported and
-  withhold feature-macro claim.
-- Required artifacts: key-path parser/type checker, fallback unsupported marker,
-  macro claim gating, semantic tests.
+- Objective: implement key-path literal typing rules, or reject unavailable
+  feature configurations with a strict diagnostic and withhold feature-macro
+  claims.
+- Required artifacts: key-path parser/type checker, strict unsupported-feature
+  marker, macro claim gating, semantic tests.
 - Test IDs: `KP-66-01`, `KP-66-GATE-01`.
 - Dependencies: `#50`, `#58`.
 - Done criteria:

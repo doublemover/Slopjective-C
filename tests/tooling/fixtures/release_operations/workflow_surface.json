@@ -3,17 +3,70 @@
   "schema_version": 1,
   "validate_action": "validate-release-operations",
   "end_to_end_action": "validate-release-operations-end-to-end",
-  "public_scripts": [
-    "check:objc3c:release-operations:surface",
-    "check:objc3c:release-operations:schemas",
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
+  "release_operations_owned_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "release-operations-source",
+    "gate_owner": "release-operations-gate",
+    "blocker_owner": "release-operations-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-release-operations-surface",
+      "check-release-operations-schema-surface",
+      "build-update-manifest",
+      "publish-release-operations",
+      "validate-release-operations",
+      "validate-release-operations-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation",
+      "validate-packaging-channels"
+    ],
+    "workflow_child_actions": [
+      "validate-packaging-channels",
+      "check-release-operations-surface",
+      "check-release-operations-schema-surface",
+      "build-update-manifest",
+      "publish-release-operations"
+    ],
+    "hard_cutover_guardrails": {
+      "missing_upstream_artifact_behavior": "fail-closed",
+      "retired_update_path_allowed": false,
+      "alternate_update_support_path_allowed": false,
+      "publication_claim_owner": "release-operations-gate",
+      "blocker_owner_required_before_publication": true,
+      "evidence_log_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
+  },
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels"
   ],
-  "nightly_action": "test-nightly"
+  "workflow_child_actions": [
+    "validate-packaging-channels",
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations"
+  ],
+  "integration_summary_contract": "objc3c.release.operations.integration.summary.v1",
+  "end_to_end_summary_contract": "objc3c.release.operations.end-to-end.summary.v1",
+  "nightly_action": "test-nightly",
+  "fail_closed_policy": "upstream artifacts must exist or their owner action must fail before release-operations publication"
 }

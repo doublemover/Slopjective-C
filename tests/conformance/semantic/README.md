@@ -18,8 +18,8 @@ Current semantic fixtures for the E.3.3 type-system lane:
 - `OPT-62-NEG-01.json`, `OPT-62-POS-01.json` for v1 reference-only optional
   chaining.
 - `GEN-64-01.json`, `GEN-64-02.json` for pragmatic generic type behavior.
-- `GEN-65-01.json`, `GEN-65-02.json` for D-008 generic method/function gate
-  behavior.
+- `GEN-65-01.json`, `GEN-65-02.json` for D-008 generic method/function
+  rejection, including removed extension-flag diagnostics.
 - `KPATH-66-01.json`, `KPATH-66-02.json` for key path support and
   unsupported-mode diagnostics.
 - `TYP-8013-01.json` through `TYP-8013-18.json` for issue #8013 typed object,
@@ -67,8 +67,8 @@ Current semantic fixtures for the E.3.3 type-system lane:
 - `DEF-70-01.json`, `DEF-70-02.json` for `defer` LIFO scope-exit semantics.
 - `GRD-72-01.json`, `GRD-72-02.json` for `guard` early-exit/refinement
   semantics.
-- `MTC-73-01.json`, `MTC-73-GATE-01.json` for `match` behavior or feature-gate
-  semantics.
+- `MTC-73-01.json`, `MTC-73-GATE-01.json` for `match` behavior and
+  hard-cutover disabled-feature rejection.
 - `THR-75-01.json`, `THR-75-02.json` for untyped `throws` v1 semantics.
 - `TRY-77-01.json`, `TRY-77-02.json` for `try`/`do-catch` and propagation
   semantics.

@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_callable_actor_isolation_sendability_finalizers_function_publication.inc"
+
+#include "parse/objc3_parser_core_callable_actor_isolation_sendability_finalizers_method_publication.inc"
+
+#include "parse/objc3_parser_core_callable_actor_isolation_sendability_finalizers_function_finalization.inc"
+
+#include "parse/objc3_parser_core_callable_actor_isolation_sendability_finalizers_method_finalization.inc"

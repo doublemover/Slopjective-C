@@ -2,6 +2,28 @@
 
 _Working draft v0.11 - last updated 2026-02-23_
 
+## Current Hard-Cutover Overlay {#impl-roadmap-current-hard-cutover}
+
+The active branch-level hard-cutover program is the local `#8132` through
+`#8150` cleanup series. The checked-in issue evidence maps record local owner
+splits through the 2026-05-09 branch state but do not assert validation, push,
+GitHub issue edits, remote closure, or final closeout.
+
+Current prose/spec/planning docs must preserve these boundaries:
+
+- public commands route through `npm run objc3c -- <action>`;
+- direct helper scripts, native binaries, CMake entrypoints, and generated
+  reports are implementation evidence only;
+- compiler/frontend, runtime/API, workflow/control-plane, behavior fixture, and
+  JSON/schema owners remain split;
+- retired old modes, retired adapters, alias adapters, alternate acceptance
+  paths, and retired-source lanes are rejection, strict-error, or absent-support
+  evidence, not accepted behavior.
+
+Historical phase inventory follows. It is not a replacement for the current
+hard-cutover evidence files under `docs/issues/` or for the support/evidence
+matrix.
+
 This roadmap tracks thirty-three completed execution phases:
 
 - Phase 1 completed: roadmap and Section E closure (`#1` through `#110`).

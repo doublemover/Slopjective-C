@@ -1,46 +1,25 @@
 #include "io/objc3_diagnostics_artifacts.h"
 
-#include <limits>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "diag/objc3_diag_utils.h"
+#include "io/objc3_diagnostics_artifact_document.h"
 #include "io/objc3_file_io.h"
-#include "io/objc3_json.h"
 
 namespace {
-
-using objc3::io::EscapeJsonString;
 
 void WriteDiagnosticsTextArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
                                   const std::vector<std::string> &diagnostics) {
-  WriteText(out_dir / (emit_prefix + ".diagnostics.txt"), JoinLines(diagnostics));
+  WriteText(out_dir / (emit_prefix + ".diagnostics.txt"),
+            BuildDiagnosticsTextArtifact(diagnostics));
 }
 
 void WriteDiagnosticsJsonArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
                                   const std::vector<std::string> &diagnostics) {
-  std::ostringstream out;
-  out << "{\n";
-  out << "  \"schema_version\": \"1.0.0\",\n";
-  out << "  \"diagnostics\": [\n";
-  for (std::size_t i = 0; i < diagnostics.size(); ++i) {
-    const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);
-    const unsigned line = key.line == std::numeric_limits<unsigned>::max() ? 0U : key.line;
-    const unsigned column = key.column == std::numeric_limits<unsigned>::max() ? 0U : key.column;
-    out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line
-        << ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""
-        << EscapeJsonString(key.message) << "\",\"raw\":\"" << EscapeJsonString(diagnostics[i]) << "\"}";
-    if (i + 1 != diagnostics.size()) {
-      out << ",";
-    }
-    out << "\n";
-  }
-  out << "  ]\n";
-  out << "}\n";
-  WriteText(out_dir / (emit_prefix + ".diagnostics.json"), out.str());
+  WriteText(out_dir / (emit_prefix + ".diagnostics.json"),
+            BuildDiagnosticsJsonArtifact(diagnostics));
 }
 
 }  // namespace

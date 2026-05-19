@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-object-model-closure-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+  "support_boundary": "lowering ownership covers object identity lowering, property synthesis lowering, ivar binding/layout lowering, realization lookup lowering, dispatch table reflection records, runtime metadata registration records, runtime-registration descriptors, property/ivar accessor records, and object-model artifact emission before IR or runtime owners claim behavior; descriptor-only, manifest-only, and generated-report rows remain provenance",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:object_model_runtime_owner",
+    "source_owner_contracts:object_model_artifact_owner",
+    "tests/tooling/fixtures/object_model_closure/realized_object_graph_runtime_implementation_contract.json",
+    "tests/tooling/fixtures/object_model_closure/object_model_reflection_artifact_runtime_registration_contract.json",
+    "implementation_invariants:registration-publishes-runtime-backed-class-graph-before-dispatch-and-query",
+    "compile_manifest_surface_keys:runtime_realization_lowering_reflection_artifact_surface",
+    "compile_manifest_surface_keys:runtime_dispatch_table_reflection_record_lowering_surface",
+    "compile_manifest_surface_keys:runtime_cross_module_realized_metadata_replay_preservation_surface"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "unresolved dispatch retired route lowering, evidence-log lowering summaries, generated descriptor-only claims, manifest-only metadata claims, old-mode layout claims, retired route layout claims, and compatibility lowering gates are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

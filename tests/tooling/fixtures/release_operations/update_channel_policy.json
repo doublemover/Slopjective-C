@@ -2,6 +2,8 @@
   "contract_id": "objc3c.release.operations.update.channel.policy.v1",
   "schema_version": 1,
   "default_channel": "stable",
+  "missing_channel_behavior": "fail-closed",
+  "channel_selection_rule": "only channel_id values listed in channel_order may be published",
   "channel_order": [
     "stable",
     "candidate",
@@ -19,7 +21,9 @@
       "permitted_upgrade_targets": [
         "stable",
         "candidate"
-      ]
+      ],
+      "revert_channel": "local-installer",
+      "requires_generated_warning": false
     },
     {
       "channel_id": "candidate",
@@ -27,28 +31,31 @@
       "support_status": "release-drill",
       "warning_classes": [
         "candidate-channel",
-        "downgrade-available",
-        "runtime-fallback-required"
+        "downgrade-available"
       ],
       "permitted_upgrade_targets": [
         "stable",
         "candidate",
         "preview"
-      ]
+      ],
+      "revert_channel": "local-installer",
+      "requires_generated_warning": true
     },
     {
       "channel_id": "preview",
       "precedence": 3,
-      "support_status": "best-effort",
+      "support_status": "blocked",
       "warning_classes": [
         "preview-channel",
         "cross-major-unsupported",
-        "data-format-fallback-required",
-        "rollback-recommended"
+        "data-format-conversion-blocked",
+        "revert-recommended"
       ],
       "permitted_upgrade_targets": [
         "preview"
-      ]
+      ],
+      "revert_channel": "offline-bundle",
+      "requires_generated_warning": true
     }
   ],
   "warning_classes": [
@@ -77,15 +84,15 @@
       "severity": "error"
     },
     {
-      "warning_id": "runtime-fallback-required",
-      "severity": "warn"
+      "warning_id": "runtime-metadata-contract-mismatch",
+      "severity": "error"
     },
     {
-      "warning_id": "data-format-fallback-required",
-      "severity": "warn"
+      "warning_id": "data-format-conversion-blocked",
+      "severity": "error"
     },
     {
-      "warning_id": "rollback-recommended",
+      "warning_id": "revert-recommended",
       "severity": "warn"
     }
   ]

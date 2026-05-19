@@ -1,0 +1,17 @@
+// Canonical runtime storage fixture: property accessor declarations are source-owned.
+module RuntimeStoragePropertyAccessorStorageContract;
+
+@interface StorageBox
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+- (i32)value;
+@end
+
+@implementation StorageBox
+- (i32)value {
+  return 3;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

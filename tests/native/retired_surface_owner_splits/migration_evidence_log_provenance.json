@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-retired-surface-matrix-behavior-provenance-split",
+  "owner_boundary": "migration_evidence_log_provenance",
+  "source_matrix": "tests/native/retired_surface_matrix.json",
+  "support_boundary": "migration-lane, evidence-log, audit-only, generated-output-only, and absent-support rows are provenance-only unless represented by a canonical rejection or strict-error fixture",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "policy:migration-lane",
+    "policy:unsupported-feature",
+    "policy:typed runtime-dispatch projection",
+    "*migration*",
+    "*evidence-log*",
+    "*audit-only*",
+    "*generated-output-only*",
+    "*absent-support*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_absence.json",
+  "retired_surface_rule": "migration, evidence-log, audit-only, and generated-output-only claims remain provenance-only or absent-support until a canonical native rejection or strict-error fixture exists"
+}

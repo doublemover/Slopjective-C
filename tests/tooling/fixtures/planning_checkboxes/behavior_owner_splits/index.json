@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-planning-checkboxes-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/planning_checkboxes/allowed_section/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/allowed_section/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/disallowed/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/disallowed/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/a.md",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/b.md",
+    "tests/tooling/fixtures/planning_checkboxes/section_mismatch/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/section_mismatch/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/unused_policy_entry/spec/planning/plan.md"
+  ],
+  "split_policy": {
+    "primary_axis": "planning-checkbox policy behavior before fixture directory label, markdown heading label, JSON policy row, file path convenience, runbook prose, generated row, report row, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "planning-checkbox positives are limited to hand-authored fixtures where an unchecked markdown checklist row is explicitly permitted by an allowed_unchecked_sections policy entry matching the document path and heading section",
+    "canonical_rejection_rule": "unchecked planning rows without policy, section mismatch rows, stale/unused policy entries, mixed-policy directories with any unallowed unchecked implementation row, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "unchecked implementation rows without policy exceptions, policy entries that do not match the checked section, unused policy entries when no unchecked row remains, and mixed JSON/markdown rows where only one document is allowed own fail-closed strict-error evidence",
+    "provenance_rule": "JSON policy files, markdown fixture files, fixture directory names, path labels, section labels, reason text, checklist text, scenario names, and owner-split routing rows remain provenance unless e2e/tooling or rejection owners claim the behavior boundary",
+    "retired_surface_rule": "old-mode planning policy, gate planning policy, retired route planning policy, compatibility planning policy, migration-only rows, generated-only rows, evidence-log rows, stale policy positives, unchecked-row positives without policy, runner-only success, workflow-label-only success, wrapper-only planning checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "planning_checkboxes_provenance",
+      "path": "tests/tooling/fixtures/planning_checkboxes/behavior_owner_splits/planning_checkboxes_provenance.json"
+    }
+  ]
+}

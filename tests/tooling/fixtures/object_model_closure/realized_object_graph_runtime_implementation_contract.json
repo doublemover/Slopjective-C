@@ -4,7 +4,21 @@
   "milestone": "M319",
   "issue": "M319-B003",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_runtime_implementation_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_runtime_implementation_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "runtime",
+    "canonical_rejection",
+    "object_model_provenance"
+  ],
+  "runtime_boundary_policy": {
+    "primary_axis": "behavior owner before runtime metadata, dispatch/object inspection, private query snapshot, generated report, or retired route runtime claim",
+    "support_authority": "object identity, property synthesis, ivar layout, category/protocol attachment, dispatch, and object inspection support requires lowering/runtime owner assignment over canonical fixtures and probes",
+    "positive_support_from_snapshot": false,
+    "retired_surface_rule": "query-only snapshots, dispatch-inspection-only rows, object-inspection-only rows, source-only reflection truth, unresolved dispatch retired route, gate, retired route, old-mode, compatibility, and public ABI widening are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
+  "canonical_rejection_owner": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
   "authoritative_runtime_symbols": [
     "objc3_runtime_register_image",
     "objc3_runtime_dispatch_i32",
@@ -19,7 +33,7 @@
   ],
   "implementation_invariants": [
     "registration-publishes-runtime-backed-class-graph-before-dispatch-and-query",
-    "attached-categories-contribute-instance-methods-and-protocol-edges-before-lookup-fallback",
+    "attached-categories-contribute-instance-methods-and-protocol-edges-before-any-unresolved-lookup-retired-route-is-classified-as-strict-error",
     "aggregate-object-model-query-state-is-derived-from-the-same-runtime-state-as-live-dispatch-and-supporting-query-snapshots",
     "full-object-model-closure-does-not-widen-the-public-runtime-abi"
   ],

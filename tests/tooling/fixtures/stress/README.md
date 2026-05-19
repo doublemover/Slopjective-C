@@ -13,9 +13,15 @@ Canonical checked-in inputs stay split into these families:
 - replay-backed contract fixtures
 
 The authoritative inventory lives in `tests/tooling/fixtures/stress/source_surface.json`.
+Behavior ownership for this mixed stress surface is split under
+`tests/tooling/fixtures/stress/behavior_owner_splits/` before any stress input
+can be cited as parser, sema, lowering, IR, runtime, or e2e support.
 
 The checked-in safety policy lives in
 `tests/tooling/fixtures/stress/safety_policy.json`.
 
 The checked-in machine-owned artifact and minimization contract lives in
 `tests/tooling/fixtures/stress/artifact_surface.json`.
+
+The checked-in public workflow contract lives in
+`tests/tooling/fixtures/stress/workflow_surface.json`.

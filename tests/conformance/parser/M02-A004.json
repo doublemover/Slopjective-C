@@ -9,7 +9,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-3-4-1",
     "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
   ],
-  "source": "id m02a004_recovery(id _Nullable value, id fallback) {\n    return value ?? ;\n}\n",
+  "source": "id m02a004_recovery(id _Nullable value, id retired route) {\n    return value ?? ;\n}\n",
   "expect": {
     "parse": "reject",
     "diagnostics": [

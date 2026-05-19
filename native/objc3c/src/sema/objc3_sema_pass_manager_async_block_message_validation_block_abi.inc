@@ -1,0 +1,44 @@
+  const auto &block_abi_summary =
+      surface.block_abi_invoke_trampoline_semantics_summary;
+  record.block_abi_invoke_trampoline_ready =
+      deterministic_block_abi_invoke_trampoline_handoff &&
+      block_abi_summary.block_literal_sites ==
+          surface.block_abi_invoke_trampoline_sites_total &&
+      block_abi_summary.invoke_argument_slots_total ==
+          surface.block_abi_invoke_trampoline_invoke_argument_slots_total &&
+      block_abi_summary.capture_word_count_total ==
+          surface.block_abi_invoke_trampoline_capture_word_count_total &&
+      block_abi_summary.parameter_entries_total ==
+          surface.block_abi_invoke_trampoline_parameter_entries_total &&
+      block_abi_summary.capture_entries_total ==
+          surface.block_abi_invoke_trampoline_capture_entries_total &&
+      block_abi_summary.body_statement_entries_total ==
+          surface.block_abi_invoke_trampoline_body_statement_entries_total &&
+      block_abi_summary.descriptor_symbolized_sites ==
+          surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total &&
+      block_abi_summary.invoke_trampoline_symbolized_sites ==
+          surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total &&
+      block_abi_summary.missing_invoke_trampoline_sites ==
+          surface.block_abi_invoke_trampoline_missing_invoke_sites_total &&
+      block_abi_summary.non_normalized_layout_sites ==
+          surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total &&
+      block_abi_summary.contract_violation_sites ==
+          surface.block_abi_invoke_trampoline_contract_violation_sites_total &&
+      block_abi_summary.descriptor_symbolized_sites <=
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.invoke_trampoline_symbolized_sites <=
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.missing_invoke_trampoline_sites <=
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.non_normalized_layout_sites <=
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.contract_violation_sites <=
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.invoke_trampoline_symbolized_sites +
+              block_abi_summary.missing_invoke_trampoline_sites ==
+          block_abi_summary.block_literal_sites &&
+      block_abi_summary.invoke_argument_slots_total ==
+          block_abi_summary.parameter_entries_total &&
+      block_abi_summary.capture_word_count_total ==
+          block_abi_summary.capture_entries_total &&
+      block_abi_summary.deterministic;

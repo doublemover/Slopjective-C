@@ -5,7 +5,7 @@
   "synthesized_accessor_lowering_contract_id": "objc3c.runtime.corrective.synthesized.accessor.lowering.implementation.contract.v1",
   "acceptance_workload_contract_id": "objc3c.runtime.corrective.acceptance.workload.map.v1",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_executable_proof_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_executable_proof_summary.py",
   "shared_acceptance_entrypoints": [
     "scripts/objc3c_native_compile.ps1",
     "scripts/check_objc3c_runtime_acceptance.py",
@@ -66,6 +66,6 @@
     "no-full-object-model-closure-claim",
     "no-public-runtime-abi-widening",
     "no-sidecar-only-proof",
-    "no-milestone-local-acceptance-harness-fork"
+    "no-closure-local-acceptance-harness-fork"
   ]
 }

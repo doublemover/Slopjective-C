@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-acceptance-area-owners",
+  "source_basis": "local hard-cutover commits indexed through 2026-05-09; no validation, gh, npm, cmake, tests, builds, lints, or generators were run for this index",
+  "policy": {
+    "positive_behavior": "canonical Objective-C 3 behavior only",
+    "retired_behavior": "retired modes, retired adapters, alternate acceptance paths, and retired-source lanes must be rejection, strict-error, or absent support",
+    "public_command_surface": "npm run objc3c -- <action>",
+    "source_paths": "code-path references are ownership evidence, not validation results"
+  },
+  "areas": [
+    {
+      "area": "parser_lexer_ast",
+      "issues": [
+        "#8132",
+        "#8134",
+        "#8146"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/parse/objc3_parser_contract_fingerprints.h",
+        "native/objc3c/src/parse/objc3_parser_recovery_boundaries.cpp",
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_assignment_statement_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_parser.cpp",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_classifier.cpp",
+        "native/objc3c/src/parse/objc3_type_feature_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_expression_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_block_literal_source.cpp",
+        "native/objc3c/src/parse/objc3_parser_async_continuation_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_actor_isolation_sendability_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_profile_helpers.cpp",
+        "native/objc3c/src/ast/objc3_ast_scope_surface.cpp",
+        "native/objc3c/src/ast/objc3_ast_signature_surface.cpp",
+        "native/objc3c/src/token/objc3_token_rejected_canonical_literal_table.cpp",
+        "native/objc3c/src/token/objc3_token_rejected_canonical_literals.cpp"
+      ],
+      "behavior_fixtures": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+      ],
+      "retired_surface_disposition": "old-mode literal aliases and parser retired route flags are parser rejections"
+    },
+    {
+      "area": "semantic_diagnostics",
+      "issues": [
+        "#8135",
+        "#8145",
+        "#8147"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_contract.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_data.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/sema/objc3_sema_contract_core.h",
+        "native/objc3c/src/sema/objc3_sema_contract_type_handoff.h",
+        "native/objc3c/src/sema/objc3_sema_contract_feature_surfaces.h",
+        "native/objc3c/src/sema/objc3_semantic_feature_claim_rules.cpp",
+        "native/objc3c/src/sema/objc3_semantic_feature_claim_context.cpp",
+        "native/objc3c/src/contracts/objc3_frontend_diagnostic_stage_contract.h"
+      ],
+      "behavior_fixtures": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
+        "tests/conformance/diagnostics/manifest.json"
+      ],
+      "retired_surface_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics"
+    },
+    {
+      "area": "lowering_and_ir",
+      "issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/lower/contracts/control_flow_lowering_contracts.cpp",
+        "native/objc3c/src/lower/contracts/block_lowering_contract_validators.cpp",
+        "native/objc3c/src/ir/objc3_ir_control_flow_ops.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_metadata_emission.cpp",
+        "native/objc3c/src/ir/objc3_ir_surface_serialization.cpp"
+      ],
+      "behavior_fixtures": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+      ],
+      "retired_surface_disposition": "runtime retired route lowering and unresolved runtime calls are strict-error evidence"
+    },
+    {
+      "area": "runtime_dispatch_registration",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/dispatch/method_cache.cpp",
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_accessor_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_command_surface.cpp",
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/selectors/selector_table.cpp",
+        "native/objc3c/src/runtime/selectors/keypath_table.cpp"
+      ],
+      "behavior_fixtures": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "dispatch retired route and unknown receiver behavior are runtime strict errors"
+    },
+    {
+      "area": "runtime_storage_reflection_public_abi",
+      "issues": [
+        "#8133",
+        "#8141",
+        "#8143",
+        "#8144"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/storage/property_ivar_layout_index.cpp",
+        "native/objc3c/src/runtime/storage/property_lookup.cpp",
+        "native/objc3c/src/runtime/storage/property_value_storage.cpp",
+        "native/objc3c/src/runtime/storage/weak_slot_zeroing.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/reflection/property_reflection_query_state.cpp",
+        "native/objc3c/src/runtime/reflection/property_entry_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/property_entry_descriptor_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/property_registry_snapshot_fields.cpp",
+        "native/objc3c/src/runtime/reflection/storage_accessor_snapshot.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_registration.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_selector.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
+      ],
+      "behavior_fixtures": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
+      ],
+      "retired_surface_disposition": "storage, reflection, and public ABI probes are canonical runtime ownership evidence; strict-result probes keep rejected dispatch as strict errors and do not create retired adapter, alternate acceptance path, or retired-source lane support"
+    },
+    {
+      "area": "frontend_public_c_api_runner",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_option_values.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_read_command.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_session.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_options.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_context.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_core.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_hardening.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_emitter.cpp",
+        "native/objc3c/src/libobjc3c_frontend/frontend_compile_entrypoints.cpp",
+        "native/objc3c/src/driver/objc3_cli_option_application.cpp",
+        "native/objc3c/src/driver/objc3_cli_option_validation.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+      ],
+      "behavior_fixtures": [
+        "docs/compiler/public_c_api.md",
+        "docs/objc3c-native/src/library-api.md",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "public C API ownership is strict contract evidence, not a retired owner-boundary adapter"
+    },
+    {
+      "area": "pipeline_artifacts_config_json",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "owner_code_paths": [
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_requirements.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_registry_summary.cpp",
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_conformance_publication.cpp",
+        "native/objc3c/src/artifacts/objc3_runtime_state_publication_paths.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.cpp",
+        "native/objc3c/src/contracts/objc3_native_contract_id_spelling.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptor.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_core_contract_ids.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_emission_contract_ids.h",
+        "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/io/json/json_equivalence_nodes.cpp",
+        "native/objc3c/src/io/json/json_pointer_tokens.cpp",
+        "native/objc3c/src/io/json/json_schema_type.cpp",
+        "native/objc3c/src/config/objc3_feature_state_query.cpp",
+        "native/objc3c/src/config/objc3_feature_state_table_contract.cpp"
+      ],
+      "behavior_fixtures": [
+        "schemas/objc3c-capability-matrix-v1.schema.json",
+        "docs/support/evidence_map.json",
+        "tests/tooling/test_objc3c_shared_json_schema.py"
+      ],
+      "retired_surface_disposition": "schemas and artifact contracts classify unsupported states without creating retired route support"
+    },
+    {
+      "area": "workflow_hygiene_command_surface",
+      "issues": [
+        "#8142",
+        "#8149"
+      ],
+      "owner_code_paths": [
+        "scripts/objc3c_workflow/action_catalog.py",
+        "scripts/objc3c_workflow/registry_views.py",
+        "scripts/objc3c_workflow/action_integrity.py",
+        "scripts/objc3c_workflow/request_dispatch.py",
+        "docs/workflows/commands.md",
+        "docs/workflows/validation.md"
+      ],
+      "behavior_fixtures": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "direct helper commands, aliases, and registry facades are not public support"
+    },
+    {
+      "area": "canonical_behavior_fixtures",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owner_code_paths": [
+        "tests/native/README.md",
+        "tests/fixtures/canonical/manifest.json",
+        "tests/native/retired_surface_matrix.json",
+        "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+        "tests/conformance/hard_cutover_positive_residue_audit.json"
+      ],
+      "behavior_fixtures": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "retired behavior is rejection, strict-error, or absent; positive fixtures remain canonical only"
+    },
+    {
+      "area": "capability_docs_and_stdlib_truth",
+      "issues": [
+        "#8145"
+      ],
+      "owner_code_paths": [
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md",
+        "docs/support/evidence_map.json",
+        "README.md",
+        "stdlib/program_surface.json",
+        "stdlib/semantic_policy.json"
+      ],
+      "behavior_fixtures": [
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ],
+      "retired_surface_disposition": "docs and support matrices reject retired adapter, alternate acceptance path, retired-mode, and retired-source lane support claims"
+    }
+  ]
+}

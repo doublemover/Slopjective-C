@@ -6,8 +6,8 @@
   "profile": "strict",
   "references": [
     "native/objc3c/src/ir/objc3_ir_emitter.cpp::emit_ivar_descriptor_section",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp::BuildObjc3FrontendArtifacts",
-    "native/objc3c/src/runtime/objc3_runtime.cpp::AttachRealizedPropertyLayoutRecordsUnlocked",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp::BuildObjc3FrontendArtifacts",
+    "native/objc3c/src/runtime/storage/property_layout_realization.cpp::AttachRealizedPropertyLayoutRecordsUnlocked",
     "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-ir %s\n@interface OC3LayoutBase : NSObject\n@property bool enabled;\n@property int baseCount;\n@end\n@implementation OC3LayoutBase\n@end\n@interface OC3LayoutChild : OC3LayoutBase\n@property id token;\n@property bool childFlag;\n@end\n@implementation OC3LayoutChild\n@end\n",
@@ -48,7 +48,7 @@
         },
         {
           "field_id": "object_model.ivar_layout.replay_key",
-          "contract_anchor": "native/objc3c/src/runtime/objc3_runtime.cpp::EmittedIvarLayoutRecord",
+          "contract_anchor": "native/objc3c/src/runtime/metadata/runtime_emitted_records.h::EmittedIvarLayoutRecord",
           "stability_property": "runtime-facing descriptors preserve the exact sema replay key for layout provenance and replay checks",
           "must_match_modes": [
             "native-ir"

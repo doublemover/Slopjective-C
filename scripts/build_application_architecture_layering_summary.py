@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,9 @@ def main() -> int:
     package_scripts = package.get("scripts", {})
     if not isinstance(package_scripts, dict):
         raise RuntimeError("package.json scripts field drifted from an object")
+    package_bridge = "objc3c"
+    package_bridge_exists = package_bridge in package_scripts
+    registered_actions = set(public_workflow_action_names())
 
     examples = portfolio.get("examples", [])
     example_ids = {
@@ -41,13 +45,13 @@ def main() -> int:
         and action not in str(stdlib_program_surface.get("public_actions", []))
         and action != "package-runnable-toolchain"
     ]
-    missing_package_script = []
-    if "package:objc3c-native:runnable-toolchain" not in package_scripts:
-        missing_package_script.append("package:objc3c-native:runnable-toolchain")
+    missing_package_bridge = [] if package_bridge_exists else [package_bridge]
+    if "package-runnable-toolchain" not in registered_actions:
+        missing_actions.append("package-runnable-toolchain")
 
     payload = {
         "contract_id": "objc3c.application.architecture.testing.canonical_application_architecture_semantics.summary.v1",
-        "status": "PASS" if not missing_examples and not missing_actions and not missing_package_script else "FAIL",
+        "status": "PASS" if not missing_examples and not missing_actions and not missing_package_bridge else "FAIL",
         "architecture_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "architecture_layer_count": len(contract["architecture_layers"]),
@@ -59,7 +63,9 @@ def main() -> int:
         "canonical_claim_rules": contract["canonical_claim_rules"],
         "missing_examples": missing_examples,
         "missing_actions": missing_actions,
-        "missing_package_script": missing_package_script,
+        "package_bridge": package_bridge,
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "missing_package_bridge": missing_package_bridge,
         "non_goals": contract["non_goals"],
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

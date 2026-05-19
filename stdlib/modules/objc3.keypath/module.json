@@ -15,16 +15,16 @@
   "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
   "api_families": [
     "typed-keypath-application",
-    "typed-keypath-text-compatibility",
+    "typed-keypath-text-shape",
     "typed-keypath-metadata",
     "reflection-interop",
-    "runtime-composition-adapter"
+    "runtime-composition-token"
   ],
   "exports": [
     "objc3_keypath_apply_index",
     "objc3_keypath_component_count",
-    "objc3_keypath_text_compatibility_score",
-    "objc3_keypath_text_compatibility_diagnostic",
+    "objc3_keypath_text_shape_score",
+    "objc3_keypath_text_shape_diagnostic",
     "objc3_keypath_metadata_token",
     "objc3_keypath_reflection_interop_token",
     "objc3_keypath_runtime_composition_token"

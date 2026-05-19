@@ -3,7 +3,7 @@
   "surface_kind": "developer-tooling-implementation-contract",
   "milestone": "M325",
   "issue": "M325-C002",
-  "summary_script": "scripts/check_developer_tooling_language_server_navigation.py",
+  "summary_implementation_anchor": "scripts/check_developer_tooling_language_server_navigation.py",
   "public_action": "inspect-editor-tooling",
   "positive_source": "tests/tooling/fixtures/native/hello.objc3",
   "negative_source": "tests/tooling/fixtures/native/negative_undefined_symbol.objc3",
@@ -13,7 +13,7 @@
     "workspaceSymbol",
     "definition"
   ],
-  "expected_fallback_capabilities": [
+  "expected_unpublished_capabilities": [
     "references",
     "rename",
     "semanticTokens",

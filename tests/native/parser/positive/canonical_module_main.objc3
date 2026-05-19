@@ -1,0 +1,6 @@
+// Canonical parser fixture: module plus main function syntax.
+module CanonicalModuleMain;
+
+fn main() -> i32 {
+  return 17;
+}

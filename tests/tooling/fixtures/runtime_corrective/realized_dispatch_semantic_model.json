@@ -3,8 +3,8 @@
   "surface_kind": "runtime-corrective-realized-dispatch-semantic-model",
   "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_dispatch_summary.py",
-  "authoritative_runtime_entrypoint": "native/objc3c/src/runtime/objc3_runtime.cpp::objc3_runtime_dispatch_i32",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_dispatch_summary.py",
+  "authoritative_runtime_entrypoint": "native/objc3c/src/runtime/dispatch/dispatch_api.cpp::objc3_runtime_dispatch_i32",
   "private_lookup_query_boundary": [
     "objc3_runtime_copy_selector_lookup_table_state_for_testing",
     "objc3_runtime_copy_selector_lookup_entry_for_testing",
@@ -13,13 +13,13 @@
     "objc3_runtime_copy_realized_class_entry_for_testing",
     "objc3_runtime_copy_protocol_conformance_query_for_testing"
   ],
-  "lookup_resolution_order_model": "seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback",
+  "lookup_resolution_order_model": "seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-strict-dispatch-error",
   "selector_materialization_model": "metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup",
   "nil_receiver_behavior_model": "zero-receiver-returns-zero-and-publishes-nil-short-circuit-dispatch-path",
-  "unresolved_selector_behavior_model": "negative-cache-entry-preserved-and-deterministic-fallback-returned",
+  "unresolved_selector_behavior_model": "negative-cache-entry-preserved-and-typed-strict-dispatch-error-returned",
   "claim_boundary": [
     "resolved-live-method-claims-require-realized-method-or-builtin-resolution-through-the-live-cache-or-slow-path",
-    "fallback-paths-do-not-count-as-live-method-execution",
+    "strict-error-paths-do-not-count-as-live-method-execution",
     "all-dispatch-proof-requires-real-compile-output-and-a-linked-runtime-probe",
     "the-corrective-tranche-does-not-claim-full-object-model-closure"
   ],
@@ -46,20 +46,20 @@
     "method_cache_miss_count",
     "slow_path_lookup_count",
     "live_dispatch_count",
-    "fallback_dispatch_count",
+    "strict_dispatch_error_count",
     "fast_path_hit_count"
   ],
   "dispatch_path_labels": [
     "cache-hit-fast-path",
     "cache-hit-live",
-    "cache-hit-fallback",
+    "cache-hit-error",
     "slow-path-live",
-    "slow-path-fallback",
-    "invalid-receiver-fallback",
+    "slow-path-error",
+    "invalid-receiver-error",
     "nil-short-circuit"
   ],
   "explicit_non_goals": [
-    "no-removal-of-the-deterministic-fallback-in-b001",
+    "no-runtime-pseudo-success-for-unresolved-dispatch",
     "no-public-runtime-abi-widening",
     "no-proof-from-unlinked-probe-or-sidecar-only-artifacts",
     "no-claim-that-category-protocol-reflection-closure-is-complete"

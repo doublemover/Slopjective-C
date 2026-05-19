@@ -13,7 +13,7 @@
   "machine_output_root": "tmp/artifacts/stdlib",
   "machine_report_root": "tmp/reports/stdlib",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-  "import_model": "implementation-alias-module-declarations-map-to-canonical-spec-module-ids",
+  "import_model": "compiler-visible-module-declarations-map-to-canonical-spec-module-ids",
   "module_imports": [
     {
       "canonical_module": "objc3.core",

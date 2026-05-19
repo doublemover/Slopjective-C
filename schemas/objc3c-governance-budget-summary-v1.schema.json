@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "schemas/objc3c-governance-budget-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-governance-budget-summary-v1.schema.json",
   "type": "object",
   "required": [
     "contract_id",
@@ -48,5 +48,5 @@
       "type": "object"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

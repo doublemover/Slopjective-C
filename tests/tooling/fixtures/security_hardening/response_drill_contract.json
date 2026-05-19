@@ -3,6 +3,17 @@
   "surface_kind": "security-response-drill-contract",
   "response_policy": "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
   "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
+  "drill_truth_contract": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "incident_response_owner": "security-hardening-response-drill",
+    "release_blocker_owner": "security-hardening-blockers",
+    "disclosure_publication_owner": "security-hardening-gate",
+    "posture_restore_owner": "security-hardening-response-drill",
+    "local_tabletop_capability_truth_allowed": false,
+    "evidence_log_response_readiness_allowed": false,
+    "retired_route_release_publication_after_drill_failure_allowed": false,
+    "requires_platform_distribution_release_and_posture_evidence": true
+  },
   "required_validate_actions": [
     "validate-platform-hardening",
     "validate-distribution-credibility",
@@ -17,5 +28,11 @@
   "required_artifacts": [
     "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
     "tmp/artifacts/security-hardening/posture/objc3c-security-posture.json"
+  ],
+  "non_claims": [
+    "no local-only tabletop as security response capability truth",
+    "no evidence-log response readiness proof",
+    "no unowned disclosure override",
+    "no retired route release publication after drill failure"
   ]
 }

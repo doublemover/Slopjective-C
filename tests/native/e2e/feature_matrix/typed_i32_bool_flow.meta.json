@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "fixture": "typed_i32_bool_flow.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "e2e",
+  "behavior_family": "feature_matrix",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "run",
+    "diagnostic_code": "",
+    "required_tokens": []
+  },
+  "execution": {
+    "expected_exit_code": 1
+  }
+}

@@ -5,6 +5,11 @@ from objc3c_tooling.json_io import write_json_file
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_evidence_owner_contracts import (
+    owner_contract_count,
+    owner_contract_ids,
+    validate_boundary_owner_contracts,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/boundary_inventory.json"
@@ -35,7 +40,7 @@ def main() -> int:
 
     checks = {
         "runbook_link_matches": contract["runbook"] == "docs/runbooks/objc3c_object_model_closure.md",
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_object_model_closure_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_object_model_closure_boundary_inventory_summary.py",
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
@@ -50,9 +55,11 @@ def main() -> int:
         "docs_publish_private_reflection_visibility_constraint": "private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state" in doc_text,
         "non_goals_keep_public_abi_narrow": "no-public-runtime-abi-widening" in contract["explicit_non_goals"],
     }
+    checks.update(validate_boundary_owner_contracts("object_model_closure", contract, ROOT))
 
     measured_inventory = {
         "focus_track_count": len(contract["focus"]),
+        "source_owner_contract_count": owner_contract_count("object_model_closure"),
         "authoritative_code_path_count": len(contract["authoritative_code_paths"]),
         "authoritative_runtime_symbol_count": len(contract["authoritative_runtime_symbols"]),
         "authoritative_probe_count": len(contract["authoritative_probe_paths"]),
@@ -81,6 +88,8 @@ def main() -> int:
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
+        "source_owner_contract_ids": list(owner_contract_ids("object_model_closure")),
+        "hard_cutover_source_owner_contract": contract["hard_cutover_source_owner_contract"],
         "current_gap_ids": [gap["gap_id"] for gap in contract["current_closure_gaps"]],
         "successor_milestones": [entry["milestone"] for entry in contract["successor_map"]],
         "checks": checks,
@@ -96,6 +105,7 @@ def main() -> int:
         f"- Authoritative code paths: `{measured_inventory['authoritative_code_path_count']}`\n"
         f"- Authoritative probes: `{measured_inventory['authoritative_probe_count']}`\n"
         f"- Authoritative fixtures: `{measured_inventory['authoritative_fixture_count']}`\n"
+        f"- Source owners: `{measured_inventory['source_owner_contract_count']}`\n"
         f"- Current gaps: `{', '.join(summary['current_gap_ids'])}`\n"
         f"- Successor milestones: `{', '.join(summary['successor_milestones'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",

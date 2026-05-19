@@ -1,0 +1,218 @@
+  Objc3ParserSemaHandoffOwnerRecord parser_sema_handoff_owner_record;
+  bool deterministic_parser_sema_handoff_owner_record = false;
+  Objc3ParserSemaHandoffPublicationEvidenceRecord
+      parser_sema_handoff_publication_evidence_record;
+  bool deterministic_parser_sema_handoff_publication_evidence_record = false;
+  Objc3ParserSemaHandoffPublicationTransferRecord
+      parser_sema_handoff_publication_transfer_record;
+  bool deterministic_parser_sema_handoff_publication_transfer_record = false;
+  Objc3ParserSemaParityPublicationReadinessRecord
+      parser_sema_parity_publication_readiness_record;
+  bool deterministic_parser_sema_parity_publication_readiness_record = false;
+  Objc3SemaCoreSemanticParityPublicationReadinessRecord
+      core_semantic_parity_publication_readiness_record;
+  bool deterministic_core_semantic_parity_publication_readiness_record = false;
+  Objc3SemaCoreSemanticSummaryReadinessRecord
+      core_semantic_summary_readiness_record;
+  bool deterministic_core_semantic_summary_readiness_record = false;
+  Objc3SemaSelectorPropertyTypeAnnotationReadinessRecord
+      selector_property_type_annotation_readiness_record;
+  bool deterministic_selector_property_type_annotation_readiness_record = false;
+  Objc3SemaTypeBoundarySummaryReadinessRecord
+      type_boundary_summary_readiness_record;
+  bool deterministic_type_boundary_summary_readiness_record = false;
+  Objc3SemaModuleTypeAbiSummaryReadinessRecord
+      module_type_abi_summary_readiness_record;
+  bool deterministic_module_type_abi_summary_readiness_record = false;
+  Objc3SemaModuleBoundarySummaryReadinessRecord
+      module_boundary_summary_readiness_record;
+  bool deterministic_module_boundary_summary_readiness_record = false;
+  Objc3SemaIntermoduleFlowSummaryReadinessRecord
+      intermodule_flow_summary_readiness_record;
+  bool deterministic_intermodule_flow_summary_readiness_record = false;
+  Objc3SemaModuleSemanticParityPublicationReadinessRecord
+      module_semantic_parity_publication_readiness_record;
+  bool deterministic_module_semantic_parity_publication_readiness_record = false;
+  Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
+      intermodule_flow_parity_publication_readiness_record;
+  bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
+  Objc3SemaConcurrencyParityPublicationReadinessRecord
+      concurrency_parity_publication_readiness_record;
+  bool deterministic_concurrency_parity_publication_readiness_record = false;
+  Objc3SemaUnsafeErrorParityValidationReadinessRecord
+      unsafe_error_parity_validation_readiness_record;
+  bool deterministic_unsafe_error_parity_validation_readiness_record = false;
+  Objc3SemaControlBindingParityValidationReadinessRecord
+      control_binding_parity_validation_readiness_record;
+  bool deterministic_control_binding_parity_validation_readiness_record = false;
+  Objc3SemaAsyncBlockMessageParityValidationReadinessRecord
+      async_block_message_parity_validation_readiness_record;
+  bool deterministic_async_block_message_parity_validation_readiness_record = false;
+  Objc3SemaDispatchRuntimeArcParityValidationReadinessRecord
+      dispatch_runtime_arc_parity_validation_readiness_record;
+  bool deterministic_dispatch_runtime_arc_parity_validation_readiness_record = false;
+  Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
+  bool deterministic_parser_sema_docs_runbook_sync = false;
+  Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
+  bool deterministic_parser_sema_release_candidate_replay_dry_run = false;
+  Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
+  bool deterministic_parser_sema_advanced_core_shard1 = false;
+  Objc3ParserSemaAdvancedContractRejectionShard1 parser_sema_advanced_contract_rejection_shard1;
+  bool deterministic_parser_sema_advanced_contract_rejection_shard1 = false;
+  Objc3ParserSemaAdvancedDiagnosticsShard1 parser_sema_advanced_diagnostics_shard1;
+  bool deterministic_parser_sema_advanced_diagnostics_shard1 = false;
+  Objc3ParserSemaAdvancedConformanceShard1 parser_sema_advanced_conformance_shard1;
+  bool deterministic_parser_sema_advanced_conformance_shard1 = false;
+  Objc3ParserSemaAdvancedIntegrationShard1 parser_sema_advanced_integration_shard1;
+  bool deterministic_parser_sema_advanced_integration_shard1 = false;
+  Objc3ParserSemaAdvancedPerformanceShard1 parser_sema_advanced_performance_shard1;
+  bool deterministic_parser_sema_advanced_performance_shard1 = false;
+  Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
+  bool deterministic_parser_sema_advanced_core_shard2 = false;
+  Objc3ParserSemaAdvancedContractRejectionShard2 parser_sema_advanced_contract_rejection_shard2;
+  bool deterministic_parser_sema_advanced_contract_rejection_shard2 = false;
+  Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
+  bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
+  Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
+  bool deterministic_parser_sema_integration_closeout_signoff = false;
+  Objc3ParserSemaConformanceEvidenceRecord
+      parser_sema_conformance_evidence_record;
+  bool deterministic_parser_sema_conformance_evidence_record = false;
+  Objc3ParserSemaContractReadinessRecord
+      parser_sema_contract_readiness_record;
+  bool deterministic_parser_sema_contract_readiness_record = false;
+  Objc3SemanticIntegrationSurface integration_surface;
+  std::vector<std::string> diagnostics;
+  std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
+  std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  bool diagnostics_accounting_consistent = false;
+  bool diagnostics_bus_publish_consistent = false;
+  bool diagnostics_canonicalized = false;
+  bool diagnostics_hardening_satisfied = false;
+  Objc3SemaPassFlowSummary sema_pass_flow_summary;
+  Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
+  bool deterministic_diagnostics_publication_record = false;
+  Objc3SemaPassFlowRecoveryRecord pass_flow_recovery_record;
+  bool deterministic_pass_flow_recovery_record = false;
+  Objc3SemaPassManagerPublicationRecord pass_manager_publication_record;
+  bool deterministic_pass_manager_publication_record = false;
+  Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
+  bool deterministic_type_metadata_publication_record = false;
+  Objc3SemaTypeMetadataMappingReadinessRecord
+      type_metadata_mapping_readiness_record;
+  bool deterministic_type_metadata_mapping_readiness_record = false;
+  Objc3SemaAtomicVectorMappingPublicationRecord
+      atomic_vector_mapping_publication_record;
+  bool deterministic_atomic_vector_mapping_publication_record = false;
+  Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
+  bool deterministic_typed_semantic_handoff_record = false;
+  Objc3SemaParityCloseoutPublicationReadinessRecord
+      parity_closeout_publication_readiness_record;
+  bool deterministic_parity_closeout_publication_readiness_record = false;
+  Objc3SemaParityValidationRecord parity_validation_record;
+  bool deterministic_parity_validation_record = false;
+  Objc3SemaCloseoutSurfaceReadinessRecord closeout_surface_readiness_record;
+  bool deterministic_closeout_surface_readiness_record = false;
+  Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
+  bool deterministic_closeout_signoff_record = false;
+  Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
+  bool deterministic_semantic_diagnostics = false;
+  bool deterministic_type_metadata_handoff = false;
+  bool deterministic_interface_implementation_handoff = false;
+  bool deterministic_protocol_category_composition_handoff = false;
+  bool deterministic_class_protocol_category_linking_handoff = false;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
+  bool deterministic_selector_normalization_handoff = false;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
+  bool deterministic_property_attribute_handoff = false;
+  Objc3PropertyAttributeSummary property_attribute_summary;
+  bool deterministic_type_annotation_surface_handoff = false;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  bool deterministic_lightweight_generic_constraint_handoff = false;
+  Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  bool deterministic_nullability_flow_warning_precision_handoff = false;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
+  bool deterministic_protocol_qualified_object_type_handoff = false;
+  Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
+  bool deterministic_variance_bridge_cast_handoff = false;
+  Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
+  bool deterministic_generic_metadata_abi_handoff = false;
+  Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
+  bool deterministic_module_import_graph_handoff = false;
+  Objc3ModuleImportGraphSummary module_import_graph_summary;
+  bool deterministic_namespace_collision_shadowing_handoff = false;
+  Objc3NamespaceCollisionShadowingSummary namespace_collision_shadowing_summary;
+  bool deterministic_public_private_api_partition_handoff = false;
+  Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary;
+  bool deterministic_incremental_module_cache_invalidation_handoff = false;
+  Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
+  bool deterministic_cross_module_conformance_handoff = false;
+  Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
+  bool deterministic_throws_propagation_handoff = false;
+  Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_async_continuation_handoff = false;
+  Objc3AsyncContinuationSummary async_continuation_summary;
+  bool deterministic_actor_isolation_sendability_handoff = false;
+  Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
+  bool deterministic_concurrency_replay_race_guard_handoff = false;
+  Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
+  bool deterministic_unsafe_pointer_extension_handoff = false;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
+  bool deterministic_inline_asm_intrinsic_governance_handoff = false;
+  Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
+  bool deterministic_ns_error_bridging_handoff = false;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  bool deterministic_error_diagnostics_recovery_handoff = false;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
+  bool deterministic_result_like_lowering_handoff = false;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  bool deterministic_unwind_cleanup_handoff = false;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
+  bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
+  Objc3AwaitLoweringSuspensionStateSummary
+      await_lowering_suspension_state_lowering_summary;
+  bool deterministic_symbol_graph_scope_resolution_handoff = false;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  bool deterministic_method_lookup_override_conflict_handoff = false;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  bool deterministic_property_synthesis_ivar_binding_handoff = false;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
+  bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
+  Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  bool deterministic_block_literal_capture_semantics_handoff = false;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  bool deterministic_block_abi_invoke_trampoline_handoff = false;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
+  bool deterministic_block_storage_escape_handoff = false;
+  Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
+  bool deterministic_block_copy_dispose_handoff = false;
+  Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
+  bool deterministic_block_determinism_perf_baseline_handoff = false;
+  Objc3BlockDeterminismPerfBaselineSummary block_determinism_perf_baseline_summary;
+  bool deterministic_message_send_selector_lowering_handoff = false;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  bool deterministic_dispatch_abi_marshalling_handoff = false;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  bool deterministic_nil_receiver_semantics_foldability_handoff = false;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  bool deterministic_super_dispatch_method_family_handoff = false;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  bool deterministic_runtime_link_host_link_handoff = false;
+  Objc3RuntimeLinkHostLinkSummary runtime_link_host_link_summary;
+  bool deterministic_retain_release_operation_handoff = false;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  bool deterministic_weak_unowned_semantics_handoff = false;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  bool deterministic_arc_diagnostics_fixit_handoff = false;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
+  bool deterministic_autoreleasepool_scope_handoff = false;
+  Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
+  Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
+  bool deterministic_atomic_memory_order_mapping = false;
+  Objc3VectorTypeLoweringSummary vector_type_lowering;
+  bool deterministic_vector_type_lowering = false;
+  Objc3SemaParityContractSurface parity_surface;
+  bool executed = false;
+};

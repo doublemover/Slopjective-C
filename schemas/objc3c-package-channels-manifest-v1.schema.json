@@ -3,13 +3,16 @@
   "$id": "https://objc3c.dev/schemas/objc3c-package-channels-manifest-v1.schema.json",
   "title": "objc3c Package Channels Manifest",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "contract_id",
     "generated_at_utc",
     "status",
     "platform_id",
     "package_root",
+    "platform_support_matrix",
+    "supported_platform_ids",
+    "support_tiers",
     "implemented_channels",
     "portable_archive",
     "installer_archive",
@@ -21,13 +24,41 @@
     "status": { "const": "PASS" },
     "platform_id": { "type": "string" },
     "package_root": { "type": "string" },
-    "implemented_channels": {
+    "platform_support_matrix": { "type": "string" },
+    "supported_platform_ids": {
       "type": "array",
       "items": { "type": "string" },
+      "minItems": 1
+    },
+    "support_tiers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/supportTier" },
+      "minItems": 1
+    },
+    "implemented_channels": {
+      "type": "array",
+      "items": {
+        "enum": ["portable-archive", "local-installer", "offline-bundle"]
+      },
       "minItems": 3
     },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
     "offline_archive": { "type": "string" }
+  },
+  "$defs": {
+    "supportTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier_id", "status"],
+      "properties": {
+        "tier_id": { "type": "string" },
+        "status": { "enum": ["supported", "experimental", "unsupported"] },
+        "platform_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
   }
 }

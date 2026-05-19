@@ -1,15 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/schemas/objc3c-long-horizon-operations-evidence-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-long-horizon-operations-evidence-v1.schema.json",
   "title": "objc3c Long-Horizon Operations Evidence",
   "type": "object",
   "required": [
     "contract_id",
     "schema_version",
     "generated_from",
+    "owner_split",
+    "owner_contracts",
     "support_window",
-    "migration_replay",
-    "rollback",
+    "upgrade_replay",
+    "revert_readiness",
     "soak",
     "aging_regression",
     "claim_audit"
@@ -26,8 +28,16 @@
     },
     "generated_from": {
       "type": "object",
-      "required": ["contracts", "commands"],
+      "required": ["owner_split", "owner_contracts", "contracts", "commands"],
       "properties": {
+        "owner_split": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "owner_contracts": {
+          "type": "object",
+          "additionalProperties": {"type": "object"}
+        },
         "contracts": {
           "type": "array",
           "items": {"type": "string"},
@@ -35,41 +45,64 @@
         },
         "commands": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
           "minItems": 1
         }
       },
       "additionalProperties": false
     },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "owner_contracts": {
+      "type": "object",
+      "additionalProperties": {"type": "object"}
+    },
     "support_window": {
       "type": "object",
-      "required": ["current_version", "supported_major_line", "channels"],
+      "required": ["current_version", "supported_major_line", "default_channel", "supported_platform_ids", "channels"],
       "properties": {
         "current_version": {"type": "string"},
         "supported_major_line": {"type": "integer"},
+        "default_channel": {"type": "string"},
+        "supported_platform_ids": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "support_tiers": {"type": "object"},
         "channels": {
           "type": "array",
           "items": {"type": "object"},
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "migration_replay": {
+    "upgrade_replay": {
       "type": "object",
-      "required": ["status", "source_version", "target_version", "evidence_paths"],
+      "required": ["status", "source_version", "target_version", "source_channel", "target_channel", "requirements", "evidence_paths"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
         "source_version": {"type": "string"},
         "target_version": {"type": "string"},
+        "source_channel": {"type": "string"},
+        "target_channel": {"type": "string"},
+        "requirements": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
         "evidence_paths": {
           "type": "array",
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "rollback": {
+    "revert_readiness": {
       "type": "object",
       "required": ["status", "channels", "evidence_paths"],
       "properties": {
@@ -84,7 +117,7 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "soak": {
       "type": "object",
@@ -100,7 +133,7 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "aging_regression": {
       "type": "object",
@@ -113,11 +146,11 @@
         },
         "freshness_budget": {"type": "object"}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "claim_audit": {
       "type": "object",
-      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "release_blockers"],
+      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "blocker_metadata", "release_blockers"],
       "properties": {
         "support_state": {"type": "string"},
         "earned_claims": {
@@ -128,13 +161,17 @@
           "type": "array",
           "items": {"type": "string"}
         },
+        "blocker_metadata": {
+          "type": "object",
+          "additionalProperties": {"type": "object"}
+        },
         "release_blockers": {
           "type": "array",
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

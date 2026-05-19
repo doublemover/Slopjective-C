@@ -238,6 +238,12 @@ struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {
   std::string bootstrap_live_restart_reset_replay_state_snapshot_symbol;
 };
 
+bool IsReadyObjc3ImportedRuntimeModuleSurfaceCrossModuleContract(
+    const Objc3ImportedRuntimeModuleSurface &surface);
+
+bool IsReadyObjc3ImportedRuntimeModulePackagingLinkPlan(
+    const Objc3ImportedRuntimeModulePackagingPeerArtifacts &artifacts);
+
 bool TryLoadObjc3ImportedRuntimeModuleSurface(
     const std::filesystem::path &path,
     Objc3ImportedRuntimeModuleSurface &surface,

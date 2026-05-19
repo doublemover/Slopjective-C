@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "support_boundary": "semantic ownership covers metaprogramming source semantics, property behavior legality, import/version diagnostics, interop call legality, FFI metadata claim narrowing, and closure/error boundary narrowing before lowering, runtime, or packaged proof may cite support; generated summaries and evidence-log rows remain provenance",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:metaprogramming_runtime_owner",
+    "source_owner_contracts:property_behavior_owner",
+    "source_owner_contracts:interop_runtime_owner",
+    "authoritative_metaprogramming_surface_keys:runtime_metaprogramming_semantics_surface",
+    "authoritative_interop_surface_keys:runtime_import_version_feature_claim_diagnostics_surface",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported property behavior combinations, unsupported foreign loader claims, compatibility gates, old-mode interop expectations, retired route FFI metadata, and wider interop stability claims are semantic diagnostics, canonical rejection, strict-error, or provenance evidence"
+}

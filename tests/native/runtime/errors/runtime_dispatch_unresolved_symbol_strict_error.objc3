@@ -1,0 +1,7 @@
+// Canonical runtime strict-error fixture: unresolved runtime dispatch is not gatemed.
+module RuntimeDispatchUnresolvedSymbol;
+
+fn main() -> i32 {
+  let receiver = 3;
+  return [receiver ping];
+}

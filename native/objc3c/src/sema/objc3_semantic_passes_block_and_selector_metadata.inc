@@ -1,0 +1,6 @@
+#include "sema/objc3_semantic_passes_message_selector_form_helpers.inc"
+#include "sema/objc3_semantic_passes_block_storage_escape_metadata.inc"
+#include "sema/objc3_semantic_passes_block_copy_dispose_metadata.inc"
+#include "sema/objc3_semantic_passes_block_determinism_perf_metadata.inc"
+#include "sema/objc3_semantic_passes_message_selector_lowering_metadata.inc"
+#include "sema/objc3_semantic_passes_autorelease_pool_scope_metadata.inc"

@@ -2,16 +2,16 @@
 
 ## Working Boundary
 
-This runbook defines the compatibility-maintenance, migration, rollback, soak,
-aging-regression, and support-window boundary for objc3c.
+This runbook defines release support-window maintenance, canonical conversion,
+revert, soak, aging-regression, and support-window boundaries for objc3c.
 
 Use it when changing:
 
 - release support windows, channel aging, and deprecation policy
-- migration replay and rollback drills
+- conversion replay and revert drills
 - long-running soak or aging-regression evidence
-- operator-facing compatibility and support claims
-- package and canonical-application workflows that feed compatibility evidence
+- operator-facing support-window claims
+- package and canonical-application workflows that feed support evidence
 
 Canonical checked-in boundary surfaces:
 
@@ -21,16 +21,15 @@ Canonical checked-in boundary surfaces:
 - `docs/runbooks/objc3c_performance_governance.md`
 - `docs/runbooks/objc3c_package_ecosystem.md`
 - `docs/runbooks/objc3c_application_architecture_testing.md`
-- `scripts/build_objc3c_update_manifest.py`
-- `scripts/publish_objc3c_release_operations_metadata.py`
-- `scripts/check_objc3c_release_operations_integration.py`
-- `scripts/check_objc3c_release_operations_end_to_end.py`
-- `scripts/check_objc3c_package_ecosystem_integration.py`
-- `scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
+- package bridge: `npm run objc3c -- <action>`
+- action catalog: checked-in workflow action catalog
 
 Replayable boundary inventory:
 
-- `python scripts/build_long_horizon_operations_boundary_inventory_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
+
+Helper implementations behind the workflow actions are not separate operator
+commands.
 
 ## Current Boundary
 
@@ -41,12 +40,12 @@ surfaces and adds durable maintenance evidence around them.
 
 The current usable substrate is:
 
-- release operations: update manifests, compatibility reports, release-channel
-  catalogs, rollback guidance, and support windows
+- release operations: update manifests, support-window reports, release-channel
+  catalogs, revert guidance, and support windows
 - package ecosystem: deterministic local package locks, package authoring, and
   offline mirror validation
 - application architecture: project template and canonical application workspace
-  replay through the public workflow runner
+  replay through the `npm run objc3c -- <action>` bridge
 - performance governance: generated performance dashboards and budget evidence
 - distribution credibility: release trust reports, provenance, and generated
   publication metadata
@@ -55,65 +54,72 @@ The current usable substrate is:
 
 Supported in this boundary:
 
-- same-major compatibility maintenance tied to generated release metadata
+- same-major support-window maintenance tied to generated release metadata
 - explicit deprecation and support-window policy
-- migration replay drills over checked-in package and application surfaces
-- rollback drills that consume generated update and release-operation metadata
-- soak and aging evidence that can be replayed under `tmp/reports/`
-- operator-visible support-window publication through the public workflow runner
+- conversion replay drills over checked-in package and application surfaces
+- revert drills that consume generated update and release-operation metadata
+- soak and aging evidence that can be replayed through generated-output artifacts
+- operator-visible support-window publication through the `npm run objc3c -- <action>` bridge
 
 Not supported in this boundary:
 
-- evergreen or forever-compatible release claims
-- cross-major compatibility without a generated migration proof
+- evergreen support or forever-supported release claims
+- cross-major support without a generated conversion proof
 - hosted registry availability or network-backed dependency resolution
 - background auto-update behavior
-- manual waiver-only compatibility status
+- manual waiver-only support status
 - soak evidence that cannot be regenerated from checked-in contracts
 
-## Deprecation And Compatibility Maintenance Policy
+## Deprecation And Support-Window Maintenance Policy
 
-The canonical policy contract is checked in at:
+The canonical deprecation support policy contract is checked in at this path:
 
-- `tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json`
+- `tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json`
+
+The file path is a checked-in fixture address; the live contract ID and fields
+own support-window truth and do not publish alternate old-surface support.
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_deprecation_policy_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
-Compatibility maintenance is a support-window promise over generated release
-metadata, not a forever-compatible language/runtime claim. Deprecations must:
+Support-window maintenance is a generated release metadata promise, not a
+forever-supported language/runtime claim. Deprecations must:
 
 - name the affected public surface, warning channel, support window, and
   successor behavior
 - stay tied to existing release-operation warning classes from
   `tests/tooling/fixtures/release_operations/update_channel_policy.json`
-- fail closed when a public claim uses forbidden release-operation phrases from
-  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
-- remain demoted until migration replay and rollback evidence exists for the
+- fail closed when a public claim uses forbidden upgrade/support phrases from
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
+- remain demoted until conversion replay and revert evidence exists for the
   affected package/application path
 
-## Migration, Rollback, And Support Windows
+## Conversion, Revert, And Support Windows
 
-The canonical semantics contract is checked in at:
+The canonical conversion/replay/revert semantics contract is checked in at this
+path:
 
-- `tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json`
+- `tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json`
+
+The live contract fields use conversion replay and revert readiness terminology,
+and they reject alternate old-surface support claims.
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_migration_rollback_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
-Migration and rollback are operator-visible behaviors. The replay path uses:
+Conversion and revert are operator-visible behaviors. The replay path uses:
 
-- `scripts/build_objc3c_update_manifest.py`
-- `scripts/publish_objc3c_release_operations_metadata.py`
+- `npm run objc3c -- build-update-manifest`
+- `npm run objc3c -- publish-release-operations`
 
-Generated evidence is valid only when the update manifest and compatibility
+Generated evidence is valid only when the update manifest and support-window
 report agree on the current version, supported platform ids, support windows,
-upgrade paths, and rollback guidance. Cross-major migration claims remain
-blocked unless a generated long-horizon migration replay artifact names the
+upgrade paths, and revert guidance. Cross-major conversion claims remain
+blocked unless a generated long-horizon conversion replay artifact names the
 source version, target version, package lock, canonical application workspace,
-and rollback target.
+and revert target.
 
 ## Aging Regression And Release Cadence
 
@@ -123,7 +129,7 @@ The canonical criteria contract is checked in at:
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_aging_cadence_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 A release cadence is supportable only when aging evidence is fresh enough to
 trust and broad enough to cover the public claim. This boundary consumes existing
@@ -139,7 +145,7 @@ Cadence claims must block when:
 - conformance, stress, external-validation, public-conformance, package, or
   canonical-application evidence is missing
 - soak evidence is hand-written or cannot be regenerated
-- a release trains forward while rollback evidence is stale or absent
+- a release trains forward while revert evidence is stale or absent
 
 ## Artifact Contract
 
@@ -150,15 +156,14 @@ The canonical long-horizon operations artifact contract is checked in at:
 Schema surface:
 
 - `schemas/objc3c-long-horizon-operations-evidence-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_artifact_contract_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
-Generated machine-owned outputs stay under:
-
-- `tmp/artifacts/long-horizon-operations/`
-- `tmp/reports/long-horizon-operations/`
+Generated machine-owned outputs stay in long-horizon artifact and report
+families selected by checked-in contracts.
 
 No long-horizon claim is supportable unless it can be regenerated from the
 checked-in policy contracts and validated through this artifact contract.
@@ -167,56 +172,50 @@ checked-in policy contracts and validated through this artifact contract.
 
 The canonical evidence generator is:
 
-- `python scripts/build_objc3c_long_horizon_operations_evidence.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
-It generates:
-
-- `tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json`
-- `tmp/reports/long-horizon-operations/evidence-summary.json`
+It writes transient long-horizon outputs for the evidence artifact and evidence
+summary.
 
 The generator replays the long-horizon policy summaries and live package,
 canonical-application, performance-governance, conformance, stress,
 external-validation, and public-conformance integration checks before writing
 the artifact. Generated evidence is temporary output; the checked-in contracts
-and scripts remain the source of truth.
+and scripts remain the owner inputs.
 
 ## Public Workflow Integration
 
 The repo-scope long-horizon workflow is:
 
-- `npm run test:objc3c:long-horizon-operations`
-- `npm run publish:objc3c:long-horizon-operations`
+- `npm run objc3c -- validate-long-horizon-operations`
+- `npm run objc3c -- publish-long-horizon-operations`
 
 It maps to:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-long-horizon-operations`
-- `python scripts/check_objc3c_long_horizon_operations_integration.py`
-- `python scripts/objc3c_public_workflow_runner.py publish-long-horizon-operations`
-- `python scripts/publish_objc3c_long_horizon_operations_metadata.py`
+- `npm run objc3c -- validate-long-horizon-operations`
+- `npm run objc3c -- publish-long-horizon-operations`
 
-The public workflow validates the generated evidence artifact shape, claim
-audit, migration evidence, rollback channel coverage, and soak evidence family
+The public workflow validates the generated-output artifact shape, claim
+audit, conversion evidence, revert channel coverage, and soak evidence family
 coverage.
 
-Support-window publication emits:
-
-- `tmp/artifacts/long-horizon-operations/support-window-publication.json`
-- `tmp/reports/long-horizon-operations/publication-summary.json`
+Support-window publication emits transient publication artifacts and summaries
+selected by the checked-in long-horizon contract.
 
 ## Closeout Gate
 
 The closeout gate is:
 
-- `python scripts/check_objc3c_long_horizon_operations_integration.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 It replays all long-horizon summaries, integration, support-window publication, public
 command rendering, documentation/repository surface checks, and source hygiene.
-The gate rejects widened compatibility claims, missing public runner actions,
+The gate rejects widened support-window claims, missing public runner actions,
 missing operator publication metadata, stale package manifest fields, and any
 claim audit release blocker.
 
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
-claims about release cadence, compatibility, or stability must consume generated
+claims about release cadence, support windows, or stability must consume generated
 long-horizon evidence rather than manually restating release intent.

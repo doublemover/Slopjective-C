@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-outcome-split",
+  "behavior_outcome": "canonical_positive_behavior",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "owner_rule": "positive fixtures cover canonical Objective-C 3 behavior only and must not carry diagnostic codes or retired-surface tags",
+  "fixtures": [
+    {
+      "path": "tests/native/parser/positive/canonical_module_main.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/positive/objc_property_surface.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/ownership/strong_id_assignment.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/objc/objc_interface_method_contract.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "objc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/control_flow/definite_return_if_else.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "control_flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/concurrency/async_await_value_flow.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+      "owner_phase": "lowering",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_keyword_elision.objc3",
+      "owner_phase": "lowering",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/statements/if_else_statement_lowering.objc3",
+      "owner_phase": "lowering",
+      "behavior_family": "statements",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
+      "owner_phase": "lowering",
+      "behavior_family": "objc_runtime",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+      "owner_phase": "lowering",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "module",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/helper_function_emission.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/block_literal_helper_function_contract.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/module_metadata_name.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/actor_executor_metadata_contract.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3",
+      "owner_phase": "ir",
+      "behavior_family": "runtime_calls",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "storage",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "arc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "blocks",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "owner_phase": "runtime",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "owner_phase": "e2e",
+      "behavior_family": "smoke",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+      "owner_phase": "e2e",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/nil_keyword_message_send_elision.objc3",
+      "owner_phase": "e2e",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    }
+  ],
+  "retired_surface_rule": "no positive fixture in this split may cover compatibility, gate, retired route, unsupported-feature, old-mode, or runtime-dispatch residue"
+}

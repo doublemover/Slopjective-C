@@ -67,13 +67,13 @@ Total examples: 58.
 
 ## Nil-coalescing `??`
 
-| ID               | Edge case                         | Expected result                               | Conformance artifact                                                               |
-| ---------------- | --------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `EC-COALESCE-01` | Right associativity               | Accept                                        | [EC-COALESCE-01](../tests/conformance/examples/nil_coalescing/EC-COALESCE-01.json) |
-| `EC-COALESCE-02` | Precedence with ternary           | Accept                                        | [EC-COALESCE-02](../tests/conformance/examples/nil_coalescing/EC-COALESCE-02.json) |
-| `EC-COALESCE-03` | Non-contiguous `? ?` tokenization | Parser error + contiguous fix-it              | [EC-COALESCE-03](../tests/conformance/examples/nil_coalescing/EC-COALESCE-03.json) |
-| `EC-COALESCE-04` | `a??b:c` likely ternary intent    | Diagnostic + ternary rewrite fix-it           | [EC-COALESCE-04](../tests/conformance/examples/nil_coalescing/EC-COALESCE-04.json) |
-| `EC-COALESCE-05` | RHS type mismatch                 | Semantic error + type-correct fallback fix-it | [EC-COALESCE-05](../tests/conformance/examples/nil_coalescing/EC-COALESCE-05.json) |
+| ID               | Edge case                         | Expected result                                         | Conformance artifact                                                               |
+| ---------------- | --------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `EC-COALESCE-01` | Right associativity               | Accept                                                  | [EC-COALESCE-01](../tests/conformance/examples/nil_coalescing/EC-COALESCE-01.json) |
+| `EC-COALESCE-02` | Precedence with ternary           | Accept                                                  | [EC-COALESCE-02](../tests/conformance/examples/nil_coalescing/EC-COALESCE-02.json) |
+| `EC-COALESCE-03` | Non-contiguous `? ?` tokenization | Parser error + contiguous fix-it                        | [EC-COALESCE-03](../tests/conformance/examples/nil_coalescing/EC-COALESCE-03.json) |
+| `EC-COALESCE-04` | `a??b:c` likely ternary intent    | Diagnostic + ternary rewrite fix-it                     | [EC-COALESCE-04](../tests/conformance/examples/nil_coalescing/EC-COALESCE-04.json) |
+| `EC-COALESCE-05` | RHS type mismatch                 | Semantic error + type-correct default-expression fix-it | [EC-COALESCE-05](../tests/conformance/examples/nil_coalescing/EC-COALESCE-05.json) |
 
 ## Capture Lists
 
@@ -103,19 +103,19 @@ Total examples: 58.
 | `EC-CROSS-02` | Non-canonical `await try` ordering               | Warning + reorder fix-it         | [EC-CROSS-02](../tests/conformance/examples/cross_feature/EC-CROSS-02.json) |
 | `EC-CROSS-03` | Follow-token violation after cross-feature chain | Diagnostic + parenthesize fix-it | [EC-CROSS-03](../tests/conformance/examples/cross_feature/EC-CROSS-03.json) |
 | `EC-CROSS-04` | `try? await` plus chained optional propagation   | Accept                           | [EC-CROSS-04](../tests/conformance/examples/cross_feature/EC-CROSS-04.json) |
-| `EC-CROSS-05` | Cross-feature expression with `??` fallback      | Accept                           | [EC-CROSS-05](../tests/conformance/examples/cross_feature/EC-CROSS-05.json) |
+| `EC-CROSS-05` | Cross-feature expression with `??` default RHS   | Accept                           | [EC-CROSS-05](../tests/conformance/examples/cross_feature/EC-CROSS-05.json) |
 
 ## Optional Spelling Outcomes (`OPT-SPELL-*`) {#optional-spelling-outcomes-opt-spell-}
 
-| ID            | Edge case                                                                                     | Expected result                                                                                   | Conformance artifact                                                            |
-| ------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `EC-OPTSP-01` | Future mode uses canonical `Optional<int>`                                                    | Accept                                                                                            | [EC-OPTSP-01](../tests/conformance/examples/optional_spelling/EC-OPTSP-01.json) |
-| `EC-OPTSP-02` | Future compatibility mode parses `optional<int>` in Core migration mode                       | Accept with `OPT-SPELL-NONCANON` warning and one-step fix-it to `Optional<int>`.                  | [EC-OPTSP-02](../tests/conformance/examples/optional_spelling/EC-OPTSP-02.json) |
-| `EC-OPTSP-03` | Future canonical-only mode sees `optional<int>`                                               | Reject with `OPT-SPELL-NONCANON-UNSUPPORTED` error and required fix-it.                           | [EC-OPTSP-03](../tests/conformance/examples/optional_spelling/EC-OPTSP-03.json) |
-| `EC-OPTSP-04` | v1 mode sees `Optional<int>` or `optional<int>`                                               | Reject with `OPT-SPELL-RESERVED-V1` (reserved-for-future wording; no mandatory fix-it).           | [EC-OPTSP-04](../tests/conformance/examples/optional_spelling/EC-OPTSP-04.json) |
-| `EC-OPTSP-05` | Nested noncanonical forms (`optional<optional<int>>`) in compatibility mode outside migration | Reject with per-occurrence `OPT-SPELL-NONCANON` diagnostics as errors and per-occurrence fix-its. | [EC-OPTSP-05](../tests/conformance/examples/optional_spelling/EC-OPTSP-05.json) |
-| `EC-OPTSP-06` | Noncanonical spelling in non-rewritable macro expansion                                       | Emit owning spelling diagnostic plus `OPT-SPELL-NOFIX-MACRO` note; no invalid rewrite edit.       | [EC-OPTSP-06](../tests/conformance/examples/optional_spelling/EC-OPTSP-06.json) |
-| `EC-OPTSP-07` | Interface/module emission after noncanonical source input                                     | Accept with canonicalized round-trip output (`Optional<...>` only).                               | [EC-OPTSP-07](../tests/conformance/examples/optional_spelling/EC-OPTSP-07.json) |
+| ID            | Edge case                                                         | Expected result                                                                            | Conformance artifact                                                            |
+| ------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `EC-OPTSP-01` | Future value-optional-enabled mode uses canonical `Optional<int>` | Accept only when that future feature is enabled                                            | [EC-OPTSP-01](../tests/conformance/examples/optional_spelling/EC-OPTSP-01.json) |
+| `EC-OPTSP-02` | Canonical mode sees lowercase `optional<int>`                     | Reject with `O3C004` and a one-step fix-it to `Optional<int>`.                             | [EC-OPTSP-02](../tests/conformance/examples/optional_spelling/EC-OPTSP-02.json) |
+| `EC-OPTSP-03` | Canonical mode sees lowercase `optional<int>` in type position    | Reject with `O3C004` and a one-step fix-it to `Optional<int>`.                             | [EC-OPTSP-03](../tests/conformance/examples/optional_spelling/EC-OPTSP-03.json) |
+| `EC-OPTSP-04` | v1 mode sees `Optional<int>` or `optional<int>`                   | Reject with `OPT-SPELL-RESERVED-V1` (reserved-for-future wording; no mandatory fix-it).    | [EC-OPTSP-04](../tests/conformance/examples/optional_spelling/EC-OPTSP-04.json) |
+| `EC-OPTSP-05` | Nested noncanonical forms (`optional<optional<int>>`)             | Reject with `O3C004` and canonicalization fix-its for the rejected lowercase spellings.    | [EC-OPTSP-05](../tests/conformance/examples/optional_spelling/EC-OPTSP-05.json) |
+| `EC-OPTSP-06` | Noncanonical spelling in non-rewritable macro expansion           | Reject with `O3C004`; no invalid rewrite edit is emitted from macro-owned text.            | [EC-OPTSP-06](../tests/conformance/examples/optional_spelling/EC-OPTSP-06.json) |
+| `EC-OPTSP-07` | Interface/module emission after noncanonical source input         | Reject before interface/module emission; emitted surfaces only contain canonical spelling. | [EC-OPTSP-07](../tests/conformance/examples/optional_spelling/EC-OPTSP-07.json) |
 
 ## Mangling Invariants Outcomes
 

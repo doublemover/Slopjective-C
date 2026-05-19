@@ -4,8 +4,14 @@
   "milestone": "M323",
   "issue": "M323-D003",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
+  "summary_implementation_anchor": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
   "authoritative_report": "tmp/reports/runtime/runnable-interop-e2e/summary.json",
+  "proof_boundary_policy": {
+    "primary_axis": "behavior owner before packaged proof report, package manifest, bridge payload, module replay, interop call, or FFI metadata",
+    "support_authority": "packaged interop proof is provenance until IR, runtime, and e2e behavior owners claim the package, bridge, replay, and probe behavior together",
+    "positive_support_from_report": false,
+    "retired_surface_rule": "packaged proof without coupled artifacts, generated bridge payload-only rows, module-replay-only rows, FFI-metadata-only rows, evidence-log rows, gate, retired route, old-mode, and compatibility-only proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "required_step_actions": [
     "package-runnable-toolchain",
     "compile-interop-provider-fixture",

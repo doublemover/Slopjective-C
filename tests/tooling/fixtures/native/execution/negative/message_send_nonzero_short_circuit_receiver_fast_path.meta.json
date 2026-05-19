@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "fixture": "message_send_nonzero_short_circuit_receiver_fast_path.objc3",
+  "expect_failure": {
+    "stage": "run",
+    "required_diagnostic_tokens": [
+      "runtime dispatch failed: unknown receiver class",
+      "O3RT002"
+    ]
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  }
+}

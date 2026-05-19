@@ -18,30 +18,31 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/security_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/release_foundation/provenance_policy.json`
-- `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+- release operations upgrade-claim policy:
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
+  (live contract fields are upgrade/support-scoped)
 - `tests/tooling/fixtures/distribution_credibility/operator_release_policy.json`
 - `tests/tooling/fixtures/external_validation/trust_policy.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_security_hardening_boundary_inventory_summary.py`
-- `python scripts/check_security_hardening_source_surface.py`
-- `python scripts/check_security_hardening_schema_surface.py`
-- `python scripts/check_security_hardening_supply_chain_audit.py`
-- `python scripts/check_security_hardening_response_drill.py`
-- `python scripts/check_security_hardening_runtime_hardening.py`
-- `python scripts/build_objc3c_security_posture.py`
-- `python scripts/publish_objc3c_security_advisories.py`
-- `python scripts/check_objc3c_security_hardening_integration.py`
-- `python scripts/check_objc3c_security_hardening_integration.py`
-- `python scripts/check_release_evidence.py`
-- `python scripts/check_source_hygiene_authenticity.py`
-- `python scripts/check_objc3c_distribution_credibility_integration.py`
-- `python scripts/check_objc3c_distribution_credibility_end_to_end.py`
-- `python scripts/check_objc3c_release_operations_integration.py`
-- `python scripts/check_objc3c_release_operations_end_to_end.py`
-- `python scripts/check_objc3c_platform_hardening_integration.py`
-- `python scripts/check_objc3c_runtime_acceptance.py`
+- `npm run objc3c -- check-security-hardening-surface`
+- `npm run objc3c -- check-security-hardening-schema-surface`
+- `npm run objc3c -- build-security-posture`
+- `npm run objc3c -- publish-security-advisories`
+- `npm run objc3c -- validate-security-hardening`
+- `npm run objc3c -- validate-security-hardening-end-to-end`
+- `npm run objc3c -- check-release-evidence`
+- `npm run objc3c -- check-source-hygiene-authenticity`
+- `npm run objc3c -- validate-distribution-credibility`
+- `npm run objc3c -- validate-distribution-credibility-end-to-end`
+- `npm run objc3c -- validate-release-operations`
+- `npm run objc3c -- validate-release-operations-end-to-end`
+- `npm run objc3c -- validate-platform-hardening`
+- `npm run objc3c -- test-runtime-acceptance-fast`
+
+Helper implementations are action-registry anchors for those
+commands, not a second security command surface.
 
 ## Current Security Posture
 
@@ -50,8 +51,8 @@ The current checked-in security posture is intentionally narrow.
 - release trust is machine-derived from:
   - the release manifest
   - the SBOM and attestation publication
-  - package-channel install and rollback evidence
-  - update-manifest and compatibility publication
+  - package-channel install and revert evidence
+  - update-manifest and support-window publication
   - the release-evidence index
 - macro/package/provenance trust is bounded by:
   - source-visible package and provenance markers
@@ -80,11 +81,11 @@ Security claims must stay narrower than the evidence:
 
 Macro trust currently terminates in the checked-in compiler and runtime surfaces:
 
-- `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-- `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- `native/objc3c/src/sema/`
+- `native/objc3c/src/pipeline/`
+- `native/objc3c/src/artifacts/`
 - `native/objc3c/src/io/objc3_process.cpp`
-- `scripts/check_objc3c_runtime_acceptance.py`
+- `npm run objc3c -- test-runtime-acceptance-fast`
 - `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3`
 - `tests/tooling/fixtures/native/macro_package_provenance_positive.objc3`
 
@@ -120,18 +121,18 @@ They do not currently prove:
 
 Installer and update trust currently terminates in:
 
-- `scripts/build_objc3c_release_manifest.py`
-- `scripts/publish_objc3c_release_provenance.py`
-- `scripts/build_objc3c_update_manifest.py`
-- `scripts/publish_objc3c_release_operations_metadata.py`
-- `scripts/build_objc3c_package_channels.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
+- `npm run objc3c -- build-release-manifest`
+- `npm run objc3c -- publish-release-provenance`
+- `npm run objc3c -- build-update-manifest`
+- `npm run objc3c -- publish-release-operations`
+- `npm run objc3c -- build-package-channels`
+- `npm run objc3c -- package-runnable-toolchain`
 
 Those surfaces prove:
 
 - shipped payload lineage
-- package-channel install and rollback coherence
-- update-manifest and compatibility publication coherence
+- package-channel install and revert coherence
+- update-manifest and support-window publication coherence
 - machine-owned evidence linkage back to the shipped package family
 
 They do not currently prove:
@@ -144,8 +145,8 @@ Current installer/update/release-key hardening semantics:
 
 - release-manifest, SBOM, and attestation publication are the canonical checked-in
   trust anchors for shipped payload lineage
-- package channels, install receipts, rollback proofs, update manifests,
-  compatibility reports, and distribution trust reports must all resolve to the
+- package channels, install receipts, revert proofs, update manifests,
+  support-window reports, and distribution trust reports must all resolve to the
   same runnable package family
 - release-key handling is bounded to the local publication environment that
   emits the checked-in attestation and provenance artifacts
@@ -158,9 +159,9 @@ Current installer/update/release-key hardening semantics:
 
 Runtime hardening currently terminates in:
 
-- `scripts/check_objc3c_runtime_acceptance.py`
-- `scripts/check_objc3c_runnable_release_candidate_end_to_end.py`
-- `scripts/check_objc3c_runnable_release_candidate_conformance.py`
+- `npm run objc3c -- test-runtime-acceptance-fast`
+- `npm run objc3c -- validate-runnable-release-candidate`
+- `npm run objc3c -- validate-release-candidate-conformance`
 - existing runtime/object-model/block-ARC/error/concurrency/metaprogramming validation
 
 That surface is sufficient for checked-in executable regression evidence, but it
@@ -181,7 +182,7 @@ infrastructure.
 
 ## Security Response And Disclosure Policy
 
-The checked-in response and disclosure policy for this milestone is intentionally
+The checked-in response and disclosure policy for security hardening is intentionally
 narrow and fail-closed.
 
 Security response states:
@@ -194,7 +195,7 @@ Security response states:
   - examples: stale trust-report inputs, candidate-only warnings, or incomplete
     but non-blocking publication refresh
 - `blocked`:
-  - install failure, rollback failure, trust drift, evidence gaps, unresolved
+  - install failure, revert failure, trust drift, evidence gaps, unresolved
     disclosure risk, or other blocking security regressions are active
 
 Current disclosure model:
@@ -209,7 +210,7 @@ Current disclosure model:
 Current incident classes:
 
 - `supply-chain-integrity`
-- `rollback-or-install-regression`
+- `revert-or-install-regression`
 - `metadata-or-provenance-drift`
 - `runtime-hardening-regression`
 - `disclosure-or-license-uncertainty`
@@ -235,7 +236,7 @@ Generated security posture and advisory outputs must stay under:
 - `tmp/reports/security-hardening/`
 - `tmp/artifacts/security-hardening/`
 
-Canonical generated artifacts for this milestone are:
+Generated security-hardening artifacts are:
 
 - a machine-owned security posture JSON
 - a machine-owned security advisory index JSON
@@ -247,12 +248,17 @@ Those artifacts must stay validated by checked-in schema and contract surfaces:
 - `schemas/objc3c-security-posture-v1.schema.json`
 - `schemas/objc3c-security-advisory-index-v1.schema.json`
 - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-The canonical supply-chain audit summary for this milestone is:
+Security posture and advisory schemas are registry-backed owner surfaces, not
+local runbook schema definitions. The runbook must not copy their JSON shape or
+promote generated security reports into support claims.
+
+The supply-chain audit summary for security hardening is:
 
 - `tmp/reports/security-hardening/supply-chain-audit-summary.json`
 
-Checked-in source-of-truth must stay under:
+Checked-in security owner inputs must stay under:
 
 - `docs/runbooks/`
 - `tests/tooling/fixtures/`

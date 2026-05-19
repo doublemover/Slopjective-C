@@ -1,0 +1,423 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/action-registry-v1.schema.json",
+  "title": "objc3c workflow action registry",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema_id",
+    "schema_path",
+    "mode",
+    "runner_path",
+    "action_count",
+    "public_action_count",
+    "package_bridge_count",
+    "package_bridges",
+    "package_bridge_invocations",
+    "single_package_bridge_only",
+    "public_bridge_owners",
+    "public_bridge_contracts",
+    "public_bridge_integrity",
+    "public_bridge_capability_truth",
+    "schema_index",
+    "capability_truth",
+    "actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "objc3c-workflow-action-registry-v1" },
+    "schema_id": { "const": "objc3c-workflow-action-registry-v1" },
+    "schema_path": {
+      "const": "scripts/objc3c_workflow/schemas/action-registry-v1.schema.json"
+    },
+    "mode": { "const": "objc3c-workflow-action-registry-v1" },
+    "runner_path": { "type": "string" },
+    "action_count": { "type": "integer", "minimum": 1 },
+    "public_action_count": { "type": "integer", "minimum": 1 },
+    "package_bridge_count": { "const": 1 },
+    "package_bridges": {
+      "type": "array",
+      "prefixItems": [{ "const": "objc3c" }],
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "package_bridge_invocations": {
+      "type": "array",
+      "prefixItems": [{ "const": "npm run objc3c -- <action>" }],
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "single_package_bridge_only": { "const": true },
+    "public_bridge_owners": {
+      "type": "object",
+      "required": ["constants", "invocation", "payload", "registry"],
+      "properties": {
+        "constants": { "const": "scripts/objc3c_workflow/public_bridge_constants.py" },
+        "invocation": { "const": "scripts/objc3c_workflow/public_bridge_invocation.py" },
+        "payload": { "const": "scripts/objc3c_workflow/public_bridge_payloads.py" },
+        "registry": { "const": "scripts/objc3c_workflow/public_bridge_registry.py" }
+      },
+      "additionalProperties": false
+    },
+    "public_bridge_contracts": {
+      "type": "array",
+      "items": { "type": "object" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "public_bridge_integrity": { "$ref": "#/$defs/publicBridgeIntegrity" },
+    "public_bridge_capability_truth": { "$ref": "#/$defs/capabilityTruth" },
+    "schema_index": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "schema_id",
+        "schema_path",
+        "owner_surface",
+        "owned_fields",
+        "constants_owner_surface",
+        "model_owner_surface",
+        "catalog_owner_surface",
+        "index_facade_surface",
+        "schema_owner_surfaces",
+        "registry_store_contract",
+        "registry_view_contract",
+        "capability_truth_schema_ids",
+        "capability_truth",
+        "schemas"
+      ],
+      "properties": {
+        "schema_version": { "const": "objc3c-workflow-schema-index-v1" },
+        "schema_id": { "const": "objc3c-workflow-schema-index-v1" },
+        "schema_path": {
+          "const": "scripts/objc3c_workflow/schemas/schema-index-v1.schema.json"
+        },
+        "owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+        "owned_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 15
+        },
+        "constants_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_constants.py" },
+        "model_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_model.py" },
+        "catalog_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_catalog.py" },
+        "index_facade_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+        "schema_owner_surfaces": {
+          "type": "object",
+          "required": [
+            "constants",
+            "model",
+            "catalog",
+            "payload",
+            "index_facade",
+            "registry_store",
+            "registry_view"
+          ],
+          "properties": {
+            "constants": { "const": "scripts/objc3c_workflow/registry_schema_constants.py" },
+            "model": { "const": "scripts/objc3c_workflow/registry_schema_model.py" },
+            "catalog": { "const": "scripts/objc3c_workflow/registry_schema_catalog.py" },
+            "payload": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+            "index_facade": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+            "registry_store": { "const": "scripts/objc3c_workflow/registry_store.py" },
+            "registry_view": { "const": "scripts/objc3c_workflow/registry_views.py" }
+          },
+          "additionalProperties": false
+        },
+        "registry_store_contract": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "owner_surface",
+            "owned_functions",
+            "view_surface",
+            "catalog_surface",
+            "public_contract"
+          ],
+          "properties": {
+            "contract_id": { "const": "objc3c-workflow-registry-store-v1" },
+            "owner_surface": { "const": "scripts/objc3c_workflow/registry_store.py" },
+            "owned_functions": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 7
+            },
+            "view_surface": { "const": "scripts/objc3c_workflow/registry_views.py" },
+            "catalog_surface": { "const": "scripts/objc3c_workflow/action_catalog.py" },
+            "public_contract": { "const": true }
+          },
+          "additionalProperties": false
+        },
+        "registry_view_contract": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "owner_surface",
+            "owned_functions",
+            "store_surface",
+            "public_contract"
+          ],
+          "properties": {
+            "contract_id": { "const": "objc3c-workflow-registry-view-v1" },
+            "owner_surface": { "const": "scripts/objc3c_workflow/registry_views.py" },
+            "owned_functions": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 9
+            },
+            "store_surface": { "const": "scripts/objc3c_workflow/registry_store.py" },
+            "public_contract": { "const": true }
+          },
+          "additionalProperties": false
+        },
+        "capability_truth_schema_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 2
+        },
+        "capability_truth": { "$ref": "#/$defs/capabilityTruth" },
+        "schemas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/schemaIndexEntry" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "capability_truth": { "$ref": "#/$defs/capabilityTruth" },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    }
+  },
+  "$defs": {
+    "capabilityTruth": {
+      "type": "object",
+      "required": ["scope", "machine_readable", "owner_surface", "schema_ids"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "package_bridge": { "type": "string", "minLength": 1 },
+        "machine_readable": { "const": true },
+        "owner_surface": { "type": "string", "minLength": 1 },
+        "schema_owner_surface": { "type": "string", "minLength": 1 },
+        "owned_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "schema_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "action_payload_schema_ref": { "type": "string", "minLength": 1 },
+        "workflow_surface_contracts": {
+          "type": "object",
+          "required": [
+            "public_bridge_integrity",
+            "package_script_lookup",
+            "argument_options",
+            "argument_usage"
+          ],
+          "properties": {
+            "public_bridge_integrity": { "$ref": "#/$defs/ownedContractRef" },
+            "package_script_lookup": { "$ref": "#/$defs/ownedContractRef" },
+            "argument_options": { "$ref": "#/$defs/ownedContractRef" },
+            "argument_usage": { "$ref": "#/$defs/ownedContractRef" }
+          },
+          "additionalProperties": false
+        },
+        "retired_surface_claims_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "ownedContractRef": {
+      "type": "object",
+      "required": ["contract_id", "owner_surface"],
+      "properties": {
+        "contract_id": { "type": "string", "minLength": 1 },
+        "owner_surface": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "publicBridgeIntegrity": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "owner_surface",
+        "package_bridge_count",
+        "canonical_package_bridge",
+        "canonical_invocation_template",
+        "single_package_bridge_only",
+        "pass_through_args_required",
+        "validation_errors"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c-workflow-public-bridge-integrity-v1"
+        },
+        "owner_surface": {
+          "const": "scripts/objc3c_workflow/public_bridge_integrity.py"
+        },
+        "package_bridge_count": { "const": 1 },
+        "canonical_package_bridge": { "const": "objc3c" },
+        "canonical_invocation_template": {
+          "const": "npm run objc3c -- <action>"
+        },
+        "single_package_bridge_only": { "const": true },
+        "pass_through_args_required": { "const": true },
+        "validation_errors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "schemaIndexEntry": {
+      "type": "object",
+      "required": [
+        "schema_id",
+        "schema_path",
+        "payload_surface",
+        "owner_surface",
+        "schema_owner_surface",
+        "capability_truth_scope",
+        "public_contract",
+        "schema_index_schema_id",
+        "schema_index_owner_surface",
+        "constants_owner_surface",
+        "model_owner_surface",
+        "catalog_owner_surface",
+        "payload_owner_surface",
+        "index_facade_surface",
+        "registry_store_owner_surface",
+        "registry_view_owner_surface"
+      ],
+      "properties": {
+        "schema_id": { "type": "string", "minLength": 1 },
+        "schema_path": { "type": "string", "minLength": 1 },
+        "payload_surface": { "type": "string", "minLength": 1 },
+        "owner_surface": { "type": "string", "minLength": 1 },
+        "schema_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+        "capability_truth_scope": { "type": "string", "minLength": 1 },
+        "public_contract": { "type": "boolean" },
+        "schema_index_schema_id": { "const": "objc3c-workflow-schema-index-v1" },
+        "schema_index_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+        "constants_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_constants.py" },
+        "model_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_model.py" },
+        "catalog_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_catalog.py" },
+        "payload_owner_surface": { "const": "scripts/objc3c_workflow/registry_schema_payload.py" },
+        "index_facade_surface": { "const": "scripts/objc3c_workflow/registry_schema_index.py" },
+        "registry_store_owner_surface": { "const": "scripts/objc3c_workflow/registry_store.py" },
+        "registry_view_owner_surface": { "const": "scripts/objc3c_workflow/registry_views.py" }
+      },
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "action",
+        "summary",
+        "audience",
+        "backend",
+        "pass_through_args",
+        "package_bridge",
+        "public_command",
+        "public_invocation",
+        "public_entrypoint",
+        "payload_schema_ref",
+        "registry_schema_id",
+        "registry_schema_path",
+        "registry_schema_owner_surface",
+        "registry_schema_index_schema_id",
+        "registry_schema_index_owner_surface",
+        "payload_owner_surface",
+        "payload_field_owner_surface",
+        "payload_owner_action",
+        "payload_field_owners",
+        "payload_field_owner_map",
+        "capability_truth"
+      ],
+      "properties": {
+        "action": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "audience": { "enum": ["operator", "maintainer"] },
+        "backend": { "type": "string", "minLength": 1 },
+        "package_bridge": { "const": "objc3c" },
+        "public_command": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [A-Za-z0-9][A-Za-z0-9_-]*$"
+        },
+        "public_invocation": {
+          "type": "string",
+          "pattern": "^npm run objc3c -- [A-Za-z0-9][A-Za-z0-9_-]*$"
+        },
+        "public_entrypoint": { "const": "single-npm-bridge" },
+        "payload_schema_ref": {
+          "const": "objc3c-workflow-action-registry-v1#/$defs/action"
+        },
+        "registry_schema_id": { "const": "objc3c-workflow-action-registry-v1" },
+        "registry_schema_path": {
+          "const": "scripts/objc3c_workflow/schemas/action-registry-v1.schema.json"
+        },
+        "registry_schema_owner_surface": {
+          "const": "scripts/objc3c_workflow/registry_schema_payload.py"
+        },
+        "registry_schema_index_schema_id": {
+          "const": "objc3c-workflow-schema-index-v1"
+        },
+        "registry_schema_index_owner_surface": {
+          "const": "scripts/objc3c_workflow/registry_schema_index.py"
+        },
+        "payload_owner_surface": {
+          "const": "scripts/objc3c_workflow/action_payload_builder.py"
+        },
+        "payload_field_owner_surface": {
+          "const": "scripts/objc3c_workflow/action_payload_field_owners.py"
+        },
+        "payload_owner_action": { "type": "string", "minLength": 1 },
+        "payload_field_owners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field_group",
+              "fields",
+              "owner_surface",
+              "payload_surface",
+              "capability_truth_scope",
+              "public_contract"
+            ],
+            "properties": {
+              "field_group": { "type": "string", "minLength": 1 },
+              "fields": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1
+              },
+              "owner_surface": { "type": "string", "minLength": 1 },
+              "payload_surface": { "type": "string", "minLength": 1 },
+              "capability_truth_scope": { "type": "string", "minLength": 1 },
+              "public_contract": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 3
+        },
+        "payload_field_owner_map": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "validation_tier": { "type": "string" },
+        "guarantee_owner": { "type": "string" },
+        "pass_through_args": { "type": "boolean" },
+        "capability_truth": { "$ref": "#/$defs/capabilityTruth" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,25 @@
+"""Core documentation-surface action specs."""
+
+from __future__ import annotations
+
+from scripts.objc3c_workflow.actions.docs_documentation import (
+    CHECK_DOCUMENTATION_SURFACE_ACTION,
+    CHECK_DOCUMENTATION_SURFACE_BACKEND,
+    CHECK_DOCUMENTATION_SURFACE_SUMMARY,
+    DOCUMENTATION_SURFACE_GUARANTEE_OWNER,
+    DOCUMENTATION_SURFACE_VALIDATION_TIER,
+)
+
+from .action_spec import ActionSpec
+
+CORE_DOCUMENTATION_SURFACE_ACTION_SPECS: dict[str, ActionSpec] = {
+    CHECK_DOCUMENTATION_SURFACE_ACTION: ActionSpec(
+        CHECK_DOCUMENTATION_SURFACE_ACTION,
+        CHECK_DOCUMENTATION_SURFACE_SUMMARY,
+        CHECK_DOCUMENTATION_SURFACE_BACKEND,
+        validation_tier=DOCUMENTATION_SURFACE_VALIDATION_TIER,
+        guarantee_owner=DOCUMENTATION_SURFACE_GUARANTEE_OWNER,
+    ),
+}
+
+__all__ = ["CORE_DOCUMENTATION_SURFACE_ACTION_SPECS"]

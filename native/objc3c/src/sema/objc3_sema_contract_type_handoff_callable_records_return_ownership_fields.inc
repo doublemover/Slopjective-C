@@ -1,0 +1,10 @@
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
+  bool return_ownership_is_weak_reference = false;
+  bool return_ownership_is_unowned_reference = false;
+  bool return_ownership_is_unowned_safe_reference = false;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;

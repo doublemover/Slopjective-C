@@ -1,5 +1,24 @@
 {
   "contract_id": "objc3c.platform.hardening.packaged.smoke.integration.contract.v1",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "packaged platform hardening command surface missing",
+      "packaged support matrix missing publication surface",
+      "packaged validate-platform-hardening summary failed"
+    ]
+  },
   "manifest_fields": [
     "platform_hardening_runbook",
     "platform_hardening_boundary_inventory",
@@ -14,17 +33,13 @@
     "platform_packaged_smoke_contract",
     "platform_hardening_scripts",
     "platform_hardening_public_actions",
-    "platform_hardening_public_scripts"
+    "package_bridge"
   ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "build-platform-support-matrix",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end"
-  ],
-  "public_scripts": [
-    "inspect:objc3c:platform-matrix",
-    "test:objc3c:platform-hardening",
-    "test:objc3c:platform-hardening:e2e"
   ],
   "required_command_surfaces": [
     "inspect_platform_matrix",
@@ -35,6 +50,7 @@
     "release_operations"
   ],
   "required_publication_surface_fields": [
+    "package_bridge",
     "inspect_support_matrix_command",
     "package_command",
     "package_channels_command",

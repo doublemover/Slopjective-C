@@ -1,21 +1,24 @@
-# Registry Compatibility Validation Suite (`V013-GOV-02`)
+# Registry Transition/Rejection Validation Suite (`V013-GOV-02`)
 
-This directory documents the deterministic validation contract for extension
-registry compatibility governance.
+This directory documents deterministic validation fixtures for extension
+registry transition and rejection governance. Historical `compatibility_*`
+field names are fixture keys only; they are not public support, retired route, or
+alias contracts.
 
 ## 1. Scope and Artifacts
 
 - Acceptance gate: `AC-V013-GOV-02`
 - Source contract: `docs/reference/legacy_spec_anchor_index.md`
-- Schema artifact: `registries/experimental_extensions/index.schema.json`
+- Schema fixture: `schema.json`
+- Canonical schema ID style: `https://objc3c.dev/schemas/<schema>.schema.json`
 
-## 2. Backward/Forward Compatibility Matrix Contract
+## 2. Backward/Forward Change-Rejection Matrix Contract
 
-Compatibility outcomes use three deterministic values:
+Change-rejection outcomes use three deterministic values:
 
-- `pass`: compatible and publishable.
-- `conditional`: compatible only with explicit fallback/migration notes.
-- `fail`: incompatible; publish is blocked.
+- `pass`: accepted for this fixture and publishable.
+- `conditional`: replay-only hold with explicit conversion notes; no alternate support.
+- `fail`: rejected; publish is blocked.
 
 Required matrix IDs:
 
@@ -24,7 +27,7 @@ Required matrix IDs:
 - `CM-RC-03` minor enum expansion
 - `CM-RC-04` minor required addition (must fail)
 - `CM-RC-05` major required removal
-- `CM-RC-06` major required rename without alias (must fail)
+- `CM-RC-06` major required rename without transition mapping (must fail)
 - `CM-RC-07` unknown major input (must fail)
 - `CM-RC-08` required field type drift (must fail)
 
@@ -34,12 +37,12 @@ Run from repository root.
 
 | Validator ID | Command | Expected deterministic signal |
 | --- | --- | --- |
-| `VAL-RC-01` | `python scripts/spec_lint.py` | `spec-lint: OK` |
+| `VAL-RC-01` | `npm run objc3c -- lint-spec` | `spec-lint: OK` |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | exit `0` and no blocking drift |
 | `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | exit `0` |
-| `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | `schema-json: OK` |
-| `VAL-RC-05` | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | `contract-keys: OK` |
-| `VAL-RC-06` | `rg -n "AC-V013-GOV-02|VAL-RC-|ESC-RC-" tests/governance/registry_compat/README.md` | exit `0` |
+| `VAL-RC-04` | Validate this fixture directory's `schema.json` as JSON. | `schema-json: OK` |
+| `VAL-RC-05` | Check that `schema.json` still exposes the required governance contract keys. | `contract-keys: OK` |
+| `VAL-RC-06` | Check this fixture directory's `readme.md` for required governance identifiers. | exit `0` |
 
 Validator ordering is fixed (`VAL-RC-01`..`VAL-RC-06`). Any non-zero exit code is a blocking failure.
 
@@ -50,7 +53,7 @@ expiry, and approval evidence.
 
 Non-waiverable classes:
 
-- `CM-RC-07` unknown-major compatibility failure
+- `CM-RC-07` unknown-major schema input failure
 - Required-field breaking change (`CM-RC-04`, `CM-RC-06`, `CM-RC-08`)
 - Missing `AC-V013-GOV-02` acceptance mapping
 - Validator nondeterminism
@@ -58,7 +61,7 @@ Non-waiverable classes:
 Escalation ladder:
 
 - `ESC-RC-01` (`E1`): local validator failure, owner response `T+24h`
-- `ESC-RC-02` (`E2`): repeated/major compatibility failure, response `T+48h`
+- `ESC-RC-02` (`E2`): repeated/major schema-transition failure, response `T+48h`
 - `ESC-RC-03` (`E3`): release-window blocker, response `T+72h`
 - `ESC-RC-04` (`E4`): integrity or policy breach, immediate emergency hold
 
@@ -68,12 +71,12 @@ Escalation ladder:
 - [x] `AC-V013-GOV-02-02` Required-field policy is explicit and deterministic.
 - [x] `AC-V013-GOV-02-03` Validator command contract is deterministic.
 - [x] `AC-V013-GOV-02-04` Waiver and escalation policy is explicit.
-- [x] `AC-V013-GOV-02-05` `python scripts/spec_lint.py` transcript is recorded.
+- [x] `AC-V013-GOV-02-05` `npm run objc3c -- lint-spec` transcript is recorded.
 
 ## 6. Validation Transcript (`VAL-RC-01`)
 
 ```sh
-python scripts/spec_lint.py
+npm run objc3c -- lint-spec
 ```
 
 Recorded output:

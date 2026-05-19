@@ -55,7 +55,7 @@ def main() -> int:
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Runtime symbols: `{summary['authoritative_runtime_symbol_count']}`\n"
         f"- Implementation invariants: `{summary['implementation_invariant_count']}`\n"
-        f"- Proof paths: `{summary['authoritative_proof_path_count']}`\n"
+        f"- Evidence paths: `{summary['authoritative_proof_path_count']}`\n"
         f"- Fixture paths: `{summary['authoritative_fixture_path_count']}`\n"
         f"- Claim-narrowing constraints: `{summary['claim_narrowing_constraint_count']}`\n"
         f"- Status: `{summary['status']}`\n",

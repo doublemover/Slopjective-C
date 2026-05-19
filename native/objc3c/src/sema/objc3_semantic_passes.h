@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#include "sema/objc3_semantic_body_validation.h"
+#include "sema/objc3_semantic_integration_surface.h"
+#include "sema/objc3_semantic_type_metadata_handoff.h"
 #include "sema/objc3_sema_contract.h"
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary;
@@ -20,8 +23,6 @@ struct Objc3FrontendInteropForeignImportSourceClosureSummary;
 struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
-                                                                bool legacy_compatibility_mode,
-                                                                bool migration_assist_enabled,
                                                                 bool allow_source_only_block_literals,
                                                                 bool allow_source_only_defer_statements,
                                                                 bool allow_source_only_error_runtime_surface,

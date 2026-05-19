@@ -5,18 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import display_path
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 DEFAULT_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "runtime-inspector-benchmark.json"
 WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
@@ -69,15 +67,15 @@ def main() -> int:
     steps = [
         run_step(
             "materialize-playground-workspace",
-            [sys.executable, str(PUBLIC_RUNNER), "materialize-playground-workspace", args.source],
+            public_workflow_command("materialize-playground-workspace", args.source),
         ),
         run_step(
             "inspect-runtime-inspector",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-runtime-inspector", args.source],
+            public_workflow_command("inspect-runtime-inspector", args.source),
         ),
         run_step(
             "inspect-capability-explorer",
-            [sys.executable, str(PUBLIC_RUNNER), "inspect-capability-explorer"],
+            public_workflow_command("inspect-capability-explorer"),
         ),
     ]
 

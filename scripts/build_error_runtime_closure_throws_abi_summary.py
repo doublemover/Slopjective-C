@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,6 @@ RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_error_runtime_closure.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 SEMA_PATH = ROOT / "native/objc3c/src/sema/objc3_semantic_passes.cpp"
 IR_PATH = ROOT / "native/objc3c/src/ir/objc3_ir_emitter.cpp"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
 CONFORMANCE_PATH = ROOT / "scripts/check_objc3c_runnable_error_conformance.py"
 E2E_PATH = ROOT / "scripts/check_objc3c_runnable_error_end_to_end.py"
 
@@ -32,7 +32,6 @@ def main() -> int:
     runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
     sema_text = SEMA_PATH.read_text(encoding="utf-8")
     ir_text = IR_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
     conformance_text = CONFORMANCE_PATH.read_text(encoding="utf-8")
     e2e_text = E2E_PATH.read_text(encoding="utf-8")
 
@@ -52,7 +51,9 @@ def main() -> int:
         "runtime_exports_helper_cluster": all(symbol in runtime_text for symbol in contract["helper_symbols"]),
         "sema_publishes_throw_and_cleanup_profiles": "throws_propagation_summary" in sema_text and "unwind_cleanup_summary" in sema_text,
         "ir_publishes_error_runtime_helper_anchor": "error_handling_error_runtime_bridge_helper" in ir_text and "frontend_objc_throws_propagation_lowering_profile" in ir_text,
-        "workflow_preserves_public_error_actions": "def action_validate_error_conformance" in workflow_text and "def action_validate_runnable_error" in workflow_text,
+        "workflow_preserves_public_error_actions": public_workflow_has_action_identifiers(
+            ["action_validate_error_conformance", "action_validate_runnable_error"]
+        ),
         "conformance_checks_required_error_cases": all(case_id in conformance_text for case_id in contract["authoritative_case_ids"]),
         "e2e_preserves_packaged_error_surface": '"error_runtime_fixture"' in e2e_text and '"error_runtime_probe"' in e2e_text,
     }

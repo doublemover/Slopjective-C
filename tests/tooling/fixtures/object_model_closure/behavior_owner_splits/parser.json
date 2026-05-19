@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-object-model-closure-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+  "support_boundary": "parser ownership covers source-form fixture parsing for classes, categories, protocols, properties, ivars, imports, selectors, and runnable object-model samples before semantic, lowering, runtime, or e2e owners claim behavior; generated reports, compile artifacts, descriptors, query snapshots, and workflow labels cannot create parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser spellings, compatibility parser flags, parser gates, parser retired routes, generated source inventories, and source-only reflection truth claims are canonical rejection, strict-error, or provenance-only evidence"
+}

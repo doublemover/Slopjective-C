@@ -1,14 +1,18 @@
 # Objc3c Native Frontend (Current Surface)
 
-The native frontend supports two input modes:
+The native frontend accepts two input classes:
 
 - `.objc3`: native lexer, parser, sema, lowering, IR emission, and object build
-- non-`.objc3`: Objective-C parse/diagnostics and object build through the Objective-C path
+- non-`.objc3`: Objective-C parse/diagnostics and object build through the
+  Objective-C path
+
+The non-`.objc3` path is a driver/frontend integration path. It does not create
+an alternate Objective-C 3.0 source mode or old-surface support path.
 
 ## CLI Usage
 
 ```text
-objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [-fobjc-version=<N>] [--objc3-language-version <N>] [--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
+objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [-fobjc-version=<N>] [--objc3-language-version <N>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
 Defaults:
@@ -18,7 +22,7 @@ Defaults:
 - clang: `clang`
 - llc: `llc`
 - language version: `3`
-- runtime dispatch symbol: `objc3_msgsend_i32`
+- runtime dispatch symbol: `objc3_runtime_dispatch_i32`
 
 ## C API Runner
 
@@ -69,14 +73,31 @@ The live lowering path currently covers:
 The live compiler/runtime boundary is centered on emitted metadata plus the native runtime library under `native/objc3c/src/runtime` and `artifacts/lib/objc3_runtime.lib`.
 ## Runtime Execution Architecture (Current)
 
-The live executable path is a single compile-to-runtime pipeline. Later runtime
-closure work must extend this path, not bypass it.
+The live executable path is a single compile-to-runtime pipeline. Reserved
+runtime-closure work must extend this path and earn exact capability rows before
+public docs can claim support.
+
+## Runtime Architecture Section Owners
+
+This chapter is the single stitched runtime-architecture fragment. Keep large
+additions inside these owner sections so source-surface changes stay reviewable
+without adding fragment files that the stitcher contract does not know about.
+
+| Owner section               | Covered headings                                                        | Primary owner       |
+| --------------------------- | ----------------------------------------------------------------------- | ------------------- |
+| Pipeline and bootstrap      | working boundary, execution flow, state publication, bootstrap, startup | runtime/compiler    |
+| Metaprogramming             | source, package/provenance, semantics, lowering, cache, runtime ABI     | compiler/semantics  |
+| Concurrency                 | source, normalization, lowering, metadata                               | runtime/concurrency |
+| Error handling              | source, catch/finalization, propagation, unwind diagnostics, ABI        | runtime/errors      |
+| Blocks and ARC              | source, ownership transfer, lowering, helper ABI, preservation          | runtime/memory      |
+| Object model and reflection | property/ivar/accessor, realization, dispatch, reflection, lookup       | runtime/classes     |
+| Installation and validation | loader lifecycle, acceptance suite, shared harness, evidence, claims    | compiler/qa         |
 
 ## Working Boundary
 
 - compiler-owned compile path:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
+  - build action: `npm run objc3c -- build-native-binaries`
+  - compile action: `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
   - `native/objc3c/src/main.cpp`
   - `native/objc3c/src/driver/objc3_driver_main.cpp`
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
@@ -84,11 +105,36 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+- split native owner surfaces:
+  - compiler: driver, parser, semantic, lowering, and IR modules
+  - runtime: public C API, state, selectors, images, classes, dispatch,
+    storage, memory, blocks, errors, and concurrency modules
+  - pipeline/artifacts/IO: dispatch classification, frontend artifacts,
+    process execution, and JSON/schema helpers
 - runtime-owned installation and execution path:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- hard-cutover runtime module tree:
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/storage/`
+  - `native/objc3c/src/runtime/memory/`
+  - `native/objc3c/src/runtime/blocks/`
+  - `native/objc3c/src/runtime/errors/`
+  - `native/objc3c/src/runtime/concurrency/`
+- the current matrix claim boundary covers only the named module tree plus wired
+  core helpers for dispatch, selector lookup, image registration, and realized
+  class graph consumption. Broader runtime behavior remains unclaimed until live
+  strict dispatch status probes and gates exercise typed success/error results
+  from `objc3_runtime_dispatch_i32_checked` and `objc3_runtime_dispatch_i32`
+  under implemented capability rows.
 - authoritative emitted artifacts:
   - `<prefix>.obj`
   - `<prefix>.ll`
@@ -96,20 +142,19 @@ closure work must extend this path, not bypass it.
   - `<prefix>.runtime-registration-manifest.json`
   - `<prefix>.runtime-registration-descriptor.json`
   - `<prefix>.compile-provenance.json`
-- validation-owned proof path:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/objc3c_runtime_launch_contract.ps1`
+- validation-owned evidence path:
+  - `npm run objc3c -- test-runtime-acceptance`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- test-execution-smoke`
   - `scripts/shared_compiler_runtime_acceptance_harness.py`
 
 ## Execution Flow
 
-1. `scripts/build_objc3c_native.ps1` publishes `artifacts/bin/objc3c-native.exe`
-   and `artifacts/lib/objc3_runtime.lib`.
-2. `scripts/objc3c_native_compile.ps1` or the native executable drives the live
-   `.objc3` compile path through driver, lowering, IR emission, and object
-   emission.
+1. `npm run objc3c -- build-native-binaries` publishes
+   `artifacts/bin/objc3c-native.exe` and `artifacts/lib/objc3_runtime.lib`.
+2. `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
+   drives the live `.objc3` compile path through driver, lowering, IR emission,
+   and object emission.
 3. The compile path emits the object, LLVM IR, registration manifest, and
    compile provenance as one coupled artifact set.
 4. The runtime installs emitted image state through
@@ -160,8 +205,7 @@ This is the authoritative bootstrap registration source audit boundary. It
 freezes the emitted registration descriptor artifact, image-root identity,
 registration entrypoint, constructor root, translation-unit identity key, and
 registration order ordinal as one coupled compile output instead of leaving
-downstream work to reconstruct that source of truth from separate manifest
-fragments.
+downstream work to reconstruct the boundary from separate manifest fragments.
 
 ## Bootstrap Lowering And Registration Artifact Surface
 
@@ -224,11 +268,10 @@ constructor-root to loader-table edge.
   - `objc_runtime_bootstrap_reset_contract`
   - `objc_runtime_bootstrap_registrar_contract`
   - `objc_runtime_bootstrap_archive_static_link_replay_corpus`
-- authoritative live proof path:
+- authoritative live evidence path:
   - fixture: `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
   - probe: `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
-  - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
-  - public workflow command: `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+  - public workflow command: `npm run objc3c -- validate-runtime-architecture`
 - authoritative runtime fields:
   - `last_rejected_module_name`
   - `last_rejected_translation_unit_identity_key`
@@ -261,8 +304,8 @@ truth from scattered semantic and runtime-side reports.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
-- authoritative proof paths:
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
 
@@ -286,8 +329,8 @@ source packet instead of inferring scope from stale checklist text.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
-- authoritative proof paths:
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_behavior_source_completion_positive.objc3`
@@ -307,7 +350,7 @@ packet instead of inventing a second package/provenance inventory.
   - `frontend.pipeline.semantic_surface.objc_metaprogramming_expansion_and_behavior_semantic_model`
 - authoritative semantic contract:
   - `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`
-- authoritative semantic/cache compatibility contracts:
+- authoritative semantic/cache preservation contracts:
   - `objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1`
   - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
 - authoritative source dependencies:
@@ -318,9 +361,9 @@ packet instead of inventing a second package/provenance inventory.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
@@ -341,7 +384,7 @@ packet instead of inventing a second package/provenance inventory.
 
 This is the authoritative compile-coupled semantic boundary for derive markers,
 macro package/provenance markers, property-behavior source completion, and the
-live macro-safety/host-cache compatibility packet. It freezes the one truthful
+live macro-safety/host-cache preservation packet. It freezes the one truthful
 semantic packet plus the fail-closed sandbox/provenance diagnostics and
 deterministic host-cache artifact contract before lowering, deeper cache
 integration, or runtime hooks so downstream metaprogramming issues extend a
@@ -366,9 +409,9 @@ assumptions.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/synthesized_ast_ir_macro_positive.objc3`
@@ -382,7 +425,7 @@ metaprogramming expansion. It freezes the emitted lowering contract,
 synthesized AST/IR packet, cross-module replay packet, and deterministic
 host-cache import artifact as one live surface so executable expansion work
 extends the real compiler outputs instead of re-deriving lowering truth from
-sidecars or milestone-local summaries.
+sidecars or release-scope summaries.
 
 ## Cross-Module Metaprogramming Artifact Preservation Surface
 
@@ -393,9 +436,9 @@ sidecars or milestone-local summaries.
   - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
 - authoritative live code paths:
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/preservation_provider.objc3`
     - `tests/tooling/fixtures/native/preservation_consumer.objc3`
@@ -403,8 +446,8 @@ sidecars or milestone-local summaries.
 This is the authoritative cross-module preservation boundary for metaprogramming
 artifacts. It freezes the provider runtime-import packet and the consumer
 cross-module runtime link plan together so derived methods, macro/property
-artifacts, and host-cache compatibility survive separate compilation without
-being reconstructed from local-only manifest state.
+artifacts, and host-cache preservation state survives separate compilation without
+being reconstructed from unpublished manifest state.
 
 ## Metaprogramming Runtime ABI And Cache Surface
 
@@ -427,7 +470,7 @@ being reconstructed from local-only manifest state.
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`
     - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
@@ -440,7 +483,7 @@ being reconstructed from local-only manifest state.
 This is the authoritative runtime ABI boundary for metaprogramming host/cache
 state. It freezes the private runtime snapshots that publish the fail-closed
 expansion boundary and the live host-process cache integration state together
-with the emitted host-cache artifact and imported-surface compatibility facts,
+with the emitted host-cache artifact and imported-surface preservation facts,
 so later runnable metaprogramming work must consume one truthful runtime ABI
 surface instead of inventing a second host/cache model from local probe notes.
 
@@ -456,7 +499,7 @@ surface instead of inventing a second host/cache model from local probe notes.
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
     - `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
@@ -468,7 +511,7 @@ host-cache integration. It freezes the real cache-materialization artifact
 fields, the runtime-import consumer link-plan coupling, and the private runtime
 snapshot that reports host-process readiness so runnable metaprogramming
 validation extends one live miss-to-hit cache path instead of relying on
-proof-only summaries or milestone-local cache assumptions.
+evidence-only summaries or release-scope cache assumptions.
 
 ## Unified Concurrency Runtime Source Surface
 
@@ -484,12 +527,12 @@ proof-only summaries or milestone-local cache assumptions.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3`
@@ -503,8 +546,8 @@ This is the authoritative compile-coupled source boundary for async functions,
 task groups, executors, actors, and sendability before lowering and runtime ABI
 closure. It freezes the live source and semantic packets together with the
 private continuation/task/actor helper inventory so later concurrency work has
-one emitted source of truth instead of rederiving boundaries from sidecars,
-stale milestone notes, or probe-local assumptions.
+one emitted owner artifact instead of rederiving boundaries from sidecars,
+stale planning notes, or probe-local assumptions.
 
 ## Async/Task/Actor Normalization Completion Surface
 
@@ -528,11 +571,11 @@ stale milestone notes, or probe-local assumptions.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/actor_isolation_sendable_semantic_model_positive.objc3`
@@ -563,9 +606,9 @@ execution has already landed.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/task_runtime_async_entry_lowering_positive.objc3`
@@ -578,7 +621,7 @@ execution has already landed.
 This is the authoritative lowering-and-metadata boundary for the unified
 concurrency slice. It freezes the live async/task/actor lowering packets and
 their emitted metadata contracts before runtime ABI and runnable execution
-closure, so later runtime issues must consume one emitted source of truth
+closure, so later runtime issues must consume one emitted owner artifact
 instead of reconstructing lowering state from sidecars or probe-local notes.
 
 ## Error Execution And Cleanup Source Surface
@@ -591,9 +634,9 @@ instead of reconstructing lowering state from sidecars or probe-local notes.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/try_expression_fail_closed_negative.objc3`
@@ -604,7 +647,7 @@ This is the authoritative error execution and cleanup source boundary. It
 freezes the live frontend-owned throws declarations, result-carrier profiles,
 NSError bridge markers, and reserved `try`/`throw`/`catch` parse boundary as
 one coupled compile surface instead of leaving later error-runtime work to
-reconstruct source truth from deleted milestone scripts or stale planning
+reconstruct source ownership from deleted milestone scripts or stale planning
 packets.
 
 ## Catch Filter And Finalization Source Surface
@@ -618,9 +661,9 @@ packets.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_positive.objc3`
@@ -645,9 +688,9 @@ source forms are valid or try-eligible.
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3`
@@ -669,9 +712,9 @@ of hand-waving over what is already enforced in the compiler.
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/bridge_legality_positive.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_native_fail_closed.objc3`
@@ -685,7 +728,7 @@ of hand-waving over what is already enforced in the compiler.
     - `tests/tooling/fixtures/native/bridge_legality_bad_status_return_negative.objc3`
 
 This is the authoritative diagnostics boundary for bridged error callables and
-their unwind compatibility rules. It freezes the live legality model, the
+their unwind legality rules. It freezes the live legality model, the
 native fail-closed lowering boundary, and the exact negative diagnostic corpus
 so later lowering and runtime work cannot silently relax or reinterpret the
 compiler contract.
@@ -703,9 +746,9 @@ compiler contract.
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_out_abi_positive.objc3`
     - `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`
@@ -724,7 +767,7 @@ artifact surface that packaged builds actually consume.
   - `runtime_error_runtime_abi_cleanup_surface`
 - authoritative runtime boundary:
   - public ABI:
-    - `native/objc3c/src/runtime/objc3_runtime.h`
+    - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - private ABI:
     - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
     - `native/objc3c/src/runtime/objc3_runtime.cpp`
@@ -747,10 +790,10 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
   - `runtime_error_lowering_unwind_bridge_helper_surface`
 - authoritative live code paths:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3`
   - probes:
@@ -782,7 +825,7 @@ surfaces.
     - `objc3_runtime_copy_realized_class_graph_state_for_testing`
     - `objc3_runtime_copy_realized_class_entry_for_testing`
     - `objc3_runtime_copy_protocol_conformance_query_for_testing`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -823,10 +866,10 @@ sidecars, stale milestone notes, or synthetic probes.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/block_source_model_completion_positive.objc3`
     - `tests/tooling/fixtures/native/block_source_storage_annotations_positive.objc3`
@@ -856,7 +899,7 @@ block invocation, byref forwarding, owned capture preservation, and ARC debug
 snapshots as one coupled compile artifact.
 Downstream block lowering, byref forwarding, ownership transfer, and ARC
 automation work must extend this emitted surface instead of reconstructing
-truth from sidecar-only notes, probe-local assumptions, or milestone-local
+truth from sidecar-only notes, probe-local assumptions, or release-scope
 scaffolding.
 
 The coupled source surface also carries the private runtime snapshot
@@ -879,9 +922,9 @@ symbol inventories from ad hoc probes.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3`
     - `tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3`
@@ -906,7 +949,7 @@ modes, retainable-family legality, and the normalized owned/weak/unowned block
 capture profile before lowering or runtime lifetime expansion. Downstream
 semantic, lowering, and runtime work must extend this emitted surface instead
 of reinterpreting capture-family truth from ad hoc lowering state or
-milestone-local notes.
+release-scope notes.
 
 ## Block/ARC Lowering And Helper Surface
 
@@ -945,10 +988,10 @@ milestone-local notes.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3`
@@ -975,7 +1018,7 @@ helper summaries, and private runtime hook symbols that together describe the
 current executable block/ARC lowering story, including escaping byref and owned
 capture lowering through the native runtime path. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
-boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
+boundary truth from one-off probes, sidecar notes, or release-scope scaffolds.
 
 ## Block/ARC Runtime ABI Surface
 
@@ -983,7 +1026,7 @@ boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
   - `runtime_block_arc_runtime_abi_surface`
 - authoritative header boundary:
   - public header:
-    - `native/objc3c/src/runtime/objc3_runtime.h`
+    - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - internal header:
     - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
 - authoritative public runtime ABI boundary:
@@ -1008,7 +1051,7 @@ boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
   - `objc3_runtime_store_weak_current_property_i32`
   - `objc3_runtime_copy_arc_debug_state_for_testing`
   - `objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
 This is the authoritative live runtime ABI boundary for `objc3c.runtime.blockarc.runtimeabisurface.v1`. It
@@ -1044,7 +1087,7 @@ hoc runtime inspection.
   - byref-layout symbolized-site counts
   - runtime-support-library link-wiring readiness
   - deterministic replay key
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1054,7 +1097,7 @@ hoc runtime inspection.
 
 This is the authoritative cross-module block-ownership preservation boundary.
 It freezes the fact that emitted runtime-import surfaces and the emitted
-cross-module link plan, not milestone-local notes or ad hoc LLVM inspection,
+cross-module link plan, not release-scope notes or ad hoc LLVM inspection,
 carry the preserved invoke-thunk, byref-helper, copy/dispose, escape, and
 runtime-link facts for imported block-heavy modules.
 
@@ -1072,7 +1115,7 @@ runtime-link facts for imported block-heavy modules.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
   - `Objc3PropertyDecl.ivar_binding_symbol`
@@ -1087,7 +1130,7 @@ runtime-link facts for imported block-heavy modules.
   - `Objc3PropertyDecl.executable_ivar_layout_slot_index`
   - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
   - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1124,7 +1167,7 @@ non-goals.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
@@ -1133,7 +1176,7 @@ non-goals.
   - `Objc3PropertyDecl.has_atomicity_conflict`
   - `Objc3PropertyDecl.property_attribute_profile`
   - `objc3_runtime_property_entry_snapshot.property_attribute_profile`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1170,14 +1213,14 @@ non-goals.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - frozen semantic models:
   - lowering metadata:
     - `runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path`
   - helper selection:
     - `plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1220,15 +1263,15 @@ or ad hoc IR inspection.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - frozen semantic models:
   - property table:
     - `property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records`
   - ivar layout:
-    - `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records`
+    - `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records`
   - accessor binding:
     - `effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1265,15 +1308,15 @@ body or layout truth outside the live lowering path.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - frozen semantic models:
   - descriptor model:
-    - `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
+    - `ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering`
   - offset globals:
     - `one-retained-i64-offset-global-per-emitted-ivar-binding`
   - layout tables:
     - `declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3`
@@ -1306,7 +1349,7 @@ runtime or in sidecars.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - frozen semantic models:
   - source model:
@@ -1315,7 +1358,7 @@ runtime or in sidecars.
     - `synthesized-getter-setter-bodies-lower-directly-to-runtime-current-property-helper-calls-without-storage-globals`
   - property descriptor model:
     - `property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1331,7 +1374,7 @@ runtime or in sidecars.
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
-  - `no-storage-global-fallbacks-or-sidecar-body-proof`
+  - `no-storage-global-retired-routes-or-sidecar-body-proof`
 
 This is the authoritative synthesized-accessor body lowering boundary. It
 freezes the fact that missing effective accessors become emitted method bodies
@@ -1368,7 +1411,7 @@ and descriptor inventories rather than being inferred from source-only proof.
     - `compile-manifest-registration-descriptor-object-and-llvm-ir-co-publish-realization-lowering-and-reflection-artifacts`
   - reflection artifact handoff:
     - `property-metadata-and-ownership-artifacts-remain-coupled-to-lowered-dispatch-accessor-and-executable-realization-record-outputs`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1388,7 +1431,7 @@ descriptor, object, LLVM IR, and provenance artifacts for lowered realization
 records and reflection metadata, and that those artifacts stay coupled to the
 same dispatch/accessor lowering path consumed by live executable probes.
 Downstream work must extend this emitted surface instead of inferring lowering
-truth from ad hoc IR inspection, source-only manifests, or milestone-local
+truth from ad hoc IR inspection, source-only manifests, or release-scope
 notes.
 
 ## Dispatch-Table And Reflection-Record Lowering Surface
@@ -1422,7 +1465,7 @@ notes.
     - `selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts`
   - reflection-record lowering:
     - `realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1440,7 +1483,7 @@ roots, runtime dispatch-thunk lowering, executable realization records, and
 metadata aggregate roots through the same manifest, object, and LLVM IR
 artifacts consumed by live executable probes. Downstream work must extend this
 emitted surface instead of rediscovering selector-table or reflection-record
-truth from ad hoc IR inspection or milestone-local notes.
+truth from ad hoc IR inspection or release-scope notes.
 
 ## Reflection Query Surface
 
@@ -1459,7 +1502,7 @@ truth from ad hoc IR inspection or milestone-local notes.
   - `objc3_runtime_copy_property_registry_state_for_testing`
   - `objc3_runtime_copy_property_entry_for_testing`
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1498,12 +1541,12 @@ from source-side manifests alone.
     - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - frozen semantic models:
   - lookup resolution order:
-    - `seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback`
+    - `seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-strict-dispatch-error`
   - selector materialization:
     - `metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup`
   - unresolved selector behavior:
-    - `negative-cache-entry-preserved-and-deterministic-fallback-returned`
-- authoritative proof paths:
+    - `negative-cache-entry-preserved-and-typed-strict-dispatch-error-returned`
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1543,7 +1586,7 @@ payloads or stale planning notes.
     - `realized-class-entries-publish-stable-class-metaclass-superclass-and-super-metaclass-owner-identities`
   - protocol conformance:
     - `realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1583,10 +1626,10 @@ milestone notes, or synthetic summaries.
   - category attachment:
     - `registration-attaches-category-owned-instance-and-protocol-members-onto-live-realized-classes-before-dispatch`
   - merged dispatch resolution:
-    - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-fallback`
+    - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-strict-error`
   - attached protocol visibility:
     - `attached-categories-publish-owner-and-name-through-realized-class-entries-and-protocol-conformance-queries`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1600,7 +1643,7 @@ milestone notes, or synthetic summaries.
 This is the authoritative category-attachment and merged-dispatch boundary. It
 freezes the fact that live registration attaches category-owned methods and
 protocol conformance before runtime dispatch, that attached implementations win
-before superclass/protocol fallback, and that attached category owner/name
+before superclass/protocol strict-error checks, and that attached category owner/name
 facts remain queryable through the same compile-coupled executable path used by
 dispatch and reflection. Downstream work must extend this emitted surface
 instead of reconstructing category merge truth from ad hoc sidecars or stale
@@ -1634,7 +1677,7 @@ planning notes.
     - `missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state`
   - runtime coherence diagnostics:
     - `reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1653,7 +1696,7 @@ without mutating runtime state, and that reflected selector/owner/layout/
 ownership metadata must remain coherent with live dispatch and attached-protocol
 results. Downstream work must extend this emitted surface instead of
 reconstructing coherence from source-only manifests, ad hoc probe payloads, or
-milestone-local notes.
+release-scope notes.
 
 ## Cross-Module Realized-Metadata Replay Preservation
 
@@ -1678,7 +1721,7 @@ milestone-local notes.
   - translation-unit identity keys
   - registration ordinals
   - replay/reset readiness and bootstrap replay symbols
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1686,7 +1729,7 @@ milestone-local notes.
     - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
 
 This is the authoritative cross-module realized-metadata replay boundary. It
-freezes the fact that the emitted cross-module link plan, not milestone-local
+freezes the fact that the emitted cross-module link plan, not release-scope
 notes or ad hoc probe interpretation, carries the preserved descriptor-count,
 identity, registration-order, and replay-readiness facts for imported and local
 runtime images. Downstream work must consume that emitted artifact and its
@@ -1723,7 +1766,7 @@ text or sidecar-only summaries.
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `objc3_runtime_copy_dispatch_state_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1747,7 +1790,7 @@ the fact that the public runtime header stays at registration, selector lookup,
 dispatch, and reset, while object-model lookup/reflection proof remains on the
 private testing snapshot boundary used by the live runtime probes. Downstream
 work must consume this emitted surface instead of widening the public ABI or
-reconstructing query truth from milestone-local probe assumptions.
+reconstructing query truth from release-scope probe assumptions.
 
 ## Realization Lookup And Reflection Implementation
 
@@ -1772,7 +1815,7 @@ reconstructing query truth from milestone-local probe assumptions.
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `objc3_runtime_copy_dispatch_state_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - fixture:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
   - probes:
@@ -1819,7 +1862,7 @@ replay of registered images from the retained catalog.
 ## Acceptance Suite Surface
 
 - authoritative suite:
-  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
 - authoritative report:
   - `tmp/reports/runtime/acceptance/summary.json`
 - machine-readable key:
@@ -1837,7 +1880,7 @@ forward when a composite action runs runtime acceptance.
   - `scripts/shared_compiler_runtime_acceptance_harness.py`
 - live executable suites:
   - `runtime-acceptance`
-  - `public-test-fast`
+  - `public-test-smoke`
   - `public-test-full`
 - harness summary root:
   - `tmp/reports/runtime/shared-executable-acceptance-harness`
@@ -1849,16 +1892,16 @@ reports to publish the runtime claim boundary, runtime state publication
 surface, and acceptance suite surface contracts, and then writes a shared
 summary that points back to those child executable reports.
 
-## Integrated Proof Packet
+## Integrated Evidence Bundle
 
 - runner:
-  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+  - `npm run objc3c -- proof-runtime-architecture`
 - public action:
-  - `python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture`
+  - `npm run objc3c -- proof-runtime-architecture`
 - packet path:
   - `tmp/reports/runtime/architecture-proof/summary.json`
 
-The integrated runtime architecture proof packet is a generic integration
+The integrated runtime architecture evidence bundle is a generic integration
 artifact over the shared harness, the public workflow report, and the direct
 runtime acceptance report. It only passes when all three agree on the runtime
 claim boundary, runtime state publication surface, acceptance suite surface,
@@ -1867,18 +1910,21 @@ runtime installation ABI surface, and runtime loader lifecycle surface.
 ## Integrated Validation Path
 
 - runner:
-  - `scripts/check_objc3c_runtime_architecture_integration.py`
+  - `npm run objc3c -- validate-runtime-architecture`
 - public action:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+  - `npm run objc3c -- validate-runtime-architecture`
 - summary path:
   - `tmp/reports/runtime/architecture-integration/summary.json`
 
 The integrated runtime architecture validation path runs the shared harness over
 `public-test-full`, then requires the resulting full public-workflow report to
-stay aligned with the runtime architecture proof packet and the direct runtime
+stay aligned with the runtime architecture evidence bundle and the direct runtime
 acceptance report. It fails closed if the full workflow drops the smoke,
 runtime-acceptance, or replay child steps, or if any published runtime
-architecture surface drifts between the full workflow and the proof packet.
+architecture surface drifts between the full workflow and the evidence bundle.
+
+Direct helper paths named in this runtime architecture chapter are
+implementation anchors for the workflow actions, not public commands.
 
 ## Claim Boundary
 
@@ -1891,14 +1937,15 @@ architecture surface drifts between the full workflow and the proof packet.
 - claim-only until later closure work lands:
   - any surface described only by comments, sidecars, or private placeholders
   - synthetic `.ll` or hand-authored artifacts with no matching compile output
-  - proof that depends on compatibility shims without a coupled emitted object
-  - future runtime capability that would require widening
-    `native/objc3c/src/runtime/objc3_runtime.h`
+  - proof that depends on non-authoritative test surfaces without a coupled emitted object
+  - strict dispatch completion without live acceptance probes covering typed
+    success and structured error cases
 
 ## Explicit Non-Goals
 
-- no milestone-specific compile wrappers, proof packets, or closeout sidecars
-- no parallel dispatch or installation ABI outside the current runtime header
+- no milestone-specific compile wrappers, evidence bundles, or closeout sidecars
+- no claim beyond the named runtime module tree and the live helper/probe
+  evidence that exercises it
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe
   path can execute today
@@ -1909,7 +1956,7 @@ cannot silently overclaim from sidecars or synthetic artifacts.
 
 The runtime-owned subsystem dependency model is anchored in
 `native/objc3c/src/runtime/ARCHITECTURE.md` and enforced by
-`npm run check:objc3c:boundaries`.
+`npm run objc3c -- check-dependency-boundaries`.
 ## Diagnostics
 
 The live frontend writes deterministic diagnostics in two forms:
@@ -1965,7 +2012,7 @@ Use these live paths:
   - `docs/objc3c-native.md`
 - generated operator and machine-facing appendix:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-public-command-surface`
 - generated proof/report outputs:
   - `tmp/reports/`
   - `tmp/artifacts/`
@@ -1988,12 +2035,24 @@ Treat these as authoritative only when they come from a real compiler invocation
 Do not treat these as authoritative proof:
 
 - hand-written `.ll` files
-- compatibility shims by themselves
+- non-authoritative test surfaces by themselves
 - sidecars that are not tied to a reproducible compile and probe path
 
 ## Current Corrective Gaps
 
-- unresolved sends still have one deterministic arithmetic fallback path in `native/objc3c/src/runtime/objc3_runtime.cpp`
+- unresolved sends must publish typed strict dispatch errors through the checked
+  runtime result path
+- strict dispatch status/error coverage must remain live-probe-backed and must
+  include success for nil receiver, resolved live methods, resolved builtins,
+  and resolved property accessors, plus structured errors for unknown selectors,
+  unknown receiver classes, missing class graph state, rejected return
+  shapes, rejected argument layouts, malformed metadata, and category
+  conflicts
+- the hard-cutover runtime module tree under
+  `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`
+  is the current named runtime layout for module-tree claims; those claims cover
+  the wired dispatch, selector, image, and class-graph helper paths only when
+  the linked strict dispatch probes and gates publish matching status evidence
 - synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path
 ## Live Validation Commands
@@ -2001,36 +2060,47 @@ Do not treat these as authoritative proof:
 From repo root:
 
 ```powershell
-npm run test:fast
-npm run test:objc3c
-npm run test:objc3c:execution-smoke
-npm run test:objc3c:execution-replay-proof
-npm run test:objc3c:runtime-acceptance
-npm run test:objc3c:full
-npm run test:objc3c:nightly
-npm run test:ci
-npm run test:objc3c:runtime-architecture
-npm run proof:objc3c
-npm run check:task-hygiene
-npm run check:objc3c:boundaries
+npm run objc3c -- test-smoke
+npm run objc3c -- test-default
+npm run objc3c -- test-behavior-matrix
+npm run objc3c -- test-recovery
+npm run objc3c -- test-execution-smoke
+npm run objc3c -- test-execution-replay
+npm run objc3c -- test-runtime-acceptance
+npm run objc3c -- test-full
+npm run objc3c -- test-nightly
+npm run objc3c -- test-ci
+npm run objc3c -- validate-runtime-architecture
+npm run objc3c -- proof-objc3c
+npm run objc3c -- check-task-hygiene
+npm run objc3c -- check-dependency-boundaries
 ```
 
 Targeted entrypoints accept bounded selectors when you need signal without the full corpus:
 
 ```powershell
-npm run test:objc3c:execution-smoke -- -Limit 12
-npm run test:objc3c -- -Limit 24
-npm run test:objc3c:fixture-matrix -- -ShardIndex 0 -ShardCount 4
-npm run test:objc3c:negative-expectations -- -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
-npm run test:objc3c:execution-replay-proof -- -CaseId synthesized-accessor
+npm run objc3c -- test-execution-smoke -Limit 12
+npm run objc3c -- test-execution-smoke -Limit 24
+npm run objc3c -- test-fixture-matrix -ShardIndex 0 -ShardCount 4
+npm run objc3c -- test-negative-expectations -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
+npm run objc3c -- test-execution-replay -CaseId synthesized-accessor
 ```
 
 Composite runner entrypoints also write one integrated report to `tmp/reports/objc3c-public-workflow/<action>.json`, with the exact child-suite summary paths captured from the live smoke, runtime-acceptance, replay, recovery, and matrix scripts.
 
+## Gate Shape
+
+- default gate: `npm run objc3c -- test-default`
+- smoke gate: `npm run objc3c -- test-smoke`
+- full gate: `npm run objc3c -- test-full`
+- release gate: `npm run objc3c -- test-nightly`
+
 ## What The Live Test Surface Covers
 
-- `test-fast`: bounded execution-smoke slice, runtime acceptance, and canonical replay/native-truth proof
-- `test-smoke`: full runnable execution smoke corpus
+- `test-default`: public default entrypoint; runs `test-smoke`
+- `test-smoke`: behavior-first parser/sema/lowering/IR/runtime/e2e matrix, runtime acceptance, and canonical replay/native-truth proof
+- `test-behavior-matrix`: direct behavior fixture execution from `tests/native`
+- `test-execution-smoke`: full runnable execution smoke corpus
 - `test-recovery`: recovery compile success and deterministic diagnostics replay as a non-default heavy path
 - `test-full`: smoke, runtime acceptance, and replay/native-truth proof without the recovery fan-out
 - `test-nightly`: full validation plus recovery, positive fixture-matrix, and static negative-expectation sweeps
@@ -2041,7 +2111,7 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
   - `test-runtime-acceptance`: runtime acceptance and ABI/accessor proof
   - `test-negative-expectations`: negative expectation header and token enforcement
   - `test-fixture-matrix`: broad positive dispatch and artifact sanity
-- `test:objc3c:runtime-architecture`: full public workflow plus runtime architecture proof-packet alignment
+- `validate-runtime-architecture`: full public workflow plus runtime architecture proof-packet alignment
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols
@@ -2049,31 +2119,77 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 - runtime-backed storage ownership reflection over emitted property descriptors
 - native-output provenance through real compile and probe paths
 
-## Current Corrective Gaps Under Test
+## Runtime Dispatch Acceptance Gates
 
-- unresolved dispatch still has one deterministic fallback path after slow-path miss
-- synthesized accessor IR still carries transitional lowering residue even though live getter/setter execution is already runtime-backed
+- strict dispatch is claimable only when every admitted send returns typed
+  success for nil receiver, resolved live method, resolved builtin, or resolved
+  property accessor behavior through live status evidence
+- runtime dispatch errors are claimable only when tests cover unknown selector,
+  unknown receiver class, missing class graph, rejected return shape,
+  rejected argument layout, malformed metadata, and category conflict cases
+- linked strict dispatch status probes, including
+  `tests/tooling/runtime/strict_dispatch_error_status_probe.cpp`, are required
+  evidence for the dispatch gate; manifest or source inventory alone is not
+  enough to claim strict dispatch completion
+- synthesized getter/setter execution is runtime-backed on live paths
 - native-output truth requires the emitted object and linked probe to stay coupled end to end
 # libobjc3c_frontend Library API
 
-This document describes the live embedding surface exposed by `native/objc3c/src/libobjc3c_frontend/api.h`.
+This document describes the live embedding surface exposed by `native/objc3c/src/libobjc3c_frontend/objc3c_frontend.h`.
 
 ## Public Surface
 
-- primary header: `native/objc3c/src/libobjc3c_frontend/api.h`
-- version header: `native/objc3c/src/libobjc3c_frontend/version.h`
-- optional C shim header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- primary header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend.h`
+- version header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_version.h`
+- context header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_context.h`
+- options header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_options.h`
+- result header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_result.h`
+- diagnostic header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_diagnostic.h`
+- artifact header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_artifact.h`
+- string header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_string.h`
+- error header: `native/objc3c/src/libobjc3c_frontend/objc3c_frontend_error.h`
+- C-only name surface: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- C-only owned result surface: `native/objc3c/src/libobjc3c_frontend/public/c_api_owned_result.h`
 
-`api.h` exposes a C ABI with an opaque frontend context type.
+`objc3c_frontend.h` exposes the canonical C ABI with an opaque frontend context type.
+
+## Header Ownership
+
+- `objc3c_frontend_version.h`: export macros, version values, and ABI gates
+- `objc3c_frontend_context.h`: opaque context lifecycle
+- `objc3c_frontend_options.h`: borrowed compile inputs, paths, and emit options
+- `objc3c_frontend_result.h`: result records, status values, and result-owned strings
+- `objc3c_frontend_diagnostic.h`: stage summary and severity metadata
+- `objc3c_frontend_artifact.h`: artifact kind selectors
+- `objc3c_frontend_string.h`: owned string and borrowed view lifetime rules
+- `objc3c_frontend_error.h`: context error copy semantics
+- `c_api.h`: C-only names over the same ABI and ownership rules
+
+Headers in `native/objc3c/src/libobjc3c_frontend/` that are not listed in the
+public surface are internal C++ owner headers. They may populate public structs
+or publish artifacts, but they are not package-facing C ABI headers.
+
+## Ownership Rules
+
+- owned C result handles are allocated by `objc3c_frontend_c_compile_*_owned()`
+  and released by `objc3c_frontend_c_owned_result_destroy()`
+- caller-provided compile result records are zero-initialized before first use
+- result-owned strings are released by result destruction, not by string release
+- accessor-returned result strings/views are borrowed until result destruction
+- standalone owned strings are released by the matching string release function
+- stage summaries are value snapshots; detailed diagnostics are read through the
+  diagnostics artifact path when produced
+- undefined artifact selectors return no path
 
 ## Stability
 
-- exported symbols, enums, and struct layouts in `api.h` are the ABI boundary
-- append-only growth for public structs
+- exported symbols, enums, and struct layouts in `objc3c_frontend*.h` are the ABI boundary
 - zero-initialize option and result structs before use
 
-## Compatibility and Versioning
+## ABI Version Gate
 
-- version macros live in `version.h`
-- use `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
+- version macros live in `objc3c_frontend_version.h`
+- use `objc3c_frontend_is_exact_abi_version(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
 - `objc3c_frontend_version().abi_version` must match `objc3c_frontend_abi_version()`
+- mismatched ABI versions are unsupported; callers must use the current header
+  and library pair rather than retired aliases

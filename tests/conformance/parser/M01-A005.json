@@ -10,7 +10,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-6-6-4",
     "docs/reference/legacy_spec_anchor_index.md#f-4"
   ],
-  "source": "id m01a005_normalize(id value);\n\nid m01a005_postfix_or_fallback(id value, id fallback) {\n    return (m01a005_normalize(value)?) ?? fallback;\n}\n",
+  "source": "id m01a005_normalize(id value);\n\nid m01a005_postfix_or_retired_route(id value, id retired route) {\n    return (m01a005_normalize(value)?) ?? retired route;\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": []

@@ -5,11 +5,11 @@ from objc3c_tooling.json_io import write_json_file
 import json
 from pathlib import Path
 from typing import Any
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_developer_tooling.md"
-RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
 PACKAGE_JSON = ROOT / "package.json"
 OUT_DIR = ROOT / "tmp/reports/developer-tooling/artifact-contract"
 JSON_OUT = OUT_DIR / "editor_protocol_debug_artifact_contract_summary.json"
@@ -23,10 +23,14 @@ def read_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    runner_text = RUNNER_PATH.read_text(encoding="utf-8")
     package_payload = read_json(PACKAGE_JSON)
     schema_paths = [ROOT / path for path in contract["schema_paths"]]
     scripts = package_payload.get("scripts", {})
+    required_actions = [str(action) for action in contract["public_actions"]]
+    registered_actions = set(public_workflow_action_names())
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in scripts
+    missing_actions = [action for action in required_actions if action not in registered_actions]
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_artifact_contract_summary.py",
@@ -34,9 +38,10 @@ def main() -> int:
         "runbook_has_artifact_contract_heading": "## Editor Protocol And Debug Artifact Contract" in runbook_text,
         "runbook_mentions_combined_surface": "one machine-owned editor tooling surface" in runbook_text,
         "runbook_mentions_tmp_report_family": "tmp/reports/developer-tooling/" in runbook_text,
-        "runbook_mentions_public_runner_entrypoint": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
-        "runner_can_be_extended_at_declared_spine": "validate-developer-tooling" in runner_text,
-        "package_retains_developer_tooling_script": scripts.get("test:objc3c:developer-tooling") == "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
+        "runbook_mentions_public_workflow_actions": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
+        "workflow_registry_exposes_declared_spine": "validate-developer-tooling" in registered_actions,
+        "package_exposes_objc3c_bridge": package_bridge_exists,
+        "all_required_actions_registered": not missing_actions,
     }
 
     summary = {
@@ -45,8 +50,12 @@ def main() -> int:
         "surface_kind": contract["surface_kind"],
         "schema_path_count": len(contract["schema_paths"]),
         "canonical_report_path_count": len(contract["canonical_report_paths"]),
-        "public_action_count": len(contract["public_actions"]),
-        "public_script_count": len(contract["public_scripts"]),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "required_actions": required_actions,
+        "missing_actions": missing_actions,
+        "package_bridge": package_bridge,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "artifact_section_count": len(contract["artifact_sections"]),
         "source_artifact_count": len(contract["source_artifacts"]),
         "checks": checks,
@@ -61,8 +70,8 @@ def main() -> int:
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Schemas: `{summary['schema_path_count']}`\n"
         f"- Canonical report paths: `{summary['canonical_report_path_count']}`\n"
-        f"- Public actions: `{summary['public_action_count']}`\n"
-        f"- Public scripts: `{summary['public_script_count']}`\n"
+        f"- Required actions: `{summary['required_action_count']}`\n"
+        f"- Package bridge count: `{summary['package_bridge_count']}`\n"
         f"- Artifact sections: `{summary['artifact_section_count']}`\n"
         f"- Source artifacts: `{summary['source_artifact_count']}`\n"
         f"- Status: `{summary['status']}`\n",

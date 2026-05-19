@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +29,7 @@ RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "r
 
 def ensure_posture() -> tuple[dict[str, Any], dict[str, Any]]:
     if not POSTURE_PATH.is_file() or not POSTURE_SUMMARY.is_file():
-        result = run_capture([sys.executable, str(POSTURE_BUILD)])
+        result = run_capture(python_script_command(POSTURE_BUILD))
         if result.returncode != 0:
             raise RuntimeError("failed to build security posture")
     posture = load_json(POSTURE_PATH)

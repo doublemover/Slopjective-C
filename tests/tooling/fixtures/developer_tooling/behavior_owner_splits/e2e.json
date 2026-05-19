@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling/boundary_inventory.json",
+    "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+    "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json",
+    "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json",
+    "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+    "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json"
+  ],
+  "support_boundary": "e2e/tooling ownership covers shipped developer-tooling contract behavior only: public actions, package bridge, formatter source pair, inspect-editor-tooling, format-objc3c, materialize-playground-workspace, compile observability, language-server published capabilities, declaration/symbol navigation, formatter debug surface, editor/debug artifact contract, workspace drill commands, packaged CLI-to-editor manifest fields, and runnable developer-tooling validation. Unpublished capabilities and hosted LLVM overclaims remain non-positive.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "public_action:inspect-editor-tooling",
+    "public_action:format-objc3c",
+    "public_action:materialize-playground-workspace",
+    "public_action:validate-developer-tooling",
+    "public_action:validate-runnable-developer-tooling",
+    "package_bridge:objc3c",
+    "supported_capability:publishDiagnostics",
+    "supported_capability:documentSymbol",
+    "supported_capability:workspaceSymbol",
+    "supported_capability:definition",
+    "supported_capability:documentFormatting",
+    "supported_capability:debugArtifactInspection",
+    "tooling_contract:formatter-output",
+    "tooling_contract:declaration-breakpoint-and-object-symbol-inspection",
+    "tooling_contract:packaged-cli-to-editor"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/developer_tooling",
+  "retired_surface_rule": "unpublished language-server capability claims, hosted LLVM support without object emission, local-only hosted proof, source-map statement stepping, wrapper-only action capability, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode tooling rows, gate tooling rows, retired route tooling rows, compatibility tooling rows, migration-only tooling rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

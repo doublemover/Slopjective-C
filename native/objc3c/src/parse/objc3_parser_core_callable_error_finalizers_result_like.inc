@@ -1,0 +1,11 @@
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_function_publication.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_method_publication.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_profile_rebuild.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_normalization_status.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_function_finalization.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_result_like_method_finalization.inc"

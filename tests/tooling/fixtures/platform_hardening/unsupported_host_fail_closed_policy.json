@@ -1,0 +1,84 @@
+{
+  "contract_id": "objc3c.platform.hardening.unsupported.host.fail_closed.policy.v1",
+  "surface_kind": "unsupported-host-fail-closed-policy",
+  "milestone": "M326",
+  "issue": "M326-B002",
+  "supported_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "unsupported host attempted build package or install flow",
+      "unsupported channel claim reached publication",
+      "support tier overclaim bypassed fail-closed policy"
+    ]
+  },
+  "hard_fail_classes": [
+    {
+      "failure_id": "unsupported-host-os-or-arch",
+      "applies_to": [
+        "build",
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "missing-required-tier-tool",
+      "applies_to": [
+        "build",
+        "package",
+        "install"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "unsupported-channel-claim",
+      "applies_to": [
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "support-tier-overclaim",
+      "applies_to": [
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    }
+  ],
+  "allowed_fail_closed_non_build_actions": [
+    {
+      "action_id": "capability-inspection-only",
+      "allowed_actions": [
+        "check-llvm-capabilities",
+        "check-documentation-surface",
+        "check-repo-superclean-surface"
+      ],
+      "claim_boundary": "read-only inspection must not widen support-tier or install claims and must not continue build package or install flows"
+    }
+  ],
+  "forbidden_phrases": [
+    "best effort supported",
+    "probably compatible",
+    "supported if LLVM is installed"
+  ],
+  "required_claims": [
+    "unsupported hosts fail closed",
+    "package install rollback and publication claims stay on the checked-in matrix",
+    "tool presence does not widen host support by itself"
+  ]
+}

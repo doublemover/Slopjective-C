@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_core_method_parameters_parameter_type_suffix.inc"
+#include "parse/objc3_parser_core_method_parameters_control_bodies.inc"
+#include "parse/objc3_parser_core_method_parameters_error_profile_builders.inc"
+#include "parse/objc3_parser_core_method_parameters_catch_clause_parsing.inc"
+#include "parse/objc3_parser_core_method_parameters_synchronization_helpers.inc"

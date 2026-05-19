@@ -54,7 +54,7 @@ def main() -> int:
     app_surface = manifest.get("application_architecture_surface", {})
     command_surfaces = manifest.get("command_surfaces", {})
     public_actions = manifest.get("application_architecture_public_actions", [])
-    public_scripts = manifest.get("application_architecture_public_scripts", [])
+    package_bridge = manifest.get("package_bridge")
     failures: list[str] = []
 
     expect(isinstance(app_surface, dict), "package manifest missing application_architecture_surface", failures)
@@ -69,27 +69,22 @@ def main() -> int:
         failures,
     )
     expect(
-        "build:objc3c:application-workspace" in public_scripts,
-        "package manifest missing application architecture public script",
+        package_bridge == "objc3c",
+        "package manifest missing objc3c package bridge",
         failures,
     )
     expect(
-        "test:objc3c:application-architecture:e2e" in public_scripts,
-        "package manifest missing runnable application architecture public script",
-        failures,
-    )
-    expect(
-        command_surfaces.get("build_application_workspace") == "npm run build:objc3c:application-workspace",
+        command_surfaces.get("build_application_workspace") == "npm run objc3c -- materialize-canonical-application-workspace",
         "package manifest missing build_application_workspace command surface",
         failures,
     )
     expect(
-        command_surfaces.get("application_architecture") == "npm run test:objc3c:application-architecture",
+        command_surfaces.get("application_architecture") == "npm run objc3c -- validate-application-architecture",
         "package manifest missing application_architecture command surface",
         failures,
     )
     expect(
-        command_surfaces.get("application_architecture_e2e") == "npm run test:objc3c:application-architecture:e2e",
+        command_surfaces.get("application_architecture_e2e") == "npm run objc3c -- validate-runnable-application-architecture",
         "package manifest missing application_architecture_e2e command surface",
         failures,
     )
@@ -131,7 +126,8 @@ def main() -> int:
         "manifest_path": repo_rel(manifest_path),
         "application_architecture_surface": app_surface,
         "application_architecture_public_actions": public_actions,
-        "application_architecture_public_scripts": public_scripts,
+        "package_bridge": "objc3c",
+        "packaged_package_bridge": package_bridge,
         "failures": failures,
         "packaged_reports": {
             "canonical_workspace_summary": repo_rel(

@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-diagnostic-outcome-code-index",
+  "source_basis": "hand-authored from checked-in retired-surface, fixture-family, and behavior-outcome indexes; no scripts, tests, builds, lints, formatters, generators, npm, cmake, gh, or push were run for this index",
+  "policy": {
+    "primary_axis": "diagnostic or strict-error code before fixture path",
+    "code_ownership_rule": "diagnostic codes identify the rejecting owner for retired or unsupported surfaces",
+    "absence_rule": "absent retired-source lane support has no diagnostic code because no accepted public surface exists",
+    "support_rule": "a code entry is rejection or strict-error evidence, not compatibility support"
+  },
+  "codes": [
+    {
+      "code": "O3C002",
+      "outcome": "parser_rejection",
+      "retired_surface": "old-mode literal aliases",
+      "owning_issues": [
+        "#8134",
+        "#8144",
+        "#8150"
+      ],
+      "fixtures": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+        "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3"
+      ],
+      "owner_boundary": "legacy literal spellings are parser/e2e rejections"
+    },
+    {
+      "code": "O3C001",
+      "outcome": "parser_rejection",
+      "retired_surface": "removed retired mode flag",
+      "owning_issues": [
+        "#8134",
+        "#8144",
+        "#8150"
+      ],
+      "fixtures": [
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3"
+      ],
+      "owner_boundary": "retired-mode flags are removed parser surfaces"
+    },
+    {
+      "code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "outcome": "parser_rejection",
+      "retired_surface": "removed parser retired route flag",
+      "owning_issues": [
+        "#8134",
+        "#8144",
+        "#8150"
+      ],
+      "fixtures": [
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+      ],
+      "owner_boundary": "parser retired route flags are removed parser surfaces"
+    },
+    {
+      "code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "outcome": "semantic_rejection",
+      "retired_surface": "removed retired adapter gate",
+      "owning_issues": [
+        "#8135",
+        "#8145",
+        "#8147"
+      ],
+      "fixtures": [
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3"
+      ],
+      "owner_boundary": "retired adapter gates are semantic diagnostics"
+    },
+    {
+      "code": "O3S214",
+      "outcome": "semantic_rejection",
+      "retired_surface": "unsupported or unknown assignment target",
+      "owning_issues": [
+        "#8135",
+        "#8146",
+        "#8147"
+      ],
+      "fixtures": [
+        "tests/native/sema/types/assignment_unknown_target_rejected.objc3"
+      ],
+      "owner_boundary": "frontend type-surface gaps reject through semantic diagnostics"
+    },
+    {
+      "code": "O3S221",
+      "outcome": "semantic_rejection",
+      "retired_surface": "unsupported feature claim",
+      "owning_issues": [
+        "#8135",
+        "#8145",
+        "#8147"
+      ],
+      "fixtures": [
+        "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
+      ],
+      "owner_boundary": "unsupported feature claims are semantic diagnostics, not deferred compatibility lanes"
+    },
+    {
+      "code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "outcome": "lowering_or_link_strict_error",
+      "retired_surface": "removed runtime dispatch retired route flag",
+      "owning_issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ],
+      "fixtures": [
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
+      ],
+      "owner_boundary": "runtime retired route flags are removed lowering/runtime surfaces"
+    },
+    {
+      "code": "link.unresolved_symbol",
+      "outcome": "lowering_or_link_strict_error",
+      "retired_surface": "non-nil runtime dispatch retired route linkage",
+      "owning_issues": [
+        "#8136",
+        "#8137",
+        "#8143",
+        "#8147"
+      ],
+      "fixtures": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+        "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
+      ],
+      "owner_boundary": "unresolved runtime dispatch linkage is strict-error evidence"
+    },
+    {
+      "code": "O3RT002",
+      "outcome": "runtime_strict_error",
+      "retired_surface": "unknown receiver runtime dispatch retired route",
+      "owning_issues": [
+        "#8133",
+        "#8143",
+        "#8144",
+        "#8150"
+      ],
+      "fixtures": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "runtime_probe_evidence": [
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+      ],
+      "owner_boundary": "unknown runtime dispatch receivers fail as strict runtime errors"
+    },
+    {
+      "code": "absent-support",
+      "outcome": "absent_support",
+      "retired_surface": "retired-source lane as behavior support",
+      "owning_issues": [
+        "#8145",
+        "#8149",
+        "#8150"
+      ],
+      "fixtures": [
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md"
+      ],
+      "owner_boundary": "retired-source lane support is absent from public support and positive fixtures"
+    }
+  ],
+  "cross_indexes": [
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
+    "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+    "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "tests/native/retired_surface_matrix.json",
+    "docs/issues/hard_cutover_8132_8150_evidence.json"
+  ]
+}

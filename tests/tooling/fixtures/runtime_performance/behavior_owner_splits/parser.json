@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "support_boundary": "parser ownership is provenance-only for runtime performance because workloads start from already-authored native fixtures and acceptance cases; timing, cache, report, generated-only, evidence-log, migration-only, runner-only, package-only, and counter-only rows do not create parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "fixture:tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "fixture:tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+    "fixture:tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "fixture:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+    "fixture:tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "parser retired route flags, legacy spellings, old-mode syntax, parser gates, compatibility parser lanes, generated-only parser rows, evidence-log parser rows, migration-only parser rows, timing-only parser rows, cache-only parser rows, runner-only parser rows, package-only parser rows, and counter-only parser rows remain parser rejection, strict-error, or provenance-only evidence and cannot be inferred from runtime timing rows"
+}

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,14 +33,18 @@ def main() -> int:
     scripts = package.get("scripts", {})
     if not isinstance(scripts, dict):
         raise RuntimeError("package.json scripts field drifted from an object")
+    package_bridge = str(criteria["package_bridge"])
+    package_bridge_exists = package_bridge in scripts
+    registered_actions = set(public_workflow_action_names())
 
     failures: list[str] = []
     for raw_path in criteria.get("depends_on", []):
         expect((ROOT / str(raw_path)).is_file(), f"missing dependency {raw_path}", failures)
 
-    required_public_scripts = [str(name) for name in criteria.get("required_public_scripts", [])]
-    missing_public_scripts = [name for name in required_public_scripts if name not in scripts]
-    expect(not missing_public_scripts, f"missing public scripts: {missing_public_scripts}", failures)
+    required_actions = [str(name) for name in criteria.get("required_actions", [])]
+    missing_actions = [name for name in required_actions if name not in registered_actions]
+    expect(package_bridge_exists, f"missing package bridge: {package_bridge}", failures)
+    expect(not missing_actions, f"missing workflow actions: {missing_actions}", failures)
 
     budget_families = performance_budget.get("budget_families", [])
     publication_freshness = [
@@ -69,7 +74,7 @@ def main() -> int:
             f"{cadence.get('cadence_id')} missing release operations evidence",
             failures,
         )
-        expect(cadence.get("rollback_required") is True, f"{cadence.get('cadence_id')} must require rollback evidence", failures)
+        expect(cadence.get("revert_required") is True, f"{cadence.get('cadence_id')} must require revert evidence", failures)
 
     payload = {
         "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence.summary.v1",
@@ -80,8 +85,11 @@ def main() -> int:
         "cadence_class_count": len(cadence_classes) if isinstance(cadence_classes, list) else 0,
         "publication_freshness_metric_count": len(blocking_freshness_metrics),
         "soak_acceptance_family_count": len(soak_families) if isinstance(soak_families, list) else 0,
-        "required_public_script_count": len(required_public_scripts),
-        "missing_public_scripts": missing_public_scripts,
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
+        "package_bridge": package_bridge,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
+        "missing_actions": missing_actions,
         "aging_regression_rules": criteria.get("aging_regression_rules", []),
         "release_blocking_conditions": criteria.get("release_blocking_conditions", []),
         "failures": failures,

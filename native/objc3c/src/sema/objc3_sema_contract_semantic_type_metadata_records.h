@@ -1,0 +1,6 @@
+#pragma once
+
+#include "sema/objc3_sema_contract_semantic_type_metadata_function_records.h"
+#include "sema/objc3_sema_contract_semantic_type_metadata_method_records.h"
+#include "sema/objc3_sema_contract_semantic_type_metadata_property_records.h"
+#include "sema/objc3_sema_contract_semantic_type_metadata_container_records.h"

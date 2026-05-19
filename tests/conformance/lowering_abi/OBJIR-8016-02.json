@@ -5,8 +5,8 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "native/objc3c/src/parse/objc3_parser.cpp::FinalizeObjcProgramPropertyIvarLayoutClosure",
-    "native/objc3c/src/parse/objc3_parser.cpp::FinalizeObjcInterfacePropertyIvarLayoutClosure",
+    "native/objc3c/src/parse/objc3_parser_core_surface_finalizers.inc::FinalizeObjcProgramPropertyIvarLayoutClosure",
+    "native/objc3c/src/parse/objc3_parser_core_surface_finalizers.inc::FinalizeObjcInterfacePropertyIvarLayoutClosure",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp::emit_ivar_descriptor_section",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
   ],

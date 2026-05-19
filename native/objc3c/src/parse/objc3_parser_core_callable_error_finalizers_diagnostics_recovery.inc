@@ -1,0 +1,11 @@
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_function_publication.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_method_publication.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_profile_rebuild.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_normalization_status.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_function_finalization.inc"
+
+#include "parse/objc3_parser_core_callable_error_finalizers_diagnostics_recovery_method_finalization.inc"

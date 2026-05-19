@@ -24,8 +24,8 @@
   ],
   "disallowed_optimization_moves": [
     "no alternate dispatch entrypoint",
-    "no benchmark-only runtime shim",
-    "no widening native/objc3c/src/runtime/objc3_runtime.h for performance counters alone",
+    "no benchmark-only runtime adapter",
+    "no widening native/objc3c/src/runtime/public/objc3_runtime_api.h for performance counters alone",
     "no sidecar-only timing report without a coupled runtime probe result",
     "no cache-fast-path claim without matching runtime snapshot proof"
   ],
@@ -50,7 +50,10 @@
     "docs/runbooks/objc3c_runtime_performance.md",
     "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
     "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ]
 }

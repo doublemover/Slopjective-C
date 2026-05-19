@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "lowering",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+  "positive_support_authority": "tests/native/lowering/{expressions,statements,objc_runtime,ownership}",
+  "negative_support_authority": "tests/native/lowering/errors",
+  "fixtures": [
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_keyword_elision.objc3",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/statements/if_else_statement_lowering.objc3",
+      "behavior_family": "statements",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
+      "behavior_family": "objc_runtime",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+      "behavior_family": "objc_runtime",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
+    }
+  ],
+  "retired_surface_rule": "runtime-dispatch retired route lowering remains strict-error or removed-flag rejection evidence"
+}

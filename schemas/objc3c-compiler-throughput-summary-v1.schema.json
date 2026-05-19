@@ -18,7 +18,7 @@
       "const": "objc3c.compiler.throughput.summary.v1"
     },
     "benchmark_kind": {
-      "const": "native-direct-compile-throughput"
+      "const": "objc3c-bridge-compile-throughput"
     },
     "status": {
       "type": "string",
@@ -43,5 +43,5 @@
       "type": "array"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

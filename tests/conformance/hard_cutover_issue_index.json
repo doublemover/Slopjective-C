@@ -1,0 +1,1298 @@
+{
+  "schema_version": 1,
+  "program": "objc3-hard-cutover-8132-8150",
+  "source_basis": "local commits on hard-cutover/hc-000-full-program as indexed on 2026-05-09; validation and GitHub updates intentionally not run by this worker",
+  "post_index_local_commit_refresh": [
+    {
+      "ref": "645e9c25f",
+      "summary": "HC index hard-cutover issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ]
+    },
+    {
+      "ref": "7e743549d",
+      "summary": "HC split parser recovery diagnostics and AST type owners",
+      "issues": [
+        "#8132",
+        "#8134",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ast/objc3_ast_scope_surface.cpp",
+        "native/objc3c/src/ast/objc3_ast_signature_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_recovery_boundaries.cpp",
+        "native/objc3c/src/parse/objc3_type_generic_profiles.cpp"
+      ]
+    },
+    {
+      "ref": "062da3dbc",
+      "summary": "HC split IR surface serialization owner",
+      "issues": [
+        "#8137"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_surface_serialization.cpp",
+        "native/objc3c/src/ir/objc3_ir_surface_serialization.h"
+      ]
+    },
+    {
+      "ref": "1da2a515b",
+      "summary": "HC split IR synthesized property accessor owner",
+      "issues": [
+        "#8137"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_synthesized_property_accessors.cpp",
+        "native/objc3c/src/ir/objc3_ir_synthesized_property_accessors.h"
+      ]
+    },
+    {
+      "ref": "e04c6cf4a",
+      "summary": "HC move parser shard core into parse namespace",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_core.h"
+      ]
+    },
+    {
+      "ref": "ffb2a715d",
+      "summary": "HC split config truth tables",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/config/objc3_feature_state_tables.cpp",
+        "native/objc3c/src/config/objc3_removed_command_option_table.cpp"
+      ]
+    },
+    {
+      "ref": "e435cdea9",
+      "summary": "HC split parser contract fingerprint owner",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_contract_fingerprints.h"
+      ]
+    },
+    {
+      "ref": "68f793396",
+      "summary": "HC split IR control flow lowering owner",
+      "issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_control_flow_ops.cpp",
+        "native/objc3c/src/lower/objc3_lowering_contract.h"
+      ]
+    },
+    {
+      "ref": "8dead58b3",
+      "summary": "HC split diagnostic catalog table",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.h"
+      ]
+    },
+    {
+      "ref": "3c335bfae",
+      "summary": "HC split IR runtime helper call owner",
+      "issues": [
+        "#8137",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.h"
+      ]
+    },
+    {
+      "ref": "239871c25",
+      "summary": "HC refresh issue closeout evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "4b5ca540d",
+      "summary": "HC split parser expression node owners",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_unary_expression_nodes.cpp"
+      ]
+    },
+    {
+      "ref": "94c0f0709",
+      "summary": "HC split parser statement node owners",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_assignment_statement_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_expression_statement_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_loop_control_statement_nodes.cpp"
+      ]
+    },
+    {
+      "ref": "dae4e84b4",
+      "summary": "HC split lower control flow contract owner",
+      "issues": [
+        "#8136",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/lower/contracts/control_flow_lowering_contracts.cpp"
+      ]
+    },
+    {
+      "ref": "6a9b0b23f",
+      "summary": "HC move class graph rebuild owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/class_graph.h"
+      ]
+    },
+    {
+      "ref": "f0ba25851",
+      "summary": "HC clarify public API ownership contracts",
+      "issues": [
+        "#8141",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "docs/compiler/public_c_api.md",
+        "docs/objc3c-native/src/library-api.md",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+      ]
+    },
+    {
+      "ref": "db4fe91cf",
+      "summary": "HC split JSON schema support owners",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_equivalence.cpp",
+        "native/objc3c/src/io/json/json_pointer.cpp",
+        "native/objc3c/src/io/json/json_schema_type.cpp"
+      ]
+    },
+    {
+      "ref": "c64fe1597",
+      "summary": "HC mark frontend header ownership boundaries",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "docs/compiler/public_c_api.md",
+        "docs/objc3c-native/src/library-api.md",
+        "native/objc3c/src/libobjc3c_frontend/objc3c_frontend_result_ownership.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result.h"
+      ]
+    },
+    {
+      "ref": "f35a96292",
+      "summary": "HC index refreshed closeout payloads",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "31da18e08",
+      "summary": "HC split frontend C API runner result owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_c_string.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result_contract.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_result_lifetime.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_stage_report.h"
+      ]
+    },
+    {
+      "ref": "25bde4f7f",
+      "summary": "HC split native contract owner surfaces",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_config_capability_contract.h",
+        "native/objc3c/src/contracts/objc3_frontend_diagnostic_flattening.h",
+        "native/objc3c/src/contracts/objc3_frontend_diagnostic_stage_contract.h",
+        "native/objc3c/src/contracts/objc3_native_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "5788dcf91",
+      "summary": "HC fold latest commits into issue evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "ebe18944b",
+      "summary": "HC move method resolution owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/dispatch/method_cache.cpp",
+        "native/objc3c/src/runtime/dispatch/method_cache.h"
+      ]
+    },
+    {
+      "ref": "99cab5b8a",
+      "summary": "HC split frontend C API runner option owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_options.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_option_values.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_options.cpp"
+      ]
+    },
+    {
+      "ref": "6063e4f32",
+      "summary": "HC clarify README support onboarding",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "README.md"
+      ]
+    },
+    {
+      "ref": "4653e8d07",
+      "summary": "HC split property support owner modules",
+      "issues": [
+        "#8138",
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_property_accessor_profiles.h",
+        "native/objc3c/src/support/objc3_property_ownership_profiles.h",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "c1c990e16",
+      "summary": "HC split JSON schema validation owner",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/io/json/json_schema_validation.h"
+      ]
+    },
+    {
+      "ref": "b1f1ba7a7",
+      "summary": "HC split frontend C API runner command owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_object_inspection_command.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_read_command.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_repro_command.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_shell_quote.cpp"
+      ]
+    },
+    {
+      "ref": "b0e6a33a5",
+      "summary": "HC split artifact JSON publication contract",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp",
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.h"
+      ]
+    },
+    {
+      "ref": "ed3273640",
+      "summary": "HC split ObjC type support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_objc_reference_type_profiles.h",
+        "native/objc3c/src/support/objc3_objc_type_surface_profiles.h",
+        "native/objc3c/src/support/objc3_type_spelling_consistency.cpp"
+      ]
+    },
+    {
+      "ref": "12787c606",
+      "summary": "HC split receiver support profiles",
+      "issues": [
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_method_family_profiles.h",
+        "native/objc3c/src/support/objc3_receiver_dispatch_profiles.cpp",
+        "native/objc3c/src/support/objc3_receiver_dispatch_profiles.h"
+      ]
+    },
+    {
+      "ref": "1897efd7a",
+      "summary": "HC move runtime registration owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/images/registration.h"
+      ]
+    },
+    {
+      "ref": "faf7363ae",
+      "summary": "HC split frontend C API runner session owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_session.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_session_output.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_summary_path.cpp"
+      ]
+    },
+    {
+      "ref": "1854669de",
+      "summary": "HC split artifact schema contract table",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.h"
+      ]
+    },
+    {
+      "ref": "2f1a954ad",
+      "summary": "HC split frontend pipeline stage contracts",
+      "issues": [
+        "#8138",
+        "#8140"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.cpp",
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.h"
+      ]
+    },
+    {
+      "ref": "be79d15ce",
+      "summary": "HC rename stdlib text shape surfaces",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "stdlib/advanced_architecture.json",
+        "stdlib/core_architecture.json",
+        "stdlib/program_surface.json",
+        "stdlib/semantic_policy.json"
+      ]
+    },
+    {
+      "ref": "e23236ea0",
+      "summary": "HC split concurrency support profile owners",
+      "issues": [
+        "#8138",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_concurrency_cancellation_symbols.cpp",
+        "native/objc3c/src/support/objc3_concurrency_profile_tokens.cpp",
+        "native/objc3c/src/support/objc3_concurrency_task_group_symbols.h",
+        "native/objc3c/src/support/objc3_concurrency_task_symbols.cpp"
+      ]
+    },
+    {
+      "ref": "5354a91b0",
+      "summary": "HC split config feature state owners",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/config/objc3_feature_state_names.cpp",
+        "native/objc3c/src/config/objc3_feature_state_query.cpp"
+      ]
+    },
+    {
+      "ref": "e74371e88",
+      "summary": "HC split frontend C API runner output contract owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_core.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_failure.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_hardening.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_paths.cpp"
+      ]
+    },
+    {
+      "ref": "3334f4a59",
+      "summary": "HC move checked dispatch owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+      ]
+    },
+    {
+      "ref": "9bbd9a143",
+      "summary": "HC add diagnostic catalog contract owner",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_contract.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_contract.h"
+      ]
+    },
+    {
+      "ref": "106006a74",
+      "summary": "HC index acceptance area ownership",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "tests/conformance/hard_cutover_acceptance_area_owners.json",
+        "tests/conformance/hard_cutover_positive_residue_audit.json",
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ]
+    },
+    {
+      "ref": "202409388",
+      "summary": "HC split frontend feature claim artifact inventory",
+      "issues": [
+        "#8138",
+        "#8145",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.h"
+      ]
+    },
+    {
+      "ref": "6f529ddfd",
+      "summary": "HC split property accessor support owners",
+      "issues": [
+        "#8138",
+        "#8146",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_current_property_runtime_profiles.cpp",
+        "native/objc3c/src/support/objc3_property_accessor_profile_builder.cpp",
+        "native/objc3c/src/support/objc3_property_accessor_profile_builder.h"
+      ]
+    },
+    {
+      "ref": "ef2b4e7ad",
+      "summary": "HC split driver runtime command contract owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_accessor_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_command_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_publication.cpp"
+      ]
+    },
+    {
+      "ref": "e63ed1189",
+      "summary": "HC split contract helper boundaries",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_contract_descriptor_validation.h",
+        "native/objc3c/src/contracts/objc3_contract_id_match.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptions.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptor.h"
+      ]
+    },
+    {
+      "ref": "a8a4f9f34",
+      "summary": "HC align stdlib shape documentation",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "docs/runbooks/objc3c_stdlib_advanced.md",
+        "docs/runbooks/objc3c_stdlib_core.md",
+        "site/src/index.body.md"
+      ]
+    },
+    {
+      "ref": "d7d299698",
+      "summary": "HC split native contract id registry",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_native_contract_id_kind.h",
+        "native/objc3c/src/contracts/objc3_native_contract_id_known.h",
+        "native/objc3c/src/contracts/objc3_native_contract_id_spelling.h",
+        "native/objc3c/src/contracts/objc3_native_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "8ceaf5917",
+      "summary": "HC split JSON pointer type and equivalence helpers",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_equivalence_nodes.cpp",
+        "native/objc3c/src/io/json/json_pointer_tokens.cpp",
+        "native/objc3c/src/io/json/json_schema_type_names.cpp"
+      ]
+    },
+    {
+      "ref": "d713e3655",
+      "summary": "HC split frontend C API runner public result mapping",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_summary_json.cpp"
+      ]
+    },
+    {
+      "ref": "2728c61d5",
+      "summary": "HC remove drained runtime .inc owner units",
+      "issues": [
+        "#8132",
+        "#8133",
+        "#8135",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
+        "native/objc3c/src/sema/objc3_sema_contract_core.h",
+        "native/objc3c/src/sema/objc3_sema_contract_type_handoff.h"
+      ]
+    },
+    {
+      "ref": "6fb35f438",
+      "summary": "HC split property ownership support owners",
+      "issues": [
+        "#8138",
+        "#8146",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_property_ownership_application.h",
+        "native/objc3c/src/support/objc3_property_ownership_classification.cpp",
+        "native/objc3c/src/support/objc3_property_ownership_kinds.h"
+      ]
+    },
+    {
+      "ref": "05250580f",
+      "summary": "HC split frontend C API runner dump emitter",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_actions.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_emitter.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_dump_emitter.h"
+      ]
+    },
+    {
+      "ref": "7be1a0eec",
+      "summary": "HC split runtime state publication paths",
+      "issues": [
+        "#8138",
+        "#8143",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/objc3_runtime_state_publication_paths.cpp",
+        "native/objc3c/src/artifacts/objc3_runtime_state_publication_paths.h"
+      ]
+    },
+    {
+      "ref": "63e7ad1eb",
+      "summary": "HC add config feature state table contract",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/config/objc3_feature_state_table_contract.cpp",
+        "native/objc3c/src/config/objc3_feature_state_table_contract.h"
+      ]
+    },
+    {
+      "ref": "1f0432fb2",
+      "summary": "HC split property storage modifier owners",
+      "issues": [
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_property_storage_modifiers.cpp",
+        "native/objc3c/src/support/objc3_property_storage_modifiers.h"
+      ]
+    },
+    {
+      "ref": "371509a81",
+      "summary": "HC split native driver CLI option owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8142"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/driver/objc3_cli_option_application.cpp",
+        "native/objc3c/src/driver/objc3_cli_parse.cpp",
+        "native/objc3c/src/driver/objc3_cli_toolchain_options.cpp",
+        "native/objc3c/src/driver/objc3_cli_option_validation.cpp",
+        "native/objc3c/src/driver/objc3_cli_usage.cpp"
+      ]
+    },
+    {
+      "ref": "e1347e564",
+      "summary": "HC add property storage modifier owner files",
+      "issues": [
+        "#8134",
+        "#8138",
+        "#8146"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_parser.cpp",
+        "native/objc3c/src/parse/objc3_parser_cstyle_type_classifier.cpp",
+        "native/objc3c/src/parse/objc3_type_feature_profiles.cpp",
+        "native/objc3c/src/support/objc3_property_storage_modifier_counts.cpp",
+        "native/objc3c/src/support/objc3_property_storage_modifier_support.cpp"
+      ]
+    },
+    {
+      "ref": "d3079ed69",
+      "summary": "HC split conformance publication session",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/objc3_frontend_conformance_publication.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_conformance_publication.h"
+      ]
+    },
+    {
+      "ref": "d9077c97f",
+      "summary": "HC fold publication and support evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_acceptance_area_owners.json"
+      ]
+    },
+    {
+      "ref": "730f316fd",
+      "summary": "HC split diagnostic catalog data owner",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_data.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_data.h",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp"
+      ]
+    },
+    {
+      "ref": "40ffba0e8",
+      "summary": "HC collapse frontend compile anchor shards",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp",
+        "native/objc3c/src/libobjc3c_frontend/frontend_compile_entrypoints.cpp"
+      ]
+    },
+    {
+      "ref": "8f9a7fc93",
+      "summary": "HC name parser core owner shards",
+      "issues": [
+        "#8132",
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_expression_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_block_literal_source.cpp",
+        "native/objc3c/src/parse/objc3_parser_async_continuation_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_profile_helpers.cpp"
+      ]
+    },
+    {
+      "ref": "ce6e66578",
+      "summary": "HC split frontend C API runner invocation owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_options.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_context.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_invocation.h"
+      ]
+    },
+    {
+      "ref": "4204602fc",
+      "summary": "HC split runtime metadata contract id owners",
+      "issues": [
+        "#8138",
+        "#8147",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_runtime_metadata_contract_ids.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_core_contract_ids.h",
+        "native/objc3c/src/contracts/objc3_runtime_metadata_emission_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "589f12fd0",
+      "summary": "HC name sema contract feature surfaces",
+      "issues": [
+        "#8135",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/sema/objc3_sema_contract.h",
+        "native/objc3c/src/sema/objc3_sema_contract_feature_surfaces.h"
+      ]
+    },
+    {
+      "ref": "f7ff17441",
+      "summary": "HC split artifact schema registry requirements",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_requirements.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_registry_summary.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
+      ]
+    }
+  ],
+  "global_policy": {
+    "public_command_bridge": "npm run objc3c -- <action>",
+    "positive_behavior_rule": "positive fixtures prove canonical Objective-C 3 behavior only",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, and retired-source lane residues are documented as rejection, strict-error, or absent surfaces",
+    "issue_closeout_artifacts": [
+      "docs/issues/hard_cutover_8132_8150_evidence.json",
+      "docs/issues/hard_cutover_8132_8150_evidence.md"
+    ]
+  },
+  "shared_behavior_indexes": [
+    "tests/fixtures/canonical/manifest.json",
+    "tests/native/retired_surface_matrix.json",
+    "tests/conformance/hard_cutover_catalog.json",
+    "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/tooling/fixtures/native/fixture_family_catalog.json"
+  ],
+  "issues": [
+    {
+      "issue": "#8132",
+      "title": "Compiler architecture module decomposition",
+      "lane": "compiler architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "1877caeb7 HC split remaining root CMake targets",
+        "df28562af HC split frontend and driver CMake targets",
+        "87f958c8c HC split AST target surfaces",
+        "d61aad21e HC split native ownership and schema surfaces",
+        "bd3905d5c HC split IR and pipeline owner modules",
+        "28a65a27a HC split lexer parser sema owners",
+        "fb443536f HC split driver and C API runner owners"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "tests/fixtures/canonical/manifest.json"
+      ],
+      "retired_surface_disposition": "not a public behavior surface; no gate, retired route, compatibility, or migration support claimed"
+    },
+    {
+      "issue": "#8133",
+      "title": "Runtime strict typed dispatch",
+      "lane": "runtime dispatch",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "d8552e07a HC enforce strict typed runtime dispatch",
+        "d53083a92 HC split runtime dispatch result owners",
+        "6d10280d0 HC split runtime selector table ownership",
+        "790be44b6 HC split runtime keypath table ownership",
+        "8c35392ea HC split runtime method cache snapshots",
+        "228d345b9 HC split runtime dispatch state snapshots",
+        "61ccee955 HC split runtime dispatch wrapper"
+      ],
+      "behavior_evidence": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "dispatch retired route is strict-error evidence, not a positive behavior lane"
+    },
+    {
+      "issue": "#8134",
+      "title": "Parser, lexer, token, and AST owner split",
+      "lane": "compiler parser architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "28a65a27a HC split lexer parser sema owners",
+        "b0f031ef5 HC split parser expression statement owners",
+        "87f9a36af HC split parser facade from shard core",
+        "29111e0c3 HC split message send profile owners",
+        "2d70b8e34 HC split parser C style type surface owner",
+        "1a130de7a HC split parser attribute profile owners",
+        "a91172c62 HC split token owner modules",
+        "ffca53ae0 HC move parser source models onto AST owners",
+        "1d135dbf5 HC split parser attribute and recovery owners"
+      ],
+      "behavior_evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/parser/positive/objc_property_surface.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+      ],
+      "retired_surface_disposition": "parser old-mode and retired route flags are rejection fixtures"
+    },
+    {
+      "issue": "#8135",
+      "title": "Semantic analysis owner split",
+      "lane": "compiler semantic architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "121c069aa HC extract sema pass helpers",
+        "8b103d250 HC split sema equivalence owners",
+        "7bf833bd8 HC route source hygiene contract through npm",
+        "112256a5a HC split sema pass publication owners",
+        "232997ba4 HC split sema frontend ownership"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
+      ],
+      "retired_surface_disposition": "semantic retired adapter gate is a rejection fixture"
+    },
+    {
+      "issue": "#8136",
+      "title": "Lowering owner split",
+      "lane": "compiler lowering architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "73ce6b57f HC extract IR runtime call lowering",
+        "f69c6388f HC split lowering dispatch ARC contracts",
+        "5464aa831 HC split backend lowering IR handoff owners",
+        "f42bd035f HC split lower and IR dispatch owners",
+        "668456c12 HC split lower block validator owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "lowering runtime retired route is strict-error/rejection evidence only"
+    },
+    {
+      "issue": "#8137",
+      "title": "IR owner split",
+      "lane": "compiler IR architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "17f74aff3 HC split lower IR emitter owners",
+        "183d5ff4b HC split IR message send validation owner",
+        "aa410fda7 HC split IR runtime metadata emission owner",
+        "bd3905d5c HC split IR and pipeline owner modules"
+      ],
+      "behavior_evidence": [
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "tests/native/ir/function/helper_function_emission.objc3",
+        "tests/native/ir/metadata/module_metadata_name.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+      ],
+      "retired_surface_disposition": "IR runtime call retired route is strict-error evidence when unresolved"
+    },
+    {
+      "issue": "#8138",
+      "title": "Pipeline, IO, artifact, and config owner split",
+      "lane": "compiler support architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "4c5fbe849 HC extract pipeline dispatch classification",
+        "7a5412e51 HC split pipeline owner surfaces",
+        "5fb992332 HC split IO support artifact owners",
+        "fd22db929 HC split artifact IO support owners",
+        "65abde135 HC split artifact publication owners",
+        "feb4cee08 HC split pipeline IO artifact contracts",
+        "d57506a67 HC split config diagnostics contract owners"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "artifact and IO support evidence is internal ownership; it does not create migration or retired route support"
+    },
+    {
+      "issue": "#8139",
+      "title": "Native CMake target families",
+      "lane": "native build topology",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "1877caeb7 HC split remaining root CMake targets",
+        "df28562af HC split frontend and driver CMake targets",
+        "445494349 HC split native config CMake targets",
+        "2e6b613b8 HC split native CLI CMake target",
+        "1e26582d3 HC split native support CMake target",
+        "87f958c8c HC split AST target surfaces"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "target topology is internal ownership evidence and no public retired route lane is exposed"
+    },
+    {
+      "issue": "#8140",
+      "title": "Driver, frontend, and runner owner split",
+      "lane": "frontend and driver architecture",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "c576b6a22 HC split driver and frontend runner owners",
+        "c18135fcc HC split frontend C API runner owners",
+        "d8bbebb2b HC own frontend C API result accessors",
+        "4e6046642 HC split frontend C API and ADR owners",
+        "93ae37eab HC split frontend basic artifact publication",
+        "fb443536f HC split driver and C API runner owners",
+        "232997ba4 HC split sema frontend ownership"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "driver/frontend ownership evidence does not reintroduce helper aliases as public commands"
+    },
+    {
+      "issue": "#8141",
+      "title": "Owned public C API result, string, diagnostic, and artifact contracts",
+      "lane": "public C API",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "a51cac68d HC expand C API ownership coverage",
+        "d8bbebb2b HC own frontend C API result accessors",
+        "c18135fcc HC split frontend C API runner owners",
+        "232997ba4 HC split sema frontend ownership",
+        "fb443536f HC split driver and C API runner owners",
+        "99f6692d5 HC rename edge-case consistency contracts"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "C API rows are internal contract truth; no compatibility result wrapper is documented as supported"
+    },
+    {
+      "issue": "#8142",
+      "title": "Workflow command surface hard cutover",
+      "lane": "workflow control plane",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "b3401be67 HC harden workflow npm bridge surface",
+        "d86f03a25 HC route CI actions through objc3c bridge",
+        "72b62d7ed HC convert app command metadata to action bridge",
+        "d5668d12e HC rename command surface bridge metadata",
+        "5c025aa97 HC route remaining runtime command docs through npm",
+        "3c4d6c973 HC broaden direct workflow command hygiene",
+        "6fef331c2 HC decompose workflow runner dispatch",
+        "a612ccede HC split workflow action catalog owner",
+        "72919dc66 HC remove workflow registry facade",
+        "37e788a6b HC route workflow registry views through owner API",
+        "5ed60a087 HC centralize script command surfaces"
+      ],
+      "behavior_evidence": [
+        "docs/workflows/commands.md",
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json"
+      ],
+      "retired_surface_disposition": "direct helpers, retired command surfaces, and registry facades are absent as public command claims"
+    },
+    {
+      "issue": "#8143",
+      "title": "Runtime acceptance ownership split",
+      "lane": "runtime acceptance",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "aeb02602b HC extract runtime acceptance surface helpers",
+        "6d03f1f01 HC split error runtime acceptance cases",
+        "4213ace21 HC split error lowering acceptance cases",
+        "eec3b5cb6 HC split concurrency acceptance domain",
+        "c5f3f933a HC split interop packaging acceptance cases",
+        "1146e503f HC split object model acceptance surface",
+        "eb25dbc34 HC split registration acceptance domain",
+        "3196d7571 HC split storage reflection acceptance domain",
+        "2341a9bc4 HC decompose runtime acceptance package",
+        "93d70f907 HC split runtime acceptance package"
+      ],
+      "behavior_evidence": [
+        "tests/tooling/runtime/README.md",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "retired_surface_disposition": "runtime acceptance evidence keeps unsupported dispatch as strict error, not retired route success"
+    },
+    {
+      "issue": "#8144",
+      "title": "Behavior-first tests and fixtures",
+      "lane": "tests and fixtures",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "aee256872 HC introduce behavior fixture catalog",
+        "e5b988129 HC catalog behavior fixture cutover boundaries",
+        "99b93ccb2 HC harden behavior fixture boundaries",
+        "e99c7d740 HC reorganize strict fixture catalog",
+        "67aa58ad9 HC align behavior fixture truth wording",
+        "16e517982 HC expand behavior fixture boundaries",
+        "e157ebe20 HC add removed-mode behavior fixtures",
+        "e02bde405 HC index retired behavior fixture surfaces"
+      ],
+      "behavior_evidence": [
+        "tests/native/README.md",
+        "tests/native/retired_surface_matrix.json",
+        "tests/fixtures/canonical/manifest.json",
+        "tests/conformance/hard_cutover_catalog.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json"
+      ],
+      "retired_surface_disposition": "explicitly documented as rejection, strict-error, or absent fixture evidence"
+    },
+    {
+      "issue": "#8145",
+      "title": "Capability truth docs and evidence map",
+      "lane": "documentation",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "cb19d16ed HC update capability truth docs",
+        "6d7c78009 HC align capability truth docs with npm bridge",
+        "49c78c2ae HC align docs command capability truth",
+        "e782c6074 HC align docs capability truth surfaces",
+        "295984cb6 HC align docs with capability truth",
+        "9034bf1f5 HC document capability schema truth",
+        "709148d75 HC tie schema docs to evidence map",
+        "016683b19 HC add support truth contract"
+      ],
+      "behavior_evidence": [
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md",
+        "docs/support/evidence_map.json",
+        "docs/support/evidence_map.md"
+      ],
+      "retired_surface_disposition": "capability docs explicitly reject retired adapters, alternate acceptance paths, retired-source lanes, and retired-mode support claims"
+    },
+    {
+      "issue": "#8146",
+      "title": "Frontend type surface before deeper sema/lowering work",
+      "lane": "frontend type surface",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "6e2d0e987 HC split frontend type and dispatch helpers",
+        "f5af084ec HC split AST and lowering owner surfaces",
+        "ffca53ae0 HC move parser source models onto AST owners",
+        "2d70b8e34 HC split parser C style type surface owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/types/assignment_unknown_target_rejected.objc3",
+        "tests/fixtures/canonical/manifest.json"
+      ],
+      "retired_surface_disposition": "type-surface evidence stays canonical and does not add compatibility aliases"
+    },
+    {
+      "issue": "#8147",
+      "title": "Deep sema, lowering, and runtime metadata owner work",
+      "lane": "compiler deep semantics and lowering",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "3d4c6c973 HC extract compiler profile helper modules",
+        "121c069aa HC extract sema pass helpers",
+        "8b103d250 HC split sema equivalence owners",
+        "112256a5a HC split sema pass publication owners",
+        "5464aa831 HC split backend lowering IR handoff owners",
+        "73ce6b57f HC extract IR runtime call lowering",
+        "668456c12 HC split lower block validator owner",
+        "183d5ff4b HC split IR message send validation owner",
+        "aa410fda7 HC split IR runtime metadata emission owner"
+      ],
+      "behavior_evidence": [
+        "tests/native/sema/ownership/strong_id_assignment.objc3",
+        "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+        "tests/native/ir/metadata/actor_executor_metadata_contract.objc3"
+      ],
+      "retired_surface_disposition": "unsupported feature claims remain strict semantic diagnostics"
+    },
+    {
+      "issue": "#8148",
+      "title": "JSON, schemas, and capability evidence infrastructure",
+      "lane": "JSON and schemas",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "01cf17064 HC expand native JSON process helpers",
+        "3e95c4d73 HC share artifact JSON writers",
+        "a94330b26 HC extract manifest JSON writers",
+        "6afa3278f HC strengthen JSON schema infrastructure",
+        "972d97906 HC split JSON artifact registry owners",
+        "a87b2c92e HC add capability evidence schemas",
+        "709148d75 HC tie schema docs to evidence map",
+        "22b8bb1c3 HC normalize schema registry ids"
+      ],
+      "behavior_evidence": [
+        "schemas/objc3c-capability-matrix-v1.schema.json",
+        "docs/support/evidence_map.json",
+        "tests/tooling/test_objc3c_shared_json_schema.py"
+      ],
+      "retired_surface_disposition": "schema rows classify unsupported states; they do not define retired route support"
+    },
+    {
+      "issue": "#8149",
+      "title": "Source hygiene and command-surface guardrails",
+      "lane": "hygiene",
+      "evidence_state": "indexed-from-local-commits",
+      "commit_evidence": [
+        "606775842 HC tighten command hygiene guardrails",
+        "fd675f294 HC cover command hygiene source roots",
+        "058acec90 HC remove source hygiene retired exception surface",
+        "f00e2e871 HC retire source hygiene exception fixture",
+        "6d0a19f84 HC harden source hygiene guardrail scanning",
+        "f49c6f38f HC split workflow and hygiene owners"
+      ],
+      "behavior_evidence": [
+        "docs/workflows/commands.md",
+        "docs/workflows/validation.md",
+        "docs/support/capability_matrix.json"
+      ],
+      "retired_surface_disposition": "hygiene evidence treats direct helper commands and allowlist/evidence-log surfaces as retired"
+    },
+    {
+      "issue": "#8150",
+      "title": "Hard-cutover final closure mechanics",
+      "lane": "program closure",
+      "evidence_state": "evidence-ready-not-remotely-closed",
+      "commit_evidence": [
+        "4c0285b0d HC tighten schemas and hard-cut fixtures",
+        "16e517982 HC expand behavior fixture boundaries",
+        "e5b988129 HC catalog behavior fixture cutover boundaries",
+        "a87b2c92e HC add capability evidence schemas",
+        "709148d75 HC tie schema docs to evidence map",
+        "016683b19 HC add support truth contract"
+      ],
+      "behavior_evidence": [
+        "tests/conformance/hard_cutover_issue_index.json",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ],
+      "retired_surface_disposition": "closure evidence is local only until validation, GitHub issue update, push, and final closeout are explicitly allowed"
+    }
+  ]
+}

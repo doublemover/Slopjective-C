@@ -5,19 +5,33 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.json_io import write_json_file as write_json
 
+try:
+    from new_work_proposal_contracts import (
+        ProposalPolicyInputs,
+        build_publication_summary,
+        render_proposal_artifacts,
+        validate_proposal,
+    )
+except ModuleNotFoundError:
+    from scripts.new_work_proposal_contracts import (
+        ProposalPolicyInputs,
+        build_publication_summary,
+        render_proposal_artifacts,
+        validate_proposal,
+    )
+
 ROOT = Path(__file__).resolve().parents[1]
 GOVERNANCE_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "sustainable_progress_policy.json"
 WAIVER_REGISTRY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
+EXTENSION_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "extension_review_policy.json"
 DEFAULT_TEMPLATE = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "new_work_proposal_template.json"
 DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "new-work-proposal"
-MILESTONE_CODE_RE = re.compile(r"^(M\d{3})")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -75,171 +89,6 @@ def run_preflight(command_text: str) -> dict[str, Any]:
     }
 
 
-def validate_required_fields(proposal: dict[str, Any], template: dict[str, Any]) -> list[str]:
-    failures: list[str] = []
-    for field in template["required_issue_fields"]:
-        if field not in proposal:
-            failures.append(f"missing required proposal field `{field}`")
-    return failures
-
-
-def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
-    failures = validate_required_fields(proposal, template)
-    allowed_fields = set(template["required_issue_fields"]) | set(template["optional_issue_fields"])
-    for key in proposal:
-        if key not in allowed_fields:
-            failures.append(f"unknown proposal field `{key}`")
-
-    issue_code = str(proposal.get("issue_code", ""))
-    resolved = {"milestone_code": "", "short_code": "", "lane": "", "waiver_status": None}
-    if not re.match(template["issue_code_pattern"], issue_code):
-        failures.append("issue_code does not match required Mxxx-Lnnn pattern")
-    else:
-        milestone_code, short_code = issue_code.split("-", 1)
-        lane = short_code[0]
-        resolved.update({"milestone_code": milestone_code, "short_code": short_code, "lane": lane})
-        if lane not in "ABCDE":
-            failures.append("issue_code lane must be A-E")
-
-    if proposal.get("validation_posture") not in set(template["validation_postures"]):
-        failures.append("validation_posture is not allowed by template")
-    if proposal.get("budget_impact") not in set(template["budget_impact_options"]):
-        failures.append("budget_impact is not allowed by template")
-    if not isinstance(proposal.get("acceptance_criteria"), list) or not proposal["acceptance_criteria"]:
-        failures.append("acceptance_criteria must be a non-empty list")
-    if not isinstance(proposal.get("primary_implementation_surfaces"), list) or not proposal["primary_implementation_surfaces"]:
-        failures.append("primary_implementation_surfaces must be a non-empty list")
-    if not isinstance(proposal.get("dependencies"), list):
-        failures.append("dependencies must be a list")
-    if not isinstance(proposal.get("label_names"), list) or not proposal["label_names"]:
-        failures.append("label_names must be a non-empty list")
-    if not isinstance(proposal.get("evidence_surfaces"), list) or not proposal["evidence_surfaces"]:
-        failures.append("evidence_surfaces must be a non-empty list")
-
-    governance_policy = read_json(GOVERNANCE_POLICY)
-    waiver_registry = read_json(WAIVER_REGISTRY)
-
-    if "issue_numbers" in proposal or "milestone_numbers" in proposal:
-        failures.append("proposal must not carry predicted GitHub numeric identifiers")
-    forbidden_source_keys = {"issue_numbers", "milestone_numbers"}
-    if forbidden_source_keys & set(proposal.keys()):
-        failures.append("proposal includes forbidden source keys")
-
-    if proposal.get("budget_impact") not in set(template["budget_impact_options"]):
-        failures.append("budget impact not allowed by template")
-    waiver_id = proposal.get("waiver_id")
-    if proposal.get("budget_impact") == "requires_exception_record":
-        if not waiver_id:
-            failures.append("waiver_id is required when budget_impact is requires_exception_record")
-        else:
-            match = next((item for item in waiver_registry.get("waivers", []) if item.get("waiver_id") == waiver_id), None)
-            if match is None:
-                failures.append(f"waiver `{waiver_id}` was not found in the waiver registry")
-            else:
-                resolved["waiver_status"] = match.get("status")
-                if match.get("status") != "active":
-                    failures.append(f"waiver `{waiver_id}` is not active")
-    elif waiver_id:
-        match = next((item for item in waiver_registry.get("waivers", []) if item.get("waiver_id") == waiver_id), None)
-        resolved["waiver_status"] = match.get("status") if match else "missing"
-
-    if proposal.get("milestone_title"):
-        milestone_code = resolved["milestone_code"]
-        title_code = MILESTONE_CODE_RE.match(str(proposal["milestone_title"]))
-        if title_code and title_code.group(1) != milestone_code:
-            failures.append("milestone_title code must match issue_code milestone")
-
-    extension_policy_path = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "extension_review_policy.json"
-    extension_policy = read_json(extension_policy_path)
-    review_classes = {
-        str(entry.get("review_class")): entry
-        for entry in extension_policy.get("review_classes", [])
-        if isinstance(entry, dict)
-    }
-    review_class = str(proposal.get("review_class", ""))
-    selected_review_class = review_classes.get(review_class)
-    if selected_review_class is None:
-        failures.append("review_class is not allowed by extension review policy")
-    else:
-        required_surfaces = {str(path) for path in selected_review_class.get("required_evidence_surfaces", [])}
-        proposal_surfaces = {str(path) for path in proposal.get("evidence_surfaces", [])}
-        missing_surfaces = sorted(required_surfaces - proposal_surfaces)
-        if missing_surfaces:
-            failures.append("evidence_surfaces missing required review surfaces: " + ", ".join(missing_surfaces))
-    if not str(proposal.get("compatibility_classification", "")).strip():
-        failures.append("compatibility_classification is required")
-    if not str(proposal.get("rollback_or_demote_path", "")).strip():
-        failures.append("rollback_or_demote_path is required")
-
-    execution_order = proposal.get("execution_order")
-    if execution_order is not None:
-        if not isinstance(execution_order, dict):
-            failures.append("execution_order must be an object when present")
-        else:
-            missing = [field for field in template["execution_order_fields"] if field not in execution_order]
-            if missing:
-                failures.append("execution_order is missing required fields: " + ", ".join(missing))
-
-    if not governance_policy.get("exception_requirements", {}).get("expiry_required", False):
-        failures.append("governance policy drifted: expiry requirement must stay enabled")
-    return resolved, failures
-
-
-def render_issue_title(proposal: dict[str, Any], template: dict[str, Any], resolved: dict[str, Any]) -> str:
-    return template["title_format"].format(
-        milestone_code=resolved["milestone_code"],
-        lane=resolved["lane"],
-        short_code=resolved["short_code"],
-        title_core=proposal["title_core"],
-    )
-
-
-def render_issue_body(proposal: dict[str, Any]) -> str:
-    lines = [
-        "## Outcome",
-        f"Deliver `{proposal['issue_code']}` for **{proposal['title_core']}** within the milestone focus: {proposal['milestone_focus_summary']}",
-        "",
-        "## Why this matters",
-        proposal["why_it_matters"],
-    ]
-    if proposal.get("design_corrections_folded_in"):
-        lines += ["", "## Design corrections folded in"] + [f"- {item}" for item in proposal["design_corrections_folded_in"]]
-    lines += ["", "## Acceptance criteria"] + [f"- {item}" for item in proposal["acceptance_criteria"]]
-    lines += ["", "## Primary implementation surfaces"] + [f"- `{item}`" for item in proposal["primary_implementation_surfaces"]]
-    lines += ["", "## Dependencies"]
-    lines += [f"- `{item}`" for item in proposal["dependencies"]] if proposal["dependencies"] else ["- None."]
-    lines += ["", "## Validation posture", f"- Class: `{proposal['validation_posture']}`", f"- Budget impact: `{proposal['budget_impact']}`"]
-    lines += ["", "## Extension review"]
-    lines += [
-        f"- Review class: `{proposal['review_class']}`",
-        f"- Compatibility classification: `{proposal['compatibility_classification']}`",
-        f"- Rollback or demotion path: {proposal['rollback_or_demote_path']}",
-    ]
-    lines += ["- Evidence surfaces:"] + [f"  - `{item}`" for item in proposal["evidence_surfaces"]]
-    if proposal.get("waiver_id"):
-        lines.append(f"- Waiver: `{proposal['waiver_id']}`")
-    if proposal.get("boundary_note"):
-        lines += ["", "## Boundary note", proposal["boundary_note"]]
-    if proposal.get("execution_order"):
-        order = proposal["execution_order"]
-        lines += [
-            "",
-            "<!-- EXECUTION-ORDER-START -->",
-            "## Execution Order",
-            f"- Cleanup program slot: `{order['cleanup_program_slot']}`",
-            f"- Cleanup program phase: `{order['cleanup_program_phase']}`",
-            f"- Global cleanup-first sequence: `{order['global_sequence']}`",
-            "- Blocked by prior cleanup milestones: " + (", ".join(f"`{item}`" for item in order["blocked_by_prior_milestones"]) if order["blocked_by_prior_milestones"] else "`None`"),
-            "- Direct issue blockers: " + (", ".join(order["direct_issue_blockers"]) if order["direct_issue_blockers"] else "`None`"),
-            "- Directly unblocks: " + (", ".join(order["directly_unblocks"]) if order["directly_unblocks"] else "`None`"),
-            f"- Execution instruction: {order['instruction']}",
-            "<!-- EXECUTION-ORDER-END -->",
-        ]
-    if proposal.get("notes"):
-        lines += ["", "## Notes"] + [f"- {item}" for item in proposal["notes"]]
-    return "\n".join(lines) + "\n"
-
-
 def resolve_live_milestone_number(repo: str, milestone_title: str | None, milestone_code: str) -> int | None:
     if not milestone_title:
         return None
@@ -287,10 +136,31 @@ def main(argv: Sequence[str]) -> int:
         args.output_dir = ROOT / args.output_dir
     template = read_json(args.template)
     proposal = read_json(args.proposal)
-    resolved, failures = validate_proposal(proposal, template)
+    governance_policy = read_json(GOVERNANCE_POLICY)
+    waiver_registry = read_json(WAIVER_REGISTRY)
+    extension_policy = read_json(EXTENSION_POLICY)
+    validation = validate_proposal(
+        proposal,
+        ProposalPolicyInputs(
+            template=template,
+            governance_policy=governance_policy,
+            waiver_registry=waiver_registry,
+            extension_policy=extension_policy,
+        ),
+    )
+    resolved = validation.resolved
+    failures = validation.failures
 
-    title = render_issue_title(proposal, template, resolved) if not failures else ""
-    body = render_issue_body(proposal) if not failures else ""
+    body_path = args.output_dir / template["render_defaults"]["write_paths"]["issue_body"]
+    payload_path = args.output_dir / template["render_defaults"]["write_paths"]["issue_payload"]
+    summary_path = args.output_dir / template["render_defaults"]["write_paths"]["summary"]
+    rendered = render_proposal_artifacts(
+        proposal=proposal,
+        template=template,
+        resolved=resolved,
+        body_path=rel(body_path),
+        failures=failures,
+    )
 
     preflight_commands = [] if args.preflight_mode == "proposal-only" else template.get("governance_preflight_commands", [])
     preflight_results = [run_preflight(command) for command in preflight_commands]
@@ -299,20 +169,9 @@ def main(argv: Sequence[str]) -> int:
         failures.append("governance preflight failed: " + ", ".join(preflight_failures))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    body_path = args.output_dir / template["render_defaults"]["write_paths"]["issue_body"]
-    payload_path = args.output_dir / template["render_defaults"]["write_paths"]["issue_payload"]
-    summary_path = args.output_dir / template["render_defaults"]["write_paths"]["summary"]
-
-    if body:
-        body_path.write_text(title + "\n\n" + body, encoding="utf-8")
-    payload = {
-        "title": title,
-        "body_path": rel(body_path),
-        "labels": proposal.get("label_names", []),
-        "milestone_title": proposal.get("milestone_title"),
-        "issue_code": proposal.get("issue_code"),
-    }
-    write_json(payload_path, payload)
+    if rendered.body:
+        body_path.write_text(rendered.title + "\n\n" + rendered.body, encoding="utf-8")
+    write_json(payload_path, rendered.payload)
 
     created_issue = None
     publication_mode = "publish" if args.publish else template["render_defaults"]["publish_mode"]
@@ -325,34 +184,32 @@ def main(argv: Sequence[str]) -> int:
             else:
                 repo = json.loads(completed.stdout)["nameWithOwner"]
         if repo and not failures:
-            created_issue = maybe_publish(repo, title, body, proposal, resolved["milestone_code"])
+            created_issue = maybe_publish(
+                repo,
+                rendered.title,
+                rendered.body,
+                proposal,
+                resolved["milestone_code"],
+            )
 
-    summary = {
-        "mode": template["mode"],
-        "contract_id": template["contract_id"],
-        "proposal_path": rel(args.proposal),
-        "template_path": rel(args.template),
-        "publication_mode": publication_mode,
-        "preflight_mode": args.preflight_mode,
-        "consumed_contract_ids": template["consumed_contract_ids"],
-        "issue_code": proposal.get("issue_code"),
-        "title": title,
-        "labels": proposal.get("label_names", []),
-        "milestone_title": proposal.get("milestone_title"),
-        "budget_impact": proposal.get("budget_impact"),
-        "validation_posture": proposal.get("validation_posture"),
-        "waiver_id": proposal.get("waiver_id"),
-        "waiver_status": resolved.get("waiver_status"),
-        "governance_preflight": preflight_results,
-        "output_paths": {
+    summary = build_publication_summary(
+        template=template,
+        proposal=proposal,
+        resolved=resolved,
+        proposal_path=rel(args.proposal),
+        template_path=rel(args.template),
+        publication_mode=publication_mode,
+        preflight_mode=args.preflight_mode,
+        title=rendered.title,
+        preflight_results=preflight_results,
+        output_paths={
             "issue_body": rel(body_path),
             "issue_payload": rel(payload_path),
-            "summary": rel(summary_path)
+            "summary": rel(summary_path),
         },
-        "published_issue_number": created_issue.get("number") if created_issue else None,
-        "ok": not failures,
-        "failures": failures
-    }
+        published_issue_number=created_issue.get("number") if created_issue else None,
+        failures=failures,
+    )
     write_json(summary_path, summary)
     if failures:
         for failure in failures:

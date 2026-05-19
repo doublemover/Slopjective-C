@@ -1,0 +1,8 @@
+#pragma once
+
+struct Objc3RuntimeBootstrapApiSummary;
+struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs;
+
+void PopulateObjc3DriverRuntimeRegistrationAccessorSurfaceInputs(
+    Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
+    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api_summary);

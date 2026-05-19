@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_core_method_parameters_parameter_type_suffix_generic.inc"
+#include "parse/objc3_parser_core_method_parameters_parameter_type_suffix_pointer_nullability.inc"
+#include "parse/objc3_parser_core_method_parameters_parameter_type_suffix_ownership.inc"
+#include "parse/objc3_parser_core_method_parameters_parameter_type_suffix_dispatch.inc"

@@ -31,8 +31,8 @@ def load_optional_json(path: Path) -> dict[str, Any] | None:
 def metric_value(metric_id: str, inventory: dict[str, Any], enforcement: dict[str, Any]) -> int:
     measured = inventory.get("measured", {})
     enforcement_measured = enforcement.get("measured", {})
-    if metric_id == "package_script_count":
-        return int(measured.get("package_script_count", 0))
+    if metric_id == "package_bridge_count":
+        return int(measured.get("package_bridge_count", 0))
     if metric_id == "public_workflow_action_count":
         return int(measured.get("public_workflow_action_count", 0))
     if metric_id == "runbook_count":

@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_await_suspension_site_collection_collection_traversal_expression.inc"
+
+#include "parse/objc3_parser_await_suspension_site_collection_collection_traversal_for_clause.inc"
+
+#include "parse/objc3_parser_await_suspension_site_collection_collection_traversal_statement.inc"

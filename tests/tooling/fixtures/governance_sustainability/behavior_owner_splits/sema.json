@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-sustainability-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json"
+  ],
+  "support_boundary": "sema ownership is non-positive for this governance-sustainability family. References to semantics, diagnostics, standard-library-visible behavior, support-boundary classification, proposal requirements, and review classes are governance review taxonomy, not semantic compiler truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "review_allowed_scope:new syntax, semantics, diagnostics, or standard-library-visible behavior",
+    "required_issue_field:support_boundary_classification",
+    "required_issue_field:review_class",
+    "required_issue_field:evidence_surfaces",
+    "compiler_phase_boundary:no-sema-positive-truth-from-governance-contracts",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic governance rows, gate semantic governance rows, retired route semantic governance rows, compatibility semantic governance rows, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, proposal-classification-only semantic claims, and policy-review-only semantic support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,13 @@
+// Positive fixture: nil receiver reassignment lowers to the canonical zero-result message-send path.
+module MessageSendNilReceiverZeroResultPositive;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver ping];
+  let eq = sent == 0;
+  if (eq) {
+    return sent + 11;
+  }
+  return 99;
+}

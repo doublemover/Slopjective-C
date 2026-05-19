@@ -1,4 +1,4 @@
-name: Planning Lint (Legacy Manual)
+name: Planning Lint (Manual)
 
 on:
   workflow_dispatch:
@@ -7,10 +7,22 @@ permissions:
   contents: read
 
 jobs:
-  legacy-planning-note:
+  planning-publication-drift:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Explain legacy workflow status
-        run: |
-          echo "This legacy local-planning workflow is manual-only."
-          echo "Planning source of truth now lives primarily in GitHub milestones and issues."
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check planning publication drift
+        run: npm run objc3c -- check-planning-publication-drift

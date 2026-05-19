@@ -51,12 +51,23 @@
     },
     {
       "name": "issue_65_generic_methods_deferral_gate",
-      "feature": "generic method/function deferral and extension gating",
+      "feature": "generic method/function deferral with removed extension-flag rejection",
       "issue": 65,
       "files": [
         "GEN-65-01.json",
         "GEN-65-02.json"
       ]
+    },
+    {
+      "name": "hard_cutover_compatibility_gate_rejections",
+      "feature": "retired adapter feature gates are strict semantic errors",
+      "files": [
+        "HC-GATE-01.json"
+      ],
+      "hard_cutover": {
+        "positive_fixture_policy": "no semantic retired adapter or retired-source lane positives",
+        "replacement_behavior": "strict semantic diagnostic before any gatemed behavior can be claimed"
+      }
     },
     {
       "name": "issue_66_key_path_literal_support",
@@ -130,7 +141,7 @@
     },
     {
       "name": "issue_73_match_or_gating",
-      "feature": "match semantics and provisional feature gating",
+      "feature": "match semantics and hard-cutover disabled-feature rejection",
       "issue": 73,
       "files": [
         "MTC-73-01.json",

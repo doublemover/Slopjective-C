@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-performance-public-report-v1.schema.json",
   "title": "ObjC 3 Performance Public Report Summary (v1)",
   "description": "Machine-readable performance public report projection over the live performance governance dashboard.",
   "type": "object",
@@ -9,6 +9,8 @@
     "contract_id",
     "generated_at_utc",
     "status",
+    "source_surface_summary_path",
+    "schema_surface_summary_path",
     "dashboard_summary_path",
     "report_markdown_path",
     "badge_path",
@@ -16,7 +18,11 @@
     "claim_ready",
     "headline",
     "summary_lines",
-    "evidence_paths"
+    "evidence_paths",
+    "policy_paths",
+    "upstream_reports",
+    "owner_split",
+    "publication_contracts"
   ],
   "properties": {
     "contract_id": {
@@ -77,6 +83,34 @@
       "minItems": 3,
       "items": {
         "$ref": "#/$defs/repoPath"
+      }
+    },
+    "policy_paths": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "upstream_reports": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/repoPath"
+        }
+      }
+    },
+    "publication_contracts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 3
       }
     }
   },

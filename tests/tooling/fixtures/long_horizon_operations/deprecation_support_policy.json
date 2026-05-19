@@ -1,0 +1,69 @@
+{
+  "contract_id": "objc3c.long_horizon_operations.deprecation_support_policy.v1",
+  "schema_version": 1,
+  "owner_contract": {
+    "owner": "deprecation_owner",
+    "artifact_section": "claim_audit",
+    "publication_projection": "operator_publication.support_window_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
+  },
+  "depends_on": [
+    "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+  ],
+  "support_policy": {
+    "maintenance_unit": "same-major-supported-line",
+    "current_support_authority": "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "default_claim_scope": "same-major support only",
+    "preview_claim_scope": "blocked unless generated conversion replay and revert evidence exists",
+    "cross_major_claim_scope": "unsupported unless generated conversion replay proves it"
+  },
+  "deprecation_states": [
+    {
+      "state": "active",
+      "public_claim_allowed": true,
+      "required_warning_class": "none",
+      "operator_action": "continue normal validation"
+    },
+    {
+      "state": "soft-deprecated",
+      "public_claim_allowed": true,
+      "required_warning_class": "deprecated-channel",
+      "operator_action": "publish warning and successor surface"
+    },
+    {
+      "state": "hard-deprecated",
+      "public_claim_allowed": false,
+      "required_warning_class": "cross-major-unsupported",
+      "operator_action": "block release claim until conversion replay or removal evidence exists"
+    },
+    {
+      "state": "removed",
+      "public_claim_allowed": false,
+      "required_warning_class": "support-window-expired",
+      "operator_action": "require explicit conversion replay or do not claim support"
+    }
+  ],
+  "claim_guardrails": [
+    "Claims must cite a generated update manifest, upgrade support report, or long-horizon operations summary.",
+    "Claims may not use release-operation forbidden phrases or imply evergreen support.",
+    "Preview support remains blocked until the generated publication surface contains conversion replay and revert evidence.",
+    "Cross-major support stays blocked unless a conversion replay artifact names the source and target versions."
+  ],
+  "required_publication_fields": [
+    "support_window",
+    "deprecation_state",
+    "warning_class",
+    "successor_surface",
+    "conversion_replay_evidence",
+    "revert_evidence"
+  ],
+  "release_blocking_conditions": [
+    "missing support-window authority",
+    "public claim includes forbidden hard-cutover phrase",
+    "hard-deprecated surface is still advertised as supported",
+    "manual waiver used without generated conversion replay and revert evidence"
+  ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
+}

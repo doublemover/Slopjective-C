@@ -1,0 +1,6 @@
+#include "parse/objc3_parser_attributes_local_storage_sugar_attribute_classification.inc"
+#include "parse/objc3_parser_attributes_local_storage_sugar_diagnostics_recovery.inc"
+#include "parse/objc3_parser_attributes_local_storage_sugar_profile_publication.inc"
+#include "parse/objc3_parser_attributes_local_storage_sugar_cleanup_payload_parsing.inc"
+#include "parse/objc3_parser_attributes_local_storage_sugar_resource_payload_parsing.inc"
+#include "parse/objc3_parser_attributes_local_storage_sugar_dispatch.inc"

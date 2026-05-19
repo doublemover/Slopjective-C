@@ -84,7 +84,7 @@ _Generated at 2026-02-24T00:00:00Z_
 
 ## Validation Command References
 
-- `python scripts/spec_lint.py`
+- `npm run objc3c -- lint-spec`
 - `python scripts/generate_quality_gate_decision.py`
 - `node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('reports/releases/v011_quality_gate_decision.status.json','utf8')); console.log('status-json: OK');"`
 - `rg -n "EV-06|EV-07|EV-08|QG-04|recommendation_signal" reports/releases/v011_quality_gate_decision.md reports/releases/v011_quality_gate_decision.status.json reports/releases/v011_quality_gate_exceptions.md`

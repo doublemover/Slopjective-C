@@ -16,8 +16,8 @@
   "api_families": [
     "error-identity",
     "result-shape",
-    "optional-bridge",
-    "text-data-compatibility"
+    "option-result-shape",
+    "text-data-shape"
   ],
   "exports": [
     "Objc3ErrorsResultOkTag",
@@ -26,12 +26,12 @@
     "objc3_errors_result_err_tag",
     "objc3_errors_result_is_ok",
     "objc3_errors_option_to_result_tag",
-    "objc3_errors_result_bridge_diagnostic",
+    "objc3_errors_option_result_shape_diagnostic",
     "objc3_errors_result_unwrap_or",
     "objc3_errors_result_error_or",
     "objc3_errors_ok_or_code",
     "objc3_errors_or_throw_code",
-    "objc3_errors_text_data_compatibility_score",
-    "objc3_errors_text_data_compatibility_diagnostic"
+    "objc3_errors_text_data_shape_score",
+    "objc3_errors_text_data_shape_diagnostic"
   ]
 }

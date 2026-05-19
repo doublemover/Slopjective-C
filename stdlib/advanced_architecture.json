@@ -12,9 +12,9 @@
     "stdlib/modules/objc3.system/module.objc3",
     "scripts/check_stdlib_surface.py",
     "scripts/materialize_objc3c_stdlib_workspace.py",
-    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/objc3c_workflow/actions/application_stdlib_integrations.py",
     "scripts/package_objc3c_runnable_toolchain.ps1",
-    "scripts/objc3c_public_workflow_runner.py"
+    "package.json#scripts.objc3c"
   ],
   "api_families": {
     "objc3.concurrency": [
@@ -27,10 +27,10 @@
     ],
     "objc3.keypath": [
       "typed-keypath-application",
-      "typed-keypath-text-compatibility",
+      "typed-keypath-text-shape",
       "typed-keypath-metadata",
       "reflection-interop",
-      "runtime-composition-adapter"
+      "runtime-composition-token"
     ],
     "objc3.system": [
       "resource-cleanup",
@@ -55,8 +55,8 @@
     "objc3.keypath": [
       "objc3_keypath_apply_index",
       "objc3_keypath_component_count",
-      "objc3_keypath_text_compatibility_score",
-      "objc3_keypath_text_compatibility_diagnostic",
+      "objc3_keypath_text_shape_score",
+      "objc3_keypath_text_shape_diagnostic",
       "objc3_keypath_metadata_token",
       "objc3_keypath_reflection_interop_token",
       "objc3_keypath_runtime_composition_token"
@@ -70,9 +70,9 @@
     ]
   },
   "module_roles": {
-    "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints that eventually back structured runtime behavior",
-    "objc3.keypath": "typed key-path metadata and helper entrypoints that bridge reflection, interop, and runtime-composition claims",
-    "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks reserved for strict-system claims"
+    "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints for deterministic structured-concurrency token shapes",
+    "objc3.keypath": "typed key-path metadata and helper entrypoints for explicit reflection, interop, and runtime-composition tokens",
+    "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks scoped to Strict System imports"
   },
   "layering_model": {
     "objc3.concurrency": [
@@ -92,7 +92,7 @@
   },
   "non_goals": [
     "duplicating the core stdlib helper contract",
-    "claiming runtime-backed reflection or executor semantics before live helper exports exist",
+    "presenting runtime-backed reflection or executor semantics without live helper exports",
     "widening strict-system helpers into always-on core imports",
     "adding a second stdlib packaging flow outside the existing runnable toolchain bundle"
   ]

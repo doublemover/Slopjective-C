@@ -12,20 +12,14 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json`
 - `tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py`
-- `python scripts/build_concurrency_runtime_closure_semantic_summary.py`
-- `python scripts/build_concurrency_runtime_closure_scheduler_policy_summary.py`
-- `python scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py`
-- `python scripts/build_concurrency_runtime_closure_actor_semantics_summary.py`
-- `python scripts/build_concurrency_runtime_closure_artifact_summary.py`
-- `python scripts/check_concurrency_runtime_closure_task_lowering.py`
-- `python scripts/check_concurrency_runtime_closure_actor_lowering.py`
-- `python scripts/build_concurrency_runtime_closure_executable_proof_summary.py`
-- `python scripts/check_concurrency_runtime_closure_live_task_runtime.py`
-- `python scripts/check_concurrency_runtime_closure_live_actor_runtime.py`
-- `python scripts/check_objc3c_runnable_concurrency_end_to_end.py`
+- `npm run objc3c -- test-runtime-acceptance-concurrency`
+- `npm run objc3c -- validate-concurrency-conformance`
+- `npm run objc3c -- validate-runnable-concurrency`
+
+Helper implementations are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -62,17 +56,17 @@ Actor isolation, sendability, and hop semantics:
 
 - actor isolation entry, nonisolated entry, executor hops, replay proof, race guard, executor binding, and mailbox ownership remain supported only through the private actor helper cluster and runtime snapshots
 - sendability and isolation enforcement claims must stay bounded by the current lowering contracts, actor probes, and cross-module replay proof
-- broader interop and public actor runtime ABI claims remain out of scope for this milestone
+- broader interop and public actor runtime ABI claims remain out of scope for this closure surface
 
 Lowering and runtime artifact contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
-- the canonical concurrency surfaces for this milestone are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
-- milestone-local checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
+- the concurrency compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-concurrency`
+- the concurrency owner surfaces are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
+- release-scope checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone remains `test:objc3c:concurrency-conformance` and `test:objc3c:runnable-concurrency`
+- the concurrency public command surface is `npm run objc3c -- validate-concurrency-conformance` and `npm run objc3c -- validate-runnable-concurrency`
 - the public workflow surface remains `validate-concurrency-conformance` and `validate-runnable-concurrency`
 - concurrency closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 
@@ -80,7 +74,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for continuation, task, executor, actor, mailbox, or sendability helpers
 - claims that ARC, thrown-error cleanup, or broader interop interaction is complete beyond the currently published concurrency-runtime evidence
-- milestone-local concurrency runtime scaffolding parallel to the shared runtime acceptance and runnable package path
+- release-scope concurrency runtime scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims that scheduler fairness, distributed actor transport, or external executor integration are complete beyond the current manifest/runtime-registration/replay proof
 
 Follow-on tracks:
@@ -92,18 +86,22 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - sema and lowering:
-  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/sema/`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
+  - `native/objc3c/src/artifacts/`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_concurrency_conformance.py`
-  - `scripts/check_objc3c_runnable_concurrency_end_to_end.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - `npm run objc3c -- validate-concurrency-conformance`
+  - `npm run objc3c -- validate-runnable-concurrency`
+  - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`
   - `docs/objc3c-native.md`

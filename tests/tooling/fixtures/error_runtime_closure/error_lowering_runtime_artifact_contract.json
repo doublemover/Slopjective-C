@@ -4,7 +4,21 @@
   "milestone": "M321",
   "issue": "M321-C001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_artifact_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_artifact_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "error_runtime_provenance",
+    "canonical_rejection"
+  ],
+  "artifact_behavior_boundary": "runtime acceptance, architecture integration, runnable error conformance, runnable error e2e reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, and result bridge metadata are provenance until behavior owners claim support",
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before lowering artifact, compile manifest, runtime-registration replay packet, runtime-import preservation row, result bridge metadata, generated report, or runnable report",
+    "support_authority": "error lowering and runtime import/preservation support requires lowering, IR, runtime, or e2e owner assignment over canonical fixtures and probes",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated reports, manifest-only rows, replay-only rows, runtime-import-only rows, result-bridge-metadata-only rows, evidence-log rows, retired route lowering, gate lowering, old-mode lowering, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "canonical_artifacts": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/architecture-integration/summary.json",
@@ -18,7 +32,7 @@
   ],
   "artifact_rules": [
     "the canonical compile-manifest and runtime-registration truth for this milestone is emitted by scripts/check_objc3c_runtime_acceptance.py and replayed by the integration and runnable error workflows",
-    "milestone-local checks consume the shared runtime acceptance, integration, conformance, and packaged e2e artifacts instead of recreating a parallel error manifest",
+    "shared checks consume the shared runtime acceptance, integration, conformance, and packaged e2e artifacts instead of recreating a parallel error manifest",
     "public workflow reporting must preserve the same error surface packets carried by acceptance and architecture integration",
     "generated evidence remains deterministic and narrower than the shared acceptance and packaged runnable error path"
   ],
@@ -27,8 +41,8 @@
     "scripts/check_objc3c_runtime_architecture_integration.py",
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "scripts.objc3c_workflow",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
   ],
   "authoritative_fixture_paths": [

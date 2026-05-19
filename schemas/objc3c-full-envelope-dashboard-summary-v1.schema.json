@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
   "title": "objc3c Full Envelope Dashboard Summary",
   "type": "object",
   "required": [
@@ -9,14 +9,25 @@
     "current_rollout_class",
     "production_strength_claimable",
     "triggered_reasons",
-    "source_summaries"
+    "source_summaries",
+    "source_reports",
+    "public_claim_class",
+    "support_row_counts_by_class",
+    "triggered_release_blockers",
+    "dashboard_release_blocker_projection",
+    "acceptance_matrix",
+    "release_artifacts"
   ],
   "properties": {
     "contract_id": {
       "type": "string"
     },
     "status": {
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
     },
     "current_rollout_class": {
       "type": "string",
@@ -40,7 +51,196 @@
       "items": {
         "type": "string"
       }
+    },
+    "source_reports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "public_claim_class": {
+      "type": "string",
+      "enum": [
+        "production-strength",
+        "candidate-scoped",
+        "preview-only"
+      ]
+    },
+    "support_row_counts_by_class": {
+      "type": "object",
+      "properties": {
+        "supported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "experimental": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "release-blocking": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "triggered_release_blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dashboard_release_blocker_projection": {
+      "type": "object",
+      "required": [
+        "blocker",
+        "dashboard_summary_path",
+        "public_summary_path",
+        "required_dashboard_fields",
+        "required_public_summary_fields",
+        "source_owned_decision_fields",
+        "current_rollout_class",
+        "public_claim_class",
+        "production_strength_claimable",
+        "blocks_production_strength_claim"
+      ],
+      "properties": {
+        "blocker": {
+          "type": "string"
+        },
+        "dashboard_summary_path": {
+          "const": "tmp/reports/full-envelope-claimability/dashboard-summary.json"
+        },
+        "public_summary_path": {
+          "const": "tmp/reports/full-envelope-claimability/public-summary.json"
+        },
+        "required_dashboard_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_public_summary_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_owned_decision_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "current_rollout_class": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "candidate",
+            "preview"
+          ]
+        },
+        "public_claim_class": {
+          "type": "string",
+          "enum": [
+            "production-strength",
+            "candidate-scoped",
+            "preview-only"
+          ]
+        },
+        "production_strength_claimable": {
+          "type": "boolean"
+        },
+        "blocks_production_strength_claim": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "acceptance_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "family",
+          "status",
+          "claim_signal"
+        ],
+        "properties": {
+          "family": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "claim_signal": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "release_artifacts": {
+      "type": "object",
+      "required": [
+        "release_manifest_path",
+        "published_sbom",
+        "published_attestation",
+        "update_manifest_path",
+        "upgrade_support_report",
+        "channel_catalog",
+        "trust_report_json"
+      ],
+      "properties": {
+        "release_manifest_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "published_sbom": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "published_attestation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "update_manifest_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "upgrade_support_report": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "channel_catalog": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trust_report_json": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

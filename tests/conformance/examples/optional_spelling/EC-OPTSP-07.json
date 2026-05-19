@@ -1,6 +1,6 @@
 {
   "id": "EC-OPTSP-07",
-  "title": "Canonicalize Optional spelling in emitted interface/module surface",
+  "title": "Reject noncanonical optional spelling before interface emission",
   "feature": "optional spelling",
   "bucket": "module_roundtrip",
   "profile": "core",
@@ -8,9 +8,40 @@
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
     "docs/reference/legacy_spec_anchor_index.md"
   ],
-  "source": "// RUN: objc3c --emit-interface out.obji %s\n// CHECK: Optional<int> exportedValue\noptional<int> exportedValue(void);\n",
+  "source": "// RUN: objc3c --emit-interface out.obji %s\noptional<int> exportedValue(void);\n",
   "expect": {
-    "parse": "accept",
-    "diagnostics": []
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3C004",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 9
+          }
+        },
+        "message": "optional<T> aliases are rejected; use canonical Optional<T> spelling",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": 9
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      }
+    ]
   }
 }

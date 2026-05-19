@@ -5,7 +5,7 @@
   "compile_output_truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
   "compile_output_provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_native_output_truth_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_native_output_truth_summary.py",
   "authoritative_suite_path": "scripts/check_objc3c_runtime_acceptance.py",
   "authoritative_replay_proof_path": "scripts/check_objc3c_execution_replay_proof.ps1",
   "required_coupled_artifacts": [
@@ -42,7 +42,7 @@
   "explicit_non_goals": [
     "no-proof-from-replay-text-alone",
     "no-proof-from-manifests-without-emitted-object-and-linked-probe",
-    "no-milestone-local-proof-theater",
-    "no-claim-that-compatibility-shims-alone-prove-native-output-truth"
+    "no-closure-local-proof-theater",
+    "no-claim-that-compatibility-gates-alone-prove-native-output-truth"
   ]
 }

@@ -2,13 +2,15 @@
 
 ## Working Boundary
 
-This runbook defines the adoption, migration, capability-comparison, onboarding,
-and evaluator-legibility boundary for objc3c.
+This runbook defines the adoption, canonical conversion,
+capability-comparison, onboarding, and evaluator-legibility boundary for
+objc3c.
 
 Use it when changing:
 
-- README, site, tutorial, showcase, or migration-guide entry points
-- migration guidance from Objective-C 2, Swift, C++, and package-based projects
+- README, site, tutorial, showcase, or canonicalization-guide entry points
+- canonical conversion guidance from Objective-C 2, Swift, C++, and
+  package-based projects
 - capability-comparison wording against the support matrix and conformance data
 - evaluator-facing public command discovery
 - onboarding paths that depend on templates, package locks, canonical apps, or
@@ -19,7 +21,7 @@ Canonical checked-in boundary surfaces:
 - `tests/tooling/fixtures/adoption_legibility/boundary_inventory.json`
 - `README.md`
 - `docs/tutorials/getting_started.md`
-- `docs/tutorials/objc2_to_objc3_migration.md`
+- canonicalization guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `showcase/README.md`
 - `site/index.md`
@@ -31,9 +33,12 @@ Canonical checked-in boundary surfaces:
 
 Replayable boundary inventory:
 
-- `python scripts/build_adoption_legibility_boundary_inventory_summary.py`
+- covered by `npm run objc3c -- validate-adoption-legibility`
 
-## Public Adoption And Migration Claim Policy
+Helper implementations for this runbook are action-catalog-owned. Script paths
+are not operator commands and are not part of the public adoption surface.
+
+## Public Adoption And Conversion Claim Policy
 
 The canonical public-claim policy is checked in at:
 
@@ -41,27 +46,29 @@ The canonical public-claim policy is checked in at:
 
 Replay it with:
 
-- `python scripts/build_adoption_legibility_public_claim_policy_summary.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
-Public adoption and migration claims are intentionally narrower than the
+Public adoption and conversion claims are intentionally narrower than the
 available implementation surface. Any claim that describes production fit,
-migration safety, ecosystem maturity, performance, conformance, or support must
+conversion safety, ecosystem maturity, performance, conformance, or support must
 name its evidence class and must stay inside the support class published by the
 release, package, conformance, performance, and long-horizon runbooks.
+Conversion wording is evidence and onboarding prose only; it does not create
+retired-source acceptance or alternate old-surface support.
 
 Adoption copy may say that objc3c has a runnable evaluator path only when it
 points to checked-in README, site, tutorial, showcase, public-command,
-package, and support evidence. Migration copy may describe incremental
-Objective-C 2 migration only when it stays same-major scoped and names package
-locks, compatibility support, rollback guidance, and deferred unsupported
-runtime behavior.
+package, and support evidence. Conversion copy may describe incremental
+Objective-C 2 conversion only when it stays same-major scoped and names package
+locks, support windows, revert guidance, and deferred unsupported runtime
+behavior.
 
 The policy fails closed on:
 
-- unsupported source-compatibility or performance-leadership claims
-- cross-major migration safety without generated migration evidence
+- unsupported source-acceptance or performance-leadership claims
+- cross-major conversion safety without generated conversion evidence
 - package-manager, hosted registry, or IDE marketplace parity claims
-- tutorial-only migration guidance that bypasses support-window evidence
+- tutorial-only conversion guidance that bypasses support-window evidence
 - adoption metrics that are hand-maintained instead of generated
 
 ## Capability Narrative And Comparison Semantics
@@ -72,28 +79,29 @@ The canonical comparison semantics contract is checked in at:
 
 Replay it with:
 
-- `python scripts/build_adoption_legibility_capability_comparison_summary.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
 Comparison language must answer a concrete evaluator question, name the
 Objective-C 2, Swift, or C++ comparison axis, then link to runnable examples and
-evidence. It must not claim parity, superiority, or migration safety unless the
+evidence. It must not claim parity, superiority, or conversion safety unless the
 claim is backed by conformance, performance, interop, package, release, and
 support evidence. Unsupported or intentionally deferred behavior must remain
 visible in the comparison text.
 
-## Migration Playbook And Interop Guidance
+## Canonical Adoption Replay And Interop Guidance
 
-The canonical migration playbook semantics contract is checked in at:
+The canonical adoption replay semantics contract is checked in at:
 
-- `tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`
+- `tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json`
 
 Replay it with:
 
-- `python scripts/build_adoption_legibility_migration_playbook_summary.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
-Migration guidance has four ordered phases: orient on public docs, compile the
+The public contract is canonical conversion over checked-in runnable examples
+and support evidence. Adoption replay has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
-check support and rollback evidence. Interop guidance is part of that path; it
+check support and revert evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
 Swift-facing, or C++-facing boundary.
 
@@ -106,59 +114,51 @@ The canonical adoption and legibility artifact contract is checked in at:
 Schema surface:
 
 - `schemas/objc3c-adoption-legibility-evidence-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Replay it with:
 
-- `python scripts/build_adoption_legibility_artifact_contract_summary.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
-Generated machine-owned outputs stay under:
+Generated machine-owned outputs stay in adoption-legibility artifact and report
+roots selected by the public workflow.
 
-- `tmp/artifacts/adoption-legibility/`
-- `tmp/reports/adoption-legibility/`
-
-No evaluator, migration, comparison, onboarding, or adoption claim is canonical
+No evaluator, conversion, comparison, onboarding, or adoption claim is canonical
 unless it can be regenerated from checked-in contracts and validated through the
 schema above.
 
 ## Evidence Generation
 
-The canonical evidence generator is:
+The checked-in evidence workflow is:
 
-- `python scripts/build_objc3c_adoption_legibility_evidence.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
-It generates:
-
-- `tmp/artifacts/adoption-legibility/adoption-legibility-evidence.json`
-- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
-- `tmp/reports/adoption-legibility/evidence-summary.json`
+It writes transient adoption-legibility outputs for the evidence artifact,
+evaluator publication, and evidence summary.
 
 The generator replays the boundary inventory, public claim policy, comparison
-semantics, migration playbook semantics, and artifact contract summaries before
-writing artifacts. Generated evidence is temporary output; checked-in contracts,
-docs, and scripts remain the source of truth.
+semantics, adoption replay semantics, and artifact contract summaries before
+writing artifacts. Generated outputs are temporary; checked-in contracts,
+docs, and action-catalog-owned implementations remain the owner inputs.
 
 ## Public Workflow Integration
 
 The repo-scope adoption workflow is:
 
-- `npm run test:objc3c:adoption-legibility`
-- `npm run publish:objc3c:adoption-legibility`
+- `npm run objc3c -- validate-adoption-legibility`
+- `npm run objc3c -- publish-adoption-legibility`
 
 It maps to:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-adoption-legibility`
-- `python scripts/check_objc3c_adoption_legibility_integration.py`
-- `python scripts/objc3c_public_workflow_runner.py publish-adoption-legibility`
-- `python scripts/publish_objc3c_adoption_legibility_metadata.py`
+- `npm run objc3c -- validate-adoption-legibility`
+- `npm run objc3c -- publish-adoption-legibility`
 
-The public workflow validates the generated evidence artifact shape, evaluator
-entrypoints, migration phases, comparison axes, onboarding workspaces, support
+The public workflow validates the generated-output artifact shape, evaluator
+entrypoints, adoption replay phases, comparison axes, onboarding workspaces, support
 state, and claim-audit blockers.
 
-Evaluator metadata publication emits:
-
-- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
-- `tmp/reports/adoption-legibility/publication-summary.json`
+Evaluator metadata publication emits transient publication artifacts and
+publication summaries selected by the checked-in adoption contract.
 
 ## Current Boundary
 
@@ -167,28 +167,28 @@ marketing layer. The repo already has evaluator-facing docs, tutorials,
 showcase projects, conformance reporting, package workflows, release operations,
 performance governance, and long-horizon support evidence. This boundary
 connects those surfaces into a coherent path for people deciding whether to
-evaluate, migrate to, or build with objc3c.
+evaluate, convert code toward, or build with objc3c.
 
 ## Claim Boundary
 
 Supported in this boundary:
 
 - evaluator entry points that name the exact commands and docs to read first
-- migration guidance grounded in checked-in tutorials, package workflows, and
+- conversion guidance grounded in checked-in tutorials, package workflows, and
   runnable canonical application surfaces
 - comparison wording tied to public conformance, performance, package, release,
   and support evidence
 - onboarding paths that can be replayed through package, template, showcase, and
   public workflow commands
-- generated adoption evidence under `tmp/reports/` and `tmp/artifacts/`
+- generated adoption outputs selected by the checked-in adoption contracts
 
 Not supported in this boundary:
 
-- unsupported claims about source compatibility, performance leadership, or
+- unsupported claims about source acceptance, performance leadership, or
   ecosystem maturity
 - hand-maintained adoption counts without replayable queries
-- tutorial-only migration claims that bypass package locks or compatibility
-  support evidence
+- tutorial-only conversion claims that bypass package locks or support-window
+  evidence
 - hosted service, registry, IDE marketplace, or community-program commitments
 - private maintainer context as a prerequisite for external evaluation
 
@@ -196,9 +196,9 @@ Not supported in this boundary:
 
 This boundary consumes:
 
-- public command discovery from `scripts/render_objc3c_public_command_surface.py`
+- public command discovery from `npm run objc3c -- build-public-command-surface`
 - package workflow evidence from `docs/runbooks/objc3c_package_ecosystem.md`
-- release and compatibility evidence from `docs/runbooks/objc3c_release_operations.md`
+- release and support-window evidence from `docs/runbooks/objc3c_release_operations.md`
 - conformance scorecard evidence from
   `docs/runbooks/objc3c_public_conformance_reporting.md`
 - performance claim governance from `docs/runbooks/objc3c_performance_governance.md`

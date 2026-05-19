@@ -1,8 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3-conformance-dashboard-status-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "title": "Objective-C 3 Conformance Dashboard Status (v1)",
   "description": "Machine-readable status contract for the v0.11 conformance evidence dashboard (Issue #173 / B-13).",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3-conformance-dashboard-status/v1",
+    "payload_id_field": "schema_id",
+    "payload_id_value": "objc3-conformance-dashboard-status/v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "conformance-dashboard"
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [

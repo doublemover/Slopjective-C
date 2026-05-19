@@ -173,13 +173,13 @@ try {
 catch {
   Write-Output ("error: {0}" -f $_.Exception.Message)
   if (!(Test-Path -LiteralPath $proofSummaryPath -PathType Leaf)) {
-    $fallback = [ordered]@{
+    $retired route = [ordered]@{
       generated_at_utc = (Get-Date).ToUniversalTime().ToString("o")
       proof_run_id = $proofRunId
       status = "FAIL"
       fatal_error = $_.Exception.Message
     }
-    $fallback | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $proofSummaryPath -Encoding utf8
+    $retired route | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $proofSummaryPath -Encoding utf8
   }
   Write-Output ("summary_path: {0}" -f $proofSummaryPath.Replace($repoRoot, "").TrimStart('\', '/').Replace('\', '/'))
   exit 1

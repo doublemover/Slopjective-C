@@ -7,6 +7,44 @@
     "release-operations",
     "release-evidence"
   ],
+  "status_values": [
+    "PASS",
+    "WARN",
+    "FAIL"
+  ],
+  "state_resolution": {
+    "ready": "all required trust signals pass on the live shipped release surface",
+    "degraded": "one or more non-blocking trust signals warn while required release drill evidence remains present",
+    "blocked": "any required trust signal fails or any checked-in source contract drifts"
+  },
+  "owner_contracts": {
+    "trust_owner": {
+      "role": "distribution-credibility-trust-owner",
+      "source_contract": "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
+      "required_actions": [
+        "build-distribution-credibility-dashboard",
+        "publish-distribution-credibility"
+      ],
+      "evidence_log_allowed": false,
+      "claim_boundary": "trust reports are projections of release drill evidence, not independent manual badges"
+    },
+    "release_drill_owner": {
+      "role": "distribution-credibility-release-drill-owner",
+      "source_contract": "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
+      "required_actions": [
+        "validate-distribution-credibility",
+        "validate-distribution-credibility-end-to-end"
+      ],
+      "evidence_log_allowed": false,
+      "claim_boundary": "release credibility blocks unless package channel, release operations, and release evidence drill inputs remain attached"
+    }
+  },
+  "required_signal_order": [
+    "release-foundation-lineage",
+    "package-channel-install-smoke",
+    "release-operations-metadata",
+    "release-evidence-gate"
+  ],
   "trust_signals": [
     {
       "signal_id": "release-foundation-lineage",
@@ -32,6 +70,7 @@
   "explicit_non_goals": [
     "hosted trust service",
     "manual badge program",
-    "parallel release source of truth"
+    "parallel release source of truth",
+    "evidence-log trust evidence"
   ]
 }

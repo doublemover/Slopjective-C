@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.subprocesses import command_text, python_script_command
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
@@ -24,7 +25,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-mirror-
 
 def ensure_lock() -> None:
     result = subprocess.run(
-        [sys.executable, "scripts/build_objc3c_package_lock.py"],
+        python_script_command("scripts/build_objc3c_package_lock.py"),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -41,6 +42,11 @@ def ensure_lock() -> None:
 def main() -> int:
     ensure_lock()
     lock = load_json(LOCK_PATH)
+    build_lock_command = command_text(python_script_command("scripts/build_objc3c_package_lock.py"))
+    build_mirror_command = command_text(python_script_command("scripts/build_objc3c_package_mirror.py"))
+    mirror_check_command = command_text(
+        python_script_command("scripts/check_objc3c_package_registry_mirror_reproducibility.py")
+    )
     packages = lock.get("packages", [])
     if not isinstance(packages, list):
         raise RuntimeError("lock packages field drifted from a list")
@@ -62,9 +68,9 @@ def main() -> int:
         "network_policy": "no-network-during-validation",
         "replay": {
             "commands": [
-                "python scripts/build_objc3c_package_lock.py",
-                "python scripts/build_objc3c_package_mirror.py",
-                "python scripts/check_objc3c_package_registry_mirror_reproducibility.py",
+                build_lock_command,
+                build_mirror_command,
+                mirror_check_command,
             ]
         },
     }
@@ -90,7 +96,7 @@ def main() -> int:
         "source_mirror": repo_rel(MIRROR_PATH),
         "source_registry_index": repo_rel(REGISTRY_PATH),
         "publication_state": "generated-local-metadata",
-        "hosted_registry_support": "deferred-release-blocking-if-claimed",
+        "hosted_registry_support": "unsupported-fail-closed-if-claimed",
         "network_resolution_support": "unsupported",
         "package_count": len(packages),
     }

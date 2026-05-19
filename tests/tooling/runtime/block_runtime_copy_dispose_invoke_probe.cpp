@@ -4,65 +4,74 @@
 
 namespace {
 
-struct ProbeCaptureState {
-  int base = 0;
-  int copy_count = 0;
-  int dispose_count = 0;
-};
-
 struct ProbeBlockStorage {
   int (*invoke)(void *, int, int, int, int) = nullptr;
   void (*copy)(void *) = nullptr;
   void (*dispose)(void *) = nullptr;
-  ProbeCaptureState *capture = nullptr;
+  int *captured_base = nullptr;
 };
 
+int g_copy_count = 0;
+int g_dispose_count = 0;
+int g_post_release_callback_count = 0;
+bool g_allow_invoke_storage_access = true;
+
 extern "C" int ProbeInvoke(void *storage, int a0, int a1, int a2, int a3) {
+  if (!g_allow_invoke_storage_access) {
+    ++g_post_release_callback_count;
+    return -777;
+  }
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return -1;
   }
-  return block->capture->base + a0 + a1 + a2 + a3 +
-         block->capture->copy_count * 100 +
-         block->capture->dispose_count * 1000;
+  return *block->captured_base + a0 + a1 + a2 + a3 + g_copy_count * 100 +
+         g_dispose_count * 1000;
 }
 
 extern "C" void ProbeCopy(void *storage) {
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return;
   }
-  ++block->capture->copy_count;
+  ++g_copy_count;
 }
 
 extern "C" void ProbeDispose(void *storage) {
   auto *block = static_cast<ProbeBlockStorage *>(storage);
-  if (block == nullptr || block->capture == nullptr) {
+  if (block == nullptr || block->captured_base == nullptr) {
     return;
   }
-  ++block->capture->dispose_count;
+  ++g_dispose_count;
 }
 
 }  // namespace
 
 int main() {
   objc3_runtime_reset_for_testing();
+  g_copy_count = 0;
+  g_dispose_count = 0;
+  g_post_release_callback_count = 0;
+  g_allow_invoke_storage_access = true;
 
-  ProbeCaptureState capture{7, 0, 0};
-  ProbeBlockStorage block{&ProbeInvoke, &ProbeCopy, &ProbeDispose, &capture};
+  int captured_base = 7;
+  ProbeBlockStorage block{&ProbeInvoke, &ProbeCopy, &ProbeDispose,
+                          &captured_base};
 
   const int handle =
       objc3_runtime_promote_block_i32(&block, sizeof(block), 1);
-  const int copy_count_after_promotion = capture.copy_count;
+  captured_base = 99;
+  const int copy_count_after_promotion = g_copy_count;
   const int invoke_result =
       handle > 0 ? objc3_runtime_invoke_block_i32(handle, 1, 2, 3, 4) : 0;
   const int retain_result = handle > 0 ? objc3_runtime_retain_i32(handle) : 0;
   const int release_result =
       handle > 0 ? objc3_runtime_release_i32(handle) : 0;
-  const int dispose_count_before_final_release = capture.dispose_count;
+  const int dispose_count_before_final_release = g_dispose_count;
   const int final_release_result =
       handle > 0 ? objc3_runtime_release_i32(handle) : 0;
-  const int dispose_count_after_final_release = capture.dispose_count;
+  const int dispose_count_after_final_release = g_dispose_count;
+  g_allow_invoke_storage_access = false;
   const int invoke_after_release_result =
       handle > 0 ? objc3_runtime_invoke_block_i32(handle, 9, 0, 0, 0) : 0;
 
@@ -81,6 +90,8 @@ int main() {
   std::printf("\"final_release_result\":%d,", final_release_result);
   std::printf("\"dispose_count_after_final_release\":%d,",
               dispose_count_after_final_release);
+  std::printf("\"post_release_callback_count\":%d,",
+              g_post_release_callback_count);
   std::printf("\"invoke_after_release_result\":%d",
               invoke_after_release_result);
   std::printf("}");

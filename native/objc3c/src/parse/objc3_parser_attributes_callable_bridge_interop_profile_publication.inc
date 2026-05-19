@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_attributes_callable_bridge_interop_profile_publication_foreign_import_module.inc"
+
+#include "parse/objc3_parser_attributes_callable_bridge_interop_profile_publication_swift_naming_privacy.inc"
+
+#include "parse/objc3_parser_attributes_callable_bridge_interop_profile_publication_cxx_header_naming.inc"
+
+#include "parse/objc3_parser_attributes_callable_bridge_interop_profile_publication_export_header.inc"

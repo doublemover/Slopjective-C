@@ -1,45 +1,80 @@
 {
   "contract_id": "objc3c.public_conformance_reporting.workflow.surface.v1",
   "schema_version": 1,
-  "actions": [
-    {
-      "action": "check-public-conformance-reporting-surface",
-      "package_script": "check:objc3c:public-conformance:surface"
-    },
-    {
-      "action": "check-public-conformance-schema-surface",
-      "package_script": "check:objc3c:public-conformance:schemas"
-    },
-    {
-      "action": "build-public-conformance-scorecard",
-      "package_script": "inspect:objc3c:public-conformance:scorecard"
-    },
-    {
-      "action": "publish-public-conformance-report",
-      "package_script": "publish:objc3c:public-conformance"
-    },
-    {
-      "action": "validate-public-conformance-reporting",
-      "package_script": "test:objc3c:public-conformance"
-    },
-    {
-      "action": "validate-public-conformance-reporting-integration",
-      "package_script": "test:objc3c:public-conformance:integration"
-    },
-    {
-      "action": "validate-public-conformance-reporting-end-to-end",
-      "package_script": "test:objc3c:public-conformance:e2e"
-    }
+  "package_bridge": "objc3c",
+  "owner_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+  "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "e2e",
+    "canonical_rejection",
+    "public_conformance_provenance"
   ],
+  "actions": [
+    "check-public-conformance-reporting-surface",
+    "check-public-conformance-schema-surface",
+    "build-public-conformance-scorecard",
+    "publish-public-conformance-report",
+    "validate-public-conformance-reporting",
+    "validate-public-conformance-reporting-integration",
+    "validate-public-conformance-reporting-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "public-conformance-source",
+    "gate_owner": "public-conformance-gate",
+    "blocker_owner": "public-conformance-blockers",
+    "evidence_log_allowed": false,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
+    "owned_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report",
+      "validate-public-conformance-reporting",
+      "validate-public-conformance-reporting-integration",
+      "validate-public-conformance-reporting-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-conformance-corpus",
+      "validate-external-validation"
+    ],
+    "workflow_child_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report"
+    ]
+  },
   "report_paths": [
     "tmp/reports/public-conformance/source-surface-summary.json",
     "tmp/reports/public-conformance/schema-surface-summary.json",
     "tmp/reports/public-conformance/scorecard-summary.json",
     "tmp/reports/public-conformance/public-summary.json"
   ],
+  "report_path_behavior_boundary": "generated public conformance reports are provenance-only and cannot establish positive parser, sema, lowering, IR, runtime, e2e, capability, claim-ready, or compatibility support",
   "artifact_paths": [
     "tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json",
     "tmp/artifacts/public-conformance/badge/public-conformance-badge.json",
     "tmp/artifacts/public-conformance/report/public-conformance-report.md"
-  ]
+  ],
+  "artifact_path_behavior_boundary": "tmp public conformance artifacts are provenance-only and cannot promote evidence-log, generated-only, dashboard-only, scorecard-only, badge-only, provisional, blocked, quarantined, retired route, gate, old-mode, workflow-label-only, or compatibility evidence to claim-ready support",
+  "behavior_boundary": {
+    "primary_axis": "behavior owner before workflow action, child report, tmp artifact, scorecard, badge, public summary, public status, or public claim language",
+    "support_authority": "public conformance workflow rows are routing/provenance until e2e owner assignment is backed by upstream parser, sema, lowering, IR, and runtime evidence owners",
+    "positive_support_from_report": false,
+    "retired_surface_rule": "workflow-label-only success, evidence-log readiness, generated-summary-only readiness, tmp-artifact-only readiness, scorecard-only readiness, badge-only readiness, provisional-as-claim-ready, blocked/quarantined promotion, retired route workflows, gate workflows, old-mode commands, and compatibility workflows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
+  "child_report_contracts": {
+    "tmp/reports/public-conformance/source-surface-summary.json": "objc3c.public_conformance_reporting.source.surface.summary.v1",
+    "tmp/reports/public-conformance/schema-surface-summary.json": "objc3c.public_conformance_reporting.schema.surface.summary.v1",
+    "tmp/reports/public-conformance/scorecard-summary.json": "objc3c.public_conformance_reporting.scorecard.summary.v1",
+    "tmp/reports/public-conformance/public-summary.json": "objc3c.public_conformance_reporting.summary.v1"
+  },
+  "capability_truth_language": {
+    "claim-ready": "all required upstream evidence owners passed and no hard blocks remain",
+    "provisional": "public summary is publishable with explicit caution and deductions",
+    "blocked": "public summary is not claim-ready and must state the blocking evidence"
+  }
 }

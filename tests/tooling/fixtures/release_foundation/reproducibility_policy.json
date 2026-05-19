@@ -2,11 +2,17 @@
   "contract_id": "objc3c.release.foundation.reproducibility.policy.v1",
   "surface_kind": "reproducibility-provenance-and-hermetic-toolchain-policy",
   "reproducibility_scope": "repo-local staged runnable bundle assembly",
-  "required_generation_inputs": [
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-native-binaries",
+    "package-runnable-toolchain",
+    "check-release-evidence"
+  ],
+  "required_generation_implementation_anchors": [
     "scripts/build_objc3c_native.ps1",
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/check_release_evidence.py",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json"
   ],
   "hermeticity_requirements": [
     "all published release artifacts must be derived from repo-relative inputs",

@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers.inc"
+#include "parse/objc3_parser_core_draft_syntax_surface_replay_finalizers.inc"
+#include "parse/objc3_parser_core_draft_syntax_surface_readiness_finalizers.inc"
+#include "parse/objc3_parser_core_draft_syntax_surface_summary_finalizers.inc"

@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_site_collection.inc"
+#include "sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_classification.inc"
+#include "sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_diagnostics.inc"
+#include "sema/objc3_semantic_passes_borrowed_ownership_diagnostics_pointer_escape_readiness.inc"

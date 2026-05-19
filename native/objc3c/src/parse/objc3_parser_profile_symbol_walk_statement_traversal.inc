@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_profile_symbol_walk_statement_traversal_expressions.inc"
+#include "parse/objc3_parser_profile_symbol_walk_statement_traversal_branch_body.inc"
+#include "parse/objc3_parser_profile_symbol_walk_statement_traversal_loop_for.inc"
+#include "parse/objc3_parser_profile_symbol_walk_statement_traversal_switch.inc"
+#include "parse/objc3_parser_profile_symbol_walk_statement_traversal_dispatch.inc"

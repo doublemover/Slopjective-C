@@ -12,9 +12,21 @@ SUMMARY_OUT_DIR = ROOT / "tmp/reports/runtime-corrective/realized-dispatch-seman
 JSON_OUT = SUMMARY_OUT_DIR / "realized_dispatch_semantic_summary.json"
 MD_OUT = SUMMARY_OUT_DIR / "realized_dispatch_semantic_summary.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
+RUNTIME_PARTS_DIR = ROOT / "native/objc3c/src/runtime/objc3_runtime_parts"
+RUNTIME_HEADER_PATHS = [
+    ROOT / "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+    ROOT / "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+]
 DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 ACCEPTANCE_SCRIPT_PATH = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
+ACCEPTANCE_DISPATCH_SEMANTICS_PATH = (
+    ROOT
+    / "scripts"
+    / "objc3c_runtime_acceptance"
+    / "domains"
+    / "object_model_surface_query_semantics.py"
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -25,12 +37,24 @@ def count_literal(text: str, needle: str) -> int:
     return text.count(needle)
 
 
+def read_joined_text(paths: list[Path]) -> str:
+    return "\n".join(path.read_text(encoding="utf-8") for path in paths)
+
+
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
+    runtime_text = read_joined_text(
+        [
+            RUNTIME_PATH,
+            *sorted(RUNTIME_PARTS_DIR.glob("*.inc")),
+            *RUNTIME_HEADER_PATHS,
+        ]
+    )
     doc_text = DOC_PATH.read_text(encoding="utf-8")
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    acceptance_text = ACCEPTANCE_SCRIPT_PATH.read_text(encoding="utf-8")
+    acceptance_text = read_joined_text(
+        [ACCEPTANCE_SCRIPT_PATH, ACCEPTANCE_DISPATCH_SEMANTICS_PATH]
+    )
 
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
     probe_paths = [ROOT / path for path in contract["authoritative_probe_paths"]]
@@ -47,7 +71,7 @@ def main() -> int:
         "realized_class_snapshot_present": "int objc3_runtime_copy_realized_class_entry_for_testing(" in runtime_text,
         "protocol_query_snapshot_present": "int objc3_runtime_copy_protocol_conformance_query_for_testing(" in runtime_text,
         "runtime_contains_all_dispatch_path_labels": all(label in runtime_text for label in contract["dispatch_path_labels"]),
-        "docs_still_publish_dispatch_fallback_gap": "unresolved dispatch still has one deterministic fallback path after slow-path miss" in doc_text,
+        "docs_publish_dispatch_strict_error_gap": "unresolved dispatch still has one strict dispatch error path after slow-path miss" in doc_text,
         "acceptance_script_uses_same_lookup_resolution_model": contract["lookup_resolution_order_model"] in acceptance_text,
         "acceptance_script_uses_same_unresolved_behavior_model": contract["unresolved_selector_behavior_model"] in acceptance_text,
         "runbook_mentions_realized_dispatch_contract": "realized_dispatch_semantic_model.json" in runbook_text,
@@ -65,7 +89,7 @@ def main() -> int:
         "explicit_non_goal_count": len(contract["explicit_non_goals"]),
         "runtime_dispatch_occurrences": count_literal(runtime_text, "objc3_runtime_dispatch_i32"),
         "method_cache_occurrences": count_literal(runtime_text, "method_cache"),
-        "fallback_formula_occurrences": count_literal(runtime_text, "fallback-formula"),
+        "strict_dispatch_error_occurrences": count_literal(runtime_text, "strict-dispatch-error"),
         "nil_short_circuit_occurrences": count_literal(runtime_text, "nil-short-circuit"),
     }
 

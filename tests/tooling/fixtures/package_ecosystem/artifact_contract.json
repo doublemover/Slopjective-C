@@ -8,8 +8,16 @@
   "registry_publication_semantics": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
   "schemas": {
     "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
-    "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+    "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json"
   },
+  "owner_split_modules": [
+    "scripts/objc3c_workflow/action_catalog_package_lock_contracts.py",
+    "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+    "scripts/objc3c_workflow/action_catalog_package_install_receipts.py",
+    "scripts/objc3c_workflow/action_catalog_package_integration_claims.py",
+    "scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py"
+  ],
   "generated_artifact_roots": [
     "tmp/artifacts/package-ecosystem/locks",
     "tmp/artifacts/package-ecosystem/mirrors",
@@ -35,17 +43,81 @@
     "registry metadata must be generated from lock and mirror evidence",
     "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
   ],
-  "required_public_scripts": [
-    "package:objc3c-native:runnable-toolchain",
-    "build:objc3c:package-lock",
-    "test:objc3c:package-authoring",
-    "test:objc3c:package-mirror",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "owner_contracts": {
+    "lock_owner": {
+      "role": "package-ecosystem-lock-owner",
+      "source_contracts": [
+        "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+        "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json"
+      ],
+      "public_actions": [
+        "build-package-lock"
+      ],
+      "claim_boundary": "deterministic local lock evidence only; no hosted registry, package-manager parity, or network-dependent install claim"
+    },
+    "registry_publication_owner": {
+      "role": "package-ecosystem-registry-owner",
+      "source_contracts": [
+        "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+        "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json"
+      ],
+      "public_actions": [
+        "validate-package-mirror",
+        "validate-package-ecosystem",
+        "validate-runnable-package-ecosystem"
+      ],
+      "claim_boundary": "registry publication means replayable local metadata and mirror evidence; hosted registry support fails closed"
+    },
+    "authoring_owner": {
+      "role": "package-ecosystem-authoring-owner",
+      "source_contracts": [
+        "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json"
+      ],
+      "public_actions": [
+        "validate-package-authoring"
+      ],
+      "claim_boundary": "package authoring credibility is owned by checked-in workflow contracts, not wrapper-only action dispatch"
+    }
+  },
+  "hard_cutover_publication_policy": {
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
+    "wrapper_only_publication_allowed": false,
+    "evidence_log_allowed": false,
+    "required_owner_contract_module": "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py"
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "package artifact generated without checked-in source contract",
+      "schema missing for package publication artifact",
+      "generated package evidence outside package ecosystem artifact root",
+      "hosted registry claim without local package evidence",
+      "package publication action has no owner contract",
+      "package publication action is wrapper-only"
+    ]
+  },
+  "required_actions": [
+    "package-runnable-toolchain",
+    "build-package-lock",
+    "validate-package-authoring",
+    "validate-package-mirror",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ]
 }

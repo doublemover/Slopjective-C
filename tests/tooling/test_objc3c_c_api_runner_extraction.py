@@ -1,111 +1,49 @@
 from __future__ import annotations
 
-from pathlib import Path
+from objc3c_c_api_runner_extraction_behavior import (
+    assert_bonus_experience_boundary_surface,
+    assert_c_gate_compile_path,
+    assert_contract_tracks_summary_ownership_fields,
+    assert_fail_closed_stage_and_result_accessor_drift,
+    assert_observability_surface,
+    assert_playground_repro_surface,
+    assert_runtime_inspector_and_dump_flags,
+    assert_summary_and_cli_contract,
+)
+from objc3c_c_api_runner_extraction_json import load_c_api_runner_contract
+from objc3c_c_api_runner_extraction_sources import runner_source_text
 
-ROOT = Path(__file__).resolve().parents[2]
-RUNNER_CPP = ROOT / "native" / "objc3c" / "src" / "tools" / "objc3c_frontend_c_api_runner.cpp"
 
-
-def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
-
-
-def test_c_api_runner_uses_c_shim_compile_path() -> None:
-    source = _read(RUNNER_CPP)
-
-    assert '#include "libobjc3c_frontend/c_api.h"' in source
-    assert "objc3c_frontend_c_context_create()" in source
-    assert "objc3c_frontend_c_compile_file(context, &compile_options, &result)" in source
-    assert "objc3c_frontend_c_copy_last_error(context, nullptr, 0)" in source
-    assert "objc3c_frontend_c_context_destroy(context);" in source
+def test_c_api_runner_uses_c_gate_compile_path() -> None:
+    assert_c_gate_compile_path(runner_source_text())
 
 
 def test_c_api_runner_reports_summary_and_cli_contract() -> None:
-    source = _read(RUNNER_CPP)
-
-    assert '\\"mode\\": \\"objc3c-frontend-c-api-runner-v1\\"' in source
-    assert 'fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native"' in source
-    assert "wrote summary: " in source
-    assert "--llc <path>" in source
-    assert "--objc3-ir-object-backend <clang|llvm-direct>" in source
-    assert "--objc3-compat-mode <canonical|legacy>" in source
-    assert "--objc3-migration-assist" in source
-    assert "--objc3-max-message-args" in source
-    assert "--objc3-runtime-dispatch-symbol" in source
-    assert "invalid --objc3-compat-mode (expected canonical|legacy): " in source
-    assert '\\"compatibility_mode\\": \\"' in source
-    assert '\\"migration_assist\\": ' in source
-    assert "compile_options.llc_path =" in source
-    assert "compile_options.compatibility_mode = options.compatibility_mode;" in source
-    assert "compile_options.migration_assist = options.migration_assist ? 1u : 0u;" in source
-    assert "compile_options.ir_object_backend = options.ir_object_backend;" in source
-    assert "ExitCodeFromStatus" in source
+    assert_summary_and_cli_contract(runner_source_text())
 
 
 def test_c_api_runner_reports_observability_surface() -> None:
-    source = _read(RUNNER_CPP)
+    assert_observability_surface(runner_source_text())
 
-    assert '\\"observability\\": ' in source
-    assert '\\"status_name\\": \\"' in source
-    assert '\\"last_attempted_stage\\": \\"' in source
-    assert '\\"blocking_stage\\": \\"' in source
-    assert '\\"highest_diagnostic_severity\\": \\"' in source
-    assert '\\"artifact_presence\\": {' in source
-    assert '\\"dump_commands\\": {' in source
-    assert "BuildDiagnosticTotals" in source
-    assert "BuildPowerShellReadCommand" in source
-    assert "Get-Content -Raw " in source
+
+def test_c_api_runner_fails_closed_on_stage_and_result_accessor_drift() -> None:
+    assert_fail_closed_stage_and_result_accessor_drift(runner_source_text())
+
+
+def test_c_api_runner_contract_fixture_tracks_summary_ownership_fields() -> None:
+    assert_contract_tracks_summary_ownership_fields(
+        runner_source_text(),
+        load_c_api_runner_contract(),
+    )
 
 
 def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
-    source = _read(RUNNER_CPP)
-
-    assert "--dump-summary-json" in source
-    assert "--dump-observability-json" in source
-    assert "--dump-playground-repro-json" in source
-    assert "--dump-runtime-inspector-json" in source
-    assert "--dump-stage-trace-json" in source
-    assert '\\"runtime_inspector\\": ' in source
-    assert '\\"section_inventory_command\\": \\"' in source
-    assert '\\"symbol_inventory_command\\": \\"' in source
-    assert '\\"arc_debug_state_snapshot_symbol\\": \\"' in source
-    assert "BuildObjectInspectionCommand" in source
-    assert "kObjc3RuntimeMetadataObjectInspectionContractId" in source
-    assert "kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel" in source
-    assert '\\"mode\\": \\"objc3c-frontend-stage-trace-v1\\"' in source
-    assert "BuildStageTraceJson" in source
+    assert_runtime_inspector_and_dump_flags(runner_source_text())
 
 
 def test_c_api_runner_reports_bonus_experience_boundary_surface() -> None:
-    source = _read(RUNNER_CPP)
-
-    assert '\\"bonus_experiences\\": ' in source
-    assert "WriteBonusExperiencesJson" in source
-    assert "objc3c.bonus.experiences.boundary.v1" in source
-    assert '\\"product_boundary_model\\": ' in source
-    assert '\\"runtime_boundary_model\\": ' in source
-    assert '\\"playground\\": {' in source
-    assert '\\"runtime_inspector_and_capability_explorer\\": {' in source
-    assert '\\"template_and_demo_harness\\": {' in source
-    assert "materialize-playground-workspace" in source
-    assert "tmp/artifacts/playground" in source
-    assert "tmp/reports/playground" in source
-    assert "inspect-compile-observability" in source
-    assert "benchmark-runtime-inspector" in source
-    assert "inspect-capability-explorer" in source
-    assert "inspect-runtime-inspector" in source
-    assert "validate-showcase" in source
+    assert_bonus_experience_boundary_surface(runner_source_text())
 
 
 def test_c_api_runner_reports_playground_repro_surface() -> None:
-    source = _read(RUNNER_CPP)
-
-    assert "WritePlaygroundReproJson" in source
-    assert "BuildFrontendRunnerReproCommand" in source
-    assert "objc3c.playground.repro.surface.v1" in source
-    assert 'EscapeJsonString(options.out_dir.generic_string())' in source
-    assert '\\"compile_profile\\": {' in source
-    assert '\\"showcase_examples\\": [' in source
-    assert '\\"repro_runner\\": \\"' in source
-    assert "materialize-playground-workspace" in source
-    assert "inspect-playground-repro" in source
+    assert_playground_repro_surface(runner_source_text())

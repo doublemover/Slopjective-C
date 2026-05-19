@@ -1,0 +1,9 @@
+  void FinalizeFunctionReturnTypeProfiles(FunctionDecl &fn) {
+#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_arc_ownership.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_type_system.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_module_contracts.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_borrowed.inc"
+  }

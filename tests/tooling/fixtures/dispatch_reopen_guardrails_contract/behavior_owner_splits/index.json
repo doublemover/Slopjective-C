@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/dispatch_review.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/playbook.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/hard_fail_invalid_utf8/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/hard_fail_invalid_utf8/dispatch_review.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/hard_fail_invalid_utf8/playbook.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/dispatch_review.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/playbook.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/drift_missing_lane_b_validation/batch_manifest.md"
+  ],
+  "split_policy": {
+    "primary_axis": "dispatch-reopen guardrail behavior before fixture directory label, markdown heading label, issue number label, agent id label, command string, source path label, generated row, report row, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "dispatch-reopen positives are limited to the hand-authored happy fixture where lane ownership, intake order, dispatch closeout order, runner preflight chain, freshness/provenance evidence, hard/soft gates, and Lane B validation are all canonical and strict",
+    "canonical_rejection_rule": "W2 drift rows, missing lane validation rows, invalid UTF-8 rows, stale order rows, missing freshness/provenance rows, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "invalid UTF-8 fixture bytes, missing Lane B pytest validation, reordered merge or closeout sequence, missing AR-DEP-M03-02 freshness linkage, missing AR-FRESHNESS-01, reordered hard-gate sequence, and drifted hard/soft matrix ordering own fail-closed strict-error evidence",
+    "provenance_rule": "markdown fixture files, batch ids, issue numbers, agent ids, lane labels, command strings, source-of-truth input paths, evidence ids, gate ids, dependency ids, commit ids, and owner-split routing rows remain provenance unless e2e/tooling or rejection owners claim the behavior boundary",
+    "retired_surface_rule": "old-mode dispatch reopen, gate dispatch reopen, retired route dispatch reopen, retired dispatch reopen, migration-only rows, generated-only rows, evidence-log rows, runner-only success, workflow-label-only success, invalid-encoding positives, stale-order positives, missing-validation positives, drift positives, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "dispatch_reopen_guardrails_provenance",
+      "path": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/behavior_owner_splits/dispatch_reopen_guardrails_provenance.json"
+    }
+  ]
+}

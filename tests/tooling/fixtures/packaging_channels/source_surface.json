@@ -6,9 +6,73 @@
   "installer_policy": "tests/tooling/fixtures/packaging_channels/installer_policy.json",
   "metadata_surface": "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
   "schema_surface": "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+  "package_bridge": "objc3c",
+  "public_actions": [
+    "check-packaging-channels-surface",
+    "check-packaging-channels-schema-surface",
+    "package-runnable-toolchain",
+    "build-package-channels",
+    "build-platform-support-matrix",
+    "validate-packaging-channels",
+    "validate-packaging-channels-end-to-end",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "packaging-channels-source",
+    "gate_owner": "packaging-channels-gate",
+    "blocker_owner": "packaging-channels-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ],
+    "hard_cutover_guardrails": {
+      "unsupported_host_success_allowed": false,
+      "supported_host_claim_owner": "platform-hardening-support-source",
+      "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+      "toolchain_archive_claim_requires_owner": true,
+      "package_payload_owner_action": "package-runnable-toolchain",
+      "evidence_log_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
+  },
+  "channel_owner_contract": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "packaging-channels-installer-validation",
+    "package_validation_owner": "packaging-channels-package-validation",
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ]
+  },
+  "blocker_metadata": {
+    "blocker_owner": "packaging-channels-blockers",
+    "blocking_conditions": [
+      "channel source contract missing checked-in source",
+      "installer policy missing rollback or receipt contract",
+      "package channel artifact not derived from runnable package manifest",
+      "platform support matrix absent from package-channel summary"
+    ]
+  },
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
-    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_release_foundation.md"
+  ],
+  "implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",

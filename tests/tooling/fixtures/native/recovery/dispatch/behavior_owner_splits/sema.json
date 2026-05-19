@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-dispatch-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3"
+  ],
+  "support_boundary": "sema ownership covers hand-authored semantic meaning in the recovery dispatch source rows: inherited container/property binding, property type surfaces, receiver expression typing, keyword selector arity classification, assignment/update surfaces in draft syntax, and source-level result typing. The native compile-args sidecar, dispatch/recovery directory labels, generated reports, evidence-log rows, old-mode rows, gate rows, retired route rows, compatibility rows, and migration-only rows are not semantic support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "semantic_surface:inherited-ivar-layout",
+    "semantic_surface:property-type-binding",
+    "semantic_surface:receiver-expression-typing",
+    "semantic_surface:keyword-selector-arity",
+    "semantic_surface:draft-assignment-and-update"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema recovery, compatibility sema recovery, gate sema recovery, retired route sema recovery, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and sidecar-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-B002",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
   "canonical_surfaces": [
     "runtime_metaprogramming_semantics_surface",
     "runtime_metaprogramming_lowering_host_cache_surface",
@@ -22,7 +22,8 @@
   "claim_narrowing_constraints": [
     "property-behavior-claims-stay-narrower-than-the-private-current-property-helper-boundary-and-runtime-owned-property-registry-snapshots",
     "unsupported-property-behavior-combinations-remain-diagnostic-backed-and-fail-closed-until-dedicated-runtime-evidence-lands",
-    "no-public-runtime-abi-widening-or-storage-global-fallbacks-are-claimed-by-this-policy"
+    "no-public-runtime-abi-widening-or-storage-global-retired-routes-are-claimed-by-this-policy",
+    "synthesized accessor artifacts, generated materialization reports, module replay rows, and storage reflection metadata are provenance until claimed by sema, lowering, runtime, or e2e owners"
   ],
   "authoritative_case_ids": [
     "metaprogramming-derive-property-behavior-semantics",
@@ -37,9 +38,11 @@
     "arc-property-helper-abi"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "scripts/check_objc3c_runtime_acceptance.py"
   ],
   "authoritative_fixture_paths": [

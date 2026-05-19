@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/dispatch_review.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy/playbook.md"
+  ],
+  "support_boundary": "e2e/tooling ownership covers only the canonical happy dispatch-reopen guardrail contract: lanes A/B/C/D/INT have non-overlapping ownership, deterministic intake and closeout order is A -> B -> C -> D -> INT, Lane B keeps both tooling pytest and lint-spec validation, required snapshot refresh/freshness/provenance evidence is present, hard gate failures reduce to BLOCKED, unresolved soft controls reduce to HOLD, and dispatch reaches READY only when required controls pass.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "scenario:happy",
+    "batch_id:BATCH-20260224-M17",
+    "lane_sequence:A->B->C->D->INT",
+    "closeout_sequence:A->B->C->D->INT",
+    "lane:B:requires:python -m pytest tests/tooling -q",
+    "lane:B:requires:npm run objc3c -- lint-spec",
+    "integrator_requires:npm run objc3c -- check-dispatch-reopen-guardrails-w1-strict",
+    "dependency:AR-DEP-M03-02",
+    "evidence:AR-FRESHNESS-01",
+    "hard_gate:G8-SNAPSHOT-FRESHNESS-EVIDENCE",
+    "state_rule:any-hard-gate-fail=>BLOCKED",
+    "state_rule:all-hard-pass-soft-unresolved=>HOLD",
+    "state_rule:all-required-controls-pass=>READY",
+    "anti_fabrication:no-task-issue-or-milestone-creation"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/happy",
+  "retired_surface_rule": "W2 drift rows, invalid UTF-8 rows, missing lane validation, stale intake order, stale closeout order, missing freshness evidence, missing provenance linkage, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only dispatch checks, old-mode dispatch rows, gate dispatch rows, retired route dispatch rows, retired dispatch rows, migration-only dispatch rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

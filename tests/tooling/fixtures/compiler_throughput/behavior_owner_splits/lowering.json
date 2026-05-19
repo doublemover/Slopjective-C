@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-compiler-throughput-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+  "support_boundary": "lowering ownership covers canonical lowering outcomes reached by compile and execution-replay workloads only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, compatibility, cache-only, runner-only, docs-only, command-surface-only, package-only, or timing-only provenance; throughput caches and runner rows are not lowering support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_roots:native/objc3c/src/lower",
+    "heavy_validation_actions:test-execution-replay",
+    "heavy_validation_actions:test-fixture-matrix",
+    "workloads:compile-cold-wrapper",
+    "workloads:compile-cache-hit-wrapper"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime dispatch retired route lowering, non-canonical receiver dispatch, retired-route-like workload names, gate lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, cache-only lowering rows, runner-only lowering rows, and timing-only lowering rows are strict-error, rejection, or provenance-only evidence"
+}

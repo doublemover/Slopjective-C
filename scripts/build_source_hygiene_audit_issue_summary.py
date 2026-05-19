@@ -4,9 +4,9 @@ from __future__ import annotations
 from objc3c_tooling.json_io import write_json_file
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_SCRIPT = ROOT / "scripts/check_source_hygiene_authenticity.py"
@@ -22,7 +22,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     result = subprocess.run(
-        [sys.executable, str(AUDIT_SCRIPT)],
+        python_script_command(AUDIT_SCRIPT),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -32,8 +32,8 @@ def main() -> int:
     summary = {
         "issue": "source-hygiene-audit-issue-summary",
         "audit_script": "scripts/check_source_hygiene_authenticity.py",
-        "runner_entrypoint": "python scripts/objc3c_public_workflow_runner.py check-source-hygiene-authenticity",
-        "package_script": "check:objc3c:source-hygiene",
+        "runner_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
+        "package_bridge": "objc3c",
         "check_count": len(payload["checks"]),
         "generator_exit_zero": result.returncode == 0,
         "audit_ok": payload.get("ok") is True,
@@ -50,7 +50,7 @@ def main() -> int:
         "# Source Hygiene Audit Summary\n\n"
         f"- Audit script: `{summary['audit_script']}`\n"
         f"- Runner entrypoint: `{summary['runner_entrypoint']}`\n"
-        f"- Package script: `{summary['package_script']}`\n"
+        f"- Package bridge: `{summary['package_bridge']}`\n"
         f"- Enforced checks: `{', '.join(summary['check_ids'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
         encoding="utf-8",

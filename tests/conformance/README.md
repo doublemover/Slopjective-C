@@ -42,15 +42,83 @@ Machine-readable indexes:
 - `tests/conformance/semantic/manifest.json`
 - `tests/conformance/lowering_abi/manifest.json`
 - `tests/conformance/module_roundtrip/manifest.json`
+- `tests/conformance/hard_cutover_catalog.json` (behavior boundary and
+  no-compatibility policy for parser, semantic, lowering/ABI, IR/module, and
+  runtime/e2e fixture groups)
+- `tests/conformance/hard_cutover_issue_index.json` (local issue evidence map
+  for `#8132`-`#8150`, keyed to behavior fixture boundaries and local commits)
+- `tests/conformance/hard_cutover_acceptance_area_owners.json` (acceptance-area
+  ownership index tying compiler/runtime/workflow/docs areas to code paths,
+  behavior fixtures, current runtime storage/reflection/public ABI probe anchors,
+  and hard-cutover issues)
+- `tests/conformance/hard_cutover_behavior_evidence_topology.json` (behavior-first
+  phase/family topology connecting native fixtures, strict-error coverage,
+  generated-boundary status, and issue closeout artifacts)
+- `tests/conformance/hard_cutover_fixture_family_owner_index.json` (fixture-family
+  ownership index separating canonical positives, retired-surface rejection,
+  generated provenance, tooling metadata, and issue closeout artifacts)
+- `tests/conformance/hard_cutover_fixture_boundary_contracts.json` (boundary
+  contract index tying canonical behavior, generated provenance, retired
+  surfaces, reference anchors, and lexical residue dispositions to their owner
+  indexes)
+- `tests/conformance/hard_cutover_behavior_outcome_owner_index.json` (behavior
+  outcome ownership index separating canonical support, rejection, strict-error,
+  generated provenance, residue-audit, and closeout-only evidence)
+- `tests/conformance/hard_cutover_diagnostic_outcome_code_index.json`
+  (diagnostic/strict-error code owner index for retired and unsupported
+  behavior outcomes)
+- `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
+  modes, retired adapters, alternate acceptance paths, and retired-source lanes mapped
+  to rejection, strict-error, or absent support)
+- `tests/conformance/hard_cutover_positive_residue_audit.json` (read-only
+  positive-fixture residue audit documenting compatibility-looking lexical hits
+  that are not positive compatibility expectations)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
+- `tests/conformance/behavior_owner_splits/index.json` (behavior-first owner
+  split for broad conformance buckets before parser, semantic, lowering, IR,
+  runtime, e2e, or rejection evidence can be cited)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
+
+## Hard-Cutover Fixture Policy
+
+Conformance metadata is canonical-first. Fixtures must not preserve retired
+modes, retired adapters, alternate acceptance paths, retired-source lanes,
+unsupported-feature claims, or runtime-dispatch paths as positive behavior. When a fixture documents an
+unavailable feature configuration, the expected result is a strict error with
+stable diagnostic metadata, not retired route acceptance.
+
+Behavior ownership is phase-first:
+
+| Boundary | Positive authority | Rejection / strict-error authority |
+| --- | --- | --- |
+| parser | `tests/native/parser/positive` | `tests/native/parser/negative` for old-mode literals and removed mode/retired-route flags |
+| semantic | `tests/native/sema/{types,ownership,objc,control_flow,concurrency}` | `tests/native/sema/{negative,errors,concurrency}` for retired adapter gates and unsupported feature claims |
+| lowering ABI | `tests/native/lowering` and canonical `tests/conformance/lowering_abi` ABI fixtures | `tests/native/lowering/errors` and strict lowering/link diagnostics for removed runtime retired route paths |
+| IR/module | `tests/native/ir/{module,function,metadata,runtime_calls}` | `tests/native/ir/runtime_calls` strict linkage evidence for unsupported runtime helpers |
+| runtime | `tests/native/runtime/{object_model,storage,arc,blocks,concurrency}` and runtime probe ownership metadata | `tests/native/runtime/{dispatch,errors}` for strict dispatch and unresolved-symbol outcomes |
+| e2e | `tests/native/e2e/{smoke,feature_matrix}` | `tests/native/e2e/negative_execution` for execution-boundary rejection and strict-error outcomes |
+| generated fixtures | none | none; generated artifacts are replay/schema provenance only |
+
+`tests/conformance/hard_cutover_fixture_boundary_contracts.json` is the
+machine-readable owner matrix for these boundaries. `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json`
+keeps stable negative detector pattern ids such as `O3C002`,
+`OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG`, `OBJC3-E-REMOVED-COMPATIBILITY-GATE`,
+`OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE`, `link.unresolved_symbol`, and `O3RT002`
+attached to rejection or strict-error fixture families. These ids are
+intentional negative residues, not positive compatibility support.
+
+Runtime probe metadata under `tests/tooling/runtime/` is treated as fixture
+evidence for canonical runtime ownership only. Storage, reflection, registration,
+object-model, and public ABI probes may anchor live owner paths; strict dispatch
+probes remain rejection/strict-error evidence and must not become retired
+adapter, alternate acceptance path, or retired-source lane positive claims.
 
 Live validation entrypoints:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
-- `python scripts/objc3c_public_workflow_runner.py test-nightly`
+- `npm run objc3c -- validate-conformance-corpus`
+- `npm run objc3c -- validate-runnable-conformance-corpus`
+- `npm run objc3c -- test-nightly`
 
 ## Cross-module preservation requirements
 

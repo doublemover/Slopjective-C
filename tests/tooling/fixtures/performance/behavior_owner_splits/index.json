@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split-index",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before benchmark workload, comparative baseline, raw sample packet, report root, artifact root, timing row, cache row, generated report, package staging, machine profile, tool version, claim class, or retired-surface claim",
+    "positive_rule": "performance rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; timing rows, raw samples, report roots, artifact roots, normalized values, package staging, machine profiles, tool versions, comparative baselines, and provenance rows are not behavior support by themselves",
+    "provenance_rule": "raw samples, report roots, artifact roots, output roots, package staging, machine profiles, tool versions, benchmark parameters, benchmark classes, measured workload lists, public command wrappers, comparative baselines, telemetry schemas, generated reports, cache rows, timing rows, generated-only rows, evidence-log rows, local-only rows, cross-machine rows, screenshot-derived rows, and hand-normalized rows are provenance-only and never define Objective-C 3 behavior support",
+    "retired_surface_rule": "compatibility, retired route, gate, old-mode, unsupported, wrapper-only, local-only, evidence-log, generated-only, migration-only, cache-only, timing-only, cross-machine universal, screenshot-derived, hand-normalized, foreign-baseline, and public-wrapper-only claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, benchmark workload timing, comparative baseline timing, public command routing, report publication, raw samples, cache rows, machine profiles, and generated telemetry are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "performance_provenance",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/performance_provenance.json"
+    }
+  ]
+}

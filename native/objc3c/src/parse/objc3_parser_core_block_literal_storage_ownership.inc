@@ -1,0 +1,6 @@
+#include "parse/objc3_parser_core_block_literal_storage_ownership_source_model.inc"
+#include "parse/objc3_parser_core_block_literal_storage_ownership_capture_diagnostics.inc"
+#include "parse/objc3_parser_core_block_literal_storage_ownership_profile_construction.inc"
+#include "parse/objc3_parser_core_block_literal_storage_ownership_storage_model.inc"
+#include "parse/objc3_parser_core_block_literal_storage_ownership_publication_finalization.inc"
+#include "parse/objc3_parser_core_block_literal_storage_ownership_application.inc"

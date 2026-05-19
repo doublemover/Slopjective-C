@@ -84,7 +84,10 @@ When `OPT-META` is supported, implementations shall expose feature macros for po
 - `__OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__`
 - `__OBJC3_FEATURE_DERIVE_CODABLE__`
 
-If a toolchain claims support for a derive in source mode, the same derive capability shall be representable in module metadata and textual interfaces so downstream builds can validate availability under separate compilation ([Part 2](#part-2), [D](#d)).
+If a toolchain claims source-level support for a derive, the same derive
+capability shall be representable in module metadata and textual interfaces so
+downstream builds can validate availability under separate compilation
+([Part 2](#part-2), [D](#d)).
 
 ## 10.3 AST macros {#part-10-3}
 

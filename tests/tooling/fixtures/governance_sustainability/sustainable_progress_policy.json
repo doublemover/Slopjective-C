@@ -4,10 +4,17 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "budget_inventory": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
   "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
-  "summary_script": "scripts/build_governance_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_governance_policy_summary.py",
+  "owner_section": "stewardship.policy_summary",
+  "owner_contract": {
+    "owner": "sustainable_progress_owner",
+    "artifact_section": "stewardship.policy_summary",
+    "publication_projection": "stewardship_publication.stewardship.policy_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.sustainable_progress_policy"
+  },
   "governed_budget_surfaces": [
     {
-      "surface_id": "package-script-budget",
+      "surface_id": "public-command-budget",
       "owner_surface": "scripts/ci/check_task_hygiene.py",
       "default_disposition": "block-on-exceed",
       "budget_change_requires_measured_delta": true,
@@ -15,7 +22,7 @@
     },
     {
       "surface_id": "public-workflow-action-surface",
-      "owner_surface": "scripts/objc3c_public_workflow_runner.py",
+      "owner_surface": "scripts.objc3c_workflow",
       "default_disposition": "review-before-widening",
       "budget_change_requires_measured_delta": true,
       "allows_time_bounded_waiver": false
@@ -71,6 +78,12 @@
     "evidence_paths_required": true,
     "max_active_waivers_per_surface": 1
   },
+  "waiver_semantics": {
+    "evidence_section": "budget.waiver_registry",
+    "release_blocker_field": "claim_audit.release_blockers",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.sustainable_progress_policy",
+    "active_waiver_budget": "max_active_waivers_per_surface"
+  },
   "claim_statuses": [
     {
       "status": "stable",
@@ -91,7 +104,7 @@
     {
       "status": "blocked",
       "requires": [
-        "fallback-when-any-release-blocking-governance-condition-is-met"
+        "block-when-any-release-blocking-governance-condition-is-met"
       ]
     }
   ],

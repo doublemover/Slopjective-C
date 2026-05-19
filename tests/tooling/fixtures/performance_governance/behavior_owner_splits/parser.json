@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-governance-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/performance_governance"
+  ],
+  "support_boundary": "parser ownership is non-positive for this performance-governance family. Budget ids, metric ids, claim statuses, waiver fields, lab profile fields, workflow action labels, schema paths, report paths, and dashboard artifact paths do not define Objective-C 3 parser support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:performance_governance",
+    "surface_kind:release-ready-performance-budget-model",
+    "surface_kind:public-performance-claim-and-waiver-policy",
+    "surface_kind:budget-breach-diagnosis-and-triage-policy",
+    "compiler_phase_boundary:no-parser-positive-truth-from-performance-governance-contracts",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser performance-governance rows, gate parser rows, retired route parser rows, compatibility parser rows, migration-only parser rows, generated-only parser rows, evidence-log parser rows, and governance-label-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

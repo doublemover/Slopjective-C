@@ -5,25 +5,37 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
 
-from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import display_path
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 from objc3c_tooling.public_workflow_output import extract_line_value
+from objc3c_application_materialization.copy_materialization import (
+    materialize_project_template_source,
+    project_template_paths,
+)
+from objc3c_application_materialization.inputs import (
+    application_architecture_contract_paths,
+)
+from objc3c_application_materialization.manifests import (
+    project_harness_payload,
+    project_template_manifest_payload,
+)
+from objc3c_application_materialization.result_rendering import (
+    print_project_template_result,
+    project_template_readme_lines,
+    write_lines,
+    write_payload,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
 TEMPLATE_REPORT_ROOT = ROOT / "tmp" / "reports" / "project-template"
-TEMPLATE_CONTRACT_ID = "objc3c.project.template.surface.v1"
-HARNESS_CONTRACT_ID = "objc3c.project.template.demo.harness.v1"
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -31,26 +43,8 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--example", default="auroraBoard")
     return parser.parse_args(argv)
 
-
-
 def read_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
-
-
-def application_architecture_contract_paths() -> dict[str, Path]:
-    application_architecture_root = (
-        ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing"
-    )
-    return {
-        "first_party_testing": application_architecture_root
-        / "first_party_testing_semantics.json",
-        "project_template_workspace": application_architecture_root
-        / "project_template_workspace_semantics.json",
-        "canonical_application_architecture": application_architecture_root
-        / "canonical_application_architecture_semantics.json",
-    }
-
-
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
@@ -90,105 +84,51 @@ def main() -> int:
         print(f"missing showcase source: {display_path(example_source)}", file=sys.stderr)
         return 1
 
-    template_root = TEMPLATE_ARTIFACT_ROOT / args.example
-    report_root = TEMPLATE_REPORT_ROOT / args.example
-    template_source = template_root / "src" / "main.objc3"
-    template_readme = template_root / "README.md"
-    template_manifest = template_root / "template.json"
-    harness_path = report_root / "demo-harness.json"
-    application_architecture_contracts = application_architecture_contract_paths()
-
-    template_source.parent.mkdir(parents=True, exist_ok=True)
-    report_root.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(example_source, template_source)
-    template_readme.write_text(
-        "\n".join(
-            [
-                f"# {args.example} Template",
-                "",
-                "This machine-owned template is derived from the checked-in showcase portfolio.",
-                "",
-                f"- source example: `{example_record['source']}`",
-                f"- generated source: `{display_path(template_source)}`",
-                "- live commands:",
-                f"  - `python scripts/objc3c_public_workflow_runner.py materialize-project-template --example {args.example}`",
-                f"  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace {display_path(template_source)}`",
-                f"  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector {display_path(template_source)}`",
-                "  - `python scripts/objc3c_public_workflow_runner.py inspect-bonus-tool-integration`",
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
+    paths = project_template_paths(
+        artifact_root=TEMPLATE_ARTIFACT_ROOT,
+        report_root=TEMPLATE_REPORT_ROOT,
+        example_id=args.example,
     )
+    application_architecture_contracts = application_architecture_contract_paths(ROOT)
 
-    template_manifest.write_text(
-        json.dumps(
-            {
-                "contract_id": TEMPLATE_CONTRACT_ID,
-                "schema_version": 1,
-                "example_id": args.example,
-                "source_origin": str(example_record["source"]),
-                "template_root": display_path(template_root),
-                "template_source": display_path(template_source),
-                "template_readme": display_path(template_readme),
-                "tutorial_guides": [
-                    "docs/tutorials/getting_started.md",
-                    "docs/tutorials/build_run_verify.md",
-                    "docs/tutorials/guided_walkthrough.md",
-                ],
-                "application_architecture_testing_contracts": {
-                    "first_party_testing": display_path(
-                        application_architecture_contracts["first_party_testing"]
-                    ),
-                    "project_template_workspace": display_path(
-                        application_architecture_contracts["project_template_workspace"]
-                    ),
-                    "canonical_application_architecture": display_path(
-                        application_architecture_contracts[
-                            "canonical_application_architecture"
-                        ]
-                    ),
-                },
-                "public_actions": [
-                    "materialize-project-template",
-                    "materialize-playground-workspace",
-                    "benchmark-runtime-inspector",
-                    "inspect-bonus-tool-integration",
-                ],
-                "recommended_validation_actions": [
-                    "validate-showcase",
-                    "validate-runnable-showcase",
-                    "validate-stdlib-program",
-                    "validate-runnable-stdlib-program",
-                ],
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
+    materialize_project_template_source(example_source=example_source, paths=paths)
+    write_lines(
+        paths.template_readme,
+        project_template_readme_lines(
+            example_id=args.example,
+            source_origin=example_record["source"],
+            template_source=paths.template_source,
+            root=ROOT,
+        ),
+    )
+    write_payload(
+        paths.template_manifest,
+        project_template_manifest_payload(
+            root=ROOT,
+            example_id=args.example,
+            example_record=example_record,
+            paths=paths,
+            application_architecture_contracts=application_architecture_contracts,
+        ),
     )
 
     integration_step = run_step(
         "inspect-bonus-tool-integration",
-        [sys.executable, str(PUBLIC_RUNNER), "inspect-bonus-tool-integration"],
+        public_workflow_command("inspect-bonus-tool-integration"),
     )
     playground_step = run_step(
         "materialize-playground-workspace",
-        [
-            sys.executable,
-            str(PUBLIC_RUNNER),
+        public_workflow_command(
             "materialize-playground-workspace",
-            display_path(template_source),
-        ],
+            display_path(paths.template_source, root=ROOT),
+        ),
     )
     benchmark_step = run_step(
         "benchmark-runtime-inspector",
-        [
-            sys.executable,
-            str(PUBLIC_RUNNER),
+        public_workflow_command(
             "benchmark-runtime-inspector",
-            display_path(template_source),
-        ],
+            display_path(paths.template_source, root=ROOT),
+        ),
     )
 
     failures: list[str] = []
@@ -203,26 +143,18 @@ def main() -> int:
     expect(playground_workspace != "", "materialize-playground-workspace did not publish workspace_path", failures)
     expect(benchmark_report != "", "benchmark-runtime-inspector did not publish summary_path", failures)
 
-    payload = {
-        "contract_id": HARNESS_CONTRACT_ID,
-        "schema_version": 1,
-        "ok": not failures,
-        "failures": failures,
-        "template_contract": display_path(template_manifest),
-        "template_source": display_path(template_source),
-        "integration_report": integration_report,
-        "playground_workspace": playground_workspace,
-        "benchmark_report": benchmark_report,
-        "public_actions": [
-            "materialize-project-template",
-            "inspect-bonus-tool-integration",
-            "materialize-playground-workspace",
-            "benchmark-runtime-inspector",
-        ],
-    }
-    write_json_file(harness_path, payload)
-    print(f"template_path: {display_path(template_manifest)}")
-    print(f"harness_path: {display_path(harness_path)}")
+    write_payload(
+        paths.harness_path,
+        project_harness_payload(
+            root=ROOT,
+            failures=failures,
+            paths=paths,
+            integration_report=integration_report,
+            playground_workspace=playground_workspace,
+            benchmark_report=benchmark_report,
+        ),
+    )
+    print_project_template_result(root=ROOT, paths=paths)
     if failures:
         print("project-template: FAIL", file=sys.stderr)
         for failure in failures:

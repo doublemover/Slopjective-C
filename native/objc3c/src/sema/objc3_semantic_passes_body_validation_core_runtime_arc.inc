@@ -1,0 +1,3 @@
+#include "sema/objc3_semantic_passes_body_validation_core_runtime_object_dispatch.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_arc_ownership_checks.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_autoreleasepool_rules.inc"

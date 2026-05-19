@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness"
+  ],
+  "support_boundary": "sema ownership is non-positive for bootstrap readiness fixtures because this family contains issue, milestone, catalog, open-blocker, and expected-output snapshots, not Objective-C 3 semantic fixtures. Terms such as blocked, open, hold, and ready are tooling readiness labels only.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/bootstrap_readiness/**/*.objc3",
+    "tooling_fixture_family:bootstrap_readiness",
+    "compiler_phase_boundary:no-sema-positive-truth",
+    "upstream_owner_required:tests/native/sema",
+    "semantic_like_terms:blocked,open,hold,ready are tooling readiness labels only"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema bootstrap, compatibility sema bootstrap, gate sema bootstrap, retired route sema bootstrap, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and readiness labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3c-performance-dashboard-summary-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-performance-dashboard-summary-v1.schema.json",
   "title": "ObjC 3 Performance Governance Dashboard Summary (v1)",
   "description": "Machine-readable performance governance dashboard derived from live benchmark summaries and checked-in budget policy.",
   "type": "object",
@@ -13,9 +13,15 @@
     "claim_policy_path",
     "breach_triage_policy_path",
     "lab_policy_path",
+    "source_surface_path",
+    "workflow_surface_path",
+    "policy_contracts",
+    "upstream_report_contracts",
     "upstream_reports",
     "release_status",
     "claim_ready",
+    "owner_split",
+    "workflow_actions",
     "budget_family_summaries",
     "breaches",
     "waivers",
@@ -52,6 +58,26 @@
     "lab_policy_path": {
       "$ref": "#/$defs/repoPath"
     },
+    "source_surface_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "workflow_surface_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "policy_contracts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
+    "upstream_report_contracts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
     "upstream_reports": {
       "type": "object",
       "additionalProperties": {
@@ -68,6 +94,49 @@
     },
     "claim_ready": {
       "type": "boolean"
+    },
+    "owner_split": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/repoPath"
+        }
+      }
+    },
+    "workflow_actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validate_action",
+        "integration_action",
+        "end_to_end_action",
+        "required_actions",
+        "upstream_validate_actions"
+      ],
+      "properties": {
+        "validate_action": {
+          "$ref": "#/$defs/actionName"
+        },
+        "integration_action": {
+          "$ref": "#/$defs/actionName"
+        },
+        "end_to_end_action": {
+          "$ref": "#/$defs/actionName"
+        },
+        "required_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/actionName"
+          }
+        },
+        "upstream_validate_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/actionName"
+          }
+        }
+      }
     },
     "budget_family_summaries": {
       "type": "array",
@@ -177,8 +246,7 @@
       "additionalProperties": false,
       "required": [
         "metric_id",
-        "comparison",
-        "observed_value"
+        "comparison"
       ],
       "properties": {
         "metric_id": {
@@ -256,8 +324,17 @@
         "allowed_value": {
           "$ref": "#/$defs/numericValue"
         },
+        "ratio": {
+          "$ref": "#/$defs/numericValue"
+        },
         "waived": {
           "type": "boolean"
+        },
+        "original_breach_id": {
+          "type": "string"
+        },
+        "waiver_id": {
+          "type": "string"
         }
       }
     },
@@ -303,8 +380,18 @@
         "expires_at_utc": {
           "type": "string",
           "format": "date-time"
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
         }
       }
+    },
+    "actionName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
     }
   }
 }

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling/*.json"
+  ],
+  "support_boundary": "canonical rejection owns developer-tooling rows that look like support but are unpublished, unsupported, local-only, hosted-without-object-emission, source-map or statement-stepping overclaims, wrapper-only, generated-only, evidence-log, migration-only, old-mode, gate, retired route, compatibility, runner-only, workflow-label-only, or directory-label-only. Negative and gap capabilities remain explicit rejection/absent-support evidence.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "unpublished_capability:references",
+    "unpublished_capability:rename",
+    "unpublished_capability:semanticTokens",
+    "unpublished_capability:codeAction",
+    "unpublished_capability:statementLevelStepping",
+    "gap_capability:hosted-execution-without-llc-object-emission",
+    "gap_capability:local-only-hosted-proof",
+    "gap_capability:source-map-debug-info-stepping",
+    "gap_capability:references-rename-semantic-tokens-code-actions",
+    "unsupported_claim:hosted LLVM availability",
+    "unsupported_claim:hosted object parity without llc --filetype=obj",
+    "unsupported_claim:language-server parity without owned implementation evidence",
+    "unsupported_claim:wrapper-only action capability",
+    "*old-mode*",
+    "*old_mode*",
+    "*gate*",
+    "*retired-route*",
+    "*compatibility*",
+    "*compat*",
+    "*migration-only*",
+    "*migration_only*",
+    "*evidence-log*",
+    "*evidence_log*",
+    "*generated-only*",
+    "*generated_only*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "unpublished capabilities, unsupported hosted LLVM claims, local-only hosted proof, source-map stepping overclaims, wrapper-only action capability, old-mode tooling, gate tooling, retired route tooling, compatibility tooling, migration-only tooling, evidence-log tooling, generated-only tooling, runner-only tooling, and alternate acceptance tooling claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

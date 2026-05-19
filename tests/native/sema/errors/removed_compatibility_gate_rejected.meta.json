@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "fixture": "removed_compatibility_gate_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "sema",
+  "behavior_family": "errors",
+  "fixture_kind": "negative",
+  "retired_surface_tags": [
+    "runtime-adapter"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+    "required_tokens": [
+      "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "compatibility gates are removed"
+    ]
+  },
+  "execution": {
+    "native_compile_args": [
+      "-fobjc-version=3",
+      "-fobjc3-compatibility-gates=on",
+      "-fsyntax-only"
+    ]
+  }
+}

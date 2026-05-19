@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-full-envelope-claimability-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/full_envelope_claimability"
+  ],
+  "support_boundary": "sema ownership is non-positive for this full-envelope claimability family. Support matrix classification, production-strength claim policy, rollout readiness, release blockers, soak/external validation, dashboard reporting, and release candidate evidence are claimability governance semantics, not Objective-C 3 semantic compiler truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:full_envelope_claimability",
+    "surface_kind:full-envelope-support-matrix-claim-taxonomy",
+    "surface_kind:full-envelope-production-strength-claim-policy",
+    "surface_kind:full-envelope-release-blocker-rollout-policy",
+    "surface_kind:full-envelope-dashboard-reporting-contract",
+    "compiler_phase_boundary:no-sema-positive-truth-from-full-envelope-claimability-contracts",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic claimability rows, gate semantic claimability rows, retired route semantic claimability rows, compatibility semantic claimability rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and claimability-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract"
+  ],
+  "support_boundary": "sema ownership is non-positive for open blocker audit contract fixtures because this family contains audit-runner metadata and expected-output snapshots, not Objective-C 3 semantic fixtures. Terms such as contract_id, final_status, open_blocker_count, and source are tooling contract labels only.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/open_blocker_audit_contract/**/*.objc3",
+    "tooling_fixture_family:open_blocker_audit_contract",
+    "compiler_phase_boundary:no-sema-positive-truth",
+    "upstream_owner_required:tests/native/sema",
+    "semantic_like_terms:contract_id,final_status,open_blocker_count are tooling contract labels only"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode sema audit, compatibility sema audit, gate sema audit, retired route sema audit, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, and audit labels promoted as semantic compiler support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

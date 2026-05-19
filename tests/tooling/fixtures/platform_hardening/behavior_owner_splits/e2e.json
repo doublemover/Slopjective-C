@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-platform-hardening-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+    "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
+    "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
+    "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
+  ],
+  "support_boundary": "e2e/tooling ownership covers only canonical strict platform hardening behavior: checked-in windows-x64 tier-1 support, checked-in portable-archive/local-installer/offline-bundle channels, validate-platform-hardening and validate-platform-hardening-end-to-end public actions, package-runnable-toolchain/build-package-channels/release-operations linkage, package validation steps, install matrix replay with rollback evidence, toolchain range replay narrower than discovery, and packaged command/publication surface fields. Generated artifacts and reports are required evidence labels, not source truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "platform_id:windows-x64",
+    "tier_id:tier-1",
+    "claim_class:supported",
+    "channel:portable-archive",
+    "channel:local-installer",
+    "channel:offline-bundle",
+    "public_action:build-platform-support-matrix",
+    "public_action:validate-platform-hardening",
+    "public_action:validate-platform-hardening-end-to-end",
+    "public_action:package-runnable-toolchain",
+    "public_action:build-package-channels",
+    "public_action:validate-packaging-channels-end-to-end",
+    "public_action:validate-release-operations-end-to-end",
+    "required_step:build-native-binaries",
+    "required_step:package-runnable-toolchain",
+    "required_step:build-package-channels",
+    "required_step:validate-packaging-channels-end-to-end",
+    "required_check:matrix platform matches supported host tier",
+    "required_check:offline install root retains installed native executable",
+    "required_check:temp-root installer path rolls back the primary install root",
+    "toolchain_claim:new LLVM or Clang major lines remain unclaimed until replayable package and install evidence lands",
+    "package_bridge:objc3c"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/platform_hardening",
+  "retired_surface_rule": "non-windows-x64 support, cross-platform parity, system package manager publication, signed/notarized installer trust, multi-host install matrix support, cross-host archive support, all-LLVM-version support, unsupported-channel support, evidence-log e2e support, generated-evidence-log success, runner-only success, workflow-label-only success, wrapper-only platform checks, old-mode platform rows, gate platform rows, retired route platform rows, compatibility platform rows, migration-only platform rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

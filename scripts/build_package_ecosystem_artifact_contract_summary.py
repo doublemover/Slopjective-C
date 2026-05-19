@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "artifact-contra
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem artifact contract")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        contract,
+        surface_name="package ecosystem artifact contract",
+        required_blockers=("package artifact generated without checked-in source contract",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(contract["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(contract["boundary_inventory"]))
@@ -34,7 +45,10 @@ def main() -> int:
     schema_paths = [str(path) for path in schemas.values()] if isinstance(schemas, dict) else []
     report_slots = [str(slot) for slot in contract["report_slots"]]
     generated_artifact_roots = [str(root) for root in contract["generated_artifact_roots"]]
-    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    registered_actions = set(public_workflow_action_names())
     source_contract_paths = [
         str(contract["boundary_inventory"]),
         str(contract["dependency_lock_policy"]),
@@ -43,7 +57,7 @@ def main() -> int:
         *schema_paths,
     ]
     missing_paths = [path for path in source_contract_paths if not (ROOT / path).is_file()]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    missing_actions = [name for name in required_actions if name not in registered_actions]
 
     package_lock_schema = load_json(ROOT / str(schemas.get("package_lock", ""))) if isinstance(schemas, dict) and schemas.get("package_lock") else {}
     mirror_schema = load_json(ROOT / str(schemas.get("offline_mirror_index", ""))) if isinstance(schemas, dict) and schemas.get("offline_mirror_index") else {}
@@ -62,7 +76,7 @@ def main() -> int:
         "report_root_under_tmp": str(contract["generated_report_root"]).startswith("tmp/reports/package-ecosystem"),
         "hosted_registry_claim_blocked": "hosted registry claims remain release-blocking until a later hosted-service evidence path exists" in claim_rules,
     }
-    ok = not missing_paths and not missing_public_scripts and all(checks.values())
+    ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.artifact_contract.summary.v1",
@@ -74,14 +88,19 @@ def main() -> int:
         "report_slot_count": len(report_slots),
         "source_contract_count": 4,
         "generated_artifact_root_count": len(generated_artifact_roots),
-        "required_public_script_count": len(required_public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "schemas": schemas,
         "report_slots": report_slots,
         "generated_artifact_roots": generated_artifact_roots,
-        "required_public_scripts": required_public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "artifact_claim_rules": claim_rules,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "checks": checks,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

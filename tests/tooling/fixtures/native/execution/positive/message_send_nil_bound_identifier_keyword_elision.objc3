@@ -1,8 +1,8 @@
-// Positive execution fixture: immutable nil-bound identifier keyword send is compile-time elided and links without runtime shim.
+// Positive execution fixture: immutable nil-bound identifier keyword send uses optional send.
 module MessageSendNilBoundIdentifierKeywordElisionExecution;
 
 fn main() {
   let receiver = nil;
-  let sent = [receiver ping: 2 pong: 3];
+  let sent = [receiver? ping: 2 pong: 3];
   return sent + 13;
 }

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling/hosted_llvm_tool_capability_owner_contract.json",
+    "tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json",
+    "tests/tooling/fixtures/developer_tooling/debugger_source_map_stepping_semantics.json"
+  ],
+  "support_boundary": "strict-error ownership covers developer-tooling fail-closed capability overclaims: hosted LLVM support without hosted llc object emission, local-only probe output promoted as hosted proof, unpublished language-server capabilities promoted as support, statement-level stepping or full source-map claims without emitted debug metadata, editor-only shadow parser claims, wrapper-only action capability, generated/report rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as positive tooling behavior.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "fail_closed_without_live_capability:true",
+    "requires_hosted_probe_summary:true",
+    "unsupported_claim:clang-only hosted execution",
+    "unsupported_claim:local-only hosted execution proof",
+    "unsupported_claim:hosted object parity without llc --filetype=obj",
+    "unsupported_claim:rename/reference/semantic-token language-server support",
+    "unowned_capability_claims_supported:false",
+    "fail_closed_claim:statement-level stepping",
+    "fail_closed_claim:full source-map claims",
+    "*wrapper-only*",
+    "*wrapper_only*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "hosted LLVM overclaims, local-only hosted proof, unpublished language-server claims, statement stepping overclaims, full source-map overclaims, editor-only shadow parser claims, wrapper-only action capability, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

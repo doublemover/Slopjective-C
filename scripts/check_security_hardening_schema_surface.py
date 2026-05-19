@@ -3,22 +3,36 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "schema_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "schema-surface-summary.json"
+SUMMARY_CONTRACT_ID = "objc3c.security.hardening.schema.surface.summary.v1"
+JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
-EXPECTED_SCHEMAS = {
-    "schemas/objc3c-security-posture-v1.schema.json",
-    "schemas/objc3c-security-advisory-index-v1.schema.json",
-}
+EXPECTED_SCHEMAS = (
+    (
+        "posture_schema",
+        "objc3c-security-posture-v1",
+        "https://objc3.dev/schemas/objc3c-security-posture-v1.schema.json",
+        "objc3c.security.hardening.posture.v1",
+    ),
+    (
+        "advisory_index_schema",
+        "objc3c-security-advisory-index-v1",
+        "https://objc3.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
+        "objc3c.security.hardening.advisory.index.v1",
+    ),
+)
 
 
 def fail(message: str) -> int:
@@ -26,6 +40,14 @@ def fail(message: str) -> int:
     return 1
 
 
+def property_const(schema_payload: dict[str, Any], property_name: str) -> Any:
+    properties = schema_payload.get("properties")
+    if not isinstance(properties, dict):
+        return None
+    property_payload = properties.get(property_name)
+    if not isinstance(property_payload, dict):
+        return None
+    return property_payload.get("const")
 
 
 def main() -> int:
@@ -37,27 +59,37 @@ def main() -> int:
     if surface.get("schema_version") != 1:
         return fail("schema_version drifted")
 
-    schema_paths = {surface.get("posture_schema"), surface.get("advisory_index_schema")}
-    if schema_paths != EXPECTED_SCHEMAS:
-        return fail(f"schema set drifted: {sorted(str(path) for path in schema_paths)}")
-    for raw_path in sorted(schema_paths):
-        if not isinstance(raw_path, str):
-            return fail("schema path drifted from string contract")
-        target = ROOT / raw_path
-        if not target.is_file():
-            return fail(f"missing schema {raw_path}")
-        payload = load_json(target)
-        if payload.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
-            return fail(f"{raw_path} drifted from draft 2020-12")
+    schema_paths: list[str] = []
+    schema_ids: list[str] = []
+    schema_refs: dict[str, str] = {}
+    for surface_key, schema_id, expected_schema_url, expected_contract_id in EXPECTED_SCHEMAS:
+        expected_path = repo_rel(schema_path(schema_id))
+        raw_path = surface.get(surface_key)
+        if raw_path != expected_path:
+            return fail(f"{surface_key} drifted from registered schema path {expected_path}")
+        payload = load_schema(schema_id)
+        if payload.get("$schema") != JSON_SCHEMA_DRAFT:
+            return fail(f"{expected_path} drifted from draft 2020-12")
+        if payload.get("$id") != expected_schema_url:
+            return fail(f"{expected_path} drifted from expected schema id {expected_schema_url}")
+        if property_const(payload, "contract_id") != expected_contract_id:
+            return fail(f"{surface_key} contract identity drifted")
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        schema_paths.append(expected_path)
+        schema_ids.append(expected_schema_url)
+        schema_refs[surface_key] = expected_path
+
     summary = {
-        "contract_id": "objc3c.security.hardening.schema.surface.summary.v1",
+        "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
-        "schemas": sorted(str(path) for path in schema_paths),
+        "posture_schema": schema_refs["posture_schema"],
+        "advisory_index_schema": schema_refs["advisory_index_schema"],
+        "schema_count": len(schema_paths),
+        "schemas": schema_paths,
+        "schema_ids": schema_ids,
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("security-hardening-schema-surface: OK")
     return 0

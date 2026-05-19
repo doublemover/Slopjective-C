@@ -1,9 +1,18 @@
 {
   "contract_id": "objc3c.release.operations.schema.surface.v1",
   "schema_version": 1,
-  "schemas": [
-    "schemas/objc3c-update-manifest-v1.schema.json",
-    "schemas/objc3c-compatibility-report-v1.schema.json"
-  ],
-  "schema_check_script": "scripts/check_release_operations_schema_surface.py"
+  "package_bridge": "objc3c",
+  "schema_check_action": "check-release-operations-schema-surface",
+  "schema_check_command": "npm run objc3c -- check-release-operations-schema-surface",
+  "schema_check_script": "scripts/check_release_operations_schema_surface.py",
+  "schema_check_implementation_anchor": "scripts/check_release_operations_schema_surface.py",
+  "update_manifest": "schemas/objc3c-update-manifest-v1.schema.json",
+  "upgrade_support_report": "schemas/objc3c-upgrade-support-report-v1.schema.json",
+  "report_contracts": {
+    "schema_surface_summary": "objc3c.release.operations.schema.surface.summary.v1",
+    "update_manifest_summary": "objc3c.release.operations.update-manifest.summary.v1",
+    "publication_summary": "objc3c.release.operations.publication.summary.v1",
+    "integration_summary": "objc3c.release.operations.integration.summary.v1",
+    "end_to_end_summary": "objc3c.release.operations.end-to-end.summary.v1"
+  }
 }

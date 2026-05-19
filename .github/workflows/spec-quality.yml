@@ -17,11 +17,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Enforce generated-only objc3c-native docs drift contract
-        run: python scripts/build_objc3c_native_docs.py --check
-      - name: Enforce generated-only published site drift contract
-        run: npm run check:site
       - name: Install Node dependencies
         run: npm ci
+      - name: Enforce generated-only objc3c-native docs drift contract
+        run: npm run objc3c -- check-native-docs
+      - name: Enforce generated-only published site drift contract
+        run: npm run objc3c -- check-site
+      - name: Run canonical maintainer lint workflow
+        run: npm run objc3c -- lint
       - name: Run spec structural lint suite
-        run: npm run lint:spec
+        run: npm run objc3c -- lint-spec

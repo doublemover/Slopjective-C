@@ -7,21 +7,22 @@
   "tutorial_roots": [
     "docs/tutorials"
   ],
-  "template_materializers": [
+  "template_materializer_implementation_anchors": [
     "scripts/materialize_objc3c_project_template.py",
     "scripts/materialize_objc3c_stdlib_workspace.py"
   ],
-  "existing_testing_surfaces": [
+  "testing_surface_implementation_anchors": [
     "tests/tooling/test_materialize_objc3c_project_template.py",
-    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/objc3c_workflow/actions/application_stdlib_integrations.py",
     "scripts/check_developer_tooling_workspace_integration.py"
   ],
-  "required_public_scripts": [
-    "build:objc3c:template",
-    "build:objc3c:stdlib",
-    "test:showcase",
-    "test:showcase:e2e",
-    "test:objc3c:runnable-developer-tooling"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "materialize-project-template",
+    "materialize-stdlib-workspace",
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "validate-runnable-developer-tooling"
   ],
   "direct_successor_milestones": [
     "M329",
@@ -30,7 +31,7 @@
   "working_scope": [
     "checked-in showcase examples and workspace manifests",
     "checked-in stdlib workspace and program surfaces",
-    "machine-owned project-template and stdlib-workspace materializers under scripts/",
+    "machine-owned project-template and stdlib-workspace materializers exposed through public objc3c actions with owned workflow action modules recorded as implementation anchors",
     "tutorial and runbook guidance for real project structure and testing",
     "runnable package and validation reuse through the existing objc3c public workflow"
   ],

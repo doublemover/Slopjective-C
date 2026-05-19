@@ -1,0 +1,17 @@
+// Canonical parser fixture: Objective-C property declarations are parsed as native source.
+module ParserObjcPropertySurface;
+
+@interface ParserPropertyBox
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+- (i32)value;
+@end
+
+@implementation ParserPropertyBox
+- (i32)value {
+  return 4;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -14,7 +14,7 @@ Use it when changing:
 
 Downstream benchmark-surface work must stay on the existing compiler, showcase,
 packaging, and public workflow surfaces listed here. Do not add a sidecar
-benchmark app, synthetic spreadsheet workflow, or milestone-local measurement
+benchmark app, synthetic spreadsheet workflow, or release-scope measurement
 wrapper.
 
 ## Benchmark Taxonomy And Claim Classes
@@ -57,14 +57,17 @@ The only current claim classes allowed from this surface are:
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - package bridge: `npm run objc3c -- <action>`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime and build roots:
   - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
   - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- package-runnable-toolchain`
 - checked-in objc3c workloads:
   - `showcase/portfolio.json`
   - `showcase/auroraBoard/main.objc3`
@@ -83,35 +86,28 @@ The only current claim classes allowed from this surface are:
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
 - machine-owned benchmark roots:
-  - `tmp/artifacts/performance/`
-  - `tmp/reports/performance/`
-  - `tmp/pkg/objc3c-native-runnable-toolchain/`
-- build-owned source-of-truth artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+  - performance artifacts: `tmp/artifacts/performance/`
+  - performance reports: `tmp/reports/performance/`
+  - runnable-toolchain package staging: `tmp/pkg/objc3c-native-runnable-toolchain/`
+- build-owned owner artifact:
+  - generated repo-superclean owner artifact selected by the checked-in build contract
 
 ## Exact Live Commands
 
 - build the native toolchain before measuring:
-  - `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-  - `npm run build:objc3c-native`
+  - `npm run objc3c -- build-native-binaries`
 - compile one checked-in objc3c workload through the public compile path:
-  - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
-  - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+  - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
 - benchmark the live objc3 showcase workloads:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-performance`
-  - `npm run inspect:objc3c:performance`
+  - `npm run objc3c -- benchmark-performance`
 - benchmark the checked-in ObjC2 Swift and C++ baselines:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines`
-  - `npm run inspect:objc3c:comparative-baselines`
+  - `npm run objc3c -- benchmark-comparative-baselines`
 - validate the staged runnable benchmark bundle:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-performance`
-  - `npm run test:objc3c:runnable-performance`
+  - `npm run objc3c -- validate-runnable-performance`
 - run the integrated benchmark foundation validation flow:
-  - `python scripts/objc3c_public_workflow_runner.py validate-performance-foundation`
-  - `npm run test:objc3c:performance`
+  - `npm run objc3c -- validate-performance-foundation`
 - stage the runnable toolchain before packaged benchmark validation:
-  - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-  - `npm run package:objc3c-native:runnable-toolchain`
+  - `npm run objc3c -- package-runnable-toolchain`
 
 ## Exact Live Paths For Downstream Work
 
@@ -124,15 +120,18 @@ The only current claim classes allowed from this surface are:
   - `showcase/portfolio.json`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - executable build/package paths:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- package-runnable-toolchain`
+  - package bridge: `npm run objc3c -- <action>`
+
+Helper implementations remain action-registry anchors for the public
+commands above.
 
 ## Explicit Non-Goals
 
 - no benchmark claims derived from screenshots or copied spreadsheet values
 - no hidden hardware-normalization constants outside checked-in code
-- no milestone-local benchmark wrappers or duplicate package surfaces
+- no release-scope benchmark wrappers or duplicate package surfaces
 - no cross-machine universal claims without raw sample packets
 - no silent dropping of unavailable baseline toolchains

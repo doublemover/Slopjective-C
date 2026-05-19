@@ -1,7 +1,10 @@
 {
   "contract_id": "objc3c.performance.governance.schema.surface.v1",
   "schema_version": 1,
-  "schema_check_script": "scripts/check_performance_governance_schema_surface.py",
+  "package_bridge": "objc3c",
+  "schema_check_action": "check-performance-governance-schema-surface",
+  "schema_check_command": "npm run objc3c -- check-performance-governance-schema-surface",
+  "schema_check_implementation_anchor": "scripts/check_performance_governance_schema_surface.py",
   "dashboard_summary_schema": "schemas/objc3c-performance-dashboard-summary-v1.schema.json",
   "public_report_schema": "schemas/objc3c-performance-public-report-v1.schema.json"
 }

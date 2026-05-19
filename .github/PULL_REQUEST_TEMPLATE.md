@@ -10,4 +10,4 @@
 - [ ] Governed budget family change is identified or explicitly `none`.
 - [ ] Exception record is linked when budget impact is `requires_exception_record`.
 - [ ] Validation posture and concrete evidence are included.
-- [ ] Rollback or regression path is stated for budget-affecting changes.
+- [ ] Revert plan or regression containment path is stated for budget-affecting changes.

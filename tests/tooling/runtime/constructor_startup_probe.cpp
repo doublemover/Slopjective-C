@@ -1,4 +1,4 @@
-#include "runtime/objc3_runtime.h"
+#include "runtime/public/objc3_runtime_api.h"
 #include "support/json_probe_writer.h"
 
 #include <cstdint>

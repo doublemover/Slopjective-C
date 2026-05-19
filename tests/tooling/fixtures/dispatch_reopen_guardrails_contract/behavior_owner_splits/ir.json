@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract"
+  ],
+  "support_boundary": "IR ownership is non-positive for this dispatch-reopen guardrails family. The family contains markdown dispatch governance fixtures only, with no checked-in IR or dispatch-IR output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/dispatch_reopen_guardrails_contract/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/dispatch_reopen_guardrails_contract/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:dispatch_reopen_guardrails_contract",
+    "compiler_phase_boundary:no-ir-positive-truth-from-dispatch-reopen-fixtures",
+    "upstream_owner_required:tests/native/ir"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated-only IR rows, evidence-log IR rows, migration-only IR rows, old-mode IR rows, gate IR rows, retired route IR rows, compatibility IR rows, and dispatch-policy-only IR claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

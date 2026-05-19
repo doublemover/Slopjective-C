@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-negative-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3"
+  ],
+  "support_boundary": "e2e ownership is intentionally non-positive for recovery negative. Rejected fixtures may route into negative execution or diagnostic acceptance, but executable success, runner behavior, workflow success, public reporting, generated reports, and directory labels do not become positive e2e support from this family.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "directory_boundary:tests/tooling/fixtures/native/recovery/negative",
+    "README:negative recovery fixtures are canonical rejection or strict diagnostic evidence",
+    "tests/tooling/fixtures/native/recovery/negative/*.objc3",
+    "e2e_boundary:negative-execution-routing-only",
+    "e2e_boundary:no-positive-e2e-from-rejected-source"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode e2e rows, gate e2e rows, retired route e2e rows, compatibility e2e rows, migration-only e2e rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

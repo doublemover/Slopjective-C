@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "fixture": "nonzero_constant_receiver_dispatch_strict_error.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "runtime",
+  "behavior_family": "dispatch",
+  "fixture_kind": "strict-error",
+  "retired_surface_tags": [
+    "runtime-dispatch"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-strict-error",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "run",
+    "diagnostic_code": "O3RT002",
+    "required_tokens": [
+      "O3RT002",
+      "runtime dispatch failed: unknown receiver class"
+    ]
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  }
+}

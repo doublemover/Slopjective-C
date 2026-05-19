@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-behavior-family-owner-split",
+  "owner_boundary": "docs_evidence",
+  "source_family": "tests/native/parser",
+  "support_boundary": "docs/evidence ownership covers fixture family index rows, phase owner references, metadata field names, diagnostic snapshots, and owner-index mentions as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json:family=parser_behavior",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json:phase=parser",
+    "snapshots/legacy_yes_literal_alias_rejected.diagnostics.txt",
+    "snapshots/legacy_no_literal_alias_rejected.diagnostics.txt",
+    "snapshots/legacy_null_literal_alias_rejected.diagnostics.txt",
+    "meta fields:diagnostic_owner_contract",
+    "meta fields:expected.required_tokens"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "docs rows, index rows, and snapshots are provenance unless they point to hand-authored parser fixture metadata"
+}

@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-capability-matrix-v1.schema.json",
+  "title": "objc3c Capability Matrix",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "matrix_version",
+    "schema_path",
+    "evidence_map_path",
+    "states",
+    "command_surface",
+    "projection_policy",
+    "claim_contract",
+    "hard_cutover_rules",
+    "retired_surface_terms",
+    "capabilities"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "objc3c-capability-matrix-v1"
+    },
+    "matrix_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_path": {
+      "type": "string",
+      "const": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    "evidence_map_path": {
+      "type": "string",
+      "const": "docs/support/evidence_map.json"
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/state"
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "command_surface": {
+      "type": "object",
+      "required": [
+        "public_bridge",
+        "action_owner",
+        "public_command_pattern",
+        "unsupported_public_surfaces"
+      ],
+      "properties": {
+        "public_bridge": {
+          "type": "string",
+          "const": "npm run objc3c -- <action>"
+        },
+        "action_owner": {
+          "type": "string",
+          "const": "scripts/objc3c_workflow/action_catalog.py"
+        },
+        "public_command_pattern": {
+          "type": "string",
+          "const": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+        },
+        "unsupported_public_surfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "projection_policy": {
+      "type": "object",
+      "required": [
+        "authoritative_data",
+        "schema_sources",
+        "human_projections",
+        "consumer_rule"
+      ],
+      "properties": {
+        "authoritative_data": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "schema_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "human_projections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "consumer_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "claim_contract": {
+      "type": "object",
+      "required": [
+        "support_claim_required_for_states",
+        "support_claim_forbidden_for_states",
+        "public_behavior_claim_namespace",
+        "no_alias_or_retired_route_claim_sources",
+        "owner_only_states",
+        "consumer_rule"
+      ],
+      "properties": {
+        "support_claim_required_for_states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "support_claim_forbidden_for_states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "public_behavior_claim_namespace": {
+          "type": "string",
+          "const": "objc3c.behavior.*"
+        },
+        "no_alias_or_retired_route_claim_sources": {
+          "type": "array",
+          "description": "Inputs that may preserve rejection or provenance evidence but must not become support-claim sources.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "owner_only_states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "consumer_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "hard_cutover_rules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "retired_surface_terms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/retiredSurfaceTerm"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "enum": [
+        "implemented",
+        "rejected",
+        "reserved",
+        "internal"
+      ]
+    },
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "supportClaim": {
+      "type": "string",
+      "pattern": "^objc3c\\.behavior\\.[a-z0-9._-]+$"
+    },
+    "publicCommand": {
+      "type": "string",
+      "description": "Optional public workflow command for replaying this evidence. Capability boundary surfaces may only advertise the npm objc3c bridge.",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "evidenceKind": {
+      "enum": [
+        "test",
+        "diagnostic",
+        "doc",
+        "schema",
+        "source"
+      ]
+    },
+    "retiredSurfaceTerm": {
+      "type": "object",
+      "required": [
+        "term",
+        "canonical_handling",
+        "allowed_context"
+      ],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_handling": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowed_context": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/evidenceKind"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command": {
+          "$ref": "#/$defs/publicCommand"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capability": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "state",
+        "summary",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/capabilityId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "support_claims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/supportClaim"
+          },
+          "uniqueItems": true
+        },
+        "owner_modules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "implemented"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "required": [
+              "support_claims"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "rejected",
+                  "reserved",
+                  "internal"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "support_claims"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

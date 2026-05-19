@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-sema-behavior-family-owner-split",
+  "owner_boundary": "sema",
+  "source_family": "tests/native/sema",
+  "support_boundary": "sema ownership covers canonical semantic positives and non-retired semantic diagnostic rejections under tests/native/sema only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "types/typed_i32_bool_flow.objc3",
+    "types/typed_i32_bool_flow.meta.json:fixture_kind=positive",
+    "ownership/strong_id_assignment.objc3",
+    "ownership/strong_id_assignment.meta.json:fixture_kind=positive",
+    "objc/objc_interface_method_contract.objc3",
+    "objc/objc_interface_method_contract.meta.json:fixture_kind=positive",
+    "control_flow/definite_return_if_else.objc3",
+    "control_flow/definite_return_if_else.meta.json:fixture_kind=positive",
+    "concurrency/async_await_value_flow.objc3",
+    "concurrency/async_await_value_flow.meta.json:fixture_kind=positive",
+    "types/assignment_unknown_target_rejected.meta.json:behavior_contract=canonical-rejection",
+    "errors/unsupported_arc_ownership_qualifier_rejected.meta.json:behavior_contract=canonical-rejection",
+    "concurrency/throws_feature_claim_rejected.meta.json:behavior_contract=canonical-rejection",
+    "control_flow/continue_outside_loop_rejected.meta.json:behavior_contract=canonical-rejection",
+    "errors/return_nonvoid_missing_value_rejected.meta.json:behavior_contract=canonical-rejection",
+    "errors/return_value_from_void_strict_error.meta.json:behavior_contract=canonical-rejection",
+    "negative/return_void_with_value_rejected.meta.json:behavior_contract=canonical-rejection"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "positive sema truth is limited to hand-authored canonical semantic fixtures; semantic negatives are diagnostic rejection evidence and never generated-only, evidence-log, migration, old-mode, gate, or retired route support"
+}

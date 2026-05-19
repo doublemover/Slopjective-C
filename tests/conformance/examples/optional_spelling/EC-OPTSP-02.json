@@ -1,6 +1,6 @@
 {
   "id": "EC-OPTSP-02",
-  "title": "Accept non-canonical optional<int> in compatibility mode with rewrite",
+  "title": "Reject non-canonical optional<int> on the canonical path",
   "feature": "optional spelling",
   "bucket": "diagnostics",
   "profile": "core",
@@ -8,13 +8,13 @@
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
     "docs/reference/legacy_spec_anchor_index.md"
   ],
-  "source": "optional<int> wrapCompat(int value) {\n    return optional<int>(value);\n}\n",
+  "source": "optional<int> wrapAlias(int value) {\n    return optional<int>(value);\n}\n",
   "expect": {
-    "parse": "accept",
+    "parse": "reject",
     "diagnostics": [
       {
-        "code": "OPT-SPELL-NONCANON",
-        "severity": "warning",
+        "code": "O3C004",
+        "severity": "error",
         "span": {
           "start": {
             "line": 1,
@@ -25,7 +25,7 @@
             "column": 9
           }
         },
-        "message": "non-canonical optional spelling in compatibility mode",
+        "message": "optional<T> aliases are rejected; use canonical Optional<T> spelling",
         "fixits": [
           {
             "range": {
@@ -36,36 +36,6 @@
               "end": {
                 "line": 1,
                 "column": 9
-              }
-            },
-            "replacement": "Optional"
-          }
-        ]
-      },
-      {
-        "code": "OPT-SPELL-NONCANON",
-        "severity": "warning",
-        "span": {
-          "start": {
-            "line": 2,
-            "column": 12
-          },
-          "end": {
-            "line": 2,
-            "column": 20
-          }
-        },
-        "message": "non-canonical optional spelling in compatibility mode",
-        "fixits": [
-          {
-            "range": {
-              "start": {
-                "line": 2,
-                "column": 12
-              },
-              "end": {
-                "line": 2,
-                "column": 20
               }
             },
             "replacement": "Optional"

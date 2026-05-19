@@ -1,0 +1,22 @@
+#include "ir/objc3_ir_emitter_expression_services.h"
+
+#include "ir/objc3_ir_emitter_expression_services_callbacks.h"
+#include "ir/objc3_ir_emitter_service_contexts.h"
+#include "ir/objc3_ir_expression_call_orchestration.h"
+
+Objc3IRExpressionCallEmissionOptions
+BuildObjc3IREmitterExpressionCallEmissionOptions(
+    const Objc3IREmitterServiceContextState &state,
+    const Objc3IREmitterServiceContextCallbacks &callbacks) {
+  return Objc3IRExpressionCallEmissionOptions{
+      state.selector_pool_globals,
+      state.class_receiver_constants,
+      state.direct_dispatch_symbols_by_key,
+      state.lowering_ir_boundary.runtime_dispatch_arg_slots,
+      state.lowering_ir_boundary.runtime_dispatch_symbol,
+      state.runtime_dispatch_call_state,
+      state.defined_functions,
+      state.declared_pure_functions,
+      state.impure_functions,
+      BuildObjc3IREmitterExpressionCallEmissionServices(state, callbacks)};
+}

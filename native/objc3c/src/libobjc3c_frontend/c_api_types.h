@@ -1,0 +1,30 @@
+#ifndef OBJC3C_LIBOBJC3C_FRONTEND_C_API_TYPES_H_
+#define OBJC3C_LIBOBJC3C_FRONTEND_C_API_TYPES_H_
+
+#include "objc3c_frontend.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
+typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;
+typedef objc3c_frontend_status_t objc3c_frontend_c_status_t;
+typedef objc3c_frontend_diagnostic_severity_t
+    objc3c_frontend_c_diagnostic_severity_t;
+typedef objc3c_frontend_ir_object_backend_t
+    objc3c_frontend_c_ir_object_backend_t;
+typedef objc3c_frontend_artifact_kind_t objc3c_frontend_c_artifact_kind_t;
+typedef objc3c_frontend_string_t objc3c_frontend_c_string_t;
+typedef objc3c_frontend_string_view_t objc3c_frontend_c_string_view_t;
+typedef objc3c_frontend_stage_summary_t objc3c_frontend_c_stage_summary_t;
+typedef objc3c_frontend_compile_options_t
+    objc3c_frontend_c_compile_options_t;
+typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;
+typedef objc3c_frontend_version_t objc3c_frontend_c_version_t;
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#endif  // OBJC3C_LIBOBJC3C_FRONTEND_C_API_TYPES_H_

@@ -1,9 +1,13 @@
 #pragma once
 
+/*
+ * Internal C++ frontend/CLI handoff owner. This header is not part of the
+ * exported C ABI; objc3c_frontend.h and c_api.h own package-facing entrypoints.
+ */
 #include <filesystem>
 #include <string>
 
-#include "pipeline/objc3_frontend_artifacts.h"
+#include "artifacts/objc3_frontend_artifacts.h"
 #include "pipeline/objc3_frontend_pipeline.h"
 
 struct Objc3FrontendCompileProduct {

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/unified_concurrency_runtime_semantic_model.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
+  ],
+  "support_boundary": "semantic ownership covers task, actor, continuation, scheduler/executor, sendability, isolation, mailbox, and claim narrowing semantics before lowering or runtime owners cite executable proof; generated summaries, private snapshots, probe payload snapshots, workflow labels, and narrative parity rows remain provenance until canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "semantic_models:scheduler-executor-continuation-task-and-actor-semantics-are-runtime-responsibilities",
+    "semantic_models:task-runtime-and-actor-runtime-remain-separate-internal-tracks-sharing-one-private-helper-boundary",
+    "claim_narrowing_constraints:public claims stay narrower than the private runtime-owned helper ABI and snapshot evidence",
+    "claim_narrowing_constraints:stdlib actor-shaped or helper-oriented narratives must not be promoted to runnable parity claims without runtime proof",
+    "workload_rules:scheduler and executor claims remain bounded by the existing task-runtime and actor-runtime probes plus the packaged runnable concurrency workflow",
+    "actor_models:sendability-and-isolation-claims-stay-grounded-in-live-lowering-probes-executor-contract-probes-and-packaged-runnable-e2e-evidence"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "stdlib narrative parity, scheduler fairness, external executor transport, distributed actor transport, compatibility-positive semantics, retired route concurrency semantics, gate actor semantics, old-mode task or actor claims, source-only semantic truth, and unsupported ARC/error/interop interaction claims remain diagnostics, canonical rejection, strict-error, or provenance-only evidence"
+}

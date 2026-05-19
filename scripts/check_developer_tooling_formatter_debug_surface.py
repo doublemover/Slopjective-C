@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_object as load_json
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json"
 OUT_DIR = ROOT / "tmp" / "reports" / "developer-tooling" / "formatter-debug"
 JSON_OUT = OUT_DIR / "formatter_debug_summary.json"
@@ -28,14 +28,14 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
     format_result = subprocess.run(
-        [sys.executable, str(PUBLIC_RUNNER), "format-objc3c", contract["format_source"]],
+        public_workflow_command("format-objc3c", contract["format_source"]),
         cwd=ROOT,
         check=False,
         text=True,
         capture_output=True,
     )
     debug_result = subprocess.run(
-        [sys.executable, str(PUBLIC_RUNNER), "inspect-editor-tooling", contract["debug_source"]],
+        public_workflow_command("inspect-editor-tooling", contract["debug_source"]),
         cwd=ROOT,
         check=False,
         text=True,

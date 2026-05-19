@@ -9,6 +9,6 @@ fn main() -> i32 {
     case 1:
       return 42;
     default:
-      let fallback = 7;
+      let retired_route = 7;
   }
 }

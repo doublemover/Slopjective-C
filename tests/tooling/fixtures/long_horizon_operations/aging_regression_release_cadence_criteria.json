@@ -1,10 +1,17 @@
 {
   "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence_criteria.v1",
   "schema_version": 1,
+  "owner_contract": {
+    "owner": "cadence_owner",
+    "artifact_section": "aging_regression",
+    "publication_projection": "operator_publication.support_window_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.aging_release_cadence"
+  },
+  "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/performance_governance/budget_model.json",
     "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
   ],
   "cadence_classes": [
     {
@@ -16,7 +23,7 @@
         "application-architecture",
         "performance-governance"
       ],
-      "rollback_required": true
+      "revert_required": true
     },
     {
       "cadence_id": "minor-additive",
@@ -29,44 +36,45 @@
         "conformance-corpus",
         "stress-integration"
       ],
-      "rollback_required": true
+      "revert_required": true
     },
     {
       "cadence_id": "preview-aging",
-      "allowed_scope": "best-effort preview only",
+      "allowed_scope": "preview release-drill only until generated conversion replay and revert evidence exists",
       "minimum_evidence_families": [
         "release-operations",
         "performance-governance",
         "external-validation",
         "public-conformance"
       ],
-      "rollback_required": true
+      "revert_required": true
     }
   ],
   "aging_regression_rules": [
     "Performance publication-freshness blocking values from performance governance are release-blocking.",
     "Soak evidence must include conformance, stress, external-validation, and public-conformance families before a production-strength claim can mention stability.",
-    "Migration and rollback evidence must be regenerated for every release-cadence class that changes package or application behavior.",
+    "Conversion replay and revert evidence must be regenerated for every release-cadence class that changes package or application behavior.",
     "Any stale package or application evidence demotes cadence claims to release-drill only."
   ],
-  "required_public_scripts": [
-    "test:objc3c:performance-governance",
-    "test:objc3c:performance-governance:integration",
-    "test:objc3c:performance-governance:e2e",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:stress:integration",
-    "test:objc3c:external-validation:integration",
-    "test:objc3c:public-conformance:integration"
+  "required_actions": [
+    "validate-performance-governance",
+    "validate-performance-governance-integration",
+    "validate-performance-governance-end-to-end",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-stress-integration",
+    "validate-external-validation-integration",
+    "validate-public-conformance-reporting-integration"
   ],
   "release_blocking_conditions": [
     "freshness budget breach",
     "missing soak family",
     "missing package ecosystem evidence",
     "missing canonical application evidence",
-    "missing rollback guidance",
+    "missing revert guidance",
     "manual or non-replayable aging evidence"
-  ]
+  ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.aging_release_cadence"
 }

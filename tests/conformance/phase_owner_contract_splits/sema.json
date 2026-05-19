@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "sema",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "semantic ownership covers semantic_diagnostics support claims, type, ownership, Objective-C, control-flow, error, concurrency, and negative semantic fixture families only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=sema]",
+    "support_claim=objc3c.behavior.sema.typed-flow",
+    "fixture_root=tests/native/sema",
+    "required_families:types",
+    "required_families:ownership",
+    "required_families:objc",
+    "required_families:control_flow",
+    "required_families:errors",
+    "required_families:concurrency",
+    "tests/native/sema/types/typed_i32_bool_flow.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "compatibility gates, unsupported feature claims, unsupported ARC ownership claims, and evidence-log semantic claims remain semantic diagnostics, canonical rejection, or provenance-only evidence"
+}

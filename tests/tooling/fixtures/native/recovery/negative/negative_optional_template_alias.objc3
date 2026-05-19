@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3C004.
+module NegativeOptionalTemplateAlias;
+
+fn main(value: optional<int>) -> i32 {
+  return value;
+}

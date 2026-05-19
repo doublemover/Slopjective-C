@@ -78,9 +78,9 @@ Only these checked-in sources may feed the public performance report:
   compiler-throughput, and runtime-performance workflows
 - checked-in budget, claim, breach-triage, and lab-policy contracts
 - checked-in public command and maintainer workflow surfaces
-- deterministic report-build scripts in `scripts/`
+- action-catalog-owned deterministic report builders
 
-No spreadsheet-only, screenshot-only, or hand-edited sidecar performance report
+No spreadsheet-only, screenshot-only, or operator-maintained sidecar performance summary
 is allowed.
 
 ## Public Claim And Waiver Policy
@@ -145,15 +145,15 @@ The performance program assumes one checked-in lab contract:
 ## Live Paths Later Issues Must Reuse
 
 - benchmark and comparison roots:
-  - `scripts/benchmark_objc3c_performance.py`
-  - `scripts/run_objc3c_comparative_baselines.py`
-  - `scripts/check_objc3c_compiler_throughput_integration.py`
-  - `scripts/check_objc3c_runtime_performance_integration.py`
+  - `npm run objc3c -- benchmark-performance`
+  - `npm run objc3c -- benchmark-comparative-baselines`
+  - `npm run objc3c -- validate-compiler-throughput`
+  - `npm run objc3c -- validate-runtime-performance`
 - package and workflow surfaces:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- package-runnable-toolchain`
 - public workflow documentation:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `docs/runbooks/objc3c_maintainer_workflows.md`

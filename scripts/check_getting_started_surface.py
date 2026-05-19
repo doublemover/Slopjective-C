@@ -3,15 +3,13 @@
 
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.json_io import write_report_json
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +20,7 @@ PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
 SHOWCASE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "showcase" / "summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "tutorials" / "getting-started-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.tutorial.getting-started.surface.summary.v1"
+RUNNER_PATH = "scripts/check_getting_started_surface.py"
 
 
 def expect(condition: bool, message: str) -> None:
@@ -56,11 +55,11 @@ def main() -> int:
     }
     expect(list(program_examples_by_id) == example_ids, "program surface example ids drifted from getting-started walkthrough")
 
-    documentation_result = run_capture([sys.executable, str(DOCUMENTATION_SURFACE_PY)])
+    documentation_result = run_capture(python_script_command(DOCUMENTATION_SURFACE_PY))
     if documentation_result.returncode != 0:
         raise RuntimeError("documentation surface validation failed")
 
-    showcase_command = [sys.executable, str(SHOWCASE_SURFACE_PY)]
+    showcase_command = python_script_command(SHOWCASE_SURFACE_PY)
     for example_id in example_ids:
         showcase_command.extend(["--example", example_id])
     showcase_result = run_capture(showcase_command)
@@ -96,7 +95,7 @@ def main() -> int:
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
-        "runner_path": "scripts/check_getting_started_surface.py",
+        "runner_path": RUNNER_PATH,
         "walkthrough_manifest": repo_rel(WALKTHROUGH_PATH),
         "program_surface_contract": repo_rel(PROGRAM_SURFACE_PATH),
         "program_publish_inputs": program_surface.get("publish_inputs"),
@@ -105,8 +104,7 @@ def main() -> int:
         "child_report_paths": [repo_rel(SHOWCASE_SUMMARY_PATH)],
         "showcase_surface_summary": showcase_summary,
     }
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_report_json(REPORT_PATH, payload, sort_keys=False)
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
     return 0
 

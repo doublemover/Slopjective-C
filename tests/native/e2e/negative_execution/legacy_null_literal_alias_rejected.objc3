@@ -1,0 +1,8 @@
+// Canonical e2e negative fixture: old literal aliases reject before execution.
+module LegacyNullLiteralAliasRejectedE2E;
+
+let value = NULL / 0;
+
+fn main() -> i32 {
+  return value;
+}

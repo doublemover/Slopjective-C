@@ -1,0 +1,9 @@
+#include "parse/objc3_type_feature_module_profiles_cache_conformance_evidence.inc"
+
+#include "parse/objc3_type_feature_module_profiles_cache_conformance_cache_invalidation_profile.inc"
+
+#include "parse/objc3_type_feature_module_profiles_cache_conformance_cache_invalidation_normalization.inc"
+
+#include "parse/objc3_type_feature_module_profiles_cache_conformance_cross_module_profile.inc"
+
+#include "parse/objc3_type_feature_module_profiles_cache_conformance_cross_module_normalization.inc"

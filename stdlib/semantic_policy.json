@@ -31,7 +31,7 @@
       "patch": 0
     }
   },
-  "compatibility_rules": [
+  "stability_rules": [
     "required export names remain stable within stdlib major version 1",
     "result tag numeric identity remains stable within stdlib major version 1",
     "text/data helper meaning remains count-and-presence preserving within stdlib major version 1",
@@ -42,7 +42,7 @@
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
     "capability_query_encoding": "0-means-missing-nonzero-means-present",
-    "option_unwrap_or": "returns value when presence flag is nonzero, otherwise fallback",
+    "option_unwrap_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default",
     "string_view_length": "returns the provided unit count unchanged",
     "string_view_prefix_units": "returns requested units clamped to the provided unit count and zero floor",
     "byte_span_length": "returns the provided byte count unchanged",
@@ -50,35 +50,35 @@
     "array_count": "returns the provided element count unchanged",
     "array_prefix_count": "returns requested elements clamped to the provided element count and zero floor",
     "map_entry_present": "0-means-absent-nonzero-means-present",
-    "map_entry_value_or": "returns value when presence flag is nonzero, otherwise fallback"
+    "map_entry_value_or": "returns value when presence flag is nonzero, otherwise the caller-supplied default"
   },
   "error_semantics": {
     "result_ok_tag": 1,
     "result_err_tag": 2,
     "result_is_ok": "returns 1 only when tag equals result_ok_tag",
     "option_to_result_tag": "maps nonzero presence to result_ok_tag and zero presence to result_err_tag",
-    "result_bridge_diagnostic": "returns 0 when option presence matches the provided result tag, otherwise 30601",
-    "result_unwrap_or": "returns value only when tag equals result_ok_tag, otherwise fallback",
-    "result_error_or": "returns code only when tag equals result_err_tag, otherwise fallback",
-    "ok_or_code": "returns value when nonzero, otherwise fallback",
-    "or_throw_code": "returns value when nonzero, otherwise fallback",
-    "text_data_compatibility_score": "returns unit_count plus byte_count",
-    "text_data_compatibility_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
+    "option_result_shape_diagnostic": "returns 0 when option presence matches the provided result tag, otherwise 30601",
+    "result_unwrap_or": "returns value only when tag equals result_ok_tag, otherwise the caller-supplied default",
+    "result_error_or": "returns code only when tag equals result_err_tag, otherwise the caller-supplied default",
+    "ok_or_code": "returns value when nonzero, otherwise the caller-supplied default",
+    "or_throw_code": "returns value when nonzero, otherwise the caller-supplied default",
+    "text_data_shape_score": "returns unit_count plus byte_count",
+    "text_data_shape_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
   },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",
-    "component_count": "returns root plus offset until runtime-backed keypath storage lands",
-    "text_compatibility_score": "returns component_count plus text_units",
-    "text_compatibility_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
-    "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
+    "component_count": "returns root plus offset as the explicit component-count shape",
+    "text_shape_score": "returns component_count plus text_units for canonical text-shape validation",
+    "text_shape_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
+    "typed_keypath_metadata": "preserves root and component counts as the current metadata token shape",
     "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
-    "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers",
+    "runtime_composition_shape": "must preserve explicit component counts without inventing ownership or allocation semantics",
     "metadata_token": "returns root plus component_count",
     "reflection_interop_token": "returns component_count when reflected_components is negative, otherwise component_count plus reflected_components",
     "runtime_composition_token": "returns component_count when imported_components is negative, otherwise component_count plus imported_components"
   },
   "concurrency_semantics": {
-    "spawn_token": "returns seed plus 1 as the current deterministic child-spawn token placeholder",
+    "spawn_token": "returns seed plus 1 as the canonical deterministic spawn token",
     "child_spawn_token": "returns seed plus 1 as the structured child-spawn helper token",
     "detached_spawn_token": "returns seed plus 2 as the detached-spawn helper token",
     "join_status": "returns the provided result code unless cancelled is nonzero, in which case it returns 2",
@@ -91,12 +91,12 @@
     "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
   },
   "system_semantics": {
-    "resource_token": "returns seed plus 4 as the current deterministic strict-system resource token placeholder",
+    "resource_token": "returns seed plus 4 as the canonical deterministic strict-system resource token",
     "cleanup_token": "returns seed plus 4 plus cleanup_count when cleanup_count is nonnegative, otherwise seed plus 4",
     "lifetime_borrow_token": "returns seed plus 4 plus borrow_depth when borrow_depth is nonnegative, otherwise seed plus 4",
     "diagnostics_gate_token": "returns 30704 when observed_profile is lower than required_profile and 0 otherwise",
     "runtime_composition_token": "returns seed plus 4 plus helper_token",
-    "profile_gate": "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports",
+    "profile_gate": "objc3.system helpers remain gated to Strict System and must not become unconditional Core imports",
     "runtime_composition_hook": "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers",
     "layering_rule": "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
   },
@@ -104,8 +104,8 @@
     "allocator or ownership ABI claims",
     "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
-    "moving error bridges into objc3.core",
-    "claiming runtime-backed executor or reflection semantics before the checked-in helper exports exist",
+    "moving result-shape helpers into objc3.core",
+    "presenting runtime-backed executor or reflection semantics without checked-in helper exports",
     "widening strict-system helpers into always-on core imports"
   ]
 }

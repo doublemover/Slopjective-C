@@ -14,13 +14,22 @@ OUTPUT_JSON_PATH = PLAN_DIR / 'validation_acceptance_suite_matrix.json'
 OUTPUT_MD_PATH = PLAN_DIR / 'validation_acceptance_suite_matrix.md'
 REPORT_JSON_PATH = REPORT_DIR / 'validation_acceptance_suite_matrix.json'
 REPORT_MD_PATH = REPORT_DIR / 'validation_acceptance_suite_matrix.md'
+DEFAULT_POLICY = {
+    'policy_id': 'objc3c.validation_consolidation_policy.v1',
+}
+
+
+def load_policy() -> dict[str, Any]:
+    if POLICY_PATH.is_file():
+        return load_json(POLICY_PATH)
+    return DEFAULT_POLICY
 
 
 
 
 def main() -> None:
     catalog = load_json(CATALOG_PATH)
-    policy = load_json(POLICY_PATH)
+    policy = load_policy()
     families = []
     for family in catalog['public_workflow_validation']['families']:
         if family['family'] in {'misc', 'static-guard-surface'}:
@@ -28,9 +37,9 @@ def main() -> None:
         families.append({
             'suite_family': family['family'],
             'canonical_actions': family['actions'],
-            'package_scripts': family['package_scripts'],
+            'public_commands': family['public_commands'],
             'tiers': family['tiers'],
-            'suite_owner': 'scripts/objc3c_public_workflow_runner.py',
+            'suite_owner': 'scripts.objc3c_workflow',
         })
 
     payload = {
@@ -42,18 +51,18 @@ def main() -> None:
         'suite_families': families,
         'aggregate_entrypoints': [
             {
-                'action': 'test-fast',
-                'package_script': 'test:fast',
-                'role': 'developer-fast-aggregate',
+                'action': 'test-smoke',
+                'public_command': 'npm run objc3c -- test-smoke',
+                'role': 'developer-smoke-aggregate',
             },
             {
                 'action': 'test-full',
-                'package_script': 'test:objc3c:full',
+                'public_command': 'npm run objc3c -- test-full',
                 'role': 'developer-full-aggregate',
             },
             {
                 'action': 'test-nightly',
-                'package_script': 'test:objc3c:nightly',
+                'public_command': 'npm run objc3c -- test-nightly',
                 'role': 'nightly-aggregate',
             },
         ],
@@ -79,10 +88,10 @@ def main() -> None:
         lines.append(f"- `{family['suite_family']}`")
         lines.append(f"  - tiers: `{', '.join(family['tiers'])}`")
         lines.append(f"  - owner: `{family['suite_owner']}`")
-        lines.append(f"  - package_scripts: {', '.join(f'`{item}`' for item in family['package_scripts'])}")
+        lines.append(f"  - public_commands: {', '.join(f'`{item}`' for item in family['public_commands'])}")
     lines.extend(['', '## Aggregate entrypoints'])
     for entry in payload['aggregate_entrypoints']:
-        lines.append(f"- `{entry['package_script']}` -> `{entry['action']}` ({entry['role']})")
+        lines.append(f"- `{entry['public_command']}` -> `{entry['action']}` ({entry['role']})")
     lines.extend(['', 'Next issues: `validation-ci-topology`, `validation-ci-topology-integration`', ''])
     markdown = '\n'.join(lines)
     write_text(OUTPUT_MD_PATH, markdown)

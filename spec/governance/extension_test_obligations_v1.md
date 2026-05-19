@@ -7,7 +7,8 @@ before lifecycle promotions and for steady-state lifecycle compliance.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md#planning-issue-175-extension-test-obligations-package`
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
 - `spec/governance/extension_lifecycle_v1.md`
 - `reports/conformance/extension_test_catalog_skeleton_v011.md`
 
@@ -44,18 +45,18 @@ This policy governs:
 
 ## 3. Canonical Test Families
 
-| Family ID | Family name                             | Purpose                                                         |
-| --------- | --------------------------------------- | --------------------------------------------------------------- |
-| `F-01`    | Syntax and parser conformance           | Accepted and rejected syntax surface plus parse determinism.    |
-| `F-02`    | Static semantics and type soundness     | Soundness and invalid-program rejection.                        |
-| `F-03`    | Diagnostics and fix-it behavior         | Deterministic diagnostic identity and fix-it output.            |
-| `F-04`    | ABI and metadata interop                | Cross-toolchain ABI and metadata compatibility.                 |
-| `F-05`    | Runtime behavioral interop              | Runtime semantics across producer and consumer implementations. |
-| `F-06`    | Cross-module and package interop        | Import and export behavior across dependency boundaries.        |
-| `F-07`    | Security and isolation conformance      | Sandbox policy, unsafe-surface rejection, and security posture. |
-| `F-08`    | Reproducibility and determinism replay  | Stable outputs across repeated runs.                            |
-| `F-09`    | Migration and deprecation compatibility | Compatibility behavior for migration and deprecation paths.     |
-| `F-10`    | Claim-to-test traceability              | Mapping between claim scope and required test IDs.              |
+| Family ID | Family name                            | Purpose                                                                   |
+| --------- | -------------------------------------- | ------------------------------------------------------------------------- |
+| `F-01`    | Syntax and parser conformance          | Accepted and rejected syntax surface plus parse determinism.              |
+| `F-02`    | Static semantics and type soundness    | Soundness and invalid-program rejection.                                  |
+| `F-03`    | Diagnostics and fix-it behavior        | Deterministic diagnostic identity and fix-it output.                      |
+| `F-04`    | ABI and metadata interop               | Cross-toolchain ABI and metadata interop evidence.                        |
+| `F-05`    | Runtime behavioral interop             | Runtime semantics across producer and consumer implementations.           |
+| `F-06`    | Cross-module and package interop       | Import and export behavior across dependency boundaries.                  |
+| `F-07`    | Security and isolation conformance     | Sandbox policy, unsafe-surface rejection, and security posture.           |
+| `F-08`    | Reproducibility and determinism replay | Stable outputs across repeated runs.                                      |
+| `F-09`    | Deprecation and retirement replay      | Rejection, tombstone, and replay evidence with no alternate support lane. |
+| `F-10`    | Claim-to-test traceability             | Mapping between claim scope and required test IDs.                        |
 
 ## 4. Lifecycle Obligation Matrix
 
@@ -73,8 +74,8 @@ Conditional activation predicates:
    boundaries,
 2. `F-05` is mandatory when runtime behavior is externally observable,
 3. `F-06` is mandatory when behavior crosses module or package boundaries,
-4. `F-09` is mandatory in `LS-2` when migration or fallback claims are used in
-   promotion rationale.
+4. `F-09` is mandatory when deprecation, retirement, or replay-only claims are
+   used in rationale.
 
 ## 5. Interop Coverage Minima
 
@@ -158,14 +159,15 @@ Waivers are forbidden for:
 
 ### 8.1 Mandatory evidence bundle
 
-| Evidence class                 | Requirement                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| Test result ledger             | Test IDs, outcomes, timestamps, and severity classes.                          |
-| Interop matrix record          | Producer and consumer pair coverage with complete matrix cells.                |
-| Environment fingerprint        | Toolchain versions, profile flags, platform tuple, dependency lock references. |
-| Raw logs and summary           | Stable IDs linking normalized summary to raw logs.                             |
-| Claim linkage manifest         | Complete mapping from claims to required test IDs.                             |
-| Provenance and replay metadata | Source revision, invocation identity, artifact digests, replay evidence.       |
+| Evidence class                 | Requirement                                                                             |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| Test result ledger             | Test IDs, outcomes, timestamps, and severity classes.                                   |
+| Interop matrix record          | Producer and consumer pair coverage with complete matrix cells.                         |
+| Environment fingerprint        | Toolchain versions, profile flags, platform tuple, dependency lock references.          |
+| Raw logs and summary           | Stable IDs linking normalized summary to raw logs.                                      |
+| Claim linkage manifest         | Complete mapping from claims to required test IDs.                                      |
+| Capability/evidence map row    | Matching row in `docs/support/capability_matrix.md` and `docs/support/evidence_map.md`. |
+| Provenance and replay metadata | Source revision, invocation identity, artifact digests, replay evidence.                |
 
 ### 8.2 Freshness limits
 
@@ -260,11 +262,11 @@ Consistency rules:
 
 ## 12. Downstream Contract
 
-| Consumer                     | Required output from this policy                                                   |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `C-05` lifecycle policy      | Gate and threshold inputs for promotion and retention decisions.                   |
-| `C-08` vendor claim template | Claim-to-test traceability contract (`F-10`, `TG-06`).                             |
-| `C-11` registry publication  | Evidence references that prove test readiness for lifecycle state and claim scope. |
+| Consumer                     | Required output from this policy                                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `C-05` lifecycle policy      | Gate and threshold inputs for promotion and retention decisions.                                                           |
+| `C-08` vendor claim template | Claim-to-test traceability contract (`F-10`, `TG-06`).                                                                     |
+| `C-11` registry publication  | Schema-registry-owned payloads plus evidence-map references that prove test readiness for lifecycle state and claim scope. |
 
 No consumer may relax mandatory-family obligations, threshold floors, or
 non-waiverable rules defined in this policy.

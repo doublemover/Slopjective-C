@@ -4,20 +4,27 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_completed
+from platform_hardening_contracts import (
+    PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH,
+    ROOT,
+    RUNNABLE_END_TO_END_SUMMARY_PATH,
+    SUPPORT_MATRIX_ARTIFACT_PATH,
+    SUPPORT_MATRIX_SUMMARY_PATH,
+    PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH,
+    platform_hardening_owner_payload,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
-CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "platform_hardening" / "packaged_smoke_integration_contract.json"
-REPORT_PATH = ROOT / "tmp" / "reports" / "platform-hardening" / "runnable-end-to-end-summary.json"
 PACKAGE_CONTRACT_ID = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
 SUMMARY_CONTRACT_ID = "objc3c.platform.hardening.runnable.end-to-end.summary.v1"
 
@@ -37,7 +44,13 @@ def package_path(package_root: Path, relative_path: str) -> Path:
 
 
 def main() -> int:
-    contract = load_json(CONTRACT_PATH)
+    contract = load_json(PACKAGED_SMOKE_INTEGRATION_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="packaged platform hardening smoke contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="packaged platform hardening smoke contract",
+        required_blockers=("packaged platform hardening command surface missing",),
+    )
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     package_root = ROOT / "tmp" / "pkg" / "objc3c-platform-hardening-e2e" / run_id
     manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
@@ -93,22 +106,20 @@ def main() -> int:
         expect(command_name in command_surfaces, f"package manifest missing platform-hardening command surface: {command_name}")
 
     public_actions = manifest.get("platform_hardening_public_actions", [])
-    public_scripts = manifest.get("platform_hardening_public_scripts", [])
+    package_bridge = str(contract["package_bridge"])
+    manifest_package_bridge = manifest.get("package_bridge")
     for action in contract["public_actions"]:
         expect(action in public_actions, f"package manifest missing platform-hardening public action: {action}")
-    for script in contract["public_scripts"]:
-        expect(script in public_scripts, f"package manifest missing platform-hardening public script: {script}")
-
-    packaged_runner = package_root / "scripts" / "objc3c_public_workflow_runner.py"
+    expect(manifest_package_bridge == package_bridge, f"package manifest missing package bridge {package_bridge}")
 
     matrix_exit_code = run_step(
-        [sys.executable, str(packaged_runner), "build-platform-support-matrix"],
+        public_workflow_command("build-platform-support-matrix"),
         cwd=package_root,
     )
     if matrix_exit_code != 0:
         raise RuntimeError("packaged build-platform-support-matrix failed")
-    matrix_artifact_path_text = "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json"
-    matrix_summary_path_text = "tmp/reports/platform-hardening/platform-support-matrix-summary.json"
+    matrix_artifact_path_text = repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH)
+    matrix_summary_path_text = repo_rel(SUPPORT_MATRIX_SUMMARY_PATH)
     support_matrix = load_json(package_root / normalize_rel_path(str(matrix_artifact_path_text)))
     publication_surface = support_matrix.get("publication_surface", {})
     for field_name in contract["required_publication_surface_fields"]:
@@ -116,12 +127,12 @@ def main() -> int:
     expect(support_matrix.get("default_platform_id") == "windows-x64", "packaged support matrix default platform drifted")
 
     integration_exit_code = run_step(
-        [sys.executable, str(packaged_runner), "validate-platform-hardening"],
+        public_workflow_command("validate-platform-hardening"),
         cwd=package_root,
     )
     if integration_exit_code != 0:
         raise RuntimeError("packaged validate-platform-hardening failed")
-    integration_summary_path_text = "tmp/reports/platform-hardening/integration-summary.json"
+    integration_summary_path_text = repo_rel(PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH)
     integration_summary = load_json(package_root / normalize_rel_path(str(integration_summary_path_text)))
     expect(integration_summary.get("ok") is True, "packaged platform-hardening integration summary did not report ok=true")
 
@@ -129,6 +140,8 @@ def main() -> int:
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS",
+        "owner_policy": owner_policy or platform_hardening_owner_payload(),
+        "blocker_metadata": blocker_metadata,
         "runner_path": "scripts/check_objc3c_runnable_platform_hardening_end_to_end.py",
         "package_manifest_path": repo_rel(manifest_path),
         "package_root": repo_rel(package_root),
@@ -136,7 +149,8 @@ def main() -> int:
         "platform_support_matrix_summary_path": repo_rel(package_root / normalize_rel_path(str(matrix_summary_path_text))),
         "platform_hardening_integration_summary_path": repo_rel(package_root / normalize_rel_path(str(integration_summary_path_text))),
         "packaged_public_actions": public_actions,
-        "packaged_public_scripts": public_scripts,
+        "package_bridge": package_bridge,
+        "packaged_package_bridge": manifest_package_bridge,
         "steps": [
             {
                 "action": "package-runnable-toolchain",
@@ -157,9 +171,9 @@ def main() -> int:
             },
         ],
     }
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(REPORT_PATH, payload)
-    print(f"summary_path: {repo_rel(REPORT_PATH)}")
+    RUNNABLE_END_TO_END_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(RUNNABLE_END_TO_END_SUMMARY_PATH, payload)
+    print(f"summary_path: {repo_rel(RUNNABLE_END_TO_END_SUMMARY_PATH)}")
     return 0
 
 

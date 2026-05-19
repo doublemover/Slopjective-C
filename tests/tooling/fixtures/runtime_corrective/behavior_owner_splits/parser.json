@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "parser ownership is provenance-only for runtime-corrective because the surface starts from already-authored fixtures, probes, and acceptance cases; generated reports, acceptance reports, proof bundles, replay manifests, compile artifacts, source-owner contract rows, evidence-log rows, migration-only rows, and runner-only rows do not create parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/class_realization_runtime_library.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/protocol_category_dispatch.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/live_method_dispatch.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "legacy spelling, old-mode syntax, parser retired route flags, parser gates, compatibility parser lanes, generated-only parser rows, evidence-log parser rows, migration-only parser rows, runner-only parser rows, sidecar-only parser proof, unlinked parser probes, and catalog-only acceptance rows remain parser rejection, strict-error, or provenance-only evidence and cannot be inferred from runtime-corrective acceptance rows"
+}

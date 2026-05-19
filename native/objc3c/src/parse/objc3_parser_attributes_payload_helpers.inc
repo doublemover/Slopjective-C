@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_attributes_payload_helpers_argument_text.inc"
+#include "parse/objc3_parser_attributes_payload_helpers_named_string_payload.inc"
+#include "parse/objc3_parser_attributes_payload_helpers_executor_payload.inc"
+#include "parse/objc3_parser_attributes_payload_helpers_abi_alignment_payload.inc"
+#include "parse/objc3_parser_attributes_payload_helpers_returns_borrowed_payload.inc"

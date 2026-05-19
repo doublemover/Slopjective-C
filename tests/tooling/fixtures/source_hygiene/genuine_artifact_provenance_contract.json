@@ -20,11 +20,18 @@
     "tmp/artifacts/"
   ],
   "generator_families": [
-    "python scripts/build_objc3c_native_docs.py",
-    "python scripts/render_objc3c_public_command_surface.py",
-    "python scripts/generate_conformance_evidence_index.py",
-    "python scripts/objc3c_public_workflow_runner.py",
-    "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1"
+    "npm run objc3c -- build-native-docs",
+    "npm run objc3c -- build-public-command-surface",
+    "npm run objc3c -- validate-conformance-corpus",
+    "npm run objc3c -- <action>",
+    "npm run objc3c -- build-native-binaries"
+  ],
+  "implementation_anchors": [
+    "scripts/build_objc3c_native_docs.py",
+    "scripts/render_objc3c_public_command_surface.py",
+    "scripts/generate_conformance_evidence_index.py",
+    "scripts.objc3c_workflow",
+    "scripts/build_objc3c_native.ps1"
   ],
   "notes": [
     "genuine generated outputs are replayable build or report artifacts, not tracked fixture substitutes",

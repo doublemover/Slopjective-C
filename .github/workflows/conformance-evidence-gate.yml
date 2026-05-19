@@ -32,8 +32,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install Python validator dependency
         run: python -m pip install --upgrade jsonschema
 
+      - name: Install Node dependencies
+        run: npm ci
+
       - name: Validate release evidence artifacts
-        run: python scripts/check_release_evidence.py
+        run: npm run objc3c -- check-release-evidence

@@ -2,13 +2,76 @@
   "contract_id": "objc3c.packaging.channels.workflow.surface.v1",
   "validate_action": "validate-packaging-channels",
   "end_to_end_action": "validate-packaging-channels-end-to-end",
-  "public_scripts": [
-    "check:objc3c:packaging-channels:surface",
-    "check:objc3c:packaging-channels:schemas",
-    "package:objc3c:channels",
-    "test:objc3c:packaging-channels",
-    "test:objc3c:packaging-channels:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-packaging-channels-surface",
+    "check-packaging-channels-schema-surface",
+    "build-package-channels",
+    "build-platform-support-matrix",
+    "validate-packaging-channels",
+    "validate-packaging-channels-end-to-end",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "packaging-channels-source",
+    "gate_owner": "packaging-channels-gate",
+    "blocker_owner": "packaging-channels-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation"
+    ],
+    "workflow_child_actions": [
+      "validate-release-foundation",
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix"
+    ],
+    "hard_cutover_guardrails": {
+      "unsupported_host_success_allowed": false,
+      "supported_host_claim_owner": "platform-hardening-support-source",
+      "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+      "toolchain_archive_claim_requires_owner": true,
+      "package_payload_owner_action": "package-runnable-toolchain",
+      "evidence_log_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
+  },
+  "channel_owner_contract": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "packaging-channels-installer-validation",
+    "package_validation_owner": "packaging-channels-package-validation",
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ]
+  },
+  "blocker_metadata": {
+    "blocker_owner": "packaging-channels-blockers",
+    "blocking_conditions": [
+      "packaging workflow skipped source or schema surface checks",
+      "package-channel child action missing from objc3c bridge",
+      "package-channel workflow summary emitted evidence-log status"
+    ]
+  },
   "upstream_validate_actions": [
     "validate-release-foundation"
   ],

@@ -25,27 +25,29 @@ Today it has:
 - a runnable subset of `.objc3`,
 - a checked-in standard library workspace with canonical modules under
   `stdlib/modules/`,
-- checked-in tutorials, migration guides, and capability-backed showcase
+- checked-in tutorials, canonical conversion guides, and capability-backed
+  showcase
   examples,
 - integrated workflow surfaces for performance, conformance, stress,
   external-validation, packaging, release operations, and distribution
   credibility,
-- ongoing work to finish full runtime realization of classes, protocols, categories, properties, blocks, and ARC.
+- support boundaries routed through the schema-backed capability matrix,
+  evidence map, and capability-claim responsibility contract.
 
-What is still incomplete:
+Current public support states:
 
-- full live Objective-C 3.0 object-model runtime behavior,
-- full property/ivar/runtime reflection closure,
-- full escaping block/byref and ARC automation,
-- complete runtime-backed semantics across `throws`/error propagation,
-  async/task/actor concurrency, metaprogramming/property-behavior surfaces, and
-  broader interop,
-- production-strength completeness and stability claims for the full intended
-  language/runtime envelope.
+| Area                                                                                                                                            | Capability boundary                           | Public support wording                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Parser syntax, typed semantic flow, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke       | `implemented` where rows exist                | Supported only at the exact row/evidence scope in `docs/support/capability_matrix.md`. |
+| Native module decomposition, public C runtime result APIs, workflow bridge, and JSON/schema helpers                                             | `internal`                                    | Owner and evidence surfaces, not language support claims.                              |
+| Full object-model runtime realization and property/ivar/reflection closure                                                                      | `reserved`                                    | Unclaimed until implemented matrix rows link executable evidence.                      |
+| Blocks, full ARC automation, `throws`, async/task/actor runtime closure, metaprogramming/property behavior runtime closure, and broader interop | `reserved` unless narrower rows say otherwise | Unavailable as public support outside exact implemented rows.                          |
+| Retired adapters, alternate acceptance paths, retired-source lanes, retired command surfaces, and generated-output completion                   | retired wording, not a support state          | Rejection, absence, or source-hygiene inventory only.                                  |
 
 ## Runnable Subset
 
-The current runnable subset is real, but it is still a subset.
+The current runnable subset is real, but it is still a subset. The capability
+matrix is the support boundary; prose in this README is only a routing summary.
 
 What you can compile and run today:
 
@@ -53,8 +55,6 @@ What you can compile and run today:
 - global and local `let` bindings,
 - `fn`, `pure fn`, and external function declarations,
 - integer and boolean values,
-- baseline alias surfaces such as `BOOL`, `NSInteger`, and `NSUInteger`,
-- Objective-C-flavored signature aliases such as `id`, `Class`, `SEL`, `Protocol`, and `instancetype`,
 - control flow:
   - `if` / `else`
   - `while`
@@ -72,53 +72,56 @@ What you can compile and run today:
 The repo also now carries dedicated conformance and runnable-package workflows
 for block/ARC, concurrency, error handling, interop, metaprogramming,
 object-model, storage/reflection, and release-candidate validation. That means
-those feature families are actively modeled and validated. It does not mean
-every corresponding language/runtime behavior is fully complete.
+those feature families have owner/evidence surfaces. It does not mean every
+corresponding language/runtime behavior is implemented.
 
-What is not fully runnable yet:
+Reserved or unclaimed runtime-backed areas:
 
-- full class/protocol/category/property runtime realization,
-- full property synthesis and reflective runtime consumption,
-- full escaping block/byref runtime behavior,
+- class/protocol/category/property runtime realization outside implemented
+  matrix rows,
+- property synthesis and reflective runtime consumption outside implemented
+  matrix rows,
+- escaping block/byref runtime behavior,
 - full ARC automation,
-- complete runtime-backed closure for `throws`, async/await, tasks, actors,
-  macros, property behaviors, and broader interop.
+- runtime-backed closure for `throws`, async/await, tasks, actors, macros,
+  property behaviors, and broader interop.
 
 ## Start Here
 
 Use the shortest path that matches what you are trying to do.
 
-| If you want to... | Start here | Then do this |
-| --- | --- | --- |
-| understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
-| build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
-| inspect the checked-in stdlib surface | [stdlib/README.md](stdlib/README.md) | then follow the core, advanced, and program runbooks |
-| follow the runnable tutorial path | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md) | compile one example first, then use the showcase surface |
-| pick the right capability-backed example first | [showcase/README.md](showcase/README.md) | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text |
-| migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it |
-| compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
-| evaluate adoption, migration, and support claims | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md) | replay `python scripts/build_objc3c_adoption_legibility_evidence.py` and inspect the generated evidence summary |
-| inspect performance surfaces | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md) | then use the performance and compiler-throughput commands |
-| inspect conformance, fuzz, and reporting work | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md) | then use the stress, external-validation, and public-conformance workflows |
-| inspect package, installer, and release flows | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md) | then follow packaging channels, release operations, and distribution credibility |
-| contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
-| inspect runnable showcase examples | [showcase/README.md](showcase/README.md) | compile them through `npm run compile:objc3c -- ...` or the showcase surface check |
-| inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
-| run exact package-script workflows | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing |
-| follow old spec links or archived anchors | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) | use this only for compatibility lookups |
+| If you want to...                                                                   | Start here                                                                                       | Then do this                                                                                                                                        |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| understand the project                                                              | [published site](https://doublemover.github.io/Slopjective-C/)                                   | read the status table and the spec map first                                                                                                        |
+| build or evaluate the toolchain                                                     | [README.md](README.md)                                                                           | follow `Fresh Setup`, then `First Working Session`                                                                                                  |
+| inspect the checked-in stdlib surface                                               | [stdlib/README.md](stdlib/README.md)                                                             | then follow the core, advanced, and program runbooks                                                                                                |
+| follow the runnable tutorial path                                                   | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md)                           | compile one example first, then use the showcase surface                                                                                            |
+| pick the right capability-backed example first                                      | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                                                             |
+| map ObjC2 patterns into canonical ObjC3 examples or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md)         | then use the broader comparison boundary only where you need it                                                                                     |
+| compare ObjC3 against ObjC2, Swift, or C++ expectations                             | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                                                          |
+| evaluate adoption and support claims                                                | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated-output summary                                                    |
+| inspect performance surfaces                                                        | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                                                           |
+| inspect conformance, fuzz, and reporting work                                       | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                                                          |
+| inspect package, installer, and release flows                                       | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                                                    |
+| contribute a normal repo change                                                     | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use `npm run objc3c -- <action>`                                                                            |
+| inspect runnable showcase examples                                                  | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                                                           |
+| inspect implementation boundaries                                                   | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                                                          |
+| run exact public workflow actions                                                   | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                                                                |
+| evaluate support status and evidence                                                | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence and [claim responsibility](docs/support/capability_claim_responsibility.md) before relying on a support claim |
 
 Documentation boundary:
 
 - onboarding: `README.md`, `CONTRIBUTING.md`, `site/index.md`
-- tutorials and migration guides: `docs/tutorials/`
+- tutorials and canonical conversion guides: `docs/tutorials/`
 - checked-in stdlib product surface: `stdlib/`
 - runnable examples: `showcase/`
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
 - operator runbooks: `docs/runbooks/`
-- compatibility redirects: `docs/reference/legacy_spec_anchor_index.md`
+- support boundaries: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, `docs/support/capability_claim_responsibility.md`
+- hard-cutover capability boundaries: `docs/support/hard_cutover_capability_truth.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
-If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
+If you are new to the repo, stay out of `tmp/` and archived redirect material until you actually need them.
 
 ## Superclean Boundary
 
@@ -151,22 +154,25 @@ Canonical roots:
 
 Explicit non-goals for cleanup work:
 
-- reintroducing milestone-coded command aliases or sidecar compatibility files,
+- reintroducing milestone-coded command names or sidecar legacy files,
+- documenting retired Objective-C aliases as supported public behavior,
+- describing old source modes, registry facades, adapter layers, or direct helper
+  commands as supported public paths,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
-- hand-editing generated outputs instead of their canonical inputs.
+- changing generated checked-in outputs without updating their owner inputs.
 
 ## Repository Layout
 
 - `native/objc3c/`: native compiler, lowering, runtime, and driver implementation
 - `stdlib/`: checked-in standard library workspace and package/import contracts
 - `showcase/`: runnable example portfolio
-- `docs/tutorials/`: learning path and migration material
+- `docs/tutorials/`: learning path and canonical conversion material
 - `docs/runbooks/`: operator-facing workflow and validation boundaries
 - `schemas/`: checked-in artifact/report schema contracts
 - `scripts/`: build, validation, packaging, and publication tooling
 - `tests/`: tooling, conformance, runtime, and stress coverage
 - `site/`: generated public overview output
-- `docs/reference/legacy_spec_anchor_index.md`: compatibility redirects for old anchors
+- `docs/support/`: capability matrix, evidence map, schema examples, and claim responsibility
 
 ## Dependencies
 
@@ -228,7 +234,7 @@ $env:LLVM_ROOT = 'D:\path\to\LLVM'
 Build the native compiler and runtime archive:
 
 ```powershell
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 Expected artifacts:
@@ -244,56 +250,56 @@ If the goal is simply to prove the repo is alive, use this order:
 1. Build the native compiler:
 
 ```powershell
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 2. Build the public site overview:
 
 ```powershell
-npm run build:site
+npm run objc3c -- build-site
 ```
 
 Optional generated-doc refreshes:
 
 ```powershell
-npm run build:docs:native
-npm run build:docs:commands
+npm run objc3c -- build-native-docs
+npm run objc3c -- build-public-command-surface
 ```
 
 3. Compile the canonical hello fixture:
 
 ```powershell
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out-dir <generated-output-dir> --emit-prefix module
 ```
 
 4. Run the bounded default validation:
 
 ```powershell
-npm run test:fast
+npm run objc3c -- test-smoke
 ```
 
 5. If you need execution smoke, set `llc.exe` only when it is not already on `PATH`:
 
 ```powershell
 $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
-npm run test:objc3c:execution-smoke
+npm run objc3c -- test-execution-smoke
 ```
 
 ## Native Build Surface
 
 Use these entrypoints:
 
-- `npm run build:objc3c-native`
-- `npm run build:objc3c-native:contracts`
-- `npm run build:objc3c-native:full`
-- `npm run build:objc3c-native:reconfigure`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- build-native-contracts`
+- `npm run objc3c -- build-native-full`
+- `npm run objc3c -- build-native-reconfigure`
 
 Operational facts:
 
-- native builds run through the CMake/Ninja-backed wrapper
+- native builds run through the public `build-native-*` actions backed by CMake/Ninja
 - the persistent build tree lives under `tmp/build-objc3c-native`
 - published binaries and libraries live under `artifacts/`
-- contract artifacts and summaries live under `tmp/artifacts/` and `tmp/reports/`
+- contract artifacts and summaries live under transient generated-output roots
 
 For the exact backend and artifact contract, use
 `docs/runbooks/objc3c_public_command_surface.md` and
@@ -301,49 +307,50 @@ For the exact backend and artifact contract, use
 
 ## Public Command Surface
 
-Use package scripts for normal work. The public surface is now large and
-purpose-specific, so use the generated appendix for the full map.
+Use `npm run objc3c -- <action>` for normal work. The public surface is now
+large and purpose-specific, so use the generated appendix for the full action
+map.
 
 Common entrypoints by job:
 
 - bootstrap and native compile:
-  - `npm run build:objc3c-native`
-  - `npm run compile:objc3c -- ...`
-  - `npm run test:fast`
-  - `npm run test:smoke`
-  - `npm run test:ci`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c ...`
+  - `npm run objc3c -- test-default`
+  - `npm run objc3c -- test-smoke`
+  - `npm run objc3c -- test-ci`
 - docs, tutorials, showcase, and stdlib:
-  - `npm run build:site`
-  - `npm run build:docs:native`
-  - `npm run build:docs:commands`
-  - `npm run test:getting-started`
-  - `npm run test:showcase`
-  - `npm run test:stdlib`
-  - `npm run test:stdlib:advanced`
-  - `npm run test:stdlib:program`
+  - `npm run objc3c -- build-site`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- validate-showcase`
+  - `npm run objc3c -- validate-stdlib-foundation`
+  - `npm run objc3c -- validate-stdlib-advanced`
+  - `npm run objc3c -- validate-stdlib-program`
 - performance and diagnostics:
-  - `npm run inspect:objc3c:runtime-performance`
-  - `npm run inspect:objc3c:compiler-throughput`
-  - `npm run test:objc3c:performance`
-  - `npm run test:objc3c:performance-governance`
-  - `npm run test:objc3c:developer-tooling`
+  - `npm run objc3c -- benchmark-runtime-performance`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `npm run objc3c -- validate-performance-foundation`
+  - `npm run objc3c -- validate-performance-governance`
+  - `npm run objc3c -- validate-developer-tooling`
 - conformance, stress, and public evidence:
-  - `npm run test:objc3c:conformance-corpus`
-  - `npm run test:objc3c:stress`
-  - `npm run test:objc3c:external-validation`
-  - `npm run test:objc3c:public-conformance`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-stress`
+  - `npm run objc3c -- validate-external-validation`
+  - `npm run objc3c -- validate-public-conformance-reporting`
 - packaging, release, and distribution:
-  - `npm run package:objc3c-native:runnable-toolchain`
-  - `npm run package:objc3c:channels`
-  - `npm run test:objc3c:release-foundation`
-  - `npm run test:objc3c:packaging-channels`
-  - `npm run test:objc3c:release-operations`
-  - `npm run test:objc3c:distribution-credibility`
+  - `npm run objc3c -- package-runnable-toolchain`
+  - `npm run objc3c -- build-package-channels`
+  - `npm run objc3c -- validate-release-foundation`
+  - `npm run objc3c -- validate-packaging-channels`
+  - `npm run objc3c -- validate-release-operations`
+  - `npm run objc3c -- validate-distribution-credibility`
 
 Rules:
 
-- prefer the public `npm run ...` surface over direct Python or PowerShell when a wrapper already exists,
-- use `python scripts/objc3c_public_workflow_runner.py <internal-action>` only for maintainer-only command-surface upkeep that intentionally does not consume public package-script budget, specifically `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
+- prefer `npm run objc3c -- <action>` over invoking implementation helpers for workflow actions,
+- use the same public command surface for maintainer-only command-surface upkeep: `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
 - treat `native/objc3c/` as the only supported compiler implementation root,
 - treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,
 - use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,
@@ -360,25 +367,25 @@ Start here:
 - [Specification map](https://doublemover.github.io/Slopjective-C/#toc-front-matter)
 - [Module metadata and ABI surface tables](https://doublemover.github.io/Slopjective-C/#d)
 - [Conformance profile checklist](https://doublemover.github.io/Slopjective-C/#e)
-- [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) for archived anchors and compatibility links only
+- [Capability matrix](docs/support/capability_matrix.md) for support status and executable evidence
 
 Language parts:
 
-| Part | Focus |
-| --- | --- |
-| [Part 0](https://doublemover.github.io/Slopjective-C/#part-0) | Baseline rules, terminology, and normative references |
-| [Part 1](https://doublemover.github.io/Slopjective-C/#part-1) | Versioning, compatibility, and conformance claims |
-| [Part 2](https://doublemover.github.io/Slopjective-C/#part-2) | Modules, namespacing, and public API surfaces |
-| [Part 3](https://doublemover.github.io/Slopjective-C/#part-3) | Types, nullability, optionals, generics, and key paths |
-| [Part 4](https://doublemover.github.io/Slopjective-C/#part-4) | Ownership, retainable objects, and lifetime rules |
-| [Part 5](https://doublemover.github.io/Slopjective-C/#part-5) | Control flow, safety constructs, and execution behavior |
-| [Part 6](https://doublemover.github.io/Slopjective-C/#part-6) | Errors, `Result`, and `throws` |
-| [Part 7](https://doublemover.github.io/Slopjective-C/#part-7) | Async/await, actors, and concurrency rules |
-| [Part 8](https://doublemover.github.io/Slopjective-C/#part-8) | System programming extensions and low-level features |
-| [Part 9](https://doublemover.github.io/Slopjective-C/#part-9) | Performance controls and runtime dynamism boundaries |
+| Part                                                            | Focus                                                    |
+| --------------------------------------------------------------- | -------------------------------------------------------- |
+| [Part 0](https://doublemover.github.io/Slopjective-C/#part-0)   | Baseline rules, terminology, and normative references    |
+| [Part 1](https://doublemover.github.io/Slopjective-C/#part-1)   | Versioning, support states, and conformance claims       |
+| [Part 2](https://doublemover.github.io/Slopjective-C/#part-2)   | Modules, namespacing, and public API surfaces            |
+| [Part 3](https://doublemover.github.io/Slopjective-C/#part-3)   | Types, nullability, optionals, generics, and key paths   |
+| [Part 4](https://doublemover.github.io/Slopjective-C/#part-4)   | Ownership, retainable objects, and lifetime rules        |
+| [Part 5](https://doublemover.github.io/Slopjective-C/#part-5)   | Control flow, safety constructs, and execution behavior  |
+| [Part 6](https://doublemover.github.io/Slopjective-C/#part-6)   | Errors, `Result`, and `throws`                           |
+| [Part 7](https://doublemover.github.io/Slopjective-C/#part-7)   | Async/await, actors, and concurrency rules               |
+| [Part 8](https://doublemover.github.io/Slopjective-C/#part-8)   | System programming extensions and low-level features     |
+| [Part 9](https://doublemover.github.io/Slopjective-C/#part-9)   | Performance controls and runtime dynamism boundaries     |
 | [Part 10](https://doublemover.github.io/Slopjective-C/#part-10) | Metaprogramming, derives, macros, and property behaviors |
-| [Part 11](https://doublemover.github.io/Slopjective-C/#part-11) | Interoperability with C, C++, and Swift-facing surfaces |
-| [Part 12](https://doublemover.github.io/Slopjective-C/#part-12) | Diagnostics, tooling, and conformance testing |
+| [Part 11](https://doublemover.github.io/Slopjective-C/#part-11) | Interoperability with C, C++, and Swift-facing surfaces  |
+| [Part 12](https://doublemover.github.io/Slopjective-C/#part-12) | Diagnostics, tooling, and conformance testing            |
 
 ## License
 

@@ -16,7 +16,8 @@ Core minimums (Part 12 `§12.5.6`):
 CI enforcement:
 
 - workflow: `.github/workflows/conformance-minima.yml`
-- checker: `scripts/check_conformance_suite.ps1`
+- public command: `npm run objc3c -- validate-conformance-corpus`
+- implementation anchor: `scripts/check_conformance_suite.ps1`
 - corpus contract: `tests/conformance/corpus_surface.json`
 
 ## Family Mapping

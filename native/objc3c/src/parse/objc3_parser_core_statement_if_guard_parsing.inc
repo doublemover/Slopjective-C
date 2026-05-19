@@ -1,0 +1,3 @@
+#include "parse/objc3_parser_core_statement_if_guard_parsing_if_statement.inc"
+
+#include "parse/objc3_parser_core_statement_if_guard_parsing_guard_statement.inc"

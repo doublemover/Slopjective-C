@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_attributes_callable_bridge_macro_attribute_predicates.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_macro_diagnostics_recovery.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_macro_payload_parsing.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_macro_profile_publication.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_macro_dispatch.inc"

@@ -3,10 +3,11 @@
   "$id": "https://objc3c.dev/schemas/objc3c-release-sbom-v1.schema.json",
   "title": "objc3c Release SBOM v1",
   "type": "object",
-  "required": ["contract_id", "schema_version", "release_manifest_path", "release_payload_digest_sha256", "component_groups"],
+  "required": ["contract_id", "schema_version", "generated_at_utc", "release_manifest_path", "release_payload_digest_sha256", "component_groups"],
   "properties": {
     "contract_id": { "const": "objc3c.release.foundation.sbom.v1" },
     "schema_version": { "const": 1 },
+    "generated_at_utc": { "type": "string" },
     "release_manifest_path": { "type": "string" },
     "release_payload_digest_sha256": { "type": "string" },
     "component_groups": {
@@ -29,13 +30,13 @@
                 "sha256": { "type": "string" },
                 "byte_count": { "type": "integer", "minimum": 0 }
               },
-              "additionalProperties": true
+              "additionalProperties": false
             }
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

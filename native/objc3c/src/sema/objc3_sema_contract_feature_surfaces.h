@@ -1,0 +1,6 @@
+#include "sema/objc3_sema_contract_metaprogramming_surfaces.h"
+#include "sema/objc3_sema_contract_async_error_surfaces.h"
+#include "sema/objc3_sema_contract_module_feature_surfaces.h"
+#include "sema/objc3_sema_contract_actor_concurrency_surfaces.h"
+#include "sema/objc3_sema_contract_runtime_tooling_surfaces.h"
+#include "sema/objc3_sema_contract_block_surfaces.h"

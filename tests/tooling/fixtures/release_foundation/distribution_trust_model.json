@@ -1,11 +1,19 @@
 {
   "contract_id": "objc3c.release.foundation.distribution.trust.model.v1",
   "surface_kind": "distribution-trust-model",
-  "trusted_inputs": [
+  "package_bridge": "objc3c",
+  "trusted_actions": [
+    "build-native-binaries",
+    "package-runnable-toolchain",
+    "check-release-evidence",
+    "build-release-manifest",
+    "publish-release-provenance"
+  ],
+  "trusted_implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_native.ps1",
     "scripts/check_release_evidence.py",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
     "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json"
   ],
   "trusted_generation_modes": [

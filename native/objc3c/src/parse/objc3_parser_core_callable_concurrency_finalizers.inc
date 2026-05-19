@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_core_callable_async_continuation_finalizers.inc"
+
+#include "parse/objc3_parser_core_callable_await_suspension_finalizers.inc"
+
+#include "parse/objc3_parser_core_callable_actor_isolation_sendability_finalizers.inc"
+
+#include "parse/objc3_parser_core_callable_task_runtime_cancellation_finalizers.inc"
+
+#include "parse/objc3_parser_core_callable_concurrency_replay_race_guard_finalizers.inc"

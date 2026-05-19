@@ -1,0 +1,3 @@
+#include "parse/objc3_parser_core_objc_property_ivar_layout_closure_state_reset.inc"
+#include "parse/objc3_parser_core_objc_property_ivar_layout_closure_state_lookup.inc"
+#include "parse/objc3_parser_core_objc_property_ivar_layout_closure_state_publication.inc"

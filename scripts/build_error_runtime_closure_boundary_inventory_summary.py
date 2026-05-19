@@ -2,9 +2,15 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
+from runtime_closure_owner_contracts import (
+    load_runtime_closure_owner_contract,
+    runtime_closure_owner_checks,
+    runtime_closure_owner_summary,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json"
@@ -15,7 +21,6 @@ DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_error_runtime_closure.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 PACKAGE_PATH = ROOT / "package.json"
-WORKFLOW_RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -24,18 +29,18 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
+    owner_contract = load_runtime_closure_owner_contract(ROOT, contract)
     runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
     doc_text = DOC_PATH.read_text(encoding="utf-8")
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     package_text = PACKAGE_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_RUNNER_PATH.read_text(encoding="utf-8")
 
     code_paths = [ROOT / path for path in contract["authoritative_code_paths"]]
     probe_paths = [ROOT / path for path in contract["authoritative_probe_paths"]]
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
 
     checks = {
-        "summary_script_link_matches": contract["summary_script"] == "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+        "summary_script_link_matches": contract["summary_implementation_anchor"] == "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
         "runbook_exists": RUNBOOK_PATH.is_file(),
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
@@ -47,7 +52,8 @@ def main() -> int:
         "docs_publish_error_runtime_impl_surface": "## Error Propagation Catch And Cleanup Runtime Implementation Surface" in doc_text,
         "runbook_mentions_private_runtime_helper_constraint": "error behavior stays on the private runtime-owned helper and snapshot surfaces" in runbook_text,
         "public_command_surfaces_exist": all(command in package_text for command in contract["public_command_surfaces"]),
-        "public_workflow_actions_exist": all(action in workflow_text for action in contract["public_workflow_actions"]),
+        "public_workflow_actions_exist": public_workflow_has_action_identifiers(contract["public_workflow_actions"]),
+        **runtime_closure_owner_checks(ROOT, contract, owner_contract),
     }
 
     symbol_occurrence_counts = {
@@ -75,6 +81,7 @@ def main() -> int:
         "current_gap_count": len(contract["current_gaps"]),
         "explicit_non_goal_count": len(contract["explicit_non_goals"]),
         "successor_milestone_count": len(contract["successor_milestones"]),
+        "owner_contract": runtime_closure_owner_summary(owner_contract),
         "runtime_symbol_occurrence_counts": symbol_occurrence_counts,
         "documentation_occurrence_counts": doc_occurrence_counts,
         "checks": checks,
@@ -93,6 +100,8 @@ def main() -> int:
         f"- Runtime symbols: `{summary['authoritative_runtime_symbol_count']}`\n"
         f"- Probe paths: `{summary['authoritative_probe_path_count']}`\n"
         f"- Fixture paths: `{summary['authoritative_fixture_path_count']}`\n"
+        f"- Owner roles: `{summary['owner_contract']['owner_role_count']}`\n"
+        f"- Evidence-log allowed: `{summary['owner_contract']['evidence_log_allowed']}`\n"
         f"- Current gaps: `{summary['current_gap_count']}`\n"
         f"- Explicit non-goals: `{summary['explicit_non_goal_count']}`\n"
         f"- Successor milestones: `{summary['successor_milestone_count']}`\n"

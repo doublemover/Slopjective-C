@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-error-runtime-closure-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+    "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
+    "tests/tooling/fixtures/error_runtime_closure/throws_abi_helper_semantics_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json"
+  ],
+  "split_policy": {
+    "primary_axis": "behavior phase before error runtime source owner, error lowering, diagnostics/recovery, result bridge, runtime import/preservation, bridge compatibility label, private helper ABI, generated report, runtime acceptance artifact, public command, or packaged runnable proof",
+    "positive_rule": "error runtime closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners over hand-authored fixtures; generated reports, compile artifacts, replay packets, private snapshots, workflow labels, and provenance rows are never positive support by themselves",
+    "provenance_rule": "runtime acceptance reports, architecture integration summaries, runnable error reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, diagnostics/recovery profile rows, result-bridge metadata, private helper ABI snapshots, public workflow labels, packaged proof summaries, and machine-owned output roots are provenance until a phase owner claims behavior",
+    "retired_surface_rule": "retired route runtime behavior, compatibility gates, old-mode behavior, evidence-log runtime closure, generated-only rows, generated-evidence-log source truth, public runtime ABI widening, wrapper-only runnable actions, migration-only rows, milestone-specific scaffolding, async/interop overclaiming, and cross-module claims without runtime-registration replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, error lowering, diagnostics/recovery, result bridging, runtime import/preservation, runtime support/library behavior, private helper ABI snapshots, generated reports, runtime acceptance reports, public workflow routing, packaged proof labels, and replay packets are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "error_runtime_provenance",
+      "path": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/error_runtime_provenance.json"
+    }
+  ]
+}

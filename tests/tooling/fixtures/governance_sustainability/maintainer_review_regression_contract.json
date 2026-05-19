@@ -3,37 +3,57 @@
   "surface_kind": "maintainer-review-and-regression-handling-contract",
   "runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
   "contributor_surface": "CONTRIBUTING.md",
-  "summary_script": "scripts/build_governance_maintainer_review_summary.py",
+  "summary_implementation_anchor": "scripts/build_governance_maintainer_review_summary.py",
+  "package_bridge": "objc3c",
+  "owner_section": "stewardship.maintainer_review_summary",
+  "owner_contract": {
+    "owner": "stewardship_owner",
+    "artifact_section": "stewardship.maintainer_review_summary",
+    "publication_projection": "stewardship_publication.stewardship.maintainer_review_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.stewardship"
+  },
   "required_review_checks": [
     {
       "check_id": "task-hygiene",
-      "command": "python scripts/ci/check_task_hygiene.py",
+      "workflow_action": "check-task-hygiene",
+      "command": "npm run objc3c -- check-task-hygiene",
       "owner_surface": "scripts/ci/check_task_hygiene.py"
     },
     {
       "check_id": "repo-superclean",
-      "command": "npm run check:repo:surface",
+      "workflow_action": "check-repo-superclean-surface",
+      "command": "npm run objc3c -- check-repo-superclean-surface",
       "owner_surface": "scripts/check_repo_superclean_surface.py"
     },
     {
       "check_id": "dependency-boundaries",
-      "command": "python scripts/check_objc3c_dependency_boundaries.py --strict",
+      "workflow_action": "check-dependency-boundaries",
+      "command": "npm run objc3c -- check-dependency-boundaries --strict",
       "owner_surface": "scripts/check_objc3c_dependency_boundaries.py"
     },
     {
       "check_id": "governance-inventory",
-      "command": "python scripts/build_governance_budget_inventory_summary.py",
+      "workflow_action": "validate-governance-sustainability",
+      "command": "npm run objc3c -- validate-governance-sustainability",
       "owner_surface": "scripts/build_governance_budget_inventory_summary.py"
     },
     {
       "check_id": "governance-policy",
-      "command": "python scripts/build_governance_policy_summary.py",
+      "workflow_action": "validate-governance-sustainability",
+      "command": "npm run objc3c -- validate-governance-sustainability",
       "owner_surface": "scripts/build_governance_policy_summary.py"
     },
     {
       "check_id": "governance-maintainer-review",
-      "command": "python scripts/build_governance_maintainer_review_summary.py",
+      "workflow_action": "validate-governance-sustainability",
+      "command": "npm run objc3c -- validate-governance-sustainability",
       "owner_surface": "scripts/build_governance_maintainer_review_summary.py"
+    },
+    {
+      "check_id": "governance-extension-review",
+      "workflow_action": "validate-governance-sustainability",
+      "command": "npm run objc3c -- validate-governance-sustainability",
+      "owner_surface": "scripts/build_governance_extension_review_policy_summary.py"
     }
   ],
   "regression_statuses": [

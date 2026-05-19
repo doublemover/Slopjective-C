@@ -4,9 +4,9 @@
   "milestone": "M324",
   "issue": "M324-C001",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/build_full_envelope_claimability_dashboard_contract_summary.py",
+  "summary_implementation_anchor": "scripts/build_full_envelope_claimability_dashboard_contract_summary.py",
   "required_source_summaries": [
-    "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
+    "checked_outputs/full-envelope-claimability/support-matrix/support_matrix_summary.json",
     "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",
     "tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json",
     "tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"
@@ -27,6 +27,51 @@
   ],
   "artifact_output_paths": [
     "tmp/artifacts/full-envelope-claimability/report/full-envelope-claimability-report.md"
+  ],
+  "required_dashboard_fields": [
+    "contract_id",
+    "status",
+    "current_rollout_class",
+    "production_strength_claimable",
+    "triggered_reasons",
+    "source_summaries",
+    "source_reports",
+    "public_claim_class",
+    "support_row_counts_by_class",
+    "triggered_release_blockers",
+    "dashboard_release_blocker_projection",
+    "acceptance_matrix",
+    "release_artifacts"
+  ],
+  "required_public_summary_fields": [
+    "contract_id",
+    "status",
+    "current_rollout_class",
+    "public_claim_class",
+    "production_strength_claimable",
+    "triggered_reason_count",
+    "dashboard_release_blocker",
+    "dashboard_blocks_production_strength_claim",
+    "report_markdown_path"
+  ],
+  "required_acceptance_matrix_families": [
+    "conformance-corpus",
+    "stress-integration",
+    "external-validation",
+    "public-conformance",
+    "performance-governance",
+    "release-foundation",
+    "release-operations",
+    "distribution-credibility"
+  ],
+  "required_release_artifact_fields": [
+    "release_manifest_path",
+    "published_sbom",
+    "published_attestation",
+    "update_manifest_path",
+    "upgrade_support_report",
+    "channel_catalog",
+    "trust_report_json"
   ],
   "required_schemas": [
     "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"

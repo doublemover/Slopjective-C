@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_core_statement_local_binding_parsing_storage_annotations.inc"
+
+#include "parse/objc3_parser_core_statement_local_binding_parsing_binding_head.inc"
+
+#include "parse/objc3_parser_core_statement_local_binding_parsing_storage_annotation_application.inc"
+
+#include "parse/objc3_parser_core_statement_local_binding_parsing_initializer.inc"
+
+#include "parse/objc3_parser_core_statement_local_binding_parsing_finalization.inc"

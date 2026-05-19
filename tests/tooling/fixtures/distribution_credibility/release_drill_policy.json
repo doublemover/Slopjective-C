@@ -4,7 +4,7 @@
   "required_upstream_reports": [
     "tmp/reports/package-channels/end-to-end-summary.json",
     "tmp/reports/release-operations/end-to-end-summary.json",
-    "tmp/reports/release_evidence/evidence-index.json"
+    "checked_outputs/release-evidence/index.json"
   ],
   "required_drill_steps": [
     "stage-package-channels",
@@ -24,9 +24,26 @@
     ],
     "claim_boundary": "a ready distribution claim requires the published release payload lineage to remain attached to the machine-owned release manifest"
   },
+  "owner_contract": {
+    "role": "distribution-credibility-release-drill-owner",
+    "source_contract": "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
+    "required_actions": [
+      "validate-distribution-credibility",
+      "validate-distribution-credibility-end-to-end"
+    ],
+    "required_reports": [
+      "tmp/reports/package-channels/end-to-end-summary.json",
+      "tmp/reports/release-operations/end-to-end-summary.json",
+      "checked_outputs/release-evidence/index.json"
+    ],
+    "evidence_log_allowed": false,
+    "wrapper_only_allowed": false,
+    "claim_boundary": "a release drill is credible only when upstream release evidence exists; dashboard and trust-report output cannot substitute for the drill"
+  },
   "explicit_non_goals": [
     "manual smoke screenshots",
     "operator-authored trust badges",
-    "alternate package build path"
+    "alternate package build path",
+    "evidence-log release readiness"
   ]
 }

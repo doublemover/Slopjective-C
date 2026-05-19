@@ -7,16 +7,28 @@
   "upstream_contract_paths": [
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/packaging_channels/installer_policy.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json"
   ],
+  "release_key_owner_contract": {
+    "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+    "installer_payload_owner": "security-hardening-installer-update-key",
+    "update_manifest_owner": "security-hardening-installer-update-key",
+    "release_key_policy_owner": "security-hardening-installer-update-key",
+    "trust_publication_owner": "security-hardening-installer-update-key",
+    "remote_key_custody_claim_allowed": false,
+    "automatic_key_rotation_claim_allowed": false,
+    "hosted_revocation_claim_allowed": false,
+    "alternate_update_trust_allowed": false,
+    "trust_bypass_for_unsigned_payload_allowed": false
+  },
   "required_artifacts": [
     "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
     "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
     "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json",
+    "checked_outputs/release-operations/publication/objc3c-upgrade-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   ],
   "required_reports": [
@@ -35,6 +47,8 @@
     "no remote key-custody claim",
     "no automatic key-rotation claim",
     "no hosted revocation claim",
-    "no signed-installer trust claim"
+    "no signed-installer trust claim",
+    "no alternate update trust claim",
+    "no trust bypass for unsigned payloads"
   ]
 }

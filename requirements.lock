@@ -1,0 +1,2 @@
+# No third-party Python runtime dependencies are required by the canonical
+# workflow bridge. CI jobs may still install test-only tools explicitly.

@@ -4,7 +4,7 @@
   "milestone": "M324",
   "issue": "M324-D001",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/check_full_envelope_claimability_soak_external_validation.py",
+  "summary_implementation_anchor": "scripts/check_full_envelope_claimability_soak_external_validation.py",
   "required_reports": [
     "tmp/reports/full-envelope-claimability/dashboard-summary.json",
     "tmp/reports/conformance/corpus-integration-summary.json",

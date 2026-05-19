@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_interop_ownership_profiles_qualifier_helpers.inc"
+#include "parse/objc3_parser_interop_ownership_profiles_operation_profiles.inc"
+#include "parse/objc3_parser_interop_ownership_profiles_weak_lifetime_profiles.inc"
+#include "parse/objc3_parser_interop_ownership_profiles_diagnostic_fixits.inc"

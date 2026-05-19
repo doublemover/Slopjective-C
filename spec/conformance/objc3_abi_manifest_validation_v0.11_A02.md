@@ -1,6 +1,10 @@
 # Objective-C 3 ABI Manifest Validation Guidance (v0.11-A02)
 
-Scope: issue #116. This guidance applies to manifests with `manifest_schema = "objc3-abi-2025Q4"` validated by `schemas/objc3-abi-2025Q4.schema.json`.
+Scope: issue #116. This guidance applies to manifests with
+`manifest_schema = "objc3-abi-2025Q4"` validated by the registry-owned schema
+`schemas/objc3-abi-2025Q4.schema.json`.
+
+Registry owner: `scripts/objc3c_shared/schema_registry.py`.
 
 ## Field-level constraints
 
@@ -22,7 +26,7 @@ Scope: issue #116. This guidance applies to manifests with `manifest_schema = "o
 | `metadata_compatibility.producer_schema_minor`         | Required integer `>= 0`.                                                                                  |
 | `metadata_compatibility.minimum_importer_schema_major` | Required integer `>= 1`; in `strict` mode, this is pinned to `1` in this schema line.                     |
 | `metadata_compatibility.minimum_importer_schema_minor` | Required integer `>= 0`.                                                                                  |
-| `metadata_compatibility.compatibility_mode`            | Required enum: `strict` or `forward-compatible`.                                                          |
+| `metadata_compatibility.canonical_policy`              | Required enum: `strict` or `forward-compatible`.                                                          |
 | `metadata_compatibility.required_capabilities[]`       | Required unique list of capability IDs (`objc3.<name>.vN`).                                               |
 | `artifacts[]`                                          | Required non-empty list.                                                                                  |
 | `artifacts[].kind`                                     | Required enum: `module-metadata`, `symbol-table`, `abi-diff`, or `binary-interface-summary`.              |
@@ -36,14 +40,12 @@ Scope: issue #116. This guidance applies to manifests with `manifest_schema = "o
 3. Use `manifest_version` minor/patch bumps for backward-compatible additions, clarifications, or payload corrections.
 4. Importers must treat unknown required capabilities as incompatibilities and fail validation.
 5. Importers should reject unsupported producer major schema values before consuming ABI metadata.
-6. `compatibility_mode = "strict"` should be interpreted as exact-policy operation: no implicit fallback behavior for missing required metadata.
+6. `canonical_policy = "strict"` should be interpreted as exact-policy operation: no implicit strict rejection for missing required metadata.
 
 ## Validation command
 
 Run from repository root:
 
-```bash
-npx --yes ajv-cli validate --spec=draft2020 \
-  -s schemas/objc3-abi-2025Q4.schema.json \
-  -d reports/conformance/manifests/objc3-abi-2025Q4.example.json
+```powershell
+npm run objc3c -- check-release-evidence
 ```

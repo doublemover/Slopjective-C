@@ -66,9 +66,9 @@ def main() -> int:
     swift_source = package_root / "tests" / "tooling" / "fixtures" / "performance" / "baselines" / "swift_reference_workload.swift"
     cpp_source = package_root / "tests" / "tooling" / "fixtures" / "performance" / "baselines" / "cpp_reference_workload.cpp"
 
-    expect(command_surfaces.get("inspect_performance") == "npm run inspect:objc3c:performance", "package manifest missing inspect_performance command surface")
-    expect(command_surfaces.get("inspect_comparative_baselines") == "npm run inspect:objc3c:comparative-baselines", "package manifest missing inspect_comparative_baselines command surface")
-    expect(command_surfaces.get("runnable_performance") == "npm run test:objc3c:runnable-performance", "package manifest missing runnable_performance command surface")
+    expect(command_surfaces.get("inspect_performance") == "npm run objc3c -- benchmark-performance", "package manifest missing inspect_performance command surface")
+    expect(command_surfaces.get("inspect_comparative_baselines") == "npm run objc3c -- benchmark-comparative-baselines", "package manifest missing inspect_comparative_baselines command surface")
+    expect(command_surfaces.get("runnable_performance") == "npm run objc3c -- validate-runnable-performance", "package manifest missing runnable_performance command surface")
 
     for path in (
         benchmark_portfolio,

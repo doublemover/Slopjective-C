@@ -1,0 +1,16 @@
+         handoff.nullability_flow_warning_precision_summary.normalized_sites <=
+             handoff.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         handoff.nullability_flow_warning_precision_summary.contract_violation_sites <=
+             handoff.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         handoff.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+             handoff.nullability_flow_warning_precision_summary.nullable_suffix_sites +
+                 handoff.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
+#include "sema/objc3_semantic_passes_body_validation_core_module_type_system.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_unsafe_intrinsics.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_error_flow.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_symbol_resolution.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_type_checking.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_blocks.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_message_dispatch.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_runtime_arc.inc"

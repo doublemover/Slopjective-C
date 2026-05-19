@@ -13,67 +13,57 @@ Each positive execution fixture is a pair of files sharing a basename:
 
 The expected exit code must be deterministic.
 
+Execution-positive fixtures are e2e-owned success contracts. A filename that
+mentions a parser, semantic, lowering, or runtime concept is phase provenance
+for the corresponding canonical owner, but the positive claim remains a
+deterministic compile-link-run claim. It must not be cited as gate, retired route,
+compatibility, migration, or alternate runtime acceptance support.
+
 Optional meta sidecar schema:
 
 - `fixture`: must match `<name>.objc3`.
 - `execution.native_compile_args`: optional string array appended to native compiler arguments.
 - `execution.requires_live_runtime_dispatch` (optional): defaults to `false`; set to `true` for fixtures that must keep a live runtime-dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`.
+- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
 
 ## Live-runtime dispatch note
 
-Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. The compatibility shim remains test-only evidence and is not the authoritative smoke-path contract.
-
-For `message_send_runtime_shim.objc3`:
-
-- Selector: `sum:with:`
-- `selector_score = 4299`
-- Live runtime dispatch value:
-  - `41 + 97*9 + 7*3 + 11*4 + 13*0 + 17*0 + 19*4299 = 82660`
-- Fixture return expression: `82660 - 82583 = 77`
-
-So `message_send_runtime_shim.exitcode.txt` is `77`.
+Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`, and the public `i32` entrypoint aborts instead of fabricating a value when strict dispatch fails.
 
 For `message_send_nil_receiver_short_circuit.objc3`:
 
 - Mutable receiver value can evaluate to nil at runtime and short-circuits through the emitted nil-dispatch branch.
 - Fixture returns `0 + 5`, so `message_send_nil_receiver_short_circuit.exitcode.txt` is `5`.
-- Live runtime dispatch linkage is still required for this fixture because lowering retains the non-nil dispatch branch.
+- No live runtime dispatch linkage is required because explicit nil reassignment enables compile-time elision.
 
 For `message_send_direct_nil_receiver_elision.objc3`:
 
-- Direct nil receiver message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
-- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
+- Direct optional nil receiver message-send lowering returns `0` without a live dispatch requirement.
 - Fixture returns `0 + 9`, so `message_send_direct_nil_receiver_elision.exitcode.txt` is `9`.
 
 For `message_send_direct_nil_receiver_keyword_elision.objc3`:
 
-- Direct nil receiver keyword message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
-- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
+- Direct optional nil receiver keyword message-send lowering returns `0` without a live dispatch requirement.
 - Fixture returns `0 + 6`, so `message_send_direct_nil_receiver_keyword_elision.exitcode.txt` is `6`.
 
 For `message_send_nil_bound_identifier_unary_elision.objc3`:
 
-- Immutable nil-bound identifier receiver unary message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
-- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
+- Immutable nil-bound identifier receiver unary optional send returns `0` without a live dispatch requirement.
 - Fixture returns `0 + 12`, so `message_send_nil_bound_identifier_unary_elision.exitcode.txt` is `12`.
 
 For `message_send_nil_bound_identifier_keyword_elision.objc3`:
 
-- Immutable nil-bound identifier receiver keyword message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
-- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
+- Immutable nil-bound identifier receiver keyword optional send returns `0` without a live dispatch requirement.
 - Fixture returns `0 + 13`, so `message_send_nil_bound_identifier_keyword_elision.exitcode.txt` is `13`.
 
 For `message_send_nil_bound_identifier_mixed_flow.objc3`:
 
-- Mixed immutable/mutable nil-bound receiver flows are deterministic: immutable binding elides while mutable binding retains runtime dispatch branch/call behavior.
-- Fixture links with live runtime dispatch because one send remains non-elided.
+- Mixed immutable/mutable nil-bound receiver flows are deterministic through optional sends.
 - Fixture returns `0 + 0 + 14`, so `message_send_nil_bound_identifier_mixed_flow.exitcode.txt` is `14`.
 
 For `message_send_nil_bound_identifier_pre_reassignment_elision.objc3`:
 
-- A nil-bound identifier send-site that occurs before reassignment still lowers through the canonical live runtime dispatch entrypoint with receiver `0`.
-- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
+- A nil-bound identifier optional send-site that occurs before reassignment returns `0`.
 - Fixture returns `0 + 16`, so `message_send_nil_bound_identifier_pre_reassignment_elision.exitcode.txt` is `16`.
 
 ## Assignment fixtures

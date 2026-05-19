@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before runtime-corrective owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
+    "positive_rule": "runtime-corrective rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners; acceptance reports, generated reports, compile artifacts, replay manifests, proof bundles, source-owner contract rows, and provenance rows are not behavior support by themselves",
+    "provenance_rule": "source-owner contract rows, acceptance workload rows, generated reports, required reports, compile artifacts, replay manifests, module bundles, native-output proof bundles, linked-probe summaries, summary/check implementation anchors, authoritative probe paths, authoritative fixture paths, required LL snippets, generated-only rows, evidence-log rows, migration-only rows, runner-only rows, cache-only rows, timing-only rows, package-only rows, and counter-only rows are provenance until a phase owner claims the behavior",
+    "retired_surface_rule": "retired-route, gate, compatibility, old-mode, unsupported, unresolved dispatch, strict-error, sidecar-only proof, unlinked probes, generated-evidence-log, evidence-log, migration-only, runner-only, package-only, replay-text-only, catalog-only, and alternate acceptance path claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime behavior, runtime public ABI/C API path rows, dispatch semantic model rows, acceptance suite rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "runtime_corrective_provenance",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json"
+    }
+  ]
+}

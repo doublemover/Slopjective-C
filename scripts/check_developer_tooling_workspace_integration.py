@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_object as load_json
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "developer_tooling" / "workspace_editor_debug_integration_contract.json"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "developer-tooling" / "workspace-integration-summary.json"
 
@@ -27,7 +27,7 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
     result = subprocess.run(
-        [sys.executable, str(PUBLIC_RUNNER), "materialize-playground-workspace", contract["workspace_source"]],
+        public_workflow_command("materialize-playground-workspace", contract["workspace_source"]),
         cwd=ROOT,
         check=False,
         text=True,

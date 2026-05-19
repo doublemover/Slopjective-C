@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers"
+  ],
+  "support_boundary": "parser ownership is non-positive for activation trigger fixtures because this family contains tooling snapshots and expected outputs, not hand-authored Objective-C 3 parser fixtures. Any parser behavior claim must point back to canonical parser fixture owners outside this family.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/activation_triggers/**/*.objc3",
+    "tooling_fixture_family:activation_triggers",
+    "compiler_phase_boundary:no-parser-positive-truth",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser activation, gate parser activation, retired route parser activation, compatibility parser activation, generated-only parser rows, evidence-log parser rows, migration-only parser rows, and parser claims derived only from activation snapshots are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

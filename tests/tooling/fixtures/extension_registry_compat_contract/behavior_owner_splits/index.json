@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/*/schema.json",
+    "tests/tooling/fixtures/extension_registry_compat_contract/*/readme.md",
+    "tests/tooling/fixtures/extension_registry_compat_contract/*/package.md"
+  ],
+  "split_policy": {
+    "primary_axis": "tooling/e2e governance contract behavior before fixture directory label, schema JSON, README/package text, compatibility taxonomy label, validator transcript, drift row, invalid-UTF8 row, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "extension registry positives are limited to the happy transition/rejection governance fixture owned by the e2e/tooling owner; compatibility fields and compatibility_* wording are taxonomy/provenance labels only and do not define public compatibility support, gates, aliases, retired route, wrappers, or alternate acceptance",
+    "canonical_rejection_rule": "drift scenarios own deterministic rejection for missing validator ordering, schema invariant drift, parity/taxonomy/gating drift, compatibility support overclaims, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and directory-label-only claims",
+    "strict_error_rule": "invalid UTF-8 scenarios and hard-gate drift promoted as support own fail-closed strict errors and cannot be cited as positive registry capability support",
+    "provenance_rule": "schema JSON, README/package text, validator ids, command anchors, acceptance gate ids, matrix ids, dependency ids, failure taxonomy ids, publication gate ids, validation transcript text, issue/package labels, and compatibility taxonomy labels are fixture provenance unless the e2e/tooling owner claims the scenario boundary",
+    "retired_surface_rule": "old-mode registry support, compatibility support, gate support, retired route support, generated-only registry support, evidence-log registry support, migration-only registry support, wrapper-only support, runner-only success, workflow-label-only success, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "extension_registry_compat_provenance",
+      "path": "tests/tooling/fixtures/extension_registry_compat_contract/behavior_owner_splits/extension_registry_compat_provenance.json"
+    }
+  ]
+}

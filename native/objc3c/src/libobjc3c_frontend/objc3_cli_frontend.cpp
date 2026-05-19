@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "artifacts/objc3_frontend_artifacts.h"
 #include "pipeline/objc3_frontend_pipeline.h"
 
 Objc3FrontendCompileProduct CompileObjc3SourceWithPipeline(const std::filesystem::path &input_path,

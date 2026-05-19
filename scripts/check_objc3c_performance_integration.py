@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 PERFORMANCE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "benchmark-summary.json"
 COMPARATIVE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "comparative-baselines-summary.json"
 RUNNABLE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "runnable-end-to-end-summary.json"
@@ -35,34 +35,30 @@ def main() -> int:
         (
             "benchmark-performance",
             run_capture(
-                [
-                    sys.executable,
-                    str(PUBLIC_RUNNER),
+                public_workflow_command(
                     "benchmark-performance",
                     "--warmup-runs",
                     "0",
                     "--measured-runs",
                     "1",
-                ]
+                )
             ),
         ),
         (
             "benchmark-comparative-baselines",
             run_capture(
-                [
-                    sys.executable,
-                    str(PUBLIC_RUNNER),
+                public_workflow_command(
                     "benchmark-comparative-baselines",
                     "--warmup-runs",
                     "0",
                     "--measured-runs",
                     "1",
-                ]
+                )
             ),
         ),
         (
             "validate-runnable-performance",
-            run_capture([sys.executable, str(PUBLIC_RUNNER), "validate-runnable-performance"]),
+            run_capture(public_workflow_command("validate-runnable-performance")),
         ),
     ]
 

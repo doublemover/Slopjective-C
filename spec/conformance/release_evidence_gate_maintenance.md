@@ -18,21 +18,20 @@ The gate requires these schema/data pairs:
 - `schemas/objc3-abi-2025Q4.schema.json`
   - `reports/conformance/manifests/objc3-abi-2025Q4.example.json`
 - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
-  - `reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json`
+  - conformance evidence bundle example selected by the release gate
 
-It also verifies that a freshly generated evidence index references all required
+The schema paths above are registry-owned by
+`scripts/objc3c_shared/schema_registry.py`. This maintenance document records
+the release-evidence data pairs only; it must not duplicate JSON Schema
+fragments or introduce alternate schema aliases.
+
+It also verifies that a freshly generated-output index references all required
 artifact payloads.
 
 ## Local Runbook
 
 ```sh
-python scripts/check_release_evidence.py
-```
-
-Or:
-
-```sh
-npm run check:release-evidence
+npm run objc3c -- check-release-evidence
 ```
 
 ## Failure Diagnostics
@@ -50,8 +49,10 @@ The validator emits actionable errors with `release-evidence:` prefix:
 
 When introducing new release-evidence artifacts:
 
-1. add/adjust schema and sample payload files,
-2. update `REQUIRED_SCHEMA_DATA_PAIRS` in
+1. add or adjust schema and sample payload files,
+2. register any new checked-in schema in
+   `scripts/objc3c_shared/schema_registry.py`,
+3. update `REQUIRED_SCHEMA_DATA_PAIRS` in
    `scripts/check_release_evidence.py`,
-3. rerun local gate and ensure CI workflow passes,
-4. update this maintenance doc and related conformance docs in the same batch.
+4. rerun `npm run objc3c -- check-release-evidence` and ensure CI workflow passes,
+5. update this maintenance doc and related conformance docs in the same batch.

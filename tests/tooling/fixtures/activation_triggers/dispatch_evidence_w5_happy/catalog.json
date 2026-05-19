@@ -16,7 +16,7 @@
       "validation_commands": [
         "python -m pytest tests/tooling -q",
         "python scripts/check_dispatch_evidence_reliability_w5_contract.py",
-        "python scripts/spec_lint.py"
+        "npm run objc3c -- lint-spec"
       ],
       "execution_status": "open-blocked",
       "blocker_owner": "lane:C",

@@ -20,8 +20,8 @@
     "validation_posture",
     "budget_impact",
     "review_class",
-    "compatibility_classification",
-    "rollback_or_demote_path",
+    "support_boundary_classification",
+    "revert_or_demote_path",
     "evidence_surfaces",
     "label_names"
   ],
@@ -45,7 +45,7 @@
   "validation_postures": [
     "shared_acceptance_harness",
     "static_policy_guard",
-    "migration_bridge",
+    "conversion_bridge",
     "generator_contract_only"
   ],
   "budget_impact_options": [
@@ -53,15 +53,22 @@
     "within_existing_budget",
     "requires_exception_record"
   ],
+  "package_bridge": "objc3c",
+  "governance_preflight_actions": [
+    "validate-governance-sustainability"
+  ],
   "governance_preflight_commands": [
-    "python scripts/build_governance_budget_inventory_summary.py",
-    "python scripts/build_governance_policy_summary.py",
-    "python scripts/build_governance_maintainer_review_summary.py",
-    "python scripts/build_governance_extension_review_policy_summary.py",
-    "python scripts/build_governance_stewardship_semantics_summary.py",
-    "python scripts/check_governance_sustainability_schema_surface.py",
-    "python scripts/build_governance_artifact_contract_summary.py",
-    "python scripts/check_governance_sustainability_budget_enforcement.py"
+    "npm run objc3c -- validate-governance-sustainability"
+  ],
+  "governance_preflight_implementation_anchors": [
+    "scripts/build_governance_budget_inventory_summary.py",
+    "scripts/build_governance_policy_summary.py",
+    "scripts/build_governance_maintainer_review_summary.py",
+    "scripts/build_governance_extension_review_policy_summary.py",
+    "scripts/build_governance_stewardship_semantics_summary.py",
+    "scripts/check_governance_sustainability_schema_surface.py",
+    "scripts/build_governance_artifact_contract_summary.py",
+    "scripts/check_governance_sustainability_budget_enforcement.py"
   ],
   "render_defaults": {
     "publish_mode": "render-only",

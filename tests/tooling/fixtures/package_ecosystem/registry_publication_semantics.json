@@ -38,26 +38,71 @@
     },
     {
       "layer_id": "hosted-registry",
-      "support_state": "deferred-release-blocking-if-claimed",
-      "source_of_truth": "none in this milestone",
+      "support_state": "unsupported-fail-closed-if-claimed",
+      "source_of_truth": "no checked-in source authority",
       "publication_path": "",
-      "claim_boundary": "no hosted registry, network fetch, auth, moderation, or availability claim"
+      "claim_boundary": "hosted registry, network fetch, auth, moderation, and availability claims fail closed"
     }
   ],
   "publication_rules": [
     "registry metadata must be generated from the lock and mirror evidence",
     "publication metadata may not introduce package identities absent from the lock graph",
-    "hosted-registry behavior is deferred and must fail closed if claimed",
+    "hosted-registry behavior must fail closed when claimed without checked-in source authority",
     "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
     "offline mirror publication must remain usable without network access"
   ],
-  "required_public_scripts": [
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "publish:objc3c:release-operations",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "owner_contracts": {
+    "registry_publication_owner": {
+      "role": "package-ecosystem-registry-owner",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+      "required_actions": [
+        "validate-package-mirror",
+        "validate-package-ecosystem",
+        "validate-runnable-package-ecosystem"
+      ],
+      "required_evidence_contracts": [
+        "objc3c.package_ecosystem.registry_publication_semantics.v1",
+        "objc3c.package_ecosystem.artifact_contract.v1"
+      ],
+      "claim_boundary": "local generated registry metadata only; hosted registry availability and package-manager parity are release-blocking overclaims"
+    }
+  },
+  "claim_truth_policy": {
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
+    "hosted_registry_claim_allowed": false,
+    "evidence_log_allowed": false,
+    "wrapper_only_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "hosted registry claimed as supported",
+      "publication metadata contains an unlocked package identity",
+      "offline mirror validation requires network access",
+      "registry index is hand-authored instead of generated",
+      "release/update metadata drifts from package ecosystem evidence",
+      "registry publication owner contract is missing",
+      "registry publication action is wrapper-only"
+    ]
+  },
+  "required_actions": [
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "release_blocking_conditions": [
     "hosted registry claimed as supported",

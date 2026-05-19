@@ -48,7 +48,6 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     )
 
     monkeypatch.setattr(benchmark, "ROOT", root)
-    monkeypatch.setattr(benchmark, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
     monkeypatch.setattr(benchmark, "PORTFOLIO_PATH", portfolio_path)
     monkeypatch.setattr(benchmark, "MEASUREMENT_POLICY_PATH", policy_path)
     monkeypatch.setattr(benchmark, "BENCHMARK_PARAMETERS_PATH", parameters_path)
@@ -66,6 +65,7 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     durations = iter([10.0, 11.0, 12.0, 20.0, 21.0, 22.0])
 
     def fake_run_timed_step(command: list[str]) -> dict[str, object]:
+        assert command[:4] == ["npm", "run", "objc3c", "--"]
         return {
             "command": command,
             "exit_code": 0,
@@ -106,5 +106,6 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     runtime_packet = json.loads((root / "tmp" / "reports" / "performance" / "runtime" / "auroraBoard.json").read_text(encoding="utf-8"))
     assert compile_packet["benchmark_kind"] == "compile-latency"
     assert compile_packet["normalized_summary"]["sample_count"] == 2
+    assert compile_packet["raw_samples"][0]["command"][:4] == ["npm", "run", "objc3c", "--"]
     assert runtime_packet["benchmark_kind"] == "runtime-wall-clock"
     assert runtime_packet["normalized_summary"]["median_duration_ms"] == 21.5

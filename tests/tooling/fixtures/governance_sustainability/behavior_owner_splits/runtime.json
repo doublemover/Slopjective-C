@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-sustainability-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability/artifact_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json"
+  ],
+  "support_boundary": "runtime ownership is non-positive for this governance-sustainability family. References to source/package/runtime/release behavior, support-boundary-impacting changes, package stewardship, and runtime evidence are governance review inputs; runtime compiler behavior must remain owned by canonical runtime fixtures, and tmp evidence cannot become runtime truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "review_allowed_scope:source, package, runtime, or release behavior that can affect existing users",
+    "fail_closed_condition:runtime evidence depends on tmp as source of truth",
+    "package_governance_rule:package publication claims must remain local/offline until hosted registry evidence exists",
+    "tooling_fixture_family:governance_sustainability",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-governance-contracts",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime governance rows, gate runtime governance rows, retired route runtime governance rows, compatibility runtime governance rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, tmp-evidence-only runtime claims, support-boundary-label-only runtime claims, and policy-only runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

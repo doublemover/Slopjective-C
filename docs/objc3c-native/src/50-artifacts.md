@@ -46,7 +46,7 @@ Use these live paths:
   - `docs/objc3c-native.md`
 - generated operator and machine-facing appendix:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-public-command-surface`
 - generated proof/report outputs:
   - `tmp/reports/`
   - `tmp/artifacts/`
@@ -69,11 +69,23 @@ Treat these as authoritative only when they come from a real compiler invocation
 Do not treat these as authoritative proof:
 
 - hand-written `.ll` files
-- compatibility shims by themselves
+- non-authoritative test surfaces by themselves
 - sidecars that are not tied to a reproducible compile and probe path
 
 ## Current Corrective Gaps
 
-- unresolved sends still have one deterministic arithmetic fallback path in `native/objc3c/src/runtime/objc3_runtime.cpp`
+- unresolved sends must publish typed strict dispatch errors through the checked
+  runtime result path
+- strict dispatch status/error coverage must remain live-probe-backed and must
+  include success for nil receiver, resolved live methods, resolved builtins,
+  and resolved property accessors, plus structured errors for unknown selectors,
+  unknown receiver classes, missing class graph state, rejected return
+  shapes, rejected argument layouts, malformed metadata, and category
+  conflicts
+- the hard-cutover runtime module tree under
+  `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`
+  is the current named runtime layout for module-tree claims; those claims cover
+  the wired dispatch, selector, image, and class-graph helper paths only when
+  the linked strict dispatch probes and gates publish matching status evidence
 - synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path

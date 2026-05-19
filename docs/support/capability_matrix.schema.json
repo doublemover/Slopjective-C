@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Objective-C 3.0 capability matrix support entrypoint",
+  "description": "Support-directory schema entrypoint for docs and editor tooling. The canonical schema owner remains schemas/objc3c-capability-matrix-v1.schema.json with schema id objc3c-capability-matrix-v1.",
+  "$ref": "../../schemas/objc3c-capability-matrix-v1.schema.json"
+}

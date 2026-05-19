@@ -4,5 +4,5 @@ icmp eq i32
 msg_nil_
 msg_dispatch_
 phi i32 [0, %msg_nil_
-call i32 @objc3_msgsend_i32(
+call i32 @objc3_runtime_dispatch_i32(
 ret i32

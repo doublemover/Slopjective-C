@@ -1,11 +1,10 @@
 # ObjC2 Swift And C++ Comparison Surface
 
-This file is the live comparison boundary for migration-oriented teaching work.
+This file is the live comparison boundary for canonicalization-oriented teaching work.
 
 The canonical policy contract for this surface is
 `tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json`;
-replay it with
-`python scripts/build_adoption_legibility_capability_comparison_summary.py`.
+replay it through `npm run objc3c -- validate-adoption-legibility`.
 When prose and policy disagree, fix the prose or the contract before widening a
 public comparison claim.
 
@@ -15,18 +14,18 @@ Use it to explain Objective-C 3 choices against:
 - Swift-facing API and ownership expectations,
 - and C/C++ interop boundary expectations.
 
-Start with `docs/tutorials/objc2_to_objc3_migration.md` when you need the actual migration sequence. Use this file for the broader comparison boundary after the runnable examples and migration path are already clear.
+Start with `docs/tutorials/objc2_to_objc3_migration.md` when you need the ObjC2 habit-mapping sequence. Use this file for the broader comparison boundary after the runnable examples and canonicalization path are already clear.
 
 ## Start With The Capability That Matches The Question
 
 Do not start with abstract parity claims. Start with the checked-in example that
 matches the capability in question:
 
-| Question | Checked-in example | Then read |
-| --- | --- | --- |
-| How do familiar ObjC2 categories and object-model habits map forward? | `showcase/auroraBoard/main.objc3` | `docs/tutorials/objc2_to_objc3_migration.md` |
-| What does current ObjC3 messaging and actor-shaped workflow look like next to Swift expectations? | `showcase/signalMesh/main.objc3` | this file |
-| What is the current macro derive property-behavior and interop story next to Swift and C++ expectations? | `showcase/patchKit/main.objc3` | this file |
+| Question                                                                                                 | Checked-in example                | Then read                                    |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------- |
+| How do familiar ObjC2 categories and object-model habits map forward?                                    | `showcase/auroraBoard/main.objc3` | `docs/tutorials/objc2_to_objc3_migration.md` |
+| What does current ObjC3 messaging and actor-shaped workflow look like next to Swift expectations?        | `showcase/signalMesh/main.objc3`  | this file                                    |
+| What is the current macro derive property-behavior and interop story next to Swift and C++ expectations? | `showcase/patchKit/main.objc3`    | this file                                    |
 
 The comparison text should explain the current runnable and compile-coupled
 surface, not an imagined future language.
@@ -45,7 +44,7 @@ This comparison surface should stay grounded in checked-in implementation truth.
 - compare against the current runnable subset, not future wish lists
 - use the checked-in showcase examples when a comparison needs executable source
 - prefer concrete language-surface and command-surface differences over marketing language
-- keep maintainer-only implementation detail out of the reader path unless it changes a user-visible migration choice
+- keep maintainer-only implementation detail out of the reader path unless it changes a user-visible canonicalization choice
 
 ## Current Truthful Comparison Shape
 
@@ -57,12 +56,12 @@ Today the comparison surface can make these kinds of claims truthfully:
   interop shape
 - Swift and C++ comparisons should stay at the level of current capability and
   ergonomics, not pretend that unsupported parity already exists
-- ObjC2 comparisons should focus on what a reader can migrate or evaluate from
+- ObjC2 comparisons should focus on what a reader can map or evaluate from
   the runnable subset today
 
 ## Canonical Inputs
 
-Downstream comparison and migration work should use these live inputs directly:
+Downstream comparison and canonicalization work should use these live inputs directly:
 
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `docs/tutorials/objc2_to_objc3_migration.md`
@@ -81,7 +80,7 @@ Downstream comparison and migration work should use these live inputs directly:
 
 ## Exact Live Paths For Downstream Work
 
-- comparison narrative and migration language:
+- comparison narrative and canonicalization language:
   - `docs/tutorials/objc2_to_objc3_migration.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `docs/tutorials/README.md`
@@ -100,11 +99,12 @@ Downstream comparison and migration work should use these live inputs directly:
   - `tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp`
 - command truth and validation references:
   - `docs/runbooks/objc3c_public_command_surface.md`
+  - `npm run objc3c -- check-documentation-surface`
   - `scripts/check_documentation_surface.py`
 
 ## Explicit Non-Goals
 
 - no parity-table claims for unsupported Swift or C++ behavior
 - no tutorial text that treats archived ObjC2 material as a normative source
-- no fake migration promises that are not backed by the runnable subset or checked-in examples
-- no separate sidecar command list when `package.json` and the public command surface already define the entrypoints
+- no unsupported conversion promises that are not backed by the runnable subset or checked-in examples
+- no separate command list when `package.json` and the public command surface already define the entrypoints

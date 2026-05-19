@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_*"
+  ],
+  "support_boundary": "strict-error ownership covers open blocker audit contract fail-closed scenarios: extractor log contract drift, snapshot parity key-order drift, final status/final exit-code mismatch, summary schema drift, generated/report rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as positive audit support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_log_contract_drift",
+    "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_snapshot_parity_key_order_drift",
+    "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_status_exit_mismatch",
+    "tests/tooling/fixtures/open_blocker_audit_contract/hard_fail_summary_schema_drift",
+    "hard_fail_class:log_contract_drift",
+    "hard_fail_class:snapshot_parity_key_order_drift",
+    "hard_fail_class:status_exit_mismatch",
+    "hard_fail_class:summary_schema_drift",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*generated-as-support*",
+    "*report-as-support*",
+    "*runner-only-as-support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "contract drift, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

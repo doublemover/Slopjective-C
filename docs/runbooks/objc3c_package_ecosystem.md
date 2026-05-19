@@ -19,25 +19,21 @@ Canonical checked-in boundary surfaces:
 - `stdlib/workspace.json`
 - `stdlib/package_surface.json`
 - `stdlib/advanced_helper_package_surface.json`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/build_objc3c_package_channels.py`
-- `scripts/build_objc3c_release_manifest.py`
-- `scripts/build_objc3c_update_manifest.py`
 
-Replayable boundary inventory:
+Replayable public workflow actions:
 
-- `python scripts/build_package_ecosystem_boundary_inventory_summary.py`
-- `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
-- `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
-- `python scripts/build_package_ecosystem_registry_publication_summary.py`
-- `python scripts/build_package_ecosystem_artifact_contract_summary.py`
-- `python scripts/build_objc3c_package_lock.py`
-- `python scripts/check_objc3c_package_authoring_workflow.py`
-- `python scripts/build_objc3c_package_mirror.py`
-- `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
-- `python scripts/check_objc3c_package_ecosystem_integration.py`
-- `python scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
-- `python scripts/check_objc3c_package_ecosystem_integration.py`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+- `npm run objc3c -- validate-package-mirror`
+- `npm run objc3c -- validate-package-ecosystem`
+- `npm run objc3c -- validate-runnable-package-ecosystem`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- build-package-channels`
+- `npm run objc3c -- build-release-manifest`
+- `npm run objc3c -- build-update-manifest`
+
+Helper implementations remain action-catalog-owned anchors for
+those actions. They are not a second public command surface.
 
 ## Current Boundary
 
@@ -53,7 +49,7 @@ surfaces, not from a hosted registry:
 - release, update, package-channel, and application-architecture workflows
   already provide package pressure from real user-shaped workspaces.
 
-That means this milestone must build local package semantics first:
+That means the package-ecosystem owner surface must build local package semantics first:
 
 - deterministic dependency resolution and lock behavior
 - local workspace and package-authoring workflow
@@ -63,7 +59,7 @@ That means this milestone must build local package semantics first:
 ## Claim Boundary
 
 The package ecosystem may claim support only when evidence flows through the
-shared public workflow runner and the existing runnable package path.
+shared `npm run objc3c -- <action>` bridge and the existing runnable package path.
 
 Supported in this boundary:
 
@@ -79,7 +75,7 @@ Not supported in this boundary:
 - a hosted package registry service
 - network-backed dependency resolution
 - system package manager publication
-- manual package manifests that bypass the public workflow runner
+- package manifests that bypass the `npm run objc3c -- <action>` bridge
 - a second compiler payload, package layout, or install workflow
 
 ## Dependency Resolution And Lock Policy
@@ -111,9 +107,9 @@ The canonical workspace and mirror semantics are checked in at:
 Local package workspaces are materialized from checked-in stdlib, showcase, and
 canonical application surfaces. Lockfiles and mirrors are generated outputs:
 
-- lockfiles publish under `tmp/artifacts/package-ecosystem/locks/`
-- mirror indexes publish under `tmp/artifacts/package-ecosystem/mirrors/`
-- replay and validation summaries publish under `tmp/reports/package-ecosystem/`
+- lockfiles publish under the package-ecosystem lock output family
+- mirror indexes publish under the package-ecosystem mirror output family
+- replay and validation summaries publish under the package-ecosystem report family
 
 An offline mirror is a local artifact cache plus an index generated from a
 locked package graph. It must not fetch from the network during validation, and
@@ -149,14 +145,13 @@ Schema surfaces:
 
 - `schemas/objc3c-package-lock-v1.schema.json`
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-Machine-owned generated outputs stay under:
-
-- `tmp/artifacts/package-ecosystem/`
-- `tmp/reports/package-ecosystem/`
+Machine-owned generated outputs stay in package-ecosystem artifact and report
+families selected by the checked-in package contracts.
 
 No package ecosystem artifact is claimable unless it can be regenerated from
-checked-in contracts and validated through the public workflow runner.
+checked-in contracts and validated through the `npm run objc3c -- <action>` bridge.
 
 ## Local Package Authoring Workflow
 
@@ -166,13 +161,16 @@ The local package authoring workflow is checked in at:
 
 The replayable implementation is:
 
-- `scripts/build_objc3c_package_lock.py`
-- `scripts/check_objc3c_package_authoring_workflow.py`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+
+Helper implementations are action-catalog-owned and are not direct package
+commands.
 
 The lock generator derives packages from `stdlib/module_inventory.json` and
-`showcase/portfolio.json`, emits a deterministic lock under
-`tmp/artifacts/package-ecosystem/locks/`, and writes a summary under
-`tmp/reports/package-ecosystem/`.
+`showcase/portfolio.json`, emits a deterministic lock under the
+package-ecosystem lock output family, and writes a generated-output summary
+under the package-ecosystem report family.
 
 ## Mirror And Registry Evidence
 
@@ -182,27 +180,29 @@ The mirror/registry reproducibility workflow is checked in at:
 
 The replayable implementation is:
 
-- `scripts/build_objc3c_package_mirror.py`
-- `scripts/check_objc3c_package_registry_mirror_reproducibility.py`
+- `npm run objc3c -- validate-package-mirror`
+
+Helper implementations are action-catalog-owned and are not direct package
+commands.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
-local registry index, and publication metadata under
-`tmp/artifacts/package-ecosystem/`, and refuses to claim hosted registry support.
+local registry index, and publication metadata under the package-ecosystem
+output root, and refuses to claim hosted registry support.
 
 ## Public Workflow Integration
 
 The repo-scope package ecosystem workflow is:
 
-- `npm run build:objc3c:package-lock`
-- `npm run test:objc3c:package-authoring`
-- `npm run test:objc3c:package-mirror`
-- `npm run test:objc3c:package-ecosystem`
-- `npm run test:objc3c:package-ecosystem:e2e`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+- `npm run objc3c -- validate-package-mirror`
+- `npm run objc3c -- validate-package-ecosystem`
+- `npm run objc3c -- validate-runnable-package-ecosystem`
 
-`test:objc3c:package-ecosystem` composes the local package authoring workflow
+`npm run objc3c -- validate-package-ecosystem` composes the local package authoring workflow
 with the canonical application architecture and stdlib program integration
 surfaces so package claims remain user-shaped instead of package-only probes.
-`test:objc3c:package-ecosystem:e2e` stages the runnable toolchain bundle and
+`npm run objc3c -- validate-runnable-package-ecosystem` stages the runnable toolchain bundle and
 reruns package authoring plus offline mirror validation from the package root.
 
 ## Successor Pressure

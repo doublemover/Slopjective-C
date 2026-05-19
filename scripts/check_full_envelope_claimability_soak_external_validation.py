@@ -5,6 +5,24 @@ import json
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        ACCEPTANCE_FAMILIES,
+        CONFORMANCE_CORPUS_SUMMARY,
+        DASHBOARD_SUMMARY,
+        EXTERNAL_VALIDATION_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        STRESS_INTEGRATION_SUMMARY,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        ACCEPTANCE_FAMILIES,
+        CONFORMANCE_CORPUS_SUMMARY,
+        DASHBOARD_SUMMARY,
+        EXTERNAL_VALIDATION_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        STRESS_INTEGRATION_SUMMARY,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json"
@@ -34,7 +52,7 @@ def main() -> int:
         repo_rel(resolve_repo_path(path)): read_json(resolve_repo_path(path))
         for path in contract["required_reports"]
     }
-    dashboard = reports["tmp/reports/full-envelope-claimability/dashboard-summary.json"]
+    dashboard = reports[DASHBOARD_SUMMARY]
     acceptance_matrix = dashboard.get("acceptance_matrix", [])
     acceptance_families = {
         row.get("family")
@@ -49,7 +67,17 @@ def main() -> int:
         "dashboard_includes_required_acceptance_matrix_families": all(
             family in acceptance_families for family in contract["required_acceptance_matrix_families"]
         ),
-        "public_conformance_remains_caution_or_better": reports["tmp/reports/public-conformance/integration-summary.json"].get("public_status") in {"claim-ready", "caution"},
+        "public_conformance_remains_caution_or_better": reports[PUBLIC_CONFORMANCE_SUMMARY].get("public_status") in {"claim-ready", "caution"},
+        "required_reports_match_owner_validation_inputs": contract["required_reports"] == [
+            DASHBOARD_SUMMARY,
+            CONFORMANCE_CORPUS_SUMMARY,
+            STRESS_INTEGRATION_SUMMARY,
+            EXTERNAL_VALIDATION_SUMMARY,
+            PUBLIC_CONFORMANCE_SUMMARY,
+        ],
+        "acceptance_matrix_matches_owner_families": set(contract["required_acceptance_matrix_families"]).issubset(
+            spec.family for spec in ACCEPTANCE_FAMILIES
+        ),
     }
 
     payload = {

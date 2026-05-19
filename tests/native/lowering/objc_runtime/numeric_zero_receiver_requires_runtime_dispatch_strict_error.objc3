@@ -1,0 +1,6 @@
+// Canonical lowering Objective-C runtime fixture: numeric zero receiver is not nil-elided.
+module LoweringObjcRuntimeNumericZeroReceiverRequiresRuntimeDispatch;
+
+fn main() -> i32 {
+  return [0 ping];
+}

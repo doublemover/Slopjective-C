@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-security-hardening-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/owner_contracts.json"
+  ],
+  "support_boundary": "sema ownership covers only the hand-authored macro package/provenance security contract: macro metadata completeness, macro package identity, provenance determinism, callable determinism, sandbox namespace enforcement, and method-topology/nonpure/missing-metadata rejection routing for the referenced macro safety fixtures. Release, runtime, workflow, report, schema, artifact, and public action rows do not define semantic compiler truth.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "required_attribute:objc_macro",
+    "required_attribute:objc_macro_package",
+    "required_attribute:objc_macro_provenance",
+    "required_enforcement_flag:metadata_completeness_enforced",
+    "required_enforcement_flag:sandbox_namespace_enforced",
+    "required_enforcement_flag:provenance_determinism_enforced",
+    "required_enforcement_flag:callable_determinism_enforced",
+    "positive_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+    "positive_fixture:tests/tooling/fixtures/native/macro_package_provenance_positive.objc3",
+    "positive_fixture:tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+    "positive_fixture:tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_orphan_metadata.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "negative_fixture:tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode macro security semantics, gate macro security semantics, retired route macro trust, compatibility macro trust, evidence-log macro provenance proof, trust bypass for missing package/provenance metadata, wrapper-only macro security actions, generated-only semantic rows, and migration-only semantic rows are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

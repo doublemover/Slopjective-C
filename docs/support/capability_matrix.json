@@ -1,0 +1,817 @@
+{
+  "schema_version": "objc3c-capability-matrix-v1",
+  "matrix_version": "2026-05-09-hard-cutover",
+  "schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
+  "evidence_map_path": "docs/support/evidence_map.json",
+  "states": [
+    "implemented",
+    "rejected",
+    "reserved",
+    "internal"
+  ],
+  "command_surface": {
+    "public_bridge": "npm run objc3c -- <action>",
+    "action_owner": "scripts/objc3c_workflow/action_catalog.py",
+    "public_command_pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$",
+    "unsupported_public_surfaces": [
+      "direct python or PowerShell helper invocations",
+      "direct CMake or native helper invocations",
+      "retired command surfaces",
+      "retired command metadata",
+      "workflow registry facade claims",
+      "success-without-evidence capability claims",
+      "runtime-behavior claims not represented by implemented matrix rows"
+    ]
+  },
+  "projection_policy": {
+    "authoritative_data": [
+      "docs/support/capability_matrix.json",
+      "docs/support/evidence_map.json"
+    ],
+    "schema_sources": [
+      "schemas/objc3c-capability-matrix-v1.schema.json",
+      "docs/support/capability_matrix.schema.json",
+      "schemas/objc3c-capability-evidence-map-v1.schema.json"
+    ],
+    "human_projections": [
+      "docs/support/capability_matrix.md",
+      "docs/support/evidence_map.md",
+      "docs/support/capability_claim_responsibility.md",
+      "docs/support/hard_cutover_capability_truth.md"
+    ],
+    "consumer_rule": "Consumers may summarize only rows and evidence present in authoritative data; projection docs cannot introduce new support claims."
+  },
+  "claim_contract": {
+    "support_claim_required_for_states": [
+      "implemented"
+    ],
+    "support_claim_forbidden_for_states": [
+      "rejected",
+      "reserved",
+      "internal"
+    ],
+    "public_behavior_claim_namespace": "objc3c.behavior.*",
+    "no_alias_or_retired_route_claim_sources": [
+      "retired surface terms",
+      "retired mode labels",
+      "workflow registry facades",
+      "direct helper commands",
+      "generated-output rows without matching implemented rows",
+      "compatibility or retired route wording"
+    ],
+    "owner_only_states": [
+      "rejected",
+      "reserved",
+      "internal"
+    ],
+    "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, owner-boundary, or evidence-boundary rows only."
+  },
+  "hard_cutover_rules": [
+    "Only implemented behavior rows may claim public Objective-C 3.0 support.",
+    "Rejected and reserved rows are diagnostic or documentation boundary evidence, not alternate acceptance paths.",
+    "Internal rows can name source, schema, workflow, or evidence-output owners without widening language support.",
+    "Publicly replayable commands must use npm run objc3c -- <action>.",
+    "Docs, spec, and site content must not advertise retired adapters, alternate acceptance paths, retired-source lanes, or retired mode labels as supported surfaces; rows that change support state must use canonical feature names with evidence instead of reviving those labels.",
+    "Runtime and object-model prose must not claim full behavior from parser, metadata, owner-module, generated-output, or internal API evidence alone."
+  ],
+  "retired_surface_terms": [
+    {
+      "term": "retired adapter",
+      "canonical_handling": "Reject as a support claim; replace with an implemented capability row or a diagnostic rejection row.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "alternate acceptance path",
+      "canonical_handling": "Reject as an acceptance path; use the canonical parser, semantic, lowering, runtime, or tooling behavior name.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "retired-source lane",
+      "canonical_handling": "Reject as a supported mode; use adoption, upgrade, or reserved-state evidence without widening accepted syntax.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "retired mode label",
+      "canonical_handling": "Reject as a mode label; use strict capability states and evidence-backed support claims.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "retired command surface",
+      "canonical_handling": "Reject as public command surface; use npm run objc3c -- <action>.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    },
+    {
+      "term": "evidence-log completion",
+      "canonical_handling": "Reject as completion evidence unless the capability matrix has matching implemented rows and evidence-map entries.",
+      "allowed_context": "Negative examples, issue evidence, and source-hygiene rejection data only."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "compiler.parser.core-declarations",
+      "title": "Canonical parser syntax",
+      "state": "implemented",
+      "summary": "The native parser accepts canonical modules, bindings, functions, control flow, and expression forms used by the runnable subset.",
+      "support_claims": [
+        "objc3c.behavior.parser.canonical-syntax"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_expression_surface.cpp",
+        "native/objc3c/src/parse/objc3_parser_statement_surface.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/parser/positive/canonical_module_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_parser_extraction.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_core.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.sema.typed-flow",
+      "title": "Typed semantic flow",
+      "state": "implemented",
+      "summary": "Semantic analysis preserves the typed integer and boolean flow used by the runnable subset.",
+      "support_claims": [
+        "objc3c.behavior.sema.typed-flow"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
+        "native/objc3c/src/sema/objc3_semantic_type_relations.cpp",
+        "native/objc3c/src/sema/objc3_semantic_symbol_lookup.cpp",
+        "native/objc3c/src/sema/objc3_sema_diagnostic_contract.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.sema.canonical-diagnostics",
+      "title": "Canonical semantic rejection",
+      "state": "rejected",
+      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics; no switch enables retired forms.",
+      "owner_modules": [
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/diagnostics/modes/canonical_rejections.cpp",
+        "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+        "native/objc3c/src/sema/objc3_sema_diagnostic_contract.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/conformance/diagnostics/manifest.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/objc3_sema_diagnostic_contract.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.lowering.strict-runtime-dispatch",
+      "title": "Strict runtime dispatch lowering",
+      "state": "implemented",
+      "summary": "Lowering reports unresolved runtime-dispatch linkage through the strict behavior matrix fixture.",
+      "support_claims": [
+        "objc3c.behavior.lowering.strict-runtime-dispatch"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/lower/contracts/runtime_dispatch_boundary_contracts.cpp",
+        "native/objc3c/src/lower/contracts/runtime_dispatch_abi_contracts.cpp",
+        "native/objc3c/src/lower/contracts/dispatch_surface_contracts.cpp",
+        "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/contracts/runtime_dispatch_boundary_contracts.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.ir.module-emission",
+      "title": "IR module emission",
+      "state": "implemented",
+      "summary": "IR generation emits the basic module shape used by the runnable native fixture set.",
+      "support_claims": [
+        "objc3c.behavior.ir.module-emission"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/ir/objc3_ir_module_emission_surface.cpp",
+        "native/objc3c/src/ir/objc3_ir_deterministic_publication.cpp",
+        "native/objc3c/src/ir/objc3_ir_message_send_lowering.cpp",
+        "native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_module_emission_surface.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/objc3_ir_deterministic_publication.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.dispatch.strict-error",
+      "title": "Runtime dispatch strict diagnostic",
+      "state": "implemented",
+      "summary": "Runtime dispatch unresolved-symbol behavior is exercised as a strict executable diagnostic. Runtime-owned diagnostic codes and messages come from the strict result surface.",
+      "support_claims": [
+        "objc3c.behavior.runtime.strict-dispatch-error"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/dispatch/method_cache.cpp",
+        "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.e2e.runnable-smoke",
+      "title": "Runnable smoke path",
+      "state": "implemented",
+      "summary": "The end-to-end native smoke fixture compiles and runs through the behavior matrix command.",
+      "support_claims": [
+        "objc3c.behavior.e2e.runnable-smoke"
+      ],
+      "owner_modules": [
+        "native/objc3c/src/libobjc3c_frontend/frontend_compile_entrypoints.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_session.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_session_publication.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        }
+      ]
+    },
+    {
+      "id": "runtime.concurrency.async-actors",
+      "title": "Async and actor runtime closure",
+      "state": "reserved",
+      "summary": "Async, task, and actor syntax and runtime concepts remain unavailable unless an entry is separately marked implemented here.",
+      "owner_modules": [
+        "native/objc3c/src/parse/objc3_parser_actor_isolation_sendability_profiles.cpp",
+        "native/objc3c/src/parse/objc3_parser_async_continuation_profiles.cpp",
+        "native/objc3c/src/runtime/concurrency/task_snapshot.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/spec/concurrency_reserved.md"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/conformance/diagnostics/manifest.json"
+        }
+      ]
+    },
+    {
+      "id": "runtime.object-model.full-realization",
+      "title": "Full object-model runtime realization",
+      "state": "reserved",
+      "summary": "Parser, semantic, metadata, and owner-module evidence exists for object-model surfaces, but full live class, protocol, category, property, ivar, and reflection runtime behavior remains unclaimed until implemented rows carry executable evidence.",
+      "owner_modules": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_object_model_closure.md"
+        }
+      ]
+    },
+    {
+      "id": "language.advanced-runtime-closure",
+      "title": "Advanced runtime-backed language closure",
+      "state": "reserved",
+      "summary": "Blocks, full ARC automation, throws/error propagation, metaprogramming/property behaviors, and broad interop closure remain unavailable as public support unless a narrower implemented capability row states otherwise.",
+      "owner_modules": [
+        "native/objc3c/src/runtime/blocks/",
+        "native/objc3c/src/runtime/memory/",
+        "native/objc3c/src/runtime/errors/",
+        "native/objc3c/src/runtime/concurrency/"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+        }
+      ]
+    },
+    {
+      "id": "compiler.architecture.module-decomposition",
+      "title": "Native compiler module decomposition",
+      "state": "internal",
+      "summary": "The native compiler target graph is decomposed into explicit token, parser, semantic, lowering, IR, IO/JSON, pipeline, artifact, runtime, frontend, tools, support, diagnostics, and driver owner modules. This is implementation ownership evidence, not a public language behavior claim.",
+      "owner_modules": [
+        "native/objc3c/src/token/objc3_token_rejected_canonical_literal_table.cpp",
+        "native/objc3c/src/parse/objc3_parser_core.cpp",
+        "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
+        "native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp",
+        "native/objc3c/src/ir/objc3_ir_message_send_lowering.cpp",
+        "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+        "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.cpp",
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/libobjc3c_frontend/frontend_compile_entrypoints.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_session_publication.cpp",
+        "native/objc3c/src/support/objc3_profile_token_match.h",
+        "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/driver/objc3_cli_option_validation.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/config/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ast/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/support/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/diag/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/diagnostics/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lex/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/sema/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/ir/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/libobjc3c_frontend/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/driver/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/cli/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/tools/CMakeLists.txt"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+        }
+      ]
+    },
+    {
+      "id": "runtime.public-c-api.strict-result",
+      "title": "Public C runtime dispatch result surface",
+      "state": "internal",
+      "summary": "The public C runtime API owns image registration, selector lookup, checked dispatch results, the narrow plain i32 lowering entrypoint, and testing snapshots through strict runtime public headers and result owner modules. It exposes no alternate dispatch mode.",
+      "owner_modules": [
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp"
+        }
+      ]
+    },
+    {
+      "id": "workflow.command.npm-objc3c-bridge",
+      "title": "npm objc3c workflow bridge",
+      "state": "internal",
+      "summary": "The only package script is objc3c, which routes npm bridge actions into scripts.objc3c_workflow. Action names, validation tiers, backend descriptions, pass-through behavior, guarantee owners, registry views, action-handler integrity checks, request dispatch, and module-bridge import roots live under scripts/objc3c_workflow; retired registry facades and retired command surfaces are not support claims.",
+      "owner_modules": [
+        "scripts/objc3c_workflow/action_catalog.py",
+        "scripts/objc3c_workflow/registry_views.py",
+        "scripts/objc3c_workflow/action_handler_integrity.py",
+        "scripts/objc3c_workflow/request_dispatch.py",
+        "scripts/objc3c_workflow/path_bootstrap.py"
+      ],
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "package.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_catalog.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/registry_views.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_handler_integrity.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/request_dispatch.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/path_bootstrap.py"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/runbooks/objc3c_public_command_surface.md"
+        }
+      ]
+    },
+    {
+      "id": "tooling.json.schema-registry",
+      "title": "JSON and schema registry helpers",
+      "state": "internal",
+      "summary": "The canonical capability matrix schema under schemas/, the ref-only support-directory schema entrypoint, the machine-readable evidence map, split native parser/writer/schema/error helpers, and artifact JSON registry modules own deterministic support boundaries. Publicly replayable evidence commands are npm-bridge commands only.",
+      "owner_modules": [
+        "schemas/objc3c-capability-matrix-v1.schema.json",
+        "schemas/objc3c-capability-evidence-map-v1.schema.json",
+        "scripts/objc3c_shared/schema_registry.py",
+        "native/objc3c/src/io/json/json_parser.cpp",
+        "native/objc3c/src/io/json/json_writer.cpp",
+        "native/objc3c/src/io/json/json_schema.cpp",
+        "native/objc3c/src/io/json/json_schema_errors.cpp",
+        "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/io/json/json_equivalence.cpp",
+        "native/objc3c/src/io/json/json_pointer.cpp",
+        "native/objc3c/src/io/json/json_schema_type.cpp",
+        "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp",
+        "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+        "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp"
+      ],
+      "evidence": [
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-capability-matrix-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "docs/support/capability_matrix.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-capability-evidence-map-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-conformance-dashboard-status-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-conformance-evidence-bundle-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-runtime-2025Q4.manifest.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3-abi-2025Q4.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-upgrade-support-report-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-update-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-lock-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-platform-support-matrix-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-compiler-throughput-summary-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-performance-telemetry-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-artifact-authenticity-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/source-hygiene-hard-cutover-report-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "docs/support/evidence_map.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/README.md"
+        },
+        {
+          "kind": "doc",
+          "path": "schemas/README.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/capability_schema_examples.md"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_shared/schema_registry.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_parser.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_writer.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema_errors.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema_validation.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_equivalence.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_pointer.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema_type.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_shared_json_schema.py"
+        }
+      ]
+    },
+    {
+      "id": "support.hard-cutover-capability-truth",
+      "title": "Hard-cutover capability truth boundary",
+      "state": "internal",
+      "summary": "Docs, specs, site pages, stdlib notes, and runbooks route support claims through the matrix, evidence map, and capability-claim responsibility page. Hard-cutover issue evidence and payload commit lists are checked-in branch evidence boundaries, not validation, pushed-state, GitHub issue, remote-closure, release, or compatibility-support claims. Retired surfaces and evidence-log completion remain negative evidence or source-hygiene data, not support.",
+      "owner_modules": [
+        "docs/support/capability_matrix.json",
+        "docs/support/evidence_map.json",
+        "docs/support/hard_cutover_capability_truth.md",
+        "docs/support/capability_claim_responsibility.md",
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/README.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/support/capability_claim_responsibility.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/issues/hard_cutover_8132_8150_evidence.md"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
+        },
+        {
+          "kind": "doc",
+          "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+        }
+      ]
+    }
+  ]
+}

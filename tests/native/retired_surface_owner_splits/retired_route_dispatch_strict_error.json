@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-retired-surface-matrix-behavior-provenance-split",
+  "owner_boundary": "retired_route_dispatch_strict_error",
+  "source_matrix": "tests/native/retired_surface_matrix.json",
+  "support_boundary": "retired route and typed runtime-dispatch projection surfaces are lowering, IR, runtime, or e2e strict-error evidence when a concrete fixture exists",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "entries.surface=removed-parser-retired-route-flag",
+    "entries.surface=removed-runtime-dispatch-retired-route-flag",
+    "entries.surface=non-nil-runtime-dispatch-linkage",
+    "entries.surface=unknown-receiver-runtime-dispatch",
+    "entries.surface=negative-execution-runtime-dispatch",
+    "entries.retired_tag=runtime-dispatch",
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+    "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+    "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+  ],
+  "canonical_anchor": "tests/native/runtime/dispatch",
+  "retired_surface_rule": "runtime dispatch retired route and typed dispatch projection claims are removed-flag rejection, link strict-error, run strict-error, or e2e negative execution evidence"
+}

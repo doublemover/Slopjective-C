@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 
 from objc3c_tooling.cli import add_check_argument
-from objc3c_tooling.public_runner import load_public_workflow_runner
+from scripts.objc3c_workflow.public_command_api import load_public_workflow_runner
 from objc3c_tooling.validation import contains_all
 
 
@@ -24,20 +24,21 @@ def test_add_check_argument() -> None:
     assert parser.parse_args(["--check"]).check is True
 
 
-def test_public_runner_loads() -> None:
-    runner = load_public_workflow_runner(module_name="objc3c_public_workflow_runner_helper_test")
-    assert hasattr(runner, "ACTION_SPECS")
-    assert callable(runner.list_actions_payload)
+def test_public_workflow_dispatch_loads() -> None:
+    dispatch = load_public_workflow_runner(
+        module_name="objc3c_workflow_dispatch_helper_test"
+    )
+    assert hasattr(dispatch, "ACTION_SPECS")
+    assert callable(dispatch.list_actions_payload)
 
 
 def main() -> int:
     test_contains_all()
     test_add_check_argument()
-    test_public_runner_loads()
+    test_public_workflow_dispatch_loads()
     print("objc3c-cli-validation-helpers: PASS")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

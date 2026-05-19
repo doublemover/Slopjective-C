@@ -34,26 +34,27 @@ REQUIRED_ADRS = (
 REQUIRED_RUNTIME_ARCH_PATH_TOKENS = (
     "`native/objc3c/src/driver/objc3_compilation_driver.cpp`",
     "`native/objc3c/src/io/objc3_process.cpp`",
-    "`native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`",
+    "`native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`",
     "`native/objc3c/src/ir/objc3_ir_emitter.cpp`",
-    "`native/objc3c/src/runtime/objc3_runtime.h`",
+    "`native/objc3c/src/runtime/public/objc3_runtime_api.h`",
     "`native/objc3c/src/runtime/objc3_runtime.cpp`",
     "`native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`",
     "`scripts/check_objc3c_runtime_acceptance.py`",
     "`scripts/check_objc3c_execution_replay_proof.ps1`",
-    "`scripts/objc3c_public_workflow_runner.py`",
+    "`scripts.objc3c_workflow`",
 )
 
 SOURCE_EXTENSIONS = (".h", ".hpp", ".hh", ".c", ".cc", ".cpp")
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 
 ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
-    "driver": {"libobjc3c_frontend", "io", "lower", "pipeline"},
-    "libobjc3c_frontend": {"pipeline", "io"},
+    "artifacts": {"parse", "sema", "lower", "ir", "pipeline", "io"},
+    "driver": {"artifacts", "libobjc3c_frontend", "io", "lower", "pipeline"},
+    "libobjc3c_frontend": {"artifacts", "pipeline", "io"},
     "pipeline": {"lex", "parse", "sema", "lower", "ir", "io"},
     "lower": {"sema"},
     "ir": {"lower", "parse"},
-    "io": {"lower", "pipeline"},
+    "io": {"artifacts", "lower", "pipeline"},
     "lex": set(),
     "parse": {"lex", "pipeline"},
     "sema": {"parse", "pipeline"},

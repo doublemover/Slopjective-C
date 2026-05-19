@@ -1,0 +1,9 @@
+#include "parse/objc3_type_feature_module_profiles_namespace_partition_evidence.inc"
+
+#include "parse/objc3_type_feature_module_profiles_namespace_partition_namespace_collision_profile.inc"
+
+#include "parse/objc3_type_feature_module_profiles_namespace_partition_namespace_collision_normalization.inc"
+
+#include "parse/objc3_type_feature_module_profiles_namespace_partition_public_private_profile.inc"
+
+#include "parse/objc3_type_feature_module_profiles_namespace_partition_public_private_normalization.inc"

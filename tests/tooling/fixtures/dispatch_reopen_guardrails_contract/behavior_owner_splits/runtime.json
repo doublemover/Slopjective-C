@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract"
+  ],
+  "support_boundary": "runtime ownership is non-positive for this dispatch-reopen guardrails family. Runner chains, gate reductions, dispatch decisions, lane assignments, and command names do not define runtime execution, ABI, dispatch, object model, or package behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:dispatch_reopen_guardrails_contract",
+    "dispatch_term:runner-chain",
+    "dispatch_term:gate-open",
+    "dispatch_term:dispatch_reopen_state",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-dispatch-reopen-fixtures",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime dispatch rows, gate runtime dispatch rows, retired route runtime dispatch rows, compatibility runtime dispatch rows, migration-only runtime rows, generated-only runtime rows, evidence-log runtime rows, dispatch-policy-only runtime claims, and runner-only success are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

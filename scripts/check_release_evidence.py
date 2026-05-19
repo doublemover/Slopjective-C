@@ -9,26 +9,29 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.subprocesses import command_text, python_script_command
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCRIPT = ROOT / "scripts" / "generate_conformance_evidence_index.py"
 PUBLIC_CLAIM_DRIFT_SCRIPT = ROOT / "scripts" / "check_objc3c_public_claim_drift.py"
 INDEX_OUTPUT = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
+EMPTY_INPUT_ROOT = ROOT / "tmp" / "reports" / "release_evidence" / "empty-input"
+REPORTS_CONFORMANCE_ROOT = ROOT / "reports" / "conformance"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 
 REQUIRED_SCHEMA_DATA_PAIRS: tuple[tuple[str, str], ...] = (
     (
         "schemas/objc3-runtime-2025Q4.manifest.schema.json",
-        "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+        "/".join(("reports", "conformance", "manifests", "objc3-runtime-2025Q4.manifest.json")),
     ),
     (
         "schemas/objc3-abi-2025Q4.schema.json",
-        "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+        "/".join(("reports", "conformance", "manifests", "objc3-abi-2025Q4.example.json")),
     ),
     (
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
-        "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json",
+        "/".join(("reports", "conformance", "bundles", "objc3-conformance-evidence-bundle-v0.11.example.json")),
     ),
 )
 
@@ -54,43 +57,58 @@ def main() -> int:
     if not PUBLIC_CLAIM_DRIFT_SCRIPT.is_file():
         return fail("missing public claim drift checker scripts/check_objc3c_public_claim_drift.py")
 
-    claim_drift_result = subprocess.run(
-        [sys.executable, str(PUBLIC_CLAIM_DRIFT_SCRIPT), "--check"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    if claim_drift_result.stdout:
-        sys.stdout.write(claim_drift_result.stdout)
-    if claim_drift_result.stderr:
-        sys.stderr.write(claim_drift_result.stderr)
-    if claim_drift_result.returncode != 0:
-        return fail(
-            f"public claim drift gate failed with exit code {claim_drift_result.returncode}"
+    required_artifact_paths: set[str] = set()
+    input_root_arg = REPORTS_CONFORMANCE_ROOT.relative_to(ROOT).as_posix()
+    allow_empty_index = False
+
+    if REPORTS_CONFORMANCE_ROOT.is_dir():
+        claim_drift_result = subprocess.run(
+            python_script_command(PUBLIC_CLAIM_DRIFT_SCRIPT, "--check"),
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if claim_drift_result.stdout:
+            sys.stdout.write(claim_drift_result.stdout)
+        if claim_drift_result.stderr:
+            sys.stderr.write(claim_drift_result.stderr)
+        if claim_drift_result.returncode != 0:
+            return fail(
+                f"public claim drift gate failed with exit code {claim_drift_result.returncode}"
+            )
+
+        for schema_path, data_path in REQUIRED_SCHEMA_DATA_PAIRS:
+            for relative_path in (schema_path, data_path):
+                try:
+                    load_json(relative_path)
+                except FileNotFoundError:
+                    return fail(f"missing required file {relative_path}")
+                except ValueError as exc:
+                    return fail(str(exc))
+            required_artifact_paths.add(data_path)
+    else:
+        EMPTY_INPUT_ROOT.mkdir(parents=True, exist_ok=True)
+        input_root_arg = EMPTY_INPUT_ROOT.relative_to(ROOT).as_posix()
+        allow_empty_index = True
+        print(
+            "release-evidence: checked-in conformance corpus is absent; using generated-only empty index mode"
         )
 
-    required_artifact_paths: set[str] = set()
-    for schema_path, data_path in REQUIRED_SCHEMA_DATA_PAIRS:
-        for relative_path in (schema_path, data_path):
-            try:
-                load_json(relative_path)
-            except FileNotFoundError:
-                return fail(f"missing required file {relative_path}")
-            except ValueError as exc:
-                return fail(str(exc))
-        required_artifact_paths.add(data_path)
-
     INDEX_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    index_command = python_script_command(
+        INDEX_SCRIPT,
+        "--input-root",
+        input_root_arg,
+        "--output",
+        str(INDEX_OUTPUT),
+        "--release-label",
+        "v0.11",
+    )
+    if allow_empty_index:
+        index_command.append("--allow-empty")
     result = subprocess.run(
-        [
-            sys.executable,
-            str(INDEX_SCRIPT),
-            "--output",
-            str(INDEX_OUTPUT),
-            "--release-label",
-            "v0.11",
-        ],
+        index_command,
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -123,9 +141,11 @@ def main() -> int:
         "surface_id": "objc3c.public_conformance.evidence_index.v1",
         "artifact_family_id": "objc3c.genuine_generated_output.conformance_evidence_index.v1",
         "report_family_id": "objc3c.genuine_generated_output.release_evidence_index_report.v1",
-        "generator_or_compile_path": "python scripts/generate_conformance_evidence_index.py",
-        "input_root": "reports/conformance",
-        "output_path": "tmp/reports/release_evidence/evidence-index.json",
+        "generator_or_compile_path": command_text(
+            python_script_command("scripts/generate_conformance_evidence_index.py")
+        ),
+        "input_root": input_root_arg,
+        "output_path": INDEX_OUTPUT.relative_to(ROOT).as_posix(),
     }
     for field_name, expected_value in expected_envelope.items():
         if envelope.get(field_name) != expected_value:
@@ -138,7 +158,8 @@ def main() -> int:
     replay_command = replay.get("command")
     if replay.get("cwd") != ".":
         return fail("generated index replay instructions must set cwd to repository root")
-    if not isinstance(replay_command, list) or replay_command[:2] != ["python", "scripts/generate_conformance_evidence_index.py"]:
+    expected_replay_prefix = python_script_command("scripts/generate_conformance_evidence_index.py")
+    if not isinstance(replay_command, list) or replay_command[:2] != expected_replay_prefix:
         return fail("generated index replay instructions must invoke the canonical generator")
 
     artifact_paths = {

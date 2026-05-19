@@ -3,10 +3,11 @@
   "$id": "https://objc3c.dev/schemas/objc3c-release-attestation-v1.schema.json",
   "title": "objc3c Release Attestation v1",
   "type": "object",
-  "required": ["contract_id", "schema_version", "release_manifest_path", "sbom_path", "attested_digests", "source_stamps"],
+  "required": ["contract_id", "schema_version", "generated_at_utc", "release_manifest_path", "sbom_path", "attested_digests", "source_stamps"],
   "properties": {
     "contract_id": { "const": "objc3c.release.foundation.attestation.v1" },
     "schema_version": { "const": 1 },
+    "generated_at_utc": { "type": "string" },
     "release_manifest_path": { "type": "string" },
     "sbom_path": { "type": "string" },
     "attested_digests": {
@@ -20,7 +21,7 @@
         "repo_superclean_surface_sha256": { "type": "string" },
         "release_evidence_index_sha256": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "source_stamps": {
       "type": "object",
@@ -34,8 +35,8 @@
         "sbom_path": { "type": "string" },
         "attestation_path": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

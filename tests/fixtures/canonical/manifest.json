@@ -1,0 +1,559 @@
+{
+  "schema_version": 1,
+  "boundary": {
+    "kind": "hand-authored-native-behavior",
+    "source_of_truth": "tests/native",
+    "phase_order": [
+      "parser",
+      "sema",
+      "lowering",
+      "ir",
+      "runtime",
+      "e2e"
+    ],
+    "positive_fixture_policy": "positive fixtures cover canonical behavior only",
+    "retired_surface_policy": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and runtime-dispatch residues must be rejection, strict-error, or absent-support metadata",
+    "positive_owner_phases": [
+      "parser",
+      "sema",
+      "lowering",
+      "ir",
+      "runtime",
+      "e2e"
+    ],
+    "canonical_rejection_owner": "canonical_rejection",
+    "legacy_positive_residue_disposition": "legacy-looking, retired-route-looking, gate-looking, unsupported, or compatibility-looking fixture surfaces are canonical rejection candidates until indexed as positives with no diagnostic code and no retired-surface tag",
+    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "phase_split_indexes": [
+      "tests/fixtures/canonical/phase_splits/parser.json",
+      "tests/fixtures/canonical/phase_splits/sema.json",
+      "tests/fixtures/canonical/phase_splits/lowering.json",
+      "tests/fixtures/canonical/phase_splits/ir.json",
+      "tests/fixtures/canonical/phase_splits/runtime.json",
+      "tests/fixtures/canonical/phase_splits/e2e.json"
+    ],
+    "behavior_split_indexes": [
+      "tests/fixtures/canonical/behavior_splits/positive.json",
+      "tests/fixtures/canonical/behavior_splits/diagnostic_negative.json",
+      "tests/fixtures/canonical/behavior_splits/canonical_rejection.json",
+      "tests/fixtures/canonical/behavior_splits/strict_error.json"
+    ]
+  },
+  "support_claims": [
+    {
+      "claim_id": "objc3c.behavior.parser.canonical-syntax",
+      "owner_phase": "parser",
+      "behavior_fixture": "tests/native/parser/positive/canonical_module_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.sema.typed-flow",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.ir.module-emission",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.strict-dispatch-error",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.e2e.runnable-smoke",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "tests/native/parser/positive/canonical_module_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/positive/objc_property_surface.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode",
+        "compatibility-gate"
+      ],
+      "expected_diagnostic_code": "O3C001"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode",
+        "retired-route"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
+    },
+    {
+      "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "negative",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_value_from_void_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_nonvoid_missing_value_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "retired_surface_tags": [
+        "runtime-adapter"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
+    },
+    {
+      "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/types/assignment_unknown_target_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S214"
+    },
+    {
+      "path": "tests/native/sema/ownership/strong_id_assignment.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/objc/objc_interface_method_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "objc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/control_flow/definite_return_if_else.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control_flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/control_flow/continue_outside_loop_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control_flow",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S213"
+    },
+    {
+      "path": "tests/native/sema/concurrency/async_await_value_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_keyword_elision.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/statements/if_else_statement_lowering.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "statements",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "objc_runtime",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "objc_runtime",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
+    },
+    {
+      "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "module",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/helper_function_emission.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/block_literal_helper_function_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/module_metadata_name.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/actor_executor_metadata_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "runtime_calls",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "runtime_calls",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-adapter",
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "storage",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "arc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "blocks",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "smoke",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/nil_keyword_message_send_elision.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "feature_matrix",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    }
+  ]
+}

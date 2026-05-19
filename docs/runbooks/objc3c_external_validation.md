@@ -11,13 +11,11 @@ Use these checked-in roots directly:
   - `tests/tooling/fixtures/external_validation/`
   - `tests/tooling/fixtures/objc3c/`
   - `tests/conformance/`
-- live replay and validation scripts:
-  - `scripts/check_objc3c_parser_replay_proof.ps1`
-  - `scripts/check_objc3c_diagnostics_replay_proof.ps1`
-  - `scripts/check_objc3c_lowering_replay_proof.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/check_objc3c_conformance_corpus_integration.py`
-  - `scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py`
+- live replay and validation actions:
+  - `npm run objc3c -- test-external-validation-replay`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-runnable-conformance-corpus`
 - machine-owned outputs only:
   - `tmp/reports/external-validation/`
   - `tmp/artifacts/external-validation/`
@@ -38,7 +36,7 @@ External fixture intake stays on one path:
 
 Independent replay means:
 
-- the accepted fixture can be rebuilt and rerun from checked-in scripts
+- the accepted fixture can be rebuilt and rerun from checked-in workflow actions
 - replay uses the live compiler/runtime path
 - the emitted summary can be traced back to a checked-in fixture contract
 
@@ -117,7 +115,7 @@ Stable machine-owned summaries:
 - no second corpus root outside `tests/conformance/` and
   `tests/tooling/fixtures/objc3c/`
 - no dashboard-only or prose-only ecosystem claims
-- no manual-only replay flow that bypasses the checked-in scripts
+- no manual-only replay flow that bypasses the checked-in workflow actions
 
 ## Live Paths Later Issues Must Reuse
 
@@ -131,26 +129,25 @@ Checked-in corpus and replay surfaces:
 
 Live replay and evidence surfaces:
 
-- `scripts/check_objc3c_parser_replay_proof.ps1`
-- `scripts/check_objc3c_diagnostics_replay_proof.ps1`
-- `scripts/check_objc3c_lowering_replay_proof.ps1`
-- `scripts/check_objc3c_execution_replay_proof.ps1`
-- `scripts/check_release_evidence.py`
+- `npm run objc3c -- test-external-validation-replay`
+- `npm run objc3c -- test-execution-replay`
+- `npm run objc3c -- validate-conformance-corpus`
+- `npm run objc3c -- check-release-evidence`
 
 Packaged reproducibility surfaces:
 
-- `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- validate-runnable-conformance-corpus`
 
 Current checked-in source-surface check:
 
-- `npm run check:external-validation:surface`
+- `npm run objc3c -- check-external-validation-surface`
 - `tests/tooling/fixtures/external_validation/source_surface.json`
 
 Current intake and replay tooling:
 
-- `npm run test:objc3c:external-validation:replay`
-- `npm run publish:objc3c:external-repro-corpus`
+- `npm run objc3c -- test-external-validation-replay`
+- `npm run objc3c -- publish-external-repro-corpus`
 
 ## Claim Boundary
 

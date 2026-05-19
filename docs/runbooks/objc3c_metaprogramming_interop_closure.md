@@ -12,20 +12,15 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json`
 - `tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_semantic_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_interop_policy_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_artifact_summary.py`
-- `python scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py`
-- `python scripts/check_metaprogramming_interop_closure_interop_lowering.py`
-- `python scripts/build_metaprogramming_interop_closure_executable_proof_summary.py`
-- `python scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py`
-- `python scripts/check_metaprogramming_interop_closure_live_interop_runtime.py`
-- `python scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py`
-- `python scripts/check_objc3c_runnable_metaprogramming_end_to_end.py`
+- `npm run objc3c -- validate-metaprogramming-conformance`
+- `npm run objc3c -- validate-runnable-metaprogramming`
+- `npm run objc3c -- validate-interop-conformance`
+- `npm run objc3c -- validate-runnable-interop`
+
+Helper implementations are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -54,21 +49,21 @@ Current closure constraints:
 
 ## Interop Runtime Surface
 
-- import/export, runtime package loading, bridge generation, mixed-image compatibility, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
-- interop claims must pass through ABI, ownership, error, and async compatibility on the real packaged toolchain; comparison-only narratives do not count
+- import/export, runtime package loading, bridge generation, mixed-image interop, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
+- interop claims must pass through ABI, ownership, error, and async behavior on the real packaged toolchain; comparison-only narratives do not count
 - packaged cross-module interop proof is anchored to the runnable interop e2e provider and consumer fixtures, packaged probe executables, and packaged execution smoke and replay steps
-- public runtime ABI widening for interop/package-loading helpers remains out of scope for this milestone
+- public runtime ABI widening for interop/package-loading helpers remains out of scope for this closure surface
 
 ## Lowering and Runtime Artifact Surface
 
-- the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
-- the canonical metaprogramming surfaces for this milestone are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
-- the canonical interop surfaces for this milestone are the published `runtime_*interop*` and package-loader bridge surfaces
-- milestone-local checks must consume those emitted surfaces instead of creating parallel manifest truth
+- the metaprogramming/interop compile-manifest and runtime-registration surface is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
+- the metaprogramming owner surfaces are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
+- the interop owner surfaces are the published `runtime_*interop*` and package-loader bridge surfaces
+- release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth
 
 ## Executable Proof and ABI Surface
 
-- the public command surface for this milestone remains `test:objc3c:metaprogramming-conformance`, `test:objc3c:runnable-metaprogramming`, `test:objc3c:interop-conformance`, and `test:objc3c:runnable-interop`
+- the metaprogramming/interop public command surface is `npm run objc3c -- validate-metaprogramming-conformance`, `npm run objc3c -- validate-runnable-metaprogramming`, `npm run objc3c -- validate-interop-conformance`, and `npm run objc3c -- validate-runnable-interop`
 - the public workflow surface remains `validate-metaprogramming-conformance`, `validate-runnable-metaprogramming`, `validate-interop-conformance`, and `validate-runnable-interop`
 - private runtime-owned helper and snapshot boundaries continue to define the live executable proof surface; the public runtime header is not widened by this milestone
 
@@ -76,7 +71,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for macro host execution, property-behavior runtime helpers, package loader helpers, or foreign bridge helpers
 - claims that full ARC/error/async interoperability is complete beyond the currently published metaprogramming and interop runtime evidence
-- milestone-local scaffolding parallel to the shared runtime acceptance, conformance, and packaged e2e paths
+- release-scope scaffolding parallel to the shared runtime acceptance, conformance, and packaged e2e paths
 - claims that unsupported macro execution topologies, unsupported property-behavior combinations, or unsupported foreign loader topologies are live
 
 Follow-on tracks:
@@ -87,17 +82,20 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime and pipeline:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_metaprogramming_conformance.py`
-  - `scripts/check_objc3c_runnable_metaprogramming_end_to_end.py`
-  - `scripts/check_objc3c_runnable_interop_conformance.py`
-  - `scripts/check_objc3c_runnable_interop_end_to_end.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- validate-metaprogramming-conformance`
+  - `npm run objc3c -- validate-runnable-metaprogramming`
+  - `npm run objc3c -- validate-interop-conformance`
+  - `npm run objc3c -- validate-runnable-interop`
+  - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`
   - `docs/objc3c-native.md`

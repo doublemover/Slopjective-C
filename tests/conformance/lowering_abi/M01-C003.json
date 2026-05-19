@@ -26,7 +26,7 @@
           "abi_requirements": [
             "throws method IMP type preserves trailing outError parameter while selector spelling remains unchanged",
             "module and textual interface replay preserve throws ABI metadata consumed by separate-compilation callers",
-            "direct IMP call path remains ABI-compatible with throwing method lowering"
+            "direct IMP call path remains ABI-equivalent with throwing method lowering"
           ],
           "runtime_assertions": [
             "m01c003_call_imp returns value + 7 when outError remains nil",

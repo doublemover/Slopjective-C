@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "unsupported_feature_claim_arc_parameter_ownership.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S221",
+      "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

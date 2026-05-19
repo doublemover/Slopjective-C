@@ -4,6 +4,13 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "author_guide": "docs/governance/extension_author_guide_v1.md",
   "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+  "owner_section": "extension_review",
+  "owner_contract": {
+    "owner": "extension_review_owner",
+    "artifact_section": "extension_review",
+    "publication_projection": "extension_review_publication.extension_review",
+    "blocker_projection": "claim_audit.blocker_metadata.extension_review"
+  },
   "review_classes": [
     {
       "review_class": "language-extension",
@@ -11,7 +18,7 @@
       "requires": [
         "proposal_packet",
         "owner_and_backup",
-        "compatibility_classification",
+        "support_boundary_classification",
         "conformance_evidence_plan",
         "adoption_and_docs_plan"
       ],
@@ -22,20 +29,20 @@
       ]
     },
     {
-      "review_class": "compatibility-impacting-change",
+      "review_class": "support-boundary-impacting-change",
       "allowed_scope": "source, package, runtime, or release behavior that can affect existing users",
       "requires": [
         "proposal_packet",
-        "compatibility_claim_class",
+        "upgrade_claim_class",
         "support_window_analysis",
-        "rollback_or_demote_path",
+        "revert_or_demote_path",
         "release_blocker_decision"
       ],
       "required_evidence_surfaces": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
-        "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-        "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+        "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
+        "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
       ]
     },
     {
@@ -83,16 +90,16 @@
     "validation_posture",
     "budget_impact",
     "review_class",
-    "compatibility_classification",
-    "rollback_or_demote_path",
+    "support_boundary_classification",
+    "revert_or_demote_path",
     "evidence_surfaces",
     "label_names"
   ],
   "fail_closed_conditions": [
     "missing proposal packet",
     "missing owner or backup owner",
-    "missing compatibility classification",
-    "missing rollback or demotion path for compatibility-impacting change",
+    "missing support-boundary classification",
+    "missing revert or demotion path for support-boundary-impacting change",
     "missing evidence surface for selected review class",
     "claims wider than release, support, package, adoption, or security evidence"
   ],
@@ -100,6 +107,7 @@
     "resolve milestone targeting from the real GitHub milestone returned by the API",
     "use GitHub labels and issue blockers instead of prose-only dependency lists when publishing",
     "publish generated summaries under tmp/reports/governance-sustainability/",
-    "keep checked-in contracts under tests/tooling/fixtures/governance_sustainability/"
+    "keep checked-in contracts under tests/tooling/fixtures/governance_sustainability/",
+    "project extension-review metadata through tmp/artifacts/governance-sustainability/extension-review-publication.json"
   ]
 }

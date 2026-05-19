@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
+import importlib
 import json
 import statistics
 import sys
@@ -16,7 +16,6 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "runtime-performance" / "benchmark-summary.json"
@@ -59,15 +58,10 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 
 def load_runtime_acceptance_module():
-    spec = importlib.util.spec_from_file_location(
-        "objc3c_runtime_acceptance", RUNTIME_ACCEPTANCE_PY
-    )
-    if spec is None or spec.loader is None:
-        raise RuntimeError("failed to load runtime acceptance module spec")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    scripts_root = str(ROOT / "scripts")
+    if scripts_root not in sys.path:
+        sys.path.insert(0, scripts_root)
+    return importlib.import_module("objc3c_runtime_acceptance.case_exports")
 
 
 def summarize_durations(durations: list[float]) -> dict[str, float]:

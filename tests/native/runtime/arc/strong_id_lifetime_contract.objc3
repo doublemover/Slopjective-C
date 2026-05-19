@@ -1,0 +1,14 @@
+// Canonical runtime ARC fixture: retained object values have explicit lifetime boundaries.
+module RuntimeArcStrongIdLifetimeContract;
+
+fn project(value: id) -> id {
+  let closure = ^() {
+    return value;
+  };
+  return closure();
+}
+
+fn main() -> i32 {
+  project(nil);
+  return 0;
+}

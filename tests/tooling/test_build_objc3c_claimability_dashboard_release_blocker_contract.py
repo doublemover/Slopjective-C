@@ -1,52 +1,31 @@
 from __future__ import annotations
 
-import importlib.util
-import json
-import sys
 from pathlib import Path
 
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "scripts"
-    / "build_objc3c_claimability_dashboard_release_blocker_contract.py"
+from build_objc3c_claimability_dashboard_release_blocker_contract_behavior import (
+    assert_dashboard_release_blocker_drift_rejection,
+    assert_dashboard_release_blocker_projection_payload,
 )
-SPEC = importlib.util.spec_from_file_location(
-    "build_objc3c_claimability_dashboard_release_blocker_contract", SCRIPT_PATH
+from build_objc3c_claimability_dashboard_release_blocker_contract_json import (
+    read_dashboard_release_blocker_json,
 )
-if SPEC is None or SPEC.loader is None:
-    raise RuntimeError(
-        "Unable to load scripts/build_objc3c_claimability_dashboard_release_blocker_contract.py"
-    )
-builder = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = builder
-SPEC.loader.exec_module(builder)
+from build_objc3c_claimability_dashboard_release_blocker_contract_support import (
+    builder,
+)
 
 
-def read_json(path: Path) -> dict[str, object]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    assert isinstance(payload, dict)
-    return payload
-
-
-def test_dashboard_release_blocker_contract_summary(tmp_path: Path) -> None:
+def dashboard_release_blocker_contract_summary(tmp_path: Path) -> None:
     json_out = tmp_path / "dashboard_release_blocker_contract_summary.json"
     md_out = tmp_path / "dashboard_release_blocker_contract_summary.md"
 
     code = builder.main(["--summary-json", str(json_out), "--summary-md", str(md_out)])
 
     assert code == 0
-    payload = read_json(json_out)
-    assert payload["contract_id"] == builder.SUMMARY_CONTRACT_ID
-    assert payload["status"] == "PASS"
-    assert payload["dashboard_release_blocker_projection"]["blocker"] == (
-        "claimability-dashboard-not-production-strength"
-    )
-    assert payload["checks"]["dashboard_script_consumes_projection"] is True
-    assert payload["checks"]["release_blocker_script_emits_projection"] is True
-    assert payload["checks"]["source_truth_excludes_tmp"] is True
+    payload = read_dashboard_release_blocker_json(json_out)
+    assert_dashboard_release_blocker_projection_payload(payload)
 
 
-def test_dashboard_release_blocker_contract_check_mode_fails_on_drift(
+def dashboard_release_blocker_contract_check_mode_fails_on_drift(
     tmp_path: Path,
     capsys: object,
 ) -> None:
@@ -61,4 +40,12 @@ def test_dashboard_release_blocker_contract_check_mode_fails_on_drift(
 
     assert code == 1
     captured = capsys.readouterr()
-    assert "dashboard release-blocker contract output drift" in captured.err
+    assert_dashboard_release_blocker_drift_rejection(captured.err)
+
+
+test_dashboard_release_blocker_contract_summary = (
+    dashboard_release_blocker_contract_summary
+)
+test_dashboard_release_blocker_contract_check_mode_fails_on_drift = (
+    dashboard_release_blocker_contract_check_mode_fails_on_drift
+)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.slopjective.local/objc3c-performance-telemetry-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-performance-telemetry-v1.schema.json",
   "title": "objc3c Performance Telemetry (v1)",
   "description": "Machine-readable raw-sample and normalized-summary contract for objc3c benchmark telemetry.",
   "type": "object",
@@ -122,10 +122,8 @@
           ]
         },
         "command": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "type": "string",
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
         },
         "duration_ms": {
           "type": "number",

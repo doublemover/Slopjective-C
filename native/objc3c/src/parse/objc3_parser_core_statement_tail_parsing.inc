@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_statement_tail_parsing_while_statement.inc"
+
+#include "parse/objc3_parser_core_statement_tail_parsing_loop_control_statements.inc"
+
+#include "parse/objc3_parser_core_statement_tail_parsing_assignment_statements.inc"
+
+#include "parse/objc3_parser_core_statement_tail_parsing_expression_statement.inc"

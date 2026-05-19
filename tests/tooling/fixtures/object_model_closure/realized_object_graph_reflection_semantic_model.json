@@ -4,7 +4,15 @@
   "milestone": "M319",
   "issue": "M319-B001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_semantic_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "runtime",
+    "canonical_rejection",
+    "object_model_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_object_model_abi_query_surface",
     "runtime_realization_lookup_reflection_implementation_surface",
@@ -50,14 +58,15 @@
       "summary": "The supported closure path keeps reflection and aggregate object-model answers on the private runtime-owned query surface instead of widening the public ABI."
     },
     {
-      "semantic_id": "unresolved-dispatch-miss-fallback-is-outside-supported-closure-claims",
-      "summary": "Deterministic miss fallback remains outside the supported full object-model closure claim and must not be presented as successful realized-method execution."
+      "semantic_id": "unresolved-dispatch-miss-retired-route-is-outside-supported-closure-claims",
+      "summary": "Deterministic miss retired route remains canonical rejection and strict-error evidence outside the supported full object-model closure claim; it must not be presented as successful realized-method execution."
     }
   ],
   "claim_narrowing_constraints": [
     "no-public-reflection-abi-claim",
     "no-universal-selector-success-claim",
-    "no-source-only-metadata-equals-runtime-truth-claim"
+    "no-source-only-metadata-equals-runtime-truth-claim",
+    "object-identity-property-synthesis-ivar-layout-runtime-metadata-and-private-query-snapshot-rows-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_proof_paths": [
     "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",

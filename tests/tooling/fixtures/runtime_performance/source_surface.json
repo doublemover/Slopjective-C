@@ -3,16 +3,69 @@
   "schema_version": 1,
   "surface_kind": "runtime-hot-path-and-bottleneck-boundary",
   "runbook": "docs/runbooks/objc3c_runtime_performance.md",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before runtime performance hot-path family, acceptance case, timing row, cache row, report packet, counter snapshot, generated artifact, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
+    "support_authority": "runtime performance source rows are acceptance, probe, timing, cache, report, package, runner, and provenance evidence only until a behavior owner split claims the phase",
+    "artifact_rule": "runtime-performance tmp reports, packet roots, runnable packages, counter snapshots, generated-only rows, evidence-log rows, migration-only rows, timing-only rows, cache-only rows, runner-only rows, package-only rows, and counter-only rows cannot define canonical support",
+    "retired_surface_rule": "retired-route, gate, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, generated-only, evidence-log, migration-only, timing-only, cache-only, runner-only, package-only, counter-only, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime library paths, runtime public C API paths, dispatch probes, runtime acceptance reports, hot-path timing rows, cache rows, report packets, and counter snapshots remain separately routed evidence classes"
+  },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/parser.json",
+      "boundary": "parser fixture provenance consumed by runtime performance workloads"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/sema.json",
+      "boundary": "semantic object-model, property, ARC, and storage fixture provenance consumed by runtime performance workloads"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/lowering.json",
+      "boundary": "dispatch, ARC helper, storage, and runtime-call provenance feeding runtime probes"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/ir.json",
+      "boundary": "emitted module, runnable package, acceptance fixture, generated report, and packet provenance"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json",
+      "boundary": "runtime acceptance cases and probe-backed dispatch, reflection, ARC, storage, and startup measurement evidence"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json",
+      "boundary": "whole runtime-performance workflows, integration summaries, runnable summaries, and executable proof boundaries"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "strict dispatch, unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, generated-only, evidence-log, migration-only, cache-only, timing-only, runner-only, package-only, counter-only, and alternate acceptance rows"
+    },
+    {
+      "phase": "runtime_performance_provenance",
+      "path": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime_performance_provenance.json",
+      "boundary": "source-surface rows, workload rows, artifact rows, acceptance reports, probe paths, timing fields, counter snapshots, report packets, package artifacts, and owner split routing metadata"
+    }
+  ],
   "runtime_library_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/runtime/ARCHITECTURE.md"
   ],
   "runtime_acceptance_paths": [
     "scripts/build_objc3c_native.ps1",
     "scripts/check_objc3c_runtime_acceptance.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "scripts/package_objc3c_runnable_toolchain.ps1"
   ],
   "authoritative_probe_paths": [
@@ -35,7 +88,7 @@
     "tmp/pkg/objc3c-native-runnable-toolchain"
   ],
   "explicit_non_goals": [
-    "no milestone-local runtime shim",
+    "no closure-local runtime adapter",
     "no sidecar-only performance claim surface",
     "no hidden optimization toggle outside checked-in code",
     "no second public runtime ABI for measurements"

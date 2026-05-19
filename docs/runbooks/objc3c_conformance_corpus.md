@@ -142,14 +142,14 @@ Stable machine-owned roots:
 
 ## Live Workflow Surface
 
-Current live scripts:
+Current live workflow actions:
 
-- surface check: `scripts/check_conformance_corpus_surface.py`
-- coverage index generation: `scripts/generate_conformance_corpus_index.py`
-- legacy suite gate: `scripts/check_conformance_suite.ps1`
-- integrated validation: `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
-- runnable packaged validation: `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
-- nightly umbrella integration: `python scripts/objc3c_public_workflow_runner.py test-nightly`
+- integrated validation: `npm run objc3c -- validate-conformance-corpus`
+- runnable packaged validation: `npm run objc3c -- validate-runnable-conformance-corpus`
+- nightly umbrella integration: `npm run objc3c -- test-nightly`
+
+Helper implementations are action-registry anchors and
+historical suite adapters, not public command examples.
 
 Checked-in references:
 
@@ -161,19 +161,19 @@ Checked-in references:
 Runtime and lowering coverage already resolves through:
 
 - `tests/conformance/lowering_abi/manifest.json`
-- `scripts/check_objc3c_execution_replay_proof.ps1`
-- `scripts/check_objc3c_lowering_replay_proof.ps1`
+- `npm run objc3c -- test-execution-replay`
+- `npm run objc3c -- validate-conformance-corpus`
 
 Module and metadata coverage already resolves through:
 
 - `tests/conformance/module_roundtrip/manifest.json`
-- `scripts/generate_conformance_evidence_index.py`
+- `npm run objc3c -- validate-conformance-corpus`
 
 Interop coverage already resolves through:
 
 - `tests/conformance/semantic/manifest.json`
 - `tests/conformance/module_roundtrip/manifest.json`
-- `scripts/check_objc3c_runnable_interop_conformance.py`
+- `npm run objc3c -- validate-interop-conformance`
 
 Example and tutorial coverage already resolves through:
 
@@ -185,7 +185,8 @@ Packaging and release evidence already resolves through:
 
 - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
 - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
-- `scripts/check_release_evidence.py`
+- `scripts/objc3c_shared/schema_registry.py`
+- `npm run objc3c -- check-release-evidence`
 
 Remaining corpus gaps are expected to terminate in:
 

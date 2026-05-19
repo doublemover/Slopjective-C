@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-parser-conformance-corpus-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/parser_conformance_corpus/manifest.json"
+  ],
+  "support_boundary": "sema ownership is non-positive for this parser-conformance corpus. Type names such as i32, bool, void pointer spelling, pure/throws labels, and declaration-like source text are parser corpus material here; semantic type checking, symbol binding, and effect validation must route to canonical sema fixtures.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:parser_conformance_corpus",
+    "source_term:i32",
+    "source_term:bool",
+    "source_term:pure",
+    "source_term:throws",
+    "compiler_phase_boundary:no-sema-positive-truth-from-parser-corpus",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic rows, gate semantic rows, retired route semantic rows, compatibility semantic rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and parser-corpus-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

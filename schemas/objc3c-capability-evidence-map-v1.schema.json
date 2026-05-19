@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-capability-evidence-map-v1.schema.json",
+  "title": "objc3c Capability Evidence Map",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "matrix_path",
+    "matrix_schema_path",
+    "projection_contract",
+    "evidence_policy",
+    "rows"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "objc3c-capability-evidence-map-v1"
+    },
+    "matrix_path": {
+      "type": "string",
+      "const": "docs/support/capability_matrix.json"
+    },
+    "matrix_schema_path": {
+      "type": "string",
+      "const": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    "projection_contract": {
+      "type": "object",
+      "description": "Declares that the evidence map is a flattened projection of matrix evidence, not an independent claim owner.",
+      "required": [
+        "source",
+        "owner",
+        "row_key",
+        "drift_rule"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "docs/support/capability_matrix.json#/capabilities/*/evidence"
+        },
+        "owner": {
+          "type": "string",
+          "const": "scripts/capability_docs_validator/evidence_map.py"
+        },
+        "row_key": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "capability_id",
+              "support_claim",
+              "evidence_kind",
+              "path",
+              "command"
+            ]
+          },
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "drift_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence_policy": {
+      "type": "object",
+      "description": "Constrains command-bearing evidence to public npm-bridge replay and classifies no-command rows as owner or boundary evidence.",
+      "required": [
+        "public_command_surface",
+        "command_required_for",
+        "command_forbidden_for",
+        "row_role_rule"
+      ],
+      "properties": {
+        "public_command_surface": {
+          "type": "string",
+          "const": "npm run objc3c -- <action>"
+        },
+        "command_required_for": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "command_forbidden_for": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "row_role_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "capability_id",
+          "evidence_kind",
+          "path"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "support_claim": {
+            "type": "string",
+            "pattern": "^objc3c\\.behavior\\.[a-z0-9._-]+$"
+          },
+          "evidence_kind": {
+            "enum": [
+              "test",
+              "diagnostic",
+              "doc",
+              "schema",
+              "source"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

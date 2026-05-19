@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-retired-surface-absence",
+  "source_of_truth": [
+    "tests/native/retired_surface_matrix.json",
+    "tests/fixtures/canonical/manifest.json",
+    "tests/conformance/hard_cutover_catalog.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json"
+  ],
+  "policy": {
+    "positive_fixtures": "canonical Objective-C 3 behavior only",
+    "retired_surfaces": "retired adapters, parser and runtime alternate acceptance paths, and retired-source lanes must be explicit rejection or strict-error evidence",
+    "absence_claim": "when a retired surface has no positive fixture, the index names the rejection fixture or documents the surface as absent from public support"
+  },
+  "forbidden_positive_surface_tokens": [
+    "old-mode",
+    "old_mode",
+    "gate",
+    "retired-route",
+    "compat",
+    "compatibility",
+    "migration"
+  ],
+  "positive_roots": [
+    "tests/native/parser/positive",
+    "tests/native/sema/types",
+    "tests/native/sema/ownership",
+    "tests/native/sema/objc",
+    "tests/native/sema/control_flow",
+    "tests/native/sema/concurrency",
+    "tests/native/lowering/expressions",
+    "tests/native/lowering/statements",
+    "tests/native/lowering/objc_runtime",
+    "tests/native/lowering/ownership",
+    "tests/native/ir/module",
+    "tests/native/ir/function",
+    "tests/native/ir/metadata",
+    "tests/native/ir/runtime_calls",
+    "tests/native/runtime/object_model",
+    "tests/native/runtime/storage",
+    "tests/native/runtime/arc",
+    "tests/native/runtime/blocks",
+    "tests/native/runtime/concurrency",
+    "tests/native/e2e/smoke",
+    "tests/native/e2e/feature_matrix"
+  ],
+  "runtime_probe_roots": [
+    "tests/tooling/runtime"
+  ],
+  "runtime_probe_policy": "runtime probes may prove canonical storage, reflection, public ABI, registration, and object-model behavior or strict dispatch errors; they are not retired adapter, alternate acceptance path, or retired-source lane positive support",
+  "retired_surface_disposition": [
+    {
+      "surface": "old-mode literal aliases",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+        "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+        "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "O3C002"
+      ]
+    },
+    {
+      "surface": "removed retired mode flag",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "O3C001"
+      ]
+    },
+    {
+      "surface": "removed parser retired route flag",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
+      ]
+    },
+    {
+      "surface": "removed retired adapter gate",
+      "status": "rejected",
+      "evidence": [
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
+      ]
+    },
+    {
+      "surface": "removed runtime dispatch retired route flag",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
+      ],
+      "diagnostic_codes": [
+        "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
+      ]
+    },
+    {
+      "surface": "non-nil runtime dispatch retired route linkage",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+        "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3"
+      ],
+      "diagnostic_codes": [
+        "link.unresolved_symbol"
+      ]
+    },
+    {
+      "surface": "unknown receiver runtime dispatch retired route",
+      "status": "strict-error",
+      "evidence": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "diagnostic_codes": [
+        "O3RT002"
+      ]
+    },
+    {
+      "surface": "retired-source lane as behavior support",
+      "status": "absent",
+      "evidence": [
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "docs/support/capability_matrix.json",
+        "docs/support/capability_matrix.md"
+      ],
+      "diagnostic_codes": []
+    }
+  ]
+}

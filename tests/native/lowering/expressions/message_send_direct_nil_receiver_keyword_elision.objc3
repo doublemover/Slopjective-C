@@ -1,0 +1,7 @@
+// Canonical lowering expression fixture: keyword sends to direct nil optional receivers elide dispatch.
+module LoweringExpressionsMessageSendDirectNilReceiverKeywordElision;
+
+fn main() -> i32 {
+  let sent = [nil? ping: 4 pong: 5];
+  return sent + 6;
+}

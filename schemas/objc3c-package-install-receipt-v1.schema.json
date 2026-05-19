@@ -3,19 +3,26 @@
   "$id": "https://objc3c.dev/schemas/objc3c-package-install-receipt-v1.schema.json",
   "title": "objc3c Package Install Receipt",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "contract_id",
     "install_root",
     "install_home",
-    "bootstrap_script",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
     "installed_at_utc"
   ],
   "properties": {
     "contract_id": { "const": "objc3c.packaging.channels.install-receipt.v1" },
     "install_root": { "type": "string" },
     "install_home": { "type": "string" },
-    "bootstrap_script": { "type": "string" },
+    "bootstrap_entrypoint": { "type": "string" },
+    "package_bridge": { "const": "objc3c" },
+    "install_command": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
     "installed_at_utc": { "type": "string" }
   }
 }

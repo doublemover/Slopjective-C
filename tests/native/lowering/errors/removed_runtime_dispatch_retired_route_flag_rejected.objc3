@@ -1,0 +1,10 @@
+// Canonical lowering strict-error fixture: runtime dispatch retired route ABI flags are removed.
+module RemovedRuntimeDispatchRetiredRouteFlagRejected;
+
+@interface RuntimeBox : NSObject
+- (i32)value;
+@end
+
+fn main(box: RuntimeBox*) -> i32 {
+  return [box value];
+}

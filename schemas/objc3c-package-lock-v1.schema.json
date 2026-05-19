@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "objc3c-package-lock-v1",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-lock-v1.schema.json",
   "title": "objc3c Package Lock",
   "type": "object",
   "required": [
@@ -76,7 +76,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
           }
         }
       }
@@ -156,7 +157,8 @@
         },
         "replay_command": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
         }
       }
     }

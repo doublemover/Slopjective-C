@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 import os
-import subprocess
-import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,7 +12,7 @@ from typing import Any, Sequence
 import check_objc3c_runtime_acceptance as runtime_acceptance
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,12 +72,12 @@ def ensure_case_passed(case_map: dict[str, dict[str, Any]], case_id: str) -> Non
         expect(case.get("passed") is True, f"required metaprogramming case {case_id} did not pass")
         return
 
-    fallback_root = (
+    retired_route_root = (
         ROOT / "tmp" / "reports" / "runtime" / "runnable-metaprogramming-conformance" / "live-case"
     )
-    fallback_root.mkdir(parents=True, exist_ok=True)
+    retired_route_root.mkdir(parents=True, exist_ok=True)
     clangxx = runtime_acceptance.find_clangxx()
-    with tempfile.TemporaryDirectory(dir=fallback_root) as tmp_dir:
+    with tempfile.TemporaryDirectory(dir=retired_route_root) as tmp_dir:
         run_dir = Path(tmp_dir)
         if case_id == "metaprogramming-source-surface":
             result = runtime_acceptance.check_metaprogramming_source_surface_case(run_dir)
@@ -121,7 +119,7 @@ def ensure_case_passed(case_map: dict[str, dict[str, Any]], case_id: str) -> Non
 def main() -> int:
     skip_integration_rerun = os.environ.get("OBJC3C_SKIP_INTEGRATION_RERUN") == "1"
     if not skip_integration_rerun:
-        integration_result = run_capture([sys.executable, str(INTEGRATION_SCRIPT)])
+        integration_result = run_capture(python_script_command(INTEGRATION_SCRIPT))
         if integration_result.returncode != 0:
             raise RuntimeError("runtime architecture integration workflow failed")
 

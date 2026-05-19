@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-fixture-boundary-contracts",
+  "source_basis": "hand-authored from checked-in tests/native, tests/fixtures, tests/conformance, and tests/tooling fixture indexes; no scripts, tests, builds, lints, formatters, generators, npm, cmake, gh, network, or push were run for this contract index",
+  "policy": {
+    "primary_axis": "fixture boundary before issue closeout",
+    "canonical_manifest_rule": "tests/fixtures/canonical/manifest.json is the only fixture manifest that can define positive native behavior",
+    "generated_manifest_rule": "tests/fixtures/generated/manifest.json is provenance-only and cannot define native behavior support",
+    "retired_surface_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported-feature claims, and unresolved runtime surfaces must be rejection, strict-error, absent-support, or documented lexical false-positive evidence",
+    "reference_anchor_rule": "docs/reference/legacy_spec_anchor_index.md references in conformance fixtures are historical spec provenance, not old-mode support claims",
+    "phase_owner_rule": "parser, sema, lowering, ir, runtime, and e2e support claims must be backed by tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "closeout_rule": "issue closeout and evidence topology indexes point at owned fixture boundaries and cannot create behavior support by themselves"
+  },
+  "manifests": {
+    "canonical_behavior": {
+      "path": "tests/fixtures/canonical/manifest.json",
+      "source_of_truth": "tests/native",
+      "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "allowed_positive_sources": [
+        "tests/native"
+      ],
+      "positive_support": true
+    },
+    "generated_provenance": {
+      "path": "tests/fixtures/generated/manifest.json",
+      "source_of_truth": "generator-output",
+      "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "phase_support_claim_authority": false,
+      "allowed_path_roots": [
+        "tests/tooling/fixtures/objc3c"
+      ],
+      "positive_support": false
+    }
+  },
+  "phase_behavior_boundaries": [
+    {
+      "phase": "parser",
+      "owner_index_area": "parser_lexer_ast",
+      "positive_authority": "tests/native/parser/positive",
+      "negative_authority": "tests/native/parser/negative",
+      "retired_surface_disposition": "old-mode literals and removed parser mode/retired-route flags are parse or compile rejections",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "sema",
+      "owner_index_area": "semantic_diagnostics",
+      "positive_authority": "tests/native/sema/{types,ownership,objc,control_flow,concurrency}",
+      "negative_authority": "tests/native/sema/{negative,errors,concurrency}",
+      "retired_surface_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "lowering_abi",
+      "owner_index_area": "lowering_and_ir",
+      "positive_authority": "tests/native/lowering plus tests/conformance/lowering_abi canonical ABI fixtures",
+      "negative_authority": "tests/native/lowering/errors and strict lowering/link diagnostics",
+      "retired_surface_disposition": "removed runtime retired route flags and non-nil dispatch retired route linkage are strict-error or rejection evidence",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "ir",
+      "owner_index_area": "lowering_and_ir",
+      "positive_authority": "tests/native/ir/{module,function,metadata,runtime_calls}",
+      "negative_authority": "tests/native/ir/runtime_calls",
+      "retired_surface_disposition": "runtime helper call residues are strict linkage diagnostics, not retired route support",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "runtime",
+      "owner_index_area": "runtime_dispatch_registration",
+      "positive_authority": "tests/native/runtime/{object_model,storage,arc,blocks,concurrency} plus runtime probe ownership metadata",
+      "negative_authority": "tests/native/runtime/{dispatch,errors}",
+      "retired_surface_disposition": "unknown dispatch and unresolved dispatch symbols are strict errors; probes do not widen support",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "e2e",
+      "owner_index_area": "canonical_behavior_fixtures",
+      "positive_authority": "tests/native/e2e/{smoke,feature_matrix}",
+      "negative_authority": "tests/native/e2e/negative_execution",
+      "retired_surface_disposition": "execution-boundary retired behavior remains rejection or strict-error evidence",
+      "generated_fixture_authority": false,
+      "closeout_authority": false
+    },
+    {
+      "phase": "generated_fixtures",
+      "owner_index_area": "generated-fixture-provenance",
+      "positive_authority": "none",
+      "negative_authority": "none",
+      "retired_surface_disposition": "generated artifacts are replay/schema provenance only and cannot satisfy support or rejection ownership by themselves",
+      "generated_fixture_authority": true,
+      "closeout_authority": false
+    }
+  ],
+  "contract_families": [
+    {
+      "family": "phase_owner_contracts",
+      "contract": "phase-owned-behavior-authority",
+      "owner_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+      "positive_support": true,
+      "phase_order": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "generated_fixture_authority": false,
+      "boundary": "phase support claims are satisfied only by hand-authored canonical native behavior fixtures; retired evidence remains rejection or strict-error"
+    },
+    {
+      "family": "canonical_positive_behavior",
+      "contract": "canonical-positive",
+      "owner_index": "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
+      "positive_support": true,
+      "evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/e2e/smoke/basic_i32_return_main.objc3"
+      ],
+      "boundary": "positive support is limited to canonical Objective-C 3 behavior fixtures with no retired-surface tags"
+    },
+    {
+      "family": "retired_surface_rejection_and_strict_error",
+      "contract": "canonical-rejection-or-strict-error",
+      "owner_index": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+      "positive_support": false,
+      "evidence": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "boundary": "retired behavior is represented through rejection or strict-error fixtures and sidecars"
+    },
+    {
+      "family": "generated_provenance_only",
+      "contract": "generated-provenance-only",
+      "owner_index": "tests/fixtures/generated/manifest.json",
+      "positive_support": false,
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
+        "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json"
+      ],
+      "boundary": "generated JSON artifacts can prove replay provenance but cannot become behavior positives"
+    },
+    {
+      "family": "conformance_reference_anchors",
+      "contract": "reference-provenance-only",
+      "owner_index": "tests/conformance/README.md",
+      "positive_support": false,
+      "anchor_token": "docs/reference/legacy_spec_anchor_index.md",
+      "roots": [
+        "tests/conformance/parser",
+        "tests/conformance/diagnostics",
+        "tests/conformance/semantic",
+        "tests/conformance/lowering_abi",
+        "tests/conformance/module_roundtrip"
+      ],
+      "boundary": "legacy spec anchors identify historical reference sections only and do not authorize old-mode behavior"
+    },
+    {
+      "family": "tooling_positive_lexical_residue_audit",
+      "contract": "audit-disposition",
+      "owner_index": "tests/conformance/hard_cutover_positive_residue_audit.json",
+      "positive_support": false,
+      "evidence": [
+        "tests/tooling/fixtures/native/dispatch_intent_source_closure_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/message_send_keyword_bool_control_flow_mix.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/return_paths_ok.objc3",
+        "tests/tooling/fixtures/native/return_paths_ok.objc3",
+        "tests/tooling/fixtures/native/execution/positive/if_static_true_else_missing_return_accept.objc3",
+        "tests/tooling/fixtures/native/execution/positive/switch_static_literal_condition_selected_return_accept.objc3",
+        "tests/tooling/fixtures/native/optional_flow_binding_refinement_positive.objc3",
+        "tests/tooling/fixtures/native/optional_binding_send_coalescing_keypath_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3"
+      ],
+      "boundary": "documented positive lexical hits are ordinary identifiers or values and are not compatibility support claims"
+    }
+  ],
+  "cross_indexes": [
+    "tests/fixtures/canonical/manifest.json",
+    "tests/fixtures/generated/manifest.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "tests/conformance/hard_cutover_catalog.json",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json",
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json",
+    "tests/conformance/hard_cutover_diagnostic_outcome_code_index.json",
+    "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+    "tests/conformance/hard_cutover_positive_residue_audit.json"
+  ]
+}

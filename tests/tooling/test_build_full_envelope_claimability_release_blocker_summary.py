@@ -7,6 +7,10 @@ from pathlib import Path
 
 import pytest
 
+SCRIPTS_ROOT = Path(__file__).resolve().parents[2] / "scripts"
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "scripts"
@@ -68,7 +72,15 @@ def test_release_blockers_include_dashboard_projection_blocker(
     projection = payload["dashboard_release_blocker_projection"]
     assert projection["public_claim_class"] == "preview-only"
     assert projection["blocks_production_strength_claim"] is True
+    assert "dashboard_release_blocker_projection" in projection[
+        "required_dashboard_fields"
+    ]
+    assert "dashboard_blocks_production_strength_claim" in projection[
+        "required_public_summary_fields"
+    ]
+    assert "release_artifacts" in projection["source_owned_decision_fields"]
     assert payload["checks"]["triggered_blockers_include_dashboard_projection"] is True
+    assert payload["checks"]["dashboard_projection_requires_source_owned_decisions"] is True
 
 
 def test_release_blocker_policy_requires_dashboard_projection(

@@ -1,5 +1,14 @@
 # Compiler Dispatch Plan
 
+## Hard-Cutover Owners
+
+- Dispatch owner: `compiler-dispatch-plan`
+- Snapshot owner: `compiler-dispatch-snapshot`
+- Result owner: `compiler-dispatch-result`
+- Artifact owner: `compiler-dispatch-artifact`
+- Status owner: `compiler-dispatch-status`
+- Retired retired-route/evidence-log claims disallowed: **true**
+
 ## Milestone
 
 - Number: **86**

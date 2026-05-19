@@ -4,7 +4,16 @@
   "milestone": "M320",
   "issue": "M320-B001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
-  "summary_script": "scripts/build_block_arc_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_block_arc_closure_semantic_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "runtime",
+    "canonical_rejection",
+    "block_arc_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "ownership_transfer_capture_family_source_surface_contract_id": "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1",
   "canonical_surfaces": [
     "runtime_ownership_transfer_capture_family_source_surface",
@@ -30,7 +39,7 @@
   "frozen_semantic_models": [
     {
       "semantic_id": "escaping-block-capture-family-truth-stays-sema-owned-before-lowering",
-      "summary": "Owned, weak, and unowned capture-family truth is fixed on the semantic surface before lowering and must not be reinterpreted by milestone-local helpers."
+      "summary": "Owned, weak, and unowned capture-family truth is fixed on the semantic surface before lowering and must not be reinterpreted by shared helpers."
     },
     {
       "semantic_id": "byref-forwarding-is-only-valid-through-runtime-owned-promotion-and-helper-paths",
@@ -48,7 +57,8 @@
   "claim_narrowing_constraints": [
     "no-public-block-or-arc-abi-widening",
     "no-lowering-owned-reinterpretation-of-capture-family-truth",
-    "no-proof-only-sidecar-ownership-model"
+    "no-evidence-only-sidecar-ownership-model",
+    "semantic-profile-source-lists-private-helper-snapshots-generated-reports-and-evidence-only-byref-rows-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "escaping-block-capture-legality",
@@ -59,9 +69,11 @@
   "authoritative_code_paths": [
     "native/objc3c/src/ast/objc3_ast.h",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp"
+    "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-ir-behavior-family-owner-split",
+  "owner_boundary": "docs_evidence",
+  "source_family": "tests/native/ir",
+  "support_boundary": "docs/evidence ownership covers fixture family index rows, phase owner references, module-roundtrip and lowering-ABI manifest rows, report pointers, generated artifact pointers, and metadata field names as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json:family=ir_behavior",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json:phase=ir",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json:phase=ir",
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json:outcome=lowering_or_link_strict_error",
+    "tests/conformance/module_roundtrip/manifest.json",
+    "tests/conformance/module_roundtrip/*.json:bucket=module_roundtrip",
+    "tests/conformance/lowering_abi/manifest.json",
+    "tests/conformance/lowering_abi/*.json:bucket=lowering_abi",
+    "reports/claimability/*",
+    "module.ll",
+    "module.manifest.json",
+    "meta fields:expected.required_tokens",
+    "meta fields:execution.runtime_dispatch_symbol",
+    "meta fields:execution.requires_live_runtime_dispatch"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "docs rows, index rows, module-roundtrip manifests, lowering-ABI manifests, generated reports, replay artifacts, module.ll/module.manifest.json pointers, and runtime-dispatch symbol mentions are provenance unless they point to hand-authored IR fixture metadata"
+}

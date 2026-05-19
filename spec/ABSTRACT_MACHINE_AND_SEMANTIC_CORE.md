@@ -1,16 +1,16 @@
-# Objective C 3.0   Abstract Machine and Semantic Core {#am}
+# Objective C 3.0 Abstract Machine and Semantic Core {#am}
 
-_Working draft v0.11   last updated 2026 02 23_
+_Working draft v0.11 last updated 2026 02 23_
 
 ## AM.0 Purpose and scope {#am-0}
 
 This document defines the unified abstract machine rules that span:
 
-  [Part 3](#part-3) (optionals and optional chaining),
-  [Part 5](#part-5) (control flow exits and `defer`),
-  [Part 6](#part-6) (throws/try/propagation),
-  [Part 7](#part-7) (async/await),
-  [Part 8](#part-8) (defer and resource cleanup).
+[Part 3](#part-3) (optionals and optional chaining),
+[Part 5](#part-5) (control flow exits and `defer`),
+[Part 6](#part-6) (throws/try/propagation),
+[Part 7](#part-7) (async/await),
+[Part 8](#part-8) (defer and resource cleanup).
 
 This document is normative for cross part behavior. Part specific rules remain normative for construct local typing and syntax.
 
@@ -18,64 +18,64 @@ If two rules appear to overlap, the more specific construct rule applies, and th
 
 Current implementation note:
 
-  The live compiler does not yet implement the full Part 3 execution surface.
-  Today it freezes protocol `@optional` partitions plus object pointer
-  nullability/generic suffix carriers as source level frontend behavior.
-  The frontend now also admits parser owned optional binding, optional send,
-  nil coalescing, and typed key path source forms.
-  Lane B now carries live optional flow semantics for optional bindings,
-  nil comparison refinement, nil coalescing, and ordinary vs optional send
-  legality.
-  Lane C now carries the first lowering owned Part 3 packet for optional
-  bindings, optional sends, and nil coalescing.
-  Optional sends now lower natively with single evaluation nil short circuit
-  behavior; selector arguments are not evaluated on the nil arm.
-  Ordinary sends still fail closed for nullable receivers unless they have
-  been proven nonnull, and `guard let` / `guard var` `else` bodies must exit
-  the current scope.
-  The current Part 5 frontend boundary is now explicit: `guard` bindings and
-  `switch` / `case` remain the admitted control flow source surface, while
-  `defer` and `match` are reserved fail closed keywords until the runnable
-  `M266` lowering/runtime work lands.
-  Typed key path roots now fail closed unless they resolve to `self`, a known
-  class type, or an ObjC reference compatible identifier; class root
-  single component paths fail closed unless the component names a readable
-  property on that root.
-  Generic Objective C method declarations written as `  <T> ...` remain
-  reserved in v1 and now diagnose explicitly.
-  Optional member access written as `?.` now lowers through the same live
-  nil short circuit path as bracketed optional sends.
-  Typed key path literals remain truthful source/sema surfaces, and the
-  validated single component subset now lowers natively into retained
-  descriptor handles.
-  The current runtime/helper boundary for that subset still stays narrow:
-  optional sends execute through selector lookup plus dispatch, while validated
-  single component typed key path handles now feed a private runtime registry
-  and probe helpers; full typed key path evaluation remains deferred to later
-  runtime work.
-  Multi component typed key path member chains, full typed key path
-  application/runtime behavior, and the broader Part 3 surface remain future
-  work.
+The live compiler does not yet implement the full Part 3 execution surface.
+Today it freezes protocol `@optional` partitions plus object pointer
+nullability/generic suffix carriers as source level frontend behavior.
+The frontend now also admits parser owned optional binding, optional send,
+nil coalescing, and typed key path source forms.
+Lane B now carries live optional flow semantics for optional bindings,
+nil comparison refinement, nil coalescing, and ordinary vs optional send
+legality.
+Lane C now carries the first lowering owned Part 3 packet for optional
+bindings, optional sends, and nil coalescing.
+Optional sends now lower natively with single evaluation nil short circuit
+behavior; selector arguments are not evaluated on the nil arm.
+Ordinary sends still fail closed for nullable receivers unless they have
+been proven nonnull, and `guard let` / `guard var` `else` bodies must exit
+the current scope.
+The current Part 5 frontend boundary is now explicit: `guard` bindings and
+`switch` / `case` remain the admitted control flow source surface, while
+`defer` and `match` are reserved fail closed keywords until the runnable
+`M266` lowering/runtime work lands.
+Typed key path roots now fail closed unless they resolve to `self`, a known
+class type, or an ObjC reference compatible identifier; class root
+single component paths fail closed unless the component names a readable
+property on that root.
+Generic Objective C method declarations written as `  <T> ...` remain
+reserved in v1 and now diagnose explicitly.
+Optional member access written as `?.` now lowers through the same live
+nil short circuit path as bracketed optional sends.
+Typed key path literals remain truthful source/sema surfaces, and the
+validated single component subset now lowers natively into retained
+descriptor handles.
+The current runtime/helper boundary for that subset still stays narrow:
+optional sends execute through selector lookup plus dispatch, while validated
+single component typed key path handles now feed a private runtime registry
+and probe helpers; full typed key path evaluation remains deferred to later
+runtime work.
+Multi component typed key path member chains, full typed key path
+application/runtime behavior, and the broader Part 3 surface remain future
+work.
 
 ### AM.0.1 Normative anchor map {#am-0-1}
 
 This document composes construct local rules from the following sections:
 
-  [Part 3](#part-3): [§3.3.2](#part-3-3-2), [§3.3.4](#part-3-3-4), [§3.4.1](#part-3-4-1), [§3.4.2](#part-3-4-2), [§3.4.2.4](#part-3-4-2-4).
-  [Part 5](#part-5): [§5.2](#part-5-2), [§5.2.4](#part-5-2-4), [§5.3.2](#part-5-3-2), [§5.4.3](#part-5-4-3).
-  [Part 6](#part-6): [§6.5.3](#part-6-5-3), [§6.5.4](#part-6-5-4), [§6.6](#part-6-6), [§6.6.4](#part-6-6-4).
-  [Part 7](#part-7): [§7.3](#part-7-3), [§7.6.5](#part-7-6-5), [§7.9.1](#part-7-9-1), [§7.9.2](#part-7-9-2), [§7.9.3](#part-7-9-3), [§7.9.4](#part-7-9-4).
-  [Part 8](#part-8): [§8.1](#part-8-1), [§8.2.3](#part-8-2-3), [§8.3](#part-8-3), [§8.6](#part-8-6), [§8.8.3](#part-8-8-3).
+[Part 3](#part-3): [§3.3.2](#part-3-3-2), [§3.3.4](#part-3-3-4), [§3.4.1](#part-3-4-1), [§3.4.2](#part-3-4-2), [§3.4.2.4](#part-3-4-2-4).
+[Part 5](#part-5): [§5.2](#part-5-2), [§5.2.4](#part-5-2-4), [§5.3.2](#part-5-3-2), [§5.4.3](#part-5-4-3).
+[Part 6](#part-6): [§6.5.3](#part-6-5-3), [§6.5.4](#part-6-5-4), [§6.6](#part-6-6), [§6.6.4](#part-6-6-4).
+[Part 7](#part-7): [§7.3](#part-7-3), [§7.6.5](#part-7-6-5), [§7.9.1](#part-7-9-1), [§7.9.2](#part-7-9-2), [§7.9.3](#part-7-9-3), [§7.9.4](#part-7-9-4).
+[Part 8](#part-8): [§8.1](#part-8-1), [§8.2.3](#part-8-2-3), [§8.3](#part-8-3), [§8.6](#part-8-6), [§8.8.3](#part-8-8-3).
 
 ## AM.1 Abstract machine state {#am-1}
 
 For a running function/task, the abstract machine tracks:
 
-  a lexical scope stack;
-  for each scope, a scope exit action stack (cleanup stack);
-  current evaluation state for the active full expression;
-  for `async` functions, an async frame that stores values live across suspension;
-  for Objective C runtimes with autorelease semantics, the implicit autorelease pool for the current task execution slice.
+a lexical scope stack;
+for each scope, a scope exit action stack (cleanup stack);
+current evaluation state for the active full expression;
+for `async` functions, an async frame that stores values live across suspension;
+for Objective C runtimes with autorelease semantics, the implicit autorelease pool for the current task execution slice.
 
 ### AM.1.1 Full expression boundary {#am-1-1}
 
@@ -85,8 +85,8 @@ A full expression boundary is the point where temporaries that are not lifetime 
 
 A scope exit action stack contains actions registered by:
 
-  executed `defer` statements ([Part 5](#part-5) [§5.2](#part-5-2));
-  successful initialization of cleanup/resource locals ([Part 8](#part-8) [§8.3](#part-8-3)).
+executed `defer` statements ([Part 5](#part-5) [§5.2](#part-5-2));
+successful initialization of cleanup/resource locals ([Part 8](#part-8) [§8.3](#part-8-3)).
 
 Actions execute only when the scope exits; mere suspension at `await` is not scope exit.
 
@@ -104,16 +104,16 @@ In particular, Objective C 3.0 does not add a universal left to right argument e
 
 Objective C 3.0 adds the following ordering/single evaluation guarantees relative to the baseline:
 
-| Construct                              | Added guarantee                                                                                                                   | Primary source                              |
-|                                        |                                                                                                                                   |                                             |
-| `x?.p`                                 | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed.                         | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
-| `[receiver? sel:arg1 other:arg2]`      | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
-| `a ?? b`                               | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`.                                       | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
-| `e?` (postfix propagation)             | `e` shall be evaluated exactly once before deciding unwrap vs early exit.                                                         | [Part 6](#part-6) [§6.6](#part-6-6)         |
-| `if let` / `guard let` binding lists   | Binding expressions shall be evaluated left to right.                                                                             | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
-| `guard` condition lists                | Conditions shall be evaluated left to right.                                                                                      | [Part 5](#part-5) [§5.3.2](#part-5-3-2)     |
-| `match (expr)`                         | `expr` shall be evaluated exactly once; case tests are top to bottom.                                                             | [Part 5](#part-5) [§5.4.3](#part-5-4-3)     |
-| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left to right at block creation time.                                                            | [Part 8](#part-8) [§8.8.3](#part-8-8-3)     |
+| Construct | Added guarantee | Primary source |
+| | | |
+| `x?.p` | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed. | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
+| `[receiver? sel:arg1 other:arg2]` | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
+| `a ?? b` | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`. | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
+| `e?` (postfix propagation) | `e` shall be evaluated exactly once before deciding unwrap vs early exit. | [Part 6](#part-6) [§6.6](#part-6-6) |
+| `if let` / `guard let` binding lists | Binding expressions shall be evaluated left to right. | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
+| `guard` condition lists | Conditions shall be evaluated left to right. | [Part 5](#part-5) [§5.3.2](#part-5-3-2) |
+| `match (expr)` | `expr` shall be evaluated exactly once; case tests are top to bottom. | [Part 5](#part-5) [§5.4.3](#part-5-4-3) |
+| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left to right at block creation time. | [Part 8](#part-8) [§8.8.3](#part-8-8-3) |
 
 No other new global expression order guarantees are introduced in v1.
 
@@ -121,9 +121,9 @@ No other new global expression order guarantees are introduced in v1.
 
 For `await e`:
 
-  user visible side effects sequenced before the suspension point shall occur before suspension;
-  evaluation that is sequenced after `await` shall not occur until resumption;
-  lowering shall not duplicate user subexpression evaluation solely due to suspend/resume transformation.
+user visible side effects sequenced before the suspension point shall occur before suspension;
+evaluation that is sequenced after `await` shall not occur until resumption;
+lowering shall not duplicate user subexpression evaluation solely due to suspend/resume transformation.
 
 ### AM.2.4 Where ObjC 3.0 changes baseline guarantees {#am-2-4}
 
@@ -141,9 +141,9 @@ A temporary created during expression evaluation shall remain valid until at lea
 
 A temporary or local lifetime is extended when required by:
 
-  explicit lifetime controls (`withLifetime`, `keepAlive`, precise lifetime annotations in [Part 8](#part-8));
-  capture into storage that outlives the full expression (for example block captures);
-  async suspension requirements in [AM.3.3](#am-3-3).
+explicit lifetime controls (`withLifetime`, `keepAlive`, precise lifetime annotations in [Part 8](#part-8));
+capture into storage that outlives the full expression (for example block captures);
+async suspension requirements in [AM.3.3](#am-3-3).
 
 ### AM.3.3 Values live across `await` {#am-3-3}
 
@@ -151,8 +151,8 @@ Any value needed after a potentially suspending `await` shall be materialized in
 
 For ARC managed values:
 
-  the implementation shall retain frame stored strong values as needed before suspension; and
-  shall release them when they become dead (or when the async frame is destroyed by return, throw, or cancellation unwind).
+the implementation shall retain frame stored strong values as needed before suspension; and
+shall release them when they become dead (or when the async frame is destroyed by return, throw, or cancellation unwind).
 
 Values proven dead before suspension may be released before suspension unless prohibited by precise lifetime rules.
 
@@ -160,8 +160,8 @@ Values proven dead before suspension may be released before suspension unless pr
 
 Hidden temporaries used to implement `?.`, optional send, `??`, `try?`, and postfix `?` shall:
 
-  preserve exactly once evaluation guarantees; and
-  not outlive the enclosing full expression unless required by [AM.3.3](#am-3-3) or explicit lifetime controls.
+preserve exactly once evaluation guarantees; and
+not outlive the enclosing full expression unless required by [AM.3.3](#am-3-3) or explicit lifetime controls.
 
 ## AM.4 Cleanup stack behavior {#am-4}
 
@@ -169,8 +169,8 @@ Hidden temporaries used to implement `?.`, optional send, `??`, `try?`, and post
 
 Within a lexical scope, scope exit actions are registered when:
 
-  a `defer` statement executes; or
-  a cleanup/resource local completes successful initialization.
+a `defer` statement executes; or
+a cleanup/resource local completes successful initialization.
 
 Registration is dynamic: code paths not executed do not register actions.
 
@@ -178,11 +178,11 @@ Registration is dynamic: code paths not executed do not register actions.
 
 Scope exit actions run when leaving the scope via:
 
-  fallthrough to scope end;
-  `return`, `break`, `continue`, or `goto` leaving the scope;
-  structured error propagation (`throw`, `try` propagation, postfix `?` early exit);
-  cancellation unwind paths defined by [Part 7](#part-7);
-  exception unwinding paths that run language cleanups.
+fallthrough to scope end;
+`return`, `break`, `continue`, or `goto` leaving the scope;
+structured error propagation (`throw`, `try` propagation, postfix `?` early exit);
+cancellation unwind paths defined by [Part 7](#part-7);
+exception unwinding paths that run language cleanups.
 
 Non local transfers that bypass cleanups (for example `longjmp` across cleanup scopes) are outside guarantees and are undefined unless the platform ABI explicitly guarantees cleanup execution.
 
@@ -219,9 +219,9 @@ Encountering `await` is not scope exit.
 
 Therefore, suspension at `await` shall not by itself execute:
 
-  `defer` actions;
-  resource cleanup actions;
-  scope final implicit ARC releases.
+`defer` actions;
+resource cleanup actions;
+scope final implicit ARC releases.
 
 Those actions execute only when their lexical scope actually exits.
 
@@ -229,9 +229,9 @@ Those actions execute only when their lexical scope actually exits.
 
 At a potentially suspending `await`:
 
-  values needed after resumption shall be preserved in the async frame ([AM.3.3](#am-3-3));
-  values dead before suspension may be released before suspension;
-  precise lifetime rules still prohibit early release when such annotations/constructs apply.
+values needed after resumption shall be preserved in the async frame ([AM.3.3](#am-3-3));
+values dead before suspension may be released before suspension;
+precise lifetime rules still prohibit early release when such annotations/constructs apply.
 
 When a scope eventually exits, defer/resource cleanup ordering relative to ARC remains governed by [AM.4.4](#am-4-4).
 
@@ -239,9 +239,9 @@ When a scope eventually exits, defer/resource cleanup ordering relative to ARC r
 
 On Objective C runtimes with autorelease semantics:
 
-  each task execution slice (resume  > next suspension or completion) shall execute inside an implicit autorelease pool;
-  if `await` actually suspends, the current slice pool shall be drained before suspension;
-  pool drain shall also occur at task completion (normal return, thrown error, or cancellation unwind).
+each task execution slice (resume > next suspension or completion) shall execute inside an implicit autorelease pool;
+if `await` actually suspends, the current slice pool shall be drained before suspension;
+pool drain shall also occur at task completion (normal return, thrown error, or cancellation unwind).
 
 If an `await` completes synchronously without suspension, draining at that point is permitted but not required.
 
@@ -253,20 +253,20 @@ Autorelease pool draining is not scope exit and shall not trigger scope exit act
 
 If the awaited operation throws:
 
-  the throw is observed at the `await` expression;
-  propagation follows [Part 6](#part-6) rules; and
-  all exited scopes run scope exit actions and ARC releases per [AM.5](#am-5).
+the throw is observed at the `await` expression;
+propagation follows [Part 6](#part-6) rules; and
+all exited scopes run scope exit actions and ARC releases per [AM.5](#am-5).
 
 For `try? await e`:
 
-  success yields the value;
-  throw yields `nil`;
-  cleanup ordering remains unchanged.
+success yields the value;
+throw yields `nil`;
+cleanup ordering remains unchanged.
 
 For `try! await e`:
 
-  success yields the value;
-  throw traps as specified in [Part 6](#part-6); no additional post trap ordering guarantees are required.
+success yields the value;
+throw traps as specified in [Part 6](#part-6); no additional post trap ordering guarantees are required.
 
 ### AM.6.5 `await` with postfix propagation `?` {#am-6-5}
 
@@ -279,22 +279,22 @@ If propagation triggers early exit (`return nil`, `return Err(...)`, or `throw .
 
 Carrier restrictions from [Part 6](#part-6) remain in force:
 
-  optional propagation is valid only in optional returning functions;
-  using optional propagation to implicitly map into `throws` or `Result` contexts is ill formed in v1.
+optional propagation is valid only in optional returning functions;
+using optional propagation to implicitly map into `throws` or `Result` contexts is ill formed in v1.
 
 ### AM.6.6 `await` with optional chaining and optional send {#am-6-6}
 
 For `await x?.p`:
 
-  `x` is evaluated exactly once;
-  if `x == nil`, result is `nil` and no member access occurs, therefore no suspension occurs on that path;
-  if `x != nil`, normal member access proceeds; suspension is possible only if that access is potentially suspending.
+`x` is evaluated exactly once;
+if `x == nil`, result is `nil` and no member access occurs, therefore no suspension occurs on that path;
+if `x != nil`, normal member access proceeds; suspension is possible only if that access is potentially suspending.
 
 For `await [receiver? sel:arg1 other:arg2]`:
 
-  `receiver` is evaluated exactly once;
-  if `receiver == nil`, arguments are not evaluated, no send occurs, and no suspension occurs on that path;
-  if `receiver != nil`, arguments are evaluated using ordinary send ordering, then the send occurs; suspension is possible only on this non `nil` path.
+`receiver` is evaluated exactly once;
+if `receiver == nil`, arguments are not evaluated, no send occurs, and no suspension occurs on that path;
+if `receiver != nil`, arguments are evaluated using ordinary send ordering, then the send occurs; suspension is possible only on this non `nil` path.
 
 Applying `await` to a path proven non suspending is permitted and may be diagnosed as unnecessary in strict modes.
 
@@ -304,8 +304,8 @@ For composed forms such as `return (try? await x?.f())?;` in an optional returni
 
 1. Evaluate `x` exactly once.
 2. Apply optional chaining/send short circuit rules ([AM.2.2](#am-2-2)):
-     if `x == nil`, yield `nil` for the chained/send expression, skip chained argument/member evaluation, and do not suspend on that path;
-     if `x != nil`, evaluate the non `nil` path normally (including any potentially suspending operation).
+   if `x == nil`, yield `nil` for the chained/send expression, skip chained argument/member evaluation, and do not suspend on that path;
+   if `x != nil`, evaluate the non `nil` path normally (including any potentially suspending operation).
 3. Apply `await` to the selected non `nil` path evaluation (if any), with possible suspension/resumption.
 4. Apply `try`/`try?`/`try!` semantics ([AM.6.4](#am-6-4)).
 5. Apply postfix propagation `?` to the resulting carrier value ([AM.6.5](#am-6-5)).
@@ -319,35 +319,36 @@ A conforming implementation shall provide tests equivalent in coverage to the fo
 
 ### AM.7.1 Matrix {#am-7-1}
 
-| ID     | Combination under test                                                     | Required outcome                                                                                                                                                    |
-|        |                                                                            |                                                                                                                                                                     |
-| AM T01 | `defer` + normal return                                                    | Defers execute once, in LIFO order, before scope final ARC releases.                                                                                                |
-| AM T02 | `defer` + cleanup/resource local + return                                  | Defer/resource actions follow per scope LIFO registration order; all run before scope final ARC releases.                                                           |
-| AM T03 | `defer` + `throw`                                                          | Throw path runs scope exit actions and ARC releases for all exited scopes (inner to outer).                                                                         |
-| AM T04 | `defer` + `try await` where awaited call throws                            | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind.                                                                          |
-| AM T05 | `try? await`                                                               | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5.                                                                     |
-| AM T06 | `try! await` throwing path                                                 | Program traps on thrown error; implementation is not required to provide post trap cleanup guarantees.                                                              |
-| AM T07 | `(await optionalProducer())?` in optional returning function               | Operand is evaluated once; on `nil`, function early returns `nil` and runs scope exit actions once.                                                                 |
-| AM T08 | `(await optionalProducer())?` in `throws` function                         | Compile time error: optional postfix propagation is not a valid carrier in `throws` context.                                                                        |
-| AM T09 | `await x?.p` with `x == nil` path                                          | `x` evaluated once; result `nil`; no member access and no suspension on nil path.                                                                                   |
-| AM T10 | `await [r? m:sideEffect()]` with `r == nil` path                           | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path.                                                                            |
-| AM T11 | `await [r? m:sideEffect()]` with `r != nil` path                           | `sideEffect()` evaluated in ordinary send order; send occurs; suspension permitted only on this path.                                                               |
-| AM T12 | `defer` around await cancellation point                                    | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes.                                    |
-| AM T13 | Nested scopes with `defer` + postfix `?` early exit                        | Early exit unwinds innermost to outermost scopes; each scope uses LIFO action order.                                                                                |
-| AM T14 | `await` in scope without exit                                              | Suspend/resume alone does not run scope exit actions or scope final ARC releases.                                                                                   |
-| AM T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path              | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early exits and runs cleanup ordering per AM.5.                     |
-| AM T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws       | Non `nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early exits; defer/cleanup actions run once before ARC scope final releases. |
-| AM T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws        | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5.                          |
-| AM T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path               | Nil short circuit occurs before suspension; no throw occurs on nil path; postfix propagation early exits `nil` and executes scope cleanups once.                    |
-| AM T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order.                     |
+| ID | Combination under test | Required outcome |
+| | | |
+| AM T01 | `defer` + normal return | Defers execute once, in LIFO order, before scope final ARC releases. |
+| AM T02 | `defer` + cleanup/resource local + return | Defer/resource actions follow per scope LIFO registration order; all run before scope final ARC releases. |
+| AM T03 | `defer` + `throw` | Throw path runs scope exit actions and ARC releases for all exited scopes (inner to outer). |
+| AM T04 | `defer` + `try await` where awaited call throws | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind. |
+| AM T05 | `try? await` | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5. |
+| AM T06 | `try! await` throwing path | Program traps on thrown error; implementation is not required to provide post trap cleanup guarantees. |
+| AM T07 | `(await optionalProducer())?` in optional returning function | Operand is evaluated once; on `nil`, function early returns `nil` and runs scope exit actions once. |
+| AM T08 | `(await optionalProducer())?` in `throws` function | Compile time error: optional postfix propagation is not a valid carrier in `throws` context. |
+| AM T09 | `await x?.p` with `x == nil` path | `x` evaluated once; result `nil`; no member access and no suspension on nil path. |
+| AM T10 | `await [r? m:sideEffect()]` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path. |
+| AM T11 | `await [r? m:sideEffect()]` with `r != nil` path | `sideEffect()` evaluated in ordinary send order; send occurs; suspension permitted only on this path. |
+| AM T12 | `defer` around await cancellation point | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes. |
+| AM T13 | Nested scopes with `defer` + postfix `?` early exit | Early exit unwinds innermost to outermost scopes; each scope uses LIFO action order. |
+| AM T14 | `await` in scope without exit | Suspend/resume alone does not run scope exit actions or scope final ARC releases. |
+| AM T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early exits and runs cleanup ordering per AM.5. |
+| AM T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws | Non `nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early exits; defer/cleanup actions run once before ARC scope final releases. |
+| AM T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5. |
+| AM T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path | Nil short circuit occurs before suspension; no throw occurs on nil path; postfix propagation early exits `nil` and executes scope cleanups once. |
+| AM T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order. |
 
 ### AM.7.2 Static diagnostics required by matrix {#am-7-2}
 
 At minimum, matrix coverage shall include diagnostics for:
 
-  potentially suspending operations used without `await`;
-  invalid optional postfix propagation carrier context;
-  optional chaining/send restrictions from [Part 3](#part-3) (including scalar/struct restriction).
+potentially suspending operations used without `await`;
+invalid optional postfix propagation carrier context;
+optional chaining/send restrictions from [Part 3](#part-3) (including scalar/struct restriction).
+
 ## M265 cross module optional and key path preservation
 
 Imported runtime surfaces now preserve the live optional/key path boundary
@@ -381,34 +382,32 @@ evidence rather than a fabricated runtime behavior claim.
 
 Current Part 5 frontend note:
 
-  `guard` now admits optional binding plus boolean clause lists
-  statement form `match` is now parsed as a frontend owned control flow surface
-  the currently admitted pattern slice is limited to wildcard, literal,
-  binding, and result case patterns
-  native lowering now executes literal/default/wildcard/binding match arms
-  while result-case payload matching stays fail closed until a runtime Result
-  ABI lands
-  expression form `match`, guarded patterns, and type test patterns remain fail closed until later `M266` issues land
-  source only `defer { ... }` statements are now admitted in the frontend/sema path, while runnable lowering/runtime execution remains deferred to later `M266` work
+`guard` now admits optional binding plus boolean clause lists
+statement form `match` is now parsed as a frontend owned control flow surface
+the currently admitted pattern slice is limited to wildcard, literal,
+binding, and result case patterns
+native lowering now executes literal/default/wildcard/binding match arms
+while result-case payload matching stays fail closed until a runtime Result
+ABI lands
+expression form `match`, guarded patterns, and type test patterns remain fail closed until later `M266` issues land
+source only `defer { ... }` statements are now admitted in the frontend/sema path, while runnable lowering/runtime execution remains deferred to later `M266` work
 
 M266 B001 semantic model note:
 
-  `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
-  now records the truthful sema boundary for Part 5.
-  live today: guard refinement, guard else exit enforcement, statement match
-  binding scopes, result case binding scopes, live bool/result case
-  exhaustiveness, and `break` / `continue` legality.
-  deferred today: `defer` cleanup ordering and `defer` mediated non local
-  exit.
+`frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
+now records the truthful sema boundary for Part 5.
+live today: guard refinement, guard else exit enforcement, statement match
+binding scopes, result case binding scopes, live bool/result case
+exhaustiveness, and `break` / `continue` legality.
+deferred today: `defer` cleanup ordering and `defer` mediated non local
+exit.
 
 M266 B002 implementation note:
 
-  admitted `match` statements now fail closed unless they are exhaustive for
-  the supported surface.
-  currently supported exhaustive forms are catch all branches, `true` plus
-  `false`, and `.Ok(...)` plus `.Err(...)`.
-
-
+admitted `match` statements now fail closed unless they are exhaustive for
+the supported surface.
+currently supported exhaustive forms are catch all branches, `true` plus
+`false`, and `.Ok(...)` plus `.Err(...)`.
 
 M266-B003 implementation note:
 
@@ -836,6 +835,7 @@ M270-A002 actor-member/isolation-annotation source note:
   `objc_nonisolated` callable annotations without reserving new lexer tokens
 
 M271-A001 system-extension source note:
+
 - the frontend now admits `objc_resource(...)` local annotations, `borrowed`
   callable-signature qualifiers, `objc_returns_borrowed(owner_index=N)`, and
   explicit block capture lists as parser-owned source surfaces without claiming
@@ -843,6 +843,7 @@ M271-A001 system-extension source note:
 - this remains a frontend/source-model claim only
 
 M271-A002 frontend completion note:
+
 - the frontend now admits local `cleanup` hook attributes, `@cleanup` sugar,
   and `@resource` sugar as real Part 8 source surfaces
 - the emitted frontend packet now preserves all explicit block capture item
@@ -851,8 +852,9 @@ M271-A002 frontend completion note:
   remain later `M271` work
 
 M271-A003 retainable-family source note:
-- the frontend now admits retainable C-family callable attributes and the
-  canonical compatibility aliases on function and method declarations
+
+- the frontend now admits retainable C-family callable attributes and imported
+  ownership attributes on function and method declarations
 - the current truthful source slice does not yet claim family legality,
   ARC-family interop, or runnable retainable-family runtime behavior
 - the next issue is `M271-B001`
@@ -874,6 +876,7 @@ M271-B001 system-extension semantic-model note:
   behavior remain later `M270` work
 
 M271-B002 resource-move semantic note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
 - explicit `move` capture now transfers cleanup ownership only for
@@ -885,6 +888,7 @@ M271-B002 resource-move semantic note:
   behavior remain later `M271` work
 
 M271-B003 borrowed-escape semantic note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis`
 - borrowed pointers now cross call boundaries only when the callee parameter is
@@ -898,17 +902,19 @@ M271-B003 borrowed-escape semantic note:
   `M271` work
 
 M271-B004 capture-list/family legality note:
+
 - the semantic pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
 - the packet consumes the already-landed `M271-B003` sema packet and completes
   the remaining legality edge cases for explicit capture lists and
-  retainable-family compatibility aliases
+  retainable-family imported ownership attributes
 - live sema rejects duplicate explicit captures, weak/unowned explicit captures
   on non-object bindings, conflicting retainable-family annotations, and
-  compatibility aliases without supporting object-return family surfaces
+  imported ownership attributes without supporting object-return family surfaces
 - lowering and runtime behavior remain later `M271` work
 
 M271-C001 lowering note:
+
 - the frontend pipeline now publishes
   `frontend.pipeline.semantic_surface.objc_part8_system_extension_lowering_contract`
 - the packet consumes the already-landed `M271-B001` through `M271-B004`
@@ -920,6 +926,7 @@ M271-C001 lowering note:
   interop, or runnable retainable-family execution behavior
 
 M271-C002 lowering note:
+
 - the live lowering path now consumes the frozen `M271-C001` Part 8 contract
   directly instead of introducing a second lowering surface
 - stack/local cleanup and resource locals now emit real cleanup calls and block
@@ -928,6 +935,7 @@ M271-C002 lowering note:
   fail-closed until later runtime ownership-transfer work lands
 
 M271-C003 Part 8 ABI completion note:
+
 - `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_and_retainable_family_abi_completion`
   now publishes one dedicated artifact/replay packet above the frozen Part 8
   lowering contract
@@ -938,6 +946,7 @@ M271-C003 Part 8 ABI completion note:
   remain later lane-D work
 
 M271-D001 system-helper/runtime-contract note:
+
 - the current Part 8 runtime proof now freezes one truthful reuse boundary over
   the private ARC/autorelease helper cluster and the paired memory-management /
   ARC-debug snapshots
@@ -949,6 +958,7 @@ M271-D001 system-helper/runtime-contract note:
   transfer remain later lane-D work
 
 M271-D002 live cleanup/runtime integration note:
+
 - the supported Part 8 fixture path now links and executes through the emitted
   cleanup/resource function body and the same private ARC/autorelease helper
   cluster frozen in `M271-D001`
@@ -961,6 +971,7 @@ M271-D002 live cleanup/runtime integration note:
   transfer remain later lane-D work
 
 M271-E001 strict system conformance gate note:
+
 - lane-E now freezes the current runnable Part 8 slice on top of
   `M271-A003`, `M271-B004`, `M271-C003`, and `M271-D002`
 - the truthful runnable proof remains the linked `M271-D002` `helperSurface`
@@ -971,6 +982,7 @@ M271-E001 strict system conformance gate note:
   explicitly fail-closed
 
 M271-E002 runnable system-extension closeout note:
+
 - the milestone closeout replays the published `M271-A003` through
   `M271-E001` proof chain and freezes one explicit runnable matrix for the
   already-landed Part 8 slice
@@ -1129,11 +1141,10 @@ M267-E001 error-model conformance gate note:
 - it does not widen the abstract machine; it proves the same already-landed
   runtime and cross-module behavior through one gate before `M267-E002`
 
-
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
-- currently supported exhaustive forms are catch-all branches, 	rue plus alse, and .Ok(...) plus .Err(...).
+- currently supported exhaustive forms are catch-all branches, rue plus alse, and .Ok(...) plus .Err(...).
 
 M275-A001 source-inventory note:
 
@@ -1150,7 +1161,7 @@ M275-A002 migration/canonicalization completion note:
 
 - the frontend now also publishes
   `frontend.pipeline.semantic_surface.objc_part12_migration_and_canonicalization_source_completion`
-- this packet reports the live lexer-owned migration-assist behavior for legacy
+- this packet reports the live lexer-owned canonical rejection behavior for legacy
   `YES` / `NO` / `NULL` spellings as deterministic canonicalization, fix-it, and
   migrator candidate counts
 - it closes the remaining frontend/source-model surface without claiming
@@ -1179,9 +1190,9 @@ M275-B003 legacy/canonical migration semantics note:
 
 - the frontend now also publishes
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
-- this packet is tied to the live semantic migration path rather than a
-  placeholder contract:
-  - canonical mode plus migration assist rejects legacy `YES` / `NO` / `NULL`
+- this packet is tied to the live semantic canonicalization/rejection path
+  rather than a placeholder contract:
+  - canonical mode plus canonical rejection rejects legacy `YES` / `NO` / `NULL`
     with `O3S216`
   - canonical literals remain accepted on the happy path
 
@@ -1268,4 +1279,3 @@ M275-E002 release-candidate execution matrix note:
 - the matrix sidecar stays bounded to milestone-closeout publication truth and
   remains pinned to the existing emitted report/publication/gate/validation
   sidecar family
-

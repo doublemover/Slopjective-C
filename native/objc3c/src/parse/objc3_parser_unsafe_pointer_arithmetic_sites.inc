@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_unsafe_pointer_arithmetic_sites_predicates.inc"
+#include "parse/objc3_parser_unsafe_pointer_arithmetic_sites_expressions.inc"
+#include "parse/objc3_parser_unsafe_pointer_arithmetic_sites_statements.inc"
+#include "parse/objc3_parser_unsafe_pointer_arithmetic_sites_body_count.inc"

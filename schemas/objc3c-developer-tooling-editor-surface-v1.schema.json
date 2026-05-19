@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
   "title": "objc3c Developer Tooling Editor Surface",
   "type": "object",
   "required": [
@@ -37,16 +37,16 @@
               "code": {"type": "string"},
               "message": {"type": "string"}
             },
-            "additionalProperties": true
+            "additionalProperties": false
           }
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "language_server": {"type": "object"},
     "navigation": {"type": "object"},
     "formatter": {"type": "object"},
     "debug": {"type": "object"}
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

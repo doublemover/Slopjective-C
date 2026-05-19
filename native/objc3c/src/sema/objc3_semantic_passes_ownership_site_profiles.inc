@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_ownership_site_profiles_records.inc"
+#include "sema/objc3_semantic_passes_ownership_site_profiles_borrowed_escape_site_collection.inc"
+#include "sema/objc3_semantic_passes_ownership_site_profiles_capture_list_site_collection.inc"
+#include "sema/objc3_semantic_passes_ownership_site_profiles_retainable_family_callable_classification.inc"

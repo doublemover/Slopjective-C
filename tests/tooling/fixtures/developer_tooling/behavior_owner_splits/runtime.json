@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-developer-tooling-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/developer_tooling"
+  ],
+  "support_boundary": "runtime ownership is non-positive for developer-tooling owner contracts except for provenance routing to canonical runtime owners. Runtime-inspector, runtime-inspector-benchmark, object-symbol inventory, hosted LLVM, and debug artifact labels are tooling capability labels, not native runtime dispatch, storage, object-model, or ABI behavior support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:developer_tooling",
+    "tooling_terms:runtime-inspector,runtime-inspector-benchmark,object-symbol-inventory,debug-artifact",
+    "compiler_phase_boundary:no-runtime-positive-truth",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime tooling, compatibility runtime tooling, gate runtime tooling, retired route runtime tooling, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, local-probe-only runtime claims, and object-symbol-label-only support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

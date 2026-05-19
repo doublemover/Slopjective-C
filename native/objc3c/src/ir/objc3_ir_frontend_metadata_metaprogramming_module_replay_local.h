@@ -1,0 +1,10 @@
+#pragma once
+
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_local_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_local_property_behavior.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_local_runtime_methods.h"
+
+struct Objc3IRFrontendMetaprogrammingModuleReplayLocalMetadata
+    : Objc3IRFrontendMetaprogrammingModuleReplayLocalArtifactsMetadata,
+      Objc3IRFrontendMetaprogrammingModuleReplayLocalPropertyBehaviorMetadata,
+      Objc3IRFrontendMetaprogrammingModuleReplayLocalRuntimeMethodsMetadata {};

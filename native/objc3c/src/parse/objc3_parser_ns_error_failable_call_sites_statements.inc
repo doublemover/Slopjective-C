@@ -1,0 +1,6 @@
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_declarations.inc"
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_assignment_return_expr.inc"
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_body_branch.inc"
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_loop_for.inc"
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_switch_case.inc"
+#include "parse/objc3_parser_ns_error_failable_call_sites_statements_dispatch.inc"

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-object-model-closure-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+  "support_boundary": "e2e ownership covers runnable object-model and storage-reflection command surfaces, workflow actions, cross-module loader replay, packaged executable proof, and full object-model closure evidence only after lower phase owners have claimed object identity, property synthesis, ivar layout, runtime metadata, dispatch/object inspection, and storage-reflection behavior; command wrappers and workflow labels are routing/provenance without canonical behavior ownership",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:object_model_workload_owner",
+    "source_owner_contracts:object_model_executable_proof_owner",
+    "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json",
+    "tests/tooling/fixtures/object_model_closure/executable_proof_abi_contract.json",
+    "workloads:cross-module-loader-replay",
+    "workloads:category-attachment-and-merged-dispatch",
+    "workloads:protocol-conformance-and-aggregate-query-coherence",
+    "public_command_surfaces:test:objc3c:object-model-conformance",
+    "public_command_surfaces:test:objc3c:storage-reflection-conformance",
+    "public_command_surfaces:test:objc3c:runnable-object-model",
+    "public_command_surfaces:test:objc3c:runnable-storage-reflection"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "evidence-log public command success, workflow-label-only acceptance, generated-evidence-log support, generated-only support, closure-local parallel acceptance scaffolding, old-mode commands, gate workflows, retired route workflows, and public ABI widening are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

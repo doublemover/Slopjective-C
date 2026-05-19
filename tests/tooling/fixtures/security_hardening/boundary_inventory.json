@@ -4,7 +4,80 @@
   "milestone": "M327",
   "issue": "M327-A001",
   "runbook": "docs/runbooks/objc3c_security_hardening.md",
-  "summary_script": "scripts/build_security_hardening_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_security_hardening_boundary_inventory_summary.py",
+  "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
+  "hard_cutover_source_owner_contract": {
+    "source_owned": true,
+    "evidence_log_allowed": false,
+    "retired_route_claims_allowed": false,
+    "generated_report_claims_allowed": false
+  },
+  "source_owner_contracts": {
+    "security_response_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/response_drill_contract.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_security_hardening_response_policy_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_response_drill.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
+    },
+    "release_key_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_security_hardening_release_key_policy_summary.py",
+      "check_implementation_anchors": [],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
+    },
+    "supply_chain_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+        "tests/tooling/fixtures/security_hardening/source_surface.json",
+        "tests/tooling/fixtures/security_hardening/schema_surface.json"
+      ],
+      "summary_implementation_anchor": "scripts/build_security_hardening_macro_trust_policy_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_supply_chain_audit.py",
+        "scripts/check_security_hardening_source_surface.py",
+        "scripts/check_security_hardening_schema_surface.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
+    },
+    "runtime_hardening_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+      "supporting_contracts": [],
+      "summary_implementation_anchor": "scripts/build_security_hardening_artifact_contract_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_security_hardening_runtime_hardening.py",
+        "scripts/check_objc3c_security_hardening_integration.py",
+        "scripts/check_objc3c_security_hardening_end_to_end.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false,
+      "wrapper_only_security_actions_allowed": false,
+      "local_tabletop_capability_truth_allowed": false,
+      "trust_bypass_claims_allowed": false
+    }
+  },
   "authoritative_code_paths": [
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",
@@ -20,15 +93,15 @@
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
     "scripts/check_objc3c_platform_hardening_integration.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts/objc3c_workflow",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/io/objc3_process.cpp"
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
     "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
     "tests/tooling/fixtures/external_validation/trust_policy.json"
@@ -45,26 +118,7 @@
     "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
     "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
   ],
-  "public_commands": [
-    "publish:objc3c:release-provenance",
-    "publish:objc3c:release-operations",
-    "publish:objc3c:distribution-credibility",
-    "publish:objc3c:security-advisories",
-    "inspect:objc3c:security-posture",
-    "test:objc3c:release-foundation",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e",
-    "test:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility:e2e",
-    "test:objc3c:security-hardening",
-    "test:objc3c:security-hardening:e2e",
-    "test:objc3c:platform-hardening",
-    "test:objc3c:runtime-acceptance",
-    "check:objc3c:security-hardening:surface",
-    "check:objc3c:security-hardening:schemas",
-    "check:release-evidence",
-    "check:objc3c:source-hygiene"
-  ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "publish-release-provenance",
     "publish-release-operations",
@@ -100,14 +154,18 @@
     "tmp/reports/distribution-credibility/publication-summary.json",
     "tmp/reports/distribution-credibility/end-to-end-summary.json",
     "tmp/reports/platform-hardening/integration-summary.json",
-    "tmp/reports/release_evidence/evidence-index.json"
+    "checked_outputs/release-evidence/index.json"
   ],
   "gap_claims": [
     "no hosted advisory service claim",
     "no remote release-key rotation claim",
     "no signed-installer publication claim",
     "no hostile-host execution safety claim",
-    "no external package-signing trust claim"
+    "no external package-signing trust claim",
+    "no evidence-log security proof",
+    "no local-only tabletop as capability truth",
+    "no retired route or trust-bypass security claim",
+    "no wrapper-only security action claim"
   ],
   "successor_issues": [
     "M327-B001",

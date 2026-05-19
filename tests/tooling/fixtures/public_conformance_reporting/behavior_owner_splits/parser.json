@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-public-conformance-reporting-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
+  "support_boundary": "parser ownership is delegated to the upstream conformance corpus and canonical parser owner indexes; public reports, generated summaries, scorecards, badges, tmp artifacts, workflow labels, and dashboard summaries cannot introduce parser support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_families:upstream-conformance-evidence",
+    "source_paths:tests/conformance/corpus_surface.json",
+    "source_paths:tests/conformance/longitudinal_suites.json",
+    "checked_in_roots:tests/conformance"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser acceptance, parser retired route flags, gate parser labels, compatibility parser summaries, generated-only parser inventories, dashboard-only parser support, scorecard-only parser support, badge-only parser support, and evidence-log parser claims are canonical rejection, strict-error, or provenance-only evidence"
+}

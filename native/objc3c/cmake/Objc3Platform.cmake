@@ -1,0 +1,7 @@
+if (WIN32)
+  set(OBJC3C_HOST_PLATFORM "windows")
+elseif(APPLE)
+  set(OBJC3C_HOST_PLATFORM "darwin")
+else()
+  set(OBJC3C_HOST_PLATFORM "posix")
+endif()

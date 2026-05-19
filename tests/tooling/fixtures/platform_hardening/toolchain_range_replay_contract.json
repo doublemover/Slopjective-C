@@ -3,9 +3,28 @@
   "surface_kind": "toolchain-range-replay-contract",
   "milestone": "M326",
   "issue": "M326-C003",
-  "summary_script": "scripts/check_platform_hardening_toolchain_range_replay.py",
-  "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "summary_implementation_anchor": "scripts/check_platform_hardening_toolchain_range_replay.py",
+  "support_matrix_artifact": "checked_outputs/platform-hardening/objc3c-platform-support-matrix.json",
   "toolchain_probe_summary": "tmp/reports/platform-hardening/toolchain-range-replay/llvm-capabilities.json",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "release operation published toolchain range outside replay evidence",
+      "toolchain probe widened support claim",
+      "required release operations report missing"
+    ]
+  },
   "required_steps": [
     "probe-objc3c-llvm-capabilities",
     "check-release-operations-integration",

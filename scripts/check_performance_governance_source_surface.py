@@ -3,119 +3,146 @@
 
 from __future__ import annotations
 
-import json
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+
+_ROOT = Path(__file__).resolve().parents[1]
+_SCRIPT_ROOT = _ROOT / "scripts"
+for _import_root in (_ROOT, _SCRIPT_ROOT):
+    _import_root_text = str(_import_root)
+    if _import_root_text not in sys.path:
+        sys.path.insert(0, _import_root_text)
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "source_surface.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "performance-governance" / "source-surface-summary.json"
-SUMMARY_CONTRACT_ID = "objc3c.performance.governance.source.surface.summary.v1"
-EXPECTED_BUILD_SCRIPTS = [
-    "scripts/build_objc3c_performance_dashboard.py",
-    "scripts/publish_objc3c_performance_report.py",
-    "scripts/check_objc3c_performance_governance_integration.py",
-    "scripts/check_objc3c_performance_governance_end_to_end.py",
-]
-EXPECTED_CHECKED_IN_ROOTS = [
-    "docs/runbooks",
-    "schemas",
-    "scripts",
-    "tests/tooling/fixtures/performance_governance",
-    "tests/tooling/fixtures/performance",
-    "tests/tooling/fixtures/compiler_throughput",
-    "tests/tooling/fixtures/runtime_performance",
-]
+from scripts.check_performance_governance_source_surface.config import SourceSurfaceConfig
+from scripts.check_performance_governance_source_surface.constants import (
+    EXPECTED_BUILD_SCRIPTS,
+    EXPECTED_CHECKED_IN_ROOTS,
+    EXPECTED_CHECKED_IN_SOURCES,
+    EXPECTED_EXPLICIT_NON_GOALS,
+    EXPECTED_MACHINE_OWNED_OUTPUT_ROOTS,
+    EXPECTED_OWNER_SPLIT,
+    EXPECTED_REQUIRED_PATHS,
+    EXPECTED_RUNBOOK,
+    EXPECTED_UPSTREAM_REPORTS,
+    ROOT,
+    SOURCE_SURFACE,
+    SOURCE_SURFACE_CONTRACT_ID,
+    SOURCE_SURFACE_KIND,
+    SUMMARY_CONTRACT_ID,
+    SUMMARY_PATH,
+)
+from scripts.check_performance_governance_source_surface.runner import run
+from scripts.check_performance_governance_source_surface.validation import fail as _fail
+from scripts.check_performance_governance_source_surface.validation import (
+    require_exact_list as _require_exact_list,
+)
+from scripts.check_performance_governance_source_surface.validation import (
+    require_exact_owner_split as _require_exact_owner_split,
+)
+from scripts.check_performance_governance_source_surface.validation import (
+    require_exact_path as _require_exact_path,
+)
+from scripts.check_performance_governance_source_surface.validation import (
+    require_path as _require_path,
+)
 
 
 def fail(message: str) -> int:
-    print(f"performance-governance-source-surface: FAIL\n- {message}", file=sys.stderr)
-    return 1
+    return _fail(message)
 
 
+def require_exact_path(source_surface: dict[str, object], field_name: str) -> str | None:
+    return _require_exact_path(
+        source_surface,
+        field_name,
+        expected_required_paths=EXPECTED_REQUIRED_PATHS,
+        fail_handler=fail,
+    )
 
 
-def require_path(relative_path: str, *, kind: str) -> Path:
-    path = ROOT / relative_path
-    if not path.exists():
-        raise RuntimeError(f"missing {kind}: {relative_path}")
-    return path
+def require_path(relative_path: str, *, kind: str) -> bool:
+    return _require_path(relative_path, kind=kind, root=ROOT, fail_handler=fail)
+
+
+def require_exact_list(
+    source_surface: dict[str, object],
+    field_name: str,
+    expected_items: tuple[str, ...],
+) -> tuple[str, ...] | None:
+    return _require_exact_list(
+        source_surface,
+        field_name,
+        expected_items,
+        fail_handler=fail,
+    )
+
+
+def require_exact_owner_split(source_surface: dict[str, object]) -> dict[str, list[str]] | None:
+    return _require_exact_owner_split(
+        source_surface,
+        expected_owner_split=EXPECTED_OWNER_SPLIT,
+        fail_handler=fail,
+    )
+
+
+def _current_config() -> SourceSurfaceConfig:
+    return SourceSurfaceConfig(
+        root=ROOT,
+        source_surface=SOURCE_SURFACE,
+        summary_path=SUMMARY_PATH,
+        source_surface_contract_id=SOURCE_SURFACE_CONTRACT_ID,
+        source_surface_kind=SOURCE_SURFACE_KIND,
+        summary_contract_id=SUMMARY_CONTRACT_ID,
+        expected_runbook=EXPECTED_RUNBOOK,
+        expected_required_paths=EXPECTED_REQUIRED_PATHS,
+        expected_upstream_reports=EXPECTED_UPSTREAM_REPORTS,
+        expected_checked_in_sources=EXPECTED_CHECKED_IN_SOURCES,
+        expected_build_scripts=EXPECTED_BUILD_SCRIPTS,
+        expected_owner_split=EXPECTED_OWNER_SPLIT,
+        expected_machine_owned_output_roots=EXPECTED_MACHINE_OWNED_OUTPUT_ROOTS,
+        expected_explicit_non_goals=EXPECTED_EXPLICIT_NON_GOALS,
+        expected_checked_in_roots=EXPECTED_CHECKED_IN_ROOTS,
+    )
 
 
 def main() -> int:
-    if not SOURCE_SURFACE.is_file():
-        return fail(f"missing source surface contract: {repo_rel(SOURCE_SURFACE)}")
+    return run(_current_config(), fail_handler=fail)
 
-    surface = load_json(SOURCE_SURFACE)
-    if surface.get("contract_id") != "objc3c.performance.governance.source.surface.v1":
-        return fail("contract_id drifted")
-    if surface.get("surface_kind") != "publishable-performance-report-source-surface":
-        return fail("surface_kind drifted")
-    if surface.get("runbook") != "docs/runbooks/objc3c_performance_governance.md":
-        return fail("runbook drifted")
 
-    require_path(surface["runbook"], kind="runbook")
-    require_path(surface["budget_model"], kind="budget model")
-    require_path(surface["claim_policy"], kind="claim policy")
-    require_path(surface["breach_triage_policy"], kind="breach triage policy")
-    require_path(surface["lab_policy"], kind="lab policy")
-    require_path(surface["waiver_registry"], kind="waiver registry")
-    require_path(surface["workflow_surface"], kind="workflow surface")
-    require_path(surface["schema_surface"], kind="schema surface")
-
-    checked_in_sources = surface.get("checked_in_sources")
-    if not isinstance(checked_in_sources, list) or len(checked_in_sources) < 4:
-        return fail("checked_in_sources drifted")
-    for relative_path in checked_in_sources:
-        if not isinstance(relative_path, str) or not relative_path:
-            return fail("checked_in_sources contains a non-string path")
-        require_path(relative_path, kind="checked-in source")
-
-    build_scripts = surface.get("build_scripts")
-    if build_scripts != EXPECTED_BUILD_SCRIPTS:
-        return fail("build_scripts drifted")
-    for relative_path in EXPECTED_BUILD_SCRIPTS:
-        require_path(relative_path, kind="build script")
-
-    upstream_reports = surface.get("upstream_reports")
-    if not isinstance(upstream_reports, list) or len(upstream_reports) < 4:
-        return fail("upstream_reports drifted")
-
-    machine_owned_output_roots = surface.get("machine_owned_output_roots")
-    if machine_owned_output_roots != [
-        "tmp/reports/performance-governance",
-        "tmp/artifacts/performance-governance",
-    ]:
-        return fail("machine_owned_output_roots drifted")
-
-    explicit_non_goals = surface.get("explicit_non_goals")
-    if not isinstance(explicit_non_goals, list) or len(explicit_non_goals) < 3:
-        return fail("explicit_non_goals drifted")
-
-    for root in EXPECTED_CHECKED_IN_ROOTS:
-        require_path(root, kind="checked-in root")
-
-    summary = {
-        "contract_id": SUMMARY_CONTRACT_ID,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "PASS",
-        "source_surface_contract": repo_rel(SOURCE_SURFACE),
-        "runbook": surface["runbook"],
-        "checked_in_roots": EXPECTED_CHECKED_IN_ROOTS,
-        "checked_in_source_count": len(checked_in_sources),
-        "build_scripts": EXPECTED_BUILD_SCRIPTS,
-        "upstream_report_paths": upstream_reports,
-    }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
-    print("performance-governance-source-surface: OK")
-    return 0
+__all__ = [
+    "EXPECTED_BUILD_SCRIPTS",
+    "EXPECTED_CHECKED_IN_ROOTS",
+    "EXPECTED_CHECKED_IN_SOURCES",
+    "EXPECTED_EXPLICIT_NON_GOALS",
+    "EXPECTED_MACHINE_OWNED_OUTPUT_ROOTS",
+    "EXPECTED_OWNER_SPLIT",
+    "EXPECTED_REQUIRED_PATHS",
+    "EXPECTED_RUNBOOK",
+    "EXPECTED_UPSTREAM_REPORTS",
+    "Path",
+    "ROOT",
+    "SOURCE_SURFACE",
+    "SOURCE_SURFACE_CONTRACT_ID",
+    "SOURCE_SURFACE_KIND",
+    "SUMMARY_CONTRACT_ID",
+    "SUMMARY_PATH",
+    "SourceSurfaceConfig",
+    "fail",
+    "load_json",
+    "main",
+    "repo_rel",
+    "require_exact_list",
+    "require_exact_owner_split",
+    "require_exact_path",
+    "require_path",
+    "run",
+    "sys",
+    "write_report_json",
+]
 
 
 if __name__ == "__main__":

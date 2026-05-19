@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_core_expression_precedence_postfix_call_parsing.inc"
+#include "parse/objc3_parser_core_expression_precedence_postfix_optional_member_metadata.inc"
+#include "parse/objc3_parser_core_expression_precedence_postfix_optional_member_message.inc"
+#include "parse/objc3_parser_core_expression_precedence_postfix_loop_dispatch.inc"

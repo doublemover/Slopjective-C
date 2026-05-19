@@ -1,0 +1,13 @@
+// Canonical e2e matrix fixture: typed bool branch lowers through executable i32 flow.
+module TypedI32BoolFlowMatrix;
+
+fn choose(flag: bool) -> i32 {
+  if (flag) {
+    return 1;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return choose(true);
+}

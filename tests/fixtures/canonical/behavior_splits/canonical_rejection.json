@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-outcome-split",
+  "behavior_outcome": "canonical_rejection_behavior",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "owner_rule": "old-mode, compatibility, gate, retired route, unsupported-feature, and execution-boundary rejection fixtures are rejection-owned even when they live beside ordinary negative diagnostics",
+  "fixtures": [
+    {
+      "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode",
+        "compatibility-gate"
+      ],
+      "expected_diagnostic_code": "O3C001"
+    },
+    {
+      "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode",
+        "retired-route"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
+    },
+    {
+      "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "canonical_disposition": "canonical-rejection",
+      "retired_surface_tags": [
+        "unsupported-feature"
+      ],
+      "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "canonical_disposition": "canonical-rejection",
+      "retired_surface_tags": [
+        "runtime-adapter"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
+    },
+    {
+      "path": "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "concurrency",
+      "fixture_kind": "negative",
+      "canonical_disposition": "canonical-rejection",
+      "retired_surface_tags": [
+        "unsupported-feature"
+      ],
+      "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+      "owner_phase": "e2e",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    }
+  ],
+  "retired_surface_rule": "all entries are non-positive rejection evidence for old-mode, retired route, compatibility, gate, unsupported-feature, or execution-boundary retired behavior"
+}

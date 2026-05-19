@@ -1,0 +1,29 @@
+#include "sema/objc3_semantic_passes_body_validation_core_block_capture_validation.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_block_storage_lifetime.inc"
+         handoff.block_determinism_perf_baseline_summary.deterministic &&
+         handoff.block_determinism_perf_baseline_summary.block_literal_sites ==
+             block_determinism_perf_baseline_summary.block_literal_sites &&
+         handoff.block_determinism_perf_baseline_summary.baseline_weight_total ==
+             block_determinism_perf_baseline_summary.baseline_weight_total &&
+         handoff.block_determinism_perf_baseline_summary.parameter_entries_total ==
+             block_determinism_perf_baseline_summary.parameter_entries_total &&
+         handoff.block_determinism_perf_baseline_summary.capture_entries_total ==
+             block_determinism_perf_baseline_summary.capture_entries_total &&
+         handoff.block_determinism_perf_baseline_summary.body_statement_entries_total ==
+             block_determinism_perf_baseline_summary.body_statement_entries_total &&
+         handoff.block_determinism_perf_baseline_summary.deterministic_capture_sites ==
+             block_determinism_perf_baseline_summary.deterministic_capture_sites &&
+         handoff.block_determinism_perf_baseline_summary.heavy_tier_sites ==
+             block_determinism_perf_baseline_summary.heavy_tier_sites &&
+         handoff.block_determinism_perf_baseline_summary.normalized_profile_sites ==
+             block_determinism_perf_baseline_summary.normalized_profile_sites &&
+         handoff.block_determinism_perf_baseline_summary.contract_violation_sites ==
+             block_determinism_perf_baseline_summary.contract_violation_sites &&
+         handoff.block_determinism_perf_baseline_summary.deterministic_capture_sites <=
+             handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+         handoff.block_determinism_perf_baseline_summary.heavy_tier_sites <=
+             handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+         handoff.block_determinism_perf_baseline_summary.normalized_profile_sites <=
+             handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+         handoff.block_determinism_perf_baseline_summary.contract_violation_sites <=
+             handoff.block_determinism_perf_baseline_summary.block_literal_sites &&

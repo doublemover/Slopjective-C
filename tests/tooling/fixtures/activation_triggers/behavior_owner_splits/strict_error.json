@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-activation-triggers-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/activation_triggers/hard_fail_*"
+  ],
+  "support_boundary": "strict-error ownership covers activation trigger hard-fail scenarios: invalid JSON, missing status, title whitespace, duplicate rows, invalid generated_at_utc, source/path whitespace, non-relative paths, Windows separators, path/line pair mismatch, HTTP evidence refs, missing evidence files or lines, non-markdown evidence refs, forbidden validation command tokens, control characters, unsorted validation commands, missing validation commands, dependency mismatch, override-source mismatch, and metadata-pair mismatch. These rows must fail closed and are not positive acceptance truth.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/activation_triggers/hard_fail_*",
+    "hard_fail_class:invalid_json",
+    "hard_fail_class:missing_status",
+    "hard_fail_class:title_whitespace",
+    "hard_fail_class:duplicate_rows",
+    "hard_fail_class:invalid_generated_at_utc",
+    "hard_fail_class:path_not_relative",
+    "hard_fail_class:path_windows_separator",
+    "hard_fail_class:path_line_pair_mismatch",
+    "hard_fail_class:evidence_ref_http_url",
+    "hard_fail_class:evidence_ref_missing_file_or_line",
+    "hard_fail_class:evidence_ref_non_md_path",
+    "hard_fail_class:validation_command_forbidden_token",
+    "hard_fail_class:validation_command_control_character",
+    "hard_fail_class:validation_commands_unsorted",
+    "hard_fail_class:dependencies_mismatch",
+    "hard_fail_class:override_source_mismatch",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "hard-fail rows, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

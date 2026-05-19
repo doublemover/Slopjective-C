@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_release_manifest.hashing import sha256_file
+from objc3c_workflow.action_catalog_release_foundation import (
+    RELEASE_FOUNDATION_VALIDATE_CHILD_ACTIONS,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_REPORT = ROOT / 'tmp' / 'reports' / 'objc3c-public-workflow' / 'validate-release-foundation.json'
@@ -15,16 +19,17 @@ WORKFLOW_SURFACE = ROOT / 'tests' / 'tooling' / 'fixtures' / 'release_foundation
 MANIFEST_SUMMARY = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'release-manifest-summary.json'
 PUBLICATION_SUMMARY = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'publication-summary.json'
 SUMMARY_PATH = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'integration-summary.json'
+MANIFEST_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'manifest' / 'objc3c-release-manifest.json'
+SBOM_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'sbom' / 'objc3c-release-sbom.json'
+ATTESTATION_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'attestation' / 'objc3c-release-attestation.json'
+INTEGRATION_SUMMARY_CONTRACT_ID = 'objc3c.release.foundation.integration.summary.v1'
 
-REQUIRED_STEPS = [
-    'validate-performance-governance',
-    'validate-runnable-release-candidate',
-    'check-release-evidence',
-    'check-release-foundation-surface',
-    'check-release-foundation-schema-surface',
-    'build-release-manifest',
-    'publish-release-provenance',
-]
+REQUIRED_STEPS = list(RELEASE_FOUNDATION_VALIDATE_CHILD_ACTIONS)
+
+REQUIRED_REPORT_CONTRACTS = {
+    'manifest_summary': 'objc3c.release.foundation.manifest.summary.v1',
+    'publication_summary': 'objc3c.release.foundation.publication.summary.v1',
+}
 
 
 def fail(message: str) -> int:
@@ -32,6 +37,31 @@ def fail(message: str) -> int:
     return 1
 
 
+def require_contract(payload: dict[str, Any], label: str) -> int | None:
+    expected_contract = REQUIRED_REPORT_CONTRACTS[label]
+    if payload.get('contract_id') != expected_contract:
+        fail(f"{label} contract drifted from {expected_contract}")
+        return 1
+    return None
+
+
+def require_artifact_digest(
+    *,
+    summary: dict[str, Any],
+    path_field: str,
+    digest_field: str,
+    expected_path: Path,
+) -> int | None:
+    if summary.get(path_field) != repo_rel(expected_path):
+        fail(f"{path_field} drifted from {repo_rel(expected_path)}")
+        return 1
+    if not expected_path.is_file():
+        fail(f"missing published artifact {repo_rel(expected_path)}")
+        return 1
+    if summary.get(digest_field) != sha256_file(expected_path):
+        fail(f"{digest_field} drifted from {repo_rel(expected_path)}")
+        return 1
+    return None
 
 
 def main() -> int:
@@ -54,20 +84,44 @@ def main() -> int:
         return fail(f"workflow steps drifted: {step_actions}")
     if workflow_surface.get('validate_action') != 'validate-release-foundation':
         return fail('workflow surface drifted from validate-release-foundation')
+    if workflow_surface.get('ordered_child_actions') != REQUIRED_STEPS:
+        return fail('workflow surface ordered_child_actions drifted')
+    if workflow_surface.get('report_contracts') != REQUIRED_REPORT_CONTRACTS:
+        return fail('workflow surface report_contracts drifted')
     if manifest_summary.get('status') != 'PASS':
         return fail('release manifest summary did not pass')
     if publication_summary.get('status') != 'PASS':
         return fail('release publication summary did not pass')
+    if require_contract(manifest_summary, 'manifest_summary') is not None:
+        return 1
+    if require_contract(publication_summary, 'publication_summary') is not None:
+        return 1
+    for path_field, digest_field, expected_path in (
+        ('release_manifest_path', 'release_manifest_sha256', MANIFEST_PATH),
+        ('sbom_path', 'sbom_sha256', SBOM_PATH),
+        ('attestation_path', 'attestation_sha256', ATTESTATION_PATH),
+    ):
+        if require_artifact_digest(
+            summary=publication_summary,
+            path_field=path_field,
+            digest_field=digest_field,
+            expected_path=expected_path,
+        ) is not None:
+            return 1
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
-        'contract_id': 'objc3c.release.foundation.integration.summary.v1',
+        'contract_id': INTEGRATION_SUMMARY_CONTRACT_ID,
         'status': 'PASS',
         'workflow_report': repo_rel(WORKFLOW_REPORT),
         'validated_steps': REQUIRED_STEPS,
         'release_manifest_path': manifest_summary.get('release_manifest_path'),
+        'release_manifest_sha256': publication_summary.get('release_manifest_sha256'),
         'published_sbom': publication_summary.get('sbom_path'),
+        'published_sbom_sha256': publication_summary.get('sbom_sha256'),
         'published_attestation': publication_summary.get('attestation_path'),
+        'published_attestation_sha256': publication_summary.get('attestation_sha256'),
+        'report_contracts': REQUIRED_REPORT_CONTRACTS,
     }
     write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")

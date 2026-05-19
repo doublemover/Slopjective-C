@@ -1,0 +1,15 @@
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.h"
+
+#include <sstream>
+
+namespace {
+
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_evidence_counts.inc"
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_consistency_publication.inc"
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_failure_publication.inc"
+
+}  // namespace
+
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_key_building.inc"
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_building.inc"
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface_readiness.inc"

@@ -12,6 +12,10 @@ from typing import Sequence
 
 from objc3c_tooling.json_io import write_text_file
 
+SNAPSHOT_REFRESH_OWNER = "compiler-dispatch-snapshot-refresh"
+SNAPSHOT_OUTPUT_ARTIFACT_OWNER = "compiler-dispatch-snapshot-output-artifact"
+
+
 def load_dispatch_plan_module() -> ModuleType:
     try:
         import generate_compiler_dispatch_plan as dispatch_module
@@ -31,6 +35,34 @@ def load_dispatch_plan_module() -> ModuleType:
 
 
 dispatch_plan = load_dispatch_plan_module()
+
+
+def snapshot_refresh_contract(
+    output_json_path: Path,
+    output_md_path: Path,
+) -> dict[str, object]:
+    return {
+        "refresh_owner": SNAPSHOT_REFRESH_OWNER,
+        "output_artifact_owner": SNAPSHOT_OUTPUT_ARTIFACT_OWNER,
+        "snapshot_owner": dispatch_plan.COMPILER_DISPATCH_SNAPSHOT_OWNER,
+        "dispatch_owner": dispatch_plan.COMPILER_DISPATCH_OWNER,
+        "json_output": dispatch_plan.display_path(output_json_path),
+        "markdown_output": dispatch_plan.display_path(output_md_path),
+        "no_retired_route_or_evidence_log_claims": True,
+    }
+
+
+def attach_snapshot_refresh_contract(
+    payload: dict[str, object],
+    *,
+    output_json_path: Path,
+    output_md_path: Path,
+) -> dict[str, object]:
+    payload["snapshot_refresh_contract"] = snapshot_refresh_contract(
+        output_json_path,
+        output_md_path,
+    )
+    return payload
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -99,6 +131,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             top_n=args.top_n,
         )
         payload["source"]["issues_json"] = dispatch_plan.display_path(issues_json_path)
+        attach_snapshot_refresh_contract(
+            payload,
+            output_json_path=output_json_path,
+            output_md_path=output_md_path,
+        )
         json_output = dispatch_plan.render_json(payload)
         markdown_output = dispatch_plan.render_markdown(payload)
 

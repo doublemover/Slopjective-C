@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-sustainability-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/artifact_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/new_work_proposal_sample.json",
+    "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+    "tests/tooling/fixtures/governance_sustainability/schema_surface.json",
+    "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/waiver_registry.json"
+  ],
+  "split_policy": {
+    "primary_axis": "governance workflow and publication contract ownership before fixture directory label, proposal sample label, tmp report path, generated artifact path, script anchor, schema path, docs path, public action label, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "governance-sustainability positives are limited to hand-authored governance contracts for budget inventory, waiver registry, stewardship semantics, maintainer review, extension review, sustainable progress, anti-regression reporting, schema surface, and the validate/publish governance workflow contract",
+    "canonical_rejection_rule": "policy-only substitute for executable review evidence, hosted community infrastructure, registry moderation service, replacement release/security/adoption claims, deprecated surface roots, milestone-named workflows, checker wrapper tests, lane readiness runners, legacy npm aliases, numeric milestone checker references, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing checked-in source contracts, missing implementation anchors, schema omissions, publication artifacts without replayable producers, runtime evidence depending on tmp as source truth, expired or unowned waivers, unknown surface drift, missing proposal packets, missing owner/backup, missing support-boundary classification, missing demotion path, and claims wider than release/support/package/adoption/security evidence own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, docs paths, schema paths, script anchors, command strings, public action labels, package bridge labels, proposal template fields, proposal sample rows, generated report paths, tmp artifact paths, owner-section names, projection paths, issue labels, successor issue labels, and owner-split routing rows remain provenance unless an owner split claims the governance behavior boundary",
+    "retired_surface_rule": "old-mode governance, gate governance, retired route governance, compatibility governance, migration-only rows, generated-only rows, evidence-log rows, policy-only governance rows, runner-only success, workflow-label-only success, wrapper-only governance actions, proposal-sample-only support, and generated/report rows promoted as governance capability support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "governance_sustainability_provenance",
+      "path": "tests/tooling/fixtures/governance_sustainability/behavior_owner_splits/governance_sustainability_provenance.json"
+    }
+  ]
+}

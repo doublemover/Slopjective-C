@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_concurrency_actor_diagnostics_executor_affinity.inc"
+#include "sema/objc3_semantic_passes_concurrency_actor_diagnostics_actor_site_collection.inc"
+#include "sema/objc3_semantic_passes_concurrency_actor_diagnostics_sendability_isolation_checks.inc"
+#include "sema/objc3_semantic_passes_concurrency_actor_diagnostics_readiness_replay.inc"

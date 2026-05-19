@@ -2,7 +2,10 @@
   "contract_id": "objc3c.packaging.channels.architecture.v1",
   "packaging_model": "release-foundation-derived-channel-set",
   "upstream_release_surface": "docs/runbooks/objc3c_release_foundation.md",
-  "canonical_payload": "scripts/package_objc3c_runnable_toolchain.ps1",
+  "package_bridge": "objc3c",
+  "canonical_payload_action": "package-runnable-toolchain",
+  "canonical_payload_command": "npm run objc3c -- package-runnable-toolchain",
+  "canonical_payload_implementation_anchor": "scripts/package_objc3c_runnable_toolchain.ps1",
   "channel_ids": [
     "portable-archive",
     "local-installer",

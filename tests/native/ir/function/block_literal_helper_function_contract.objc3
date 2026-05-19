@@ -1,0 +1,10 @@
+// Canonical IR function fixture: block literals create explicit helper-function contracts.
+module IRFunctionBlockLiteralHelperFunctionContract;
+
+fn main() -> i32 {
+  let seed = 8;
+  let closure = ^() {
+    return seed + 2;
+  };
+  return closure();
+}

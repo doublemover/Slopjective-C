@@ -8,7 +8,7 @@
   "compile_output_provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
   "compile_output_truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_lowering_provenance_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_lowering_provenance_summary.py",
   "authoritative_generation_paths": [
     "scripts/objc3c_native_compile.ps1",
     "scripts/check_objc3c_execution_replay_proof.ps1",
@@ -40,7 +40,7 @@
     "linked-runtime-probe-proof-must-consume-the-same-emitted-object-bundle"
   ],
   "explicit_non_goals": [
-    "no-duplicate-milestone-local-proof-bundle-format",
+    "no-duplicate-closure-local-proof-bundle-format",
     "no-sidecar-only-lowering-proof",
     "no-proof-from-emitted-ir-without-object-and-manifest-coupling",
     "no-publication-claim-without-truthfulness-envelope"

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.subprocesses import python_script_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,17 +24,16 @@ EXPECTED_PUBLIC_ACTIONS = [
     "validate-governance-sustainability",
     "publish-governance-sustainability",
 ]
-EXPECTED_PUBLIC_SCRIPTS = [
-    "test:objc3c:governance-sustainability",
-    "publish:objc3c:governance-sustainability",
-]
+PACKAGE_BRIDGE = "objc3c"
+STEWARDSHIP_PUBLICATION_ID = "objc3c.governance.sustainability.stewardship_publication.v1"
+EXTENSION_PUBLICATION_ID = "objc3c.governance.sustainability.extension_review_publication.v1"
 
 
 
 
 def ensure_evidence() -> None:
     result = subprocess.run(
-        [sys.executable, str(EVIDENCE_BUILDER)],
+        python_script_command(EVIDENCE_BUILDER),
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -61,29 +61,37 @@ def main() -> int:
     stewardship = evidence.get("stewardship", {}) if isinstance(evidence.get("stewardship"), dict) else {}
     extension_review = evidence.get("extension_review", {}) if isinstance(evidence.get("extension_review"), dict) else {}
     public_workflow = evidence.get("public_workflow", {}) if isinstance(evidence.get("public_workflow"), dict) else {}
+    metadata_publication = evidence.get("metadata_publication", {}) if isinstance(evidence.get("metadata_publication"), dict) else {}
+    owner_contracts = evidence.get("owner_contracts", {}) if isinstance(evidence.get("owner_contracts"), dict) else {}
 
     stewardship_publication = {
-        "contract_id": "objc3c.governance.sustainability.stewardship_publication.v1",
+        "contract_id": STEWARDSHIP_PUBLICATION_ID,
         "published_at_utc": published_at,
         "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
         "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
         "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
         "contributor_surface": "CONTRIBUTING.md",
-        "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
+        "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
+        "metadata_publication": metadata_publication,
         "stewardship": stewardship,
         "budget": evidence.get("budget", {}),
         "claim_audit": claim_audit,
     }
     extension_publication = {
-        "contract_id": "objc3c.governance.sustainability.extension_review_publication.v1",
+        "contract_id": EXTENSION_PUBLICATION_ID,
         "published_at_utc": published_at,
         "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
         "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
         "author_guide": "docs/governance/extension_author_guide_v1.md",
         "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
         "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
-        "public_scripts": public_workflow.get("public_scripts", EXPECTED_PUBLIC_SCRIPTS),
+        "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
+        "metadata_publication": metadata_publication,
         "extension_review": extension_review,
         "claim_audit": claim_audit,
     }
@@ -99,8 +107,14 @@ def main() -> int:
         "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
         "stewardship_publication": repo_rel(STEWARDSHIP_PUBLICATION),
         "extension_review_publication": repo_rel(EXTENSION_PUBLICATION),
+        "publication_ids": [
+            STEWARDSHIP_PUBLICATION_ID,
+            EXTENSION_PUBLICATION_ID,
+        ],
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
-        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "package_bridge": PACKAGE_BRIDGE,
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

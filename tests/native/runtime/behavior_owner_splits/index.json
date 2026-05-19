@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-behavior-family-owner-split-index",
+  "source_family": "tests/native/runtime",
+  "source_contracts": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json"
+  ],
+  "split_policy": {
+    "primary_axis": "runtime fixture role before fixture path convenience, diagnostic sidecar, conformance manifest row, runtime probe pointer, generated report pointer, or retired-surface tag",
+    "positive_rule": "runtime positives are hand-authored tests/native/runtime fixtures with fixture_kind=positive, canonical_behavior_source=true, and retired_positive_surface=false",
+    "strict_error_rule": "dispatch misses and unresolved runtime-dispatch symbols are strict-error evidence; they are not positive runtime support",
+    "docs_evidence_rule": "owner index rows, phase contracts, runtime-backed conformance manifests, runtime probe pointers, report pointers, generated artifacts, and metadata field names are provenance unless tied to a runtime fixture sidecar",
+    "rejection_rule": "old-mode, gate, retired route, generated-only, evidence-log, and migration-only runtime rows are rejection or provenance-only evidence",
+    "omitted_phase_rule": "this family has no parser, sema, lowering, IR, or e2e behavior contracts"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "runtime",
+      "path": "tests/native/runtime/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_boundary": "docs_evidence",
+      "path": "tests/native/runtime/behavior_owner_splits/docs_evidence.json"
+    },
+    {
+      "owner_boundary": "rejection_provenance",
+      "path": "tests/native/runtime/behavior_owner_splits/rejection_provenance.json"
+    }
+  ],
+  "omitted_boundaries": [
+    "parser",
+    "sema",
+    "lowering",
+    "ir",
+    "e2e"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-public-conformance-reporting-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
+  "support_boundary": "runtime ownership is delegated to upstream conformance, external validation, and release-evidence owners; public conformance reports, generated summaries, scorecards, badges, dashboards, and workflow labels can only publish runtime readiness after runtime evidence owners pass and cannot create runtime support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_families:upstream-conformance-evidence",
+    "source_families:external-credibility-evidence",
+    "source_paths:tests/tooling/fixtures/external_validation/artifact_surface.json",
+    "source_paths:scripts/run_objc3c_external_validation_replay.py",
+    "source_paths:scripts/publish_objc3c_external_repro_corpus.py"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime retired route, gatemed runtime acceptance, old-mode runtime readiness, compatibility runtime summaries, blocked external evidence, quarantined runtime evidence, generated-only runtime readiness, generated-evidence-log runtime readiness, scorecard-only runtime readiness, badge-only runtime readiness, dashboard-only runtime readiness, and evidence-log runtime readiness are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

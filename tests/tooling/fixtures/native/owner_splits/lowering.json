@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "lowering",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "lowering fixtures own canonical lowering, ABI handoff, and strict link-error evidence for required runtime symbols",
+  "positive_support_authority": "tests/native/lowering/{expressions,statements,objc_runtime,ownership}",
+  "negative_support_authority": "tests/native/lowering/errors",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "selectors": [
+        "message_send_*_elision.objc3",
+        "message_send_*_short_circuit.objc3",
+        "main_bool_entrypoint.objc3",
+        "unary_plus_*.objc3"
+      ],
+      "disposition": "canonical lowering or ABI handoff evidence only"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/positive",
+      "selectors": [
+        "message_send_*_elision.objc3",
+        "message_send_*_short_circuit.objc3",
+        "unary_plus_*.objc3"
+      ],
+      "disposition": "phase provenance for lowering contracts; executable success remains e2e-owned"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/negative",
+      "selectors": [
+        "expect_failure.stage=link + link.unresolved_symbol:*"
+      ],
+      "disposition": "strict link-error evidence for required runtime symbols"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+    "tests/native/lowering/statements/if_else_statement_lowering.objc3",
+    "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
+    "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3",
+    "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3"
+  ],
+  "retired_surface_rule": "removed runtime retired route flags and non-nil dispatch retired route linkage stay strict-error or rejection evidence"
+}

@@ -4,12 +4,13 @@
   "milestone": "M325",
   "issue": "M325-B003",
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
-  "summary_script": "scripts/build_developer_tooling_debug_semantics_summary.py",
+  "summary_implementation_anchor": "scripts/build_developer_tooling_debug_semantics_summary.py",
   "authoritative_code_paths": [
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",

@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json"
-OUT_DIR = ROOT / "tmp/reports/runtime-corrective/native-output-truth-policy"
+OUT_DIR = ROOT / "tmp" / "reports" / "runtime-corrective" / "native-output-truth-policy"
 JSON_OUT = OUT_DIR / "native_output_truth_policy_summary.json"
 MD_OUT = OUT_DIR / "native_output_truth_policy_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"

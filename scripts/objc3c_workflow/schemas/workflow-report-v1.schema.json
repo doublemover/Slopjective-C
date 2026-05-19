@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/workflow-report-v1.schema.json",
+  "title": "objc3c workflow report",
+  "type": "object",
+  "required": ["action", "status", "generated_at_utc", "steps"],
+  "properties": {
+    "schema_version": { "const": "objc3c-workflow-report-v1" },
+    "schema_id": { "const": "objc3c-workflow-report-v1" },
+    "schema_path": {
+      "const": "scripts/objc3c_workflow/schemas/workflow-report-v1.schema.json"
+    },
+    "action": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "generated_at_utc": { "type": "string" },
+    "duration_seconds": { "type": "number", "minimum": 0 },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "exit_code"],
+        "properties": {
+          "action": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer" },
+          "duration_seconds": { "type": "number", "minimum": 0 },
+          "reports": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

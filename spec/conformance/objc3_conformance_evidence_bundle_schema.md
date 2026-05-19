@@ -2,7 +2,9 @@
 
 Scope: `v0.11-B01` (`#122`).
 Schema file: `schemas/objc3-conformance-evidence-bundle-v1.schema.json`.
-Sample payload: `reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json`.
+Registry owner: `scripts/objc3c_shared/schema_registry.py`.
+Sample payload owner: the conformance bundle example selected by the release
+evidence gate.
 
 ## Required top-level keys
 
@@ -37,5 +39,5 @@ Sample payload: `reports/conformance/bundles/objc3-conformance-evidence-bundle-v
 ## Validation command
 
 ```powershell
-python -c "import json, pathlib, jsonschema; s=json.loads(pathlib.Path('schemas/objc3-conformance-evidence-bundle-v1.schema.json').read_text(encoding='utf-8-sig')); d=json.loads(pathlib.Path('reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json').read_text(encoding='utf-8-sig')); jsonschema.Draft202012Validator(s).validate(d); print('valid: objc3 conformance evidence bundle')"
+npm run objc3c -- check-release-evidence
 ```

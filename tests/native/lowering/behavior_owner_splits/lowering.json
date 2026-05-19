@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-lowering-behavior-family-owner-split",
+  "owner_boundary": "lowering",
+  "source_family": "tests/native/lowering",
+  "support_boundary": "lowering ownership covers canonical expression, statement, Objective-C runtime nil-receiver elision, and ownership lowering positives under tests/native/lowering only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "expressions/message_send_direct_nil_receiver_elision.objc3",
+    "expressions/message_send_direct_nil_receiver_elision.meta.json:fixture_kind=positive",
+    "expressions/message_send_direct_nil_receiver_keyword_elision.objc3",
+    "expressions/message_send_direct_nil_receiver_keyword_elision.meta.json:fixture_kind=positive",
+    "statements/if_else_statement_lowering.objc3",
+    "statements/if_else_statement_lowering.meta.json:fixture_kind=positive",
+    "objc_runtime/nil_receiver_runtime_call_elision.objc3",
+    "objc_runtime/nil_receiver_runtime_call_elision.meta.json:fixture_kind=positive",
+    "ownership/block_capture_owned_value_lowering.objc3",
+    "ownership/block_capture_owned_value_lowering.meta.json:fixture_kind=positive"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "positive lowering truth is limited to hand-authored canonical lowering fixtures with retired_positive_surface=false; strict runtime-dispatch/linkage rows and removed retired route flags are rejection or provenance evidence, never generated-only, evidence-log, migration, old-mode, gate, or retired route support"
+}

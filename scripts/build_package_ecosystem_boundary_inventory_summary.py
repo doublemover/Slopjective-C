@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +32,12 @@ def missing_files(paths: list[str]) -> list[str]:
 
 def main() -> int:
     contract = load_json(CONTRACT_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(contract, surface_name="package ecosystem boundary inventory")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        contract,
+        surface_name="package ecosystem boundary inventory",
+        required_blockers=("missing checked-in package source contract",),
+    )
     package = load_json(PACKAGE_JSON)
     stdlib_workspace = load_json(ROOT / str(contract["stdlib_workspace_contract"]))
     stdlib_package_surface = load_json(ROOT / str(contract["stdlib_package_surface"]))
@@ -41,16 +52,19 @@ def main() -> int:
     schemas = [str(path) for path in contract["release_and_package_channel_schemas"]]
     generators = [str(path) for path in contract["package_workflow_generators"]]
     validation_surfaces = [str(path) for path in contract["existing_package_validation_surfaces"]]
-    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    registered_actions = set(public_workflow_action_names())
 
     missing_paths = missing_files(runbooks + schemas + generators + validation_surfaces)
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    missing_actions = [name for name in required_actions if name not in registered_actions]
     module_imports = stdlib_package_surface.get("module_imports", [])
     advanced_helper_modules = advanced_helper_surface.get("advanced_helper_modules", [])
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.boundary_inventory.summary.v1",
-        "status": "PASS" if not missing_paths and not missing_public_scripts else "FAIL",
+        "status": "PASS" if not missing_paths and package_bridge_exists and not missing_actions else "FAIL",
         "boundary_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "stdlib_workspace_contract_id": stdlib_workspace.get("contract_id"),
@@ -63,15 +77,20 @@ def main() -> int:
         "release_and_package_channel_schema_count": len(schemas),
         "package_workflow_generator_count": len(generators),
         "existing_package_validation_surface_count": len(validation_surfaces),
-        "required_public_script_count": len(required_public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "direct_successor_milestone_count": len(contract["direct_successor_milestones"]),
         "release_and_package_channel_runbooks": existing_files(runbooks),
         "release_and_package_channel_schemas": existing_files(schemas),
         "package_workflow_generators": existing_files(generators),
         "existing_package_validation_surfaces": existing_files(validation_surfaces),
-        "required_public_scripts": required_public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "working_scope": contract["working_scope"],
         "non_goals": contract["non_goals"],
         "direct_successor_milestones": contract["direct_successor_milestones"],

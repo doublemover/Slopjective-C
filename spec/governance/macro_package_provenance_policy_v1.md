@@ -7,7 +7,8 @@ reproducibility controls for derive and macro package consumption.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
+- `docs/support/evidence_map.md`
+- `scripts/objc3c_shared/schema_registry.py`
 - `spec/governance/extension_lifecycle_v1.md`
 - `spec/governance/macro_security_incident_playbook_v1.md`
 
@@ -41,12 +42,12 @@ Non-negotiable invariants:
 
 ### 2.2 Trust boundaries
 
-| Boundary ID | Boundary                                       | Mandatory checks                                                          |
-| ----------- | ---------------------------------------------- | ------------------------------------------------------------------------- |
-| `BND-1`     | Source retrieval -> resolver                   | Signature verification and digest pin checks.                             |
-| `BND-2`     | Lockfile materialization -> build orchestrator | Schema compatibility, canonical ordering, and no implicit mutation check. |
-| `BND-3`     | Build invocation -> policy gate                | Graph equivalence and trust-root version check.                           |
-| `BND-4`     | Artifact publication -> release evidence store | Provenance completeness and reproducibility gate checks.                  |
+| Boundary ID | Boundary                                       | Mandatory checks                                                                        |
+| ----------- | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `BND-1`     | Source retrieval -> resolver                   | Signature verification and digest pin checks.                                           |
+| `BND-2`     | Lockfile materialization -> build orchestrator | Shared schema-registry conformance, canonical ordering, and no implicit mutation check. |
+| `BND-3`     | Build invocation -> policy gate                | Graph equivalence and trust-root version check.                                         |
+| `BND-4`     | Artifact publication -> release evidence store | Provenance completeness and reproducibility gate checks.                                |
 
 ## 3. Signed Metadata Requirements
 
@@ -158,17 +159,17 @@ metadata updates.
 | Update mode | Allowed mutations                                                                         | Forbidden mutations                           |
 | ----------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
 | `refresh`   | Signature, timestamp, or trust-root metadata refresh with unchanged graph and digest set. | Version changes or digest changes.            |
-| `patch`     | Controlled compatibility-window dependency updates with explicit diff.                    | Unbounded upgrade or silent transitive drift. |
-| `minor`     | Controlled additive updates preserving compatibility profile.                             | Breaking schema changes.                      |
-| `major`     | Explicit schema or policy migration with migration record.                                | Silent compatibility fallback.                |
+| `patch`     | Controlled dependency updates with explicit diff and unchanged evidence scope.            | Unbounded upgrade or silent transitive drift. |
+| `minor`     | Controlled additive updates preserving the approved capability/evidence rows.             | Breaking schema changes.                      |
+| `major`     | Explicit schema or policy transition with registry-owned evidence update.                 | Silent support bypass.                        |
 
 Governance rules:
 
 1. digest-changing mutations require explicit review rationale,
 2. CI and release MUST reject implicit regeneration,
-3. lockfile merges are resolved by deterministic regeneration, not manual edits.
+3. lockfile merges are resolved by deterministic regeneration, not direct lockfile rewrites.
 
-### 5.5 Version compatibility
+### 5.5 Version transition rules
 
 | Rule ID | Rule                                                                      |
 | ------- | ------------------------------------------------------------------------- |
@@ -246,14 +247,14 @@ Operator response minimums:
 
 ## 9. Enforcement Points (`EP-*`)
 
-| Enforcement point                | Required checks                                                      | Fail behavior                                       |
-| -------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
-| `EP-1` Resolution                | Lockfile compatibility, signature verification, trust-root validity. | Block resolution.                                   |
-| `EP-2` Fetch and materialization | Metadata and payload digest checks plus substitution rules.          | Block use and quarantine suspect content.           |
-| `EP-3` Build graph realization   | Graph equivalence and no implicit lockfile mutation.                 | Mark run noncompliant and fail enforced mode.       |
-| `EP-4` CI gate                   | Complete dependency and provenance policy checks.                    | Fail pipeline and block merge or release promotion. |
-| `EP-5` Reproducibility gate      | Replay output and provenance consistency.                            | Fail release readiness.                             |
-| `EP-6` Release publication gate  | Final trust and reproducibility checks for publish action.           | Block publication until resolved.                   |
+| Enforcement point                | Required checks                                                           | Fail behavior                                       |
+| -------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------- |
+| `EP-1` Resolution                | Lockfile schema conformance, signature verification, trust-root validity. | Block resolution.                                   |
+| `EP-2` Fetch and materialization | Metadata and payload digest checks plus substitution rules.               | Block use and quarantine suspect content.           |
+| `EP-3` Build graph realization   | Graph equivalence and no implicit lockfile mutation.                      | Mark run noncompliant and fail enforced mode.       |
+| `EP-4` CI gate                   | Complete dependency and provenance policy checks.                         | Fail pipeline and block merge or release promotion. |
+| `EP-5` Reproducibility gate      | Replay output and provenance consistency.                                 | Fail release readiness.                             |
+| `EP-6` Release publication gate  | Final trust and reproducibility checks for publish action.                | Block publication until resolved.                   |
 
 Enforcement order is fixed: `EP-1` -> `EP-2` -> `EP-3` -> `EP-4` -> `EP-5` -> `EP-6`.
 

@@ -1,0 +1,6 @@
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_top_level_counts.inc"
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_objc_declaration_counts.inc"
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_function_category_counts.inc"
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_grammar_handoff.inc"
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_diagnostics.inc"
+#include "parse/objc3_parser_snapshot_contract_fingerprint_mixing_ast_recovery.inc"

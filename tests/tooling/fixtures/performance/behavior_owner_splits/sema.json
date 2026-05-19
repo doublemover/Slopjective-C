@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-performance-behavior-owner-split",
+  "owner_phase": "sema",
+  "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "support_boundary": "semantic ownership covers capability provenance for categories, reflection, status bridging, actors, derives, macros, property behaviors, and interop only when canonical sema owners claim support; benchmark timing, raw samples, reports, generated rows, cache rows, comparative baselines, package staging, machine profiles, tool versions, and public command wrappers do not widen semantic support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "story_capabilities:categories",
+    "story_capabilities:reflection",
+    "story_capabilities:status-bridging",
+    "story_capabilities:actors",
+    "story_capabilities:derives",
+    "story_capabilities:macros",
+    "story_capabilities:property-behaviors",
+    "story_capabilities:interop"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported feature claims, compatibility gates, semantic retired route gates, old-mode semantic rows, semantic-only benchmark stories, generated-only semantic rows, evidence-log semantic rows, migration-only semantic rows, timing-only semantic rows, cache-only semantic rows, wrapper-only semantic rows, local-only semantic rows, and foreign-baseline semantic rows are diagnostics, canonical rejection, strict-error, absent-support, or provenance-only evidence until canonical sema fixtures own support"
+}

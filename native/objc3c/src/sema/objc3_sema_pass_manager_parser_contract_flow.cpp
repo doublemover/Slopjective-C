@@ -1,0 +1,4 @@
+#include "sema/objc3_sema_pass_manager_contract_flow.h"
+
+#include "objc3_sema_pass_manager_parser_conformance_evidence_flow.inc"
+#include "objc3_sema_pass_manager_parser_contract_readiness_flow.inc"

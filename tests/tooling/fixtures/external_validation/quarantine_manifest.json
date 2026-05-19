@@ -9,8 +9,15 @@
       "escalation_target": "license-review",
       "disclosure_compatibility": "internal-only",
       "reason": "replayable normalization exists, but the upstream licensing and redistribution terms are not yet clear enough for public publication",
-      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_runtime_shim_host_link_contract/replay_run_1/module.manifest.json",
-      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_runtime_dispatch_host_link_contract/replay_run_1/module.manifest.json",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "owner_contract": {
+        "quarantine_owner": "external-validation-quarantine",
+        "trust_policy_owner": "external-validation-trust-policy",
+        "blocked_claim_owner": "external-validation-public-claims",
+        "capability_truth_allowed": false,
+        "retired_route_trust_route_allowed": false
+      }
     },
     {
       "fixture_id": "ecosystem_dispatch_trace_nondeterministic",
@@ -20,7 +27,14 @@
       "disclosure_compatibility": "redacted-summary",
       "reason": "the normalized replay anchor exists, but the evidence cannot be promoted until replay stability is reconfirmed on the live path",
       "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_dispatch_abi_marshalling_contract/replay_run_1/module.manifest.json",
-      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "owner_contract": {
+        "quarantine_owner": "external-validation-quarantine",
+        "trust_policy_owner": "external-validation-trust-policy",
+        "blocked_claim_owner": "external-validation-public-claims",
+        "capability_truth_allowed": false,
+        "retired_route_trust_route_allowed": false
+      }
     },
     {
       "fixture_id": "ecosystem_unredistributable_blob_report",
@@ -30,7 +44,14 @@
       "disclosure_compatibility": "blocked",
       "reason": "the upstream material cannot be redistributed or published in a way that is compatible with the public evidence surface",
       "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_cross_module_conformance_contract/replay_run_1/module.manifest.json",
-      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "owner_contract": {
+        "quarantine_owner": "external-validation-quarantine",
+        "trust_policy_owner": "external-validation-trust-policy",
+        "blocked_claim_owner": "external-validation-public-claims",
+        "capability_truth_allowed": false,
+        "retired_route_trust_route_allowed": false
+      }
     }
   ]
 }

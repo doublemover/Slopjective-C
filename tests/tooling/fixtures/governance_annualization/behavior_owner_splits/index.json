@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-governance-annualization-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_annualization/baseline_ok.json",
+    "tests/tooling/fixtures/governance_annualization/missing_field.json",
+    "tests/tooling/fixtures/governance_annualization/quorum_fail.json",
+    "tests/tooling/fixtures/governance_annualization/w2_deadline_regression.json",
+    "tests/tooling/fixtures/governance_annualization/w2_escalation_missing_owner.json",
+    "tests/tooling/fixtures/governance_annualization/w2_exception_expired.json"
+  ],
+  "split_policy": {
+    "primary_axis": "governance annualization scenario behavior before fixture filename, timestamp literal, quorum field label, publication window field label, exception id label, escalation id label, issue-like owner text, old-mode label, gate label, retired route label, compatibility label, migration label, or report label",
+    "positive_rule": "governance-annualization positives are limited to the hand-authored baseline_ok fixture: annual review completed before the due timestamp, cadence anchor present, quorum present with five voters, three vendors, spec editor and tooling owner present, recusal ratio 0.2, and publication windows matching the baseline deadlines",
+    "canonical_rejection_rule": "missing-field, quorum-fail, W2 deadline regression, missing escalation owner, expired exception, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing annual_review_completed_utc, insufficient quorum fields, missing spec editor, high recusal ratio, publication windows later than baseline, active escalation records with empty owner, active expired exceptions without renewal, generated/report rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "scenario filenames, annual review timestamps, cadence utc_anchor values, quorum field names and values, publication deadline field names and values, exception ids, escalation ids, owner strings, opened/response/closed timestamps, statuses, empty arrays, and owner-split routing rows remain provenance unless an owner split claims the annualization behavior boundary",
+    "retired_surface_rule": "old-mode annualization rows, gate rows, retired route rows, compatibility rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, runner-only success, workflow-label-only success, timestamp-only rows, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "governance_annualization_provenance",
+      "path": "tests/tooling/fixtures/governance_annualization/behavior_owner_splits/governance_annualization_provenance.json"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ def main() -> int:
         schema = load_json(schema_path)
         expect(schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", "schema draft drifted", failures)
         required_fields = schema.get("required", [])
-        for field in ("support_window", "migration_replay", "rollback", "soak", "aging_regression", "claim_audit"):
+        for field in ("support_window", "upgrade_replay", "revert_readiness", "soak", "aging_regression", "claim_audit"):
             expect(field in required_fields, f"schema missing required field {field}", failures)
 
     checked_paths = [str(contract["runbook"]), str(contract["schema"])]

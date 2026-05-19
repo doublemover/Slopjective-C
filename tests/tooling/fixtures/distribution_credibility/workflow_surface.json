@@ -3,13 +3,84 @@
   "schema_version": 1,
   "validate_action": "validate-distribution-credibility",
   "end_to_end_action": "validate-distribution-credibility-end-to-end",
-  "public_scripts": [
-    "check:objc3c:distribution-credibility:surface",
-    "check:objc3c:distribution-credibility:schemas",
-    "inspect:objc3c:distribution-credibility",
-    "publish:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility",
-    "test:objc3c:distribution-credibility:e2e"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility",
+    "validate-distribution-credibility",
+    "validate-distribution-credibility-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "distribution-credibility-source",
+    "gate_owner": "distribution-credibility-gate",
+    "trust_owner": "distribution-credibility-trust-owner",
+    "release_drill_owner": "distribution-credibility-release-drill-owner",
+    "blocker_owner": "distribution-credibility-blockers",
+    "evidence_log_allowed": false,
+    "wrapper_only_allowed": false,
+    "owned_actions": [
+      "check-distribution-credibility-surface",
+      "check-distribution-credibility-schema-surface",
+      "build-distribution-credibility-dashboard",
+      "publish-distribution-credibility",
+      "validate-distribution-credibility",
+      "validate-distribution-credibility-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation",
+      "validate-packaging-channels",
+      "validate-release-operations"
+    ],
+    "workflow_child_actions": [
+      "validate-release-operations",
+      "check-distribution-credibility-surface",
+      "check-distribution-credibility-schema-surface",
+      "build-distribution-credibility-dashboard",
+      "publish-distribution-credibility"
+    ]
+  },
+  "owner_contracts": {
+    "source_owner": {
+      "role": "distribution-credibility-source-owner",
+      "required_actions": [
+        "check-distribution-credibility-surface",
+        "check-distribution-credibility-schema-surface"
+      ],
+      "claim_boundary": "source and schema summaries are inputs to the credibility gate, never standalone trust evidence"
+    },
+    "trust_owner": {
+      "role": "distribution-credibility-trust-owner",
+      "required_actions": [
+        "build-distribution-credibility-dashboard",
+        "publish-distribution-credibility"
+      ],
+      "claim_boundary": "trust publication is credible only when attached to live release drill artifacts and registered schemas"
+    },
+    "release_drill_owner": {
+      "role": "distribution-credibility-release-drill-owner",
+      "required_actions": [
+        "validate-distribution-credibility",
+        "validate-distribution-credibility-end-to-end"
+      ],
+      "claim_boundary": "release readiness requires package-channel, release-operations, and release-evidence drill outputs"
+    }
+  },
+  "integrated_required_steps": [
+    "validate-release-operations",
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility"
+  ],
+  "required_report_contracts": [
+    "objc3c.distribution.credibility.source.surface.summary.v1",
+    "objc3c.distribution.credibility.schema.surface.summary.v1",
+    "objc3c.distribution.credibility.dashboard.summary.v1",
+    "objc3c.distribution.credibility.public.summary.v1",
+    "objc3c.distribution.credibility.integration.summary.v1",
+    "objc3c.distribution.credibility.end-to-end.summary.v1"
   ],
   "upstream_validate_actions": [
     "validate-release-foundation",

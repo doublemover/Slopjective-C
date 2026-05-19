@@ -4,18 +4,16 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.subprocesses import run_capture
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 MATERIALIZER = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 WORKSPACE_CONTRACT_PATH = ROOT / "stdlib" / "workspace.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "stdlib" / "workspace-smoke-summary.json"
@@ -37,7 +35,7 @@ def extract_value(stdout: str, key: str) -> str | None:
 
 def main() -> int:
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
-    materialize_result = run_capture([sys.executable, str(MATERIALIZER)])
+    materialize_result = run_capture(python_script_command(MATERIALIZER))
     if materialize_result.returncode != 0:
         raise RuntimeError("stdlib workspace materialization failed")
     workspace_root_text = extract_value(materialize_result.stdout, "workspace_root")
@@ -66,16 +64,14 @@ def main() -> int:
         compile_root = artifact_run_root / canonical_module.replace(".", "_")
         compile_root.mkdir(parents=True, exist_ok=True)
         compile_result = run_capture(
-            [
-                sys.executable,
-                str(RUNNER),
+            public_workflow_command(
                 "compile-objc3c",
                 repo_rel(smoke_source),
                 "--out-dir",
                 repo_rel(compile_root),
                 "--emit-prefix",
                 "module",
-            ]
+            )
         )
         if compile_result.returncode != 0:
             raise RuntimeError(f"stdlib smoke compile failed for {canonical_module}")

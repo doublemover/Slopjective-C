@@ -13,9 +13,9 @@ Use it when changing:
 - compiler-throughput summaries, cache-proof artifacts, and packaged validation
 
 Downstream compiler-throughput work must stay on the existing native compiler executable,
-compile wrapper, public workflow runner, native build wrapper, and validation
+compile wrapper, `npm run objc3c -- <action>` bridge, native build wrapper, and validation
 scripts listed here. Do not add a second benchmark harness, spreadsheet-only
-measurement flow, or milestone-local validation packet.
+measurement flow, or release-scope validation packet.
 
 ## Throughput Taxonomy
 
@@ -49,10 +49,10 @@ The current truthful compiler-throughput workload families are:
 The current audit inventory is:
 
 - compiler/tooling throughput:
-  - `scripts/objc3c_native_compile.ps1`
+  - `npm run objc3c -- compile-objc3c`
   - `artifacts/bin/objc3c-native.exe`
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- build-native-binaries`
+  - package bridge: `npm run objc3c -- <action>`
 - incremental build and invalidation:
   - wrapper `--use-cache`
   - `tmp/artifacts/objc3c-native/cache/`
@@ -64,9 +64,9 @@ The current audit inventory is:
   - `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
   - `module.metaprogramming-macro-host-cache.json`
 - docs-generation paths:
-  - `scripts/build_objc3c_native_docs.py`
-  - `scripts/render_objc3c_public_command_surface.py`
-  - `scripts/build_site_index.py`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- build-site`
 
 ## Workload Manifest
 
@@ -90,11 +90,11 @@ The authoritative tier map is checked in at
 
 The live ownership split is:
 
-- `test-fast`
-  - bounded smoke slice
+- `test-smoke`
+  - behavior-first parser, sema, lowering, IR, runtime, and e2e matrix
   - runtime acceptance and ABI/accessor proof
   - canonical replay/native-truth proof
-- `test-smoke`
+- `test-execution-smoke`
   - compile, link, and run execution behavior over the full runnable smoke
     corpus
 - `test-recovery`
@@ -129,7 +129,8 @@ One authoritative owner per guarantee:
 Compiler-throughput work is only valid when it preserves these invariants:
 
 - the authoritative compile surface remains
-  `scripts/objc3c_native_compile.ps1` plus `artifacts/bin/objc3c-native.exe`
+  `npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  backed by `artifacts/bin/objc3c-native.exe`
 - cache-hit claims remain coupled to compile-output provenance and the runtime
   launch contract
 - incremental invalidation claims remain rooted in the live manifest/replay-key
@@ -167,21 +168,23 @@ Disallowed optimization moves:
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
   - `scripts/check_objc3c_native_perf_budget.ps1`
   - `scripts/check_objc3c_compiler_throughput_integration.py`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- build-native-binaries`
+  - package bridge: `npm run objc3c -- <action>`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `npm run objc3c -- validate-compiler-throughput`
 - heavyweight validation suites:
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/check_objc3c_native_recovery_contract.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/run_objc3c_native_fixture_matrix.ps1`
-  - `scripts/check_objc3c_negative_fixture_expectations.ps1`
-  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-recovery`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- test-fixture-matrix`
+  - `npm run objc3c -- test-negative-expectations`
+  - `npm run objc3c -- test-runtime-acceptance`
 - compile-coupled docs and command surfaces:
-  - `scripts/build_objc3c_native_docs.py`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
   - `docs/objc3c-native/src/60-tests.md`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - checked-in throughput metadata:
@@ -191,6 +194,10 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
   - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
   - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
+  - registry owner: `scripts/objc3c_shared/schema_registry.py`
+
+Helper implementations remain action-registry anchors for the public
+commands above.
 
 ## Exact Live Artifact And Output Paths
 
@@ -204,11 +211,11 @@ Disallowed optimization moves:
 ## Exact Live Commands
 
 - benchmark the live direct-compile throughput and wrapper cache surface:
-  - `npm run inspect:objc3c:compiler-throughput`
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `npm run objc3c -- benchmark-compiler-throughput`
 - build the compile-coupled docs generators used by this milestone:
-  - `npm run build:docs:native`
-  - `npm run build:docs:commands`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
 
 ## Explicit Non-Goals
 

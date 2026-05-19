@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_dispatch_callable_interop_dispatch_intent_validation.inc"
+#include "sema/objc3_semantic_passes_dispatch_callable_interop_runtime_parity.inc"
+#include "sema/objc3_semantic_passes_dispatch_callable_interop_cpp_interactions.inc"
+#include "sema/objc3_semantic_passes_dispatch_callable_interop_swift_isolation.inc"

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-stress-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/stress/source_surface.json",
+  "support_boundary": "parser stress fixtures own tokenization, grammar shape, parser recovery, and parser diagnostics only when the row is not generated-only, evidence-log, gate, retired route, old-mode, migration-only, or compatibility provenance",
+  "source_families": [
+    "parser-sema-fuzz"
+  ],
+  "owned_inputs": [
+    {
+      "path": "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+      "selectors": [
+        "cases[].subsystem=parser",
+        "tests/tooling/fixtures/parser_conformance_corpus/*.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_misplaced_qualifier_message_receiver_extern.objc3"
+      ],
+      "disposition": "grammar recovery and parser rejection stress evidence"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative",
+      "selectors": [
+        "negative_*_parser_*.objc3",
+        "negative_parser_draft_syntax_*.objc3",
+        "negative_misplaced_qualifier_*.objc3"
+      ],
+      "disposition": "parser diagnostic provenance only; not semantic or runtime acceptance"
+    }
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode spellings, removed parser retired route flags, parser gates, compatibility parser routing, generated-only parser rows, evidence-log parser rows, and migration-only parser claims remain parser rejections, strict-error, or provenance-only evidence, never stress positives"
+}

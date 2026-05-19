@@ -1,0 +1,15 @@
+#pragma once
+
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_imported_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_imported_property_behavior.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_imported_runtime_methods.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_module_replay_readiness.h"
+
+struct Objc3IRFrontendMetaprogrammingModuleReplayImportCountsMetadata
+    : Objc3IRFrontendMetaprogrammingModuleReplayImportedArtifactsMetadata,
+      Objc3IRFrontendMetaprogrammingModuleReplayImportedPropertyBehaviorMetadata,
+      Objc3IRFrontendMetaprogrammingModuleReplayImportedRuntimeMethodsMetadata {};
+
+struct Objc3IRFrontendMetaprogrammingModuleReplayImportsMetadata
+    : Objc3IRFrontendMetaprogrammingModuleReplayImportCountsMetadata,
+      Objc3IRFrontendMetaprogrammingModuleReplayReadinessMetadata {};

@@ -1,22 +1,43 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.doublemover.dev/objc3c-distribution-credibility-dashboard-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-distribution-credibility-dashboard-v1.schema.json",
   "title": "objc3c Distribution Credibility Dashboard",
   "type": "object",
   "required": [
     "contract_id",
+    "generated_at_utc",
     "status",
     "trust_state",
     "release_id",
     "release_version",
-    "trust_signals"
+    "warning_count",
+    "upstream_reports",
+    "trust_signals",
+    "required_drill_steps",
+    "install_docs",
+    "release_docs",
+    "operator_states",
+    "operator_actions",
+    "release_drill_policy",
+    "workflow_surface",
+    "dashboard_schema",
+    "trust_report_schema",
+    "artifact_surface",
+    "failures"
   ],
   "properties": {
     "contract_id": {
       "const": "objc3c.distribution.credibility.dashboard.summary.v1"
     },
+    "generated_at_utc": {
+      "type": "string",
+      "minLength": 1
+    },
     "status": {
-      "const": "PASS"
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
     },
     "trust_state": {
       "enum": [
@@ -33,15 +54,28 @@
       "type": "string",
       "minLength": 1
     },
+    "warning_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "upstream_reports": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "trust_signals": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 4,
       "items": {
         "type": "object",
         "required": [
           "signal_id",
           "status",
-          "source_path"
+          "source_path",
+          "artifact_source",
+          "claim_boundary"
         ],
         "properties": {
           "signal_id": {
@@ -59,6 +93,12 @@
             "type": "string",
             "minLength": 1
           },
+          "artifact_source": {
+            "type": "string"
+          },
+          "claim_boundary": {
+            "type": "string"
+          },
           "detail": {
             "type": "string"
           }
@@ -66,8 +106,71 @@
         "additionalProperties": false
       }
     },
-    "upstream_reports": {
+    "required_drill_steps": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "install_docs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "release_docs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "operator_states": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "enum": [
+          "ready",
+          "degraded",
+          "blocked"
+        ]
+      }
+    },
+    "operator_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "release_drill_policy": {
       "type": "object"
+    },
+    "workflow_surface": {
+      "type": "object"
+    },
+    "dashboard_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trust_report_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_surface": {
+      "type": "object"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   },
   "additionalProperties": false

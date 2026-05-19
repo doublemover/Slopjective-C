@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-open-blocker-audit-contract-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/open_blocker_audit_contract"
+  ],
+  "support_boundary": "lowering ownership is non-positive for open blocker audit contract fixtures. This family does not contain lowering source fixtures or lowering expectations; accepted audit contract scenarios prove tooling contract behavior only, not compiler lowering behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/open_blocker_audit_contract/**/*-ir.expect.txt",
+    "absent:tests/tooling/fixtures/open_blocker_audit_contract/**/*.dispatch-ir.expect.txt",
+    "tooling_fixture_family:open_blocker_audit_contract",
+    "compiler_phase_boundary:no-lowering-positive-truth",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering audit, gate lowering audit, retired route lowering audit, compatibility lowering audit, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, and audit expected-output rows promoted as lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

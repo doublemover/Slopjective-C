@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+EXPECTED_LAYOUT = {
+    "enabled": {
+        "slot": 0,
+        "offset": 0,
+        "size": 1,
+        "alignment": 1,
+        "padding": 0,
+        "inherited_slots": 0,
+        "inherited_size": 0,
+        "owner_size": 8,
+    },
+    "baseCount": {
+        "slot": 1,
+        "offset": 4,
+        "size": 4,
+        "alignment": 4,
+        "padding": 3,
+        "inherited_slots": 0,
+        "inherited_size": 0,
+        "owner_size": 8,
+    },
+    "token": {
+        "slot": 2,
+        "offset": 8,
+        "size": 8,
+        "alignment": 8,
+        "padding": 0,
+        "inherited_slots": 2,
+        "inherited_size": 8,
+        "owner_size": 24,
+    },
+    "childFlag": {
+        "slot": 3,
+        "offset": 16,
+        "size": 1,
+        "alignment": 1,
+        "padding": 0,
+        "inherited_slots": 2,
+        "inherited_size": 8,
+        "owner_size": 24,
+    },
+}
+
+REQUIRED_LAYOUT_FIELDS = [
+    "executable_ivar_layout_offset_bytes",
+    "executable_ivar_layout_padding_bytes",
+    "executable_ivar_layout_inherited_slot_count",
+    "executable_ivar_layout_inherited_size_bytes",
+    "executable_ivar_layout_owner_size_bytes",
+    "executable_ivar_init_order_index",
+    "executable_ivar_destroy_order_index",
+    "executable_ivar_layout_valid",
+    "executable_ivar_layout_replay_key",
+]
+
+REQUIRED_RUNTIME_FIELDS = [
+    "ivar_layout_replay_key",
+    "ivar_layout_offset_bytes",
+    "ivar_layout_padding_bytes",
+    "ivar_layout_inherited_slot_count",
+    "ivar_layout_inherited_size_bytes",
+    "ivar_layout_owner_size_bytes",
+    "ivar_init_order_index",
+    "ivar_destroy_order_index",
+    "ivar_layout_valid",
+    "layout_replay_key",
+    "padding_bytes",
+    "inherited_slot_count",
+    "inherited_size_bytes",
+    "owner_size_bytes",
+    "init_order_index",
+    "destroy_order_index",
+    "layout_valid",
+]

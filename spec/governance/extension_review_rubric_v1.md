@@ -7,7 +7,8 @@ review decisions. It is the canonical `C-04` artifact.
 
 This document is aligned to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
 - `spec/governance/macro_derive_extension_charter_v1.md`
 
 ## 1. Scope
@@ -89,7 +90,7 @@ An extension review is accepted only if all checks pass:
 | Hard-fail ID | Trigger                                                                                          | Required disposition                |
 | ------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | `HF-01`      | Open critical security or safety issue without approved mitigation plan.                         | `REJECT` or emergency `hold`.       |
-| `HF-02`      | Non-deterministic behavior in required extension path without deterministic fallback.            | Minimum `DEFER`.                    |
+| `HF-02`      | Non-deterministic behavior in required extension path without deterministic rejection.           | Minimum `DEFER`.                    |
 | `HF-03`      | Portability claims lack independent corroboration and replayable evidence.                       | `DEFER` until evidence is complete. |
 | `HF-04`      | Tooling cost introduces release or CI instability above approved risk budget without mitigation. | `DEFER` or `REJECT`.                |
 | `HF-05`      | Provenance or traceability gap prevents audit replay.                                            | `DEFER` until repaired.             |
@@ -163,10 +164,10 @@ Reference calculations:
 
 ## 11. Downstream Contract
 
-| Consumer                     | Required output from this rubric                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                           |
-| `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims. |
-| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                         |
+| Consumer                     | Required output from this rubric                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                                                                 |
+| `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims, grounded in capability/evidence rows. |
+| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                                                               |
 
 No downstream consumer may reinterpret `HF-*` or criterion floors as advisory.

@@ -26,16 +26,16 @@
     "native_executable",
     "frontend_c_api_runner",
     "runtime_library",
-    "compile_wrapper",
-    "execution_smoke_script",
-    "execution_replay_script",
+    "compile_action",
+    "execution_smoke_action",
+    "execution_replay_action",
     "repo_superclean_surface",
-    "release_evidence_gate_script",
+    "release_evidence_gate_action",
     "command_surfaces"
   ],
   "audited_upstream_manifests": [
     "artifacts/package/objc3c-runnable-toolchain-package.json",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json"
   ],
   "payload_selection_boundary": [
     "payload membership must come from the runnable package manifest and checked-in release payload policy",

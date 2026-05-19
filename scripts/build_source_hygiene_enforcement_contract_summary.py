@@ -31,8 +31,17 @@ def main() -> int:
         "policy_link_matches": contract["policy_contract"] == "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
         "classification_link_matches": contract["classification_contract"] == "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
         "genuine_contract_link_matches": contract["genuine_provenance_contract"] == "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
-        "future_live_audit_entrypoint_declared": contract["future_live_audit_entrypoint"] == "python scripts/check_source_hygiene_authenticity.py",
+        "live_audit_entrypoint_declared": contract["live_audit_entrypoint"] == "npm run objc3c -- check-source-hygiene-authenticity",
         "generated_report_root_under_tmp_reports": contract["generated_report_root"].startswith("tmp/reports/"),
+        "owner_surfaces_declared": set(contract["owner_surfaces"]) == {
+            "scan_root_owner",
+            "pattern_owner",
+            "generated_report_owner",
+            "docs_surface_owner",
+            "capability_truth_owner",
+            "public_claim_drift_owner",
+        },
+        "blocker_metadata_declared": contract["blocker_metadata"]["blocker_contract"] == "hard-cutover-source-hygiene-fail-closed",
         "check_ids_unique": len(check_ids) == len(set(check_ids)),
         "contract_has_expected_check_count": len(contract["enforcement_checks"]) == 4,
         "policy_generated_truth_surface_count_matches_expectation": len(policy["scope"]["generated_truth_files"]) == 3,
@@ -45,8 +54,10 @@ def main() -> int:
         "issue": "source-hygiene-enforcement-contract",
         "contract_id": contract["contract_id"],
         "check_ids": check_ids,
-        "future_live_audit_entrypoint": contract["future_live_audit_entrypoint"],
-        "future_archive_boundary_contract": contract["future_archive_boundary_contract"],
+        "live_audit_entrypoint": contract["live_audit_entrypoint"],
+        "archive_boundary_contract": contract["archive_boundary_contract"],
+        "owner_surfaces": contract["owner_surfaces"],
+        "blocker_metadata": contract["blocker_metadata"],
         "fail_closed_condition_count": len(contract["fail_closed_conditions"]),
         "checks": checks,
         "ok": all(checks.values()),
@@ -57,7 +68,7 @@ def main() -> int:
     MD_OUT.write_text(
         "# Source Hygiene Enforcement Contract Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
-        f"- Canonical future audit entrypoint: `{summary['future_live_audit_entrypoint']}`\n"
+        f"- Canonical live audit entrypoint: `{summary['live_audit_entrypoint']}`\n"
         f"- Enforcement checks: `{', '.join(summary['check_ids'])}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
         encoding="utf-8",

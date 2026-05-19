@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_result_like_site_collection_statements_declarations.inc"
+
+#include "parse/objc3_parser_result_like_site_collection_statements_expressions.inc"
+
+#include "parse/objc3_parser_result_like_site_collection_statements_branches.inc"
+
+#include "parse/objc3_parser_result_like_site_collection_statements_loops.inc"
+
+#include "parse/objc3_parser_result_like_site_collection_statements_dispatch.inc"

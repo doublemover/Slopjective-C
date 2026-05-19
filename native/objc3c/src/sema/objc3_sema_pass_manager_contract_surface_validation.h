@@ -1,0 +1,11 @@
+struct Objc3SemaPassManagerResult {
+  Objc3ParserContractSnapshot parser_contract_snapshot;
+  bool deterministic_parser_sema_handoff = false;
+  Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
+  bool deterministic_parser_sema_conformance_matrix = false;
+  Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
+  bool deterministic_parser_sema_conformance_corpus = false;
+  Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
+  bool deterministic_parser_sema_performance_quality_guardrails = false;
+  Objc3ParserSemaCrossLaneIntegrationSync parser_sema_cross_lane_integration_sync;
+  bool deterministic_parser_sema_cross_lane_integration_sync = false;

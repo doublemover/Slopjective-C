@@ -9,18 +9,26 @@ Use it when changing developer ergonomics, explainability, runtime inspection,
 or debug-reporting behavior.
 
 Downstream developer-tooling work must stay on the existing implementation paths below
-instead of introducing sidecar drivers, milestone-local wrappers, or proof-only
+instead of introducing sidecar drivers, release-scope wrappers, or evidence-only
 inspection flows.
 
 Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/developer_tooling/boundary_inventory.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_developer_tooling_boundary_inventory_summary.py`
-- `python scripts/check_objc3c_developer_tooling_integration.py`
-- `python scripts/check_objc3c_developer_tooling_integration.py`
+- `npm run objc3c -- validate-developer-tooling`
+- `npm run objc3c -- validate-runnable-developer-tooling`
+- `npm run objc3c -- inspect-compile-observability`
+- `npm run objc3c -- inspect-runtime-inspector`
+- `npm run objc3c -- inspect-capability-explorer`
+- `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- trace-compile-stages`
+- `npm run objc3c -- test-capability-routed-source-parity`
+
+Helper implementations and native tool binaries are registry
+anchors for those actions, not separate current-facing commands.
 
 ## Exact Live Implementation Paths
 
@@ -34,24 +42,27 @@ Replayable generators and validators:
   - `native/objc3c/CMakeLists.txt`
 - native build/publish surface:
   - `scripts/build_objc3c_native.ps1`
+  - `npm run objc3c -- build-native-binaries`
   - published binary: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - public command and workflow surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - package bridge: `npm run objc3c -- <action>`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - runtime inspection and debug-state implementation:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/{classes,dispatch,images,selectors,state,public}/`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/`
 - runtime/debug ABI and contract emitters:
-  - `native/objc3c/src/lower/objc3_lowering_contract.cpp`
-  - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
 - live validation and parity paths:
   - `scripts/check_objc3c_library_cli_parity.py`
   - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_repo_superclean_surface.py`
+  - `npm run objc3c -- test-capability-routed-source-parity`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- check-repo-superclean-surface`
 - live runtime probes:
   - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
@@ -68,8 +79,8 @@ implemented:
   `objc3c-frontend-c-api-runner`
 - runtime-side inspection comes from exported testing/debug ABI snapshots that
   are emitted from the real runtime implementation
-- build-owned source-of-truth metadata comes from
-  `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+- build-owned owner metadata comes from the generated repo-superclean owner
+  artifact selected by the checked-in build contract
 
 Downstream issues must extend these exact surfaces before inventing new ones.
 
@@ -80,68 +91,67 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - runtime library:
   - `artifacts/lib/objc3_runtime.lib`
-- build-emitted source-of-truth artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+- build-emitted owner artifact:
+  - generated repo-superclean owner artifact selected by the checked-in build contract
+  - `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`
 - default compile/explain output root:
+  - generated native compilation artifact root
   - `tmp/artifacts/compilation/objc3c-native/`
 - runtime/debug report roots:
-  - `tmp/reports/runtime/`
-  - `tmp/reports/objc3c-public-workflow/`
-  - `tmp/artifacts/playground/`
-  - `tmp/reports/playground/`
+  - runtime reports
+  - public-workflow reports
+  - playground artifacts
+  - playground reports
 - developer-tooling dump artifacts:
-  - `tmp/reports/objc3c-public-workflow/inspect-compile-observability-summary.json`
+  - compile observability summary
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
-  - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
+  - compile observability payload
+  - runtime inspector summary
   - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
+  - runtime inspector payload
+  - capability explorer payload
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
-  - `tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json`
-  - `tmp/reports/objc3c-public-workflow/trace-compile-stages-summary.json`
+  - `capability_demo_compatibility`
+  - runtime inspector benchmark payload
+  - compile-stage trace summary
   - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
+  - compile-stage trace payload
 
 ## Exact Live Commands
 
 - build the live binaries and contracts:
-  - `npm run build:objc3c-native`
-  - `npm run build:objc3c-native:contracts`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- build-native-contracts`
 - compile one source through the public compiler path:
-  - `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3`
+  - `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3`
+- inspect one source through the raw runner binary when debugging runner-only issues:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3`
 - materialize a runnable workspace with editor/debug drill references:
-  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
-  - `npm run build:objc3c:playground -- tests/tooling/fixtures/native/hello.objc3`
+  - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:
-  - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 --summary-out tmp/reports/objc3c-public-workflow/frontend-c-api-runner-summary.json`
+  - `npm run objc3c -- inspect-compile-observability tests/tooling/fixtures/native/hello.objc3`
 - dump the structured developer observability object through the public command surface:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-compile-observability`
-  - `npm run inspect:objc3c:observability`
+  - `npm run objc3c -- inspect-compile-observability`
 - dump the structured runtime inspector object through the public command surface:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
-  - `npm run inspect:objc3c:runtime`
+  - `npm run objc3c -- inspect-runtime-inspector`
 - dump the live capability-explorer object through the public command surface:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
-  - `npm run inspect:objc3c:capabilities`
+  - `npm run objc3c -- inspect-capability-explorer`
 - benchmark the runtime-inspector and capability-explorer workflow through the public command surface:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector`
-  - `npm run inspect:objc3c:benchmark`
+  - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the structured compile-stage trace through the public command surface:
-  - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
-  - `npm run trace:objc3c:stages`
+  - `npm run objc3c -- trace-compile-stages`
 - inspect the combined editor tooling surface:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
-  - `npm run inspect:objc3c:editor`
+  - `npm run objc3c -- inspect-editor-tooling`
 - format one supported objc3c source through the preview formatter subset:
-  - `python scripts/objc3c_public_workflow_runner.py format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
-  - `npm run format:objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
+  - `npm run objc3c -- format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
 - run the integrated developer-tooling validation flow:
-  - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
-  - `npm run test:objc3c:developer-tooling`
+  - `npm run objc3c -- validate-developer-tooling`
 - run the packaged developer-tooling validation flow against the staged runnable bundle:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-developer-tooling`
-  - `npm run test:objc3c:runnable-developer-tooling`
+  - `npm run objc3c -- validate-runnable-developer-tooling`
 - validate compiler/library parity:
-  - `python scripts/check_objc3c_library_cli_parity.py`
+  - `npm run objc3c -- test-capability-routed-source-parity`
 - validate runtime/debug ABI and emitted source surfaces:
-  - `python scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
 
 ## Runtime Introspection Primitives
 
@@ -151,9 +161,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `arc_debug_state_snapshot_symbol`
   - `runtime_metadata_object_inspection_uses_llvm_objdump`
 - live capability-explorer probe contract:
-  - `scripts/probe_objc3c_llvm_capabilities.py`
-  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
-  - `capability_demo_compatibility`
+  - `npm run objc3c -- inspect-capability-explorer`
+  - generated capability-explorer public-workflow payload
+  - `capability_demo_consistency`
   - `stdlib/program_surface.json`
   - `showcase/portfolio.json`
 - downstream work must treat those runtime-emitted facts as authoritative over
@@ -163,8 +173,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 
 - extend the existing native tool or runtime ABI before adding any new script
   wrapper
-- treat `scripts/objc3c_public_workflow_runner.py` as the only public command
-  routing surface
+- treat the `package.json` bridge, `npm run objc3c -- <action>`, as the
+  only public command routing surface
 - keep emitted reports and dumps under `tmp/`
 - keep checked-in developer guidance under `docs/runbooks/`
 - prove inspection/debug behavior through the existing runtime acceptance and
@@ -210,15 +220,15 @@ formatter or declaration-breakpoint debug surface.
 Diagnostics, formatting, and symbol resolution must stay coupled to the live
 frontend runner output model.
 
-- diagnostics source of truth:
+- diagnostics owner outputs:
   - the frontend runner summary JSON
   - the emitted diagnostics JSON with real line, column, severity, code, and
     message entries
-- symbol resolution source of truth:
+- symbol resolution owner outputs:
   - the emitted manifest declaration records for globals, functions,
     interfaces, implementations, protocols, and categories
   - declaration coordinates published by the real compile output
-- formatting source of truth:
+- formatting owner output:
   - machine-owned formatter output must be generated from the canonical
     formatter helper and reflected through the combined developer-tooling
     surface
@@ -228,7 +238,11 @@ frontend runner output model.
 Downstream editor and navigation work must use compile-owned declaration
 coordinates instead of building a shadow symbol index from ad hoc text scans.
 
-## Language-Server Capability And Fallback Policy
+## Language-Server Capability Publication Policy
+
+The canonical policy contract for this surface is:
+
+- `tests/tooling/fixtures/developer_tooling/language_server_capability_publication_policy.json`
 
 Language-server claims must stay narrower than the real shipped capability set.
 
@@ -236,8 +250,8 @@ Language-server claims must stay narrower than the real shipped capability set.
   - compile-owned diagnostics
   - compile-owned declaration coordinates
   - emitted artifact presence and runtime inspection facts
-- unsupported capability classes must fail closed with explicit fallback
-  metadata instead of pretending partial support:
+- unsupported capability classes must fail closed with explicit unpublished-status
+  metadata instead of pretending unpublished capabilities are supported:
   - references
   - rename
   - semantic tokens
@@ -245,8 +259,23 @@ Language-server claims must stay narrower than the real shipped capability set.
   - statement-level debugger stepping
 
 The public developer-tooling surface must publish one canonical capability map
-with capability status, fallback status, and evidence roots instead of
+with capability status, publication status, and evidence roots instead of
 duplicating per-editor interpretations.
+
+## Hosted LLVM Capability Truth Payloads
+
+Hosted LLVM and capability-routed parity claims are owned by typed workflow
+contracts, not by local executable discovery text.
+
+- local `check-llvm-capabilities` probe output is diagnostic-only, even when it
+  finds clang and llc on the current machine
+- hosted execution support requires a hosted LLVM summary with canonical mode,
+  `ok=true`, clang availability, llc availability, and llc `--filetype=obj`
+  support
+- capability-routed source parity is publishable only when the same hosted
+  object-emission truth is available
+- fail-closed payload fields must include source kind, local-diagnostic status,
+  hosted execution support, hosted source parity support, and failure reasons
 
 ## Debugger, Source-Map, And Stepping Semantics
 
@@ -267,52 +296,56 @@ statement debugger.
 
 ## Editor Protocol And Debug Artifact Contract
 
-the checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
+The checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
 scattering separate editor-only payloads across ad hoc scripts.
 
-The canonical generated surface must group:
+The generated developer-tooling surface must group:
 
 - diagnostics summary and per-diagnostic entries
-- language-server capability publication and fallback metadata
+- language-server capability publication and unpublished-status metadata
 - navigation and declaration coordinates rooted in compile-owned manifest data
 - formatter execution results and formatted output references
 - debug artifact inspection, breakpoint anchors, and stepping availability
 
-The authoritative report family lives under `tmp/reports/developer-tooling/`
-and must be produced by the public runner plus replayable checked-in scripts.
+The developer-tooling report family is transient output produced by the public
+runner plus replayable checked-in scripts. It does not own capability claims.
 
-The current generator for the combined surface is:
+The current generator for the combined surface is reached through:
 
-- `python scripts/build_objc3c_editor_tooling_surface.py`
+- `npm run objc3c -- inspect-editor-tooling`
 
 The current and follow-on public entrypoints for the surface converge on:
 
-- `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
-- `python scripts/objc3c_public_workflow_runner.py format-objc3c`
-- `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
+- `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- format-objc3c`
+- `npm run objc3c -- validate-developer-tooling`
 
-Exact implementation anchors for the current formatter/debug/workspace slice:
+The current formatter/debug/workspace slice is action-catalog-owned. Its script
+paths are implementation details, not direct public commands.
 
-- `scripts/format_objc3c_source.py`
-- `scripts/build_objc3c_editor_tooling_surface.py`
-- `scripts/check_developer_tooling_formatter_debug_surface.py`
-- `scripts/check_developer_tooling_workspace_integration.py`
-- `scripts/check_objc3c_runnable_developer_tooling_end_to_end.py`
+Checked-in contracts for the current slice:
+
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
+- `schemas/objc3c-developer-tooling-editor-surface-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 - `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
 
-The npm entrypoints must route to the same action family once implemented:
+The editor tooling schema is a registry-backed owner surface. This runbook must
+not copy its JSON shape or promote generated editor tooling reports into public
+support claims outside the capability matrix and evidence map.
 
-- `npm run inspect:objc3c:editor`
-- `npm run format:objc3c -- <source>`
-- `npm run test:objc3c:developer-tooling`
-- `npm run test:objc3c:runnable-developer-tooling`
+The npm entrypoints route to the same action family:
+
+- `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- format-objc3c <source>`
+- `npm run objc3c -- validate-developer-tooling`
+- `npm run objc3c -- validate-runnable-developer-tooling`
 
 ## Explicit Non-Goals
 
-- no milestone-local debug launcher
-- no ad hoc LLVM-only inspection path treated as source of truth
-- no duplicate command surface outside `package.json` and
-  `scripts/objc3c_public_workflow_runner.py`
+- no release-scope debug launcher
+- no ad hoc LLVM-only inspection path treated as owner evidence
+- no duplicate command surface outside the `package.json` bridge:
+  `npm run objc3c -- <action>`
 - no hand-authored report snapshots under checked-in doc roots
-- no new parallel source-of-truth copy for runtime inspection semantics
+- no new parallel owner copy for runtime inspection semantics

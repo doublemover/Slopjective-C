@@ -1,0 +1,9 @@
+// Canonical rejection fixture: legacy YES literal alias is not a positive mode.
+module LegacyYesLiteralAliasRejected;
+
+fn main() -> i32 {
+  if (YES) {
+    return 1;
+  }
+  return 0;
+}

@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_async_continuation_site_collection_symbol_predicates.inc"
+
+#include "parse/objc3_parser_async_continuation_site_collection_continuation_counters.inc"
+
+#include "parse/objc3_parser_async_continuation_site_collection_symbol_collection.inc"
+
+#include "parse/objc3_parser_async_continuation_site_collection_body_counting.inc"

@@ -1,0 +1,8 @@
+// Negative execution fixture: strict runtime dispatch hard-fails for unknown receiver class.
+module MessageSendRuntimeDispatchStrictError;
+
+fn main() -> i32 {
+  let receiver = 9;
+  let sent = [receiver sum: 3 with: 4];
+  return sent;
+}

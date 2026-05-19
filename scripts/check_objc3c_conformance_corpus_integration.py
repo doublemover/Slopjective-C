@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,8 +34,8 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 
 def main() -> int:
     steps = [
-        ("check-conformance-corpus-surface", run_capture([sys.executable, str(SURFACE_CHECK_PY)])),
-        ("generate-conformance-corpus-index", run_capture([sys.executable, str(INDEX_PY)])),
+        ("check-conformance-corpus-surface", run_capture(python_script_command(SURFACE_CHECK_PY))),
+        ("generate-conformance-corpus-index", run_capture(python_script_command(INDEX_PY))),
     ]
 
     failures: list[str] = []

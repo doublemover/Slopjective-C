@@ -30,6 +30,27 @@
     "require_explicit_unavailable_reason": true,
     "forbid_silent_omission": true
   },
+  "approved_lab_profiles": [
+    {
+      "lab_profile_id": "windows-live-toolchain-lab",
+      "owner_id": "performance-governance-lab-owner",
+      "platform": "windows",
+      "required_machine_profile_fields": [
+        "hostname",
+        "os",
+        "arch",
+        "cpu_model",
+        "cpu_count",
+        "python_version"
+      ],
+      "required_report_roots": [
+        "tmp/reports/performance",
+        "tmp/reports/compiler-throughput",
+        "tmp/reports/runtime-performance"
+      ],
+      "environment_breach_id": "environment-drift"
+    }
+  ],
   "required_paths": [
     "docs/runbooks/objc3c_performance_governance.md",
     "tests/tooling/fixtures/performance_governance/lab_policy.json",

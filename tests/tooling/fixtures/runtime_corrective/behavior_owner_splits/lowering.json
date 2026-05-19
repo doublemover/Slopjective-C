@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "lowering ownership covers dispatch lowering, synthesized accessor helper selection, and lowering provenance coupling only when canonical lowering owners claim the behavior before runtime execution or e2e proof may cite support; generated reports, acceptance reports, proof bundles, replay manifests, compile artifacts, source-owner contract rows, evidence-log rows, migration-only rows, runner-only rows, and package-only rows do not create lowering support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:runtime_corrective_dispatch_owner",
+    "source_owner_contracts:runtime_corrective_lowering_provenance_owner",
+    "source_owner_contracts:runtime_corrective_accessor_owner",
+    "supporting_contracts:tests/tooling/fixtures/runtime_corrective/dispatch_lowering_implementation_contract.json",
+    "supporting_contracts:tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json",
+    "required_ll_substrings:declare i32 @objc3_runtime_dispatch_i32(",
+    "required_ll_snippets:call i32 @objc3_runtime_read_current_property_i32()"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime dispatch retired route lowering, direct-dispatch alternate entrypoints, transitional lowering residue, storage retired route claims, gate lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, runner-only lowering rows, sidecar-only lowering proof, unlinked lowering probes, package-only lowering rows, and catalog-only acceptance rows remain strict-error, rejection, absent-support, or provenance-only evidence"
+}

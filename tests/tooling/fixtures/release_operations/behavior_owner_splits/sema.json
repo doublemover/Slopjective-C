@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-release-operations-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/release_operations"
+  ],
+  "support_boundary": "sema ownership is non-positive for this release-operations family. Same-major release policy, update channel metadata, warning policy, diagnostic policy, and upgrade claim policy are release governance semantics, not Objective-C 3 semantic compiler truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:release_operations",
+    "surface_kind:release-operations-source-surface",
+    "surface_kind:release-operations-metadata-surface",
+    "claim_id:same-major-stable-upgrade",
+    "claim_id:preview-upgrade",
+    "claim_id:cross-major-upgrade",
+    "compiler_phase_boundary:no-sema-positive-truth-from-release-operations-contracts",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic release-operation rows, gate semantic release-operation rows, retired route semantic release-operation rows, compatibility semantic release-operation rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and release-policy-only semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,19 @@
+#pragma once
+
+#include <string>
+
+#include "io/json/json_schema.h"
+#include "io/json/json_value.h"
+
+namespace objc3::io::json {
+
+void ValidateJsonSchemaAdditionalPropertySchemaDelegation(
+    const JsonValue &schema_root,
+    const JsonValue &additional_properties,
+    const JsonValue &value,
+    const std::string &key,
+    const std::string &instance_path,
+    const std::string &schema_path,
+    JsonSchemaResult &result);
+
+}  // namespace objc3::io::json

@@ -39,9 +39,16 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
 
     monkeypatch.setattr(materializer, "ROOT", root)
     monkeypatch.setattr(materializer, "PORTFOLIO", portfolio_path)
-    monkeypatch.setattr(materializer, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
-    monkeypatch.setattr(materializer, "TEMPLATE_ARTIFACT_ROOT", root / "tmp" / "artifacts" / "project-template")
-    monkeypatch.setattr(materializer, "TEMPLATE_REPORT_ROOT", root / "tmp" / "reports" / "project-template")
+    monkeypatch.setattr(
+        materializer,
+        "TEMPLATE_ARTIFACT_ROOT",
+        root / "tmp" / "artifacts" / "project-template",
+    )
+    monkeypatch.setattr(
+        materializer,
+        "TEMPLATE_REPORT_ROOT",
+        root / "tmp" / "reports" / "project-template",
+    )
 
     def fake_run_step(name: str, command: list[str]) -> dict[str, object]:
         stdout = ""
@@ -59,12 +66,30 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
         }
 
     monkeypatch.setattr(materializer, "run_step", fake_run_step)
-    monkeypatch.setattr(sys, "argv", ["materialize_objc3c_project_template.py", "--example", "auroraBoard"])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["materialize_objc3c_project_template.py", "--example", "auroraBoard"],
+    )
 
     exit_code = materializer.main()
 
-    template_path = root / "tmp" / "artifacts" / "project-template" / "auroraBoard" / "template.json"
-    harness_path = root / "tmp" / "reports" / "project-template" / "auroraBoard" / "demo-harness.json"
+    template_path = (
+        root
+        / "tmp"
+        / "artifacts"
+        / "project-template"
+        / "auroraBoard"
+        / "template.json"
+    )
+    harness_path = (
+        root
+        / "tmp"
+        / "reports"
+        / "project-template"
+        / "auroraBoard"
+        / "demo-harness.json"
+    )
     assert exit_code == 0
     assert template_path.is_file()
     assert harness_path.is_file()

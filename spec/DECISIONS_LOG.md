@@ -181,15 +181,19 @@ It is required for **any operation that may suspend**, including:
 ## D-013: Future value-optionals use canonical `Optional<T>` spelling {#decisions-d-013}
 
 **Decision:** If a future value-optional feature is standardized, its canonical source spelling is `Optional<T>`.
-`optional<T>` is not canonical and remains a reserved compatibility surface.
+`optional<T>` is not canonical and remains a reserved rejected spelling.
 
 In conforming modes:
 
 - parsers and interface emitters shall treat `Optional<T>` as the canonical spelling,
 - textual interfaces shall emit `Optional<T>` when value-optionals are represented,
-- any compatibility acceptance of `optional<T>` shall diagnose and offer a migration fix-it to `Optional<T>`.
+- `optional<T>` shall be rejected before type admission; diagnostics may offer a
+  canonicalization fix-it to `Optional<T>` but shall not accept the lowercase
+  spelling as a compatibility alias.
 
-**Rationale:** A single canonical spelling avoids dual-surface drift in tooling, formatting, metadata round-trips, and diagnostics while preserving a migration path for compatibility aliases.
+**Rationale:** A single canonical spelling avoids dual-surface drift in tooling,
+formatting, metadata round-trips, and diagnostics. A fix-it is rejection
+evidence, not a second source surface.
 
 **Spec impact:** [Part 3](#part-3) [§3.3.5](#part-3-3-5) and [§3.9](#part-3-9).
 
@@ -246,7 +250,7 @@ support based on parser/sema or contract-only progress.
 
 ---
 
-## D-032: Part 9 freezes the existing runtime cache and fallback surface before widening live fast paths {#decisions-d-032}
+## D-032: Part 9 freezes the existing runtime cache and slow-path surface before widening live fast paths {#decisions-d-032}
 
 **Decision:** `M272-D001` shall freeze the existing runtime dispatch boundary as
 follows:
@@ -262,8 +266,8 @@ follows:
   artifact paths so later runtime widening can stay provenance-aware.
 
 **Rationale:** The current Part 9 runnable boundary is already truthful: exact
-LLVM direct calls bypass runtime, while the existing method-cache / slow-path /
-fallback runtime remains the only live dispatch engine. `M272-D001` should
+LLVM direct calls bypass runtime, while the existing method-cache / slow-path
+runtime remains the only live dispatch engine. `M272-D001` should
 freeze that boundary before `M272-D002` widens the live fast path.
 
 **Spec impact:** [Part 9](#part-9) runtime behavior and [E](#e) conformance
@@ -506,7 +510,7 @@ IR or overclaiming runtime behavior before the later M272 execution lanes land.
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable
 `runtime_capability_report` and `public_conformance_report` payloads as a
-direct projection of the lowered conformance-report truth surface rather than
+direct projection of the lowered conformance-report owner surface rather than
 introducing an independent release or CLI-owned claim model.
 
 The current public claim set shall stay explicit:
@@ -589,8 +593,9 @@ validation sidecar.
 That gate currently permits only:
 
 - claimed profile `core`
-- compatibility selection `canonical|legacy`
-- migration-assist selection
+- language-version selection plus canonical rejection
+- retired compatibility selection fails closed
+- canonical rejection selection
 - JSON conformance publication/validation
 
 It explicitly does not permit:
@@ -618,8 +623,9 @@ operator probes.
 That matrix currently permits only:
 
 - claimed profile `core`
-- compatibility modes `canonical|legacy`
-- migration assist
+- canonical-only mode
+- retired legacy selection remains fail-closed
+- canonical rejection
 - JSON conformance emit/validate operations
 - native CLI report/publication/validation evidence
 - frontend C API report/publication evidence
@@ -674,8 +680,8 @@ macro-claim set for strictness and strict-concurrency publication.
 currently live selection surfaces:
 
 - language version,
-- compatibility mode,
-- migration assist.
+- canonical-only mode,
+- canonical rejection.
 
 Strictness selection, strict concurrency selection, and feature-macro claim
 publication shall remain machine-readable but fail-closed as unsupported until
@@ -690,12 +696,13 @@ spec eventually defines.
 
 ---
 
-## D-018: Compatibility selections are live, source-only claims stay downgraded, and strictness stays rejected {#decisions-d-018}
+## D-018: Retired compatibility selections fail closed, source-only claims stay downgraded, and strictness stays rejected {#decisions-d-018}
 
 **Decision:** The native `objc3c` sema layer shall publish one fail-closed
 semantic legality packet that classifies the current frontend truth surface as:
 
-- valid live selections: language version, compatibility mode, migration assist,
+- valid live selections: language version, canonical-only mode, canonical rejection,
+- retired selections: compatibility/legacy mode requests fail closed,
 - downgraded recognized claims: source-only declaration/object-surface features,
 - rejected claim surfaces: strictness, strict concurrency, and feature-macro publication.
 
@@ -775,11 +782,10 @@ Direct LLVM call sites remain outside the runtime dispatch entrypoint. The widen
 
 `M272-E001` does not invent a new runtime proof channel. Lane E freezes the current Part 9 gate by consuming the standard driver/manifest/frontend publication surface plus the already-landed `M272-D002` live summary.
 
-That means the Part 9 conformance gate remains tied to the published D002 runtime evidence for seeded fast-path baseline state, first-call cache hits, and deterministic fallback continuity.
+That means the Part 9 conformance gate remains tied to the published D002 runtime evidence for seeded fast-path baseline state, first-call cache hits, and deterministic dispatch-continuity evidence.
 
 ## D-035: Part 9 closeout publishes one runnable dispatch-control matrix on the existing D002 runtime proof {#decisions-d-035}
 
 `M272-E002` keeps the milestone closeout truthful by replaying the existing `M272-A002` through `M272-E001` proof chain and freezing one explicit runnable matrix rather than inventing a new runtime or publication boundary.
 
-That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic fallback caching on top of the same `M272-D002` evidence surface.
-
+That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic unresolved-dispatch rejection on top of the same `M272-D002` evidence surface.

@@ -5,6 +5,25 @@
   "issue": "M326-B001",
   "source_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "supported_platforms_contract": "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "support tier claim outside checked-in platform ids",
+      "package install claim missing replayable validation",
+      "release publication widened support tier"
+    ]
+  },
   "tiers": [
     {
       "tier_id": "tier-1",
@@ -44,7 +63,7 @@
   "publication_rules": [
     "only tier-1 and tier-2 hosts may be described as supported",
     "experimental hosts must not be described as installable support claims",
-    "unsupported hosts must not be described as best-effort supported",
+    "fail-closed hosts must not be described as best-effort supported",
     "package-install-update claims must agree with the same tier assignment"
   ],
   "forbidden_claims": [

@@ -1,0 +1,3 @@
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_collection.inc"
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics.inc"
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_properties.inc"

@@ -9,9 +9,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from objc3c_tooling.paths import repo_rel
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_count
+
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability"
 BUDGET_INVENTORY_PATH = FIXTURE_ROOT / "budget_inventory.json"
 POLICY_PATH = FIXTURE_ROOT / "sustainable_progress_policy.json"
@@ -32,18 +37,6 @@ def read_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeError(f"JSON object expected at {path}")
     return payload
-
-
-def count_package_script_categories(package_json: dict[str, Any]) -> dict[str, int]:
-    categories: dict[str, int] = {}
-    for name in package_json.get("scripts", {}):
-        key = name.split(":", 1)[0] if ":" in name else name
-        categories[key] = categories.get(key, 0) + 1
-    return dict(sorted(categories.items()))
-
-
-def count_action_definitions(path: Path) -> int:
-    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("def action_"))
 
 
 def iter_live_files(roots: list[Path]):
@@ -69,7 +62,7 @@ def main() -> int:
     task_hygiene_text = TASK_HYGIENE_PATH.read_text(encoding="utf-8")
 
     package_scripts = package_json.get("scripts", {})
-    script_categories = count_package_script_categories(package_json)
+    package_bridge_count = 1 if isinstance(package_scripts, dict) and "objc3c" in package_scripts else 0
     live_roots = [
         ROOT / ".github",
         ROOT / "docs",
@@ -101,11 +94,10 @@ def main() -> int:
     expired_waivers = [waiver for waiver in waivers if isinstance(waiver, dict) and waiver.get("status") == "expired"]
 
     measured = {
-        "package_script_count": len(package_scripts),
-        "package_script_budget": int(re.search(r"PACKAGE_SCRIPT_BUDGET = (\d+)", task_hygiene_text).group(1)),
-        "package_script_category_count": len(script_categories),
-        "package_script_categories": script_categories,
-        "public_workflow_action_count": count_action_definitions(ROOT / "scripts" / "objc3c_public_workflow_runner.py"),
+        "package_bridge_count": package_bridge_count,
+        "package_bridge_budget": int(re.search(r"PACKAGE_BRIDGE_BUDGET = (\d+)", task_hygiene_text).group(1)),
+        "package_bridge": "objc3c" if package_bridge_count else "",
+        "public_workflow_action_count": public_workflow_action_count(),
         "runbook_count": len(list((ROOT / "docs" / "runbooks").glob("*.md"))),
         "schema_count": len(list((ROOT / "schemas").glob("*.json"))),
         "live_check_script_count": len(list((ROOT / "scripts").rglob("check_*.py"))),
@@ -130,8 +122,10 @@ def main() -> int:
     }
 
     failures: list[str] = []
-    if measured["package_script_count"] > measured["package_script_budget"]:
-        failures.append("package script count exceeds budget")
+    if measured["package_bridge_count"] > measured["package_bridge_budget"]:
+        failures.append("package bridge count exceeds budget")
+    if measured["package_bridge_count"] != 1:
+        failures.append("objc3c package bridge must be live")
     must_absent = measured["must_remain_absent"]
     if must_absent["docs_contracts_exists"]:
         failures.append("docs/contracts must remain absent")

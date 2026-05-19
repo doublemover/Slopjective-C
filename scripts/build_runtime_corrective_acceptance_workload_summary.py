@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
-from objc3c_tooling.subprocesses import run_completed as run_command
+from objc3c_tooling.subprocesses import python_script_command, run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json"
@@ -31,14 +30,14 @@ def main() -> int:
     suite_payloads: dict[str, dict[str, Any]] = {}
     suite_ok = True
     for suite_id in contract["suite_ids"]:
-        result = run_command([sys.executable, str(HARNESS_PATH), "--show-suite", suite_id])
+        result = run_command(python_script_command(HARNESS_PATH, "--show-suite", suite_id))
         if result.returncode != 0:
             suite_ok = False
             continue
         payload = json.loads(result.stdout)
         suite_payloads[suite_id] = payload
 
-    catalog_result = run_command([sys.executable, str(HARNESS_PATH), "--check-catalog"])
+    catalog_result = run_command(python_script_command(HARNESS_PATH, "--check-catalog"))
     catalog_payload = json.loads(catalog_result.stdout) if catalog_result.returncode == 0 else {}
 
     dispatch_probe_paths = [ROOT / path for path in contract["dispatch_focus"]["authoritative_probe_paths"]]
@@ -51,14 +50,14 @@ def main() -> int:
         "suite_catalog_check_passes": catalog_result.returncode == 0 and catalog_payload.get("ok") is True,
         "all_suite_payloads_loaded": suite_ok and len(suite_payloads) == len(contract["suite_ids"]),
         "runtime_acceptance_suite_present": "runtime-acceptance" in suite_payloads,
-        "public_test_fast_suite_present": "public-test-fast" in suite_payloads,
+        "public_test_smoke_suite_present": "public-test-smoke" in suite_payloads,
         "public_test_full_suite_present": "public-test-full" in suite_payloads,
         "all_dispatch_probe_paths_exist": all(path.is_file() for path in dispatch_probe_paths),
         "all_synthesized_probe_paths_exist": all(path.is_file() for path in synthesized_probe_paths),
         "all_synthesized_fixture_paths_exist": all(path.is_file() for path in synthesized_fixture_paths),
         "required_reports_align_with_suite_ids": contract["required_reports"] == [
             "tmp/reports/runtime/acceptance/summary.json",
-            "tmp/reports/objc3c-public-workflow/test-fast.json",
+            "tmp/reports/objc3c-public-workflow/test-smoke.json",
             "tmp/reports/objc3c-public-workflow/test-full.json",
         ],
         "runbook_mentions_acceptance_workload_map": "acceptance_workload_map.json" in runbook_text,

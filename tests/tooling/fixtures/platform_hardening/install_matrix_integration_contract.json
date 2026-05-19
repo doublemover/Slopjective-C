@@ -3,9 +3,28 @@
   "surface_kind": "install-matrix-integration-contract",
   "milestone": "M326",
   "issue": "M326-D001",
-  "summary_script": "scripts/check_platform_hardening_install_matrix_integration.py",
+  "summary_implementation_anchor": "scripts/check_platform_hardening_install_matrix_integration.py",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "install matrix validation lost rollback evidence",
+      "offline install root missing native executable",
+      "build package validation failed before install matrix"
+    ]
+  },
   "required_inputs": [
-    "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+    "checked_outputs/platform-hardening/objc3c-platform-support-matrix.json",
     "tmp/reports/platform-hardening/build-package-validation-summary.json",
     "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",
     "tmp/reports/package-channels/end-to-end-summary.json"

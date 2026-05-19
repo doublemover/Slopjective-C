@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "parser",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "parser fixtures own canonical syntax acceptance, lexical shape, grammar recovery, and parser diagnostics only",
+  "positive_support_authority": "tests/native/parser/positive",
+  "negative_support_authority": "tests/native/parser/negative",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "selectors": [
+        "block_comment_lexical_basic.objc3",
+        "control_*_statement_bodies.objc3",
+        "function_return_annotation_*.objc3",
+        "message_send_keywords.objc3",
+        "*_literal_*.objc3"
+      ],
+      "disposition": "canonical syntax and selector-shape acceptance only"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/negative",
+      "selectors": [
+        "negative_missing_return.objc3",
+        "negative_message_*.objc3",
+        "negative_misplaced_qualifier_*.objc3",
+        "negative_parser_draft_syntax_*.objc3"
+      ],
+      "disposition": "parser recovery and grammar diagnostics"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/negative",
+      "selectors": [
+        "expect_failure.stage=compile + O3P*"
+      ],
+      "disposition": "syntax and grammar rejection metadata"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/parser/positive/canonical_module_main.objc3",
+    "tests/native/parser/positive/objc_property_surface.objc3",
+    "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+    "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+    "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+  ],
+  "retired_surface_rule": "old-mode literals and removed parser mode or retired route flags are parser rejections, never positive recovery fixtures"
+}

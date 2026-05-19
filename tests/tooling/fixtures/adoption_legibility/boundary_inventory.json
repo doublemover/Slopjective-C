@@ -3,16 +3,30 @@
   "schema_version": 1,
   "milestone": "M331",
   "runbook": "docs/runbooks/objc3c_adoption_legibility.md",
+  "owner_split": {
+    "boundary_inventory": "primary evaluator surface and substrate inventory",
+    "artifact_contract": "generated adoption evidence and evaluator publication artifact contract",
+    "capability_comparison": "Objective-C 2, Swift, and C++ comparison semantics",
+    "adoption_replay": "same-major adoption replay phases and fields",
+    "public_claim_policy": "candidate claim classes and forbidden public wording",
+    "metadata_publication": "evaluator-facing metadata projection"
+  },
+  "owner_contracts": {
+    "public_claim_owner": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+    "adoption_comparison_owner": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+    "adoption_replay_owner": "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
+    "publication_owner": "scripts/publish_objc3c_adoption_legibility_metadata.py"
+  },
   "working_scope": [
     "external evaluator entrypoints across README, site, tutorials, showcase, and public command surfaces",
-    "migration guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",
+    "conversion guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",
     "capability narrative and comparison wording constrained by public conformance, performance, package, release, and long-horizon evidence",
     "onboarding paths that reuse templates, package locks, canonical apps, and public workflow commands"
   ],
   "non_goals": [
     "hosted community or registry service",
     "IDE marketplace integration",
-    "unsupported source-compatibility guarantees",
+    "unsupported retired-source acceptance guarantees",
     "manual adoption metrics without replayable source queries",
     "private maintainer context as an evaluator prerequisite"
   ],
@@ -46,11 +60,11 @@
     "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
     "tests/tooling/fixtures/performance_governance/claim_policy.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json"
   ],
-  "substrate_scripts": [
+  "substrate_implementation_anchors": [
     "scripts/render_objc3c_public_command_surface.py",
     "scripts/check_objc3c_package_ecosystem_integration.py",
     "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
@@ -61,32 +75,48 @@
     "scripts/check_objc3c_long_horizon_operations_integration.py",
     "scripts/build_objc3c_long_horizon_operations_evidence.py"
   ],
-  "required_existing_public_scripts": [
-    "build:docs:commands",
-    "check:docs:surface",
-    "test:docs",
-    "test:showcase",
-    "test:showcase:e2e",
-    "build:objc3c:template",
-    "build:objc3c:package-lock",
-    "test:objc3c:package-ecosystem",
-    "test:objc3c:package-ecosystem:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:public-conformance",
-    "test:objc3c:performance-governance",
-    "test:objc3c:long-horizon-operations"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "build-public-command-surface",
+    "check-documentation-surface",
+    "validate-documentation-surface",
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "materialize-project-template",
+    "build-package-lock",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-public-conformance-reporting",
+    "validate-performance-governance",
+    "validate-long-horizon-operations"
   ],
   "measured_inventory_queries": [
     "rg --files docs/tutorials --glob '*.md'",
     "rg --files showcase --glob '*.objc3'",
-    "rg --files showcase --glob 'workspace.json'",
-    "node -e \"const p=require('./package.json'); console.log(Object.keys(p.scripts||{}).filter(k=>/objc3c|docs|showcase/.test(k)).length)\""
+    "rg --files showcase --glob 'workspace.json'"
+  ],
+  "measured_action_inventory": [
+    "build-public-command-surface",
+    "validate-package-ecosystem",
+    "validate-application-architecture",
+    "validate-public-conformance-reporting",
+    "validate-performance-governance",
+    "validate-long-horizon-operations"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/adoption-legibility/",
     "tmp/artifacts/adoption-legibility/"
   ],
+  "metadata_publication": {
+    "publisher": "scripts/publish_objc3c_adoption_legibility_metadata.py",
+    "publication_artifact": "tmp/artifacts/adoption-legibility/evaluator-publication.json",
+    "public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "successor_surfaces": [
     "M332 governance and ecosystem sustainability closeout"
   ]

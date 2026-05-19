@@ -40,6 +40,17 @@
       ]
     },
     {
+      "name": "hard_cutover_runtime_dispatch_retired_route_rejection",
+      "feature": "retired route runtime dispatch ABI claims are strict lowering errors",
+      "files": [
+        "HC-NOGATE-01.json"
+      ],
+      "hard_cutover": {
+        "positive_fixture_policy": "no lowering retired-source lane or runtime ABI alternate acceptance positives",
+        "replacement_behavior": "canonical typed dispatch ABI or fail-closed diagnostic"
+      }
+    },
+    {
       "name": "issue_81_async_coroutine_lowering",
       "feature": "coroutine-based async lowering and ABI stability",
       "issue": 81,

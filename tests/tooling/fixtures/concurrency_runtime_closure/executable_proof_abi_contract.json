@@ -4,7 +4,21 @@
   "milestone": "M322",
   "issue": "M322-D001",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
-  "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
+  "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
+  ],
+  "public_command_behavior_boundary": "public commands and workflows are executable proof routing only and do not widen public runtime ABI or turn evidence-log/generated-evidence-log evidence into support",
+  "proof_boundary_policy": {
+    "primary_axis": "behavior owner before public command wrapper, workflow label, executable proof report, private runtime ABI snapshot, generated report, packaged proof summary, probe payload snapshot, or public runtime ABI boundary",
+    "support_authority": "executable proof reports and public workflows are provenance unless runtime or e2e owners claim behavior already supported by parser, sema, lowering, and IR owners",
+    "positive_support_from_report": false,
+    "retired_surface_rule": "evidence-log, generated-evidence-log, wrapper-only, workflow-label-only, private-snapshot-only, probe-payload-only, package-only, gate workflow, retired route workflow, old-mode command, closure-local scaffolding, successor-boundary widening, and public ABI widening proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "public_commands": [
     "test:objc3c:concurrency-conformance",
     "test:objc3c:runnable-concurrency"
@@ -31,8 +45,11 @@
   "authoritative_code_paths": [
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts.objc3c_workflow",
+    "native/objc3c/src/runtime/concurrency/continuation_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ],
   "authoritative_fixture_paths": [

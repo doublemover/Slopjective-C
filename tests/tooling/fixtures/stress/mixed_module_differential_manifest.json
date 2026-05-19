@@ -4,9 +4,9 @@
   "case_ids": [
     "cross-module-runtime-package-interop-source-surface",
     "textual-binary-interface-parity-source-surface",
-    "mixed-image-compatibility-interop-semantics",
+    "mixed-image-interop-semantics",
     "imported-runtime-packaging-replay",
-    "c-cpp-swift-bridge-compatibility-semantics",
+    "c-cpp-swift-interop-boundary-semantics",
     "import-version-feature-claim-diagnostics",
     "runtime-packaging-bridge-loader-artifact-surface",
     "mixed-image-package-lowering-bridge-emission",
@@ -17,9 +17,9 @@
   "surface_contracts": {
     "runtime_cross_module_package_interop_source_surface": "objc3c.runtime.cross.module.package.interop.source.surface.v1",
     "runtime_textual_binary_interface_parity_source_surface": "objc3c.runtime.textual.binary.interface.parity.source.surface.v1",
-    "runtime_mixed_image_compatibility_interop_semantics_surface": "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1",
+    "runtime_mixed_image_interop_semantics_surface": "objc3c.runtime.mixed.image.interop.semantics.surface.v1",
     "runtime_package_loading_module_identity_semantics_surface": "objc3c.runtime.package.loading.module.identity.semantics.surface.v1",
-    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": "objc3c.runtime.c.cpp.swift.bridge.compatibility.semantics.surface.v1",
+    "runtime_c_cpp_swift_bridge_semantics_surface": "objc3c.runtime.c.cpp.swift.bridge.semantics.surface.v1",
     "runtime_import_version_feature_claim_diagnostics_surface": "objc3c.runtime.import.version.feature.claim.diagnostics.surface.v1",
     "runtime_packaging_bridge_loader_artifact_surface": "objc3c.runtime.packaging.bridge.loader.artifact.surface.v1",
     "runtime_mixed_image_package_lowering_bridge_emission_surface": "objc3c.runtime.mixed.image.package.lowering.bridge.emission.surface.v1",

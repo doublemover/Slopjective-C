@@ -17,18 +17,35 @@
     "schemas/objc3c-release-sbom-v1.schema.json",
     "schemas/objc3c-release-attestation-v1.schema.json",
     "schemas/objc3c-update-manifest-v1.schema.json",
+    "schemas/objc3c-package-lock-v1.schema.json",
+    "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
     "schemas/objc3c-package-channels-manifest-v1.schema.json",
     "schemas/objc3c-package-install-receipt-v1.schema.json"
   ],
-  "package_workflow_generators": [
+  "package_owner_split_modules": [
+    "scripts/objc3c_workflow/action_catalog_package_lock_contracts.py",
+    "scripts/objc3c_workflow/action_catalog_package_registry_publication.py",
+    "scripts/objc3c_workflow/action_catalog_package_install_receipts.py",
+    "scripts/objc3c_workflow/action_catalog_package_integration_claims.py",
+    "scripts/objc3c_workflow/action_catalog_package_public_workflows.py",
+    "scripts/objc3c_workflow/actions/ecosystem_publication_package_contracts.py",
+    "scripts/objc3c_workflow/actions/ecosystem_publication_package_runner.py"
+  ],
+  "package_workflow_implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_package_channels.py",
+    "scripts/build_objc3c_package_lock.py",
+    "scripts/build_objc3c_package_mirror.py",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/build_objc3c_update_manifest.py",
     "scripts/materialize_objc3c_stdlib_workspace.py",
     "scripts/materialize_objc3c_canonical_application_workspace.py"
   ],
-  "existing_package_validation_surfaces": [
+  "package_validation_implementation_anchors": [
+    "scripts/check_objc3c_package_authoring_workflow.py",
+    "scripts/check_objc3c_package_registry_mirror_reproducibility.py",
+    "scripts/check_objc3c_package_ecosystem_integration.py",
+    "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
     "scripts/check_objc3c_stdlib_foundation_integration.py",
     "scripts/check_objc3c_stdlib_advanced_integration.py",
     "scripts/check_objc3c_stdlib_program_integration.py",
@@ -39,21 +56,45 @@
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py"
   ],
-  "required_public_scripts": [
-    "build:objc3c:stdlib",
-    "build:objc3c:application-workspace",
-    "package:objc3c-native:runnable-toolchain",
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "test:stdlib:advanced",
-    "test:stdlib:advanced:e2e",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "missing checked-in package source contract",
+      "public package workflow action absent from objc3c bridge",
+      "generated package evidence outside package ecosystem artifact root",
+      "hosted registry claim without local package evidence"
+    ]
+  },
+  "required_actions": [
+    "materialize-stdlib-workspace",
+    "materialize-canonical-application-workspace",
+    "package-runnable-toolchain",
+    "build-package-lock",
+    "validate-package-authoring",
+    "validate-package-mirror",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem",
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "validate-stdlib-advanced",
+    "validate-runnable-stdlib-advanced",
+    "validate-stdlib-program",
+    "validate-runnable-stdlib-program",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "direct_successor_milestones": [
     "M328",
@@ -64,8 +105,8 @@
     "checked-in stdlib workspace and package surfaces",
     "dependency-resolution, lockfile, and package-authoring semantics generated from checked-in contracts",
     "offline mirror and registry metadata modeled as local replayable artifacts before any hosted service claim",
-    "canonical application and template pressure through the existing public workflow runner",
-    "runnable package, package-channel, release-manifest, and update-manifest integration through existing scripts"
+    "canonical application and template pressure through the objc3c package bridge and workflow action registry",
+    "runnable package, package-channel, release-manifest, and update-manifest integration through public objc3c workflow actions"
   ],
   "non_goals": [
     "hosted package registry service",

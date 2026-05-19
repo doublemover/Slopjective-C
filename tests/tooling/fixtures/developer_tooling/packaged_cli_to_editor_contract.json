@@ -3,21 +3,17 @@
   "surface_kind": "developer-tooling-packaged-cli-to-editor-contract",
   "milestone": "M325",
   "issue": "M325-D002",
-  "summary_script": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
+  "summary_action": "validate-runnable-developer-tooling",
+  "summary_command": "npm run objc3c -- validate-runnable-developer-tooling",
+  "summary_implementation_anchor": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
   "package_action": "package-runnable-toolchain",
+  "package_bridge": "objc3c",
   "public_actions": [
     "inspect-editor-tooling",
     "format-objc3c",
     "materialize-playground-workspace",
     "validate-developer-tooling",
     "validate-runnable-developer-tooling"
-  ],
-  "public_scripts": [
-    "inspect:objc3c:editor",
-    "format:objc3c",
-    "build:objc3c:playground",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling"
   ],
   "manifest_fields": [
     "developer_tooling_runbook",
@@ -33,7 +29,7 @@
     "developer_tooling_expected_formatted_source",
     "developer_tooling_scripts",
     "developer_tooling_public_actions",
-    "developer_tooling_public_scripts"
+    "package_bridge"
   ],
   "required_command_surfaces": [
     "build_playground",

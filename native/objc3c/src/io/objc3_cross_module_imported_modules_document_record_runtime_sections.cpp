@@ -1,0 +1,138 @@
+#include "io/objc3_cross_module_imported_modules_document_record_runtime_sections.h"
+
+#include <ostream>
+
+#include "io/objc3_json.h"
+
+using objc3::io::EscapeJsonString;
+
+void EmitObjc3CrossModuleImportedModuleRecordRuntimePreludeJson(
+    std::ostream &out,
+    const Objc3CrossModuleRuntimeLinkPlanImportedInput &imported_input) {
+  out << "      \"error_handling_result_and_bridging_artifact_replay_present\": "
+      << (imported_input.error_handling_result_and_bridging_artifact_replay_present
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"error_handling_binary_artifact_replay_ready\": "
+      << (imported_input.error_handling_binary_artifact_replay_ready ? "true"
+                                                                     : "false")
+      << ",\n"
+      << "      \"error_handling_runtime_import_artifact_ready\": "
+      << (imported_input.error_handling_runtime_import_artifact_ready ? "true"
+                                                                     : "false")
+      << ",\n"
+      << "      \"error_handling_separate_compilation_replay_ready\": "
+      << (imported_input.error_handling_separate_compilation_replay_ready
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"error_handling_deterministic\": "
+      << (imported_input.error_handling_deterministic ? "true" : "false")
+      << ",\n"
+      << "      \"error_handling_contract_id\": \""
+      << EscapeJsonString(imported_input.error_handling_contract_id) << "\",\n"
+      << "      \"error_handling_source_contract_id\": \""
+      << EscapeJsonString(imported_input.error_handling_source_contract_id)
+      << "\",\n"
+      << "      \"error_handling_result_and_bridging_artifact_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.error_handling_result_and_bridging_artifact_replay_key)
+      << "\",\n"
+      << "      \"error_handling_replay_key\": \""
+      << EscapeJsonString(imported_input.error_handling_error_handling_replay_key)
+      << "\",\n"
+      << "      \"throws_replay_key\": \""
+      << EscapeJsonString(imported_input.error_handling_throws_replay_key)
+      << "\",\n"
+      << "      \"result_like_replay_key\": \""
+      << EscapeJsonString(imported_input.error_handling_result_like_replay_key)
+      << "\",\n"
+      << "      \"ns_error_replay_key\": \""
+      << EscapeJsonString(imported_input.error_handling_ns_error_replay_key)
+      << "\",\n"
+      << "      \"unwind_replay_key\": \""
+      << EscapeJsonString(imported_input.error_handling_unwind_replay_key)
+      << "\",\n"
+      << "      \"concurrency_actor_mailbox_runtime_import_present\": "
+      << (imported_input.concurrency_actor_mailbox_runtime_import_present
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_runtime_ready\": "
+      << (imported_input.concurrency_actor_mailbox_runtime_ready ? "true"
+                                                                 : "false")
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_runtime_deterministic\": "
+      << (imported_input.concurrency_actor_mailbox_runtime_deterministic
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"concurrency_actor_contract_id\": \""
+      << EscapeJsonString(imported_input.concurrency_actor_contract_id)
+      << "\",\n"
+      << "      \"concurrency_actor_source_contract_id\": \""
+      << EscapeJsonString(imported_input.concurrency_actor_source_contract_id)
+      << "\",\n"
+      << "      \"concurrency_actor_mailbox_runtime_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_actor_mailbox_runtime_replay_key)
+      << "\",\n"
+      << "      \"concurrency_actor_lowering_replay_key\": \""
+      << EscapeJsonString(imported_input.concurrency_actor_lowering_replay_key)
+      << "\",\n"
+      << "      \"concurrency_actor_isolation_lowering_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_actor_isolation_lowering_replay_key)
+      << "\",\n";
+}
+
+void EmitObjc3CrossModuleImportedModuleRecordMetaprogrammingSectionJson(
+    std::ostream &out,
+    const Objc3CrossModuleRuntimeLinkPlanImportedInput &imported_input) {
+  out << "      \"metaprogramming_macro_host_process_cache_runtime_integration_present\": "
+      << (imported_input
+                  .metaprogramming_macro_host_process_cache_runtime_integration_present
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"metaprogramming_macro_host_process_cache_runtime_ready\": "
+      << (imported_input.metaprogramming_macro_host_process_cache_runtime_ready
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"metaprogramming_macro_host_process_cache_separate_compilation_ready\": "
+      << (imported_input
+                  .metaprogramming_macro_host_process_cache_separate_compilation_ready
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"metaprogramming_macro_host_process_cache_deterministic\": "
+      << (imported_input.metaprogramming_macro_host_process_cache_deterministic
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"metaprogramming_macro_host_process_cache_contract_id\": \""
+      << EscapeJsonString(
+             imported_input.metaprogramming_macro_host_process_cache_contract_id)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_source_contract_id\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_source_contract_id)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.metaprogramming_macro_host_process_cache_replay_key)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_host_executable_relative_path\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_host_executable_relative_path)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_root_relative_path\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_root_relative_path)
+      << "\",\n";
+}

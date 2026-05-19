@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split-index",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "source_contracts": [
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json"
+  ],
+  "split_policy": {
+    "primary_axis": "phase owner contract before fixture path convenience, docs/evidence surface, generated manifest, retired surface, or absent-support row",
+    "positive_rule": "positive support claims must remain hand-authored tests/native behavior evidence owned by parser, sema, lowering, IR, runtime, or e2e split contracts",
+    "docs_evidence_rule": "docs, issue evidence, source_basis text, and cross-index references are provenance only and cannot create behavior support",
+    "generated_rule": "generated-only contracts are provenance-only and cannot satisfy phase support claims",
+    "retired_surface_rule": "old-mode, gate, retired route, evidence-log, generated-only, migration-only, retired-source, unsupported-feature, and alternate acceptance contracts are strict rejection, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_boundary": "parser",
+      "path": "tests/conformance/phase_owner_contract_splits/parser.json"
+    },
+    {
+      "owner_boundary": "sema",
+      "path": "tests/conformance/phase_owner_contract_splits/sema.json"
+    },
+    {
+      "owner_boundary": "lowering",
+      "path": "tests/conformance/phase_owner_contract_splits/lowering.json"
+    },
+    {
+      "owner_boundary": "ir",
+      "path": "tests/conformance/phase_owner_contract_splits/ir.json"
+    },
+    {
+      "owner_boundary": "runtime",
+      "path": "tests/conformance/phase_owner_contract_splits/runtime.json"
+    },
+    {
+      "owner_boundary": "e2e",
+      "path": "tests/conformance/phase_owner_contract_splits/e2e.json"
+    },
+    {
+      "owner_boundary": "docs_evidence",
+      "path": "tests/conformance/phase_owner_contract_splits/docs_evidence.json"
+    },
+    {
+      "owner_boundary": "rejection_provenance",
+      "path": "tests/conformance/phase_owner_contract_splits/rejection_provenance.json"
+    }
+  ]
+}

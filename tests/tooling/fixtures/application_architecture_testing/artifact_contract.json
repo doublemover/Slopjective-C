@@ -29,7 +29,8 @@
     "package-integration-summary.json",
     "closeout-gate.json"
   ],
-  "public_actions": [
+  "package_bridge": "objc3c",
+  "required_actions": [
     "materialize-project-template",
     "materialize-canonical-application-workspace",
     "materialize-playground-workspace",
@@ -41,18 +42,6 @@
     "validate-runnable-stdlib-program",
     "package-runnable-toolchain"
   ],
-  "public_scripts": [
-    "build:objc3c:application-workspace",
-    "build:objc3c:template",
-    "build:objc3c:playground",
-    "test:objc3c:application-architecture",
-    "test:objc3c:application-architecture:e2e",
-    "test:showcase",
-    "test:showcase:e2e",
-    "test:stdlib:program",
-    "test:stdlib:program:e2e",
-    "package:objc3c-native:runnable-toolchain"
-  ],
   "artifact_claim_rules": [
     "all milestone evidence reports publish under one generated report root",
     "all machine-owned application-architecture artifacts must be replayable from checked-in source contracts and public workflow actions",
@@ -60,7 +49,7 @@
     "package and runnable evidence is invalid if it bypasses the public workflow runner"
   ],
   "non_goals": [
-    "independent milestone-local evidence roots",
+    "independent shared evidence roots",
     "untracked schema drift between template and canonical-app evidence",
     "package or install evidence published without a corresponding source contract"
   ]

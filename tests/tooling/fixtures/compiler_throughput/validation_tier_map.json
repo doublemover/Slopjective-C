@@ -3,17 +3,17 @@
   "schema_version": 1,
   "tiers": [
     {
-      "tier": "fast",
-      "public_action": "test-fast",
+      "tier": "smoke",
+      "public_action": "test-smoke",
       "guarantees": [
-        "bounded smoke slice",
+        "behavior-first parser, sema, lowering, IR, runtime, and e2e matrix",
         "runtime acceptance and ABI/accessor proof",
         "canonical replay/native-truth proof"
       ]
     },
     {
-      "tier": "smoke",
-      "public_action": "test-smoke",
+      "tier": "execution-smoke",
+      "public_action": "test-execution-smoke",
       "guarantees": [
         "compile/link/run execution behavior over the full runnable smoke corpus"
       ]

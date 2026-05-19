@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-phase-owner-contract-behavior-provenance-split",
+  "owner_boundary": "lowering",
+  "source_contract": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+  "support_boundary": "lowering ownership covers strict-runtime-dispatch lowering support claims, expression, statement, Objective-C runtime, ownership, and lowering error fixture families only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "phase_contracts[phase=lowering]",
+    "support_claim=objc3c.behavior.lowering.strict-runtime-dispatch",
+    "fixture_root=tests/native/lowering",
+    "required_families:expressions",
+    "required_families:statements",
+    "required_families:objc_runtime",
+    "required_families:ownership",
+    "required_families:errors",
+    "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime-dispatch retired route lowering, removed retired route flags, strict link evidence, and generated-only lowering rows remain strict-error, canonical rejection, or provenance-only evidence"
+}

@@ -1,0 +1,7 @@
+// Canonical lowering Objective-C runtime fixture: nil optional sends elide live dispatch.
+module LoweringObjcRuntimeNilReceiverRuntimeCallElision;
+
+fn main() -> i32 {
+  let sent = [nil? ping];
+  return sent + 5;
+}

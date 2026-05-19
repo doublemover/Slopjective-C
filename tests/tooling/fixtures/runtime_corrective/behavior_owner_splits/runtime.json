@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "runtime ownership covers runtime acceptance cases, linked probes, dispatch/cache behavior, property storage helpers, ARC helper interaction, and native runtime symbols after canonical fixtures own the behavior; acceptance reports, generated reports, proof bundles, replay manifests, source-owner contract rows, evidence-log rows, migration-only rows, runner-only rows, cache-only rows, and counter-only rows remain provenance unless canonical runtime owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "suite_ids:runtime-acceptance",
+    "runtime_acceptance_case_ids:canonical-dispatch",
+    "runtime_acceptance_case_ids:canonical-sample-set",
+    "runtime_acceptance_case_ids:dispatch-fast-path",
+    "authoritative_probe_paths:tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/synthesized_accessor_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "authoritative_runtime_symbols:objc3_runtime_dispatch_i32",
+    "authoritative_runtime_symbols:objc3_runtime_read_current_property_i32",
+    "authoritative_runtime_symbols:objc3_runtime_write_current_property_i32"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "unresolved dispatch, runtime pseudo-success, public ABI widening, unlinked probes, retired route runtime paths, runtime gates, old-mode runtime rows, compatibility runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, runner-only runtime rows, cache-only runtime rows, counter-only runtime rows, sidecar-only proof, replay-text-only proof, and alternate acceptance rows remain strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

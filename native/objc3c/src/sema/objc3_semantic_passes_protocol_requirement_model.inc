@@ -1,0 +1,5 @@
+#include "sema/objc3_semantic_passes_protocol_requirement_model_inventory_types.inc"
+#include "sema/objc3_semantic_passes_protocol_requirement_model_diagnostics_readiness.inc"
+#include "sema/objc3_semantic_passes_protocol_requirement_model_inventory.inc"
+#include "sema/objc3_semantic_passes_protocol_requirement_model_matching.inc"
+#include "sema/objc3_semantic_passes_protocol_requirement_model_replay_model.inc"

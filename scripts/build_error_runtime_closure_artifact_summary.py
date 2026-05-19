@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_actions
 import json
 from pathlib import Path
 from typing import Any
@@ -16,8 +17,7 @@ ACCEPTANCE_PATH = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
 INTEGRATION_PATH = ROOT / "scripts/check_objc3c_runtime_architecture_integration.py"
 CONFORMANCE_PATH = ROOT / "scripts/check_objc3c_runnable_error_conformance.py"
 E2E_PATH = ROOT / "scripts/check_objc3c_runnable_error_end_to_end.py"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
-FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 RUNTIME_IMPORT_PATH = ROOT / "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
 
 
@@ -32,7 +32,6 @@ def main() -> int:
     integration_text = INTEGRATION_PATH.read_text(encoding="utf-8")
     conformance_text = CONFORMANCE_PATH.read_text(encoding="utf-8")
     e2e_text = E2E_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
     frontend_artifacts_text = FRONTEND_ARTIFACTS_PATH.read_text(encoding="utf-8")
     runtime_import_text = RUNTIME_IMPORT_PATH.read_text(encoding="utf-8")
 
@@ -58,7 +57,9 @@ def main() -> int:
         "conformance_reads_acceptance_and_integration_reports": "ACCEPTANCE_REPORT" in conformance_text and "INTEGRATION_REPORT" in conformance_text,
         "conformance_preserves_error_surface_packets": all(surface in conformance_text for surface in contract["canonical_surfaces"]),
         "e2e_preserves_packaged_error_fixture_and_probe": '"error_runtime_fixture"' in e2e_text and '"error_runtime_probe"' in e2e_text,
-        "workflow_preserves_public_error_commands": "validate-error-conformance" in workflow_text and "validate-runnable-error" in workflow_text,
+        "workflow_preserves_public_error_commands": public_workflow_has_actions(
+            ["validate-error-conformance", "validate-runnable-error"]
+        ),
         "frontend_artifacts_publish_runtime_registration_surface": "runtime_registration_manifest" in frontend_artifacts_text,
         "runtime_import_surface_preserves_runtime_registration_replay": "ready_for_live_registration_discovery_replay" in runtime_import_text and "unexpected runtime registration manifest contract id" in runtime_import_text,
     }
@@ -92,4 +93,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,6 +1,6 @@
 # Tutorial Build Run And Verify Surface
 
-This file defines the live build, run, and verify workflow for the tutorial and migration path.
+This file defines the live build, run, and verify workflow for the tutorial and canonicalization path.
 
 Use it when you need the exact commands and artifact expectations behind the reader-facing tutorials.
 
@@ -8,8 +8,8 @@ Use it when you need the exact commands and artifact expectations behind the rea
 
 The tutorial workflow must stay on the normal public compiler and showcase surfaces.
 
-- build the native toolchain through the public package-script surface
-- compile showcase examples through `compile:objc3c`
+- build the native toolchain through the public npm bridge surface
+- compile showcase examples through `npm run objc3c -- compile-objc3c`
 - verify the checked-in example portfolio through the showcase surface and integrated validation
 - treat `tmp/artifacts/showcase/` and `tmp/reports/showcase/` as outputs, not as tutorial sources
 
@@ -18,7 +18,7 @@ The tutorial workflow must stay on the normal public compiler and showcase surfa
 Build the native toolchain first:
 
 ```sh
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 That is the canonical tutorial build step. Do not add a tutorial-only build wrapper.
@@ -28,7 +28,7 @@ That is the canonical tutorial build step. Do not add a tutorial-only build wrap
 Compile one checked-in example directly:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 Use `auroraBoard` for the first compile because it stays closest to the current object-model and runtime-acceptance shape.
@@ -38,23 +38,24 @@ Use `auroraBoard` for the first compile because it stays closest to the current 
 After one direct compile, verify the full checked-in portfolio:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
 Use the packaged surface only when you need the staged runnable bundle:
 
 ```sh
-npm run test:showcase:e2e
-npm run test:objc3c:runnable-developer-tooling
+npm run objc3c -- validate-runnable-showcase
+npm run objc3c -- validate-runnable-developer-tooling
 ```
 
 If you want the ordered example sequence after these commands are clear, continue to `docs/tutorials/guided_walkthrough.md`.
 
 ## Validation Surface
 
-The bounded getting-started validation contract is implemented in `scripts/check_getting_started_surface.py`.
-The public integrated entrypoint for the same tutorial and onboarding flow is `npm run test:getting-started`.
+The bounded getting-started validation contract is reached through
+`npm run objc3c -- validate-getting-started`.
+The public integrated entrypoint for the same tutorial and onboarding flow is `npm run objc3c -- validate-getting-started`.
 
 That surface proves:
 
@@ -63,7 +64,8 @@ That surface proves:
 - the walkthrough-selected examples still compile through the normal public compiler path
 - the public tutorial and onboarding command surface still runs end to end
 
-The live smoke integration for that same surface is implemented in `scripts/check_getting_started_integration.py`.
+The live smoke integration for that same surface is reached through
+`npm run objc3c -- validate-getting-started`.
 
 ## Artifact And Report Expectations
 
@@ -80,8 +82,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/getting_started.md`
-- `scripts/check_getting_started_surface.py`
-- `scripts/check_getting_started_integration.py`
+- `npm run objc3c -- validate-getting-started`
 - `docs/tutorials/objc2_to_objc3_migration.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
@@ -102,10 +103,12 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - command truth:
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- <action>`
 - bounded tutorial validation:
+  - `npm run objc3c -- validate-getting-started`
   - `scripts/check_getting_started_surface.py`
   - `scripts/check_getting_started_integration.py`
+  - `scripts.objc3c_workflow`
 - machine-owned outputs:
   - `tmp/artifacts/showcase/`
   - `tmp/reports/showcase/`
@@ -115,5 +118,5 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 ## Explicit Non-Goals
 
 - no tutorial-specific compiler wrapper
-- no sidecar validation commands that bypass the public package-script surface
+- no sidecar validation commands that bypass the public npm bridge surface
 - no checked-in tutorial claims rooted in `tmp/` outputs instead of source inputs

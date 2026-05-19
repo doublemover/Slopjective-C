@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/boundary_inventory.json"
@@ -33,12 +34,19 @@ def main() -> int:
     contract = read_json(CONTRACT_PATH)
     integration = read_json(INTEGRATION_SUMMARY)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    registered_actions = set(public_workflow_action_names())
+    missing_actions = [
+        str(action)
+        for action in contract["public_actions"]
+        if str(action) not in registered_actions
+    ]
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_developer_tooling_boundary_inventory_summary.py",
         "integration_summary_passes": integration.get("ok") is True,
         "all_authoritative_code_paths_exist": all(resolve_repo_path(path).exists() for path in contract["authoritative_code_paths"]),
         "all_report_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["report_paths"]),
+        "all_public_actions_registered": not missing_actions,
         "runbook_mentions_current_capability_map": "## Current Capability Map" in runbook_text,
         "runbook_mentions_explicit_gap_inventory": "## Explicit Gap Inventory" in runbook_text,
         "runbook_mentions_language_server_surface": "manifest-backed language-server capabilities and navigation" in runbook_text,
@@ -52,8 +60,9 @@ def main() -> int:
         "status": "PASS" if all(checks.values()) else "FAIL",
         "runner_path": "scripts/build_developer_tooling_boundary_inventory_summary.py",
         "authoritative_code_path_count": len(contract["authoritative_code_paths"]),
-        "public_command_count": len(contract["public_commands"]),
+        "package_bridge": contract["package_bridge"],
         "public_action_count": len(contract["public_actions"]),
+        "missing_actions": missing_actions,
         "report_path_count": len(contract["report_paths"]),
         "supported_capability_count": len(contract["supported_capabilities"]),
         "gap_capability_count": len(contract["gap_capabilities"]),
@@ -66,7 +75,7 @@ def main() -> int:
         "# Developer Tooling Boundary Inventory Summary\n\n"
         f"- Contract: `{payload['source_contract_id']}`\n"
         f"- Authoritative code paths: `{payload['authoritative_code_path_count']}`\n"
-        f"- Public commands: `{payload['public_command_count']}`\n"
+        f"- Package bridge: `{payload['package_bridge']}`\n"
         f"- Public actions: `{payload['public_action_count']}`\n"
         f"- Supported capabilities: `{payload['supported_capability_count']}`\n"
         f"- Gap capabilities: `{payload['gap_capability_count']}`\n"

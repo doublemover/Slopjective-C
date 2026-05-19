@@ -9,9 +9,9 @@
     "native_executable",
     "frontend_c_api_runner",
     "runtime_library",
-    "compile_wrapper",
+    "compile_action",
     "repo_superclean_surface",
-    "release_evidence_gate_script",
+    "release_evidence_gate_action",
     "command_surfaces",
     "copied_files",
     "copied_file_count"

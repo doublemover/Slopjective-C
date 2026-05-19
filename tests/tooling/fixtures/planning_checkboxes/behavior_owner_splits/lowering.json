@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-planning-checkboxes-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/planning_checkboxes"
+  ],
+  "support_boundary": "lowering ownership is non-positive for this planning-checkbox family. The family contains markdown and JSON planning policy fixtures only, with no checked-in lowering output truth.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "absent:tests/tooling/fixtures/planning_checkboxes/**/*-lowering.expect.txt",
+    "tooling_fixture_family:planning_checkboxes",
+    "compiler_phase_boundary:no-lowering-positive-truth-from-planning-checkbox-fixtures",
+    "upstream_owner_required:tests/native/lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering planning rows, gate lowering planning rows, retired route lowering planning rows, compatibility lowering planning rows, migration-only lowering rows, generated-only lowering rows, evidence-log lowering rows, and planning-policy-only lowering support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

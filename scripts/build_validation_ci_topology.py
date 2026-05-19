@@ -15,8 +15,8 @@ REPORT_JSON_PATH = REPORT_DIR / 'validation_ci_topology.json'
 REPORT_MD_PATH = REPORT_DIR / 'validation_ci_topology.md'
 
 TOPOLOGY = {
-    'test:fast': ['aggregate-validation', 'docs', 'repo-shape', 'showcase', 'onboarding'],
-    'test:objc3c:full': [
+    'test-smoke': ['aggregate-validation', 'docs', 'repo-shape', 'showcase', 'onboarding'],
+    'test-full': [
         'aggregate-validation',
         'docs',
         'repo-shape',
@@ -30,7 +30,7 @@ TOPOLOGY = {
         'packaging-channels',
         'release-operations',
     ],
-    'test:objc3c:nightly': [
+    'test-nightly': [
         'aggregate-validation',
         'docs',
         'repo-shape',
@@ -60,21 +60,22 @@ TOPOLOGY = {
 def main() -> None:
     suite_matrix = load_json(SUITE_MATRIX_PATH)
     known_families = {row['suite_family'] for row in suite_matrix['suite_families']}
-    for script_name, families in TOPOLOGY.items():
+    for action, families in TOPOLOGY.items():
         missing = [family for family in families if family not in known_families]
         if missing:
-            raise RuntimeError(f'{script_name} topology references unknown families: {missing}')
+            raise RuntimeError(f'{action} topology references unknown families: {missing}')
 
     payload = {
         'issue': 'validation-ci-topology',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'topology': [
             {
-                'package_script': script_name,
+                'action': action,
+                'public_command': f'npm run objc3c -- {action}',
                 'family_count': len(families),
                 'families': families,
             }
-            for script_name, families in TOPOLOGY.items()
+            for action, families in TOPOLOGY.items()
         ],
         'next_issues': ['validation-ci-topology-integration'],
     }
@@ -83,7 +84,7 @@ def main() -> None:
 
     lines = ['# Validation CI Topology', '', f"- issue: `{payload['issue']}`", '', '## Aggregate schedules']
     for row in payload['topology']:
-        lines.append(f"- `{row['package_script']}` -> `{row['family_count']}` families")
+        lines.append(f"- `{row['public_command']}` -> `{row['family_count']}` families")
         lines.append(f"  - families: {', '.join(f'`{family}`' for family in row['families'])}")
     lines.extend(['', 'Next issue: `validation-ci-topology-integration`', ''])
     markdown = '\n'.join(lines)

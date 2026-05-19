@@ -4,24 +4,140 @@
   "milestone": "M319",
   "issue": "M319-A001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m319/M319-A001",
+  "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before object identity, property synthesis, ivar binding/layout, runtime metadata, dispatch/object inspection, loader workload, generated report, compile artifact, private query snapshot, public command surface, or closure/provenance row",
+    "support_authority": "object-model closure rows are source, workload, runtime query, artifact, acceptance, command, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
+    "generated_report_rule": "generated reports, compile manifests, runtime-registration descriptors, private query snapshots, dispatch/object inspection dumps, property/ivar layout snapshots, workflow labels, and packaged proof summaries cannot define canonical support",
+    "retired_surface_rule": "unresolved dispatch retired route, public reflection ABI widening, public runtime ABI widening, source-only reflection truth, probe-local reflection truth, compatibility, gate, retired route, old-mode, migration-only, evidence-log, generated-only, generated-evidence-log, descriptor-only, manifest-only, query-only, and closure-local alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "object identity, property synthesis, ivar binding/layout, runtime metadata registration, dispatch/object inspection, cross-module loader replay, generated compile artifacts, private query snapshots, public workflows, and closure/provenance rows are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
+  },
+  "hard_cutover_source_owner_contract": {
+    "source_owned": true,
+    "evidence_log_allowed": false,
+    "retired_route_claims_allowed": false,
+    "generated_report_claims_allowed": false,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+  },
+  "source_owner_contracts": {
+    "object_model_semantic_owner": {
+      "source_contract": "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "sema",
+        "runtime",
+        "canonical_rejection",
+        "object_model_provenance"
+      ],
+      "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+      "support_boundary": "object identity, class/metaclass/protocol/category meaning, property synthesis, ivar binding/layout, selector meaning, and private-query semantics require sema/runtime owner assignment; source-only metadata, probe-local reflection, generated reports, and private query snapshots stay provenance unless a behavior owner claims support",
+      "summary_implementation_anchor": "scripts/build_object_model_closure_semantic_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_object_model_closure_live_property_reflection.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "object_model_runtime_owner": {
+      "source_contract": "tests/tooling/fixtures/object_model_closure/realized_object_graph_runtime_implementation_contract.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "lowering",
+        "runtime",
+        "canonical_rejection",
+        "object_model_provenance"
+      ],
+      "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+      "support_boundary": "runtime object-model support requires lowering/runtime owner assignment for realization, dispatch, property/ivar layout, runtime metadata, and object inspection; dispatch retired route, public ABI widening, evidence-log runtime proof, and query-only inspection stay rejection/provenance",
+      "summary_implementation_anchor": "scripts/build_object_model_closure_runtime_implementation_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_object_model_closure_live_runtime.py",
+        "scripts/check_object_model_closure_realization_lowering.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "object_model_artifact_owner": {
+      "source_contract": "tests/tooling/fixtures/object_model_closure/object_model_reflection_artifact_runtime_registration_contract.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "object_model_provenance"
+      ],
+      "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+      "support_boundary": "object-model artifact rows bind lowering, IR, and provenance for compile manifests, runtime-registration manifests, runtime-registration descriptors, dispatch table reflection records, property/ivar layout records, and replay preservation; generated descriptor-only or manifest-only rows cannot create support",
+      "summary_implementation_anchor": "scripts/build_object_model_closure_artifact_registration_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_object_model_closure_property_reflection_artifact.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "object_model_workload_owner": {
+      "source_contract": "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "parser",
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "object_model_provenance"
+      ],
+      "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+      "support_boundary": "loader/category/protocol workloads are runtime/e2e evidence only when parser and runtime owners claim fixture import, category attachment, protocol conformance, dispatch, and object inspection behavior; workload maps, workflow labels, and report rows remain provenance",
+      "summary_implementation_anchor": "scripts/build_object_model_closure_workload_summary.py",
+      "check_implementation_anchors": [],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "object_model_executable_proof_owner": {
+      "source_contract": "tests/tooling/fixtures/object_model_closure/executable_proof_abi_contract.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "runtime",
+        "e2e",
+        "canonical_rejection",
+        "object_model_provenance"
+      ],
+      "behavior_owner_split_index": "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/index.json",
+      "support_boundary": "executable proof is runtime/e2e evidence only after object identity, property synthesis, ivar layout, runtime metadata, dispatch/object inspection, and loader replay have canonical owner assignment; command wrappers, workflow labels, generated reports, and private query snapshots remain provenance",
+      "summary_implementation_anchor": "scripts/build_object_model_closure_executable_proof_summary.py",
+      "check_implementation_anchors": [],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    }
+  },
   "focus": [
     "realized-class-metaclass-protocol-category-runtime-closure",
     "property-ivar-and-aggregate-reflection-coherence-over-runtime-owned-state",
     "compile-coupled-object-model-proof-and-packaged-validation-without-public-abi-widening"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/images/registration_api.cpp",
+    "native/objc3c/src/runtime/selectors/selector_table.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+    "native/objc3c/src/runtime/state/runtime_reset.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/lower/objc3_lowering_contract.h",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_object_model_conformance.py",
     "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
     "scripts/check_objc3c_runnable_object_model_end_to_end.py",
     "scripts/check_objc3c_runnable_storage_reflection_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "docs/objc3c-native.md",
     "tests/tooling/runtime/README.md"
   ],
@@ -86,7 +202,8 @@
       "summary": "Aggregate object-model and property reflection are runtime-backed today, but the supported query surface remains private testing API and must stay explicitly fail-closed rather than being overclaimed as public reflection ABI.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
         "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp"
       ],
@@ -114,9 +231,10 @@
   ],
   "explicit_non_goals": [
     "no-public-runtime-abi-widening",
-    "no-claim-that-unresolved-dispatch-miss-fallback-is-part-of-supported-object-model-closure",
+    "no-claim-that-unresolved-dispatch-miss-retired-route-is-part-of-supported-object-model-closure",
     "no-source-only-or-probe-local-reflection-truth-outside-runtime-owned-query-state",
-    "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"
+    "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-query-snapshots-dispatch-inspection-dumps-property-layout-snapshots-workflow-labels-or-closure-provenance-rows",
+    "no-closure-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"
   ],
   "successor_map": [
     {
@@ -144,7 +262,15 @@
     {
       "query_id": "runtime-object-model-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/images/registration_api.cpp",
+        "native/objc3c/src/runtime/selectors/selector_table.cpp",
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+        "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+        "native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp",
+        "native/objc3c/src/runtime/state/runtime_reset.cpp"
+      ],
       "patterns": [
         "objc3_runtime_copy_realized_class_graph_state_for_testing",
         "objc3_runtime_copy_realized_class_entry_for_testing",

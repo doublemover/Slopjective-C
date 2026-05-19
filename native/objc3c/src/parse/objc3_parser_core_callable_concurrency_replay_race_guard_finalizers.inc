@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_callable_concurrency_replay_race_guard_finalizers_function_publication.inc"
+
+#include "parse/objc3_parser_core_callable_concurrency_replay_race_guard_finalizers_method_publication.inc"
+
+#include "parse/objc3_parser_core_callable_concurrency_replay_race_guard_finalizers_function_finalization.inc"
+
+#include "parse/objc3_parser_core_callable_concurrency_replay_race_guard_finalizers_method_finalization.inc"

@@ -1,0 +1,108 @@
+{
+  "contract_id": "objc3c.security.hardening.owner.contracts.v1",
+  "surface_kind": "security-hardening-owner-contracts",
+  "milestone": "M327",
+  "issue": "M327-A001",
+  "source_surface": "tests/tooling/fixtures/security_hardening/source_surface.json",
+  "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "hard_cutover_guardrails": {
+    "evidence_log_security_proof_allowed": false,
+    "generated_report_capability_truth_allowed": false,
+    "local_tabletop_capability_truth_allowed": false,
+    "retired_route_claims_allowed": false,
+    "trust_bypass_claims_allowed": false,
+    "wrapper_only_security_actions_allowed": false,
+    "security_positive_claim_requires_source_contract": true,
+    "security_positive_claim_requires_runtime_or_release_evidence": true
+  },
+  "domain_owner_contracts": {
+    "macro_provenance_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+      "owner": "security-hardening-macro-provenance",
+      "claim_authority": "checked-in macro metadata, package identity, provenance, and runtime acceptance evidence",
+      "required_actions": [
+        "check-security-hardening-surface",
+        "check-security-hardening-schema-surface",
+        "build-security-posture"
+      ],
+      "required_contract_fields": [
+        "macro_metadata_owner",
+        "macro_package_identity_owner",
+        "macro_provenance_owner",
+        "runtime_acceptance_owner"
+      ],
+      "forbidden_claims": [
+        "evidence-log macro trust proof",
+        "retired route macro package trust",
+        "trust bypass for missing provenance",
+        "wrapper-only macro security action"
+      ]
+    },
+    "response_drill_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
+      "owner": "security-hardening-response-drill",
+      "claim_authority": "release, distribution, platform, and posture evidence linked by the drill contract",
+      "required_actions": [
+        "check-security-response-drill",
+        "validate-security-hardening"
+      ],
+      "required_contract_fields": [
+        "incident_response_owner",
+        "release_blocker_owner",
+        "disclosure_publication_owner",
+        "posture_restore_owner"
+      ],
+      "forbidden_claims": [
+        "local-only tabletop as capability truth",
+        "evidence-log response readiness proof",
+        "unowned disclosure override",
+        "retired route release publication after drill failure"
+      ]
+    },
+    "runtime_hardening_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+      "owner": "security-hardening-runtime",
+      "claim_authority": "runtime acceptance and runnable release-candidate evidence",
+      "required_actions": [
+        "check-security-runtime-hardening",
+        "validate-security-hardening"
+      ],
+      "required_contract_fields": [
+        "runtime_acceptance_owner",
+        "runnable_candidate_owner",
+        "conformance_owner",
+        "regression_blocker_owner"
+      ],
+      "forbidden_claims": [
+        "runtime hardening without runnable evidence",
+        "runtime retired route acceptance",
+        "trust bypass for missing runtime case",
+        "wrapper-only runtime security action"
+      ]
+    },
+    "installer_update_key_owner": {
+      "source_contract": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+      "owner": "security-hardening-installer-update-key",
+      "claim_authority": "release manifest, provenance, update manifest, package channel, and distribution trust evidence",
+      "required_actions": [
+        "build-security-posture",
+        "publish-security-advisories",
+        "validate-security-hardening-end-to-end"
+      ],
+      "required_contract_fields": [
+        "installer_payload_owner",
+        "update_manifest_owner",
+        "release_key_policy_owner",
+        "trust_publication_owner"
+      ],
+      "forbidden_claims": [
+        "remote key custody",
+        "automatic key rotation",
+        "hosted revocation",
+        "signed-installer trust",
+        "retired route update trust",
+        "trust bypass for unsigned payload"
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_core_objc_property_ivar_layout_symbols.inc"
+
+#include "parse/objc3_parser_core_objc_property_ivar_layout_shape.inc"
+
+#include "parse/objc3_parser_core_objc_property_ivar_layout_closure_state.inc"
+
+#include "parse/objc3_parser_core_objc_property_ivar_layout_interface_closure.inc"
+
+#include "parse/objc3_parser_core_objc_property_ivar_layout_program_closure.inc"

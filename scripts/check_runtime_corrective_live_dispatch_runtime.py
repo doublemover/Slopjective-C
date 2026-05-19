@@ -14,7 +14,9 @@ RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 
 
 def load_acceptance_module():
-    spec = importlib.util.spec_from_file_location("objc3c_runtime_acceptance", ACCEPTANCE_SCRIPT)
+    spec = importlib.util.spec_from_file_location(
+        "_objc3c_runtime_acceptance_entrypoint", ACCEPTANCE_SCRIPT
+    )
     if spec is None or spec.loader is None:
         raise RuntimeError(f"failed to load acceptance module from {ACCEPTANCE_SCRIPT}")
     module = importlib.util.module_from_spec(spec)

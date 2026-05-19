@@ -1,0 +1,2 @@
+#include "parse/objc3_parser_attributes_local_storage_payloads_cleanup.inc"
+#include "parse/objc3_parser_attributes_local_storage_payloads_resource.inc"

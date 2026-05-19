@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-dispatch-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3"
+  ],
+  "support_boundary": "lowering ownership covers hand-authored source rows only when they are cited for canonical lowering shape: six-argument keyword message dispatch lowering, inherited container layout lowering, property backing surfaces, and supported draft syntax lowering. The --objc3-max-message-args sidecar is provenance for a configurable arity route, not lowering support by itself.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
+    "lowering_surface:message-send-keyword-arity",
+    "lowering_surface:inherited-container-layout",
+    "lowering_surface:property-backing",
+    "provenance_coupling:native_compile_args=--objc3-max-message-args"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering recovery, gate lowering recovery, retired route lowering recovery, compatibility lowering recovery, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, and native-compile-args-only lowering claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

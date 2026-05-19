@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "fixture": "removed_retired_mode_flag_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "parser",
+  "diagnostic_owner_contract": {
+    "contract_id": "objc3c.native.diagnostic.owner-split.hard-cutover.v1",
+    "catalog_owner": "native.frontend.parser.diagnostic-catalog",
+    "stage_owner": "native.frontend.parser.diagnostic-stage",
+    "fixit_owner": "native.frontend.parser.diagnostic-fixit",
+    "recovery_owner": "native.frontend.parser.diagnostic-recovery",
+    "owner_model": "strict-hard-cutover-no-retired-route-no-compatibility-gate",
+    "recovery_counts_as_success": false
+  },
+  "behavior_family": "negative",
+  "fixture_kind": "rejection",
+  "retired_surface_tags": [
+    "old-mode",
+    "compatibility-gate"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-rejection",
+    "retired_positive_surface": true,
+    "retired_route_allowed": false,
+    "gate_allowed": false
+  },
+  "expected": {
+    "stage": "parse",
+    "diagnostic_code": "O3C001",
+    "required_tokens": [
+      "O3C001",
+      "Retired mode flags are rejected"
+    ]
+  },
+  "execution": {
+    "native_compile_args": [
+      "--objc2-compatible",
+      "-fsyntax-only"
+    ]
+  }
+}

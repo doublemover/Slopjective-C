@@ -338,8 +338,7 @@ Every incident record MUST include:
 
 Audit evidence MUST maintain bidirectional references to:
 
-- `docs/reference/legacy_spec_anchor_index.md`
-  Sections `14` through `18`,
+- `docs/support/evidence_map.md`,
 - this playbook Sections `2` through `8`,
 - all associated `E174-*`, `AC-174-*`, and `SPT-0366` through `SPT-0374`
   identifiers used for closeout.
@@ -426,7 +425,7 @@ remediation ledger where each row contains:
 | `FRL-V013-02`  | `SMT-V013-02`   | Add deterministic mirror quarantine replay runbook for containment. | tooling owner       | `2026-03-04T18:00:00Z` | `open`        |
 | `FRL-V013-03`  | `SMT-V013-03`   | Enforce trust-root freshness guardrail for release runners.         | release owner       | `2026-03-06T18:00:00Z` | `open`        |
 | `FRL-V013-04`  | `SMT-V013-04`   | Add replay mismatch stop condition to recovery checklist.           | provenance owner    | `2026-03-03T18:00:00Z` | `in_progress` |
-| `FRL-V013-05`  | `SMT-V013-05`   | Publish coordinated vendor contact rota with fallback owners.       | governance delegate | `2026-03-05T18:00:00Z` | `open`        |
+| `FRL-V013-05`  | `SMT-V013-05`   | Publish coordinated vendor contact rota with backup owners.         | governance delegate | `2026-03-05T18:00:00Z` | `open`        |
 
 ### 12.3 Acceptance mapping for `AC-V013-GOV-04`
 

@@ -1,0 +1,202 @@
+#pragma once
+
+#include <array>
+#include <cstddef>
+
+#include "parse/objc3_diagnostics_bus.h"
+#include "pipeline/results/canonical_literal_rejection_counts.h"
+#include "pipeline/results/compile_result_payloads.h"
+#include "pipeline/results/compile_options.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
+#include "sema/objc3_sema_pass_flow_core_contract.h"
+
+struct Objc3FrontendPipelineResult {
+  Objc3ParsedProgram program;
+  Objc3ParserContractSnapshot parser_contract_snapshot;
+  Objc3FrontendDiagnosticsBus stage_diagnostics;
+  Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold
+      semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureImplementationSurface
+      semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface
+      semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface
+      semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface
+      semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface
+      semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisRecoveryDeterminismHardeningSurface
+      semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceMatrixImplementationSurface
+      semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceCorpusExpansionSurface
+      semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisPerformanceQualityGuardrailsSurface
+      semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface;
+  Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
+  Objc3SemanticStabilitySpecDeltaClosureScaffold
+      semantic_stability_spec_delta_closure_scaffold;
+  Objc3SemanticStabilityCoreFeatureImplementationSurface
+      semantic_stability_core_feature_implementation_surface;
+  Objc3LoweringRuntimeStabilityInvariantScaffold
+      lowering_runtime_stability_invariant_scaffold;
+  Objc3LoweringPipelinePassGraphScaffold lowering_pipeline_pass_graph_scaffold;
+  Objc3LoweringPipelinePassGraphCoreFeatureSurface
+      lowering_pipeline_pass_graph_core_feature_surface;
+  Objc3IREmissionCompletenessScaffold ir_emission_completeness_scaffold;
+  Objc3LoweringRuntimeDiagnosticsSurfacingScaffold
+      lowering_runtime_diagnostics_surfacing_scaffold;
+  Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface
+      lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface
+      lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface
+      lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseExpansionAndRobustnessSurface
+      lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingDiagnosticsHardeningSurface
+      lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurface
+      lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface
+      lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface;
+  Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
+      lowering_runtime_stability_core_feature_implementation_surface;
+  Objc3FrontendCanonicalLiteralRejectionCounts
+      canonical_literal_rejection_counts;
+  Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
+  Objc3FrontendBootstrapRegistrationSourcePragmaContract
+      bootstrap_registration_source_pragma_contract;
+  Objc3SemanticIntegrationSurface integration_surface;
+  Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
+  Objc3FrontendProtocolCategorySummary protocol_category_summary;
+  Objc3FrontendClassProtocolCategoryLinkingSummary
+      class_protocol_category_linking_summary;
+  Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
+  Objc3FrontendPropertyAttributeSummary property_attribute_summary;
+  Objc3FrontendObjectPointerNullabilityGenericsSummary
+      object_pointer_nullability_generics_summary;
+  Objc3FrontendTypeSystemTypeSourceClosureSummary
+      type_system_type_source_closure_summary;
+  Objc3FrontendControlFlowControlFlowSourceClosureSummary
+      control_flow_control_flow_source_closure_summary;
+  Objc3FrontendErrorHandlingErrorSourceClosureSummary
+      error_handling_error_source_closure_summary;
+  Objc3FrontendConcurrencyAsyncSourceClosureSummary
+      concurrency_async_source_closure_summary;
+  Objc3FrontendOwnershipSystemExtensionSourceClosureSummary
+      ownership_system_extension_source_closure_summary;
+  Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
+      ownership_cleanup_resource_capture_source_completion_summary;
+  Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
+      ownership_retainable_c_family_source_completion_summary;
+  Objc3FrontendDispatchDispatchIntentSourceClosureSummary
+      dispatch_dispatch_intent_source_closure_summary;
+  Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
+      dispatch_dispatch_intent_source_completion_summary;
+  Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+      metaprogramming_metaprogramming_source_closure_summary;
+  Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+      metaprogramming_macro_package_provenance_source_completion_summary;
+  Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+      metaprogramming_property_behavior_source_completion_summary;
+  Objc3FrontendInteropForeignImportSourceClosureSummary
+      interop_foreign_import_source_closure_summary;
+  Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+      interop_cpp_swift_interop_annotation_source_completion_summary;
+  Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
+      tooling_diagnostics_migrator_source_inventory_summary;
+  Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
+      tooling_migration_canonicalization_source_completion_summary;
+  Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary
+      tooling_diagnostic_taxonomy_portability_contract_summary;
+  Objc3ToolingFeatureSpecificFixitSynthesisSummary
+      tooling_feature_specific_fixit_synthesis_summary;
+  Objc3InteropForeignSurfaceInterfacePreservationSummary
+      interop_foreign_surface_interface_preservation_summary;
+  Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+      concurrency_actor_member_isolation_source_closure_summary;
+  Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
+      concurrency_actor_isolation_sendable_semantic_model_summary;
+  Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
+      concurrency_actor_isolation_sendability_enforcement_summary;
+  Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary
+      concurrency_actor_race_hazard_escape_diagnostics_summary;
+  Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
+      concurrency_task_group_cancellation_source_closure_summary;
+  Objc3ControlFlowControlFlowSemanticModelSummary
+      control_flow_control_flow_semantic_model_summary;
+  Objc3ErrorHandlingErrorSemanticModelSummary
+      error_handling_error_semantic_model_summary;
+  Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
+      concurrency_task_executor_cancellation_semantic_model_summary;
+  Objc3OwnershipSystemExtensionSemanticModelSummary
+      ownership_system_extension_semantic_model_summary;
+  Objc3EffectsOwnershipSemanticModelSummary
+      effects_ownership_semantic_model_summary;
+  Objc3CrossModuleSemanticContractsDiagnosticsSummary
+      cross_module_semantic_contracts_diagnostics_summary;
+  Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
+      metaprogramming_expansion_behavior_semantic_model_summary;
+  Objc3MetaprogrammingDeriveExpansionInventorySummary
+      metaprogramming_derive_expansion_inventory_summary;
+  Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary
+      metaprogramming_macro_safety_sandbox_determinism_summary;
+  Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+      metaprogramming_property_behavior_legality_compatibility_summary;
+  Objc3DispatchDispatchIntentSemanticModelSummary
+      dispatch_dispatch_intent_semantic_model_summary;
+  Objc3DispatchDispatchIntentLegalitySummary
+      dispatch_dispatch_intent_legality_summary;
+  Objc3DispatchDispatchIntentCompatibilitySummary
+      dispatch_dispatch_intent_compatibility_summary;
+  Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
+      ownership_resource_move_use_after_move_semantics_summary;
+  Objc3OwnershipBorrowedPointerEscapeAnalysisSummary
+      ownership_borrowed_pointer_escape_analysis_summary;
+  Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
+      ownership_capture_list_retainable_family_legality_completion_summary;
+  Objc3InteropInteropSemanticModelSummary
+      interop_interop_semantic_model_summary;
+  Objc3InteropInteropRuntimeParitySummary
+      interop_interop_runtime_parity_summary;
+  Objc3InteropCppInteropInteractionSummary
+      interop_cpp_interop_interaction_summary;
+  Objc3InteropSwiftInteropIsolationSummary
+      interop_swift_interop_isolation_summary;
+  Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
+      concurrency_structured_task_cancellation_semantic_summary;
+  Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary
+      concurrency_executor_hop_affinity_compatibility_summary;
+  Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary
+      concurrency_async_effect_suspension_semantic_model_summary;
+  Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary
+      concurrency_await_suspension_resume_semantic_summary;
+  Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary
+      concurrency_async_diagnostics_compatibility_summary;
+  Objc3ErrorHandlingTryDoCatchSemanticSummary
+      error_handling_try_do_catch_semantic_summary;
+  Objc3ErrorHandlingErrorBridgeLegalitySummary
+      error_handling_error_bridge_legality_summary;
+  Objc3FrontendSymbolGraphScopeResolutionSummary
+      symbol_graph_scope_resolution_summary;
+  Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
+  Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;
+  Objc3ExecutableMetadataSemanticConsistencyBoundary
+      executable_metadata_semantic_consistency_boundary;
+  Objc3ExecutableMetadataSemanticValidationSurface
+      executable_metadata_semantic_validation_surface;
+  Objc3ExecutableMetadataLoweringHandoffSurface
+      executable_metadata_lowering_handoff_surface;
+  Objc3ExecutableMetadataTypedLoweringHandoff
+      executable_metadata_typed_lowering_handoff;
+  Objc3RuntimeMetadataSourceOwnershipBoundary
+      runtime_metadata_source_ownership_boundary;
+  Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
+  Objc3RuntimeExportEnforcementSummary runtime_export_enforcement_summary;
+  std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
+  Objc3SemaPassFlowSummary sema_pass_flow_summary;
+  Objc3SemaParityContractSurface sema_parity_surface;
+};

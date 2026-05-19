@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "runtime",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.runtime.strict-dispatch-error",
+  "positive_support_authority": "tests/native/runtime/{object_model,storage,arc,blocks,concurrency}",
+  "negative_support_authority": "tests/native/runtime/{dispatch,errors}",
+  "fixtures": [
+    {
+      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "O3RT002"
+    },
+    {
+      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-adapter",
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+      "behavior_family": "object_model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+      "behavior_family": "storage",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
+      "behavior_family": "arc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
+      "behavior_family": "blocks",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    }
+  ],
+  "retired_surface_rule": "runtime dispatch retired route and unresolved dispatch symbols are strict errors"
+}

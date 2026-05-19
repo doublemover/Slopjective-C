@@ -1,0 +1,8 @@
+#pragma once
+
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_synthesized_emission_artifact_sites.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_synthesized_emission_runtime_sites.h"
+
+struct Objc3IRFrontendMetaprogrammingSynthesizedEmissionSitesMetadata
+    : Objc3IRFrontendMetaprogrammingSynthesizedEmissionArtifactSitesMetadata,
+      Objc3IRFrontendMetaprogrammingSynthesizedEmissionRuntimeSitesMetadata {};

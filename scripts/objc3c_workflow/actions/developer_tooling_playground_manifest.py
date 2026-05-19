@@ -1,0 +1,71 @@
+"""Workspace manifest assembly for public playground materialization."""
+
+from __future__ import annotations
+
+from ..environment import ROOT
+from .developer_tooling_paths import PLAYGROUND_WORKSPACE_CONTRACT_ID
+from .developer_tooling_playground_editor import workspace_drill_commands
+from .developer_tooling_playground_inputs import PlaygroundInvocation
+from .developer_tooling_playground_paths import PlaygroundWorkspacePaths
+
+
+def _object_payload(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
+def build_playground_workspace_payload(
+    invocation: PlaygroundInvocation,
+    *,
+    paths: PlaygroundWorkspacePaths,
+    playground_payload: dict[str, object],
+    editor_surface_payload: dict[str, object],
+    published_paths: dict[str, str],
+) -> dict[str, object]:
+    formatter_payload = _object_payload(editor_surface_payload.get("formatter"))
+    debug_payload = _object_payload(editor_surface_payload.get("debug"))
+
+    return {
+        "contract_id": PLAYGROUND_WORKSPACE_CONTRACT_ID,
+        "schema_version": 1,
+        "workspace_id": invocation.workspace_id,
+        "source_path": invocation.source_display,
+        "workspace_root": paths.workspace_root.relative_to(ROOT).as_posix(),
+        "artifact_root": paths.artifact_root.relative_to(ROOT).as_posix(),
+        "report_root": paths.report_root.relative_to(ROOT).as_posix(),
+        "emit_prefix": "module",
+        "summary_path": paths.summary_path.relative_to(ROOT).as_posix(),
+        "playground_payload_path": paths.dump_path.relative_to(ROOT).as_posix(),
+        "playground_payload_contract_id": playground_payload.get("contract_id"),
+        "public_actions": [
+            "materialize-playground-workspace",
+            "compile-objc3c",
+            "inspect-playground-repro",
+            "inspect-compile-observability",
+            "inspect-editor-tooling",
+            "format-objc3c",
+            "trace-compile-stages",
+            "validate-developer-tooling",
+        ],
+        "compile_profile": playground_payload.get("compile_profile", {}),
+        "artifact_paths": playground_payload.get("artifact_paths", {}),
+        "showcase_examples": playground_payload.get("showcase_examples", []),
+        "repro_command": playground_payload.get("dump_commands", {}).get(
+            "repro_runner",
+            "",
+        ),
+        "editor_tooling": {
+            **published_paths,
+            "formatted_output_path": formatter_payload.get("formatted_output_path"),
+            "format_preview_supported": formatter_payload.get("supported"),
+            "debugger_model": debug_payload.get("debugger_model", ""),
+            "declaration_breakpoint_anchor_count": debug_payload.get(
+                "declaration_breakpoint_anchor_count",
+                0,
+            ),
+            "statement_level_stepping": debug_payload.get("statement_level_stepping"),
+        },
+        "workspace_drill_commands": workspace_drill_commands(
+            invocation.source_display,
+            debug_payload,
+        ),
+    }

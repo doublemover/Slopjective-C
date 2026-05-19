@@ -271,7 +271,7 @@ Module metadata / interface requirements (when used in exported syntax payloads)
 
 - A module payload that requires importer understanding of type-test pattern syntax shall include required capability `objc3.pattern.type_test.v1` in `required_capabilities` ([D.2.1](#d-2-1)).
 - Importers that do not support this capability shall reject import as a hard error per [D.2.3](#d-2-3) and [Table E](#d-3-5).
-- Textual interfaces exposing such syntax shall guard it with `#if __OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__` (or provide a portable fallback spelling).
+- Textual interfaces exposing such syntax shall guard it with `#if __OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__` or publish the canonical explicit `if`/cast-chain rewrite.
 
 Unsupported-mode requirements (`__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0`):
 

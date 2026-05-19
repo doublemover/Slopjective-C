@@ -4,109 +4,8 @@
 #include <utility>
 #include <vector>
 
-// Lexer output contract consumed across parser/lowering/IR boundaries.
-enum class Objc3LexTokenKind {
-  Eof,
-  Identifier,
-  Number,
-  String,
-  KwModule,
-  KwLet,
-  KwVar,
-  KwFn,
-  KwAsync,
-  KwPure,
-  KwExtern,
-  KwReturn,
-  KwIf,
-  KwElse,
-  KwGuard,
-  KwDefer,
-  KwDo,
-  KwAwait,
-  KwTry,
-  KwThrow,
-  KwCatch,
-  KwFor,
-  KwSwitch,
-  KwMatch,
-  KwCase,
-  KwDefault,
-  KwWhile,
-  KwBreak,
-  KwContinue,
-  KwI32,
-  KwBool,
-  KwBOOL,
-  KwNSInteger,
-  KwNSUInteger,
-  KwVoid,
-  KwId,
-  KwClass,
-  KwSEL,
-  KwProtocol,
-  KwInstancetype,
-  KwTrue,
-  KwFalse,
-  KwNil,
-  KwAtInterface,
-  KwAtImplementation,
-  KwAtProtocol,
-  KwAtRequired,
-  KwAtOptional,
-  KwAtProperty,
-  KwAtKeypath,
-  KwAtCleanup,
-  KwAtResource,
-  KwAtEnd,
-  KwAtAutoreleasePool,
-  LParen,
-  RParen,
-  LBracket,
-  RBracket,
-  LBrace,
-  RBrace,
-  Comma,
-  Colon,
-  Dot,
-  Semicolon,
-  Equal,
-  PlusEqual,
-  MinusEqual,
-  StarEqual,
-  SlashEqual,
-  PercentEqual,
-  AmpersandEqual,
-  PipeEqual,
-  CaretEqual,
-  LessLessEqual,
-  GreaterGreaterEqual,
-  PlusPlus,
-  MinusMinus,
-  EqualEqual,
-  Bang,
-  BangEqual,
-  Less,
-  LessLess,
-  LessEqual,
-  Greater,
-  GreaterGreater,
-  GreaterEqual,
-  Ampersand,
-  Pipe,
-  Caret,
-  AndAnd,
-  OrOr,
-  Question,
-  QuestionDot,
-  QuestionQuestion,
-  Tilde,
-  Plus,
-  Minus,
-  Star,
-  Slash,
-  Percent
-};
+#include "token/objc3_sema_token_metadata.h"
+#include "token/objc3_token_kind_contract.h"
 
 struct Objc3LexToken {
   Objc3LexTokenKind kind = Objc3LexTokenKind::Eof;
@@ -242,7 +141,7 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedMigratorInvento
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedCanonicalizationInventory =
     "source-only:advanced-canonicalization-inventory";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedMigrationAssistFlow =
-    "source-only:advanced-migration-assist-flow";
+    "source-only:advanced-canonical-rejection-diagnostics-flow";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =
@@ -369,9 +268,8 @@ inline constexpr const char *kObjc3ControlFlowFailClosedConstructGuardedPatterns
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns =
     "control_flow-fail-closed:match-type-test-patterns";
 
-// runnable-core compatibility guard anchor: later advanced surfaces
-// remain explicitly non-runnable claim families until dedicated runtime-backed
-// support lands.
+// runnable-core guard anchor: later advanced surfaces remain explicitly
+// non-runnable claim families until dedicated runtime-backed support lands.
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictness =
     "unsupported:strictness-selection";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictConcurrency =
@@ -391,10 +289,10 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";
-inline constexpr const char *kObjc3SupportedSelectionSurfaceCompatibilityMode =
-    "selection:compatibility-mode";
-inline constexpr const char *kObjc3SupportedSelectionSurfaceMigrationAssist =
-    "selection:migration-assist";
+inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageProfile =
+    "selection:language-profile";
+inline constexpr const char *kObjc3RejectedSelectionSurfaceCanonicalRejectionDiagnostics =
+    "selection:canonical-rejection-diagnostics";
 inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictness =
     "selection:strictness";
 inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictConcurrency =
@@ -406,26 +304,3 @@ inline constexpr const char *kObjc3SuppressedMacroClaimConcurrencyMode =
     "macro-claim:__OBJC3_CONCURRENCY_MODE__";
 inline constexpr const char *kObjc3SuppressedMacroClaimConcurrencyStrict =
     "macro-claim:__OBJC3_CONCURRENCY_STRICT__";
-
-enum class Objc3SemaTokenKind {
-  PointerDeclarator,
-  NullabilitySuffix,
-  OwnershipQualifier,
-};
-
-struct Objc3SemaTokenMetadata {
-  Objc3SemaTokenKind kind = Objc3SemaTokenKind::PointerDeclarator;
-  std::string text;
-  unsigned line = 1;
-  unsigned column = 1;
-};
-
-inline Objc3SemaTokenMetadata MakeObjc3SemaTokenMetadata(Objc3SemaTokenKind kind, std::string text, unsigned line,
-                                                         unsigned column) {
-  Objc3SemaTokenMetadata metadata;
-  metadata.kind = kind;
-  metadata.text = std::move(text);
-  metadata.line = line;
-  metadata.column = column;
-  return metadata;
-}

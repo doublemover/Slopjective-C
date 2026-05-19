@@ -1,0 +1,7 @@
+#pragma once
+
+#include "artifacts/objc3_frontend_interop_semantic_json_summary_fields_common.h"
+#include "artifacts/objc3_frontend_interop_semantic_json_summary_fields_interop_model.h"
+#include "artifacts/objc3_frontend_interop_semantic_json_summary_fields_language_interop.h"
+#include "artifacts/objc3_frontend_interop_semantic_json_summary_fields_runtime_parity.h"
+#include "artifacts/objc3_frontend_interop_semantic_json_summary_fields_surface_packaging.h"

@@ -1,0 +1,9 @@
+  Objc3TypeAnnotationSurfaceSummary type_annotation_summary;
+
+#include "sema/objc3_semantic_passes_type_metadata_determinism_type_annotations_function_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_determinism_type_annotations_method_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_determinism_type_annotations_property_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_determinism_type_annotations_recompute.inc"

@@ -7,10 +7,10 @@
     "objc3c.executable.synthesized.accessor.property.lowering.v1"
   ],
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
   "lowering_contract_source_path": "native/objc3c/src/lower/objc3_lowering_contract.h",
   "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-  "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+  "runtime_source_path": "native/objc3c/src/runtime/storage/current_property_value.cpp",
   "accessor_storage_lowering_metadata_model": "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path",
   "accessor_storage_lowering_helper_selection_model": "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers",
   "runtime_storage_execution_models": [
@@ -62,7 +62,7 @@
   },
   "explicit_non_goals": [
     "no-public-runtime-abi-widening",
-    "no-storage-global-fallback-claims",
+    "no-storage-global-retired-route-claims",
     "no-claim-that-full-atomic-or-reflection-closure-has-landed-in-b002",
     "no-milestone-specific-scaffolding"
   ]

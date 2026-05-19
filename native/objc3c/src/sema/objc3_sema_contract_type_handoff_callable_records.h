@@ -1,0 +1,38 @@
+#pragma once
+
+#include <cstddef>
+#include <string>
+#include <vector>
+
+#include "sema/objc3_sema_contract_type_handoff_canonical_records.h"
+
+struct FunctionInfo {
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_type_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_ownership_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_type_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_ownership_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_concurrency_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_error_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc"
+};
+
+struct Objc3MethodInfo {
+#include "sema/objc3_sema_contract_type_handoff_callable_records_method_selector_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_type_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_ownership_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_parameter_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_type_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_ownership_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_return_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_concurrency_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_error_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_method_dispatch_fields.inc"
+};
+
+struct Objc3PropertyInfo {
+#include "sema/objc3_sema_contract_type_handoff_callable_records_property_type_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_property_ownership_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_property_interop_fields.inc"
+};

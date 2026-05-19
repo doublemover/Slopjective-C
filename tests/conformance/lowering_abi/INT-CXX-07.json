@@ -45,7 +45,7 @@
           "abi_requirements": [
             "optimized ObjC++ lowering preserves canonical thunk ordering and callback shape from -O0",
             "optimized ObjC++ lowering preserves status/error mapping invariants for success, failure, and cancellation",
-            "optimization does not collapse status domain distinctions or break separate-compilation thunk compatibility"
+            "optimization does not collapse status domain distinctions or break separate-compilation thunk import stability"
           ],
           "runtime_assertions": [
             "callback count and status invariants remain equivalent to -O0 under optimization",

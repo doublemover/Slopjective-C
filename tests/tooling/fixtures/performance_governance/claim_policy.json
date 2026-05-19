@@ -23,7 +23,7 @@
       "status": "blocked",
       "minimum_score": 0,
       "requires": [
-        "fallback-when-any-release-blocking-condition-is-met"
+        "blocked-when-any-release-blocking-condition-is-met"
       ]
     }
   ],
@@ -40,6 +40,21 @@
     "active",
     "expired",
     "superseded"
+  ],
+  "forbidden_evidence_classes": [
+    "local-only-performance-evidence",
+    "evidence-log-performance-evidence",
+    "unsupported-benchmark-claim",
+    "compatibility-retired-route-performance-claim",
+    "wrapper-only-action-surface"
+  ],
+  "required_public_claim_inputs": [
+    "checked_in_benchmark_source",
+    "approved_lab_profile",
+    "raw_sample_packets",
+    "budget_id",
+    "breach_id_or_release_ready_status",
+    "owner_id"
   ],
   "required_paths": [
     "docs/runbooks/objc3c_performance_governance.md",

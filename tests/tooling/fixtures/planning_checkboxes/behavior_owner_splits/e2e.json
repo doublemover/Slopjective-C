@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-planning-checkboxes-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/planning_checkboxes/allowed_section/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/allowed_section/spec/planning/plan.md",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/planning_checkbox_policy.json",
+    "tests/tooling/fixtures/planning_checkboxes/json_mixed/spec/planning/a.md"
+  ],
+  "support_boundary": "e2e/tooling ownership covers the positive planning-checkbox policy behavior only: an unchecked procedural runbook checklist row may remain unchecked when a hand-authored planning_checkbox_policy.json entry names the matching path and exact markdown section. allowed_section and the Alpha Plan row in json_mixed are positive tooling behavior; disallowed rows and stale/mismatched policy entries are not support.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "scenario:allowed_section",
+    "scenario:json_mixed:allowed_document=a.md",
+    "policy_field:allowed_unchecked_sections",
+    "policy_match:path=docs/reference/legacy_spec_anchor_index.md",
+    "policy_match:section=Runbook Fixture > 1. Future Rerun Checklist",
+    "policy_match:section=Alpha Plan > 1. Operator Runbook",
+    "markdown_row:unchecked-procedural-runbook-template",
+    "tooling_contract:planning-checkbox-policy-exception"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/planning_checkboxes",
+  "retired_surface_rule": "unchecked implementation rows without matching policy, stale policy entries, section mismatches, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, wrapper-only planning checks, old-mode planning rows, gate planning rows, retired route planning rows, compatibility planning rows, migration-only planning rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

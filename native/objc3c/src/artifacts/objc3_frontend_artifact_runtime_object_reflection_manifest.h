@@ -1,0 +1,5 @@
+#pragma once
+
+#include "artifacts/objc3_frontend_artifact_runtime_object_lookup_reflection_manifest.h"
+#include "artifacts/objc3_frontend_artifact_runtime_object_reflection_query_manifest.h"
+#include "artifacts/objc3_frontend_artifact_runtime_object_visibility_diagnostics_manifest.h"

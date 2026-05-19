@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import load_json_object as load_json
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json"
 OUT_DIR = ROOT / "tmp/reports/developer-tooling/language-server-navigation"
 JSON_OUT = OUT_DIR / "language_server_navigation_summary.json"
@@ -22,7 +22,7 @@ JSON_OUT = OUT_DIR / "language_server_navigation_summary.json"
 
 def run_action(source_path: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(PUBLIC_RUNNER), "inspect-editor-tooling", source_path],
+        public_workflow_command("inspect-editor-tooling", source_path),
         cwd=ROOT,
         check=False,
         text=True,
@@ -61,7 +61,7 @@ def main() -> int:
     negative_payload = load_json(ROOT / negative_dump) if negative_dump else {}
 
     positive_supported = set(positive_payload.get("language_server", {}).get("supported_capability_ids", []))
-    positive_fallback = set(positive_payload.get("language_server", {}).get("fallback_only_capability_ids", []))
+    positive_unpublished = set(positive_payload.get("language_server", {}).get("unpublished_capability_ids", []))
     positive_symbols = [symbol.get("name") for symbol in positive_payload.get("navigation", {}).get("symbols", [])]
     negative_codes = [entry.get("code") for entry in negative_payload.get("diagnostics", {}).get("entries", [])]
 
@@ -71,8 +71,8 @@ def main() -> int:
         failures,
     )
     expect(
-        all(capability in positive_fallback for capability in contract["expected_fallback_capabilities"]),
-        "positive editor surface is missing expected fallback-only capabilities",
+        all(capability in positive_unpublished for capability in contract["expected_unpublished_capabilities"]),
+        "positive editor surface is missing expected unpublished capabilities",
         failures,
     )
     expect(

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-lowering-behavior-family-owner-split",
+  "owner_boundary": "docs_evidence",
+  "source_family": "tests/native/lowering",
+  "support_boundary": "docs/evidence ownership covers fixture family index rows, phase owner references, lowering/ABI conformance manifest rows, report pointers, and metadata field names as provenance only",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tests/conformance/hard_cutover_fixture_family_owner_index.json:family=lowering_behavior",
+    "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json:phase=lowering",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json:phase=lowering",
+    "tests/conformance/hard_cutover_behavior_outcome_owner_index.json:outcome=lowering_or_link_strict_error",
+    "tests/conformance/lowering_abi/manifest.json",
+    "tests/conformance/lowering_abi/*.json:bucket=lowering_abi",
+    "reports/claimability/*",
+    "meta fields:expected.required_tokens",
+    "meta fields:execution.runtime_dispatch_symbol",
+    "meta fields:execution.requires_live_runtime_dispatch",
+    "meta fields:execution.native_compile_args"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "docs rows, index rows, lowering/ABI manifests, generated reports, runtime-dispatch symbol mentions, and claimability report pointers are provenance unless they point to hand-authored lowering fixture metadata"
+}

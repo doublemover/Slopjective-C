@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_core_objc_property_source_model_finalizers_profiles.inc"
+
+#include "parse/objc3_parser_core_objc_property_source_model_finalizers_fields.inc"
+
+#include "parse/objc3_parser_core_objc_property_source_model_finalizers_synthesis_packets.inc"

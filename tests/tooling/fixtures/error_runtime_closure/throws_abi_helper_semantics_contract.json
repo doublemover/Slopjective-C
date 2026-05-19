@@ -4,7 +4,21 @@
   "milestone": "M321",
   "issue": "M321-B003",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_throws_abi_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_throws_abi_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "runtime",
+    "canonical_rejection",
+    "error_runtime_provenance"
+  ],
+  "helper_abi_boundary_policy": {
+    "primary_axis": "behavior owner before helper ABI packet, result bridge helper call, cleanup ordering packet, private runtime snapshot, generated report, or public runtime ABI claim",
+    "support_authority": "throw/catch helper ABI support requires lowering and runtime owner assignment over canonical fixtures and probes",
+    "positive_support_from_snapshot": false,
+    "retired_surface_rule": "helper ABI snapshot-only rows, retired route helper calls, compatibility helper gates, old-mode bridge helpers, public runtime ABI widening, evidence-log helper proof, and result-bridge-metadata-only rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
+  "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_error_runtime_abi_cleanup_surface",
     "runtime_error_propagation_catch_cleanup_runtime_implementation_surface",
@@ -20,7 +34,7 @@
   ],
   "abi_rules": [
     "throw and catch execution remain supported only through the private runtime-owned helper ABI and emitted lowering packets already exercised by live probes",
-    "cleanup ordering, bridge normalization, and catch matching are one executable runtime story and must not drift into independent proof-only models",
+    "cleanup ordering, bridge normalization, and catch matching are one executable runtime story and must not drift into independent evidence-only models",
     "public workflow and package claims stay anchored to validate-error-conformance and validate-runnable-error instead of widening the public runtime header",
     "cross-module and packaged execution claims remain bounded by the existing manifest, runtime-registration, replay, and probe evidence"
   ],
@@ -31,13 +45,13 @@
     "cross-module-error-metadata-replay-preservation"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts.objc3c_workflow"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",

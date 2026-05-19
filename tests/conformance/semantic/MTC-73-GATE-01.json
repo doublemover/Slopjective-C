@@ -1,7 +1,7 @@
 {
   "id": "MTC-73-GATE-01",
-  "title": "Require macro-gated fallback and reject unguarded match when match feature is disabled",
-  "feature": "match provisional gating and feature-macro fallback behavior",
+  "title": "Reject disabled match feature flag without retired route acceptance",
+  "feature": "match provisional gating and hard-cutover fail-closed behavior",
   "bucket": "semantic",
   "profile": "core",
   "references": [
@@ -12,18 +12,28 @@
     "docs/reference/legacy_spec_anchor_index.md#part-5-4",
     "docs/reference/legacy_spec_anchor_index.md#part-5-6"
   ],
-  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-match=off -fsyntax-only %s\nint classifyWithFallback(int value) {\n#if __OBJC3_FEATURE_MATCH__\n    match (value) {\n      case 0: {\n        return 10;\n      }\n      case let observed: {\n        return observed;\n      }\n    }\n#else\n    if (value == 0) {\n        return 10;\n    }\n    return value;\n#endif\n}\n\nint rejectUnguardedMatchWhenDisabled(int value) {\n    match (value) {\n      case 0: {\n        return 1;\n      }\n      default: {\n        return 0;\n      }\n    }\n}\n",
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-match=off -fsyntax-only %s\nint rejectDisabledMatchFlag(int value) {\n    match (value) {\n      case 0: {\n        return 1;\n      }\n      default: {\n        return 0;\n      }\n    }\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [
       {
+        "code": "OBJC3-E-REMOVED-EXTENSION-FLAG",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 29 },
+          "end": { "line": 1, "column": 52 }
+        },
+        "message": "match feature toggles are removed in the Objective-C 3.0 hard cutover; disabled-feature retired route paths are not accepted",
+        "fixits": []
+      },
+      {
         "code": "OBJC3-D-MATCH-UNSUPPORTED",
         "severity": "error",
         "span": {
-          "start": { "line": 21, "column": 5 },
-          "end": { "line": 21, "column": 17 }
+          "start": { "line": 3, "column": 5 },
+          "end": { "line": 3, "column": 17 }
         },
-        "message": "match statements are not available in the current feature configuration; guard with __OBJC3_FEATURE_MATCH__ or use an if/switch fallback",
+        "message": "match statements are not available in the current feature configuration",
         "fixits": []
       }
     ]

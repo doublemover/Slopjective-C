@@ -7,11 +7,33 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        CONFORMANCE_CORPUS_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        EXTERNAL_VALIDATION_SUMMARY,
+        PERFORMANCE_GOVERNANCE_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        STRESS_INTEGRATION_SUMMARY,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        CONFORMANCE_CORPUS_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        EXTERNAL_VALIDATION_SUMMARY,
+        PERFORMANCE_GOVERNANCE_SUMMARY,
+        PUBLIC_CONFORMANCE_SUMMARY,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        STRESS_INTEGRATION_SUMMARY,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
-OUT_DIR = ROOT / "tmp/reports/full-envelope-claimability/support-matrix"
+OUT_DIR = ROOT / "tmp" / "reports" / "full-envelope-claimability" / "support-matrix"
 JSON_OUT = OUT_DIR / "support_matrix_summary.json"
 MD_OUT = OUT_DIR / "support_matrix_summary.md"
 
@@ -73,6 +95,26 @@ def main() -> int:
         "demotion_model_covers_release_blocking": any(
             trigger["demotes_to"] == "release-blocking"
             for trigger in contract["demotion_triggers"]
+        ),
+        "evidence_family_reports_match_owner_constants": {
+            family["report"] for family in contract["evidence_families"]
+        }
+        == {
+            CONFORMANCE_CORPUS_SUMMARY,
+            STRESS_INTEGRATION_SUMMARY,
+            EXTERNAL_VALIDATION_SUMMARY,
+            PUBLIC_CONFORMANCE_SUMMARY,
+            PERFORMANCE_GOVERNANCE_SUMMARY,
+            RELEASE_FOUNDATION_SUMMARY,
+            RELEASE_OPERATIONS_SUMMARY,
+            DISTRIBUTION_CREDIBILITY_SUMMARY,
+        },
+        "support_rows_require_defined_evidence_families": all(
+            set(row["required_evidence_families"]).issubset(evidence_family_names)
+            for row in contract["support_matrix"]
+        ),
+        "support_rows_require_defined_support_classes": set(support_class_counter).issubset(
+            item["class"] for item in contract["support_classes"]
         ),
         "successor_tracks_cover_post_m324_program": len(contract["successor_tracks"]) == 8,
     }

@@ -1,0 +1,13 @@
+from runtime_runnable_closure_contracts_forbidden_claims import (
+    runtime_closure_forbidden_claim_contracts_are_owner_typed,
+)
+from runtime_runnable_closure_contracts_owner_metadata import (
+    runtime_closure_runnable_actions_publish_owner_contract_metadata,
+)
+
+test_runtime_closure_runnable_actions_publish_owner_contract_metadata = (
+    runtime_closure_runnable_actions_publish_owner_contract_metadata
+)
+test_runtime_closure_forbidden_claim_contracts_are_owner_typed = (
+    runtime_closure_forbidden_claim_contracts_are_owner_typed
+)

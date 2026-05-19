@@ -1,0 +1,49 @@
+{
+  "contract_id": "objc3c.platform.hardening.toolchain.archive.claim.policy.v1",
+  "surface_kind": "toolchain-archive-claim-policy",
+  "milestone": "M326",
+  "issue": "M326-B003",
+  "package_channels_summary_contract": "objc3c.packaging.channels.summary.v1",
+  "release_operations_update_manifest_contract": "objc3c.release.operations.update-manifest.v1",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "platform_support_owner": "platform-hardening-support-source",
+    "installer_validation_owner": "platform-hardening-install-validation",
+    "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+    "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+    "blocker_owner": "platform-hardening-blockers",
+    "source_authority": "checked-in-platform-hardening-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "platform-hardening-blockers",
+    "blocking_conditions": [
+      "toolchain archive claim outside checked-in package channel set",
+      "toolchain range claim wider than replay evidence",
+      "release operations metadata widened host claim"
+    ]
+  },
+  "claim_boundary_rules": [
+    "archive claims are only published for the checked-in windows-x64 package and install surface",
+    "portable archive installer archive and offline bundle must resolve to the same runnable payload family",
+    "toolchain presence does not widen archive or install claims by itself",
+    "release-operations metadata must not publish host or channel claims outside the checked-in package-channel set"
+  ],
+  "toolchain_range_rules": [
+    "the current milestone does not publish a multi-major LLVM or Clang support range",
+    "new LLVM or Clang major lines remain unclaimed until replayable package and install evidence lands on the public workflow path",
+    "toolchain-range evidence must be narrower than local executable discovery"
+  ],
+  "forbidden_claims": [
+    "cross-host archive support",
+    "cross-platform installer parity",
+    "all LLVM major versions supported",
+    "archive publication implies installer or update support on every host"
+  ],
+  "required_artifact_links": [
+    "tmp/reports/package-channels/package-channels-summary.json",
+    "tmp/reports/release-operations/update-manifest-summary.json",
+    "tmp/reports/release-operations/publication-summary.json"
+  ]
+}

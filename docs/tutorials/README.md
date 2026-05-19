@@ -1,12 +1,12 @@
-# Tutorials And Migration Guides
+# Tutorials And Canonicalization Guides
 
-This directory is the live learning-path and migration boundary.
+This directory is the live learning-path and canonicalization boundary.
 
 Use it for reader-facing material that teaches someone how to:
 
 - get productive with the repo,
 - understand the current runnable subset,
-- map Objective-C 2 habits onto Objective-C 3 surfaces,
+- map Objective-C 2 habits onto canonical Objective-C 3 surfaces,
 - compare Objective-C 3 choices against Swift and C++ interop expectations,
 - and follow the checked-in showcase examples without reading internal implementation notes first.
 
@@ -14,13 +14,13 @@ Use it for reader-facing material that teaches someone how to:
 
 Choose the shortest route that matches the question you actually have:
 
-| If you want to... | Start here | Runnable proof to keep open |
-| --- | --- | --- |
-| prove the toolchain is alive | `docs/tutorials/getting_started.md` | `showcase/auroraBoard/main.objc3` |
-| understand the full example map | `showcase/README.md` | `showcase/portfolio.json` |
-| migrate familiar ObjC2 habits | `docs/tutorials/objc2_to_objc3_migration.md` | `showcase/auroraBoard/main.objc3` |
+| If you want to...                               | Start here                                     | Runnable evidence to keep open                                      |
+| ----------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| prove the toolchain is alive                    | `docs/tutorials/getting_started.md`            | `showcase/auroraBoard/main.objc3`                                   |
+| understand the full example map                 | `showcase/README.md`                           | `showcase/portfolio.json`                                           |
+| map familiar ObjC2 habits                       | `docs/tutorials/objc2_to_objc3_migration.md`   | `showcase/auroraBoard/main.objc3`                                   |
 | compare ObjC3 against Swift or C++ expectations | `docs/tutorials/objc2_swift_cpp_comparison.md` | `showcase/signalMesh/main.objc3` and `showcase/patchKit/main.objc3` |
-| follow the exact compile run verify flow | `docs/tutorials/build_run_verify.md` | `showcase/tutorial_walkthrough.json` |
+| follow the exact compile run verify flow        | `docs/tutorials/build_run_verify.md`           | `showcase/tutorial_walkthrough.json`                                |
 
 ## Capability-Backed Routes
 
@@ -56,11 +56,16 @@ module boundary that sits behind the same teaching path.
   - use `docs/tutorials/build_run_verify.md` for the exact command and artifact flow
   - use `docs/tutorials/guided_walkthrough.md` for the ordered example pass
   - then use `showcase/README.md` plus the checked-in example sources in `showcase/`
-- migration path:
-  - use this directory for ObjC2-to-ObjC3 and Swift/C++ comparison guides
+- canonicalization path:
+  - use this directory for ObjC2-to-ObjC3 habit mapping and Swift/C++ comparison guides
   - keep examples compile-coupled to the live toolchain and showcase sources
   - start with `docs/tutorials/objc2_to_objc3_migration.md`
   - then use `docs/tutorials/objc2_swift_cpp_comparison.md` for broader comparison framing
+
+The `objc2_to_objc3_migration.md` path is a stable historical filename. Treat
+the guide as canonicalization and conversion teaching over checked-in examples,
+not a retired-source lane or retired-source acceptance surface.
+
 - contributor path:
   - use `CONTRIBUTING.md` for repo-change instructions
   - use `docs/runbooks/objc3c_maintainer_workflows.md` only for maintainer-only workflow maps
@@ -72,7 +77,7 @@ The live teaching surface is intentionally narrow.
 - onboarding and setup:
   - `README.md`
   - `site/src/index.body.md`
-- tutorial and migration narrative:
+- tutorial and canonicalization narrative:
   - `docs/tutorials/`
   - `docs/tutorials/getting_started.md`
   - `docs/tutorials/build_run_verify.md`
@@ -90,7 +95,7 @@ The live teaching surface is intentionally narrow.
 
 ## Exact Live Paths For Downstream Work
 
-Later issues in this milestone should edit these live paths directly:
+Later docs work should edit these live paths directly:
 
 - tutorial map and audience routing:
   - `docs/tutorials/README.md`
@@ -108,16 +113,17 @@ Later issues in this milestone should edit these live paths directly:
 - maintainer boundary notes:
   - `docs/runbooks/objc3c_maintainer_workflows.md`
 - documentation guardrails:
+  - `npm run objc3c -- check-documentation-surface`
   - `scripts/check_documentation_surface.py`
 
 Reader-facing downstream work should keep one rule in mind: route from a user
-question to a checked-in example first, then to the comparison or migration
+question to a checked-in example first, then to the comparison or canonicalization
 text that explains that example.
 
 ## Explicit Non-Goals
 
-- no milestone-local tutorial wrappers or sidecar indexes
+- no release-scope tutorial wrappers or sidecar indexes
 - no machine-owned paths such as `tmp/` or `artifacts/` treated as tutorials
 - no screenshots or slide-deck-only teaching material with no checked-in source
 - no historical redirect material used as the primary learning path
-- no separate command aliases when the public package-script surface already exists
+- no separate command list when the public npm bridge surface already exists

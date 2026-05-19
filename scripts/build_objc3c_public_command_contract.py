@@ -7,16 +7,26 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.public_runner import load_public_workflow_runner
+from scripts.objc3c_workflow.public_command_api import (
+    public_workflow_action_payloads,
+    public_workflow_list_payload,
+)
+from scripts.objc3c_workflow.actions.command_facades_inventory import (
+    package_bridge_inventory_fields,
+    package_bridge_payloads_from_scripts,
+)
 
 sys.dont_write_bytecode = True
 
-ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_JSON = ROOT / 'package.json'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
 DEFAULT_OUTPUT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 
@@ -28,47 +38,33 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-
-def load_runner() -> Any:
-    return load_public_workflow_runner(
-        runner_path=RUNNER_PATH,
-        module_name='objc3c_public_workflow_runner_contract_builder',
-    )
-
-
 def build_contract() -> dict[str, object]:
     package = load_json(PACKAGE_JSON)
     schema = load_json(SCHEMA_PATH)
-    runner = load_runner()
-    list_payload = runner.list_actions_payload()
+    list_payload = public_workflow_list_payload()
     package_scripts = package['scripts']
 
-    public_script_to_action = runner.public_script_to_action_map()
-    distinct_runner_scripts = sorted(public_script_to_action)
-    package_script_names = sorted(package_scripts)
-    unmapped_scripts = sorted(set(package_script_names) - set(distinct_runner_scripts))
-    extra_runner_public_scripts = sorted(set(distinct_runner_scripts) - set(package_script_names))
-
-    action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
-    package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]
-    operator_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'operator')
-    maintainer_script_count = sum(1 for payload in package_script_payloads if payload['audience'] == 'maintainer')
+    bridge_inventory = package_bridge_inventory_fields(package_scripts)
+    action_payloads = sorted(public_workflow_action_payloads(), key=lambda payload: str(payload.get('action')))
+    package_bridge_payloads = package_bridge_payloads_from_scripts(package_scripts)
+    operator_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'operator')
+    maintainer_action_count = sum(1 for payload in action_payloads if payload.get('audience') == 'maintainer')
 
     return {
         'contract_id': 'objc3c-public-command-contract-v1',
+        'issue': 'workflow-public-command-contract',
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
-        'package_script_count': len(package_script_names),
+        'package_bridge_count': bridge_inventory['package_bridge_count'],
         'workflow_action_count': list_payload['action_count'],
-        'public_script_count': len(distinct_runner_scripts),
         'internal_action_count': list_payload['internal_action_count'],
-        'operator_script_count': operator_script_count,
-        'maintainer_script_count': maintainer_script_count,
-        'unmapped_scripts': unmapped_scripts,
-        'extra_runner_public_scripts': extra_runner_public_scripts,
+        'operator_action_count': operator_action_count,
+        'maintainer_action_count': maintainer_action_count,
+        'missing_package_bridge': bridge_inventory['missing_package_bridge'],
+        'unexpected_package_bridges': bridge_inventory['unexpected_package_bridges'],
         'actions': action_payloads,
-        'package_scripts': package_script_payloads,
+        'package_bridges': package_bridge_payloads,
     }
 
 

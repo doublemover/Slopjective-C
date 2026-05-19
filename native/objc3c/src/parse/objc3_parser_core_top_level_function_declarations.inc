@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_profiles.inc"
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl.inc"
+#include "parse/objc3_parser_core_top_level_function_declarations_qualifier_state.inc"
+#include "parse/objc3_parser_core_top_level_function_declarations_language_decl.inc"

@@ -4,19 +4,175 @@
   "milestone": "M316",
   "issue": "M316-A001",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m316/M316-A001",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before corrective source-owner contract, acceptance suite, runtime acceptance report, generated report, compile artifact, replay manifest, module bundle, native-output proof bundle, linked-probe summary, generated-only row, evidence-log row, migration-only row, runner-only row, or retired-surface claim",
+    "support_authority": "runtime-corrective contracts are source, probe, acceptance, report, proof, compile-artifact, and provenance evidence only until a behavior owner split claims the phase",
+    "generated_report_rule": "generated corrective reports, required reports, compile artifacts, replay manifests, proof bundles, module bundles, native-output truth bundles, linked-probe summaries, generated-only rows, evidence-log rows, migration-only rows, and runner-only rows cannot define canonical support",
+    "retired_surface_rule": "retired-route, gate, old-mode, compatibility, unsupported, unresolved dispatch, strict dispatch, sidecar-only proof, unlinked probe proof, replay-text-only proof, catalog-only closeout, generated-evidence-log rows, evidence-log rows, migration-only rows, runner-only rows, and alternate acceptance evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "runtime source rows, runtime public ABI/C API path rows, dispatch semantic rows, acceptance workload rows, linked probe rows, native output truth rows, generated report rows, and proof bundle rows remain separately routed evidence classes"
+  },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json",
+      "boundary": "parser fixture provenance consumed by runtime corrective acceptance and proof contracts"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json",
+      "boundary": "realized dispatch, synthesized accessor, ARC, and storage semantic provenance consumed by corrective runtime probes"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/lowering.json",
+      "boundary": "dispatch lowering, synthesized accessor helper selection, and lowering provenance coupling before runtime/e2e proof"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json",
+      "boundary": "emitted LLVM IR, object output, module manifests, registration manifests, compile provenance, and truthfulness envelope provenance"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
+      "boundary": "runtime acceptance cases, linked probes, dispatch/cache behavior, storage helpers, ARC helper interaction, and native runtime symbols"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
+      "boundary": "public smoke/full suite wiring, executable proof, native-output truth, linked-probe closeout, and required report provenance"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "strict-error, unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, sidecar-only, unlinked-probe, generated-evidence-log, evidence-log, migration-only, runner-only, replay-text-only, catalog-only, and alternate acceptance rows"
+    },
+    {
+      "phase": "runtime_corrective_provenance",
+      "path": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime_corrective_provenance.json",
+      "boundary": "boundary inventory rows, acceptance workload rows, source-owner contracts, summary/check anchors, required reports, compile artifacts, replay manifests, module bundles, native-output proof bundles, linked-probe summaries, probe/fixture paths, and owner split routing metadata"
+    }
+  ],
+  "hard_cutover_source_owner_contract": {
+    "source_owned": true,
+    "evidence_log_allowed": false,
+    "retired_route_claims_allowed": false,
+    "generated_report_claims_allowed": false
+  },
+  "source_owner_contracts": {
+    "runtime_corrective_dispatch_owner": {
+      "source_contract": "tests/tooling/fixtures/runtime_corrective/realized_dispatch_semantic_model.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/runtime_corrective/dispatch_lowering_implementation_contract.json"
+      ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "dispatch realization claims require semantic model, lowering implementation, and linked runtime probe ownership; unresolved dispatch remains strict-error evidence",
+      "summary_implementation_anchor": "scripts/build_runtime_corrective_dispatch_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_runtime_corrective_live_dispatch_runtime.py",
+        "scripts/check_runtime_corrective_dispatch_lowering.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_corrective_native_output_owner": {
+      "source_contract": "tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "native-output truth requires coupled IR, object, provenance, registration manifest, and linked probe evidence; sidecar-only or generated-report proof is rejection/provenance",
+      "summary_implementation_anchor": "scripts/build_runtime_corrective_native_output_truth_summary.py",
+      "check_implementation_anchors": [],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_corrective_lowering_provenance_owner": {
+      "source_contract": "tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "canonical_rejection"
+      ],
+      "support_boundary": "lowering provenance binds lowering surfaces to emitted IR/object artifacts, but artifact presence alone cannot create support",
+      "summary_implementation_anchor": "scripts/build_runtime_corrective_lowering_provenance_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_runtime_corrective_dispatch_lowering.py",
+        "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_corrective_accessor_owner": {
+      "source_contract": "tests/tooling/fixtures/runtime_corrective/synthesized_accessor_semantic_model.json",
+      "supporting_contracts": [
+        "tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json"
+      ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "synthesized accessor claims require semantic ownership, lowering helper selection, and runtime-backed execution; storage-global retired route claims remain rejection evidence",
+      "summary_implementation_anchor": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_runtime_corrective_synthesized_accessor_runtime.py",
+        "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    },
+    "runtime_corrective_executable_proof_owner": {
+      "source_contract": "tests/tooling/fixtures/runtime_corrective/executable_proof_abi_contract.json",
+      "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "executable proof is e2e/runtime evidence only when compile artifacts and linked probes are coupled; closure-local harness forks and sidecar-only proof stay rejected",
+      "summary_implementation_anchor": "scripts/build_runtime_corrective_executable_proof_summary.py",
+      "check_implementation_anchors": [
+        "scripts/check_runtime_corrective_closeout_gate.py"
+      ],
+      "evidence_log_allowed": false,
+      "retired_route_claims_allowed": false,
+      "generated_report_claims_allowed": false
+    }
+  },
   "focus": [
     "realized-dispatch-over-the-live-object-graph",
     "synthesized-accessor-codegen-and-execution",
     "native-output-truth-tied-to-real-compile-and-linked-probe-paths"
   ],
   "authoritative_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/storage/current_property_binding.cpp",
+    "native/objc3c/src/runtime/storage/current_property_value.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.h",
     "native/objc3c/src/lower/objc3_lowering_contract.h",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/io/objc3_process.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_execution_replay_proof.ps1",
@@ -33,7 +189,7 @@
     "objc3_runtime_exchange_current_property_i32",
     "objc3_runtime_load_weak_current_property_i32",
     "objc3_runtime_store_weak_current_property_i32",
-    "objc3_msgsend_i32"
+    "objc3_runtime_dispatch_i32_checked"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/class_realization_runtime_probe.cpp",
@@ -65,11 +221,11 @@
   ],
   "current_corrective_gaps": [
     {
-      "gap_id": "dispatch-fallback-after-slow-path-miss",
-      "summary": "Unresolved sends still retain one deterministic arithmetic fallback path after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
+      "gap_id": "unresolved-dispatch-strict-error-after-slow-path-miss",
+      "summary": "Unresolved sends still terminate with a strict dispatch error after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp"
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
       ],
       "successor_issue_codes": [
         "M316-B001",
@@ -148,7 +304,12 @@
     {
       "query_id": "runtime-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+        "native/objc3c/src/runtime/storage/current_property_binding.cpp",
+        "native/objc3c/src/runtime/storage/current_property_value.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp"
+      ],
       "patterns": [
         "objc3_runtime_dispatch_i32",
         "objc3_runtime_bind_current_property_context_for_testing",
@@ -164,7 +325,7 @@
       "kind": "documentation-search",
       "path": "docs/objc3c-native.md",
       "patterns": [
-        "unresolved dispatch still has one deterministic fallback path after slow-path miss",
+        "unresolved dispatch still has one strict dispatch error path after slow-path miss",
         "synthesized accessor IR still carries transitional lowering residue",
         "native-output truth requires the emitted object and linked probe to stay coupled end to end"
       ]

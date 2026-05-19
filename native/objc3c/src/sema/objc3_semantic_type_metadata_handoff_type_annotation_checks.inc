@@ -1,0 +1,11 @@
+  Objc3TypeAnnotationSurfaceSummary type_annotation_summary;
+
+#include "sema/objc3_semantic_type_metadata_handoff_type_annotation_checks_function_accumulator.inc"
+
+#include "sema/objc3_semantic_type_metadata_handoff_type_annotation_checks_method_accumulator.inc"
+
+#include "sema/objc3_semantic_type_metadata_handoff_type_annotation_checks_property_accumulator.inc"
+
+#include "sema/objc3_semantic_type_metadata_handoff_type_annotation_checks_summary_recompute.inc"
+
+#include "sema/objc3_semantic_type_metadata_handoff_type_annotation_checks_summary_drift.inc"

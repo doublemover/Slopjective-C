@@ -1,0 +1,9 @@
+[project]
+name = "slopjective-c-workflow"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.objc3c.workflow]
+entrypoint = "python -m scripts.objc3c_workflow"
+dependency-lock = "requirements.lock"

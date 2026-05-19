@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-tooling-probe-metadata-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_family": "tests/tooling/runtime",
+  "support_boundary": "runtime tooling rows that mention retired route dispatch, gate behavior, old-mode behavior, compatibility-positive runtime behavior, alternate acceptance paths, retired-source lane names, unsupported dispatch outcomes, helper-only success, sidecar-only evidence, placeholder artifacts, generated-evidence-log proof, or public ABI widening are non-positive unless canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "README:What does not count as proof",
+    "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+    "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
+    "tests/tooling/runtime/dispatch_expectations_support_test.cpp",
+    "tests/tooling/runtime/support/dispatch_expectations.h",
+    "*retired-route*",
+    "*gate*",
+    "*old_mode*",
+    "*old-mode*",
+    "*compatibility*",
+    "*legacy*",
+    "*retired-source*",
+    "*alternate-acceptance*",
+    "*unsupported-dispatch*",
+    "*strict-dispatch*",
+    "*helper-only*",
+    "*sidecar-only*",
+    "*placeholder-object*",
+    "*generated-report*",
+    "*public-abi-widening*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "retired route dispatch, compatibility gates, old-mode behavior, unsupported dispatch, alternate acceptance paths, helper-only success, generated-evidence-log proof, placeholder artifacts, sidecar-only evidence, and public ABI widening remain canonical rejection, strict-error, or provenance-only evidence"
+}

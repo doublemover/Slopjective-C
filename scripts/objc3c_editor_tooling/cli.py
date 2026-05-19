@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+import argparse
+import sys
+
+from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
+from objc3c_editor_tooling.model import build_editor_tooling_model
+from objc3c_editor_tooling.paths import default_source_argument, paths_for_source, resolve_source
+from objc3c_editor_tooling.publication import publish_editor_tooling_surface
+from objc3c_editor_tooling.validation import compile_summary_exit_code
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("source", nargs="?", default=default_source_argument())
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    paths = paths_for_source(resolve_source(args.source))
+    compile_result = run_frontend_compile(paths)
+    if compile_result.stdout:
+        sys.stdout.write(compile_result.stdout)
+    if compile_result.stderr:
+        sys.stderr.write(compile_result.stderr)
+
+    summary_exit_code = compile_summary_exit_code(compile_result)
+    if summary_exit_code is not None:
+        return summary_exit_code
+
+    inputs = load_editor_tooling_inputs(paths)
+    model = build_editor_tooling_model(paths, inputs)
+    published = publish_editor_tooling_surface(paths=paths, inputs=inputs, model=model)
+
+    print(f"summary_path: {published.summary_path}")
+    print(f"dump_path: {published.dump_path}")
+    print(f"capabilities_path: {published.capabilities_path}")
+    print(f"navigation_path: {published.navigation_path}")
+    print(f"formatter_path: {published.formatter_path}")
+    print(f"debug_path: {published.debug_path}")
+    return 0

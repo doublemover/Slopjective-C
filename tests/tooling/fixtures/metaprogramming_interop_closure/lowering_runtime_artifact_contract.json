@@ -4,13 +4,19 @@
   "milestone": "M323",
   "issue": "M323-C001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
   "canonical_artifacts": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/architecture-integration/summary.json",
     "tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",
     "tmp/reports/runtime/runnable-metaprogramming-e2e/summary.json"
   ],
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before generated report, runtime-import artifact, cache snapshot, synthesized artifact, or module replay row",
+    "support_authority": "lowering/runtime artifacts bind provenance for host-cache, synthesized-accessor, runtime-import, and replay evidence; they require lowering, IR, or runtime behavior owner assignment before support is cited",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated evidence-log, generated artifact-only, module-replay-only, cache-only, retired route lowering, gate lowering, and old-mode lowering rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "canonical_surfaces": [
     "runtime_metaprogramming_lowering_host_cache_surface",
     "runtime_cross_module_metaprogramming_artifact_preservation_surface",
@@ -20,8 +26,8 @@
   ],
   "artifact_rules": [
     "the canonical compile-manifest and runtime-registration truth for this milestone is emitted by scripts/check_objc3c_runtime_acceptance.py and replayed by architecture integration and runnable metaprogramming workflows",
-    "milestone-local checks consume the shared runtime acceptance integration conformance and packaged e2e artifacts instead of creating a parallel metaprogramming or property-behavior manifest",
-    "property-behavior runtime evidence is carried through the shared executable_synthesized_accessor_property_lowering_surface rather than a milestone-local sidecar artifact",
+    "shared checks consume the shared runtime acceptance integration conformance and packaged e2e artifacts instead of creating a parallel metaprogramming or property-behavior manifest",
+    "property-behavior runtime evidence is carried through the shared executable_synthesized_accessor_property_lowering_surface rather than a shared sidecar artifact",
     "generated evidence remains deterministic and narrower than the shared acceptance and packaged runnable metaprogramming path"
   ],
   "authoritative_code_paths": [
@@ -29,10 +35,10 @@
     "scripts/check_objc3c_runtime_architecture_integration.py",
     "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
     "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "scripts.objc3c_workflow",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp"
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/macro_host_process_provider.objc3",

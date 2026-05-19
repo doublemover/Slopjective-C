@@ -1,0 +1,615 @@
+{
+  "schema_version": "objc3c-capability-evidence-map-v1",
+  "matrix_path": "docs/support/capability_matrix.json",
+  "matrix_schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
+  "projection_contract": {
+    "source": "docs/support/capability_matrix.json#/capabilities/*/evidence",
+    "owner": "scripts/capability_docs_validator/evidence_map.py",
+    "row_key": [
+      "capability_id",
+      "support_claim",
+      "evidence_kind",
+      "path",
+      "command"
+    ],
+    "drift_rule": "The evidence map is a flattened projection of capability matrix evidence rows. Validators fail on duplicate, missing, or extra row keys."
+  },
+  "evidence_policy": {
+    "public_command_surface": "npm run objc3c -- <action>",
+    "command_required_for": [
+      "replayable implemented behavior evidence"
+    ],
+    "command_forbidden_for": [
+      "source ownership rows",
+      "schema ownership rows",
+      "doc boundary rows",
+      "diagnostic inventory rows that are not public replay commands"
+    ],
+    "row_role_rule": "Rows without command are ownership or boundary evidence; they do not define public workflow surface or broaden capability state. Hard-cutover issue evidence and payload rows identify checked-in branch evidence boundaries only; their implementation commit lists do not prove validation, push state, GitHub issue edits, remote closure, or compatibility support."
+  },
+  "rows": [
+    {
+      "capability_id": "compiler.parser.core-declarations",
+      "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "evidence_kind": "test",
+      "path": "tests/native/parser/positive/canonical_module_main.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "compiler.parser.core-declarations",
+      "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_objc3c_parser_extraction.py"
+    },
+    {
+      "capability_id": "compiler.parser.core-declarations",
+      "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser.cpp"
+    },
+    {
+      "capability_id": "compiler.parser.core-declarations",
+      "support_claim": "objc3c.behavior.parser.canonical-syntax",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core.cpp"
+    },
+    {
+      "capability_id": "compiler.sema.typed-flow",
+      "support_claim": "objc3c.behavior.sema.typed-flow",
+      "evidence_kind": "test",
+      "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "compiler.sema.typed-flow",
+      "support_claim": "objc3c.behavior.sema.typed-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
+    },
+    {
+      "capability_id": "compiler.sema.typed-flow",
+      "support_claim": "objc3c.behavior.sema.typed-flow",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_type_relations.cpp"
+    },
+    {
+      "capability_id": "compiler.sema.canonical-diagnostics",
+      "evidence_kind": "diagnostic",
+      "path": "tests/conformance/diagnostics/manifest.json"
+    },
+    {
+      "capability_id": "compiler.sema.canonical-diagnostics",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py"
+    },
+    {
+      "capability_id": "compiler.sema.canonical-diagnostics",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp"
+    },
+    {
+      "capability_id": "compiler.sema.canonical-diagnostics",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_sema_diagnostic_contract.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.strict-runtime-dispatch",
+      "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "evidence_kind": "test",
+      "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "compiler.lowering.strict-runtime-dispatch",
+      "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lower/contracts/runtime_dispatch_boundary_contracts.cpp"
+    },
+    {
+      "capability_id": "compiler.lowering.strict-runtime-dispatch",
+      "support_claim": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+    },
+    {
+      "capability_id": "compiler.ir.module-emission",
+      "support_claim": "objc3c.behavior.ir.module-emission",
+      "evidence_kind": "test",
+      "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "compiler.ir.module-emission",
+      "support_claim": "objc3c.behavior.ir.module-emission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_module_emission_surface.cpp"
+    },
+    {
+      "capability_id": "compiler.ir.module-emission",
+      "support_claim": "objc3c.behavior.ir.module-emission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_deterministic_publication.cpp"
+    },
+    {
+      "capability_id": "runtime.dispatch.strict-error",
+      "support_claim": "objc3c.behavior.runtime.strict-dispatch-error",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "runtime.dispatch.strict-error",
+      "support_claim": "objc3c.behavior.runtime.strict-dispatch-error",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+    },
+    {
+      "capability_id": "runtime.dispatch.strict-error",
+      "support_claim": "objc3c.behavior.runtime.strict-dispatch-error",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp"
+    },
+    {
+      "capability_id": "compiler.e2e.runnable-smoke",
+      "support_claim": "objc3c.behavior.e2e.runnable-smoke",
+      "evidence_kind": "test",
+      "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "evidence_kind": "doc",
+      "path": "docs/spec/concurrency_reserved.md"
+    },
+    {
+      "capability_id": "runtime.concurrency.async-actors",
+      "evidence_kind": "diagnostic",
+      "path": "tests/conformance/diagnostics/manifest.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_object_model_closure.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/config/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/support/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/diag/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/diagnostics/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lex/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lower/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/libobjc3c_frontend/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/cli/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/tools/CMakeLists.txt"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/dispatch_surface_classification.cpp"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+    },
+    {
+      "capability_id": "compiler.architecture.module-decomposition",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+    },
+    {
+      "capability_id": "runtime.public-c-api.strict-result",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_api.h"
+    },
+    {
+      "capability_id": "runtime.public-c-api.strict-result",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+    },
+    {
+      "capability_id": "runtime.public-c-api.strict-result",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h"
+    },
+    {
+      "capability_id": "runtime.public-c-api.strict-result",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/images/registration.cpp"
+    },
+    {
+      "capability_id": "runtime.public-c-api.strict-result",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "package.json"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog.py"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/registry_views.py"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_handler_integrity.py"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/request_dispatch.py"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/path_bootstrap.py"
+    },
+    {
+      "capability_id": "workflow.command.npm-objc3c-bridge",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_public_command_surface.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-capability-matrix-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "docs/support/capability_matrix.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-capability-evidence-map-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3-conformance-dashboard-status-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3-conformance-evidence-bundle-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3-runtime-2025Q4.manifest.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3-abi-2025Q4.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-upgrade-support-report-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-update-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-lock-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-support-matrix-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-compiler-throughput-summary-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-performance-telemetry-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-artifact-authenticity-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/source-hygiene-hard-cutover-report-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "docs/support/evidence_map.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
+      "path": "docs/support/README.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
+      "path": "schemas/README.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "doc",
+      "path": "docs/support/capability_schema_examples.md"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_shared/schema_registry.py"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_parser.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_writer.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_schema.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_schema_errors.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_schema_validation.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_equivalence.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_pointer.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_schema_type.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_objc3c_shared_json_schema.py"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/README.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/capability_claim_responsibility.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_evidence.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+    }
+  ]
+}

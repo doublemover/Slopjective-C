@@ -15,9 +15,12 @@ Authoritative workload inventory:
 
 - `workload_manifest.json`
 - `source_surface.json`
+- `behavior_owner_splits/index.json`
 
 What does not count:
 
-- milestone-local probe copies
+- shared probe copies
 - sidecar-only timing claims with no coupled runtime probe
 - ad hoc workload substitutions that are not recorded in the manifest
+- generated runtime-performance packets, cache/counter snapshots, or runnable
+  package artifacts as canonical behavior support without a behavior owner split

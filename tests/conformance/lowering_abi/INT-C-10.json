@@ -45,7 +45,7 @@
           ],
           "runtime_assertions": [
             "errorStatusCount remains 0 under optimization",
-            "optimized callbacks still report only success or cancelled statuses"
+            "optimized callbacks still evidence log success or cancelled statuses"
           ]
         }
       ],

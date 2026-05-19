@@ -2,14 +2,25 @@
   "contract_id": "objc3c.runtime.performance.workload.manifest.v1",
   "schema_version": 1,
   "manifest_kind": "startup-dispatch-reflection-ownership-runtime-workloads",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
+  "workload_boundary_policy": {
+    "primary_axis": "behavior owner before hot-path workload family, acceptance case, probe path, timing row, cache row, report packet, generated artifact, evidence-log row, migration-only row, runner-only row, package artifact, or counter snapshot",
+    "support_authority": "runtime performance workloads measure acceptance cases and probes; canonical support must be cited through behavior owner splits and never through workload names, measured fields, reports, packets, or counters alone",
+    "runtime_acceptance_rule": "runtime acceptance reports are runtime/e2e evidence only after parser, sema, lowering, and IR boundaries remain provenance or are claimed by canonical fixtures; evidence-log, generated-only, migration-only, runner-only, timing-only, cache-only, package-only, and counter-only acceptance rows stay provenance or rejection",
+    "retired_surface_rule": "strict dispatch, unresolved dispatch, retired route, gate, compatibility, old-mode, unsupported, alternate acceptance, cache-only, timing-only, runner-only, package-only, counter-only, generated-only, evidence-log, and migration-only rows map to canonical_rejection or runtime_performance_provenance"
+  },
   "benchmark_root": "tests/tooling/fixtures/runtime_performance",
   "artifact_root": "tmp/artifacts/runtime-performance",
   "report_root": "tmp/reports/runtime-performance",
   "runtime_acceptance_report": "tmp/reports/runtime/acceptance/summary.json",
   "runtime_acceptance_script": "scripts/check_objc3c_runtime_acceptance.py",
   "authoritative_runtime_code_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/method_cache_snapshots.cpp",
+    "native/objc3c/src/runtime/classes/class_graph_snapshots.cpp",
+    "native/objc3c/src/runtime/reflection/property_snapshot_api.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ],
   "workload_families": [
@@ -19,6 +30,12 @@
       "probe": "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
       "fixture": "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
       "hot_path_family": "startup-installation",
+      "owner_phases": [
+        "runtime",
+        "ir",
+        "e2e"
+      ],
+      "support_boundary": "runtime startup timing and runnable package provenance only; install lifecycle support is owned by runtime/e2e splits",
       "measured_fields": [
         "fixture_compile_ms",
         "probe_link_ms",
@@ -32,13 +49,19 @@
       "probe": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
       "fixture": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
       "hot_path_family": "dispatch-cache",
+      "owner_phases": [
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "dispatch-cache measurements distinguish canonical fast path from strict-error paths; retired-route-like dispatch remains canonical rejection",
       "measured_fields": [
         "baseline_cache_entry_count",
         "baseline_fast_path_seed_count",
         "mixed_first_dispatch_path",
         "mixed_second_dispatch_path",
-        "fallback_first_dispatch_path",
-        "fallback_second_dispatch_path"
+        "strict_error_first_dispatch_path",
+        "strict_error_second_dispatch_path"
       ]
     },
     {
@@ -47,6 +70,13 @@
       "probe": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
       "fixture": "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
       "hot_path_family": "reflection-query",
+      "owner_phases": [
+        "sema",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "reflection-query rows are runtime/e2e acceptance evidence with sema and IR provenance; counter snapshots do not create support",
       "measured_fields": [
         "realized_class_count",
         "reflectable_property_count",
@@ -60,6 +90,12 @@
       "probe": "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
       "fixture": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
       "hot_path_family": "ownership-helpers",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime"
+      ],
+      "support_boundary": "ownership helper counters are runtime acceptance evidence after semantic ownership and lowering owners claim the behavior",
       "measured_fields": [
         "inside_retain_call_count",
         "inside_current_property_exchange_count",
@@ -73,6 +109,13 @@
       "probe": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
       "fixture": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
       "hot_path_family": "ownership-helpers",
+      "owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "storage ownership reflection timing is runtime/e2e evidence with sema/lowering provenance; packet fields are not support claims",
       "measured_fields": [
         "owned_value",
         "weak_value",
@@ -82,10 +125,10 @@
     }
   ],
   "exact_live_commands": [
-    "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
-    "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance",
-    "python scripts/objc3c_public_workflow_runner.py validate-runtime-performance",
-    "python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance"
+    "npm run objc3c -- build-native-binaries",
+    "npm run objc3c -- benchmark-runtime-performance",
+    "npm run objc3c -- validate-runtime-performance",
+    "npm run objc3c -- validate-runnable-runtime-performance"
   ],
   "exact_live_paths_for_downstream_work": [
     "docs/runbooks/objc3c_runtime_performance.md",

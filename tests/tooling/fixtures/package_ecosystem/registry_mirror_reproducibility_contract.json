@@ -14,17 +14,36 @@
     "mirror_summary": "tmp/reports/package-ecosystem/package-mirror-summary.json",
     "reproducibility_summary": "tmp/reports/package-ecosystem/registry-mirror-reproducibility-summary.json"
   },
-  "required_public_scripts": [
-    "package:objc3c:channels",
-    "inspect:objc3c:release-manifest",
-    "inspect:objc3c:update-manifest",
-    "test:objc3c:release-operations",
-    "test:objc3c:release-operations:e2e"
+  "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "mirror package ids drift from lock package ids",
+      "local registry package ids drift from lock package ids",
+      "hosted registry claim did not fail closed",
+      "mirror validation requires network access"
+    ]
+  },
+  "required_actions": [
+    "build-package-channels",
+    "build-release-manifest",
+    "build-update-manifest",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
   ],
   "reproducibility_rules": [
     "mirror package ids must match the generated lock package ids",
     "local registry package ids must match the generated lock package ids",
-    "publication metadata must state hosted registry support is deferred",
+    "publication metadata must fail closed for hosted registry support claims",
     "mirror validation must declare no-network-during-validation",
     "all generated paths remain under tmp/artifacts/package-ecosystem"
   ]

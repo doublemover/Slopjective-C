@@ -1,0 +1,6 @@
+// Canonical parser rejection fixture: parser retired route flags fail closed instead of enabling a second mode.
+module RemovedParserRetiredRouteFlagRejected;
+
+fn main() -> i32 {
+  return 0;
+}

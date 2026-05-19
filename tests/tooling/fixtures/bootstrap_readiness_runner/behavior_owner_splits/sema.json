@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-runner-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness_runner"
+  ],
+  "support_boundary": "sema ownership is non-positive for bootstrap-readiness-runner fixtures. Issue snapshots, milestone snapshots, catalog task snapshots, open blocker reports, source labels, and generated timestamps are tooling readiness state, not Objective-C 3 semantic behavior.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:bootstrap_readiness_runner",
+    "scenario:zero_open",
+    "scenario:blocked_issues",
+    "issue_number:1149",
+    "compiler_phase_boundary:no-sema-positive-truth-from-bootstrap-readiness-runner",
+    "upstream_owner_required:tests/native/sema"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "old-mode semantic readiness-runner rows, gate semantic rows, retired route semantic rows, compatibility semantic rows, migration-only semantic rows, generated-only semantic rows, evidence-log semantic rows, and runner-state semantic claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

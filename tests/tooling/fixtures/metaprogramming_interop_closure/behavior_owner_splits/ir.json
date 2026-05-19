@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "support_boundary": "IR ownership covers runtime-import artifacts, package manifests, bridge JSON, link plans, module generation, replay import preservation, FFI metadata serialization, and generated report provenance without creating behavior support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:metaprogramming_lowering_owner",
+    "source_owner_contracts:runtime_abi_packaged_proof_owner",
+    "required_artifact_fields:package_manifest_path",
+    "required_artifact_fields:package_root",
+    "required_artifact_fields:provider_bridge_json_path",
+    "required_artifact_fields:consumer_cross_module_link_plan_path",
+    "required_bridge_probe_payload:module_generation_ready",
+    "authoritative_interop_surface_keys:runtime_cross_language_replay_import_surface_preservation_surface",
+    "authoritative_interop_surface_keys:runtime_packaging_bridge_loader_artifact_surface"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated bridge payloads, package artifacts, runtime-import artifacts, module replay rows, FFI metadata rows, and replay preservation rows cannot convert compatibility, gate, retired route, or old-mode labels into canonical IR support"
+}

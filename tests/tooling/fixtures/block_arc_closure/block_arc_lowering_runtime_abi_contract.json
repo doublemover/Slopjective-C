@@ -4,7 +4,22 @@
   "milestone": "M320",
   "issue": "M320-C001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
-  "summary_script": "scripts/build_block_arc_closure_lowering_abi_summary.py",
+  "summary_implementation_anchor": "scripts/build_block_arc_closure_lowering_abi_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "runtime",
+    "canonical_rejection",
+    "block_arc_provenance"
+  ],
+  "artifact_behavior_boundary": "compile artifacts, manifests, runtime-registration descriptors, lowering helper rows, ARC helper rows, and private ABI snapshot references are provenance until behavior owners claim support",
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before compile artifact, manifest, runtime-registration descriptor, lowering helper row, ARC helper row, private ABI snapshot, generated report, or runnable report",
+    "support_authority": "block/ARC lowering and runtime ABI support requires lowering, IR, or runtime owner assignment over canonical fixtures and probes",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated reports, descriptor-only rows, manifest-only rows, private-snapshot-only rows, evidence-log rows, retired route lowering, gate lowering, old-mode lowering, evidence-only helper rows, stack-only byref rows, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "compile_manifest_surface_keys": [
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",

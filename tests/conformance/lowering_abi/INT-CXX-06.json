@@ -34,7 +34,7 @@
           ],
           "runtime_assertions": [
             "intcxx06_run_probe can observe success/failure exclusively through parsedError nullability and returned value slot",
-            "C and C++ callers that import only declarations can invoke intcxx06_parse_c with ABI-compatible trailing outError"
+            "C and C++ callers that import only declarations can invoke intcxx06_parse_c with ABI-equivalent trailing outError"
           ]
         },
         {
@@ -45,7 +45,7 @@
           "abi_requirements": [
             "optimized ObjC++ lowering preserves trailing outError placement and store semantics from -O0",
             "optimization does not introduce hidden exception ABI lanes for ObjC 3.0 throws declarations",
-            "optimized code preserves separate-compilation compatibility for imported thunk declarations"
+            "optimized code preserves separate-compilation import stability for imported thunk declarations"
           ],
           "runtime_assertions": [
             "parsedError success/failure observations remain equivalent to -O0 under optimization",

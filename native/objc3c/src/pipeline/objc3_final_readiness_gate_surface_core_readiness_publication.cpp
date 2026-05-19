@@ -1,0 +1,216 @@
+#include "pipeline/objc3_final_readiness_gate_surface_readiness_helpers.h"
+#include "pipeline/objc3_final_readiness_gate_surface_core_readiness_publication_tail.h"
+#include "pipeline/readiness/objc3_final_readiness_gate_core_keys.h"
+
+#include <string>
+
+namespace objc3_final_readiness_gate_surface {
+
+void PublishObjc3FinalReadinessGateCoreReadiness(
+    Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
+  const bool upstream_lanes_ready =
+      surface.lane_a_core_feature_ready &&
+      surface.lane_b_core_feature_ready &&
+      surface.lane_c_core_feature_ready &&
+      surface.lane_d_core_feature_ready;
+  const bool replay_keys_ready =
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.lane_a_key.empty() &&
+      !surface.lane_b_key.empty() &&
+      !surface.lane_c_key.empty() &&
+      !surface.lane_d_key.empty();
+
+  surface.dependency_chain_ready =
+      surface.governance_contract_ready &&
+      surface.modular_split_ready &&
+      upstream_lanes_ready &&
+      replay_keys_ready;
+  surface.core_feature_impl_ready = surface.dependency_chain_ready;
+  const bool lane_expansion_consistent =
+      lane_a_surface.expansion_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.expansion_ready &&
+      lane_d_surface.core_feature_expansion_ready;
+  const bool core_feature_expansion_consistent =
+      surface.core_feature_impl_ready &&
+      lane_expansion_consistent;
+  const bool core_feature_expansion_ready =
+      core_feature_expansion_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty();
+  surface.core_feature_expansion_consistent = core_feature_expansion_consistent;
+  surface.core_feature_expansion_ready = core_feature_expansion_ready;
+  surface.core_feature_key =
+      BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
+  surface.core_feature_expansion_key =
+      "final-readiness-gate-core-feature-expansion:v1:"
+      "dependency-chain-ready=" +
+      std::string(surface.dependency_chain_ready ? "true" : "false") +
+      ";lane-a-expansion-ready=" +
+      std::string(lane_a_surface.expansion_ready ? "true"
+                                                                   : "false") +
+      ";lane-b-expansion-ready=" +
+      std::string(lane_b_surface.expansion_ready ? "true" : "false") +
+      ";lane-c-expansion-ready=" +
+      std::string(lane_c_surface.expansion_ready ? "true" : "false") +
+      ";lane-d-core-feature-expansion-ready=" +
+      std::string(lane_d_surface.core_feature_expansion_ready ? "true" : "false") +
+      ";core-feature-expansion-consistent=" +
+      std::string(core_feature_expansion_consistent ? "true" : "false") +
+      ";core-feature-expansion-ready=" +
+      std::string(core_feature_expansion_ready ? "true" : "false");
+
+  const bool lane_edge_case_compatibility_consistent =
+      lane_a_surface.edge_case_compatibility_ready &&
+      lane_b_surface.edge_case_compatibility_ready &&
+      lane_c_surface.edge_case_compatibility_ready &&
+      lane_d_surface.edge_case_compatibility_ready;
+  const bool edge_case_compatibility_consistent =
+      surface.core_feature_expansion_ready &&
+      lane_edge_case_compatibility_consistent;
+  const bool edge_case_compatibility_ready =
+      edge_case_compatibility_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.core_feature_expansion_key.empty();
+
+  surface.core_feature_expansion_ready =
+      surface.core_feature_expansion_ready &&
+      !surface.core_feature_expansion_key.empty();
+  surface.edge_case_compatibility_consistent =
+      edge_case_compatibility_consistent;
+  surface.edge_case_compatibility_ready =
+      edge_case_compatibility_ready;
+  surface.edge_case_compatibility_key =
+      BuildObjc3FinalReadinessGateEdgeCaseCompatibilityKey(
+          surface,
+          lane_a_surface.edge_case_compatibility_ready,
+          lane_b_surface.edge_case_compatibility_ready,
+          lane_c_surface.edge_case_compatibility_ready,
+          lane_d_surface.edge_case_compatibility_ready);
+  surface.edge_case_compatibility_ready =
+      surface.edge_case_compatibility_ready &&
+      !surface.edge_case_compatibility_key.empty();
+
+  const bool lane_edge_case_expansion_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.core_feature_impl_ready &&
+      lane_c_surface.core_feature_impl_ready &&
+      lane_d_surface.edge_case_compatibility_ready;
+  const bool edge_case_expansion_consistent =
+      surface.edge_case_compatibility_ready &&
+      lane_edge_case_expansion_consistent;
+  const bool edge_case_robustness_ready =
+      edge_case_expansion_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.edge_case_compatibility_key.empty();
+  surface.edge_case_expansion_consistent =
+      edge_case_expansion_consistent;
+  surface.edge_case_robustness_ready =
+      edge_case_robustness_ready;
+  surface.edge_case_robustness_key =
+      BuildObjc3FinalReadinessGateEdgeCaseRobustnessKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.core_feature_impl_ready,
+          lane_c_surface.core_feature_impl_ready,
+          lane_d_surface.edge_case_compatibility_ready);
+  surface.edge_case_robustness_ready =
+      surface.edge_case_robustness_ready &&
+      !surface.edge_case_robustness_key.empty();
+  const bool lane_diagnostics_hardening_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.core_feature_impl_ready &&
+      lane_c_surface.core_feature_impl_ready &&
+      lane_d_surface.edge_case_robustness_ready;
+  const bool diagnostics_hardening_consistent =
+      surface.edge_case_robustness_ready &&
+      lane_diagnostics_hardening_consistent;
+  const bool diagnostics_hardening_ready =
+      diagnostics_hardening_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.edge_case_robustness_key.empty();
+  surface.diagnostics_hardening_consistent =
+      diagnostics_hardening_consistent;
+  surface.diagnostics_hardening_ready =
+      diagnostics_hardening_ready;
+  surface.diagnostics_hardening_key =
+      BuildObjc3FinalReadinessGateDiagnosticsHardeningKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.core_feature_impl_ready,
+          lane_c_surface.core_feature_impl_ready,
+          lane_d_surface.edge_case_robustness_ready);
+  surface.diagnostics_hardening_ready =
+      surface.diagnostics_hardening_ready &&
+      !surface.diagnostics_hardening_key.empty();
+  const bool lane_recovery_determinism_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.expansion_ready &&
+      lane_d_surface.diagnostics_hardening_ready;
+  const bool recovery_determinism_consistent =
+      surface.diagnostics_hardening_ready &&
+      lane_recovery_determinism_consistent;
+  const bool recovery_determinism_ready =
+      recovery_determinism_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.diagnostics_hardening_key.empty();
+  surface.recovery_determinism_consistent =
+      recovery_determinism_consistent;
+  surface.recovery_determinism_ready =
+      recovery_determinism_ready;
+  surface.recovery_determinism_key =
+      BuildObjc3FinalReadinessGateRecoveryDeterminismKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.expansion_ready,
+          lane_c_surface.expansion_ready,
+          lane_d_surface.diagnostics_hardening_ready);
+  surface.recovery_determinism_ready =
+      surface.recovery_determinism_ready &&
+      !surface.recovery_determinism_key.empty();
+  const bool lane_conformance_matrix_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.expansion_ready &&
+      lane_d_surface.diagnostics_hardening_ready;
+  const bool conformance_matrix_consistent =
+      surface.recovery_determinism_ready &&
+      lane_conformance_matrix_consistent;
+  const bool conformance_matrix_ready =
+      conformance_matrix_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.recovery_determinism_key.empty();
+  surface.conformance_matrix_consistent =
+      conformance_matrix_consistent;
+  surface.conformance_matrix_ready =
+      conformance_matrix_ready;
+  surface.conformance_matrix_key =
+      BuildObjc3FinalReadinessGateConformanceMatrixKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.expansion_ready,
+          lane_c_surface.expansion_ready,
+          lane_d_surface.diagnostics_hardening_ready);
+  surface.conformance_matrix_ready =
+      surface.conformance_matrix_ready &&
+      !surface.conformance_matrix_key.empty();
+  PublishObjc3FinalReadinessGateTailReadiness(
+      surface,
+      lane_a_surface,
+      lane_b_surface,
+      lane_c_surface,
+      lane_d_surface);
+}
+
+}  // namespace objc3_final_readiness_gate_surface

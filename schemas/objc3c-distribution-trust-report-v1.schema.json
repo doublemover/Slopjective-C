@@ -1,20 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-distribution-trust-report-v1.schema.json",
   "title": "objc3c Distribution Trust Report",
   "type": "object",
   "required": [
     "contract_id",
+    "generated_at_utc",
     "status",
     "trust_state",
     "headline",
+    "release_version",
+    "warning_count",
+    "dashboard_path",
     "evidence_paths",
+    "trust_signals",
+    "required_drill_steps",
     "operator_actions",
     "markdown_path"
   ],
   "properties": {
     "contract_id": {
       "const": "objc3c.distribution.trust.report.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "minLength": 1
     },
     "status": {
       "const": "PASS"
@@ -30,9 +40,68 @@
       "type": "string",
       "minLength": 1
     },
+    "release_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "warning_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "dashboard_path": {
+      "type": "string",
+      "minLength": 1
+    },
     "evidence_paths": {
       "type": "array",
       "minItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "trust_signals": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "signal_id",
+          "status",
+          "source_path"
+        ],
+        "properties": {
+          "signal_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "WARN",
+              "FAIL"
+            ]
+          },
+          "source_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact_source": {
+            "type": "string"
+          },
+          "claim_boundary": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required_drill_steps": {
+      "type": "array",
+      "minItems": 5,
       "items": {
         "type": "string",
         "minLength": 1

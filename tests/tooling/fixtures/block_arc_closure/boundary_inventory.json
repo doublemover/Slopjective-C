@@ -4,8 +4,29 @@
   "milestone": "M320",
   "issue": "M320-A001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
-  "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
+  "owner_split_contract": "tests/tooling/fixtures/block_arc_closure/owner_split_contract.json",
+  "behavior_owner_split_index": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/index.json",
+  "summary_implementation_anchor": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m320/M320-A001",
+  "generated_report_behavior_boundary": "generated block/ARC closure reports are provenance-only and cannot establish positive parser, sema, lowering, IR, runtime, e2e, compatibility, ARC, byref, block runtime, or public ABI support",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before block source ownership, byref forwarding/copy/dispose, ARC lifetime insertion, weak/current-property helper traffic, private helper ABI snapshot, generated report, runtime acceptance artifact, public command, packaged runnable proof, or successor-boundary provenance row",
+    "support_authority": "block/ARC closure rows are source, semantic profile, lowering, runtime ABI, runtime helper, report, executable proof, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
+    "generated_report_rule": "runtime acceptance reports, runnable block/ARC reports, compile manifests, runtime-registration descriptors, private helper snapshots, ARC debug snapshots, byref forwarding snapshots, public workflow labels, and packaged proof summaries cannot define canonical support",
+    "retired_surface_rule": "retired route runtime behavior, compatibility gate runtime closure, old-mode behavior, evidence-log runtime closure, generated-only rows, generated-evidence-log source truth, evidence-only promotion helper claims, stack-only byref success, source-only sidecar ownership, public runtime ABI widening, wrapper-only runnable actions, migration-only rows, closure-local scaffolding, broader error/concurrency overclaims, and successor-boundary widening are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "block source semantics, byref promotion/copy/dispose/forwarding, ARC lifetime insertion, weak/current-property helpers, autoreleasepool helper traffic, private helper ABI snapshots, runtime acceptance reports, generated reports, public workflows, packaged proof labels, and successor-boundary rows are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
+  },
+  "fail_closed_boundary_inventory": {
+    "missing_behavior_owner_split": "fail-closed",
+    "missing_owner_split_contract": "fail-closed",
+    "missing_authoritative_code_path": "fail-closed",
+    "missing_authoritative_runtime_symbol": "fail-closed",
+    "missing_authoritative_probe_path": "fail-closed",
+    "missing_authoritative_fixture_path": "fail-closed",
+    "missing_public_workflow_action": "fail-closed",
+    "missing_executable_proof": "fail-closed"
+  },
+  "canonical_rejection_owner": "tests/tooling/fixtures/block_arc_closure/behavior_owner_splits/canonical_rejection.json",
   "focus": [
     "escaping-block-promotion-and-invoke-runtime-closure",
     "byref-forwarding-copy-dispose-and-heap-promotion-closure",
@@ -14,13 +35,17 @@
   "authoritative_code_paths": [
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+    "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
+    "native/objc3c/src/runtime/memory/arc.cpp",
+    "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+    "native/objc3c/src/runtime/storage/current_property_weak.cpp",
     "scripts/check_objc3c_runtime_acceptance.py",
     "scripts/check_objc3c_runnable_block_arc_conformance.py",
     "scripts/check_objc3c_runnable_block_arc_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "docs/objc3c-native.md",
     "tests/tooling/runtime/README.md"
   ],
@@ -65,6 +90,14 @@
     "tests/tooling/runtime/README.md",
     "docs/runbooks/objc3c_public_command_surface.md"
   ],
+  "public_command_surfaces": [
+    "test:objc3c:block-arc-conformance",
+    "test:objc3c:runnable-block-arc"
+  ],
+  "public_workflow_actions": [
+    "validate-block-arc-conformance",
+    "validate-runnable-block-arc"
+  ],
   "current_closure_gaps": [
     {
       "gap_id": "block-byref-and-arc-proof-remains-split-across-separate-shared-reports",
@@ -87,7 +120,8 @@
       "summary": "ARC runtime support, autoreleasepool traffic, and weak/current-property helper behavior are live today, but the supported closure path still depends on private runtime-owned helpers and snapshots rather than a widened public ABI.",
       "evidence_references": [
         "docs/objc3c-native.md",
-        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp",
         "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
       ],
@@ -116,7 +150,8 @@
   "explicit_non_goals": [
     "no-public-runtime-abi-widening",
     "no-claim-that-arc-automation-is-complete-beyond-the-runtime-owned-helper-and-lowering-surfaces-already-proved",
-    "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path",
+    "no-closure-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path",
+    "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-descriptors-private-helper-snapshots-arc-debug-snapshots-byref-forwarding-snapshots-public-workflow-labels-packaged-proof-summaries-or-provenance-rows",
     "no-broader-error-or-concurrency-interaction-claim-before-successor-milestones-land"
   ],
   "successor_map": [
@@ -141,7 +176,13 @@
     {
       "query_id": "block-arc-runtime-symbol-exports",
       "kind": "source-search",
-      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "paths": [
+        "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+        "native/objc3c/src/runtime/blocks/block_arc_snapshot.cpp",
+        "native/objc3c/src/runtime/memory/arc.cpp",
+        "native/objc3c/src/runtime/memory/arc_debug_state.cpp",
+        "native/objc3c/src/runtime/storage/current_property_weak.cpp"
+      ],
       "patterns": [
         "objc3_runtime_promote_block_i32",
         "objc3_runtime_invoke_block_i32",

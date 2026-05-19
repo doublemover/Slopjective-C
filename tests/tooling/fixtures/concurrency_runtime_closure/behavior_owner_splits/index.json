@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/owner_split_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/unified_concurrency_runtime_semantic_model.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
+  ],
+  "split_policy": {
+    "primary_axis": "behavior phase before concurrency source owner, task lifecycle contract, actor isolation contract, scheduler/executor policy, cancellation policy, private helper ABI, private snapshot, probe payload, generated report, runtime acceptance artifact, compile manifest, runtime-registration descriptor, public command, workflow label, packaged runnable proof, or successor-boundary provenance",
+    "positive_rule": "concurrency runtime closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners over checked-in fixtures and probes; generated reports, compile artifacts, manifests, runtime-registration descriptors, private snapshots, probe payload snapshots, public workflow labels, packaged proof labels, and provenance rows are never positive support by themselves",
+    "provenance_rule": "runtime acceptance reports, runnable concurrency reports, compile manifests, runtime-registration descriptors, private helper snapshots, continuation/task/actor probe payload counts, public workflow labels, packaged proof summaries, machine-owned output roots, generated-only rows, evidence-log rows, manifest-only rows, descriptor-only rows, wrapper-only rows, and generated reports are provenance until a phase owner claims behavior",
+    "retired_surface_rule": "retired route runtime behavior, compatibility gates, old-mode behavior, evidence-log runtime closure, generated-only rows, generated-evidence-log source truth, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, public runtime ABI widening, wrapper-only runnable actions, workflow-label-only rows, stdlib actor-shaped narrative parity, scheduler fairness, distributed actor transport, external executor integration, broader ARC/error/interop overclaims, and cross-module claims without manifest/runtime-registration replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, task lifecycle, actor isolation, scheduler/executor cancellation, private helper ABI, private runtime snapshots, continuation/task/actor probe payloads, compile manifests, runtime-registration descriptors, generated reports, runtime acceptance reports, public workflows, packaged proof labels, and successor-boundary rows are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "concurrency_runtime_provenance",
+      "path": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/concurrency_runtime_provenance.json"
+    }
+  ]
+}

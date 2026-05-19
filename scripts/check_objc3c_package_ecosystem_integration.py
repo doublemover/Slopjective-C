@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.subprocesses import python_script_command, run_timed
+from package_ecosystem_contracts import package_ecosystem_owner_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,9 +22,9 @@ STDLIB_PROGRAM_SUMMARY = ROOT / "tmp" / "reports" / "stdlib" / "program-integrat
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "integration-summary.json"
 
 STEPS = [
-    ("package-authoring-workflow", [sys.executable, "scripts/check_objc3c_package_authoring_workflow.py"]),
-    ("application-architecture-integration", [sys.executable, "scripts/check_objc3c_application_architecture_integration.py"]),
-    ("stdlib-program-integration", [sys.executable, "scripts/check_objc3c_stdlib_program_integration.py"]),
+    ("package-authoring-workflow", python_script_command("scripts/check_objc3c_package_authoring_workflow.py")),
+    ("application-architecture-integration", python_script_command("scripts/check_objc3c_application_architecture_integration.py")),
+    ("stdlib-program-integration", python_script_command("scripts/check_objc3c_stdlib_program_integration.py")),
 ]
 
 
@@ -87,6 +88,16 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/check_objc3c_package_ecosystem_integration.py",
+        "owner_policy": package_ecosystem_owner_payload(),
+        "blocker_metadata": {
+            "blocker_owner": "package-ecosystem-blockers",
+            "blocking_conditions": [
+                "child package ecosystem workflow failed",
+                "package lock summary failed source-owned replay checks",
+                "application architecture package surface drifted",
+                "stdlib package program surface drifted",
+            ],
+        },
         "workflow_actions": [
             "build-package-lock",
             "validate-package-authoring",

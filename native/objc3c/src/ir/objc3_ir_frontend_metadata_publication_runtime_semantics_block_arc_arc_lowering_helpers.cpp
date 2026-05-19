@@ -1,0 +1,14 @@
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_lowering_helpers.h"
+
+#include <sstream>
+
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_lowering_helpers_arc_rows.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_lowering_helpers_block_rows.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_lowering_helpers_runtime_rows.h"
+
+void EmitObjc3IRArcLoweringSemanticsHelperMetadataNodes(
+    std::ostringstream &out) {
+  EmitObjc3IRArcAutomaticInsertionMetadataNode(out);
+  EmitObjc3IRArcCleanupWeakLifetimeHooksMetadataNode(out);
+  EmitObjc3IRArcBlockAutoreleaseReturnLoweringMetadataNode(out);
+}

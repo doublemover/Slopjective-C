@@ -3,3 +3,4 @@ site/_site/
 tests/tooling/fixtures/
 tmp/
 docs/objc3c-native.md
+docs/runbooks/objc3c_public_command_surface.md

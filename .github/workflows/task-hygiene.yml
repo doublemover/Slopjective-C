@@ -46,64 +46,26 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Run canonical maintainer lint workflow
+        run: npm run objc3c -- lint
+
       - name: Install Python test dependencies
         run: python -m pip install --upgrade pytest
 
       - name: Build native objc3c artifacts
-        run: npm run build:objc3c-native
+        run: npm run objc3c -- build-native-binaries
 
       - name: Refresh binary-derived frontend contract artifacts
-        run: npm run build:objc3c-native:contracts
+        run: npm run objc3c -- build-native-contracts
 
       - name: Probe hosted-runner LLVM capabilities
-        shell: pwsh
-        run: |
-          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
-          python scripts/probe_objc3c_llvm_capabilities.py --summary-out $summaryPath
-          $probeExit = $LASTEXITCODE
-          $summary = Get-Content $summaryPath | ConvertFrom-Json
-          if ($probeExit -eq 0) {
-            Write-Host "Hosted runner exposes clang and llc object-emission capability."
-            exit 0
-          }
-          if (-not $summary.clang.found) {
-            throw "Hosted runner capability probe failed without clang availability."
-          }
-          if ($summary.llc.found -or $summary.llc_features.supports_filetype_obj) {
-            throw "Hosted runner capability probe reported an unexpected llc failure mode."
-          }
-          Write-Host "Hosted runner does not provide llc --filetype=obj capability; continuing via capability-routed parity validation."
-          exit 0
+        run: npm run objc3c -- check-hosted-llvm-capabilities
 
       - name: Validate capability discovery and routing code paths
-        run: >
-          python -m pytest
-          tests/tooling/test_probe_objc3c_llvm_capabilities.py
-          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled
-          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable
-          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary
-          tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py
-          tests/tooling/test_objc3c_driver_cli_extraction.py
-          -q
+        run: npm run objc3c -- test-llvm-capability-routing
 
       - name: Verify capability-routed source parity when llc is available
-        shell: pwsh
-        run: |
-          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
-          $summary = Get-Content $summaryPath | ConvertFrom-Json
-          if (-not $summary.llc.found -or -not $summary.llc_features.supports_filetype_obj) {
-            Write-Host "Skipping live source parity: hosted runner does not provide llc --filetype=obj capability."
-            exit 0
-          }
-          python scripts/check_objc3c_library_cli_parity.py --source tests/tooling/fixtures/native/hello.objc3 --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --work-dir tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work --summary-out tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/summary.json --llvm-capabilities-summary tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json --route-cli-backend-from-capabilities
+        run: npm run objc3c -- test-capability-routed-source-parity
 
-      - name: Run native execution smoke when llc is available
-        shell: pwsh
-        run: |
-          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
-          $summary = Get-Content $summaryPath | ConvertFrom-Json
-          if (-not $summary.llc.found -or -not $summary.llc_features.supports_filetype_obj) {
-            Write-Host "Skipping execution smoke: hosted runner does not provide llc --filetype=obj capability."
-            exit 0
-          }
-          npm run test:objc3c:execution-smoke
+      - name: Run hosted native execution smoke when llc is available
+        run: npm run objc3c -- test-hosted-execution-smoke

@@ -3,10 +3,10 @@
 ## Working Boundary
 
 This runbook defines the live platform, toolchain, packaging, install, and
-compatibility claim surface for objc3c.
+support claim surface for objc3c.
 
 Use it when changing host support claims, toolchain version expectations,
-packaged install behavior, or archive/update compatibility rules.
+packaged install behavior, or archive/update support rules.
 
 Downstream platform work must stay on the existing implementation paths below
 instead of inventing a second portability harness or publishing broader support
@@ -17,43 +17,45 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
-- `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+- release operations upgrade-claim policy:
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
+  (live contract fields are upgrade/support-scoped)
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_platform_hardening_boundary_inventory_summary.py`
-- `python scripts/build_objc3c_platform_support_matrix.py`
-- `python scripts/check_objc3c_platform_hardening_integration.py`
-- `python scripts/check_objc3c_runnable_platform_hardening_end_to_end.py`
-- `python scripts/check_objc3c_platform_hardening_integration.py`
-- `python scripts/build_platform_hardening_artifact_contract_summary.py`
-- `python scripts/check_platform_hardening_build_package_validation.py`
-- `python scripts/check_platform_hardening_toolchain_range_replay.py`
-- `python scripts/check_platform_hardening_install_matrix_integration.py`
-- `python scripts/check_objc3c_packaging_channels_integration.py`
-- `python scripts/check_objc3c_packaging_channels_end_to_end.py`
-- `python scripts/check_objc3c_release_operations_integration.py`
-- `python scripts/check_objc3c_release_operations_end_to_end.py`
+- `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- validate-platform-hardening`
+- `npm run objc3c -- validate-platform-hardening-end-to-end`
+- `npm run objc3c -- build-package-channels`
+- `npm run objc3c -- validate-packaging-channels`
+- `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- build-update-manifest`
+- `npm run objc3c -- publish-release-operations`
+- `npm run objc3c -- validate-release-operations`
+- `npm run objc3c -- validate-release-operations-end-to-end`
+
+Helper implementations are registry anchors for the workflow
+actions above, not separate current-facing commands.
 
 ## Exact Live Implementation Paths
 
 - native build and toolchain probing:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/probe_objc3c_llvm_capabilities.py`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- inspect-capability-explorer`
 - runnable package assembly:
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
-  - `scripts/build_objc3c_release_manifest.py`
+  - `npm run objc3c -- package-runnable-toolchain`
+  - `npm run objc3c -- build-release-manifest`
 - package-channel and installer flow:
-  - `scripts/build_objc3c_package_channels.py`
-  - `scripts/check_objc3c_packaging_channels_integration.py`
-  - `scripts/check_objc3c_packaging_channels_end_to_end.py`
-- release/update compatibility flow:
-  - `scripts/build_objc3c_update_manifest.py`
-  - `scripts/publish_objc3c_release_operations_metadata.py`
-  - `scripts/check_objc3c_release_operations_integration.py`
-  - `scripts/check_objc3c_release_operations_end_to_end.py`
+  - `npm run objc3c -- build-package-channels`
+  - `npm run objc3c -- validate-packaging-channels`
+  - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- release/update support flow:
+  - `npm run objc3c -- build-update-manifest`
+  - `npm run objc3c -- publish-release-operations`
+  - `npm run objc3c -- validate-release-operations`
+  - `npm run objc3c -- validate-release-operations-end-to-end`
 - public command and workflow surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - package bridge: `npm run objc3c -- <action>`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
@@ -99,7 +101,7 @@ Toolchain claims must also stay narrow:
 - `clang++`, `python`, and `pwsh` presence are part of the live support surface
 - unsupported hosts and unsupported toolchain shapes must fail closed with
   explicit diagnostics
-- packaged install behavior, archive behavior, and update/rollback publication
+- packaged install behavior, archive behavior, and update/revert publication
   must all agree on the same support boundary
 
 ## Platform Support Tier Policy
@@ -129,38 +131,38 @@ Tier publication rules:
 - `windows-x64` is the only host family that may currently be described as
   supported on the public workflow surface
 
-## Install And Archive Compatibility Boundary
+## Install And Archive Support Boundary
 
-Packaging and install compatibility is part of platform support, not a separate
+Packaging and install support is part of platform support, not a separate
 story.
 
 - the canonical payload remains the runnable toolchain package
 - package channels are transport views over that payload
-- install receipts, bootstrap scripts, rollback, and update metadata must all
+- install receipts, bootstrap scripts, revert guidance, and update metadata must all
   resolve back to the same packaged payload family
-- archive and installer compatibility claims remain `windows-x64` only until
+- archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
-## Toolchain-Range And Archive Compatibility Policy
+## Toolchain-Range And Archive Support Policy
 
-Toolchain-range and archive compatibility claims must also stay narrower than
+Toolchain-range and archive support claims must also stay narrower than
 the evidence.
 
 - the current live claim boundary is the checked-in `windows-x64` package and
   install surface produced from the local runnable toolchain bundle
-- packaged archive reuse, installer replay, rollback, and update publication
+- packaged archive reuse, installer replay, revert guidance, and update publication
   are only claimable for the same checked-in host family
-- toolchain presence by itself does not imply archive or install compatibility
+- toolchain presence by itself does not imply archive or install support
 - a new LLVM or Clang major line is not automatically supported just because the
   current host can launch it
 
-Archive compatibility rules:
+Archive support rules:
 
 - portable archive, installer archive, and offline bundle must all resolve to
   the same runnable payload family
 - package-channel publication and release-operations metadata must describe the
   same host and channel boundary
-- archive compatibility claims remain fail-closed outside the checked-in
+- archive support claims remain fail-closed outside the checked-in
   `windows-x64` package/install/update path
 
 ## Explicit Unsupported-Host Behavior
@@ -174,7 +176,7 @@ best-effort language.
 - widening support later must happen by expanding checked-in contracts,
   generated matrix artifacts, and public workflow validation
 
-## Unsupported-Host And Fallback Policy
+## Unsupported-Host Fail-Closed Policy
 
 Unsupported-host behavior must be deterministic and machine-describable.
 
@@ -183,14 +185,14 @@ Hard-fail classes:
 - host OS or host architecture outside the checked-in support matrix
 - missing required local tools for the claimed host tier
 - installer or package-channel invocation outside the published host/channel set
-- update or compatibility publication that implies support outside the checked-in
+- update or support publication that implies support outside the checked-in
   matrix
 
-Allowed fallback behavior:
+Allowed fail-closed behavior:
 
 - capability inspection and docs-only policy checks may still run on an
   unsupported host when they do not widen support claims
-- public package, install, rollback, and support-tier publication must fail
+- public package, install, revert, and support-tier publication must fail
   closed instead of silently degrading into unsupported behavior
 
 No unsupported host may be described as:
@@ -201,9 +203,9 @@ No unsupported host may be described as:
 
 ## Working Rules For Downstream Issues
 
-- treat `scripts/objc3c_public_workflow_runner.py` as the only public command
-  routing surface
-- keep support-tier and compatibility publication machine-owned
+- treat the `package.json` bridge, `npm run objc3c -- <action>`, as the
+  only public command routing surface
+- keep support-tier and support-window publication machine-owned
 - keep transient package/install reports and matrix captures under `tmp/`
 - keep checked-in platform policy under `docs/runbooks/`,
   `tests/tooling/fixtures/`, and `schemas/`
@@ -212,43 +214,42 @@ No unsupported host may be described as:
 
 ## Machine-Owned Artifact Contract
 
-The canonical generated support-matrix surface for this milestone is:
-
-- `tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`
+The platform-hardening generated support-matrix surface is the platform support
+matrix artifact selected by the checked-in platform-hardening contract.
 
 It must be generated by:
 
-- `python scripts/build_objc3c_platform_support_matrix.py`
+- `npm run objc3c -- build-platform-support-matrix`
 
 The checked-in schema and contract surfaces for that artifact are:
 
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
-The generated summary/report family for this milestone lives under:
-
-- `tmp/reports/platform-hardening/`
+The generated summary family for platform hardening is selected by the
+checked-in platform-hardening contract.
 
 Downstream validation and publication work must extend this artifact instead of
 inventing a second matrix format.
 
 ## Build And Package Validation Surface
 
-The live build/package validation path for this milestone must stay on the same
+The live build/package validation path for platform hardening must stay on the same
 public build/package surfaces users run:
 
-- `python scripts/objc3c_public_workflow_runner.py build-platform-support-matrix`
-- `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening`
-- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening-end-to-end`
-- `python scripts/build_objc3c_package_channels.py`
-- `python scripts/check_objc3c_packaging_channels_integration.py`
-- `python scripts/check_objc3c_packaging_channels_end_to_end.py`
+- `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- validate-platform-hardening`
+- `npm run objc3c -- validate-platform-hardening-end-to-end`
+- `npm run objc3c -- build-package-channels`
+- `npm run objc3c -- validate-packaging-channels`
+- `npm run objc3c -- validate-packaging-channels-end-to-end`
 
 The matrix validator for this slice is:
 
-- `python scripts/check_platform_hardening_build_package_validation.py`
+- `npm run objc3c -- validate-platform-hardening`
 
 It must fail closed if the current host is outside the checked-in support
 matrix.
@@ -258,7 +259,7 @@ matrix.
 Use this command before widening any host, toolchain, package, install, or
 release claim:
 
-- `python scripts/check_objc3c_platform_hardening_integration.py`
+- `npm run objc3c -- validate-platform-hardening`
 
 The closeout gate reruns the milestone summary builders and validators, then
 verifies that the published support boundary still resolves to exactly:
@@ -266,36 +267,36 @@ verifies that the published support boundary still resolves to exactly:
 - default platform: `windows-x64`
 - supported platform ids: `windows-x64`
 - unpublished tiers: `tier-2`, `experimental`
-- package, release, and compatibility artifacts all reference the same support
+- package, release, and support artifacts all reference the same support
   matrix
 
-## Toolchain Replay And Compatibility Evidence
+## Toolchain Replay And Support Evidence
 
-Toolchain-range evidence for this milestone must come from replayable host
-probes plus the checked-in release/update compatibility outputs.
+Toolchain-range evidence for platform hardening must come from replayable host
+probes plus the checked-in release/update support outputs.
 
 The replay surface for this slice is:
 
-- `python scripts/probe_objc3c_llvm_capabilities.py`
-- `python scripts/check_objc3c_release_operations_integration.py`
-- `python scripts/check_objc3c_release_operations_end_to_end.py`
-- `python scripts/check_platform_hardening_toolchain_range_replay.py`
+- `npm run objc3c -- inspect-capability-explorer`
+- `npm run objc3c -- validate-release-operations`
+- `npm run objc3c -- validate-release-operations-end-to-end`
+- `npm run objc3c -- validate-platform-hardening`
 
 This surface proves the current host/toolchain shape that the checked-in matrix
 can actually claim and keeps broader toolchain-range rhetoric fail-closed.
 
 ## Runnable Install-Matrix Integration
 
-The runnable install-matrix proof for this milestone is the composition of:
+The runnable install-matrix proof for platform hardening is the composition of:
 
 - support-matrix generation
 - build/package validation on the checked-in host tier
-- toolchain/release compatibility replay
+- toolchain/release support replay
 - installer and offline-bundle smoke under temp-owned roots
 
 The integrator for this slice is:
 
-- `python scripts/check_platform_hardening_install_matrix_integration.py`
+- `npm run objc3c -- validate-platform-hardening`
 
 It must prove the current supported host tier through the same package/install
 artifacts that operators would actually consume.
@@ -306,17 +307,18 @@ The tiered support matrix must now be visible on the public workflow and
 release/update metadata surfaces:
 
 - public commands:
-  - `npm run inspect:objc3c:platform-matrix`
-  - `npm run test:objc3c:platform-hardening`
-  - `npm run test:objc3c:platform-hardening:e2e`
+  - `npm run objc3c -- build-platform-support-matrix`
+  - `npm run objc3c -- validate-platform-hardening`
+  - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - update metadata:
-  - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
-- compatibility publication:
-  - `tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json`
-  - `tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json`
+  - generated update manifest selected by the release-operations contract
+- support publication:
+  - generated upgrade-support report selected by the release-operations contract
+  - generated release-channel catalog selected by the release-operations contract
 
 These surfaces must publish the same support tiers and supported platform ids as
-`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`.
+the platform support matrix artifact selected by the checked-in
+platform-hardening contract.
 
 ## Explicit Non-Goals
 

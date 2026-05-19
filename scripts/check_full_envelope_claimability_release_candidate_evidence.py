@@ -5,11 +5,31 @@ import json
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        DASHBOARD_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_SUMMARY,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_READINESS_SUMMARY,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        DASHBOARD_SUMMARY,
+        DISTRIBUTION_CREDIBILITY_SUMMARY,
+        PUBLIC_SUMMARY,
+        RELEASE_ARTIFACT_FIELDS,
+        RELEASE_FOUNDATION_SUMMARY,
+        RELEASE_OPERATIONS_SUMMARY,
+        ROLLOUT_READINESS_SUMMARY,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/release_candidate_evidence_contract.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_full_envelope_claimability.md"
-OUT_DIR = ROOT / "tmp/reports/full-envelope-claimability/release-candidate-evidence"
+OUT_DIR = ROOT / "tmp" / "reports" / "full-envelope-claimability" / "release-candidate-evidence"
 JSON_OUT = OUT_DIR / "release_candidate_evidence_summary.json"
 MD_OUT = OUT_DIR / "release_candidate_evidence_summary.md"
 
@@ -35,19 +55,19 @@ def main() -> int:
         for path in contract["required_reports"]
     }
 
-    dashboard = reports["tmp/reports/full-envelope-claimability/dashboard-summary.json"]
-    public_summary = reports["tmp/reports/full-envelope-claimability/public-summary.json"]
-    rollout = reports["tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"]
-    release_foundation = reports["tmp/reports/release-foundation/integration-summary.json"]
-    release_operations = reports["tmp/reports/release-operations/integration-summary.json"]
-    distribution = reports["tmp/reports/distribution-credibility/integration-summary.json"]
+    dashboard = reports[DASHBOARD_SUMMARY]
+    public_summary = reports[PUBLIC_SUMMARY]
+    rollout = reports[ROLLOUT_READINESS_SUMMARY]
+    release_foundation = reports[RELEASE_FOUNDATION_SUMMARY]
+    release_operations = reports[RELEASE_OPERATIONS_SUMMARY]
+    distribution = reports[DISTRIBUTION_CREDIBILITY_SUMMARY]
 
     artifact_values = {
         "release_manifest_path": release_foundation.get("release_manifest_path"),
         "published_sbom": release_foundation.get("published_sbom"),
         "published_attestation": release_foundation.get("published_attestation"),
         "update_manifest_path": release_operations.get("update_manifest_path"),
-        "compatibility_report": release_operations.get("compatibility_report"),
+        "upgrade_support_report": release_operations.get("upgrade_support_report"),
         "channel_catalog": release_operations.get("channel_catalog"),
         "trust_report_json": distribution.get("trust_report_json"),
     }
@@ -59,7 +79,7 @@ def main() -> int:
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/check_full_envelope_claimability_release_candidate_evidence.py",
-        "runbook_mentions_release_candidate_evidence_section": "## Release-Candidate Compatibility And Evidence Packaging" in runbook_text,
+        "runbook_mentions_release_candidate_evidence_section": "## Release-Candidate Evidence Packaging" in runbook_text,
         "all_required_reports_pass": all(report.get("status") == "PASS" for report in reports.values()),
         "all_required_artifact_fields_present": all(bool(artifact_values.get(field)) for field in contract["required_artifact_fields"]),
         "all_required_artifact_paths_exist": all(path.exists() for path in artifact_paths.values()),
@@ -67,6 +87,19 @@ def main() -> int:
         "dashboard_and_rollout_summary_agree_on_rollout_class": dashboard.get("current_rollout_class") == rollout.get("current_rollout_class"),
         "preview_only_claim_remains_publishable": public_summary.get("public_claim_class") == "preview-only" and dashboard.get("production_strength_claimable") is False,
         "distribution_trust_report_is_published": distribution.get("trust_state") == "ready",
+        "required_report_paths_match_owner_constants": contract["required_reports"] == [
+            DASHBOARD_SUMMARY,
+            PUBLIC_SUMMARY,
+            ROLLOUT_READINESS_SUMMARY,
+            RELEASE_FOUNDATION_SUMMARY,
+            RELEASE_OPERATIONS_SUMMARY,
+            DISTRIBUTION_CREDIBILITY_SUMMARY,
+        ],
+        "required_artifact_fields_match_owner_constants": tuple(contract["required_artifact_fields"]) == RELEASE_ARTIFACT_FIELDS,
+        "release_candidate_requires_dashboard_blocker_decision": public_summary.get(
+            "dashboard_blocks_production_strength_claim"
+        )
+        is True,
     }
 
     payload = {

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-runner-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness_runner"
+  ],
+  "support_boundary": "runtime ownership is non-positive for bootstrap-readiness-runner fixtures. Issue counts, open blocker counts, catalog task snapshots, and zero-open runner state are tooling readiness evidence, not native runtime dispatch, storage, object-model, or ABI support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:bootstrap_readiness_runner",
+    "tooling_terms:issues.json,milestones.json,catalog.json,open_blockers.json",
+    "scenario:zero_open",
+    "scenario:blocked_issues",
+    "compiler_phase_boundary:no-runtime-positive-truth-from-bootstrap-readiness-runner",
+    "upstream_owner_required:tests/native/runtime"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "old-mode runtime readiness-runner rows, compatibility runtime rows, gate runtime rows, retired route runtime rows, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, blocker-label-only runtime claims, and runner-state rows promoted as runtime support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

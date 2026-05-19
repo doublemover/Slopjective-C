@@ -1,0 +1,6 @@
+// Canonical IR runtime-call fixture: optional nil sends do not emit live runtime calls.
+module IRRuntimeCallsNilMessageSendRuntimeCallContract;
+
+fn main() -> i32 {
+  return [nil? ping];
+}

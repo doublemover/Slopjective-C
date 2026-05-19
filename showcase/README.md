@@ -12,7 +12,7 @@ Choose the story that matches the question before you read deeper docs:
 - `auroraBoard`
   - use this when the question starts with categories, reflection, or synthesized behaviors
   - pair it with `docs/tutorials/getting_started.md`
-  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for forward-mapping ObjC2 habits
+  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for ObjC2 pattern conversion notes
   - stdlib follow-up modules: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `signalMesh`
   - use this when the question is about actor-shaped messaging, status bridging, or runtime messaging
@@ -33,17 +33,19 @@ stdlib module surface that matches the same story.
 The adoption evidence generator treats this portfolio as the runnable proof for
 onboarding and comparison claims:
 
-- `auroraBoard` anchors Objective-C 2 object-model migration guidance.
+- `auroraBoard` anchors Objective-C 2 object-model pattern-conversion guidance.
 - `signalMesh` anchors Swift-facing async, executor, and messaging comparison.
 - `patchKit` anchors macro, derive, property-behavior, and C++-facing interop
   comparison.
 
 Replay the adoption evidence with:
 
-- `python scripts/build_objc3c_adoption_legibility_evidence.py`
+- `npm run objc3c -- validate-adoption-legibility`
 
-Generated adoption reports stay under `tmp/reports/adoption-legibility/` and
-generated artifacts stay under `tmp/artifacts/adoption-legibility/`.
+The adoption evidence action writes transient adoption reports and artifacts.
+Those outputs are not portfolio owner inputs; showcase support claims still
+resolve through the capability matrix, evidence map, and checked-in example
+sources.
 
 ## Portfolio Boundary
 
@@ -61,20 +63,16 @@ Canonical checked-in inputs:
 Shared live tooling:
 
 - `package.json`
-- `scripts/objc3c_public_workflow_runner.py`
+- `npm run objc3c -- <action>`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
-- `scripts/objc3c_native_compile.ps1`
-- `scripts/check_showcase_surface.py`
-- `scripts/check_objc3c_native_execution_smoke.ps1`
-- `scripts/check_objc3c_execution_replay_proof.ps1`
 
-Machine-owned outputs only:
+Retired command surfaces, direct helper scripts, showcase-local wrappers,
+alternate compile/runtime support lanes, and retired-source support claims are not
+public entrypoints for this portfolio.
 
-- `tmp/artifacts/showcase/`
-- `tmp/reports/showcase/`
-- `tmp/pkg/objc3c-native-runnable-toolchain/`
-- `tmp/reports/objc3c-public-workflow/`
+Machine-owned outputs are transient build, package, showcase-report, and public
+workflow report roots. They are not canonical example sources.
 
 ## Portfolio Stories
 
@@ -94,11 +92,11 @@ roots and public command surface.
 
 Selection model:
 
-- compile the full portfolio with `npm run check:showcase:surface`
+- compile the full portfolio with `npm run objc3c -- check-showcase-surface`
 - compile one named example with
-  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --example auroraBoard`
+  `npm run objc3c -- check-showcase-surface --example auroraBoard`
 - compile by story capability with
-  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actor-shaped-messaging`
+  `npm run objc3c -- check-showcase-surface --capability actor-shaped-messaging`
 
 ## Build Run Package Surface
 
@@ -112,23 +110,23 @@ The tutorial-facing command and artifact map for this same surface lives in
 
 Build and artifact entrypoints:
 
-- `npm run build:objc3c-native`
-- `npm run check:showcase:surface`
-- `npm run test:showcase`
-- `npm run test:showcase:e2e`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- check-showcase-surface`
+- `npm run objc3c -- validate-showcase`
+- `npm run objc3c -- validate-runnable-showcase`
+- `npm run objc3c -- package-runnable-toolchain`
+- implementation checker: `scripts/check_showcase_surface.py`
+- showcase artifact root: `tmp/artifacts/showcase/`
 
 Runtime-backed shared commands used by the showcase surface:
 
-- `npm run test:objc3c:execution-smoke`
-- `npm run test:objc3c:execution-replay-proof`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase-runtime`
+- `npm run objc3c -- test-execution-smoke`
+- `npm run objc3c -- test-execution-replay`
+- `npm run objc3c -- validate-showcase-runtime`
 
-The live compile path emits object and manifest artifacts under
-`tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
-Package staging stays under `tmp/pkg/objc3c-native-runnable-toolchain/`, and
-showcase report artifacts stay under `tmp/reports/showcase/`, rooted at
-`tmp/reports/showcase/summary.json`.
+The live compile path emits object and manifest artifacts with the fixed emit
+prefix `module`. Package staging and showcase report outputs stay in transient
+output roots selected by the public workflow.
 
 Runtime and presentation contracts are checked in per example under
 `showcase/<example-id>/workspace.json`. Those workspace contracts declare the
@@ -140,5 +138,5 @@ for the example.
 
 - screenshots or image-only demos
 - sidecar-only example manifests with no checked-in source
-- example-specific compiler wrappers or milestone-local validation paths
-- treating `tmp/` outputs as canonical example sources
+- example-specific compiler wrappers or milestone-scoped validation paths
+- treating transient outputs as example owner sources

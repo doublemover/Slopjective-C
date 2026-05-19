@@ -13,19 +13,16 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/object_model_closure/property_ivar_aggregate_reflection_artifact_contract.json`
 - `tests/tooling/fixtures/object_model_closure/executable_proof_abi_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_object_model_closure_boundary_inventory_summary.py`
-- `python scripts/build_object_model_closure_semantic_summary.py`
-- `python scripts/build_object_model_closure_workload_summary.py`
-- `python scripts/build_object_model_closure_runtime_implementation_summary.py`
-- `python scripts/build_object_model_closure_artifact_registration_summary.py`
-- `python scripts/check_object_model_closure_realization_lowering.py`
-- `python scripts/check_object_model_closure_property_reflection_artifact.py`
-- `python scripts/build_object_model_closure_executable_proof_summary.py`
-- `python scripts/check_object_model_closure_live_runtime.py`
-- `python scripts/check_object_model_closure_live_property_reflection.py`
-- `python scripts/check_objc3c_runnable_object_model_end_to_end.py`
+- `npm run objc3c -- test-runtime-acceptance-fast`
+- `npm run objc3c -- validate-object-model-conformance`
+- `npm run objc3c -- validate-storage-reflection-conformance`
+- `npm run objc3c -- validate-runnable-object-model`
+- `npm run objc3c -- validate-runnable-storage-reflection`
+
+Helper implementations are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -35,16 +32,16 @@ Current closure scope:
 
 Current closure constraints:
 
-- unresolved sends still retain one deterministic miss fallback path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
+- unresolved sends still retain one deterministic miss strict error path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
 - reflection visibility remains on the private runtime-owned query surface and must not be repackaged as public ABI
-- milestone proof must stay compile-coupled to the live runtime/registration path and not fork into milestone-local scaffolding
+- milestone proof must stay compile-coupled to the live runtime/registration path and not fork into release-scope scaffolding
 
 Explicit non-goals:
 
 - public runtime ABI widening beyond registration, selector lookup, dispatch, and reset
-- claims that unresolved dispatch miss fallback is part of the supported object-model closure
+- claims that unresolved dispatch miss recovery is part of the supported object-model closure
 - probe-local or source-only reflection truth that bypasses runtime-owned query state
-- milestone-local runtime or packaging scaffolds parallel to the shipped acceptance path
+- release-scope runtime or packaging scaffolds parallel to the shipped acceptance path
 
 Follow-on tracks:
 
@@ -57,18 +54,22 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - lowering and manifests:
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/artifacts/`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_object_model_conformance.py`
-  - `scripts/check_objc3c_runnable_storage_reflection_conformance.py`
-  - `scripts/check_objc3c_runnable_object_model_end_to_end.py`
-  - `scripts/check_objc3c_runnable_storage_reflection_end_to_end.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- validate-object-model-conformance`
+  - `npm run objc3c -- validate-storage-reflection-conformance`
+  - `npm run objc3c -- validate-runnable-object-model`
+  - `npm run objc3c -- validate-runnable-storage-reflection`
+  - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`
   - `docs/objc3c-native.md`

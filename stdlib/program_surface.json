@@ -17,6 +17,18 @@
   "machine_report_root": "tmp/reports/stdlib",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
   "publish_model": "shared-runnable-toolchain-bundle-carries-live-stdlib-docs-tutorials-site-and-showcase-surfaces",
+  "public_command_model": {
+    "entrypoint_kind": "single-npm-bridge",
+    "canonical_template": "npm run objc3c -- <action>",
+    "authoritative_script": "package.json#scripts.objc3c",
+    "retired_public_semantics": [
+      "retired command surfaces",
+      "direct helper script commands",
+      "stdlib-local wrappers",
+      "alternate import or package support lanes",
+      "retired-source support claims"
+    ]
+  },
   "publish_inputs": [
     "stdlib/README.md",
     "docs/runbooks/objc3c_stdlib_program.md",
@@ -67,29 +79,29 @@
     "package-runnable-toolchain"
   ],
   "command_surfaces": {
-    "check_documentation_surface": "npm run check:docs:surface",
-    "check_showcase_surface": "npm run check:showcase:surface",
-    "validate_getting_started": "npm run test:getting-started",
-    "validate_showcase": "npm run test:showcase",
-    "validate_runnable_showcase": "npm run test:showcase:e2e",
-    "validate_stdlib_foundation": "npm run test:stdlib",
-    "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
-    "validate_stdlib_program": "npm run test:stdlib:program",
-    "validate_runnable_stdlib_program": "npm run test:stdlib:program:e2e",
-    "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
-    "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain"
+    "check_documentation_surface": "npm run objc3c -- check-documentation-surface",
+    "check_showcase_surface": "npm run objc3c -- check-showcase-surface",
+    "validate_getting_started": "npm run objc3c -- validate-getting-started",
+    "validate_showcase": "npm run objc3c -- validate-showcase",
+    "validate_runnable_showcase": "npm run objc3c -- validate-runnable-showcase",
+    "validate_stdlib_foundation": "npm run objc3c -- validate-stdlib-foundation",
+    "validate_runnable_stdlib_foundation": "npm run objc3c -- validate-runnable-stdlib-foundation",
+    "validate_stdlib_program": "npm run objc3c -- validate-stdlib-program",
+    "validate_runnable_stdlib_program": "npm run objc3c -- validate-runnable-stdlib-program",
+    "inspect_capability_explorer": "npm run objc3c -- inspect-capability-explorer",
+    "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain"
   },
   "onboarding_policy": {
     "entry_order": [
       "repo-health",
       "single-example-compile",
       "showcase-example-selection",
-      "migration-or-comparison-doc"
+      "canonical-conversion-or-comparison-doc"
     ],
     "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
-    "comparison_claim_rule": "not-yet-runnable capabilities must be framed as actor-shaped comparison or migration guidance rather than runnable parity claims",
-    "command_truth_rule": "package.json and scripts/objc3c_public_workflow_runner.py define the authoritative public commands",
-    "machine_noise_rule": "tmp artifacts and legacy redirect material may not appear as the primary onboarding route"
+    "comparison_claim_rule": "comparison-only capabilities must be framed as canonical pattern-conversion guidance rather than runnable parity or retired-source support stories",
+    "command_truth_rule": "package.json objc3c is the authoritative public npm entrypoint; workflow examples use npm run objc3c -- <action>",
+    "machine_noise_rule": "tmp artifacts and archived redirect material may not appear as the primary onboarding route"
   },
   "capability_demo_examples": [
     {
@@ -144,7 +156,7 @@
     "shared validation and packaging through the existing public runner and runnable toolchain bundle"
   ],
   "non_goals": [
-    "milestone-local tutorial wrappers",
+    "shared tutorial adapter layers outside live tutorial and showcase routes",
     "duplicate example trees outside showcase",
     "machine-owned documentation under tmp",
     "a second stdlib demo packaging flow outside the existing runnable toolchain bundle"

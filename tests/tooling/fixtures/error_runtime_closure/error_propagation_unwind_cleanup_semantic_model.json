@@ -4,7 +4,16 @@
   "milestone": "M321",
   "issue": "M321-B001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_semantic_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "runtime",
+    "canonical_rejection",
+    "error_runtime_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_error_execution_cleanup_source_surface",
     "runtime_catch_filter_finalization_source_surface",
@@ -32,7 +41,7 @@
   "frozen_semantic_models": [
     {
       "semantic_id": "thrown-value-storage-and-cleanup-order-form-one-runtime-story",
-      "summary": "Thrown-value storage, exceptional exit, cleanup scheduling, and cleanup resume behavior are one runtime-backed contract and must not drift into separate proof-only interpretations."
+      "summary": "Thrown-value storage, exceptional exit, cleanup scheduling, and cleanup resume behavior are one runtime-backed contract and must not drift into separate evidence-only interpretations."
     },
     {
       "semantic_id": "catch-filtering-and-catch-all-finalization-stay-coupled-to-runtime-observable-behavior",
@@ -49,8 +58,9 @@
   ],
   "claim_narrowing_constraints": [
     "no-public-error-runtime-abi-widening",
-    "no-proof-only-cleanup-ordering-model",
-    "no-async-or-interop-closure-claims-beyond-current-error-runtime-evidence"
+    "no-evidence-only-cleanup-ordering-model",
+    "no-async-or-interop-closure-claims-beyond-current-error-runtime-evidence",
+    "diagnostics-recovery-profiles-result-bridge-metadata-runtime-import-preservation-rows-and-generated-summaries-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "throw-catch-cleanup-ordering",
@@ -60,12 +70,13 @@
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/ast/objc3_ast.h",
-    "native/objc3c/src/parse/objc3_parser.cpp",
+    "native/objc3c/src/parse/objc3_parser_error_bridge_attribute_profiles.cpp",
+    "native/objc3c/src/parse/objc3_parser_error_diagnostics_recovery_profiles.cpp",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/sema/objc3_sema_contract.h",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.cpp"
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge.cpp"
   ],
   "authoritative_fixture_paths": [
     "tests/tooling/fixtures/native/error_source_closure_positive.objc3",

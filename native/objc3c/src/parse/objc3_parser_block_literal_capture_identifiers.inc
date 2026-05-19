@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_block_literal_capture_identifiers_expression_traversal.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_for_clause_collection.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection.inc"

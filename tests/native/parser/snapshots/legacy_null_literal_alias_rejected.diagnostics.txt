@@ -1,0 +1,1 @@
+O3C002: legacy literal alias 'NULL' is rejected

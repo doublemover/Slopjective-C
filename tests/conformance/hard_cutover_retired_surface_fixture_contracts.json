@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-retired-surface-fixture-contracts",
+  "source_basis": "hand-authored from checked-in tests/native fixture sidecars and conformance owner indexes; no scripts, tests, builds, lints, formatters, generators, npm, cmake, gh, or push were run for this contract index",
+  "policy": {
+    "primary_axis": "retired surface before fixture path",
+    "positive_expectation_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved typed runtime dispatch projections are never positive expectations",
+    "fixture_owner_rule": "each retired surface must name its canonical native fixture family, behavior outcome, diagnostic owner, and sidecar metadata",
+    "strict_naming_rule": "retired-surface fixture names must end in _rejected, _strict_error, or _contract according to their rejection or strict-error disposition",
+    "absence_rule": "retired-source lane behavior support has no fixture because the positive support surface is absent",
+    "negative_detector_pattern_id_rule": "stable detector pattern ids are retained as rejection or strict-error identities and must not be renamed into positive compatibility labels"
+  },
+  "surface_families": [
+    {
+      "surface_family": "old_mode_literal_aliases",
+      "historical_positive_surface": "YES, NO, and NULL legacy literal spelling acceptance",
+      "canonical_disposition": "canonical-rejection",
+      "behavior_outcome": "parser_rejection",
+      "diagnostic_owner": "O3C002",
+      "negative_detector_pattern_id": "O3C002",
+      "canonical_fixture_family": "parser/negative",
+      "retired_tags": [
+        "old-mode"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/legacy_null_literal_alias_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/parser/negative/legacy_yes_literal_alias_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/legacy_yes_literal_alias_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/parser/negative/legacy_no_literal_alias_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/legacy_no_literal_alias_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+          "sidecar": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "removed_retired_mode_flag",
+      "historical_positive_surface": "retired Objective-C mode flag acceptance",
+      "canonical_disposition": "canonical-rejection",
+      "behavior_outcome": "parser_rejection",
+      "diagnostic_owner": "O3C001",
+      "negative_detector_pattern_id": "O3C001",
+      "canonical_fixture_family": "parser/negative",
+      "retired_tags": [
+        "old-mode"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/removed_retired_mode_flag_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "parse",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "removed_parser_retired_route_flag",
+      "historical_positive_surface": "parser retired route flag acceptance",
+      "canonical_disposition": "canonical-rejection",
+      "behavior_outcome": "parser_rejection",
+      "diagnostic_owner": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG",
+      "canonical_fixture_family": "parser/negative",
+      "retired_tags": [
+        "old-mode"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+          "sidecar": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.meta.json",
+          "fixture_kind": "rejection",
+          "expected_stage": "parse",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "removed_compatibility_gate",
+      "historical_positive_surface": "retired adapter feature-gate acceptance",
+      "canonical_disposition": "canonical-rejection",
+      "behavior_outcome": "semantic_rejection",
+      "diagnostic_owner": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-COMPATIBILITY-GATE",
+      "canonical_fixture_family": "sema/errors",
+      "retired_tags": [
+        "runtime-adapter"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+          "sidecar": "tests/native/sema/errors/removed_compatibility_gate_rejected.meta.json",
+          "fixture_kind": "negative",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "removed_runtime_dispatch_retired_route_flag",
+      "historical_positive_surface": "runtime dispatch retired route ABI flag acceptance",
+      "canonical_disposition": "canonical-strict-error",
+      "behavior_outcome": "lowering_or_link_strict_error",
+      "diagnostic_owner": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "negative_detector_pattern_id": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "canonical_fixture_family": "lowering/errors",
+      "retired_tags": [
+        "runtime-dispatch"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+          "sidecar": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "compile",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "non_nil_runtime_dispatch_linkage",
+      "historical_positive_surface": "non-nil receiver dispatch through an unresolved typed msgsend_i32 projection",
+      "canonical_disposition": "canonical-strict-error",
+      "behavior_outcome": "lowering_or_link_strict_error",
+      "diagnostic_owner": "link.unresolved_symbol",
+      "negative_detector_pattern_id": "link.unresolved_symbol",
+      "canonical_fixture_family": "lowering+ir+runtime strict-error linkage",
+      "retired_tags": [
+        "runtime-dispatch"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+          "sidecar": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+          "sidecar": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+          "sidecar": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.objc3",
+          "sidecar": "tests/native/runtime/errors/numeric_zero_dispatch_unresolved_symbol_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "link",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ]
+    },
+    {
+      "surface_family": "unknown_receiver_runtime_dispatch",
+      "historical_positive_surface": "unknown receiver runtime dispatch acceptance",
+      "canonical_disposition": "canonical-strict-error",
+      "behavior_outcome": "runtime_strict_error",
+      "diagnostic_owner": "O3RT002",
+      "negative_detector_pattern_id": "O3RT002",
+      "canonical_fixture_family": "runtime/dispatch + e2e/negative_execution",
+      "retired_tags": [
+        "runtime-dispatch"
+      ],
+      "fixtures": [
+        {
+          "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "run",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "run",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.objc3",
+          "sidecar": "tests/native/runtime/dispatch/six_arg_runtime_dispatch_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "run",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        },
+        {
+          "path": "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+          "sidecar": "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.meta.json",
+          "fixture_kind": "strict-error",
+          "expected_stage": "run",
+          "strict_rejection_name": true,
+          "positive_expectation": false
+        }
+      ],
+      "runtime_probe_evidence": [
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        "tests/tooling/runtime/runtime_fast_path_contract_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+      ]
+    }
+  ],
+  "absent_support_surfaces": [
+    {
+      "surface_family": "migration_lane_behavior_support",
+      "historical_positive_surface": "retired-source lane as accepted behavior mode",
+      "canonical_disposition": "absent-support",
+      "behavior_outcome": "absent_support",
+      "diagnostic_owner": "absent-support",
+      "positive_expectation": false,
+      "absence_indexes": [
+        "tests/fixtures/README.md",
+        "tests/fixtures/generated/README.md",
+        "tests/conformance/hard_cutover_retired_surface_absence.json",
+        "tests/conformance/hard_cutover_positive_residue_audit.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+#include "sema/objc3_semantic_passes_concurrency_interop_dispatch_error_model_completion.inc"
+
+#include "sema/objc3_semantic_passes_concurrency_interop_dispatch_models_actor_diagnostics.inc"
+
+#include "sema/objc3_semantic_passes_concurrency_interop_dispatch_ownership_system_extension_model.inc"
+
+#include "sema/objc3_semantic_passes_concurrency_interop_dispatch_interop_semantic_model.inc"
+
+#include "sema/objc3_semantic_passes_concurrency_interop_dispatch_metaprogramming_expansion_model_prefix.inc"

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,30 +28,47 @@ def main() -> int:
 
     materializer_source = MATERIALIZER_PATH.read_text(encoding="utf-8")
     checked_in_source_roots = [str(path) for path in contract["checked_in_source_roots"]]
-    missing_paths = [raw for raw in [str(contract["template_materializer"]), *checked_in_source_roots] if not (ROOT / raw).exists()]
-    public_scripts = [str(name) for name in contract["public_scripts"]]
-    missing_public_scripts = [name for name in public_scripts if name not in package_scripts]
-    missing_actions = [action for action in contract["public_actions"] if f"\"{action}\"" not in materializer_source and action != contract["playground_materializer_action"]]
+    template_materializer = str(contract["template_materializer_implementation_anchor"])
+    missing_paths = [
+        raw for raw in [template_materializer, *checked_in_source_roots] if not (ROOT / raw).exists()
+    ]
+    package_bridge = str(contract["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in contract["required_actions"]]
+    registered_actions = set(public_workflow_action_names())
+    missing_actions = [action for action in required_actions if action not in registered_actions]
+    materializer_bound_actions = [
+        str(contract["template_materializer_action"]),
+        "inspect-bonus-tool-integration",
+        str(contract["playground_materializer_action"]),
+        "benchmark-runtime-inspector",
+    ]
+    missing_materializer_actions = [
+        action for action in materializer_bound_actions if f"\"{action}\"" not in materializer_source
+    ]
 
     payload = {
         "contract_id": "objc3c.application.architecture.testing.project_template_workspace_semantics.summary.v1",
-        "status": "PASS" if not missing_paths and not missing_public_scripts and not missing_actions else "FAIL",
+        "status": "PASS" if not missing_paths and package_bridge_exists and not missing_actions and not missing_materializer_actions else "FAIL",
         "template_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "checked_in_source_root_count": len(checked_in_source_roots),
-        "public_action_count": len(contract["public_actions"]),
-        "public_script_count": len(public_scripts),
+        "template_materializer_implementation_anchor": template_materializer,
+        "required_action_count": len(required_actions),
+        "materializer_bound_actions": materializer_bound_actions,
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "generated_template_required_path_count": len(contract["generated_template_layout"]["required_paths"]),
         "generated_harness_required_path_count": len(contract["generated_harness_layout"]["required_paths"]),
         "template_contract_id": contract["template_contract_id"],
         "template_harness_contract_id": contract["template_harness_contract_id"],
         "playground_workspace_contract_id": contract["playground_workspace_contract_id"],
         "workspace_semantics": contract["workspace_semantics"],
-        "public_actions": contract["public_actions"],
-        "public_scripts": public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
         "missing_actions": missing_actions,
+        "missing_materializer_actions": missing_materializer_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "non_goals": contract["non_goals"],
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

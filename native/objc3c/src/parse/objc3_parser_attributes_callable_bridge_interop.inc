@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_attributes_callable_bridge_interop_attribute_predicates.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_interop_diagnostics_recovery.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_interop_payload_parsing.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_interop_profile_publication.inc"
+#include "parse/objc3_parser_attributes_callable_bridge_interop_dispatch.inc"

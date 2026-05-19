@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/happy"
+  ],
+  "support_boundary": "e2e/tooling ownership covers the accepted extension registry transition/rejection governance contract only: schema id, AC-V013-GOV-02 acceptance gate, CM-RC change-rejection matrix, required-field policy, VAL-RC validator contract ordering, waiver/escalation policy, acceptance checklist, and recorded lint transcript. Compatibility terms remain taxonomy evidence only and do not authorize public compatibility, retired route, alias, gate, wrapper, or alternate success behavior.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/happy",
+    "expected_contract:AC-V013-GOV-02",
+    "expected_contract:CM-RC-01..CM-RC-08",
+    "expected_contract:VAL-RC-01..VAL-RC-06",
+    "expected_contract:WVR-RC-01..WVR-RC-03",
+    "expected_contract:ESC-RC-01..ESC-RC-04",
+    "expected_contract:AC-V013-GOV-02-01..AC-V013-GOV-02-05",
+    "compatibility_terms:taxonomy-only"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/extension_registry_compat_contract",
+  "retired_surface_rule": "drift rows, invalid-UTF8 rows, compatibility support rows, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode registry rows, gate registry rows, retired route registry rows, migration-only registry rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

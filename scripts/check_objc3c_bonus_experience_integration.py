@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 BONUS_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "bonus-tool-integration.json"
 SHOWCASE_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "showcase" / "integration-summary.json"
 GETTING_STARTED_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "tutorials" / "getting-started-integration-summary.json"
@@ -37,27 +37,25 @@ def main() -> int:
     steps = [
         (
             "inspect-bonus-tool-integration",
-            run_capture([sys.executable, str(PUBLIC_RUNNER), "inspect-bonus-tool-integration"]),
+            run_capture(public_workflow_command("inspect-bonus-tool-integration")),
         ),
         (
             "materialize-project-template",
             run_capture(
-                [
-                    sys.executable,
-                    str(PUBLIC_RUNNER),
+                public_workflow_command(
                     "materialize-project-template",
                     "--example",
                     "auroraBoard",
-                ]
+                )
             ),
         ),
         (
             "validate-showcase",
-            run_capture([sys.executable, str(PUBLIC_RUNNER), "validate-showcase"]),
+            run_capture(public_workflow_command("validate-showcase")),
         ),
         (
             "validate-getting-started",
-            run_capture([sys.executable, str(PUBLIC_RUNNER), "validate-getting-started"]),
+            run_capture(public_workflow_command("validate-getting-started")),
         ),
     ]
 

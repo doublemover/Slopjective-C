@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-tooling-probe-metadata-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_family": "tests/tooling/runtime",
+  "support_boundary": "semantic ownership covers runtime probe claim language for ownership, public ABI result/status records, selector and registration records, and release-candidate claim gates before runtime probes are cited as support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "README:public ABI result, selector, and registration records exposed through the runtime public headers",
+    "tests/tooling/runtime/runtime_memory_management_api_probe.cpp",
+    "tests/tooling/runtime/ownership_runtime_hook_probe.cpp",
+    "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp",
+    "tests/tooling/runtime/runtime_bootstrap_api_probe.cpp"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "compatibility-positive public ABI claims, borrowed helper-output success, release-candidate claim promotion without runtime proof, and old-surface naming remain canonical rejection or provenance-only evidence"
+}

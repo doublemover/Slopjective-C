@@ -1,0 +1,10 @@
+// Canonical sema concurrency fixture: throws is a strict unsupported feature claim.
+module SemaConcurrencyThrowsFeatureClaimRejected;
+
+fn risky() throws -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  return risky();
+}

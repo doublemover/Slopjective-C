@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_block_copy_dispose_metadata_helper_intent.inc"
+#include "sema/objc3_semantic_passes_block_copy_dispose_metadata_publication.inc"
+#include "sema/objc3_semantic_passes_block_copy_dispose_metadata_site_collection.inc"
+#include "sema/objc3_semantic_passes_block_copy_dispose_metadata_readiness_replay.inc"

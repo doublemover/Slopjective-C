@@ -1,4 +1,4 @@
-// Expected diagnostic code(s): O3S210.
+// Expected diagnostic code(s): O3C002.
 module NegativeObjcLiteralAliasesGlobalDivideByZero;
 
 let value = NULL / 0;

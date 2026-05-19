@@ -1,0 +1,16 @@
+// Canonical IR metadata fixture: actor executor annotations are source-authored metadata.
+module IRMetadataActorExecutorMetadataContract;
+
+actor class IRMetadataMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation IRMetadataMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  return seed;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

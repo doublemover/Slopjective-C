@@ -1,117 +1,167 @@
-# Part 1 — Versioning, Compatibility, and Conformance {#part-1}
+# Part 1 - Canonical Language Mode And Conformance {#part-1}
 
-_Working draft v0.11 — last updated 2026-02-27_
+_Working draft v0.11 - hard-cutover public surface_
 
 ## 1.1 Purpose {#part-1-1}
 
 This part defines:
 
-- how Objective‑C 3.0 is enabled,
-- how source and behavior changes are contained,
-- conformance levels and the meaning of “strictness,”
-- required feature-test mechanisms,
-- migration tooling requirements.
+- the single Objective-C 3.0 language mode,
+- how source and behavior claims map to capability states,
+- conformance levels as evidence-backed support claims,
+- required feature-test and report mechanisms,
+- canonical diagnostics for rejected source forms.
+
+Public support ownership lives in:
+
+- `docs/support/capability_matrix.md`
+- `docs/support/capability_matrix.json`
+- `docs/support/evidence_map.json`
+- `docs/support/evidence_map.md`
+- `docs/support/capability_claim_responsibility.md`
+- `scripts/objc3c_shared/schema_registry.py`
+- `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
+
+Any claim in this part is subordinate to those capability and evidence
+surfaces. The capability matrix and evidence map schemas are selected by shared
+registry ids and artifact-owned support schema records, not by schema fragments
+in this part.
+
+Public command ownership lives in `package.json` and
+`scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
+`npm run objc3c -- <action>`; direct helper commands and retired command
+surfaces are implementation details unless a public workflow document generated
+from the action catalog lists them through the npm bridge.
 
 ## 1.2 Language mode selection {#part-1-2}
 
-### 1.2.1 Compiler option {#part-1-2-1}
+### 1.2.1 Canonical compiler surface {#part-1-2-1}
 
-A conforming implementation shall provide a command-line mechanism equivalent to:
+A conforming implementation exposes Objective-C 3.0 as one canonical source
+language. The current public command surface must not expose a second language
+profile, source mode, or command switch that accepts retired spelling families
+as supported input.
+
+In this repository, the public command bridge is intentionally single-script:
+`package.json` exposes `objc3c`, and `npm run objc3c -- <action>` dispatches to
+the `scripts.objc3c_workflow` module. Action names, validation tiers, and
+guarantee owners are action-catalog-owned, not duplicated in per-doc command
+lists.
+
+A command-line mechanism equivalent to the following may select Objective-C 3.0
+for toolchains that also host other languages:
 
 - `-fobjc-version=3`
 
-Selecting ObjC 3.0 mode shall:
+Selecting Objective-C 3.0 shall:
 
-- enable the ObjC 3.0 grammar additions,
-- enable ObjC 3.0 default rules (nonnull-by-default regions, etc.),
-- enable ObjC 3.0 diagnostics (at least warnings in permissive mode).
+- enable the canonical Objective-C 3.0 grammar additions,
+- enable Objective-C 3.0 default rules such as nonnull-by-default regions where
+  those rules are implemented,
+- emit canonical diagnostics for rejected source forms,
+- report support through the capability matrix rather than through chapter status
+  prose.
 
-### 1.2.2 Translation-unit granularity (v1 decision) {#part-1-2-2}
+### 1.2.2 Translation-unit granularity {#part-1-2-2}
 
-For Objective‑C 3.0 v1, language-version selection shall be **translation-unit-only**.
+For Objective-C 3.0 v1, language selection is translation-unit-only.
 
-Mixing ObjC 3.0 and non‑ObjC3 language versions within a single translation unit is not conforming for v1.
+Mixing Objective-C 3.0 with another Objective-C source language inside a single
+translation unit is not conforming.
 
 A conforming implementation:
 
-- shall treat the effective language version as fixed for the entire translation unit,
-- shall reject per-region language-version switching forms (for example `push`/`pop`-style pragmas),
-- shall diagnose any attempt to change language version after parsing has started.
+- treats the effective language as fixed for the entire translation unit,
+- rejects per-region language switching forms such as `push`/`pop` pragmas,
+- diagnoses any attempt to change the language selection after parsing starts.
 
-### 1.2.3 Source directive (optional) {#part-1-2-3}
+### 1.2.3 Source directive {#part-1-2-3}
 
-A conforming implementation may provide a source directive such as:
+A source directive such as this may be supported:
 
 - `#pragma objc_language_version(3)`
 
 If supported in v1, the directive:
 
-- shall apply to the entire translation unit,
-- shall appear only at file scope before the first non-preprocessor declaration/definition token,
-- shall reject region-scoped variants (for example `#pragma objc_language_version(push, 3)` / `pop`),
-- shall diagnose conflicting selections (for example command line selects `3` while source selects a different version value).
+- applies to the entire translation unit,
+- appears only at file scope before the first non-preprocessor declaration or
+  definition token,
+- rejects region-scoped variants such as `#pragma objc_language_version(push, 3)`
+  and `pop`,
+- diagnoses conflicting selections between the command line and source.
 
-### 1.2.4 Required conformance tests for language-version selection (normative minimum) {#part-1-2-4}
+### 1.2.4 Required conformance tests for language selection {#part-1-2-4}
 
-A conforming implementation shall include tests that cover both accepted and rejected forms, including at minimum:
+A conforming implementation includes tests for accepted and rejected forms,
+including at minimum:
 
 - TUV-01: accepted command-line translation-unit selection (`-fobjc-version=3`).
-- TUV-02: accepted file-scope pragma form `#pragma objc_language_version(3)` before declarations.
-- TUV-03: rejected region switching forms (`push`/`pop`, begin/end, or equivalent).
+- TUV-02: accepted file-scope pragma form `#pragma objc_language_version(3)`
+  before declarations, when that directive is implemented.
+- TUV-03: rejected region switching forms (`push`/`pop`, begin/end, or
+  equivalent).
 - TUV-04: rejected in-function or post-declaration version-selection pragma.
-- TUV-05: rejected conflicting command-line/source version selections.
+- TUV-05: rejected conflicting command-line/source selections.
 
-Test expectations and diagnostic portability requirements are defined in [§12.5.8](#part-12-5-8).
+Test expectations and diagnostic portability requirements are defined in
+[Part 12](#part-12).
 
-## 1.3 Reserved keywords and conflict handling {#part-1-3}
+## 1.3 Reserved keywords and rejected source forms {#part-1-3}
 
 ### 1.3.1 Reserved keywords {#part-1-3-1}
 
-In ObjC 3.0 mode, at minimum the following tokens are reserved as keywords:
+In Objective-C 3.0 mode, at minimum the following tokens are reserved as
+keywords:
 
 - Control flow: `defer`, `guard`, `match`, `case`
 - Effects/concurrency: `async`, `await`, `actor`
 - Errors: `try`, `throw`, `do`, `catch`, `throws`
 - Bindings: `let`, `var`
 
-### 1.3.2 Contextual keywords (non-normative guidance) {#part-1-3-1-2}
+### 1.3.2 Contextual keywords {#part-1-3-1-2}
 
-Some tokens are treated as **contextual keywords** only within specific grammar positions, to reduce breakage in existing codebases.
+Some tokens may be contextual keywords only within specific grammar positions
+when that keeps the canonical syntax precise.
 
 Examples include:
 
 - `borrowed` (type qualifier; [Part 8](#part-8), also cataloged in [B.8.3](#b-8-3))
 - `move`, `weak`, `unowned` (block capture lists; [Part 8](#part-8), also cataloged in [B.8.5](#b-8-5))
 
-Conforming implementations should avoid reserving these tokens globally.
+Contextual treatment is a grammar rule, not an alternate source mode.
 
-### 1.3.3 Raw identifiers {#part-1-3-2}
+### 1.3.3 Escaped identifiers {#part-1-3-2}
 
-A conforming implementation shall provide a compatibility escape hatch for identifiers that collide with reserved keywords.
+A conforming implementation may provide an explicit escaped-identifier spelling
+for identifiers that collide with reserved keywords.
 
-Two acceptable designs:
+Acceptable designs include:
 
-- a raw identifier syntax (e.g., `@identifier(defer)`), or
-- a backtick escape (e.g., `` `defer` ``) in ObjC 3.0 mode only.
+- a raw identifier syntax such as `@identifier(defer)`, or
+- a backtick escape such as `` `defer` ``.
 
-The toolchain shall also provide fix-its to mechanically rewrite collisions.
+The toolchain may provide fix-its to rewrite collisions to the canonical escaped
+form. The fix-it does not make the rejected unescaped form supported behavior.
 
-### 1.3.4 Backward compatibility note {#part-1-3-3}
+### 1.3.4 Retired spelling rejection {#part-1-3-3}
 
-This specification does not require keyword reservation to apply outside ObjC 3.0 mode.
+Retired source spellings such as `YES`, `NO`, `NULL`, and `optional<T>` are
+represented as rejected behavior unless the capability matrix states otherwise.
+They are diagnostic inputs, not accepted Objective-C 3.0 syntax.
 
-## 1.4 Feature test macros {#part-1-4}
+## 1.4 Feature and capability reporting {#part-1-4}
 
 ### 1.4.1 Required macros {#part-1-4-1}
 
-A conforming implementation shall provide predefined macros to allow conditional compilation:
+A conforming implementation provides predefined macros for Objective-C 3.0
+source:
 
-- `__OBJC_VERSION__` (integer; at least `3` in ObjC 3.0 mode)
-- `__OBJC3__` (defined to `1` in ObjC 3.0 mode)
+- `__OBJC_VERSION__` (integer; at least `3`)
+- `__OBJC3__` (defined to `1`)
 
 ### 1.4.2 Per-feature macros {#part-1-4-2}
 
-A conforming implementation shall provide per-feature macros:
+A conforming implementation may provide per-feature macros:
 
 - `__OBJC3_FEATURE_<NAME>__`
 
@@ -123,134 +173,179 @@ Examples:
 - `__OBJC3_FEATURE_ASYNC_AWAIT__`
 - `__OBJC3_FEATURE_ACTORS__`
 
-Feature macros shall be defined in ObjC 3.0 mode even if a feature is disabled by a profile, to allow feature probing (`0` meaning “recognized but disabled”).
+Feature macros report capability state. A recognized but unavailable feature is
+reported as unavailable and remains rejected or reserved according to the
+capability matrix.
 
-### 1.4.3 Mode-selection macros (required) {#part-1-4-3}
+### 1.4.3 Capability state reporting {#part-1-4-3}
 
-A conforming implementation shall provide predefined mode-selection macros in ObjC 3.0 mode:
+Public reports use the capability states defined in
+`docs/support/capability_matrix.md`:
 
-- `__OBJC3_STRICTNESS_LEVEL__` with values:
-  - `0` for `permissive`,
-  - `1` for `strict`,
-  - `2` for `strict-system`.
-- `__OBJC3_CONCURRENCY_MODE__` with values:
-  - `0` for `off`,
-  - `1` for `strict`.
-- `__OBJC3_CONCURRENCY_STRICT__` as a boolean alias (`1` when `__OBJC3_CONCURRENCY_MODE__ == 1`, else `0`).
+- `implemented`
+- `rejected`
+- `reserved`
+- `internal`
 
-### 1.4.4 `__has_feature` integration (optional) {#part-1-4-4}
+These states are the support vocabulary for Objective-C 3.0 public docs.
+Internal rows may describe compiler decomposition, workflow bridges,
+runtime-public-header ownership, or schema helpers. They do not claim public
+language behavior without an implemented behavior row and evidence map entry.
 
-A conforming implementation may expose ObjC 3.0 features through a `__has_feature`-style mechanism. If present, it should align with the per-feature macros and mode-selection macros.
+### 1.4.4 `__has_feature` integration {#part-1-4-4}
 
-## 1.5 Conformance levels (strictness) {#part-1-5}
+A conforming implementation may expose Objective-C 3.0 features through a
+`__has_feature`-style mechanism. If present, it aligns with per-feature macros
+and capability states.
+
+## 1.5 Conformance levels {#part-1-5}
 
 ### 1.5.1 Levels {#part-1-5-1}
 
-A translation unit in ObjC 3.0 mode may additionally declare a conformance level.
+Conformance is evidence-backed. A support claim is valid only when the
+capability matrix points to the executable test, diagnostic, source, schema, or
+documentation evidence that owns the claim.
 
-Objective‑C 3.0 v1 defines exactly three strictness levels:
+Objective-C 3.0 v1 uses these public support states:
 
-- **Permissive**: language features enabled; safety checks default to warnings; legacy patterns allowed.
-- **Strict**: key safety checks are errors; opt-outs require explicit unsafe spellings.
-- **Strict-system**: strict + additional system-API safety checks (resource cleanup correctness, borrowed pointer escape analysis, etc.).
+- **Implemented**: parser, semantic analysis, lowering, runtime, docs, and
+  executable tests exist for the named behavior.
+- **Rejected**: parser or semantic analysis emits a canonical diagnostic for the
+  source form.
+- **Reserved**: the syntax or concept remains unavailable and is documented as
+  unavailable.
+- **Internal**: the surface is an implementation helper, report shape, or
+  workflow contract that is not public Objective-C 3.0 behavior.
 
-### 1.5.2 Selecting a level {#part-1-5-2}
+### 1.5.2 Claiming support {#part-1-5-2}
 
-A conforming implementation shall provide an option equivalent to:
+A conforming implementation claims support through a machine-readable matrix and
+human-readable evidence map. Local prose must not widen support beyond those
+files.
 
-- `-fobjc3-strictness=permissive|strict|strict-system`
+Evidence map rows may cite source owners such as
+`native/objc3c/src/runtime/public/objc3_runtime_api.h`,
+`native/objc3c/src/runtime/public/objc3_runtime_result.h`,
+`native/objc3c/src/io/json/`, or
+`native/objc3c/src/artifacts/json/`. Those owner rows keep command, runtime, and
+schema responsibility explicit without converting implementation surfaces into
+new language features.
+
+The machine-readable support contract is:
+
+- capability data: `docs/support/capability_matrix.json`
+- capability schema id: `objc3c-capability-matrix-v1`
+- evidence data: `docs/support/evidence_map.json`
+- evidence schema id: `objc3c-capability-evidence-map-v1`
+- claim responsibility: `docs/support/capability_claim_responsibility.md`
+- schema owners: `scripts/objc3c_shared/schema_registry.py` and
+  `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
+
+Docs, spec prose, and site pages must not introduce a status state beyond
+`implemented`, `rejected`, `reserved`, or `internal`.
 
 ### 1.5.3 Diagnostic escalation rule {#part-1-5-3}
 
-If a construct is ill‑formed in strict mode, it may still be accepted in permissive mode with a warning _only_ if:
+Diagnostic severity can vary by toolchain profile, but severity changes must not
+turn rejected behavior into accepted Objective-C 3.0 source.
 
-- the compiler can preserve baseline behavior, and
-- the behavior is not undefined.
-
-## 1.6 Orthogonal checking modes (submodes) {#part-1-6}
+## 1.6 Orthogonal checking modes {#part-1-6}
 
 ### 1.6.1 Strict concurrency checking {#part-1-6-1}
 
-Concurrency checking is an orthogonal strictness sub-mode: a translation unit may enable additional checking beyond the selected strictness level.
+Concurrency checking may be an orthogonal analysis axis. The current public
+support state for async and actor runtime closure is `reserved` unless the
+capability matrix states otherwise.
 
-For v1, strict concurrency checking is **not** a fourth strictness level.
-
-A conforming implementation shall provide an option equivalent to:
+A conforming implementation may provide an option equivalent to:
 
 - `-fobjc3-concurrency=strict|off`
 
-Strict concurrency checking enables additional diagnostics defined in [Part 7](#part-7)/12 (Sendable, actor isolation misuse, executor affinity misuse, etc.).
+Enabling or disabling such checking must not weaken canonical diagnostics for
+rejected non-concurrency source forms.
 
-### 1.6.2 Required strictness/sub-mode consistency rules (normative) {#part-1-6-2}
+### 1.6.2 Required checking consistency rules {#part-1-6-2}
 
-A conforming implementation shall apply strictness and strict concurrency as two axes:
+A conforming implementation applies checking modes as evidence-backed analysis
+settings:
 
-- `-fobjc3-strictness=*` selects baseline strictness semantics.
-- `-fobjc3-concurrency=*` enables or disables additional concurrency diagnostics/constraints from [Part 7](#part-7) and [Part 12](#part-12).
+- no checking mode accepts rejected syntax,
+- no checking mode advertises reserved behavior as implemented,
+- profile claims map to capability states and evidence rows.
 
-Consistency requirements:
+Conformance tests for checking consistency are defined in [Part 12](#part-12).
 
-- Enabling `-fobjc3-concurrency=strict` shall not weaken any diagnostic required by the selected strictness level.
-- Disabling `-fobjc3-concurrency` shall not disable non-concurrency diagnostics required by the selected strictness level.
-- Profile claims shall map to strictness/sub-mode combinations defined in [E.2](#e-2).
+### 1.6.3 Performance checking {#part-1-6-3}
 
-Conformance tests for this matrix are defined in [§12.5.10](#part-12-5-10).
+Implementations may provide additional diagnostics or assertions for [Part 9](#part-9)
+features such as static regions and direct methods. If provided, those checks are
+reported as capability-backed behavior.
 
-### 1.6.3 Strict performance checking (optional) {#part-1-6-3}
+## 1.7 Canonical source principles {#part-1-7}
 
-Implementations may provide a “strict performance” mode enabling additional diagnostics and/or runtime assertions for [Part 9](#part-9) features (static regions, direct methods). If provided, the option shall be orthogonal to strictness levels.
+### 1.7.1 No alternate Objective-C 3.0 source mode {#part-1-7-1}
 
-> Note: This draft treats strict performance checking as an optional extension because runtime enforcement strategies differ by platform.
+Objective-C 3.0 source is canonical-only in this specification. Retired forms
+are rejected or reserved according to the capability matrix.
 
-## 1.7 Source compatibility principles {#part-1-7}
-
-### 1.7.1 No silent semantic changes in non‑ObjC3 code {#part-1-7-1}
-
-Compiling code not in ObjC 3.0 mode shall not change meaning due to this specification.
+Retired adapters, alternate language paths, retired-source lanes, old modes, and
+success-without-evidence wording are not alternate Objective-C 3.0 support states.
 
 ### 1.7.2 Contained default changes {#part-1-7-2}
 
-Default changes (e.g., nonnull-by-default) apply only inside ObjC 3.0 translation units and/or explicitly marked module boundaries ([Part 2](#part-2)/3).
+Default changes, such as nonnull-by-default regions, apply only inside
+Objective-C 3.0 translation units and explicitly marked module boundaries.
 
-### 1.7.3 Header compatibility {#part-1-7-3}
+### 1.7.3 Public header discipline {#part-1-7-3}
 
-Headers intended to be consumed by non‑ObjC3 translation units shall:
+Headers that claim Objective-C 3.0 support use canonical spellings and published
+capability gates. A header must not require a reader to infer support from
+archived notes, private issue history, or file-level status comments.
 
-- avoid ObjC 3.0‑only keywords in public API unless guarded by feature macros, or
-- use canonical attribute spellings that are syntactically valid in baseline compilers ([Decision D-007](#decisions-d-007)).
+## 1.8 Canonical diagnostics and fix-its {#part-1-8}
 
-## 1.8 Migration tooling requirements {#part-1-8}
+A conforming implementation provides diagnostics and optional fix-its for common
+rejected forms.
 
-A conforming implementation shall provide:
+Minimum diagnostic capabilities:
 
-- diagnostics with fix-its for common migrations,
-- a batch migrator capable of applying safe transformations.
+1. Reject retired null and boolean spellings when canonical spellings are
+   required ([Part 3](#part-3)).
+2. Reject unsupported ownership or capture forms and point at canonical spelling
+   where one exists ([Part 8](#part-8)).
+3. Reject unsupported cleanup forms and point at implemented `defer` or resource
+   patterns where those are available ([Part 8](#part-8)).
+4. Reject borrowed-pointer lifetime violations with a canonical lifetime
+   diagnostic ([Part 8](#part-8)).
+5. Report unavailable error and `Result` bridging surfaces as reserved until
+   capability evidence marks them implemented ([Part 6](#part-6)).
+6. Report unavailable async bridging overlays as reserved until capability
+   evidence marks them implemented ([Part 11](#part-11)).
 
-Minimum migrator capabilities:
+Fix-its are allowed only as canonicalization hints. They do not create another
+accepted language surface.
 
-1. Insert nullability annotations based on static inference and usage ([Part 3](#part-3)).
-2. Convert “weak‑strong dance” patterns to capture lists ([Part 8](#part-8)).
-3. Convert common manual cleanup patterns to `defer` or `@resource` ([Part 8](#part-8)).
-4. Suggest `withLifetime/keepAlive` when borrowed-pointer diagnostics trigger ([Part 8](#part-8)).
-5. Provide stubs for `throws` and `Result` bridging from NSError patterns ([Part 6](#part-6)).
-6. Where possible, annotate completion-handler C/ObjC APIs for `async` bridging overlays ([Part 11](#part-11)).
+## 1.9 Profiles {#part-1-9}
 
-## 1.9 Profiles (hook point) {#part-1-9}
+Objective-C 3.0 profiles are named bundles of additional restrictions, defaults,
+and required library/runtime surfaces aimed at specific domains such as
+`system`, `app`, or `freestanding`.
 
-Objective‑C 3.0 defines optional **profiles**: named bundles of additional restrictions, defaults, and required library/runtime surfaces aimed at specific domains (e.g., “system”, “app”, “freestanding”).
-
-Profiles are selected by **toolchain configuration**, not by source-level directives.
-A conforming implementation shall provide a mechanism equivalent to:
+Profiles are selected by toolchain configuration, not by source-level language
+switches. A conforming implementation may provide a mechanism equivalent to:
 
 - `-fobjc-profile=<name>`
 
 Profiles may:
 
 - enable additional diagnostics as errors ([Part 12](#part-12)),
-- require particular standard modules (e.g., Concurrency; [Part 7](#part-7)),
+- require particular standard modules such as Concurrency ([Part 7](#part-7)),
 - require additional module metadata preservation ([D](#d)),
-- restrict unsafe constructs (e.g., borrowed pointer escaping; [Part 8](#part-8)).
+- restrict unsafe constructs such as borrowed pointer escapes ([Part 8](#part-8)).
 
-This part defines the _hook point_ and selection mechanism; profile contents are specified in **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)**.
+Profile contents are specified in `CONFORMANCE_PROFILE_CHECKLIST.md` and must
+also resolve to capability states and evidence rows before they are public
+support claims.
 
-When emitting a machine-readable conformance report, implementations shall report the selected profile set using the schema in [§12.4.5](#part-12-4-5).
+When emitting a machine-readable conformance report, implementations report the
+selected profile set using the schema in [Part 12](#part-12).

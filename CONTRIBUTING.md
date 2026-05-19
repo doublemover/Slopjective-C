@@ -21,13 +21,13 @@ maintainer-only workflow map.
 
 ## Repo Boundary
 
-Treat these as the canonical roots for normal contribution work:
+Treat these as the owner roots for normal contribution work:
 
 - implementation roots:
   - `native/objc3c/`
   - `scripts/`
   - `tests/`
-- canonical doc inputs:
+- doc owner inputs:
   - `README.md`
   - `CONTRIBUTING.md`
   - `docs/tutorials/README.md`
@@ -48,8 +48,9 @@ Treat these as the canonical roots for normal contribution work:
   - `tmp/`
   - `artifacts/`
 
-Do not hand-edit generated outputs. Do not treat `tmp/`, `artifacts/`, or
-archived redirect material as primary contributor guidance.
+Refresh generated checked-in outputs from their owner inputs. Do not treat
+`tmp/`, `artifacts/`, or archived redirect material as primary contributor
+guidance.
 
 ## Branches and Commits
 
@@ -63,26 +64,28 @@ archived redirect material as primary contributor guidance.
 Run these before committing:
 
 ```sh
-npm run build:site
-npm run lint
-npm run check:md
-npm run test:fast
+npm run objc3c -- build-site
+npm run objc3c -- lint
+npm run objc3c -- check-markdown
+npm run objc3c -- test-smoke
 ```
 
 ## Core Maintainer Checks
 
-- dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
-- task hygiene: `python scripts/ci/check_task_hygiene.py`
-- docs drift: `python scripts/build_objc3c_native_docs.py --check`
-- repo superclean surface: `npm run check:repo:surface`
+- dependency boundaries: `npm run objc3c -- check-dependency-boundaries`
+- task hygiene: `npm run objc3c -- check-task-hygiene`
+- docs drift: `npm run objc3c -- check-native-docs`
+- repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`
 
 When a change widens package scripts, runbooks, schemas, checker surfaces, or
 publication helpers, also refresh the governance summaries:
 
-- governance inventory: `python scripts/build_governance_budget_inventory_summary.py`
-- governance policy: `python scripts/build_governance_policy_summary.py`
-- maintainer review surface: `python scripts/build_governance_maintainer_review_summary.py`
-- stewardship semantics: `python scripts/build_governance_stewardship_semantics_summary.py`
+- governance validation: `npm run objc3c -- validate-governance-sustainability`
+- governance publication metadata: `npm run objc3c -- publish-governance-sustainability`
+
+Direct helper paths under `scripts/` are implementation anchors for the action
+catalog at `scripts/objc3c_workflow/action_catalog.py`. Contributor-facing command examples should route through
+`npm run objc3c -- <action>`.
 
 ## PR Expectations
 

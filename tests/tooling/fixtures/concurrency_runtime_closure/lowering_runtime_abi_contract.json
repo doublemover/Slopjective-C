@@ -4,7 +4,22 @@
   "milestone": "M322",
   "issue": "M322-C001",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
-  "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
+  "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "runtime",
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
+  ],
+  "artifact_behavior_boundary": "compile artifacts, manifests, runtime-registration descriptors, generated reports, private snapshot references, probe payload references, and workflow action labels are provenance until behavior owners claim support",
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before compile artifact, manifest, runtime-registration descriptor, lowering metadata row, private runtime snapshot, probe payload snapshot, generated report, runnable report, or public workflow label",
+    "support_authority": "concurrency lowering and runtime ABI support requires lowering, IR, or runtime owner assignment over canonical fixtures and probes",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated reports, evidence-log rows, manifest-only rows, descriptor-only rows, private-snapshot-only rows, probe-payload-only rows, retired route lowering, gate lowering, old-mode lowering, workflow-label-only rows, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "compile_manifest_surface_keys": [
     "runtime_unified_concurrency_source_surface",
     "runtime_async_task_actor_normalization_completion_surface",
@@ -36,7 +51,7 @@
     "scripts/check_objc3c_runtime_architecture_integration.py",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts.objc3c_workflow"
   ],
   "required_public_workflow_actions": [
     "action_validate_concurrency_conformance",

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-packaging-channels-behavior-owner-split-index",
+  "source_contracts": [
+    "tests/tooling/fixtures/packaging_channels/channel_architecture.json",
+    "tests/tooling/fixtures/packaging_channels/installer_policy.json",
+    "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+    "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+    "tests/tooling/fixtures/packaging_channels/source_surface.json",
+    "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+    "tests/tooling/fixtures/packaging_channels/workflow_surface.json"
+  ],
+  "split_policy": {
+    "primary_axis": "packaging-channel behavior before fixture directory label, generated artifact path, tmp report path, schema path, script anchor, public action label, package bridge label, platform label, channel label, installer label, receipt label, archive label, tool label, old-mode label, gate label, retired route label, compatibility label, or migration label",
+    "positive_rule": "packaging-channel positives are limited to hand-authored checked-in contracts for release-foundation-derived channel manifests, the portable-archive/local-installer/offline-bundle channel set, windows-x64 support, package-runnable-toolchain payload derivation, package channel and platform support matrix actions, machine-generated install receipts, deterministic rollback, offline bootstrap without network, payload digest parity with the runnable package, required manifest/receipt fields, and fail-closed package-channel validation workflow",
+    "canonical_rejection_rule": "package-manager publication, auto-update services, signing/notarization claims, unsupported host success, second compiler payloads, hand-curated install trees, installer-only metadata that bypasses the release manifest, system-wide installs, network bootstraps, cross-platform installer parity, evidence-log release claims, wrapper-only action surfaces, generated-only rows, evidence-log rows, migration-only rows, old-mode rows, gate rows, retired route rows, and compatibility rows are non-positive rejection or provenance evidence",
+    "strict_error_rule": "missing checked-in channel sources, missing rollback or receipt contracts, package-channel artifacts not derived from the runnable package manifest, absent platform support matrix, skipped source/schema surface checks, missing bridge child actions, evidence-log workflow summaries, missing package channel manifest fields, missing install receipt fields, unsupported host success, missing payload digest parity, network-dependent offline bundles, and generated/report rows promoted as support own fail-closed strict-error evidence",
+    "provenance_rule": "JSON owner contracts, runbook paths, schema paths, script anchors, public action labels, package bridge labels, checked-in source labels, implementation anchor labels, machine-owned output roots, platform ids, host os/arch labels, channel ids, required tool labels, runtime requirement labels, manifest field names, receipt field names, upstream action labels, workflow child labels, blocker labels, unsupported claim labels, forbidden shape labels, forbidden claim labels, and owner-split routing rows remain provenance unless an owner split claims the behavior boundary",
+    "retired_surface_rule": "old-mode packaging channels, gate packaging channels, retired route packaging channels, compatibility packaging channels, migration-only rows, generated-only rows, evidence-log rows, manual-only package rows, unsupported-host positives, package-manager positives, signing/notarization positives, network bootstrap positives, cross-platform parity positives, system-wide installer positives, runner-only success, workflow-label-only success, wrapper-only channel checks, and generated/report rows promoted as support are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "strict_error",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/strict_error.json"
+    },
+    {
+      "owner_phase": "packaging_channels_provenance",
+      "path": "tests/tooling/fixtures/packaging_channels/behavior_owner_splits/packaging_channels_provenance.json"
+    }
+  ]
+}

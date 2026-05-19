@@ -17,7 +17,7 @@ This part is closely related to:
 
 - **[B](#b)** (canonical spellings for emitted interfaces),
 - **[C](#c)** (separate compilation and lowering contracts), and
-- **[D](#d)** (the normative checklist, version compatibility matrix, and profile-based importer validation for module metadata).
+- **[D](#d)** (the normative checklist, metadata versioning/rejection matrix, and profile-based importer validation for module metadata).
 
 ## 2.2 Modules {#part-2-2}
 
@@ -31,12 +31,12 @@ A module import shall:
 - apply the module’s exported nullability metadata ([Part 3](#part-3)),
 - apply the module’s exported availability metadata (if any),
 - make any exported “strictness recommendation” visible to tooling ([Part 1](#part-1)),
-- validate metadata version/capability compatibility and required semantic fields per [D.2](#d-2), [D.3.4](#d-3-4), and [D.3.5](#d-3-5).
+- validate metadata version/capability support and required semantic fields per [D.2](#d-2), [D.3.4](#d-3-4), and [D.3.5](#d-3-5).
 
 ### 2.2.2 `#import` and mixed-mode code (non-normative) {#part-2-2-2}
 
-`#import` remains supported for compatibility with existing headers.
-However, toolchains are encouraged to treat `@import` as the semantic source of truth for:
+`#import` remains a supported import form for existing Objective-C headers.
+However, toolchains are encouraged to treat `@import` as the semantic owner for:
 
 - nullability defaults,
 - availability,
@@ -110,7 +110,7 @@ If a declaration is referenced using a module-qualified name in an emitted textu
 
 A module’s public API contract includes not only names and types, but also ObjC 3.0 semantics that affect call legality and call lowering.
 The minimum required set is enumerated in **[D.3.1](#d-3-1) [Table A](#d-3-1)**.
-Version-compatibility and profile-specific validation behavior for that contract is defined by [D.3.4](#d-3-4) and [D.3.5](#d-3-5).
+Versioning and profile-specific validation behavior for that contract is defined by [D.3.4](#d-3-4) and [D.3.5](#d-3-5).
 
 ### 2.4.1 Public vs SPI vs private (normative) {#part-2-4-1}
 
@@ -149,18 +149,18 @@ Canonical spellings are defined in **[B](#b)**.
 This draft does not require a particular distribution format (text vs binary).
 However, the format must be sufficient to support:
 
-- strictness/migration tooling ([Part 1](#part-1)),
+- strictness and canonicalization diagnostics ([Part 1](#part-1)),
 - diagnostics for effect mismatches ([C.2](#c-2)),
 - cross-module concurrency checking ([Part 7](#part-7)),
-- and metadata version/capability checks with ignorable-field forward compatibility ([D.2](#d-2), [D.3.4](#d-3-4)).
+- and metadata version/capability checks with explicit ignorable-field evolution rules ([D.2](#d-2), [D.3.4](#d-3-4)).
 
-### 2.5.3 Metadata versioning and compatibility on import (normative) {#part-2-5-3}
+### 2.5.3 Metadata versioning and importer outcomes (normative) {#part-2-5-3}
 
 When importing module metadata or emitted interfaces that carry serialized metadata, an importer shall:
 
 - read `schema_major`, `schema_minor`, and `required_capabilities` (or an equivalent representation),
 - classify imported fields as required semantic vs ignorable extension fields per [D.2.1](#d-2-1),
-- apply the compatibility outcomes in [D.3.4](#d-3-4),
+- apply the version/rejection outcomes in [D.3.4](#d-3-4),
 - reject unknown required fields/capabilities as hard errors,
 - diagnose missing/invalid known-required semantic metadata using profile rules in [D.3.5](#d-3-5),
 - permit unknown ignorable extension fields without semantic changes to required behavior.
@@ -174,7 +174,7 @@ Toolchains claiming conformance shall provide tests and/or verification mode for
 - profile-gated metadata preservation for Strict Concurrency and Strict System claims (Sendable/task-spawn and borrowed/lifetime metadata),
 - behavioral equivalence checks that preserve `try`/`await` obligations and profile-gated diagnostics after round-trip import.
 
-Minimum round-trip and compatibility test obligations are specified in [D.4.1](#d-4-1), [D.4.2](#d-4-2), and [D.4.3](#d-4-3).
+Minimum round-trip and importer-validation test obligations are specified in [D.4.1](#d-4-1), [D.4.2](#d-4-2), and [D.4.3](#d-4-3).
 
 ### 2.5.5 Portable concurrency metadata interface format (normative) {#part-2-5-5}
 
@@ -190,7 +190,7 @@ OCI-1 may be embedded in a textual interface or emitted as a sidecar payload, bu
 - actor isolation metadata (actor-bound vs nonisolated),
 - Sendable-related boundary metadata required for strict-concurrency checks.
 
-OCI-1 schema versioning shall follow the compatibility model in [D.2](#d-2) and [D.3.4](#d-3-4).
+OCI-1 schema versioning shall follow the version/rejection model in [D.2](#d-2) and [D.3.4](#d-3-4).
 If OCI-1 data is absent for declarations that require concurrency metadata under the claimed profile, import shall diagnose per [D.3.5](#d-3-5).
 Missing OCI-1 fields shall be diagnosed by category against [D.3.5](#d-3-5): `effects.*` as effect metadata, `isolation.*` as isolation metadata, and `sendable.*` as sendability/task-boundary metadata.
 

@@ -1,0 +1,10 @@
+#include "parse/objc3_parser_core_objc_declarations_function_finalization.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_entrypoint.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_parameters.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_suffixes.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_profiles.inc"
+
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_parser.inc"

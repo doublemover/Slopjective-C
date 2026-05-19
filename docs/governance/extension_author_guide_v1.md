@@ -8,18 +8,21 @@ Primary references:
 
 - `templates/experimental_extension_proposal.md` (`C-03` intake contract)
 - `templates/vendor_extension_conformance_claim.md` (`C-08` declaration contract)
-- `registries/experimental_extensions/index.schema.json` (`C-11` publication format)
-- `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package` (`C-10` decision publication model)
+- `scripts/objc3c_shared/schema_registry.py` plus `docs/support/capability_matrix.md` and `docs/support/evidence_map.md` (`C-11` registry/schema ownership and publication truth)
+- `spec/governance/review_board_operating_model_v1.md` plus `spec/governance/macro_derive_extension_charter_v1.md` (`C-10` board authority and decision publication model)
 - `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json` (current review policy contract)
 
 Current review policy:
 
-- replay with `python scripts/build_governance_extension_review_policy_summary.py`
-- route compatibility-impacting changes through release operations,
+- replay with `npm run objc3c -- validate-governance-sustainability`
+- route support-impacting changes through release operations,
   long-horizon support, package ecosystem, adoption-legibility, and security
-  hardening evidence
-- block proposal publication when required evidence, owners, rollback path, or
+  hardening evidence without retired aliases or alternate support lanes
+- block proposal publication when required evidence, owners, revert path, or
   deferred-behavior demotion is missing
+
+The underlying governance helpers are implementation anchors owned by the
+workflow action registry, not public command examples.
 
 ## 2. End-to-End Workflow (`ONB-01`..`ONB-09`)
 
@@ -51,7 +54,7 @@ Current review policy:
 
 ### 3.3 Tooling/release owners
 
-1. Validate registry payload shape against `registries/experimental_extensions/index.schema.json`.
+1. Validate registry payload shape against schema IDs owned by `scripts/objc3c_shared/schema_registry.py` and support rows in `docs/support/capability_matrix.md` plus `docs/support/evidence_map.md`.
 2. Link decision publication artifacts and claim references in release notes.
 3. Record defer/hold rationale when publication is delayed.
 
@@ -64,7 +67,7 @@ Current review policy:
 
 ## 5. Quality and Freshness Rules
 
-- Keep onboarding/FAQ references aligned with current template and registry paths.
+- Keep onboarding/FAQ references aligned with current templates, shared schema registry, capability matrix, and evidence map owners.
 - Re-verify board cadence and escalation references at least every 30 days.
 - Re-verify security/provenance guidance at least every 14 days.
 

@@ -21,7 +21,7 @@ Live stdlib-program work must stay on these paths:
 - `docs/tutorials/getting_started.md`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
-- `docs/tutorials/objc2_to_objc3_migration.md`
+- canonicalization guide at `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
@@ -47,27 +47,35 @@ of inventing a second examples tree inside `stdlib/`.
 - only capabilities backed by checked-in compile and shared validation flows may
   be presented as runnable-now stories
 - not-yet-runnable capabilities must be framed as actor-shaped comparison or
-  migration guidance rather than runnable parity claims
-- `package.json` and `scripts/objc3c_public_workflow_runner.py` remain the
+  canonical conversion guidance rather than runnable parity claims
+- the `package.json` bridge, `npm run objc3c -- <action>`, remains the
   authoritative command truth
-- `tmp/` artifacts and legacy redirects may not become the primary onboarding
+- `tmp/` artifacts and archived redirects may not become the primary onboarding
   route
 
 ## Exact Live Implementation Paths
 
 - `stdlib/program_surface.json`
-- `scripts/check_stdlib_surface.py`
-- `scripts/check_documentation_surface.py`
-- `scripts/check_showcase_surface.py`
-- `scripts/check_showcase_integration.py`
-- `scripts/check_getting_started_integration.py`
-- `scripts/objc3c_public_workflow_runner.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
+- package bridge: `npm run objc3c -- <action>`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- check-documentation-surface`
+  - `npm run objc3c -- check-showcase-surface`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- validate-showcase`
+  - `npm run objc3c -- validate-stdlib-program`
+  - `npm run objc3c -- validate-runnable-stdlib-program`
+  - `npm run objc3c -- package-runnable-toolchain`
 - `package.json`
 - `showcase/portfolio.json`
 - `showcase/auroraBoard/main.objc3`
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
+- `scripts/check_stdlib_surface.py`
+- `scripts/check_documentation_surface.py`
+- `scripts/check_showcase_surface.py`
+- `scripts/check_showcase_integration.py`
+- `scripts/check_getting_started_integration.py`
 
 ## Exact Capability Demo Paths
 
@@ -81,7 +89,7 @@ of inventing a second examples tree inside `stdlib/`.
   interop
   - stdlib follow-up modules: `objc3.keypath`, `objc3.system`
 - `docs/tutorials/getting_started.md` for the first runnable reader path
-- `docs/tutorials/objc2_swift_cpp_comparison.md` for migration and comparison
+- `docs/tutorials/objc2_swift_cpp_comparison.md` for conversion and comparison
   framing
 - `stdlib/README.md` for the checked-in stdlib surface behind those same stories
 
@@ -118,58 +126,50 @@ of inventing a second examples tree inside `stdlib/`.
 ## Live Workflow Surface
 
 The live stdlib publish and adoption workflow is currently a composition of
-existing public actions, with dedicated top-level wrappers now exposed for the
-full program surface.
+existing npm-bridge actions exposed through the single package script.
 
 Top-level workflow entrypoints:
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
-- `npm run test:stdlib:program`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
-- `npm run test:stdlib:program:e2e`
+
+- `npm run objc3c -- validate-stdlib-program`
+- `npm run objc3c -- validate-runnable-stdlib-program`
 
 Integration flow:
-- `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
-- `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
-- `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
+
+- `npm run objc3c -- check-documentation-surface`
+- `npm run objc3c -- validate-getting-started`
+- `npm run objc3c -- validate-showcase`
+- `npm run objc3c -- validate-stdlib-foundation`
+- `npm run objc3c -- inspect-capability-explorer`
 
 Release-facing flow:
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+
+- `npm run objc3c -- validate-runnable-showcase`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`
+- `npm run objc3c -- package-runnable-toolchain`
 
 Report roots:
+
 - `tmp/reports/stdlib/`
 - `tmp/reports/showcase/`
 - `tmp/reports/tutorials/`
 
 ## Exact Live Commands
 
-- `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
-- `npm run check:docs:surface`
-- `python scripts/objc3c_public_workflow_runner.py check-showcase-surface`
-- `npm run check:showcase:surface`
-- `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
-- `npm run test:getting-started`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase`
-- `npm run test:showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
-- `npm run test:showcase:e2e`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
-- `npm run test:stdlib:program`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
-- `npm run test:stdlib:program:e2e`
-- `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
-- `npm run inspect:objc3c:capabilities`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `npm run objc3c -- check-documentation-surface`
+- `npm run objc3c -- check-showcase-surface`
+- `npm run objc3c -- validate-getting-started`
+- `npm run objc3c -- validate-showcase`
+- `npm run objc3c -- validate-runnable-showcase`
+- `npm run objc3c -- validate-stdlib-program`
+- `npm run objc3c -- validate-runnable-stdlib-program`
+- `npm run objc3c -- inspect-capability-explorer`
+- `npm run objc3c -- package-runnable-toolchain`
 
 ## Working Rules For Downstream Issues
 
 - edit the live docs, site, and onboarding files directly
 - keep capability demos rooted in checked-in showcase examples
-- reuse shared validation and packaging paths instead of adding milestone-local
+- reuse shared validation and packaging paths instead of adding release-scope
   wrappers
 - keep machine-owned artifacts under `tmp/` and out of the reader-facing tree
 - treat the tutorial and comparison guides as user-facing narrative sources, not
@@ -180,4 +180,4 @@ Report roots:
 - a second stdlib tutorial tree inside `stdlib/`
 - a duplicate example portfolio outside `showcase/`
 - screenshot-only capability demos without checked-in source
-- milestone-local publish wrappers or sidecar doc indexes
+- release-scope publish wrappers or sidecar doc indexes

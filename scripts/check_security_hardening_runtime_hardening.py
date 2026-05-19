@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "runtime_hardening_contract.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 ACTION_REPORTS = {
@@ -45,7 +45,7 @@ def ensure_action(action: str) -> bool:
     report_paths = ACTION_REPORTS.get(action, [])
     if report_paths and all(report_passes(path) for path in report_paths):
         return True
-    result = run_capture([sys.executable, str(RUNNER), action])
+    result = run_capture(public_workflow_command(action))
     if result.returncode != 0:
         raise RuntimeError(f"{action} failed")
     return False

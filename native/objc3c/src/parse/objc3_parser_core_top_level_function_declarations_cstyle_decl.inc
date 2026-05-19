@@ -1,0 +1,11 @@
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_return_type.inc"
+
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_name_scope.inc"
+
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_parameters.inc"
+
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_publication.inc"
+
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_prototype_body.inc"
+
+#include "parse/objc3_parser_core_top_level_function_declarations_cstyle_decl_entrypoint.inc"

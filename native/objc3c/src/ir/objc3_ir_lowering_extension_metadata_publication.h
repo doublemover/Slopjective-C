@@ -1,0 +1,7 @@
+#pragma once
+
+#include "ir/objc3_ir_lowering_extension_metadata_publication_comments.h"
+#include "ir/objc3_ir_lowering_extension_metadata_publication_dispatch.h"
+#include "ir/objc3_ir_lowering_extension_metadata_publication_interop.h"
+#include "ir/objc3_ir_lowering_extension_metadata_publication_metaprogramming.h"
+#include "ir/objc3_ir_lowering_extension_metadata_publication_ownership.h"

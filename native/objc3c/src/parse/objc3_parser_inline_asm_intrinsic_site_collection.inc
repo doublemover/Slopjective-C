@@ -1,0 +1,4 @@
+#include "parse/objc3_parser_inline_asm_intrinsic_site_collection_symbol_predicates.inc"
+#include "parse/objc3_parser_inline_asm_intrinsic_site_collection_site_counts.inc"
+#include "parse/objc3_parser_inline_asm_intrinsic_site_collection_symbol_collection.inc"
+#include "parse/objc3_parser_inline_asm_intrinsic_site_collection_body_traversal.inc"

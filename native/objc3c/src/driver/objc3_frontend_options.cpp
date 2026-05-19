@@ -1,18 +1,20 @@
 #include "driver/objc3_frontend_options.h"
 
+#include "config/objc3_language_profile.h"
+
 Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_options) {
   Objc3FrontendOptions options;
-  options.language_version = static_cast<std::uint8_t>(cli_options.language_version);
-  options.compatibility_mode = cli_options.compat_mode == Objc3CompatMode::kLegacy
-                                   ? Objc3FrontendCompatibilityMode::kLegacy
-                                   : Objc3FrontendCompatibilityMode::kCanonical;
+  options.language_version =
+      static_cast<std::uint8_t>(objc3c::config::kCanonicalLanguageVersion);
+  options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
   options.arc_mode = cli_options.arc_mode == Objc3ArcMode::kEnabled
                          ? Objc3FrontendArcMode::kEnabled
                          : Objc3FrontendArcMode::kDisabled;
-  options.migration_assist = cli_options.migration_assist;
   options.emit_manifest = true;
   options.emit_ir = true;
   options.emit_object = true;
+  options.allow_live_error_runtime_surface =
+      cli_options.allow_live_error_runtime_surface;
   options.bootstrap_registration_order_ordinal =
       cli_options.bootstrap_registration_order_ordinal;
   options.metaprogramming_cache_root_relative_path =

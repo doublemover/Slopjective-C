@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-performance-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "support_boundary": "lowering ownership covers dispatch, ARC helper, storage, and runtime-call provenance feeding runtime probes only when canonical lowering owners claim the behavior; performance measurements, cache rows, report packets, generated-only rows, evidence-log rows, migration-only rows, runner-only rows, package-only rows, and counter-only rows do not create lowering support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "workloads:dispatch-cache",
+    "workloads:ownership-helpers",
+    "workloads:storage-ownership-reflection",
+    "probe:tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "probe:tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "probe:tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "measured_fields:mixed_first_dispatch_path",
+    "measured_fields:strict_error_first_dispatch_path"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime dispatch retired route lowering, non-canonical receiver dispatch, retired-route-like fast-path rows, gate lowering, old-mode lowering, compatibility lowering, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, timing-only lowering rows, cache-only lowering rows, runner-only lowering rows, package-only lowering rows, and counter-only lowering rows are strict-error, canonical rejection, or provenance-only evidence"
+}

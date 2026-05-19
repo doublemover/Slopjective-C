@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "project_template_workspace_semantics.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "template-harness-summary.json"
 DEFAULT_EXAMPLE = "auroraBoard"
@@ -50,13 +50,11 @@ def main() -> int:
     contract = load_json(CONTRACT_PATH)
     step = run_step(
         "materialize-project-template",
-        [
-            sys.executable,
-            str(PUBLIC_RUNNER),
+        public_workflow_command(
             "materialize-project-template",
             "--example",
             DEFAULT_EXAMPLE,
-        ],
+        ),
     )
 
     failures: list[str] = []
@@ -99,7 +97,7 @@ def main() -> int:
             failures,
         )
         expect(
-            template_payload.get("public_actions") == contract["public_actions"],
+            template_payload.get("public_actions") == contract["required_actions"],
             "template manifest public actions drifted from the canonical template semantics",
             failures,
         )

@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.public_conformance_reporting.stability.policy.v1",
   "schema_version": 1,
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "e2e",
+    "canonical_rejection",
+    "public_conformance_provenance"
+  ],
   "allowed_public_statuses": [
     "pass",
     "caution",
@@ -55,6 +61,24 @@
     "external validation integration summary must report PASS",
     "checked-in dashboard and release-evidence schema anchors must exist",
     "public reporting cannot promote quarantined or blocked evidence into claim-ready status"
-  ]
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
+  "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
+  "fail_closed_behavior_boundary": "provisional, blocked, quarantined, missing-upstream, evidence-log, generated-only, generated-evidence-log, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, retired route, gate, old-mode, compatibility, and unsupported public claims cannot be promoted to claim-ready support",
+  "stability_boundary_policy": {
+    "primary_axis": "behavior owner before public status, badge, score band, scoring weight, deduction, minimum claimability row, fail-closed condition, or claim language",
+    "support_authority": "claim-ready status requires e2e owner assignment backed by upstream evidence owners and fail-closed stability rules",
+    "positive_support_from_badge": false,
+    "retired_surface_rule": "provisional-as-claim-ready, blocked-as-claim-ready, quarantined promotion, missing-upstream evidence, evidence-log rows, generated-only rows, dashboard-only rows, scorecard-only rows, badge-only rows, retired route rows, gate rows, old-mode rows, compatibility rows, and unsupported rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
+  "capability_truth_rules": [
+    "claim-ready means every upstream evidence owner reported PASS and no hard blocks remain",
+    "provisional means publishable with explicit deductions and caution status",
+    "blocked means the public artifact must report blocked and cannot imply conformance readiness"
+  ],
+  "claim_language": {
+    "claim-ready": "Objective-C 3 public conformance is claim-ready only when the scorecard has no hard blocks.",
+    "provisional": "Objective-C 3 public conformance is publishable with caution when non-blocking deductions remain.",
+    "blocked": "Objective-C 3 public conformance is blocked when required upstream evidence or schema anchors are missing."
+  }
 }
-

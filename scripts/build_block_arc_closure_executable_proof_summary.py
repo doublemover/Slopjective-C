@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_action_identifiers
 import json
 from pathlib import Path
 from typing import Any
@@ -9,7 +10,6 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json"
 PACKAGE_PATH = ROOT / "package.json"
-RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
 OUT_DIR = ROOT / "tmp/reports/block-arc-closure/executable-proof-abi"
 JSON_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.json"
 MD_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.md"
@@ -22,12 +22,11 @@ def read_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
     package_text = PACKAGE_PATH.read_text(encoding="utf-8")
-    runner_text = RUNNER_PATH.read_text(encoding="utf-8")
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_block_arc_closure_executable_proof_summary.py",
         "all_authoritative_runner_paths_exist": all((ROOT / path).is_file() for path in contract["authoritative_runner_paths"]),
         "all_public_command_surfaces_exist": all(command in package_text for command in contract["public_command_surfaces"]),
-        "all_public_workflow_actions_exist": all(action in runner_text for action in contract["public_workflow_actions"]),
+        "all_public_workflow_actions_exist": public_workflow_has_action_identifiers(contract["public_workflow_actions"]),
     }
 
     summary = {

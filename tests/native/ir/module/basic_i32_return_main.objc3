@@ -1,0 +1,6 @@
+// Canonical IR fixture: module/function emission for a deterministic i32 main.
+module BasicI32ReturnMainIR;
+
+fn main() -> i32 {
+  return 17;
+}

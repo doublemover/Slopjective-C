@@ -5,6 +5,23 @@ Each negative execution fixture is a pair of files sharing a basename:
 - `<name>.objc3`: source fixture compiled by the execution smoke harness.
 - `<name>.meta.json`: deterministic failure expectations for that fixture.
 
+These fixtures are hard-cutover rejection contracts. A legacy, retired route,
+unsupported, or compatibility-looking basename does not imply a preserved
+compatibility path; the sidecar must describe the canonical compile, link, or
+run failure.
+
+Owner boundaries are behavior-first:
+
+- parser-owned cases fail at compile stage with `O3P*` diagnostics.
+- sema-owned cases fail at compile stage with `O3S*` diagnostics.
+- lowering-owned cases fail at link stage when canonical lowering requires a
+  runtime symbol that is intentionally unresolved in the fixture.
+- runtime-owned cases fail at run stage with strict `O3RT*` dispatch/status
+  diagnostics.
+- canonical-rejection cases cover retired modes, unsupported runnable claims,
+  compatibility-looking names, gate-looking names, and retired-route-looking names.
+  They must stay non-positive even when the source file parses.
+
 ## Sidecar schema (`<name>.meta.json`)
 
 ```json
@@ -31,7 +48,7 @@ Field notes:
 - `expect_failure.stage`: first failing pipeline stage (`compile`, `link`, or `run`).
 - `expect_failure.required_diagnostic_tokens`: case-sensitive substrings that must all appear in diagnostics for the failing stage.
 - `execution.requires_live_runtime_dispatch`: whether successful execution would require a live runtime dispatch declaration/call in emitted LLVM IR.
-- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true. The canonical symbol is `objc3_runtime_dispatch_i32`.
+- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true. The canonical symbol is `objc3_runtime_dispatch_i32`; this field must be absent when live dispatch is not required.
 
 ## Assignment fixture note
 
@@ -93,7 +110,7 @@ Field notes:
 - `return_bool_pointer_declarator_unsupported.objc3` is a compile-stage negative expecting semantic return pointer-declarator diagnostics (`O3S206`).
 - `sel_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
-- `instancetype_return_nullability_suffix_unsupported.objc3` is a legacy-name compile-stage negative that still asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes.
+- `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a retired-mode support fixture.
 
 ## id-alias parser fixture note
 
@@ -105,10 +122,18 @@ Field notes:
 
 ## Runtime-dispatch fixture notes
 
+- `message_send_runtime_dispatch_strict_error.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics; it is not a positive retired route fixture.
+- `message_send_six_args_custom_cap.objc3` is a run-stage strict-error negative expecting `O3RT002` unknown-receiver diagnostics while preserving the custom message-argument cap.
 - `runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` on non-nil message-send lowering.
 - `nil_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` when a mutable receiver is reassigned from runtime-unknown value and lowering retains dispatch linkage.
 - `numeric_zero_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32`; numeric zero receivers are intentionally non-elided and retain dispatch linkage.
 - `nil_bound_identifier_reassigned_function.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S206`) for invalid mutable nil-bound identifier reassignment to a function value.
+
+## Unsupported runnable-claim fixture notes
+
+- `unsupported_feature_claim_throws.objc3` is a compile-stage negative expecting `O3S221` because parsed `throws` declarations are not runnable native-mode coverage.
+- `unsupported_feature_claim_arc_parameter_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC parameter ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
+- `unsupported_feature_claim_arc_return_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC return ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
 
 ## Prototype fixture notes
 

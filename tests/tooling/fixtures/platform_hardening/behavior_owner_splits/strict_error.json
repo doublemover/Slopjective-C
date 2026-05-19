@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-platform-hardening-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+    "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+    "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json"
+  ],
+  "support_boundary": "strict-error ownership covers fail-closed platform-hardening violations: unsupported host build/package/install/publication flows, missing required tier tools, unsupported channel publication, support tier overclaim, required package validation failure, current host outside the checked-in support matrix, failed required tool probes, install matrix rollback loss, missing installed native executable, release operation widening toolchain range, toolchain probe widening support claims, missing release reports, missing source-owned owner policy, missing publication surface, schema drift, and report/artifact rows promoted as source truth.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "failure_id:unsupported-host-os-or-arch",
+    "failure_id:missing-required-tier-tool",
+    "failure_id:unsupported-channel-claim",
+    "failure_id:support-tier-overclaim",
+    "blocking_condition:required package validation step failed",
+    "blocking_condition:current host fell outside checked-in supported platform matrix",
+    "blocking_condition:required tool probe failed",
+    "blocking_condition:install matrix validation lost rollback evidence",
+    "blocking_condition:offline install root missing native executable",
+    "blocking_condition:build package validation failed before install matrix",
+    "blocking_condition:release operation published toolchain range outside replay evidence",
+    "blocking_condition:toolchain probe widened support claim",
+    "blocking_condition:required release operations report missing",
+    "blocking_condition:platform matrix artifact missing source-owned owner policy",
+    "blocking_condition:platform matrix artifact missing publication surface",
+    "blocking_condition:support matrix schema drifted from source contract",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*migration-as-support*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/platform_hardening",
+  "retired_surface_rule": "unsupported host execution, missing required tools, unsupported channel claims, support tier overclaims, failed package validation, host matrix drift, rollback loss, missing native executable, widened toolchain claims, missing release reports, schema drift, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, tool-probe-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

@@ -46,7 +46,7 @@
           "abi_requirements": [
             "optimized ObjC++ lowering preserves selector-surface vs ABI-surface split from -O0",
             "optimized wrapper forwarding preserves method thunk signature and argument ordering",
-            "optimized lowering preserves async-throws status/error callback invariants and separate-compilation compatibility"
+            "optimized lowering preserves async-throws status/error callback invariants and separate-compilation import stability"
           ],
           "runtime_assertions": [
             "selector identity, callback once-ness, and context identity remain stable under optimization",

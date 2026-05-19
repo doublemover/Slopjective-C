@@ -2,9 +2,9 @@
 
 This runbook defines the live Objective-C 3 standard-library foundation surface.
 
-It is the working source of truth for `objc3c.stdlib.foundation.v1` and the stdlib bootstrap path.
+It is the working owner surface for `objc3c.stdlib.foundation.v1` and the stdlib bootstrap path.
 Downstream issues must stay on the exact repo-owned roots defined here instead of
-inventing sidecar trees or milestone-local scaffolding.
+inventing sidecar trees or release-scope scaffolding.
 
 ## Working boundary
 
@@ -30,8 +30,7 @@ Authoritative inputs:
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
-- `scripts/objc3c_public_workflow_runner.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
+- package bridge: `npm run objc3c -- <action>`
 
 ## Non-goals
 
@@ -49,7 +48,7 @@ The stdlib-foundation implementation path should leave behind:
 - one checked-in stdlib root
 - canonical module partitions using the names from `spec/STANDARD_LIBRARY_CONTRACT.md`
 - a machine-readable workspace contract under `stdlib/`
-- runner/package integration through the existing public command surface
+- runner/package integration through the existing `npm run objc3c -- <action>` bridge
 - runnable validation rooted in the existing package and compile workflow
 
 ## Lowering And Import Artifact Surface
@@ -70,18 +69,20 @@ and identifier-safe implementation module declarations.
 
 ## Exact Live Implementation Paths
 
-- `scripts/check_stdlib_surface.py`
-- `scripts/materialize_objc3c_stdlib_workspace.py`
-- `scripts/run_objc3c_stdlib_workspace_smoke.py`
-- `scripts/check_objc3c_stdlib_foundation_integration.py`
-- `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/objc3c_public_workflow_runner.py`
+- package bridge: `npm run objc3c -- <action>`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- materialize-stdlib-workspace`
+  - `npm run objc3c -- validate-stdlib-foundation`
+  - `npm run objc3c -- validate-runnable-stdlib-foundation`
+  - `npm run objc3c -- package-runnable-toolchain`
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
+- `scripts/check_objc3c_stdlib_foundation_integration.py`
+- `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
 
 ## Exact Live Artifact And Output Paths
 
@@ -95,20 +96,18 @@ and identifier-safe implementation module declarations.
 
 ## Exact Live Commands
 
-- `python scripts/objc3c_public_workflow_runner.py check-stdlib-surface`
-- `npm run check:stdlib:surface`
-- `python scripts/objc3c_public_workflow_runner.py materialize-stdlib-workspace`
-- `npm run build:objc3c:stdlib`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
-- `npm run test:stdlib`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
-- `npm run test:stdlib:e2e`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `npm run objc3c -- check-stdlib-surface`
+- `npm run objc3c -- materialize-stdlib-workspace`
+- `npm run objc3c -- validate-stdlib-foundation`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`
+- `npm run objc3c -- package-runnable-toolchain`
+
+Stdlib helper scripts are implementation anchors owned by the action catalog,
+not separate current-facing commands.
 
 ## Public actions
 
-- `npm run check:stdlib:surface`
-- `npm run build:objc3c:stdlib`
-- `npm run test:stdlib`
-- `npm run test:stdlib:e2e`
+- `npm run objc3c -- check-stdlib-surface`
+- `npm run objc3c -- materialize-stdlib-workspace`
+- `npm run objc3c -- validate-stdlib-foundation`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`

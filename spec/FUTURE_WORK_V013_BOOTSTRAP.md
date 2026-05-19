@@ -7,24 +7,24 @@ Status: kickoff scaffold and dependency-preflight artifact for issue `#728`
 
 ## 1. Cycle Header and Baseline
 
-| Metadata field                   | Value                                                       |
-| -------------------------------- | ----------------------------------------------------------- |
-| `cycle_label`                    | `v0.13`                                                     |
-| `source_cycle`                   | `v0.12`                                                     |
-| `publication_date`               | `2026-02-23`                                                |
-| `source_revision`                | `2ea95d68d2762ea72a3b984d131c86ad103519af`                  |
-| `batch_id`                       | `BATCH-20260223-11E`                                        |
-| `issue_id`                       | `#728`                                                      |
-| `seed_id`                        | `V013-REL-03`                                               |
-| `acceptance_gate_id`             | `AC-V013-REL-03`                                            |
+| Metadata field                   | Value                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `cycle_label`                    | `v0.13`                                                                                        |
+| `source_cycle`                   | `v0.12`                                                                                        |
+| `publication_date`               | `2026-02-23`                                                                                   |
+| `source_revision`                | `2ea95d68d2762ea72a3b984d131c86ad103519af`                                                     |
+| `batch_id`                       | `BATCH-20260223-11E`                                                                           |
+| `issue_id`                       | `#728`                                                                                         |
+| `seed_id`                        | `V013-REL-03`                                                                                  |
+| `acceptance_gate_id`             | `AC-V013-REL-03`                                                                               |
 | `carryover_source_ref`           | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-carryover`               |
-| `carryover_policy_companion_ref` | `docs/reference/legacy_spec_anchor_index.md`    |
+| `carryover_policy_companion_ref` | `docs/reference/legacy_spec_anchor_index.md`                                                   |
 | `dependency_map_source_ref`      | `docs/reference/legacy_spec_anchor_index.md#planning-v013-future-work-seed-matrix`             |
-| `batch_manifest_ref`             | `docs/reference/legacy_spec_anchor_index.md`    |
-| `dispatch_queue_ref`             | `docs/reference/legacy_spec_anchor_index.md`  |
+| `batch_manifest_ref`             | `docs/reference/legacy_spec_anchor_index.md`                                                   |
+| `dispatch_queue_ref`             | `docs/reference/legacy_spec_anchor_index.md`                                                   |
 | `support_preflight_ref`          | `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package` |
-| `published_by`                   | `B5 worker (agent 019c8b13-026e-7f10-8a66-117c82ad3692)`    |
-| `approved_by`                    | `A5`, `C5`, `D5`, `INT5` (per W3 merge/closeout sequence)   |
+| `published_by`                   | `B5 worker (agent 019c8b13-026e-7f10-8a66-117c82ad3692)`                                       |
+| `approved_by`                    | `A5`, `C5`, `D5`, `INT5` (per W3 merge/closeout sequence)                                      |
 
 Scope baseline for this bootstrap artifact:
 
@@ -39,13 +39,13 @@ Scope baseline for this bootstrap artifact:
 Approved scope for issue `#728` is constrained to one publication artifact plus
 its four hard dependency inputs.
 
-| scope_item_id    | source_ref                                                                                                               | classification     | rationale_code     | dependency_implication    | owner_primary | owner_backup | target_window |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------ | ------------------ | ------------------------- | ------------- | ------------ | ------------- |
-| `REL03-SCOPE-01` | `spec/FUTURE_WORK_V013_BOOTSTRAP.md`                                                                                     | `publication-core` | `R-REL-W7`         | `DEP-READY-POST-EDGE-016` | `B5`          | `C5`         | `W3-P1`       |
-| `REL03-SCOPE-02` | `docs/reference/legacy_spec_anchor_index.md`                                                                 | `hard-gate-input`  | `R-CARRYOVER-GATE` | `EDGE-V013-016`           | `A5`          | `D5`         | `W3-P0`       |
-| `REL03-SCOPE-03` | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `hard-gate-input`  | `R-AM-SYNC`        | `EDGE-V013-017`           | `D2`          | `B5`         | `W3-P0`       |
-| `REL03-SCOPE-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `hard-gate-input`  | `R-PROFILE-DELTA`  | `EDGE-V013-018`           | `A4`          | `B5`         | `W3-P0`       |
-| `REL03-SCOPE-05` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `hard-gate-input`  | `R-GOV-CADENCE`    | `EDGE-V013-019`           | `C3`          | `B5`         | `W3-P0`       |
+| scope_item_id    | source_ref                                                                                                                                      | classification     | rationale_code     | dependency_implication    | owner_primary | owner_backup | target_window |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ | ------------------------- | ------------- | ------------ | ------------- |
+| `REL03-SCOPE-01` | `spec/FUTURE_WORK_V013_BOOTSTRAP.md`                                                                                                            | `publication-core` | `R-REL-W7`         | `DEP-READY-POST-EDGE-016` | `B5`          | `C5`         | `W3-P1`       |
+| `REL03-SCOPE-02` | `docs/reference/legacy_spec_anchor_index.md`                                                                                                    | `hard-gate-input`  | `R-CARRYOVER-GATE` | `EDGE-V013-016`           | `A5`          | `D5`         | `W3-P0`       |
+| `REL03-SCOPE-03` | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md`                                              | `hard-gate-input`  | `R-AM-SYNC`        | `EDGE-V013-017`           | `D2`          | `B5`         | `W3-P0`       |
+| `REL03-SCOPE-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                          | `hard-gate-input`  | `R-PROFILE-DELTA`  | `EDGE-V013-018`           | `A4`          | `B5`         | `W3-P0`       |
+| `REL03-SCOPE-05` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md` | `hard-gate-input`  | `R-GOV-CADENCE`    | `EDGE-V013-019`           | `C3`          | `B5`         | `W3-P0`       |
 
 Classification notes:
 
@@ -88,12 +88,12 @@ Dependency integration summary:
 - Batch-level gating policy imported from
   `docs/reference/legacy_spec_anchor_index.md`.
 
-| edge_id         | predecessor_seed | successor_seed | required_input_refs                                                                                                      | predecessor_state_2026-02-23      | gate_class | publication_effect                   |
-| --------------- | ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------- | ---------- | ------------------------------------ |
+| edge_id         | predecessor_seed | successor_seed | required_input_refs                                                                                                                             | predecessor_state_2026-02-23      | gate_class | publication_effect                   |
+| --------------- | ---------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ---------- | ------------------------------------ |
 | `EDGE-V013-016` | `V013-REL-02`    | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `satisfied (#727 closeout-ready)` | `hard`     | `gate-satisfied-publication-enabled` |
-| `EDGE-V013-017` | `V013-SPEC-03`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `satisfied (closed in W1)`        | `hard`     | `required-input-cited`               |
-| `EDGE-V013-018` | `V013-SPEC-04`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `satisfied (closed in W2)`        | `hard`     | `required-input-cited`               |
-| `EDGE-V013-019` | `V013-GOV-03`    | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `satisfied (closed in W1B)`       | `hard`     | `required-input-cited`               |
+| `EDGE-V013-017` | `V013-SPEC-03`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md`                                              | `satisfied (closed in W1)`        | `hard`     | `required-input-cited`               |
+| `EDGE-V013-018` | `V013-SPEC-04`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                          | `satisfied (closed in W2)`        | `hard`     | `required-input-cited`               |
+| `EDGE-V013-019` | `V013-GOV-03`    | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md` | `satisfied (closed in W1B)`       | `hard`     | `required-input-cited`               |
 
 Critical-path recomputation:
 
@@ -141,12 +141,12 @@ Ownership baseline is inherited from
 
 ## 7. Risk and Blocker Carry-In
 
-| risk_id         | carried_from                                                                                                             | severity | risk statement                                                                                                                                                 | linked_kickoff_actions | mitigation_owner | target_date  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------- | ------------ |
+| risk_id         | carried_from                                                                                                                                    | severity | risk statement                                                                                                                                                 | linked_kickoff_actions | mitigation_owner | target_date  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------- | ------------ |
 | `RK13-REL03-01` | `docs/reference/legacy_spec_anchor_index.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `medium` | `EDGE-V013-016` is now satisfied via canonical ledger publication in `#727`; residual risk is carryover-reference drift between kickoff and support artifacts. | `ACT-06`               | `A5 + B5`        | `2026-02-24` |
-| `RK13-REL03-02` | `reports/spec_sync/abstract_machine_audit_2026Q2.md`; `docs/reference/legacy_spec_anchor_index.md` | `medium` | AM sync audit includes unresolved blocking drift (`AM-AUDIT-2026Q2-01`) that must be reflected consistently in release kickoff messaging.                      | `ACT-02`, `ACT-07`     | `B5`             | `2026-02-24` |
-| `RK13-REL03-03` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `medium` | Profile gate deltas must remain synchronized across package/checklist references to prevent release handoff ambiguity.                                         | `ACT-03`, `ACT-07`     | `B5 + C5`        | `2026-02-24` |
-| `RK13-REL03-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `medium` | Governance cadence anchors can drift if signoff timing moves without calendar anchor alignment.                                                                | `ACT-04`, `ACT-08`     | `B5 + D5`        | `2026-02-24` |
+| `RK13-REL03-02` | `reports/spec_sync/abstract_machine_audit_2026Q2.md`; `docs/reference/legacy_spec_anchor_index.md`                                              | `medium` | AM sync audit includes unresolved blocking drift (`AM-AUDIT-2026Q2-01`) that must be reflected consistently in release kickoff messaging.                      | `ACT-02`, `ACT-07`     | `B5`             | `2026-02-24` |
+| `RK13-REL03-03` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                          | `medium` | Profile gate deltas must remain synchronized across package/checklist references to prevent release handoff ambiguity.                                         | `ACT-03`, `ACT-07`     | `B5 + C5`        | `2026-02-24` |
+| `RK13-REL03-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md` | `medium` | Governance cadence anchors can drift if signoff timing moves without calendar anchor alignment.                                                                | `ACT-04`, `ACT-08`     | `B5 + D5`        | `2026-02-24` |
 
 Current blocker register:
 
@@ -177,7 +177,7 @@ Current blocker register:
 | `KC13-05`    | `PASS` | Sections 2/4/7 include required inputs from `V013-SPEC-03`, `V013-SPEC-04`, and `V013-GOV-03`.           |
 | `KC13-06`    | `PASS` | Section 3 reproduces deterministic scoring row for `V013-REL-03` (`score=63`, `Tier-0`).                 |
 | `KC13-07`    | `PASS` | Section 7 risk rows map directly to Section 8 action rows.                                               |
-| `KC13-08`    | `PASS` | `python scripts/spec_lint.py` returned `spec-lint: OK` with exit code `0`.                               |
+| `KC13-08`    | `PASS` | `npm run objc3c -- lint-spec` returned `spec-lint: OK` with exit code `0`.                               |
 | `KC13-09`    | `PASS` | `rg` edge and required-section checks matched expected rows with exit code `0`.                          |
 | `KC13-10`    | `PASS` | Final publication gate is clear with `EDGE-V013-016` satisfied and downstream references normalized.     |
 
@@ -185,7 +185,7 @@ Validation record:
 
 | command                                                                                                                                                                                                                                                                                                                                                                                                                                              | outcome                                       |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `python scripts/spec_lint.py`                                                                                                                                                                                                                                                                                                                                                                                                                        | `PASS` (`spec-lint: OK`)                      |
+| `npm run objc3c -- lint-spec`                                                                                                                                                                                                                                                                                                                                                                                                                        | `PASS` (`spec-lint: OK`)                      |
 | `rg -n "EDGE-V013-016\|EDGE-V013-017\|EDGE-V013-018\|EDGE-V013-019\|V013-REL-02.*must be complete first" spec/FUTURE_WORK_V013_BOOTSTRAP.md`                                                                                                                                                                                                                                                                                                         | `PASS` (matched required edge/gate lines)     |
 | `rg -n "^## 1\\. Cycle Header and Baseline$\|^## 2\\. Approved Carryover Scope$\|^## 3\\. Prioritization Method and Scoring Summary$\|^## 4\\. Dependency Map and Critical Path$\|^## 5\\. Execution Windows and Gate Sequence$\|^## 6\\. Ownership and SLA Mapping$\|^## 7\\. Risk and Blocker Carry-In$\|^## 8\\. First-Window Action Plan \\(Top 8-12 items\\)$\|^## 9\\. Acceptance and Publication Record$" spec/FUTURE_WORK_V013_BOOTSTRAP.md` | `PASS` (all required section headers present) |
 

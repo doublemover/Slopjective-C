@@ -1,6 +1,6 @@
 {
   "id": "EC-OPTSP-03",
-  "title": "Reject non-canonical optional<int> in canonical-only mode",
+  "title": "Reject non-canonical optional<int> in type position",
   "feature": "optional spelling",
   "bucket": "diagnostics",
   "profile": "strict",
@@ -8,34 +8,34 @@
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
     "docs/reference/legacy_spec_anchor_index.md"
   ],
-  "source": "// MODE: future-canonical-only\noptional<int> wrapCanonicalOnly(int value) {\n    return optional<int>(value);\n}\n",
+  "source": "fn wrapCanonicalOnly(value: optional<int>) -> i32 {\n    return value;\n}\n",
   "expect": {
     "parse": "reject",
     "diagnostics": [
       {
-        "code": "OPT-SPELL-NONCANON-UNSUPPORTED",
+        "code": "O3C004",
         "severity": "error",
         "span": {
           "start": {
-            "line": 2,
-            "column": 1
+            "line": 1,
+            "column": 29
           },
           "end": {
-            "line": 2,
-            "column": 9
+            "line": 1,
+            "column": 37
           }
         },
-        "message": "canonical-only mode requires Optional spelling",
+        "message": "optional<T> aliases are rejected; use canonical Optional<T> spelling",
         "fixits": [
           {
             "range": {
               "start": {
-                "line": 2,
-                "column": 1
+                "line": 1,
+                "column": 29
               },
               "end": {
-                "line": 2,
-                "column": 9
+                "line": 1,
+                "column": 37
               }
             },
             "replacement": "Optional"

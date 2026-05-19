@@ -10,7 +10,7 @@ fn dynamicEntry() -> i32 __attribute__((objc_dynamic)) {
 
 @interface DirectBox __attribute__((objc_direct_members, objc_final, objc_sealed))
 - (i32)fastPath __attribute__((objc_direct, objc_final));
-- (i32)fallbackPath __attribute__((objc_dynamic));
+- (i32)retired-routePath __attribute__((objc_dynamic));
 @end
 
 actor class Worker __attribute__((objc_sealed))
@@ -22,7 +22,7 @@ actor class Worker __attribute__((objc_sealed))
   return 7;
 }
 
-- (i32)fallbackPath __attribute__((objc_dynamic)) {
+- (i32)retired-routePath __attribute__((objc_dynamic)) {
   return dynamicEntry();
 }
 @end

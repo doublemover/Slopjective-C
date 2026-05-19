@@ -1,0 +1,5 @@
+#include "sema/objc3_semantic_passes_method_property_type_validation_readiness.inc"
+#include "sema/objc3_semantic_passes_method_property_type_validation_diagnostics.inc"
+#include "sema/objc3_semantic_passes_method_property_type_validation_accessors.inc"
+#include "sema/objc3_semantic_passes_method_property_type_validation_method_signature.inc"
+#include "sema/objc3_semantic_passes_method_property_type_validation_property_type.inc"

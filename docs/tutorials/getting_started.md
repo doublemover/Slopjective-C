@@ -7,7 +7,7 @@ Use it when you want to:
 - prove the repo is healthy before reading implementation code,
 - learn the surface area through one small compileable example at a time,
 - understand which commands are the normal user path,
-- and choose the next tutorial or migration guide based on the capability you actually care about.
+- and choose the next tutorial or canonicalization guide based on the capability you actually care about.
 
 ## What This Tutorial Proves
 
@@ -16,7 +16,7 @@ By the end of this file, a reader should know:
 - which commands count as the normal public path
 - which example is the right first compile target
 - which showcase story matches the capability they care about next
-- which document to open for migration or comparison questions instead of guessing
+- which document to open for ObjC2 habit-mapping or comparison questions instead of guessing
 
 ## Teaching Model
 
@@ -25,7 +25,7 @@ Teach from checked-in runnable sources first.
 - start with the smallest command that proves the compiler and runtime are alive
 - read one showcase story at a time instead of scanning the whole implementation tree
 - move from compile, to run, to comparison, to deeper implementation notes in that order
-- treat the public package scripts and workflow runner as the command truth
+- treat the `npm run objc3c -- <action>` package bridge as the command truth
 - keep maintainer-only workflow detail out of the primary reader path
 
 ## Step 1 Verify The Toolchain
@@ -33,8 +33,8 @@ Teach from checked-in runnable sources first.
 Run the normal repo checks before you trust any tutorial claim:
 
 ```sh
-npm run build:objc3c-native
-npm run test:fast
+npm run objc3c -- build-native-binaries
+npm run objc3c -- test-smoke
 ```
 
 If those fail, stop there and fix the repo state first.
@@ -44,7 +44,7 @@ If those fail, stop there and fix the repo state first.
 Use the smallest example-first compile path:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 Why `auroraBoard` first:
@@ -57,8 +57,8 @@ Why `auroraBoard` first:
 Once one example compiles, move to the checked-in showcase surface:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
 Use `showcase/README.md` and `showcase/portfolio.json` as the example map:
@@ -87,7 +87,7 @@ immediately:
 Choose the next document based on the question you actually have:
 
 - if you need the exact build, run, and verify flow, continue to `docs/tutorials/build_run_verify.md`
-- if you need migration language, continue to `docs/tutorials/objc2_swift_cpp_comparison.md`
+- if you need ObjC2 habit-mapping language, continue to `docs/tutorials/objc2_swift_cpp_comparison.md`
 - if you need runnable example context, continue to `showcase/README.md`
 - if you need exact command mapping, use `docs/runbooks/objc3c_public_command_surface.md`
 - if you need implementation boundaries after the tutorial, then open `docs/objc3c-native.md`
@@ -96,7 +96,7 @@ Use this decision rule:
 
 - compile first
 - then choose the showcase example that matches the capability
-- then open the migration or comparison guide only after the runnable source is in view
+- then open the canonicalization or comparison guide only after the runnable source is in view
 
 ## Canonical Inputs
 
@@ -131,6 +131,7 @@ This getting-started tutorial should stay coupled to these live inputs:
   - `showcase/patchKit/main.objc3`
 - command truth and documentation guardrails:
   - `docs/runbooks/objc3c_public_command_surface.md`
+  - `npm run objc3c -- check-documentation-surface`
   - `scripts/check_documentation_surface.py`
 
 ## Explicit Non-Goals
@@ -138,4 +139,4 @@ This getting-started tutorial should stay coupled to these live inputs:
 - no tutorial path rooted in `tmp/` or other machine outputs
 - no slide-deck or screenshot-first onboarding path
 - no maintainer-only workflow notes in the primary getting-started flow
-- no extra command aliases beyond the public package-script surface
+- no extra command names beyond the public npm bridge surface

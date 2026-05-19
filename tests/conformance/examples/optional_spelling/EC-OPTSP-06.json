@@ -10,11 +10,11 @@
   ],
   "source": "#define MAKE_OPT(T) optional<T>\nMAKE_OPT(int) macroValue(void);\n",
   "expect": {
-    "parse": "accept",
+    "parse": "reject",
     "diagnostics": [
       {
-        "code": "OPT-SPELL-NONCANON",
-        "severity": "warning",
+        "code": "O3C004",
+        "severity": "error",
         "span": {
           "start": {
             "line": 1,
@@ -25,7 +25,7 @@
             "column": 28
           }
         },
-        "message": "non-canonical optional spelling in macro expansion",
+        "message": "optional<T> aliases are rejected; use canonical Optional<T> spelling",
         "fixits": []
       },
       {

@@ -1,12 +1,49 @@
 {
   "contract_id": "objc3c.release.foundation.workflow.surface.v1",
   "validate_action": "validate-release-foundation",
-  "public_scripts": [
-    "test:objc3c:release-foundation",
-    "check:objc3c:release-foundation:surface",
-    "check:objc3c:release-foundation:schemas",
-    "inspect:objc3c:release-manifest",
-    "publish:objc3c:release-provenance"
+  "package_bridge": "objc3c",
+  "required_actions": [
+    "validate-release-foundation",
+    "check-release-foundation-surface",
+    "check-release-foundation-schema-surface",
+    "build-release-manifest",
+    "publish-release-provenance"
+  ],
+  "owner_policy": {
+    "source_owner": "release-foundation-source",
+    "gate_owner": "release-foundation-gate",
+    "blocker_owner": "release-foundation-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-release-foundation-surface",
+      "check-release-foundation-schema-surface",
+      "build-release-manifest",
+      "publish-release-provenance",
+      "validate-release-foundation"
+    ],
+    "upstream_owner_actions": [
+      "validate-performance-governance",
+      "validate-runnable-release-candidate",
+      "check-release-evidence"
+    ],
+    "workflow_child_actions": [
+      "validate-performance-governance",
+      "validate-runnable-release-candidate",
+      "check-release-evidence",
+      "check-release-foundation-surface",
+      "check-release-foundation-schema-surface",
+      "build-release-manifest",
+      "publish-release-provenance"
+    ]
+  },
+  "ordered_child_actions": [
+    "validate-performance-governance",
+    "validate-runnable-release-candidate",
+    "check-release-evidence",
+    "check-release-foundation-surface",
+    "check-release-foundation-schema-surface",
+    "build-release-manifest",
+    "publish-release-provenance"
   ],
   "release_evidence_paths": [
     "tmp/reports/release-foundation/source-surface-summary.json",
@@ -25,5 +62,9 @@
   "upstream_direct_checks": [
     "check-release-evidence"
   ],
+  "report_contracts": {
+    "manifest_summary": "objc3c.release.foundation.manifest.summary.v1",
+    "publication_summary": "objc3c.release.foundation.publication.summary.v1"
+  },
   "nightly_action": "test-nightly"
 }

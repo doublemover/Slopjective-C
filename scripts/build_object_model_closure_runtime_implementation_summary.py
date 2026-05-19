@@ -53,7 +53,7 @@ def main() -> int:
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Runtime symbols: `{summary['authoritative_runtime_symbol_count']}`\n"
         f"- Implementation invariants: `{summary['implementation_invariant_count']}`\n"
-        f"- Proof paths: `{summary['authoritative_proof_path_count']}`\n"
+        f"- Evidence paths: `{summary['authoritative_proof_path_count']}`\n"
         f"- Status: `{'PASS' if summary['ok'] else 'FAIL'}`\n",
         encoding="utf-8",
     )

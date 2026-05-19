@@ -2,6 +2,9 @@
 
 This document defines the required fields and validation flow for the runtime artifact manifest used by `v0.11-A01`.
 
+Schema file: `schemas/objc3-runtime-2025Q4.manifest.schema.json`.
+Registry owner: `scripts/objc3c_shared/schema_registry.py`.
+
 ## Required fields
 
 A valid manifest must include these top-level fields:
@@ -29,7 +32,8 @@ A valid manifest must include these top-level fields:
 ## Validation command
 
 ```powershell
-python -c "import json, pathlib, jsonschema; schema=json.loads(pathlib.Path('schemas/objc3-runtime-2025Q4.manifest.schema.json').read_text(encoding='utf-8')); data=json.loads(pathlib.Path('reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json').read_text(encoding='utf-8')); jsonschema.Draft202012Validator(schema).validate(data); print('valid: objc3-runtime-2025Q4 manifest')"
+npm run objc3c -- check-release-evidence
 ```
 
-If validation fails, the command raises a `jsonschema` exception identifying the failing path and rule.
+If validation fails, the release-evidence gate reports the failing schema path
+and rule.

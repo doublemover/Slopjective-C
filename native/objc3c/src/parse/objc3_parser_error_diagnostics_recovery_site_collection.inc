@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_error_diagnostics_recovery_site_collection_recovery_predicates.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_site_collection_site_counts.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_site_collection_symbol_collection.inc"
+
+#include "parse/objc3_parser_error_diagnostics_recovery_site_collection_body_counting.inc"

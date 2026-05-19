@@ -1,0 +1,6 @@
+#include "sema/objc3_semantic_passes_dispatch_inheritance_surface_resolution.inc"
+#include "sema/objc3_semantic_passes_dispatch_callable_interop_validation.inc"
+#include "sema/objc3_semantic_passes_dispatch_inheritance_override_validation.inc"
+#include "sema/objc3_semantic_passes_protocol_conformance_surface_resolution.inc"
+#include "sema/objc3_semantic_passes_protocol_requirement_closure_collection.inc"
+#include "sema/objc3_semantic_passes_protocol_message_resolution.inc"

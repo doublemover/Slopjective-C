@@ -4,7 +4,23 @@
   "milestone": "M322",
   "issue": "M322-B004",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
-  "summary_script": "scripts/build_concurrency_runtime_closure_actor_semantics_summary.py",
+  "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_actor_semantics_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "lowering",
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
+  "actor_boundary_policy": {
+    "primary_axis": "behavior owner before actor isolation row, sendability row, executor hop row, mailbox row, replay/race-guard row, private snapshot, probe payload snapshot, generated report, cross-module replay row, or successor transport row",
+    "support_authority": "actor isolation, sendability, hop, mailbox, and cross-module replay support requires sema, lowering, runtime, or e2e owner assignment over canonical fixtures and probes",
+    "positive_support_from_probe_payload": false,
+    "retired_surface_rule": "distributed actor transport, external executor integration, stdlib actor-shaped parity, cross-module claims without manifest/runtime-registration replay proof, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, retired route actor rows, gate actor rows, old-mode isolation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "actor_models": [
     "actor-isolation-entry-nonisolated-entry-and-hop-semantics-remain-runtime-owned-behavior-backed-by-private-helper-entrypoints-and-testing-snapshots",
     "replay-proof-race-guard-executor-binding-and-mailbox-drain-ownership-remain-one-deterministic-actor-runtime-story",
@@ -18,7 +34,9 @@
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_snapshot.cpp",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",

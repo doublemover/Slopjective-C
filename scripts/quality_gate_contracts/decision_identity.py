@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+CONTRACT_ID = "V013-CONF-02-QUALITY-GATE-v2"
+SEED_ID = "V013-CONF-02"
+ACCEPTANCE_GATE_ID = "AC-V013-CONF-02"
+TASK_ID = "D-05"
+RELEASE_LABEL = "v0.11"
+RELEASE_ID = "20260223-issue713-lanea-012"
+SOURCE_REVISION = "50c106ed1e0392d5b7820672ce7c3f96f1f0f9c8"
+VALIDATED_BY = "worker-lane-b"
+
+__all__ = [
+    "ACCEPTANCE_GATE_ID",
+    "CONTRACT_ID",
+    "RELEASE_ID",
+    "RELEASE_LABEL",
+    "SEED_ID",
+    "SOURCE_REVISION",
+    "TASK_ID",
+    "VALIDATED_BY",
+]

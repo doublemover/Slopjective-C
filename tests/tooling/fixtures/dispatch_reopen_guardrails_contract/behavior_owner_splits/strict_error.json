@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/hard_fail_invalid_utf8/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/batch_manifest.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/dispatch_review.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/w2_drift_freshness_provenance_gate_sequence/playbook.md",
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract/drift_missing_lane_b_validation/batch_manifest.md"
+  ],
+  "support_boundary": "strict-error ownership covers fail-closed dispatch-reopen guardrail violations: invalid UTF-8 input, Lane B missing tooling pytest validation, deterministic intake order drift, dispatch closeout order drift, missing AR-DEP-M03-02 freshness linkage, missing AR-FRESHNESS-01 evidence, hard-gate matrix reordering, and any promotion of drift/invalid rows through old-mode, gate, retired route, compatibility, migration, generated-only, or evidence-log support.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "strict_error:invalid-utf8",
+    "strict_error:missing-lane-b-pytest-validation",
+    "strict_error:merge-order:B-before-A",
+    "strict_error:closeout-order:A-C-B-D-INT",
+    "strict_error:missing-AR-DEP-M03-02",
+    "strict_error:missing-AR-FRESHNESS-01",
+    "strict_error:hard-gate-matrix-order:G3-before-G2",
+    "scenario:hard_fail_invalid_utf8",
+    "scenario:w2_drift_freshness_provenance_gate_sequence",
+    "scenario:drift_missing_lane_b_validation",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*migration-as-support*",
+    "*generated-as-support*",
+    "*report-as-support*"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/dispatch_reopen_guardrails_contract",
+  "retired_surface_rule": "invalid UTF-8, missing validation, stale merge order, stale closeout order, missing freshness evidence, missing provenance linkage, hard-gate sequence drift, retired-route-as-positive, gate-as-positive, old-mode-as-positive, compatibility-as-positive, migration-as-support, generated-as-support, report-as-support, drift-as-support, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

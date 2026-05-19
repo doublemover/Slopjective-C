@@ -1,0 +1,14 @@
+// Canonical sema concurrency fixture: async value flow is explicit source behavior.
+module SemaConcurrencyAsyncAwaitValueFlow;
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn runTask() -> i32 __attribute__((objc_executor(main))) {
+  return await fetchValue();
+}
+
+fn main() -> i32 {
+  return runTask();
+}

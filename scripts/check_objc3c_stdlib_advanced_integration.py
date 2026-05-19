@@ -4,18 +4,16 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_any as load_json
-from objc3c_tooling.subprocesses import run_capture
+from scripts.objc3c_workflow.public_command_api import public_workflow_command
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 SMOKE_RUNNER = ROOT / "scripts" / "run_objc3c_stdlib_workspace_smoke.py"
 ADVANCED_HELPER_PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "advanced_helper_package_surface.json"
 SURFACE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
@@ -34,11 +32,11 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    surface_result = run_capture([sys.executable, str(RUNNER), "check-stdlib-surface"])
+    surface_result = run_capture(public_workflow_command("check-stdlib-surface"))
     if surface_result.returncode != 0:
         raise RuntimeError("stdlib surface validation failed")
 
-    smoke_result = run_capture([sys.executable, str(SMOKE_RUNNER)])
+    smoke_result = run_capture(python_script_command(SMOKE_RUNNER))
     if smoke_result.returncode != 0:
         raise RuntimeError("stdlib workspace smoke validation failed")
 

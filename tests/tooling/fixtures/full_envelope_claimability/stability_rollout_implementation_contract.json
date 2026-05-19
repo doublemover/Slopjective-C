@@ -4,9 +4,9 @@
   "milestone": "M324",
   "issue": "M324-B003",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/check_full_envelope_claimability_rollout_readiness.py",
+  "summary_implementation_anchor": "scripts/check_full_envelope_claimability_rollout_readiness.py",
   "required_policy_summaries": [
-    "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
+    "checked_outputs/full-envelope-claimability/support-matrix/support_matrix_summary.json",
     "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",
     "tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json"
   ],
@@ -21,5 +21,14 @@
     "stable",
     "candidate",
     "preview"
+  ],
+  "required_release_artifact_fields": [
+    "release_manifest_path",
+    "published_sbom",
+    "published_attestation",
+    "update_manifest_path",
+    "upgrade_support_report",
+    "channel_catalog",
+    "trust_report_json"
   ]
 }

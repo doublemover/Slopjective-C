@@ -1,0 +1,7 @@
+// Canonical sema control-flow fixture: continue outside a loop is rejected.
+module SemaControlFlowContinueOutsideLoopRejected;
+
+fn main() -> i32 {
+  continue;
+  return 0;
+}

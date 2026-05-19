@@ -1,0 +1,25 @@
+# Generated Fixture Provenance
+
+`manifest.json` tracks generated artifacts used for deterministic replay and
+contract provenance. Generated entries are intentionally not native behavior
+expectations and must stay disjoint from `tests/native`.
+
+Generated artifacts can prove that a generator or replay surface is stable, but
+they cannot make a retired adapter, alternate acceptance path, retired-source
+lane, unsupported-feature claim, or runtime-dispatch path acceptable.
+Those cases must be promoted into `tests/native` as canonical rejection or
+strict-error fixtures before they can satisfy hard-cutover behavior coverage.
+Generated metadata also cannot own parser, semantic, lowering ABI, runtime, or
+e2e behavior claims. It can only reference canonical fixture families as
+provenance, while the phase owner indexes decide whether the referenced behavior
+is supported, rejected, strict-error, or absent.
+`tests/conformance/hard_cutover_fixture_boundary_contracts.json` records this
+generated-provenance-only contract beside the canonical manifest boundary.
+The larger replay tree under `tests/tooling/fixtures/objc3c` is additionally
+split by behavior owner in `tests/tooling/fixtures/objc3c/behavior_owner_splits/`
+so generated diagnostics, semantic, lowering, IR, runtime, e2e, and rejection
+provenance cannot be cited as generic generated support.
+The manifest boundary itself is split in
+`tests/fixtures/generated/behavior_owner_splits/` so generated inventory,
+canonical fixture truth pointers, strict rejection, and evidence-log generated
+outputs stay separate.

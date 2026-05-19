@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_objc_interface_protocol_declarations_category_clause.inc"
+#include "parse/objc3_parser_core_objc_interface_protocol_declarations_members.inc"
+#include "parse/objc3_parser_core_objc_interface_protocol_declarations_protocol_decl.inc"
+
+#include "parse/objc3_parser_core_objc_interface_generic_helpers.inc"
+
+#include "parse/objc3_parser_core_objc_interface_declarations.inc"

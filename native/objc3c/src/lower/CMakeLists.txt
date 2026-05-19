@@ -1,0 +1,52 @@
+add_library(objc3c_lower STATIC
+  contracts/arc_boundary_lowering_contracts.cpp
+  contracts/block_lowering_contract_validators.cpp
+  contracts/block_arc_lowering_plan.cpp
+  contracts/block_runtime_lowering_contracts.cpp
+  contracts/lowering_arc_runtime_summaries.cpp
+  contracts/control_flow_lowering_contracts.cpp
+  contracts/cross_module_lowering_contracts.cpp
+  contracts/dispatch_surface_contracts.cpp
+  contracts/executable_layout_lowering_contracts.cpp
+  contracts/function_method_lowering_state.cpp
+  contracts/interop_lowering_contracts.cpp
+  contracts/lowering_concurrency_contracts.cpp
+  contracts/lowering_arc_contracts.cpp
+  contracts/lowering_backend_handoff.cpp
+  contracts/metaprogramming_lowering_contracts.cpp
+  contracts/lowering_extended_contracts.cpp
+  contracts/lowering_artifact_publication.cpp
+  contracts/lowering_diagnostic_contract.cpp
+  contracts/lowering_diagnostics.cpp
+  contracts/lowering_error_diagnostic_contracts.cpp
+  contracts/lowering_ir_handoff.cpp
+  contracts/lowering_phase_io.cpp
+  contracts/lowering_runtime_bootstrap_summaries.cpp
+  contracts/lowering_contract_validators.cpp
+  contracts/ownership_runtime_lowering_contracts.cpp
+  contracts/runtime_metadata_emission_contracts.cpp
+  contracts/lowering_summary_surfaces.cpp
+  contracts/lowering_summary_ownership_concurrency_surfaces.cpp
+  contracts/lowering_summary_runtime_object_surfaces.cpp
+  contracts/lowering_summary_tooling_capability_surfaces.cpp
+  contracts/object_model_lowering_contracts.cpp
+  contracts/runtime_dispatch_abi_contracts.cpp
+  contracts/runtime_dispatch_boundary_contracts.cpp
+  contracts/runtime_metadata_handoff.cpp
+  contracts/typed_sema_lowering_boundary.cpp
+  contracts/typed_sema_lowering_boundary_counts.cpp
+  contracts/typed_sema_lowering_boundary_replay.cpp
+  contracts/type_system_lowering_contracts.cpp
+  core/lowering_atomic_ops.cpp
+  core/lowering_primitive_ops.cpp
+  core/lowering_simd_vector_ops.cpp
+  metadata/lowering_metadata_helpers.cpp
+  metadata/runtime_metadata_layout_policy.cpp
+)
+objc3c_apply_build_defaults(objc3c_lower)
+objc3c_apply_llvm_direct_config(objc3c_lower)
+target_link_libraries(objc3c_lower PUBLIC
+  objc3c_ast
+  objc3c_lower_model
+  objc3c_sema_type_system
+)

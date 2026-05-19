@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_await_suspension_site_collection_diagnostics_normalization.inc"
+
+#include "parse/objc3_parser_await_suspension_site_collection_profile_construction.inc"
+
+#include "parse/objc3_parser_await_suspension_site_collection_collection_traversal.inc"
+
+#include "parse/objc3_parser_await_suspension_site_collection_publication.inc"

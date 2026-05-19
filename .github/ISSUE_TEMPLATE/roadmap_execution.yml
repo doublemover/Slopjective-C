@@ -1,5 +1,5 @@
 name: Roadmap Execution Task
-description: Create a lean roadmap issue aligned to the simplified cleanup-era authoring contract.
+description: Create a lean roadmap issue aligned to the hard-cutover authoring contract.
 title: "[ROADMAP] <title core>"
 labels:
   - priority:P1
@@ -40,10 +40,11 @@ body:
     id: implementation_surfaces
     attributes:
       label: Primary Implementation Surfaces
-      description: Files, generators, templates, or workflows most likely to change.
+      description: GitHub surfaces, canonical workflow actions, templates, or control-plane docs most likely to change.
       placeholder: |
         - .github/ISSUE_TEMPLATE/roadmap_execution.yml
-        - tmp/planning/<generator>.py
+        - .github/workflows/<workflow>.yml
+        - objc3c workflow action: <action-name>
     validations:
       required: true
   - type: textarea
@@ -64,7 +65,7 @@ body:
       options:
         - shared_acceptance_harness
         - static_policy_guard
-        - migration_bridge
+        - hard_cutover_rejection_surface
         - generator_contract_only
     validations:
       required: true
@@ -90,7 +91,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Planning hygiene: prefer shared validation and runner surfaces, keep notes bounded,
+        Planning hygiene: prefer shared validation and canonical workflow actions,
+        route public commands through `npm run objc3c -- <action>`, keep notes bounded,
         and cite an exception record whenever the issue exceeds an anti-noise budget.
   - type: textarea
     id: notes

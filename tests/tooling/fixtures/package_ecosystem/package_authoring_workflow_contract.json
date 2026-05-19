@@ -14,18 +14,36 @@
     "summary": "tmp/reports/package-ecosystem/package-lock-summary.json",
     "authoring_summary": "tmp/reports/package-ecosystem/package-authoring-workflow-summary.json"
   },
-  "required_public_scripts": [
-    "build:objc3c:stdlib",
-    "build:objc3c:application-workspace",
-    "test:stdlib:program",
-    "test:objc3c:application-architecture",
-    "package:objc3c-native:runnable-toolchain"
+  "package_bridge": "objc3c",
+  "owner_policy": {
+    "channel_owner": "packaging-channels-source",
+    "registry_owner": "package-ecosystem-registry-source",
+    "package_authoring_owner": "package-ecosystem-authoring-source",
+    "package_validation_owner": "package-ecosystem-validation-gate",
+    "blocker_owner": "package-ecosystem-blockers",
+    "source_authority": "checked-in-package-ecosystem-contracts",
+    "evidence_log_allowed": false
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "package source lacks provenance entry",
+      "authoring lock graph missing package edge",
+      "public workflow replay failure"
+    ]
+  },
+  "required_actions": [
+    "materialize-stdlib-workspace",
+    "materialize-canonical-application-workspace",
+    "validate-stdlib-program",
+    "validate-application-architecture",
+    "package-runnable-toolchain"
   ],
   "authoring_rules": [
     "stdlib modules become package ids derived from canonical module names",
     "showcase examples become local app package ids with explicit stdlib dependencies",
     "dependencies are sorted deterministically by package edge",
     "each package references a provenance entry with source path and replay command",
-    "generated locks are replayable through public workflow commands"
+    "generated locks are replayable through objc3c workflow actions"
   ]
 }

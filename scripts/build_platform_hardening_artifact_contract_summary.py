@@ -3,43 +3,43 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
-from pathlib import Path
-from typing import Any
-from objc3c_tooling.json_io import write_json_file
+
 from objc3c_tooling.paths import resolve_repo_path
-
-ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json"
-SCHEMA_PATH = ROOT / "schemas/objc3c-platform-support-matrix-v1.schema.json"
-RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_platform_hardening.md"
-OUT_DIR = ROOT / "tmp/reports/platform-hardening/artifact-contract"
-JSON_OUT = OUT_DIR / "artifact_contract_summary.json"
-MD_OUT = OUT_DIR / "artifact_contract_summary.md"
-
-
-def expect(condition: bool, message: str) -> None:
-    if not condition:
-        raise RuntimeError(message)
-
-
-def read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    expect(isinstance(payload, dict), f"JSON object expected at {path}")
-    return payload
-
-
+from objc3c_tooling.subprocesses import python_script_command
+from platform_hardening_contracts import (
+    ARTIFACT_CONTRACT_SUMMARY_PATH,
+    BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT,
+    PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH,
+    PLATFORM_RUNBOOK_PATH,
+    PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH,
+    ROOT,
+    load_json_object,
+    require_platform_hardening_blocker_metadata,
+    require_platform_hardening_owner_policy,
+    write_json,
+    write_markdown_summary,
+)
 
 def main() -> int:
-    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_objc3c_platform_support_matrix.py")], cwd=ROOT, check=True)
-    contract = read_json(CONTRACT_PATH)
-    schema = read_json(SCHEMA_PATH)
-    artifact = read_json(resolve_repo_path(contract["generated_artifact_path"]))
-    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    subprocess.run(
+        python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT),
+        cwd=ROOT,
+        check=True,
+    )
+    contract = load_json_object(PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH)
+    owner_policy = require_platform_hardening_owner_policy(contract, surface_name="platform matrix artifact contract")
+    blocker_metadata = require_platform_hardening_blocker_metadata(
+        contract,
+        surface_name="platform matrix artifact contract",
+        required_blockers=("platform matrix artifact missing source-owned owner policy",),
+    )
+    schema = load_json_object(PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH)
+    artifact = load_json_object(resolve_repo_path(contract["generated_artifact_path"]))
+    runbook_text = PLATFORM_RUNBOOK_PATH.read_text(encoding="utf-8")
 
     publication_surface = artifact["publication_surface"]
     checks = {
-        "schema_exists": SCHEMA_PATH.is_file(),
+        "schema_exists": PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH.is_file(),
         "generator_script_exists": resolve_repo_path(contract["generator_script"]).is_file(),
         "artifact_exists": resolve_repo_path(contract["generated_artifact_path"]).is_file(),
         "summary_exists": resolve_repo_path(contract["generated_summary_path"]).is_file(),
@@ -47,7 +47,7 @@ def main() -> int:
         "artifact_has_required_fields": all(field in artifact for field in contract["required_fields"]),
         "artifact_has_required_publication_fields": all(field in publication_surface for field in contract["required_publication_surface_fields"]),
         "runbook_mentions_machine_owned_artifact_contract": "## Machine-Owned Artifact Contract" in runbook_text,
-        "runbook_mentions_support_matrix_artifact_path": "`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`" in runbook_text,
+        "runbook_mentions_support_matrix_artifact_path": f"`{contract['generated_artifact_path']}`" in runbook_text,
     }
 
     payload = {
@@ -57,18 +57,21 @@ def main() -> int:
         "runner_path": "scripts/build_platform_hardening_artifact_contract_summary.py",
         "required_field_count": len(contract["required_fields"]),
         "required_publication_field_count": len(contract["required_publication_surface_fields"]),
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "checks": checks,
     }
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    write_json_file(JSON_OUT, payload)
-    MD_OUT.write_text(
-        "# Platform Matrix Artifact Contract Summary\n\n"
-        f"- Contract: `{payload['source_contract_id']}`\n"
-        f"- Required fields: `{payload['required_field_count']}`\n"
-        f"- Required publication fields: `{payload['required_publication_field_count']}`\n"
-        f"- Status: `{payload['status']}`\n",
-        encoding="utf-8",
+    write_json(ARTIFACT_CONTRACT_SUMMARY_PATH, payload)
+    write_markdown_summary(
+        ARTIFACT_CONTRACT_SUMMARY_PATH.with_suffix(".md"),
+        "Platform Matrix Artifact Contract Summary",
+        (
+            ("Contract", payload["source_contract_id"]),
+            ("Required fields", payload["required_field_count"]),
+            ("Required publication fields", payload["required_publication_field_count"]),
+            ("Status", payload["status"]),
+        ),
     )
     print(json.dumps(payload, indent=2))
     return 0 if payload["status"] == "PASS" else 1

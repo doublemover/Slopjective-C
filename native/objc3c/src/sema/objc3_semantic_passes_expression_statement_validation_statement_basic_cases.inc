@@ -1,0 +1,3 @@
+#include "sema/objc3_semantic_passes_expression_statement_validation_statement_binding_cases.inc"
+#include "sema/objc3_semantic_passes_expression_statement_validation_statement_return_case.inc"
+#include "sema/objc3_semantic_passes_expression_statement_validation_statement_expr_case.inc"

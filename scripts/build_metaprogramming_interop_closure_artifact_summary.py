@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from objc3c_tooling.json_io import write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_has_actions
 import json
 from pathlib import Path
 from typing import Any
@@ -16,8 +17,7 @@ ACCEPTANCE_PATH = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
 INTEGRATION_PATH = ROOT / "scripts/check_objc3c_runtime_architecture_integration.py"
 CONFORMANCE_PATH = ROOT / "scripts/check_objc3c_runnable_metaprogramming_conformance.py"
 E2E_PATH = ROOT / "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
-FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 RUNTIME_IMPORT_PATH = ROOT / "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
 RUNTIME_CPP_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 
@@ -33,7 +33,6 @@ def main() -> int:
     integration_text = INTEGRATION_PATH.read_text(encoding="utf-8")
     conformance_text = CONFORMANCE_PATH.read_text(encoding="utf-8")
     e2e_text = E2E_PATH.read_text(encoding="utf-8")
-    workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
     frontend_artifacts_text = FRONTEND_ARTIFACTS_PATH.read_text(encoding="utf-8")
     runtime_import_text = RUNTIME_IMPORT_PATH.read_text(encoding="utf-8")
     runtime_cpp_text = RUNTIME_CPP_PATH.read_text(encoding="utf-8")
@@ -48,7 +47,7 @@ def main() -> int:
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
         "runbook_mentions_shared_acceptance_truth": "the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`" in runbook_text,
-        "runbook_forbids_parallel_milestone_local_manifest_truth": "milestone-local checks must consume those emitted surfaces instead of creating parallel manifest truth" in runbook_text,
+        "runbook_forbids_parallel_milestone_local_manifest_truth": "release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth" in runbook_text,
         "acceptance_builds_metaprogramming_surfaces": all(
             builder in acceptance_text
             for builder in (
@@ -62,7 +61,9 @@ def main() -> int:
         "integration_replays_shared_metaprogramming_surfaces": all(surface in integration_text for surface in contract["canonical_surfaces"][:-1]),
         "conformance_preserves_metaprogramming_surface_packets": all(surface in conformance_text for surface in contract["canonical_surfaces"][:-1]),
         "e2e_preserves_packaged_metaprogramming_artifacts": all(token in e2e_text for token in ("provider_host_cache_artifact_path", "provider_runtime_import_surface_path", "consumer_link_plan_path")),
-        "workflow_preserves_public_metaprogramming_commands": "validate-metaprogramming-conformance" in workflow_text and "validate-runnable-metaprogramming" in workflow_text,
+        "workflow_preserves_public_metaprogramming_commands": public_workflow_has_actions(
+            ["validate-metaprogramming-conformance", "validate-runnable-metaprogramming"]
+        ),
         "frontend_artifacts_publish_synthesized_accessor_surface": "executable_synthesized_accessor_property_lowering_surface" in frontend_artifacts_text,
         "runtime_import_surface_preserves_property_behavior_artifact_counts": "metaprogramming_local_interface_property_behavior_artifact_count" in runtime_import_text and "metaprogramming_local_implementation_property_behavior_artifact_count" in runtime_import_text,
         "runtime_cpp_preserves_metaprogramming_cache_snapshot_symbols": "objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing" in runtime_cpp_text and "objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing" in runtime_cpp_text,

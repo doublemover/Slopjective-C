@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-extension-registry-compat-contract-behavior-owner-split",
+  "owner_phase": "strict_error",
+  "source_contracts": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/w1_hard_fail_invalid_utf8",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w2_hard_fail_invalid_utf8"
+  ],
+  "support_boundary": "strict-error ownership covers extension registry fail-closed scenarios: invalid UTF-8 in W1/W2 fixture text, non-waiverable schema/validator/gating drift promoted as support, compatibility labels promoted as public support, generated/report rows promoted as support, and old-mode/gate/retired-route/compat rows promoted as positive registry behavior.",
+  "phase_support_claim_authority": false,
+  "negative_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/extension_registry_compat_contract/w1_hard_fail_invalid_utf8",
+    "tests/tooling/fixtures/extension_registry_compat_contract/w2_hard_fail_invalid_utf8",
+    "hard_fail_class:invalid_utf8",
+    "hard_fail_class:non_waiverable_schema_drift",
+    "hard_fail_class:validator_nondeterminism",
+    "hard_fail_class:publication_gate_ambiguity",
+    "*compatibility-as-support*",
+    "*compatibility_as_support*",
+    "*retired-route-as-positive*",
+    "*gate-as-positive*",
+    "*old-mode-as-positive*",
+    "*compat-as-positive*",
+    "*generated-as-support*",
+    "*report-as-support*",
+    "*runner-only-as-support*"
+  ],
+  "canonical_anchor": "tests/native/e2e/negative_execution",
+  "retired_surface_rule": "invalid UTF-8, non-waiverable schema drift, validator nondeterminism, publication-gate ambiguity, compatibility-as-support, retired-route-as-positive, gate-as-positive, old-mode-as-positive, generated-as-support, report-as-support, migration-as-support, wrapper-only success, and runner-only success claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

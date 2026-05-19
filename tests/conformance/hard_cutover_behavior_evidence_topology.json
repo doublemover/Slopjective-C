@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-hard-cutover-behavior-evidence-topology",
+  "source_basis": "hand-authored indexes under tests/native, tests/fixtures, tests/conformance, and docs/issues; no validation was run for this topology",
+  "policy": {
+    "primary_axis": "behavior phase before issue number",
+    "positive_fixture_rule": "positive fixtures remain canonical Objective-C 3 behavior only",
+    "negative_fixture_rule": "retired modes, retired adapters, alternate acceptance paths, retired-source lanes, unsupported features, and unresolved runtime surfaces are rejection or strict-error evidence",
+    "generated_fixture_rule": "generated artifacts are provenance evidence and cannot define positive behavior",
+    "closeout_rule": "issue closeout points to behavior fixtures and owner paths, not prose-only completion claims"
+  },
+  "topology": [
+    {
+      "phase": "parser",
+      "families": [
+        "positive",
+        "negative",
+        "snapshots"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/parser/positive/canonical_module_main.objc3",
+        "tests/native/parser/positive/objc_property_surface.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+        "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+        "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3"
+      ],
+      "owner_index_area": "parser_lexer_ast",
+      "issues": [
+        "#8132",
+        "#8134",
+        "#8146"
+      ],
+      "retired_surface_disposition": "parser old-mode spellings and retired route flags are parser rejections"
+    },
+    {
+      "phase": "sema",
+      "families": [
+        "types",
+        "ownership",
+        "objc",
+        "control_flow",
+        "concurrency",
+        "errors",
+        "negative"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/sema/types/typed_i32_bool_flow.objc3",
+        "tests/native/sema/ownership/strong_id_assignment.objc3",
+        "tests/native/sema/objc/objc_interface_method_contract.objc3",
+        "tests/native/sema/control_flow/definite_return_if_else.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+        "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+        "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
+        "tests/native/sema/types/assignment_unknown_target_rejected.objc3"
+      ],
+      "owner_index_area": "semantic_diagnostics",
+      "issues": [
+        "#8135",
+        "#8145",
+        "#8147"
+      ],
+      "retired_surface_disposition": "retired adapter gates and unsupported feature gates are semantic diagnostics"
+    },
+    {
+      "phase": "lowering",
+      "families": [
+        "expressions",
+        "statements",
+        "objc_runtime",
+        "ownership",
+        "errors"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+        "tests/native/lowering/statements/if_else_statement_lowering.objc3",
+        "tests/native/lowering/objc_runtime/nil_receiver_runtime_call_elision.objc3",
+        "tests/native/lowering/ownership/block_capture_owned_value_lowering.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+        "tests/native/lowering/errors/shadowed_nil_runtime_dispatch_strict_error.objc3",
+        "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+        "tests/native/lowering/objc_runtime/numeric_zero_receiver_requires_runtime_dispatch_strict_error.objc3"
+      ],
+      "owner_index_area": "lowering_and_ir",
+      "issues": [
+        "#8136",
+        "#8137",
+        "#8147"
+      ],
+      "retired_surface_disposition": "runtime retired route lowering stays strict-error or removed-flag rejection evidence"
+    },
+    {
+      "phase": "ir",
+      "families": [
+        "module",
+        "function",
+        "metadata",
+        "runtime_calls"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/ir/module/basic_i32_return_main.objc3",
+        "tests/native/ir/function/helper_function_emission.objc3",
+        "tests/native/ir/metadata/module_metadata_name.objc3",
+        "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3"
+      ],
+      "owner_index_area": "lowering_and_ir",
+      "issues": [
+        "#8137",
+        "#8147"
+      ],
+      "retired_surface_disposition": "unresolved runtime helper/call evidence is strict-error, not retired route support"
+    },
+    {
+      "phase": "runtime",
+      "families": [
+        "dispatch",
+        "errors",
+        "object_model",
+        "storage",
+        "reflection",
+        "public_abi",
+        "arc",
+        "blocks",
+        "concurrency"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+        "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
+        "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
+        "tests/native/runtime/concurrency/actor_executor_contract.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+        "tests/native/runtime/dispatch/nonzero_constant_receiver_dispatch_strict_error.objc3",
+        "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3",
+        "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp",
+        "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+      ],
+      "runtime_probe_evidence": [
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+        "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp"
+      ],
+      "owner_index_area": "runtime_dispatch_registration",
+      "related_owner_areas": [
+        "runtime_storage_reflection_public_abi",
+        "frontend_public_c_api_runner"
+      ],
+      "issues": [
+        "#8133",
+        "#8141",
+        "#8143",
+        "#8144"
+      ],
+      "retired_surface_disposition": "runtime dispatch retired route is strict-error behavior; storage/reflection/public ABI probes are canonical owner evidence only"
+    },
+    {
+      "phase": "e2e",
+      "families": [
+        "smoke",
+        "feature_matrix",
+        "negative_execution"
+      ],
+      "canonical_positive_evidence": [
+        "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+        "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+        "tests/native/e2e/feature_matrix/nil_keyword_message_send_elision.objc3"
+      ],
+      "strict_or_rejection_evidence": [
+        "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+        "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+      ],
+      "owner_index_area": "canonical_behavior_fixtures",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "retired_surface_disposition": "legacy literals and runtime dispatch misses stay negative or strict-error execution evidence"
+    },
+    {
+      "phase": "generated_boundary",
+      "families": [
+        "generated_contract_artifacts",
+        "tooling_fixture_catalog",
+        "issue_closeout_artifacts"
+      ],
+      "canonical_positive_evidence": [],
+      "strict_or_rejection_evidence": [
+        "tests/fixtures/generated/manifest.json",
+        "tests/tooling/fixtures/native/fixture_family_catalog.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.json"
+      ],
+      "owner_index_area": "pipeline_artifacts_config_json",
+      "issues": [
+        "#8138",
+        "#8144",
+        "#8145",
+        "#8148",
+        "#8150"
+      ],
+      "retired_surface_disposition": "generated and issue artifacts are evidence indexes only and cannot widen behavior support"
+    }
+  ],
+  "closeout_indexes": [
+    "tests/conformance/hard_cutover_issue_index.json",
+    "tests/conformance/hard_cutover_acceptance_area_owners.json",
+    "tests/conformance/hard_cutover_retired_surface_absence.json",
+    "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+    "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "docs/issues/hard_cutover_8132_8150_evidence.json",
+    "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
+  ]
+}

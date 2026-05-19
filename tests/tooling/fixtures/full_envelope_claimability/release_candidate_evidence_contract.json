@@ -4,7 +4,7 @@
   "milestone": "M324",
   "issue": "M324-D002",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/check_full_envelope_claimability_release_candidate_evidence.py",
+  "summary_implementation_anchor": "scripts/check_full_envelope_claimability_release_candidate_evidence.py",
   "required_reports": [
     "tmp/reports/full-envelope-claimability/dashboard-summary.json",
     "tmp/reports/full-envelope-claimability/public-summary.json",
@@ -18,7 +18,7 @@
     "published_sbom",
     "published_attestation",
     "update_manifest_path",
-    "compatibility_report",
+    "upgrade_support_report",
     "channel_catalog",
     "trust_report_json"
   ]

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "runtime",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "runtime fixtures own dispatch status, object model, storage, reflection, public ABI, ARC, blocks, and concurrency behavior",
+  "positive_support_authority": "tests/native/runtime/{object_model,storage,arc,blocks,concurrency}",
+  "negative_support_authority": "tests/native/runtime/{dispatch,errors}",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "selectors": [
+        "message_send_numeric_zero_receiver_non_elided.objc3",
+        "message_send_keyword_bool_control_flow_mix.objc3",
+        "message_send_nonzero_*_fast_path.objc3",
+        "message_send_*_non_fast_path.objc3"
+      ],
+      "disposition": "runtime-dispatch requirement evidence only when live dispatch remains canonical"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/positive",
+      "selectors": [
+        "*runtime_dispatch*.meta.json",
+        "registration_reset_replay_runtime_entrypoints.*"
+      ],
+      "disposition": "live dispatch positives must name objc3_runtime_dispatch_i32 and require live runtime dispatch"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/negative",
+      "selectors": [
+        "expect_failure.stage=run + O3RT*",
+        "execution.requires_live_runtime_dispatch=true"
+      ],
+      "disposition": "strict runtime-status and dispatch-error evidence"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+    "tests/native/runtime/storage/property_accessor_storage_contract.objc3",
+    "tests/native/runtime/arc/strong_id_lifetime_contract.objc3",
+    "tests/native/runtime/blocks/block_capture_runtime_contract.objc3",
+    "tests/native/runtime/concurrency/actor_executor_contract.objc3",
+    "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+    "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol_strict_error.objc3"
+  ],
+  "retired_surface_rule": "runtime dispatch retired route and unresolved dispatch symbols are strict errors"
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "sema",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.sema.typed-flow",
+  "positive_support_authority": "tests/native/sema/{types,ownership,objc,control_flow,concurrency}",
+  "negative_support_authority": "tests/native/sema/{negative,errors,concurrency}",
+  "fixtures": [
+    {
+      "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
+      "behavior_family": "negative",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_value_from_void_strict_error.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_nonvoid_missing_value_rejected.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S221"
+    },
+    {
+      "path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "retired_surface_tags": [
+        "runtime-adapter"
+      ],
+      "expected_diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
+    },
+    {
+      "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/types/assignment_unknown_target_rejected.objc3",
+      "behavior_family": "types",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S214"
+    },
+    {
+      "path": "tests/native/sema/ownership/strong_id_assignment.objc3",
+      "behavior_family": "ownership",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/objc/objc_interface_method_contract.objc3",
+      "behavior_family": "objc",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/control_flow/definite_return_if_else.objc3",
+      "behavior_family": "control_flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/control_flow/continue_outside_loop_rejected.objc3",
+      "behavior_family": "control_flow",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S213"
+    },
+    {
+      "path": "tests/native/sema/concurrency/async_await_value_flow.objc3",
+      "behavior_family": "concurrency",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3",
+      "behavior_family": "concurrency",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S221"
+    }
+  ],
+  "retired_surface_rule": "retired adapter gates and unsupported feature claims are semantic diagnostics"
+}

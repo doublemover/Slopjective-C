@@ -3,10 +3,11 @@
 Live runtime surface:
 
 - archive: `artifacts/lib/objc3_runtime.lib`
-- public header: `native/objc3c/src/runtime/objc3_runtime.h`
+- public header: `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - primary entrypoints:
   - `objc3_runtime_register_image`
   - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32_checked`
   - `objc3_runtime_dispatch_i32`
   - `objc3_runtime_reset_for_testing`
 
@@ -21,7 +22,7 @@ Current dispatch path:
 2. the runtime interns or resolves the selector through `objc3_runtime_lookup_selector`
 3. dispatch probes the method cache and then the realized class/category/protocol slow path
 4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
-5. unresolved sends still fall back to the deterministic arithmetic path in `ComputeDispatchResult`
+5. unresolved sends return a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`; the current `i32` entrypoint returns values only for successful or nil-receiver sends and aborts on strict dispatch errors
 
 Installation lifecycle:
 
@@ -77,7 +78,7 @@ Property/ivar/storage/accessor source surface:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
   - `Objc3PropertyDecl.ivar_binding_symbol`
@@ -103,7 +104,7 @@ Property/ivar/storage/accessor source surface:
   - later storage legality, synthesis, lowering, runtime realization, and
     property/reflection conformance work must consume the AST/sema-approved
     source boundary instead of re-deriving semantics from sidecars or
-    milestone-local notes
+    release-scope notes
   - lowering may serialize these fields into emitted artifacts but must not
     invent property storage, accessor selectors, or ownership semantics beyond
     the frozen source model
@@ -123,7 +124,7 @@ Property atomicity/synthesis/reflection source surface:
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
@@ -336,7 +337,7 @@ Category attachment and merged dispatch surface:
   - registration attaches category-owned instance and protocol members onto live
     realized classes before dispatch
   - attached-category implementations override base-class instance lookup
-    before superclass and protocol fallback
+    before superclass and protocol strict-error checks
   - attached categories publish owner and name through realized class entries
     and protocol-conformance queries
 
@@ -382,13 +383,13 @@ Authoritative code paths for the current tranche:
 
 - runtime registration and dispatch:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - message-send lowering:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - compile and artifact publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - runtime/lowering boundary comments:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
 - published architecture map:
@@ -410,7 +411,7 @@ Integrated runtime architecture proof:
 - runner:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
 - public action:
-  - `python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture`
+  - `npm run objc3c -- proof-runtime-architecture`
 - integrated packet:
   - `tmp/reports/runtime/architecture-proof/summary.json`
 
@@ -419,6 +420,6 @@ Integrated runtime architecture validation:
 - runner:
   - `scripts/check_objc3c_runtime_architecture_integration.py`
 - public action:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+  - `npm run objc3c -- validate-runtime-architecture`
 - integrated summary:
   - `tmp/reports/runtime/architecture-integration/summary.json`

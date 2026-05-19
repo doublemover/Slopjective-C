@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/scheduler_executor_cancellation_policy.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
+  ],
+  "support_boundary": "runtime ownership covers private continuation, task, task-group, cancellation, executor-hop, actor isolation, actor mailbox, actor replay/race-guard, runtime snapshot helper ABI, and runtime support/library behavior only; private-snapshot-only rows, probe-payload-only rows, generated reports, manifests, descriptors, and workflow labels stay provenance",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "private_runtime_abi_boundary:objc3_runtime_allocate_async_continuation_i32",
+    "private_runtime_abi_boundary:objc3_runtime_handoff_async_continuation_to_executor_i32",
+    "private_runtime_abi_boundary:objc3_runtime_resume_async_continuation_i32",
+    "private_runtime_abi_boundary:objc3_runtime_spawn_task_i32",
+    "private_runtime_abi_boundary:objc3_runtime_enter_task_group_scope_i32",
+    "private_runtime_abi_boundary:objc3_runtime_add_task_group_task_i32",
+    "private_runtime_abi_boundary:objc3_runtime_wait_task_group_next_i32",
+    "private_runtime_abi_boundary:objc3_runtime_cancel_task_group_i32",
+    "private_runtime_abi_boundary:objc3_runtime_task_is_cancelled_i32",
+    "private_runtime_abi_boundary:objc3_runtime_task_on_cancel_i32",
+    "private_runtime_abi_boundary:objc3_runtime_executor_hop_i32",
+    "authoritative_runtime_symbols:objc3_runtime_actor_enter_isolation_thunk_i32",
+    "authoritative_runtime_symbols:objc3_runtime_actor_mailbox_enqueue_i32",
+    "authoritative_runtime_symbols:objc3_runtime_copy_actor_runtime_state_for_testing",
+    "authoritative_probe_paths:tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+    "authoritative_probe_paths:tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "public concurrency runtime ABI widening, retired route runtime behavior, compatibility gate runtime closure, old-mode runtime behavior, evidence-log runtime closure, manifest-only runtime support, descriptor-only runtime-registration, private-snapshot-only proof, probe-payload-only proof, scheduler fairness, distributed actor transport, external executor integration, and non-runtime-backed ARC/error/interop interaction claims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

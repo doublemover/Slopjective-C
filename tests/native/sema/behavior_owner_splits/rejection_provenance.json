@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-sema-behavior-family-owner-split",
+  "owner_boundary": "rejection_provenance",
+  "source_family": "tests/native/sema",
+  "support_boundary": "rejection/provenance ownership covers sema compatibility-gate gates, retired adapter tags, and any generated-only, evidence-log, migration-only, old-mode, gate, or retired route sema claims",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "errors/removed_compatibility_gate_rejected.objc3",
+    "errors/removed_compatibility_gate_rejected.meta.json",
+    "errors/removed_compatibility_gate_rejected.meta.json:retired_surface_tags=runtime-adapter",
+    "errors/removed_compatibility_gate_rejected.meta.json:boundary.retired_positive_surface=true",
+    "errors/removed_compatibility_gate_rejected.meta.json:execution.native_compile_args=-fobjc3-compatibility-gates=on",
+    "errors/removed_compatibility_gate_rejected.meta.json:boundary.behavior_contract=canonical-rejection",
+    "errors/removed_compatibility_gate_rejected.meta.json:boundary.retired_route_allowed=false",
+    "errors/removed_compatibility_gate_rejected.meta.json:boundary.gate_allowed=false",
+    "*old-mode*",
+    "*compatibility-gate*",
+    "*gate*",
+    "*retired-route*",
+    "*generated-only*",
+    "*evidence-log*",
+    "*migration-only*"
+  ],
+  "canonical_anchor": "tests/native/sema/errors/removed_compatibility_gate_rejected.meta.json",
+  "retired_surface_rule": "old-mode, compatibility-gate, retired route, generated-only, evidence-log, and migration-only sema surfaces are canonical rejection or provenance-only evidence, never positive sema behavior truth"
+}

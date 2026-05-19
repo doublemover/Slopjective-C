@@ -1,0 +1,26 @@
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_boundary_export_row_helpers.h"
+
+#include <sstream>
+
+#include "ir/objc3_ir_c_string.h"
+
+void BeginObjc3IRRuntimeBoundaryExportMetadataRow(
+    const char *metadata_node_id, const std::string &contract_id,
+    std::ostringstream &out) {
+  out << metadata_node_id << " = !{!\"" << EscapeCStringLiteral(contract_id)
+      << "\"";
+}
+
+void EmitObjc3IRRuntimeBoundaryExportBoolField(bool field_value,
+                                               std::ostringstream &out) {
+  out << ", i1 " << (field_value ? 1 : 0);
+}
+
+void EmitObjc3IRRuntimeBoundaryExportSizeField(std::size_t field_value,
+                                               std::ostringstream &out) {
+  out << ", i64 " << static_cast<unsigned long long>(field_value);
+}
+
+void EndObjc3IRRuntimeBoundaryExportMetadataRow(std::ostringstream &out) {
+  out << "}\n";
+}

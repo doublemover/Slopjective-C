@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt"
+  ],
+  "support_boundary": "lowering ownership covers canonical Objective-C 3 lowering behavior for recovery positive sources: entrypoint ABI handoff, literal and global initializer lowering, assignment and compound-assignment lowering, increment/decrement lowering, loop and switch control lowering, conditional select lowering, unary-plus lowering, bitwise/modulo lowering, nil receiver elision, nil-bound identifier elision, receiver fast-path/non-fast-path lowering, and runtime dispatch call lowering. Native .m dispatch probes and dispatch-ir marker files are provenance for legacy lowering-dispatch markers, not canonical Objective-C 3 lowering truth by themselves.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_basic.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_keywords.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*elision*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/message_send_*fast_path.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*compound_assignment*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*increment_decrement*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*switch*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*loop*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/unary_plus*.objc3"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "old-mode lowering recovery, gate lowering recovery, retired route lowering recovery, compatibility lowering recovery, generated-only lowering rows, evidence-log lowering rows, migration-only lowering rows, native .m lowering claims, dispatch-ir marker claims as source truth, and directory-label-only lowering claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

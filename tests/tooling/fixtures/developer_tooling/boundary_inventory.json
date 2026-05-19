@@ -4,32 +4,22 @@
   "milestone": "M325",
   "issue": "M325-A001",
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
-  "summary_script": "scripts/build_developer_tooling_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_developer_tooling_boundary_inventory_summary.py",
   "authoritative_code_paths": [
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
     "native/objc3c/src/io/objc3_cli_reporting_output_contract_scaffold.h",
     "native/objc3c/src/io/objc3_cli_reporting_output_contract_core_feature_surface.h",
     "native/objc3c/src/io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/metadata/runtime_snapshot_helpers.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/io/objc3_process.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
     "native/objc3c/src/lower/objc3_lowering_contract.cpp",
     "native/objc3c/src/lower/objc3_lowering_contract.h",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp"
   ],
-  "public_commands": [
-    "build:objc3c:playground",
-    "inspect:objc3c:editor",
-    "format:objc3c",
-    "inspect:objc3c:observability",
-    "inspect:objc3c:runtime",
-    "inspect:objc3c:capabilities",
-    "inspect:objc3c:benchmark",
-    "trace:objc3c:stages",
-    "test:objc3c:developer-tooling",
-    "test:objc3c:runnable-developer-tooling"
-  ],
+  "package_bridge": "objc3c",
   "public_actions": [
     "materialize-playground-workspace",
     "inspect-editor-tooling",
@@ -53,6 +43,9 @@
     "tmp/reports/developer-tooling/workspace-integration-summary.json",
     "tmp/reports/runtime/runnable-developer-tooling-e2e/summary.json"
   ],
+  "owner_contract_paths": [
+    "tests/tooling/fixtures/developer_tooling/hosted_llvm_tool_capability_owner_contract.json"
+  ],
   "supported_capabilities": [
     "compile-observability",
     "runtime-inspector",
@@ -67,7 +60,14 @@
     "integrated-developer-tooling-validation",
     "packaged-cli-to-editor-contract"
   ],
+  "capability_truth_boundaries": [
+    "hosted LLVM capability truth requires hosted clang plus llc object-emission summary evidence",
+    "local LLVM probe output is diagnostic only and does not prove hosted execution support",
+    "unpublished language-server capabilities remain blocked until implemented by owned action surfaces"
+  ],
   "gap_capabilities": [
+    "hosted-execution-without-llc-object-emission",
+    "local-only-hosted-proof",
     "source-map-debug-info-stepping",
     "references-rename-semantic-tokens-code-actions"
   ],

@@ -4,7 +4,23 @@
   "milestone": "M321",
   "issue": "M321-B002",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+    "error_runtime_provenance"
+  ],
+  "compatibility_behavior_boundary": "bridge compatibility is a narrowed private-helper/runtime-registration replay contract; wider public ABI, foreign-runtime, retired route, gate, old-mode, generated-only, or evidence-log compatibility claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+  "compatibility_boundary_policy": {
+    "primary_axis": "behavior owner before bridge compatibility label, result bridge metadata, runtime-registration replay proof, runtime-import preservation row, private helper snapshot, or foreign-runtime claim",
+    "support_authority": "bridged NSError/status and result bridge claims are provenance until sema, runtime, or e2e owners claim the narrowed private-helper and runtime-registration replay behavior",
+    "positive_support_from_label": false,
+    "positive_support_from_metadata": false,
+    "retired_surface_rule": "foreign-runtime bridge compatibility, compatibility-only rows, result-bridge-metadata-only rows, runtime-import-only rows, gate bridge rows, retired route bridge rows, old-mode bridge rows, evidence-log rows, and public ABI widening rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "canonical_surfaces": [
     "runtime_bridging_filter_unwind_diagnostics_surface",
     "runtime_error_lowering_unwind_bridge_helper_surface",
@@ -13,7 +29,7 @@
   ],
   "compatibility_rules": [
     "bridged NSError and status propagation remain supported only through the emitted helper ABI and runtime bridge-state snapshot path",
-    "cross-module propagation claims are limited to the manifest, runtime-registration, replay, and packaged runnable proof path already exercised by live validation",
+    "cross-module propagation claims are limited to the manifest, runtime-registration, replay, and packaged runnable evidence path already exercised by live validation",
     "bridge compatibility remains fail-closed where a wider public ABI, richer interop transport, or foreign-runtime model would be required",
     "public claims stay narrower than the private runtime-owned helper ABI and runtime bridge-state evidence"
   ],
@@ -34,7 +50,7 @@
     "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge.cpp",
     "scripts/check_objc3c_runnable_error_conformance.py",
     "scripts/check_objc3c_runnable_error_end_to_end.py"
   ],

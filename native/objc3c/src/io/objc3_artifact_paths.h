@@ -1,0 +1,68 @@
+#pragma once
+
+#include <filesystem>
+#include <string>
+
+std::filesystem::path BuildManifestArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeMetadataBinaryArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeMetadataLinkerResponseArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildErrorHandlingResultBridgeArtifactReplayPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildVersionedConformanceReportArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildConformancePublicationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildConformanceValidationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildReleaseEvidenceOperationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildDashboardStatusArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildAdvancedFeatureGateArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildReleaseCandidateMatrixArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildMetaprogrammingMacroHostProcessCacheArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildInteropBridgeHeaderArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildInteropBridgeModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildInteropBridgeArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);

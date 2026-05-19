@@ -2,7 +2,7 @@
 
 Active repo content no longer points directly at the archived `spec/` corpus. This index preserves the legacy file and anchor targets that existing docs, scripts, conformance metadata, and reports used to cite.
 
-Use topic-specific docs when they exist. Use this page only as a compatibility redirect layer while the old `spec/` tree remains in-repo but decommissioned from active navigation.
+Use topic-specific docs when they exist. Use this page only as a retired-reference anchor bridge while the old `spec/` tree remains in-repo but decommissioned from active navigation; it is not an old-surface support path.
 
 ## Legacy Files {#legacy-files}
 
@@ -766,25 +766,24 @@ Use topic-specific docs when they exist. Use this page only as a compatibility r
 ### 3-dry-run-scope-contract {#3-dry-run-scope-contract}
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
-- redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
+- redirect intent: keep retired anchor lookups resolvable for existing references while removing active dependencies on the archived `spec/` files; no compatibility support is implied.
 
 ### issue-134-optional-spelling-diagnostics-package {#issue-134-optional-spelling-diagnostics-package}
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
-- redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
+- redirect intent: keep retired anchor lookups resolvable for existing references while removing active dependencies on the archived `spec/` files; no compatibility support is implied.
 
 ### issue-135-mangling-invariants-vectors-plan {#issue-135-mangling-invariants-vectors-plan}
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
-- redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
+- redirect intent: keep retired anchor lookups resolvable for existing references while removing active dependencies on the archived `spec/` files; no compatibility support is implied.
 
 ### issue-136-reification-grammar-semantics-package {#issue-136-reification-grammar-semantics-package}
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
-- redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
+- redirect intent: keep retired anchor lookups resolvable for existing references while removing active dependencies on the archived `spec/` files; no compatibility support is implied.
 
 ### issue-189-closeout-comment-template {#issue-189-closeout-comment-template}
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
-- redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
-
+- redirect intent: keep retired anchor lookups resolvable for existing references while removing active dependencies on the archived `spec/` files; no compatibility support is implied.

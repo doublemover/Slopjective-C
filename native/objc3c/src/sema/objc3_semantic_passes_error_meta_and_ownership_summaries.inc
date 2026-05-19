@@ -1,0 +1,5 @@
+#include "sema/objc3_semantic_passes_metaprogramming_macro_property_completion_tail.inc"
+#include "sema/objc3_semantic_passes_ownership_resource_move_summary.inc"
+#include "sema/objc3_semantic_passes_ownership_borrowed_escape_summary.inc"
+#include "sema/objc3_semantic_passes_ownership_capture_retainable_family_summary.inc"
+#include "sema/objc3_semantic_passes_metaprogramming_derive_inventory_prefix.inc"

@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_task_runtime_cancellation_site_collection_symbol_predicates.inc"
+
+#include "parse/objc3_parser_task_runtime_cancellation_site_collection_site_counts.inc"
+
+#include "parse/objc3_parser_task_runtime_cancellation_site_collection_symbol_collection.inc"
+
+#include "parse/objc3_parser_task_runtime_cancellation_site_collection_body_counting.inc"

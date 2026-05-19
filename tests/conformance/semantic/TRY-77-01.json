@@ -14,7 +14,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-6-7-2",
     "docs/reference/legacy_spec_anchor_index.md#c-3-3"
   ],
-  "source": "id loadPrimary(id seed) throws;\nid loadSecondary(id seed) throws;\nid<Error> upgradeFailure(void);\n\nid? resolveDisplay(id seed) {\n    do {\n        do {\n            id value = try loadPrimary(seed);\n            return value;\n        } catch {\n            if (seed == nil) {\n                throw upgradeFailure();\n            }\n            id? fallback = try? loadSecondary(seed);\n            return fallback?;\n        }\n    } catch {\n        return nil;\n    }\n}\n",
+  "source": "id loadPrimary(id seed) throws;\nid loadSecondary(id seed) throws;\nid<Error> upgradeFailure(void);\n\nid? resolveDisplay(id seed) {\n    do {\n        do {\n            id value = try loadPrimary(seed);\n            return value;\n        } catch {\n            if (seed == nil) {\n                throw upgradeFailure();\n            }\n            id? retired route = try? loadSecondary(seed);\n            return retired route?;\n        }\n    } catch {\n        return nil;\n    }\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": []

@@ -2,15 +2,19 @@
 
 # Objc3c Native Frontend (Current Surface)
 
-The native frontend supports two input modes:
+The native frontend accepts two input classes:
 
 - `.objc3`: native lexer, parser, sema, lowering, IR emission, and object build
-- non-`.objc3`: Objective-C parse/diagnostics and object build through the Objective-C path
+- non-`.objc3`: Objective-C parse/diagnostics and object build through the
+  Objective-C path
+
+The non-`.objc3` path is a driver/frontend integration path. It does not create
+an alternate Objective-C 3.0 source mode or old-surface support path.
 
 ## CLI Usage
 
 ```text
-objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [-fobjc-version=<N>] [--objc3-language-version <N>] [--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
+objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [-fobjc-version=<N>] [--objc3-language-version <N>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
 Defaults:
@@ -20,7 +24,7 @@ Defaults:
 - clang: `clang`
 - llc: `llc`
 - language version: `3`
-- runtime dispatch symbol: `objc3_msgsend_i32`
+- runtime dispatch symbol: `objc3_runtime_dispatch_i32`
 
 ## C API Runner
 

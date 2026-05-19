@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 
-import json
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,30 @@ SCHEMA_SURFACE = (
 )
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "public-conformance" / "schema-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.schema.surface.summary.v1"
-
+JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
+EXPECTED_SCHEMAS = (
+    (
+        "dashboard_status_schema",
+        "objc3-conformance-dashboard-status-v1",
+        "https://objc3c.dev/schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        "schema_id",
+        "objc3-conformance-dashboard-status/v1",
+    ),
+    (
+        "public_scorecard_schema",
+        "objc3c-public-conformance-scorecard-v1",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-scorecard-v1.schema.json",
+        "contract_id",
+        "objc3c.public_conformance_reporting.scorecard.summary.v1",
+    ),
+    (
+        "public_summary_schema",
+        "objc3c-public-conformance-summary-v1",
+        "https://objc3c.dev/schemas/objc3c-public-conformance-summary-v1.schema.json",
+        "contract_id",
+        "objc3c.public_conformance_reporting.summary.v1",
+    ),
+)
 
 
 def fail(message: str) -> int:
@@ -31,12 +55,14 @@ def fail(message: str) -> int:
     return 1
 
 
-
-def require_path(relative_path: str, *, kind: str) -> Path:
-    path = ROOT / relative_path
-    if not path.exists():
-        raise RuntimeError(f"missing {kind}: {relative_path}")
-    return path
+def property_const(schema_payload: dict[str, Any], property_name: str) -> Any:
+    properties = schema_payload.get("properties")
+    if not isinstance(properties, dict):
+        return None
+    property_payload = properties.get(property_name)
+    if not isinstance(property_payload, dict):
+        return None
+    return property_payload.get("const")
 
 
 def main() -> int:
@@ -51,42 +77,43 @@ def main() -> int:
     if surface.get("schema_check_script") != "scripts/check_public_conformance_schema_surface.py":
         return fail("schema_check_script drifted")
 
-    dashboard_schema = surface.get("dashboard_status_schema")
-    scorecard_schema = surface.get("public_scorecard_schema")
-    summary_schema = surface.get("public_summary_schema")
-    if dashboard_schema != "schemas/objc3-conformance-dashboard-status-v1.schema.json":
-        return fail("dashboard_status_schema drifted")
-    if scorecard_schema != "schemas/objc3c-public-conformance-scorecard-v1.schema.json":
-        return fail("public_scorecard_schema drifted")
-    if summary_schema != "schemas/objc3c-public-conformance-summary-v1.schema.json":
-        return fail("public_summary_schema drifted")
+    checked_paths: list[str] = []
+    schema_ids: list[str] = []
+    schema_refs: dict[str, str] = {}
+    for (
+        surface_key,
+        registry_id,
+        expected_schema_url,
+        identity_property,
+        expected_identity,
+    ) in EXPECTED_SCHEMAS:
+        expected_path = repo_rel(schema_path(registry_id))
+        if surface.get(surface_key) != expected_path:
+            return fail(f"{surface_key} drifted from registered schema path {expected_path}")
 
-    dashboard_path = require_path(dashboard_schema, kind="dashboard status schema")
-    scorecard_path = require_path(scorecard_schema, kind="public scorecard schema")
-    summary_path = require_path(summary_schema, kind="public summary schema")
+        payload = load_schema(registry_id)
+        if payload.get("$schema") != JSON_SCHEMA_DRAFT:
+            return fail(f"{expected_path} drifted from draft 2020-12")
+        if payload.get("$id") != expected_schema_url:
+            return fail(f"{expected_path} drifted from expected schema id {expected_schema_url}")
+        if property_const(payload, identity_property) != expected_identity:
+            return fail(f"{surface_key} contract identity drifted")
 
-    dashboard_payload = load_json(dashboard_path)
-    scorecard_payload = load_json(scorecard_path)
-    summary_payload = load_json(summary_path)
-
-    if dashboard_payload.get("properties", {}).get("schema_id", {}).get("const") != "objc3-conformance-dashboard-status/v1":
-        return fail("dashboard schema identity drifted")
-    if scorecard_payload.get("properties", {}).get("contract_id", {}).get("const") != "objc3c.public_conformance_reporting.scorecard.summary.v1":
-        return fail("scorecard schema contract identity drifted")
-    if summary_payload.get("properties", {}).get("contract_id", {}).get("const") != "objc3c.public_conformance_reporting.summary.v1":
-        return fail("summary schema contract identity drifted")
+        checked_paths.append(expected_path)
+        schema_ids.append(expected_schema_url)
+        schema_refs[surface_key] = expected_path
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS",
-        "schema_surface_contract": repo_rel(SCHEMA_SURFACE),
-        "dashboard_status_schema": dashboard_schema,
-        "public_scorecard_schema": scorecard_schema,
-        "public_summary_schema": summary_schema,
+        "schema_surface": repo_rel(SCHEMA_SURFACE),
+        "dashboard_status_schema": schema_refs["dashboard_status_schema"],
+        "public_scorecard_schema": schema_refs["public_scorecard_schema"],
+        "public_summary_schema": schema_refs["public_summary_schema"],
+        "schemas": checked_paths,
+        "schema_ids": schema_ids,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("public-conformance-schema-surface: OK")
     return 0

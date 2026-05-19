@@ -31,12 +31,16 @@ Exact live implementation paths for downstream work:
 - `stdlib/modules/objc3.system/module.json`
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
-- `scripts/check_stdlib_surface.py`
-- `scripts/materialize_objc3c_stdlib_workspace.py`
-- `scripts/run_objc3c_stdlib_workspace_smoke.py`
-- `scripts/check_objc3c_stdlib_advanced_integration.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/objc3c_public_workflow_runner.py`
+- package bridge: `npm run objc3c -- <action>`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- materialize-stdlib-workspace`
+  - `npm run objc3c -- validate-stdlib-advanced`
+  - `npm run objc3c -- validate-runnable-stdlib-advanced`
+  - `npm run objc3c -- package-runnable-toolchain`
+
+Advanced-stdlib helper scripts are implementation anchors owned by the action
+registry, not separate current-facing commands.
 
 ## Advanced family split
 
@@ -75,7 +79,7 @@ The checked-in architecture contract requires these families to stay visible:
   - `executor-hop`
 - `objc3.keypath`
   - `typed-keypath-application`
-  - `typed-keypath-text-compatibility`
+  - `typed-keypath-text-shape`
   - `typed-keypath-metadata`
   - `reflection-interop`
   - `runtime-composition-adapter`
@@ -107,8 +111,8 @@ the checked-in architecture contract.
 
 - `objc3_keypath_apply_index`
 - `objc3_keypath_component_count`
-- `objc3_keypath_text_compatibility_score`
-- `objc3_keypath_text_compatibility_diagnostic`
+- `objc3_keypath_text_shape_score`
+- `objc3_keypath_text_shape_diagnostic`
 - `objc3_keypath_metadata_token`
 - `objc3_keypath_reflection_interop_token`
 - `objc3_keypath_runtime_composition_token`
@@ -148,11 +152,11 @@ the checked-in architecture contract.
 - `objc3_concurrency_executor_hop_token` returns the target executor when one
   is provided and otherwise preserves the current executor token
 - `objc3_concurrency_actor_mailbox_token` returns `actor_seed +
-  pending_messages` for nonnegative message counts and otherwise preserves the
+pending_messages` for nonnegative message counts and otherwise preserves the
   actor seed
 - `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
   provided cancellation flag is nonzero
-- key-path helpers preserve caller-visible component counts and compatibility
+- key-path helpers preserve caller-visible component counts and shape
   diagnostics instead of inventing reflection-owned storage
 - `objc3_keypath_metadata_token` returns `root + component_count`, while
   `objc3_keypath_reflection_interop_token` and
@@ -179,17 +183,17 @@ This milestone does not justify:
 - a duplicate advanced-helper tree outside `stdlib/`
 - public reflection or executor ABI claims without checked-in helper exports
 - moving strict-system hooks into always-on core imports
-- adding a second stdlib packaging flow or milestone-local wrapper scripts
+- adding a second stdlib packaging flow or release-scope wrapper scripts
 
 ## Live workflow surface
 
 The advanced-helper slice now owns a dedicated public validation action instead
 of hiding behind the generic stdlib label:
 
-- `npm run test:stdlib:advanced`
-- `npm run test:stdlib:advanced:e2e`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-advanced`
+- `npm run objc3c -- validate-stdlib-advanced`
+- `npm run objc3c -- validate-runnable-stdlib-advanced`
+- `npm run objc3c -- validate-stdlib-advanced`
+- `npm run objc3c -- validate-runnable-stdlib-advanced`
 
 That workflow must continue to:
 
@@ -198,5 +202,5 @@ That workflow must continue to:
 - prove the exact advanced-helper module subset from
   `stdlib/advanced_helper_package_surface.json`
 - write machine-owned reports under `tmp/reports/stdlib/`
-- preserve the same advanced-helper command surface from the staged runnable
+- preserve the same advanced stdlib command surface from the staged runnable
   toolchain bundle

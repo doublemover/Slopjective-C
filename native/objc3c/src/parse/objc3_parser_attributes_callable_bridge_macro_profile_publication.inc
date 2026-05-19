@@ -1,0 +1,3 @@
+#include "parse/objc3_parser_attributes_callable_bridge_macro_profile_publication_identity_package_provenance.inc"
+
+#include "parse/objc3_parser_attributes_callable_bridge_macro_profile_publication_cache_sandbox.inc"

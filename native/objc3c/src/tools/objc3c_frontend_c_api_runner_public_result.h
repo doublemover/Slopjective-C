@@ -1,0 +1,28 @@
+#pragma once
+
+#include <string>
+
+#include "libobjc3c_frontend/c_api.h"
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
+#include "tools/objc3c_frontend_c_api_runner_options.h"
+#include "tools/objc3c_frontend_c_api_runner_public_result_diagnostics.h"
+#include "tools/objc3c_frontend_c_api_runner_public_result_ownership.h"
+#include "tools/objc3c_frontend_c_api_runner_result_error_snapshot.h"
+
+struct FrontendCApiRunnerPublicResultView {
+  const char *backend_name = "clang";
+  unsigned status_code = 0;
+  int process_exit_code = 0;
+  bool success = false;
+  bool semantic_skipped = false;
+  FrontendCApiRunnerArtifactPathView paths;
+  FrontendCApiRunnerPublicResultDiagnostics diagnostics;
+  FrontendCApiRunnerCOwnershipView c_api_ownership;
+};
+
+FrontendCApiRunnerPublicResultView BuildFrontendCApiRunnerPublicResultView(
+    const FrontendCApiRunnerOptions &options,
+    const FrontendCApiRunnerArtifactPathView &paths,
+    objc3c_frontend_c_status_t status,
+    const objc3c_frontend_c_compile_result_t &result,
+    const FrontendCApiRunnerResultErrorSnapshot &error_snapshot);

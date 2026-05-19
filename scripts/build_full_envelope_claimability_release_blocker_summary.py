@@ -6,6 +6,30 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
+try:
+    from build_full_envelope_claimability_contracts import (
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        NON_PRODUCTION_PUBLIC_CLAIM_CLASSES,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+        ROLLOUT_CLASS_STABLE,
+        public_claim_class_for_rollout,
+    )
+except ModuleNotFoundError:
+    from scripts.build_full_envelope_claimability_contracts import (
+        DASHBOARD_DECISION_FIELDS,
+        DASHBOARD_SUMMARY,
+        NON_PRODUCTION_PUBLIC_CLAIM_CLASSES,
+        PUBLIC_SUMMARY,
+        PUBLIC_SUMMARY_DECISION_FIELDS,
+        ROLLOUT_CLASS_CANDIDATE,
+        ROLLOUT_CLASS_PREVIEW,
+        ROLLOUT_CLASS_STABLE,
+        public_claim_class_for_rollout,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/release_blocker_rollout_policy.json"
@@ -26,17 +50,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-
-
-def public_claim_class_for_rollout(
-    current_rollout_class: str,
-    production_strength_claimable: bool,
-) -> str:
-    if current_rollout_class == "stable" and production_strength_claimable:
-        return "production-strength"
-    if current_rollout_class == "candidate":
-        return "candidate-scoped"
-    return "preview-only"
 
 
 def build_dashboard_release_blocker_projection(
@@ -65,6 +78,8 @@ def build_dashboard_release_blocker_projection(
         "dashboard_summary_path": projection_contract["dashboard_summary_path"],
         "public_summary_path": projection_contract["public_summary_path"],
         "required_dashboard_fields": projection_contract["required_dashboard_fields"],
+        "required_public_summary_fields": projection_contract["required_public_summary_fields"],
+        "source_owned_decision_fields": projection_contract["source_owned_decision_fields"],
         "current_rollout_class": current_rollout_class,
         "public_claim_class": public_claim_class,
         "production_strength_claimable": production_strength_claimable,
@@ -114,12 +129,12 @@ def main() -> int:
         if triggered:
             triggered_policy_blockers.append(blocker)
 
-    current_rollout_class = "stable"
+    current_rollout_class = ROLLOUT_CLASS_STABLE
     if triggered_policy_blockers:
-        current_rollout_class = "preview"
+        current_rollout_class = ROLLOUT_CLASS_PREVIEW
     elif reports["public-conformance"]["payload"].get("public_status") == "caution":
-        current_rollout_class = "candidate"
-    production_strength_claimable = current_rollout_class == "stable"
+        current_rollout_class = ROLLOUT_CLASS_CANDIDATE
+    production_strength_claimable = current_rollout_class == ROLLOUT_CLASS_STABLE
     dashboard_projection, dashboard_blocker = build_dashboard_release_blocker_projection(
         contract, current_rollout_class, production_strength_claimable
     )
@@ -144,11 +159,27 @@ def main() -> int:
             for rollout in contract["rollout_classes"]
         ),
         "current_state_triggers_at_least_one_release_blocker": len(triggered_blockers) > 0,
-        "current_state_is_not_stable_rollout_ready": current_rollout_class != "stable",
+        "current_state_is_not_stable_rollout_ready": current_rollout_class != ROLLOUT_CLASS_STABLE,
         "dashboard_projection_configured": bool(dashboard_projection["blocker"]),
+        "dashboard_projection_names_canonical_outputs": (
+            dashboard_projection["dashboard_summary_path"] == DASHBOARD_SUMMARY
+            and dashboard_projection["public_summary_path"] == PUBLIC_SUMMARY
+        ),
+        "dashboard_projection_requires_source_owned_decisions": set(DASHBOARD_DECISION_FIELDS).issubset(
+            dashboard_projection["required_dashboard_fields"]
+        )
+        and set(PUBLIC_SUMMARY_DECISION_FIELDS).issubset(
+            dashboard_projection["required_public_summary_fields"]
+        )
+        and set(DASHBOARD_DECISION_FIELDS).issubset(
+            dashboard_projection["source_owned_decision_fields"]
+        )
+        and set(PUBLIC_SUMMARY_DECISION_FIELDS).issubset(
+            dashboard_projection["source_owned_decision_fields"]
+        ),
         "dashboard_projection_blocks_non_production_public_claims": (
             dashboard_projection["blocks_production_strength_claim"]
-            == (dashboard_projection["public_claim_class"] != "production-strength")
+            == (dashboard_projection["public_claim_class"] in NON_PRODUCTION_PUBLIC_CLAIM_CLASSES)
         ),
         "triggered_blockers_include_dashboard_projection": (
             not dashboard_projection["blocks_production_strength_claim"]

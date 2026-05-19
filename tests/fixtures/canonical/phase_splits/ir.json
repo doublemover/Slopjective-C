@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-phase-split",
+  "owner_phase": "ir",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "support_claim": "objc3c.behavior.ir.module-emission",
+  "positive_support_authority": "tests/native/ir/{module,function,metadata,runtime_calls}",
+  "negative_support_authority": "tests/native/ir/runtime_calls",
+  "fixtures": [
+    {
+      "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "behavior_family": "module",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/helper_function_emission.objc3",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/function/block_literal_helper_function_contract.objc3",
+      "behavior_family": "function",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/module_metadata_name.objc3",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/metadata/actor_executor_metadata_contract.objc3",
+      "behavior_family": "metadata",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/runtime_calls/nil_message_send_runtime_call_contract.objc3",
+      "behavior_family": "runtime_calls",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+      "behavior_family": "runtime_calls",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    }
+  ],
+  "retired_surface_rule": "non-nil runtime helper calls are strict-error linkage evidence, not retired route support"
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "fixture": "objc_property_surface.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "parser",
+  "behavior_family": "positive",
+  "fixture_kind": "positive",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-positive",
+    "retired_positive_surface": false
+  },
+  "expected": {
+    "stage": "parse",
+    "diagnostic_code": "",
+    "required_tokens": []
+  }
+}

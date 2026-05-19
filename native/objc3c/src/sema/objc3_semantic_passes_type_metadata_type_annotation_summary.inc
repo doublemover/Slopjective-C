@@ -1,0 +1,9 @@
+  handoff.type_annotation_surface_summary = Objc3TypeAnnotationSurfaceSummary{};
+
+#include "sema/objc3_semantic_passes_type_metadata_type_annotation_summary_function_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_type_annotation_summary_method_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_type_annotation_summary_property_accumulator.inc"
+
+#include "sema/objc3_semantic_passes_type_metadata_type_annotation_summary_determinism_readiness_checks.inc"

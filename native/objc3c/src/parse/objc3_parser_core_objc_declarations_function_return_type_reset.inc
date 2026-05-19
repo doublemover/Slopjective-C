@@ -1,0 +1,5 @@
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset_spelling.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset_generic_profiles.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset_module_profiles.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset_pointer_ownership.inc"
+#include "parse/objc3_parser_core_objc_declarations_function_return_type_reset_dispatch.inc"

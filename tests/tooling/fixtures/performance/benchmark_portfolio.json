@@ -3,6 +3,56 @@
   "schema_version": 1,
   "portfolio_kind": "live-benchmark-and-comparative-baseline-surface",
   "benchmark_root": "tests/tooling/fixtures/performance",
+  "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
+  "portfolio_boundary": {
+    "primary_axis": "behavior owner before benchmark workload, comparative baseline, timing row, cache row, raw sample packet, report root, artifact root, package staging, machine profile, generated report, public command wrapper, or retired-surface claim",
+    "support_authority": "benchmark workloads and comparative baselines are timing/provenance rows; canonical support is owned by behavior owner splits and cannot be inferred from workload names, benchmark classes, report roots, public commands, expected exit codes, or raw samples",
+    "comparative_baseline_rule": "Objective-C 2, Swift, and C++ reference baselines are comparison provenance only and cannot create Objective-C 3 behavior support",
+    "retired_surface_rule": "compatibility, retired route, wrapper-only, unsupported, old-mode, gate, generated-only, evidence-log, migration-only, cache-only, timing-only, local-only, hand-normalized, screenshot-derived, foreign-baseline, and cross-machine universal claims map to canonical_rejection or performance_provenance",
+    "evidence_boundary_rule": "parser, sema, lowering, IR, runtime, e2e, comparative baseline, benchmark timing, report publication, public command routing, raw sample, cache row, machine profile, and generated telemetry evidence are separately routed"
+  },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/parser.json",
+      "boundary": "source-form provenance for Objective-C 3 showcase workloads"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/sema.json",
+      "boundary": "story capability provenance for categories, reflection, status bridging, actors, derives, macros, property behaviors, and interop"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/lowering.json",
+      "boundary": "compile-latency and emitted-code workload shape before runtime or e2e measurement"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/ir.json",
+      "boundary": "artifact roots, package staging, telemetry schema, compile output, and generated report provenance"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/runtime.json",
+      "boundary": "runtime-wall-clock workload rows and expected exit-code provenance after runtime behavior ownership"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/e2e.json",
+      "boundary": "benchmark workflow shape, same-machine comparison rows, public commands, raw samples, report publication, and comparative baseline publication"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "compatibility, retired route, gate, old-mode, unsupported, wrapper-only, local-only, evidence-log, generated-only, migration-only, cache-only, timing-only, cross-machine, screenshot-derived, hand-normalized, and foreign-baseline rows"
+    },
+    {
+      "phase": "performance_provenance",
+      "path": "tests/tooling/fixtures/performance/behavior_owner_splits/performance_provenance.json",
+      "boundary": "benchmark portfolio rows, measurement policy rows, benchmark parameter rows, comparative baseline rows, public command wrappers, report roots, artifact roots, raw samples, machine profiles, tool versions, normalized values, generated reports, cache rows, timing rows, and owner split routing metadata"
+    }
+  ],
   "artifact_root": "tmp/artifacts/performance",
   "report_root": "tmp/reports/performance",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
@@ -10,10 +60,16 @@
   "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
   "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
   "telemetry_schema": "schemas/objc3c-performance-telemetry-v1.schema.json",
-  "public_entrypoints": {
-    "build_native": "build:objc3c-native",
-    "compile_objc3c": "compile:objc3c",
-    "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain"
+  "package_bridge": "objc3c",
+  "public_commands": {
+    "build_native": "npm run objc3c -- build-native-binaries",
+    "compile_objc3c": "npm run objc3c -- compile-objc3c",
+    "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain"
+  },
+  "public_actions": {
+    "build_native": "build-native-binaries",
+    "compile_objc3c": "compile-objc3c",
+    "package_runnable_toolchain": "package-runnable-toolchain"
   },
   "objc3_workloads": [
     {
@@ -25,6 +81,15 @@
       "source": "showcase/auroraBoard/main.objc3",
       "workspace_manifest": "showcase/auroraBoard/workspace.json",
       "expected_exit_code": 33,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "showcase workload timing only; categories, reflection, and synthesized behavior support must be cited through canonical phase owners",
       "story_capabilities": [
         "categories",
         "reflection",
@@ -40,6 +105,15 @@
       "source": "showcase/signalMesh/main.objc3",
       "workspace_manifest": "showcase/signalMesh/workspace.json",
       "expected_exit_code": 13,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "support_boundary": "showcase workload timing only; status bridging, actor, and runtime messaging support must be cited through canonical phase owners",
       "story_capabilities": [
         "status-bridging",
         "actors",
@@ -55,6 +129,16 @@
       "source": "showcase/patchKit/main.objc3",
       "workspace_manifest": "showcase/patchKit/workspace.json",
       "expected_exit_code": 7,
+      "owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "showcase workload timing only; derives, macros, property behaviors, and interop are support only through behavior owners, while compatibility-like interop claims route to canonical rejection",
       "story_capabilities": [
         "derives",
         "macros",
@@ -71,7 +155,12 @@
         "comparative-compile-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
-      "compiler_hint": "clang"
+      "compiler_hint": "clang",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Objective-C 2 reference baseline is comparative provenance only and cannot define Objective-C 3 old-mode or compatibility support"
     },
     {
       "baseline_id": "swift_reference",
@@ -81,7 +170,12 @@
         "comparative-runtime-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
-      "compiler_hint": "swiftc"
+      "compiler_hint": "swiftc",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "Swift reference baseline is comparative provenance only and cannot define Objective-C 3 behavior support or interop compatibility"
     },
     {
       "baseline_id": "cpp_reference",
@@ -91,7 +185,12 @@
         "comparative-runtime-baseline"
       ],
       "source": "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
-      "compiler_hint": "clang++"
+      "compiler_hint": "clang++",
+      "owner_phases": [
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "C++ reference baseline is comparative provenance only and cannot define Objective-C 3 behavior support or compatibility support"
     }
   ],
   "exact_live_paths_for_downstream_work": [

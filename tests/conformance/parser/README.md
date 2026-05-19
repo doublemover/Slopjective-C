@@ -114,5 +114,6 @@ parser-owned draft syntax surface to:
 The negative fixture set covers malformed or unsupported variants for block
 literals, `try`, `throw`, `do catch`, `throws`, `async`, `await`, `actor class`,
 macro marker/package/provenance payloads, property behavior payloads, and
-interop bridge/import attributes. Regenerate and verify the executable evidence
-with `python scripts/build_objc3c_parser_draft_syntax_conformance.py`.
+interop bridge/import attributes. The implementation anchor for the executable
+evidence builder is `scripts/build_objc3c_parser_draft_syntax_conformance.py`;
+public validation remains routed through `npm run objc3c -- validate-conformance-corpus`.

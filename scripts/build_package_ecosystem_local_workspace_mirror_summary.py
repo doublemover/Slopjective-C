@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from scripts.objc3c_workflow.public_command_api import public_workflow_action_names
+from package_ecosystem_contracts import (
+    require_package_ecosystem_blocker_metadata,
+    require_package_ecosystem_owner_policy,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +24,12 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "local-workspace
 
 def main() -> int:
     semantics = load_json(SEMANTICS_PATH)
+    owner_policy = require_package_ecosystem_owner_policy(semantics, surface_name="package ecosystem workspace mirror semantics")
+    blocker_metadata = require_package_ecosystem_blocker_metadata(
+        semantics,
+        surface_name="package ecosystem workspace mirror semantics",
+        required_blockers=("mirror index not derived from current lock graph",),
+    )
     package = load_json(PACKAGE_JSON)
     runbook_text = (ROOT / str(semantics["runbook"])).read_text(encoding="utf-8")
     boundary = load_json(ROOT / str(semantics["boundary_inventory"]))
@@ -47,8 +58,11 @@ def main() -> int:
         ]
         if not (ROOT / path).is_file()
     ]
-    required_public_scripts = [str(name) for name in semantics["required_public_scripts"]]
-    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+    package_bridge = str(semantics["package_bridge"])
+    package_bridge_exists = package_bridge in package_scripts
+    required_actions = [str(name) for name in semantics["required_actions"]]
+    registered_actions = set(public_workflow_action_names())
+    missing_actions = [name for name in required_actions if name not in registered_actions]
 
     generated_roots = semantics.get("generated_roots", {})
     lockfile_semantics = semantics.get("lockfile_semantics", {})
@@ -66,7 +80,7 @@ def main() -> int:
         "mirror_no_network": offline_mirror_semantics.get("network_policy") == "no-network-during-validation",
         "mirror_lock_derived": offline_mirror_semantics.get("index_model") == "lock-derived-package-index",
     }
-    ok = not missing_paths and not missing_public_scripts and all(checks.values())
+    ok = not missing_paths and package_bridge_exists and not missing_actions and all(checks.values())
 
     payload = {
         "contract_id": "objc3c.package_ecosystem.local_workspace_mirror_semantics.summary.v1",
@@ -77,17 +91,22 @@ def main() -> int:
         "dependency_lock_policy_contract_id": lock_policy.get("contract_id"),
         "workspace_input_count": len(workspace_inputs) if isinstance(workspace_inputs, list) else 0,
         "workspace_rule_count": len(workspace_rules) if isinstance(workspace_rules, list) else 0,
-        "required_public_script_count": len(required_public_scripts),
+        "required_action_count": len(required_actions),
+        "package_bridge_count": 1 if package_bridge_exists else 0,
         "non_goal_count": len(non_goals) if isinstance(non_goals, list) else 0,
         "workspace_inputs": workspace_inputs,
         "generated_roots": generated_roots,
         "lockfile_semantics": lockfile_semantics,
         "offline_mirror_semantics": offline_mirror_semantics,
         "workspace_rules": workspace_rules,
-        "required_public_scripts": required_public_scripts,
+        "required_actions": required_actions,
+        "package_bridge": package_bridge,
+        "owner_policy": owner_policy,
+        "blocker_metadata": blocker_metadata,
         "non_goals": non_goals,
         "missing_paths": missing_paths,
-        "missing_public_scripts": missing_public_scripts,
+        "missing_actions": missing_actions,
+        "missing_package_bridge": [] if package_bridge_exists else [package_bridge],
         "checks": checks,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

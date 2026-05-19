@@ -1,7 +1,7 @@
 {
   "contract_id": "objc3c.developer.tooling.workspace.editor.debug.integration.contract.v1",
   "surface_kind": "developer-tooling-workspace-integration-contract",
-  "summary_script": "scripts/check_developer_tooling_workspace_integration.py",
+  "summary_implementation_anchor": "scripts/check_developer_tooling_workspace_integration.py",
   "workspace_source": "tests/tooling/fixtures/native/hello.objc3",
   "required_public_actions": [
     "materialize-playground-workspace",

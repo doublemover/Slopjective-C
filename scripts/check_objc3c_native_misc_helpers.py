@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
     return 5;
   }
 
-  if (!Expect(objc3c::support::MakeIdentifierSafeSuffix("mod-name.1", "fallback") == "mod_name_1" &&
-              objc3c::support::MakeIdentifierSafeSuffix("", "fallback") == "fallback" &&
+  if (!Expect(objc3c::support::MakeIdentifierSafeSuffix("mod-name.1", "retired-route") == "mod_name_1" &&
+              objc3c::support::MakeIdentifierSafeSuffix("", "retired-route") == "retired-route" &&
               objc3c::support::MakeIdentifierSafeSuffix(std::string("x") + static_cast<char>(0xe9),
-                                                        "fallback") == "x_")) {
+                                                        "retired-route") == "x_")) {
     return 6;
   }
 

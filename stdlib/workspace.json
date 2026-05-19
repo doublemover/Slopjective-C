@@ -30,7 +30,7 @@
     "reader-facing docs examples and capability demos routed through live tutorials site and showcase paths"
   ],
   "non_goals": [
-    "milestone-local scaffolding",
+    "shared scaffolding",
     "duplicate example trees outside stdlib",
     "a second packaging system outside the existing runnable toolchain bundle",
     "hidden machine-owned source roots",

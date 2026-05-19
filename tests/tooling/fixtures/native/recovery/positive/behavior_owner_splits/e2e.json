@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-native-recovery-positive-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/recovery/positive/*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.m",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
+  ],
+  "support_boundary": "e2e ownership is intentionally non-positive for this recovery positive family. The fixtures may route accepted source and IR expectation provenance toward end-to-end acceptance, but executable success, runner behavior, workflow success, public reporting, and generated report behavior belong in native execution or e2e fixture owners, not in the recovery positive directory label.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "directory_boundary:tests/tooling/fixtures/native/recovery/positive",
+    "README:e2e owner does not get a positive claim from recovery tree",
+    "tests/tooling/fixtures/native/recovery/positive/*.objc3",
+    "tests/tooling/fixtures/native/recovery/positive/*-ir.expect.txt",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.m",
+    "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/*.dispatch-ir.expect.txt"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode e2e rows, gate e2e rows, retired route e2e rows, compatibility e2e rows, migration-only e2e rows, native .m e2e claims, dispatch-ir e2e claims, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

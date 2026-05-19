@@ -13,25 +13,71 @@
     "docs/tutorials/build_run_verify.md",
     "docs/tutorials/guided_walkthrough.md",
     "docs/tutorials/objc2_to_objc3_migration.md",
+    "docs/runbooks/objc3c_maintainer_workflows.md",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
+    "tests/tooling/fixtures/release_operations/metadata_surface.json",
+    "tests/tooling/fixtures/release_operations/schema_surface.json",
+    "scripts/objc3c_workflow",
+    "package.json",
+    "tests/tooling/fixtures/release_operations/workflow_surface.json"
+  ],
+  "package_bridge": "objc3c",
+  "public_actions": [
+    "package-runnable-toolchain",
+    "build-release-manifest",
+    "build-package-channels",
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+    "build-native-binaries"
+  ],
+  "release_operations_owned_actions": [
+    "check-release-operations-surface",
+    "check-release-operations-schema-surface",
+    "build-update-manifest",
+    "publish-release-operations",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end"
+  ],
+  "owner_policy": {
+    "source_owner": "release-operations-source",
+    "gate_owner": "release-operations-gate",
+    "blocker_owner": "release-operations-blockers",
+    "evidence_log_allowed": false,
+    "owned_actions": [
+      "check-release-operations-surface",
+      "check-release-operations-schema-surface",
+      "build-update-manifest",
+      "publish-release-operations",
+      "validate-release-operations",
+      "validate-release-operations-end-to-end"
+    ],
+    "hard_cutover_guardrails": {
+      "missing_upstream_artifact_behavior": "fail-closed",
+      "retired_update_path_allowed": false,
+      "alternate_update_support_path_allowed": false,
+      "publication_claim_owner": "release-operations-gate",
+      "blocker_owner_required_before_publication": true,
+      "evidence_log_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
+  },
+  "implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/build_objc3c_package_channels.py",
-    "docs/runbooks/objc3c_maintainer_workflows.md",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-    "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
-    "tests/tooling/fixtures/release_operations/metadata_surface.json",
-    "tests/tooling/fixtures/release_operations/schema_surface.json",
     "scripts/check_release_operations_source_surface.py",
     "scripts/check_release_operations_schema_surface.py",
     "scripts/build_objc3c_update_manifest.py",
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
-    "scripts/build_objc3c_native.ps1",
-    "package.json",
-    "tests/tooling/fixtures/release_operations/workflow_surface.json"
+    "scripts/build_objc3c_native.ps1"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/release-operations",
@@ -40,11 +86,19 @@
   "explicit_non_goals": [
     "no hosted updater",
     "no package-manager-specific upgrade flow",
-    "no second payload lineage"
+    "no second payload lineage",
+    "no retired update adapter",
+    "no evidence-log support claim"
   ],
-  "compatibility_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+  "hard_cutover_policy": {
+    "upstream_artifacts": "required-before-publication",
+    "missing_artifact_behavior": "fail-closed",
+    "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
+    "public_action_names": "preserved"
+  },
+  "upgrade_claim_policy": "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
   "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-  "fallback_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+  "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
   "metadata_surface": "tests/tooling/fixtures/release_operations/metadata_surface.json",
   "schema_surface": "tests/tooling/fixtures/release_operations/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/release_operations/workflow_surface.json"

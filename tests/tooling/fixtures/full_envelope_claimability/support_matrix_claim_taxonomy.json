@@ -4,7 +4,7 @@
   "milestone": "M324",
   "issue": "M324-A001",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/build_full_envelope_claimability_support_matrix_summary.py",
+  "summary_implementation_anchor": "scripts/build_full_envelope_claimability_support_matrix_summary.py",
   "support_classes": [
     {
       "class": "supported",
@@ -211,7 +211,7 @@
     "docs/runbooks/objc3c_release_foundation.md",
     "docs/runbooks/objc3c_release_operations.md",
     "docs/runbooks/objc3c_distribution_credibility.md",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts/objc3c_workflow"
   ],
   "successor_tracks": [
     "M325",

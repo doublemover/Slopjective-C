@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "source_of_truth": "tests/native",
+  "policy": "retired old-mode, gate, retired route, compatibility, migration-lane, unsupported-feature, and typed runtime-dispatch projection surfaces are never positive fixtures",
+  "owner_split_index": "tests/native/retired_surface_owner_splits/index.json",
+  "owner_splits": [
+    "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
+    "tests/native/retired_surface_owner_splits/gate_compatibility_rejection.json",
+    "tests/native/retired_surface_owner_splits/retired_route_dispatch_strict_error.json",
+    "tests/native/retired_surface_owner_splits/migration_evidence_log_provenance.json"
+  ],
+  "entries": [
+    {
+      "surface": "legacy-literal-aliases",
+      "retired_tag": "old-mode",
+      "fixture_path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+      "expected_stage": "compile",
+      "diagnostic_code": "O3C002"
+    },
+    {
+      "surface": "removed-retired-mode-flag",
+      "retired_tag": "old-mode",
+      "fixture_path": "tests/native/parser/negative/removed_retired_mode_flag_rejected.objc3",
+      "expected_stage": "parse",
+      "diagnostic_code": "O3C001"
+    },
+    {
+      "surface": "removed-parser-retired-route-flag",
+      "retired_tag": "old-mode",
+      "fixture_path": "tests/native/parser/negative/removed_parser_retired_route_flag_rejected.objc3",
+      "expected_stage": "parse",
+      "diagnostic_code": "OBJC3-E-REMOVED-RETIRED_ROUTE-FLAG"
+    },
+    {
+      "surface": "removed-compatibility-gate",
+      "retired_tag": "runtime-adapter",
+      "fixture_path": "tests/native/sema/errors/removed_compatibility_gate_rejected.objc3",
+      "expected_stage": "compile",
+      "diagnostic_code": "OBJC3-E-REMOVED-COMPATIBILITY-GATE"
+    },
+    {
+      "surface": "removed-runtime-dispatch-retired-route-flag",
+      "retired_tag": "runtime-dispatch",
+      "fixture_path": "tests/native/lowering/errors/removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+      "expected_stage": "compile",
+      "diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE"
+    },
+    {
+      "surface": "non-nil-runtime-dispatch-linkage",
+      "retired_tag": "runtime-dispatch",
+      "fixture_path": "tests/native/ir/runtime_calls/non_nil_receiver_runtime_call_contract.objc3",
+      "expected_stage": "link",
+      "diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "surface": "unknown-receiver-runtime-dispatch",
+      "retired_tag": "runtime-dispatch",
+      "fixture_path": "tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3",
+      "expected_stage": "run",
+      "diagnostic_code": "O3RT002"
+    },
+    {
+      "surface": "negative-execution-runtime-dispatch",
+      "retired_tag": "runtime-dispatch",
+      "fixture_path": "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3",
+      "expected_stage": "run",
+      "diagnostic_code": "O3RT002"
+    }
+  ]
+}

@@ -1,5 +1,15 @@
-[
-  [
+{
+  "fixture_contract": {
+    "contract_id": "objc3c.compiler.dispatch.fixture.owner_contract.v1",
+    "dispatch_owner": "compiler-dispatch-plan",
+    "snapshot_owner": "compiler-dispatch-snapshot",
+    "result_owner": "compiler-dispatch-result",
+    "artifact_owner": "compiler-dispatch-artifact",
+    "status_owner": "compiler-dispatch-status",
+    "no_retired_route_or_evidence_log_claims": true
+  },
+  "pages": [
+    [
     {
       "number": 1214,
       "title": "[Compiler][M02][Lane A][M02-A001] Define command/grammar contract slice (Contract Definition)",
@@ -69,5 +79,6 @@
       "labels": [],
       "pull_request": { "url": "https://api.github.com/repos/example/pulls/9001" }
     }
+    ]
   ]
-]
+}

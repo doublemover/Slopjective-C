@@ -2,6 +2,13 @@
   "contract_id": "objc3c.performance.measurement.policy.v1",
   "schema_version": 1,
   "policy_kind": "fair-measurement-and-claimability",
+  "behavior_owner_split_index": "tests/tooling/fixtures/performance/behavior_owner_splits/index.json",
+  "measurement_boundary": {
+    "primary_axis": "behavior owner before performance claim class, raw sample packet, report entry, artifact root, timing row, cache row, machine profile, tool version, normalized value, generated report, public command wrapper, or retired-surface claim",
+    "support_authority": "performance policy rows define measurement claimability only; canonical behavior support must be cited through behavior owner splits and cannot be inferred from allowed claim class, raw sample presence, report publication, tool version capture, or normalized value",
+    "artifact_rule": "raw sample packets, machine profiles, report entries, tool versions, normalized values, generated reports, cache rows, timing rows, and public command wrappers are provenance artifacts and never define parser, sema, lowering, IR, runtime, or e2e support",
+    "retired_surface_rule": "compatibility, retired route, wrapper-only, unsupported, local-only, evidence-log, generated-only, migration-only, timing-only, cache-only, screenshot-derived, hand-normalized, cross-machine, and foreign-baseline claims are canonical rejection or performance_provenance evidence"
+  },
   "sample_policy": {
     "warmup_runs": 1,
     "measured_runs": 5,
@@ -22,15 +29,29 @@
   },
   "claimability_policy": {
     "allowed_claim_classes": [
-      "local-measurement",
+      "same-machine-raw-sample-measurement",
       "toolchain-comparison",
-      "availability-limited",
-      "non-portable"
+      "availability-limited-with-explicit-reason"
     ],
     "disallowed_claim_classes": [
+      "local-only-performance-evidence",
+      "evidence-log-performance-evidence",
+      "unsupported-benchmark-claim",
+      "compatibility-retired-route-performance-claim",
+      "wrapper-only-action-surface",
       "cross-machine-universal",
       "screenshot-derived",
       "hand-normalized-without-raw-samples"
+    ],
+    "required_claim_inputs": [
+      "checked_in_benchmark_source",
+      "approved_lab_profile",
+      "raw_sample_packets",
+      "machine_profile",
+      "tool_versions",
+      "budget_id",
+      "breach_id_or_release_ready_status",
+      "owner_id"
     ]
   },
   "exact_live_paths_for_downstream_work": [

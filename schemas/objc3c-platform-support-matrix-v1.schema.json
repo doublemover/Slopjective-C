@@ -9,6 +9,7 @@
     "generated_at_utc",
     "default_platform_id",
     "platform_count",
+    "platforms",
     "channels",
     "tiers",
     "current_host",
@@ -33,6 +34,21 @@
     "platform_count": {
       "type": "integer",
       "minimum": 1
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "platform_id"
+        ],
+        "properties": {
+          "platform_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
     },
     "channels": {
       "type": "array",
@@ -91,7 +107,8 @@
       "type": "object",
       "required": [
         "supported_platform_ids",
-        "gap_claims"
+        "gap_claims",
+        "forbidden_claims"
       ],
       "properties": {
         "supported_platform_ids": {
@@ -105,12 +122,19 @@
           "items": {
             "type": "string"
           }
+        },
+        "forbidden_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "publication_surface": {
       "type": "object",
       "required": [
+        "package_bridge",
         "inspect_support_matrix_command",
         "package_command",
         "package_channels_command",
@@ -122,34 +146,43 @@
         "release_operations_end_to_end_command"
       ],
       "properties": {
+        "package_bridge": {
+          "const": "objc3c"
+        },
         "inspect_support_matrix_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "package_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "package_channels_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "packaging_validation_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "packaging_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "platform_hardening_validation_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "platform_hardening_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "release_operations_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         },
         "release_operations_end_to_end_command": {
-          "type": "string"
+          "$ref": "#/$defs/publicCommand"
         }
       }
+    }
+  },
+  "$defs": {
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
     }
   }
 }

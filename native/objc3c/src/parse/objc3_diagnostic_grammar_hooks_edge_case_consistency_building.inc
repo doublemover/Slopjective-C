@@ -1,0 +1,9 @@
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_building_edge_case_classification.inc"
+
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_building_evidence_model_helpers.inc"
+
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_building_consistency_normalization.inc"
+
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_building_diagnostics_profile_publication.inc"
+
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_building_finalization.inc"

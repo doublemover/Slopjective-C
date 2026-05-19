@@ -3,8 +3,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 AST_BUILDER_HEADER = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_ast_builder_contract.h"
 AST_BUILDER_SOURCE = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_ast_builder_contract.cpp"
-PIPELINE_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
-CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
+PIPELINE_STAGE_RUNNER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_stage_runner.cpp"
+PARSE_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "parse" / "CMakeLists.txt"
 BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
 
 
@@ -29,14 +29,14 @@ def test_ast_builder_contract_module_exists() -> None:
 
 
 def test_pipeline_consumes_ast_builder_contract() -> None:
-    pipeline = _read(PIPELINE_SOURCE)
+    pipeline = _read(PIPELINE_STAGE_RUNNER)
     assert '#include "parse/objc3_ast_builder_contract.h"' in pipeline
     assert '#include "parse/objc3_parser.h"' not in pipeline
     assert "BuildObjc3AstFromTokens(tokens)" in pipeline
 
 
 def test_build_surfaces_register_ast_builder_contract() -> None:
-    cmake = _read(CMAKE_FILE)
+    cmake = _read(PARSE_CMAKE_FILE)
     build_script = _read(BUILD_SCRIPT)
-    assert "src/parse/objc3_ast_builder_contract.cpp" in cmake
+    assert "objc3_ast_builder_contract.cpp" in cmake
     assert '"native/objc3c/src/parse/objc3_ast_builder_contract.cpp"' in build_script

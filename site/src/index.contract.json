@@ -2,6 +2,25 @@
   "contract_id": "site-index-generator/v2",
   "output_path": "site/index.md",
   "body_path": "site/src/index.body.md",
+  "support_matrix_path": "docs/support/capability_matrix.json",
+  "evidence_map_path": "docs/support/evidence_map.json",
+  "schema_registry_path": "scripts/objc3c_shared/schema_registry.py",
+  "capability_schema_records_path": "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp",
+  "schema_ids": [
+    "objc3c-capability-matrix-v1",
+    "objc3c-capability-evidence-map-v1"
+  ],
+  "public_command_model": {
+    "entrypoint_kind": "single-npm-bridge",
+    "canonical_template": "npm run objc3c -- <action>",
+    "authoritative_script": "package.json#scripts.objc3c",
+    "forbidden_public_command_semantics": [
+      "retired package-script names",
+      "direct helper script commands as public entrypoints",
+      "alternate command support lanes",
+      "retired-source support claims"
+    ]
+  },
   "front_matter": [
     "---",
     "title: Objective-C 3.0 Draft Specification",

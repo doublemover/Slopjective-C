@@ -1,0 +1,1 @@
+"""Activation trigger checker helpers."""

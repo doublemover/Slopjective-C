@@ -1,0 +1,8 @@
+#pragma once
+
+struct Objc3IRModuleMetadataPublicationOptions;
+struct Objc3IREmitterServiceContextState;
+
+Objc3IRModuleMetadataPublicationOptions
+BuildObjc3IREmitterModuleMetadataPublicationOptions(
+    const Objc3IREmitterServiceContextState &state);

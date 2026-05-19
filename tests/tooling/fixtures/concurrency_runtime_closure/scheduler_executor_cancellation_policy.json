@@ -4,7 +4,22 @@
   "milestone": "M322",
   "issue": "M322-B002",
   "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
-  "summary_script": "scripts/build_concurrency_runtime_closure_scheduler_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_concurrency_runtime_closure_scheduler_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+    "concurrency_runtime_provenance"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/concurrency_runtime_closure/behavior_owner_splits/canonical_rejection.json",
+  "scheduler_boundary_policy": {
+    "primary_axis": "behavior owner before scheduler/executor/cancellation row, task-group workload row, actor executor row, private snapshot, probe payload snapshot, generated report, public workflow label, or successor fairness/transport row",
+    "support_authority": "scheduler, executor, and cancellation support requires sema, runtime, or e2e owner assignment over canonical fixtures and probes",
+    "positive_support_from_probe_payload": false,
+    "retired_surface_rule": "scheduler fairness, distributed actor transport, external executor integration, probe-payload-only rows, private-snapshot-only rows, evidence-log rows, workflow-label-only rows, retired route scheduler rows, gate executor rows, old-mode cancellation rows, and compatibility transport rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "workload_rules": [
     "executor selection, cancellation polling, cancellation callbacks, and executor hops are supported only through the current private runtime helper cluster and shared acceptance evidence",
     "scheduler and executor claims remain bounded by the existing task-runtime and actor-runtime probes plus the packaged runnable concurrency workflow",
@@ -20,7 +35,11 @@
   ],
   "authoritative_code_paths": [
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/concurrency/task_lifecycle.cpp",
+    "native/objc3c/src/runtime/concurrency/task_group_state.cpp",
+    "native/objc3c/src/runtime/concurrency/task_cancellation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_isolation.cpp",
+    "native/objc3c/src/runtime/concurrency/actor_mailbox.cpp",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py"
   ],

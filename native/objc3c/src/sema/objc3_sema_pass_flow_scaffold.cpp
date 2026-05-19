@@ -47,8 +47,7 @@ void FinalizeObjc3SemaPassFlowSummary(
   summary.diagnostics_emission_totals_consistent = diagnostics_emitted_total == summary.diagnostics_total;
   summary.transition_edge_count = summary.executed_pass_count > 0u ? summary.executed_pass_count - 1u : 0u;
   summary.compatibility_handoff_consistent =
-      summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ||
-      summary.compatibility_mode == Objc3SemaCompatibilityMode::Legacy;
+      summary.language_profile == Objc3SemaLanguageProfile::Canonical;
   summary.missing_pass_execution_count = 0;
   for (const bool pass_executed : summary.pass_executed) {
     if (!pass_executed) {
@@ -62,6 +61,17 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.transition_edge_count + 1u == summary.executed_pass_count &&
       summary.diagnostics_after_pass_monotonic &&
       summary.diagnostics_emission_totals_consistent;
+  summary.owner_split_explicit = Objc3SemaOwnerSplitIsReady(
+      summary.stage_input_owner,
+      summary.typed_semantic_handoff_owner,
+      summary.diagnostic_handoff_owner,
+      summary.owner_model,
+      summary.strict_no_retired_route,
+      summary.strict_no_compatibility) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_catalog_owner) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_fixit_owner) &&
+      Objc3SemaOwnerIsExplicit(summary.diagnostic_recovery_owner) &&
+      !summary.recovery_counts_as_success;
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -85,9 +95,11 @@ void FinalizeObjc3SemaPassFlowSummary(
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.duplicate_pass_execution_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.missing_pass_execution_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_total));
-  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_assist_enabled ? 1u : 0u));
-  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_legacy_literal_total));
-  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.compatibility_mode));
+  fingerprint = fnv1a_mix(
+      fingerprint,
+      static_cast<std::uint64_t>(
+          summary.canonical_literal_rejection_total_sites));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.language_profile));
   for (std::size_t i = 0; i < summary.pass_executed.size(); ++i) {
     fingerprint = fnv1a_mix(fingerprint, summary.pass_executed[i] ? 1ull : 0ull);
     fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_after_pass[i]));
@@ -106,9 +118,22 @@ void FinalizeObjc3SemaPassFlowSummary(
   std::ostringstream handoff_key;
   handoff_key << "sema-pass-flow:v1:"
               << summary.executed_pass_count << "/" << summary.configured_pass_count
-              << ":compat=" << (summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ? "canonical" : "legacy")
+              << ":compat=canonical"
               << ":diag=" << summary.diagnostics_total
-              << ":fp=" << summary.pass_execution_fingerprint;
+              << ":fp=" << summary.pass_execution_fingerprint
+              << ":stage_input_owner=" << summary.stage_input_owner
+              << ":typed_handoff_owner=" << summary.typed_semantic_handoff_owner
+              << ":diagnostic_owner=" << summary.diagnostic_handoff_owner
+              << ":diagnostic_catalog_owner=" << summary.diagnostic_catalog_owner
+              << ":diagnostic_fixit_owner=" << summary.diagnostic_fixit_owner
+              << ":diagnostic_recovery_owner=" << summary.diagnostic_recovery_owner
+              << ":owner_model=" << summary.owner_model
+              << ":strict_no_retired_route="
+              << (summary.strict_no_retired_route ? "true" : "false")
+              << ":strict_no_compatibility="
+              << (summary.strict_no_compatibility ? "true" : "false")
+              << ":recovery_counts_as_success="
+              << (summary.recovery_counts_as_success ? "true" : "false");
   summary.deterministic_handoff_key = handoff_key.str();
   summary.replay_key_deterministic =
       summary.deterministic_handoff_key.rfind("sema-pass-flow:v1:", 0) == 0 &&
@@ -128,6 +153,7 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.pass_execution_fingerprint != 1469598103934665603ull &&
       !summary.deterministic_handoff_key.empty() &&
       summary.replay_key_deterministic &&
+      summary.owner_split_explicit &&
       deterministic_semantic_diagnostics &&
       deterministic_type_metadata_handoff;
 }

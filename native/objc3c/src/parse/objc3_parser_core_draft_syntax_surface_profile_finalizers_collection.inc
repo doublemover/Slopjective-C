@@ -1,0 +1,7 @@
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_collection_expression_traversal.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_collection_for_clause_traversal.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_collection_block_traversal.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_collection_statement_traversal.inc"

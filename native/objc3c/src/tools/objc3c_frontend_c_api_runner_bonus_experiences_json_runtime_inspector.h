@@ -1,0 +1,13 @@
+#pragma once
+
+#include <iosfwd>
+#include <string>
+
+#include "tools/objc3c_frontend_c_api_runner_artifact_paths.h"
+
+void WriteFrontendCApiRunnerBonusExperiencesRuntimeInspectorJsonRows(
+    std::ostream &out,
+    const std::string &child_indent,
+    const std::string &grandchild_indent,
+    const FrontendCApiRunnerArtifactPathView &paths,
+    bool runtime_inspector_ready);

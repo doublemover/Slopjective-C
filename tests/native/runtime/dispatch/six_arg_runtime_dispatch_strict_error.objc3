@@ -1,0 +1,7 @@
+// Canonical runtime dispatch fixture: high-arity sends strict-error when receiver lookup fails.
+module RuntimeDispatchSixArgRuntimeDispatchStrictError;
+
+fn main() -> i32 {
+  let receiver = 5;
+  return [receiver sum: 1 with: 2 then: 3 and: 4 plus: 6 extra: 7];
+}

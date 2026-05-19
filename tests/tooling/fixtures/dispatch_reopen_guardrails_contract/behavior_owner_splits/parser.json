@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-dispatch-reopen-guardrails-contract-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/dispatch_reopen_guardrails_contract"
+  ],
+  "support_boundary": "parser ownership is non-positive for this dispatch-reopen guardrails family. Markdown headings, tables, issue labels, command strings, dependency ids, gate ids, and fixture directory labels are tooling governance inputs; they do not define Objective-C 3 parser support.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "tooling_fixture_family:dispatch_reopen_guardrails_contract",
+    "markdown_surface:heading",
+    "markdown_surface:table",
+    "markdown_surface:ordered-list",
+    "compiler_phase_boundary:no-parser-positive-truth-from-dispatch-reopen-fixtures",
+    "upstream_owner_required:tests/native/parser"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser dispatch rows, gate parser dispatch rows, retired route parser dispatch rows, compatibility parser dispatch rows, migration-only parser rows, generated-only parser rows, evidence-log parser rows, markdown-only parser claims, and dispatch-contract-only parser claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

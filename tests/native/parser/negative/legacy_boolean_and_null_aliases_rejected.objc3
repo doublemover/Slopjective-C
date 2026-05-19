@@ -1,0 +1,12 @@
+// Canonical rejection fixture: legacy YES/NO/NULL aliases are not a positive mode.
+module LegacyBooleanAndNullAliasesRejected;
+
+extern fn consume(value: id) -> void;
+
+fn main() -> i32 {
+  consume(NULL);
+  if (YES) {
+    return NO ? 2 : 1;
+  }
+  return 0;
+}

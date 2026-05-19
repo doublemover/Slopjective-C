@@ -1,16 +1,17 @@
-# ObjC2 To ObjC3 Migration Guide
+# ObjC2 To ObjC3 Canonicalization Guide
 
-This file is the live migration guide for people moving existing ObjC2 habits into the current runnable ObjC3 subset.
+This file is the live guide for mapping familiar ObjC2 habits onto the current canonical ObjC3 runnable subset.
 
-The canonical migration playbook contract for this guide is
-`tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`;
-replay it with
-`python scripts/build_adoption_legibility_migration_playbook_summary.py`.
+The checked-in adoption-legibility contract for this guide is
+`tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json`;
+replay it through `npm run objc3c -- validate-adoption-legibility`.
+This reader-facing guide is canonicalization guidance over runnable examples,
+not a retired-source acceptance surface.
 Keep this guide narrower than that contract, never broader.
 
 Use it together with the checked-in showcase examples. The guide is only authoritative where the repo already compiles or validates the behavior it describes.
 
-## Migration Boundary
+## Canonicalization Boundary
 
 This guide is intentionally narrow.
 
@@ -24,7 +25,7 @@ This guide is intentionally narrow.
 
 The fastest path from ObjC2 to the current ObjC3 subset is to keep the recognizable interface and implementation layout, while removing assumptions that the old runtime filled in implicitly.
 
-Use `showcase/auroraBoard/main.objc3` as the first migration example:
+Use `showcase/auroraBoard/main.objc3` as the first canonicalization example:
 
 - protocols still declare required methods and properties
 - `@interface` and `@implementation` remain the main structural units
@@ -34,7 +35,7 @@ Use `showcase/auroraBoard/main.objc3` as the first migration example:
 Compile it through the normal surface:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 What to keep from ObjC2 habits:
@@ -51,7 +52,7 @@ What to drop:
 
 ## Step 2 Map Properties And Categories Through The Runnable Object Model
 
-`auroraBoard` is the best migration anchor for object-model habits.
+`auroraBoard` is the best canonical ObjC3 example for object-model habits.
 
 Read it in this order:
 
@@ -59,7 +60,7 @@ Read it in this order:
 2. `Tile` for the explicit property ownership and custom accessor names
 3. `Tile (Inspection)` for the category extension path
 
-Migration takeaway:
+Canonicalization takeaway:
 
 - ObjC3 keeps the surface recognizable, but the contract is more explicit and more tightly tied to the live compiler/runtime path
 - if your old ObjC2 code relied on vague synthesized behavior, reduce it to the specific patterns already validated by the showcase and runtime acceptance paths
@@ -77,38 +78,38 @@ Use `signalMesh` and `patchKit` for Swift-facing expectations.
 Compile it with:
 
 ```sh
-npm run compile:objc3c -- showcase/signalMesh/main.objc3
+npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3
 ```
 
 `showcase/patchKit/main.objc3` shows the current imported-module and macro-backed interop edge:
 
 - imported hooks are explicit through `objc_import_module(...)`
 - derive and macro use is named and provenance-bearing
-- the guide should treat this as a real interop boundary, not as proof of full Swift parity
+- the guide should treat this as a real interop boundary, not as evidence for full Swift parity
 
 Compile it with:
 
 ```sh
-npm run compile:objc3c -- showcase/patchKit/main.objc3
+npm run objc3c -- compile-objc3c showcase/patchKit/main.objc3
 ```
 
-## Step 4 Use The Showcase Validation Surface Before You Claim Migration Success
+## Step 4 Use The Showcase Validation Surface Before You Claim Support
 
 Do not stop after a single compile.
 
 Run the checked-in portfolio surface:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
-That keeps migration teaching tied to the same examples the repo already compiles and runs.
+That keeps canonicalization teaching tied to the same examples the repo already compiles and runs.
 
 ## Recommended Reading Order
 
 - start with `docs/tutorials/getting_started.md`
-- use this guide for the actual ObjC2-to-ObjC3 and Swift-facing migration path
+- use this guide to map ObjC2 habits onto canonical ObjC3 examples
 - use `docs/tutorials/objc2_swift_cpp_comparison.md` when you need the broader comparison boundary
 - use `showcase/README.md` when you want the example portfolio and workspace contracts
 
@@ -126,7 +127,7 @@ That keeps migration teaching tied to the same examples the repo already compile
 
 ## Exact Live Paths For Downstream Work
 
-- migration narrative and comparison routing:
+- canonicalization narrative and comparison routing:
   - `docs/tutorials/objc2_to_objc3_migration.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `docs/tutorials/README.md`
@@ -134,7 +135,7 @@ That keeps migration teaching tied to the same examples the repo already compile
   - `docs/tutorials/getting_started.md`
   - `README.md`
   - `site/src/index.body.md`
-- executable examples backing the migration claims:
+- executable examples backing the canonicalization claims:
   - `showcase/README.md`
   - `showcase/portfolio.json`
   - `showcase/auroraBoard/main.objc3`
@@ -142,11 +143,12 @@ That keeps migration teaching tied to the same examples the repo already compile
   - `showcase/patchKit/main.objc3`
 - command truth and documentation guardrails:
   - `docs/runbooks/objc3c_public_command_surface.md`
+  - `npm run objc3c -- check-documentation-surface`
   - `scripts/check_documentation_surface.py`
 
 ## Explicit Non-Goals
 
 - no promise of full ObjC2 runtime parity
 - no claim of broad Swift interop beyond the checked-in runnable examples
-- no migration advice rooted in `tmp/`, archived spec material, or maintainer-only notes
-- no sidecar command aliases outside the public package-script surface
+- no canonicalization advice rooted in `tmp/`, archived spec material, or maintainer-only notes
+- no command names outside the canonical `npm run objc3c -- <action>` surface

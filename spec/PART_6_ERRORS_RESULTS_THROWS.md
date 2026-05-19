@@ -11,7 +11,7 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 - ObjC 3.0 v1 does not add a dedicated `never throws` marker; absence of `throws` is the canonical non-throwing form.
 - Generic non-throwing requirements are expressed using non-throwing function/block types, not a new keyword or attribute.
 - Nil-to-error mapping is explicit and library-defined via canonical `objc3.errors` helpers (`orThrow` and `okOr`), not language sugar.
-- Typed throws remains a planned post-v1 feature; v1 reserves syntax/metadata slots and requires compatibility diagnostics for non-v1 typed-throws metadata.
+- Typed throws is not a v1 behavior claim; v1 reserves syntax/metadata slots and requires canonical diagnostics for typed-throws metadata.
 
 ### v0.9 resolved decisions {#part-6-v0-9-resolved-decisions}
 
@@ -262,9 +262,9 @@ Recommended patterns for generic and callable APIs:
 - If an API should accept both throwing and non-throwing callables, declare the parameter as throwing and rely on the implicit non-throwing to throwing conversion in [§6.3.4](#part-6-3-4).
 - When adapting a throwing callable to a non-throwing callable, use an explicit adapter that handles the error path.
 
-### 6.3.7 Reserved typed-throws slots (planned, not in v1) {#part-6-3-7}
+### 6.3.7 Reserved typed-throws slots (not in v1) {#part-6-3-7}
 
-Typed throws is planned for a future revision, but it is not available in ObjC 3.0 v1.
+Typed throws is reserved and unavailable in ObjC 3.0 v1.
 
 Reserved source syntax slots:
 
@@ -283,11 +283,11 @@ Reserved metadata slots for module/interface exchange:
 - `throws_type_arity`: unsigned slot. v1 requires `0`.
 - `throws_type_refs`: sequence slot of canonical type references. v1 requires empty.
 
-Compatibility constraints:
+Version constraints:
 
 - A v1 consumer that imports non-v1 typed-throws metadata values (for example, `throws_kind=typed`, non-zero arity, or non-empty type refs) shall emit an incompatibility diagnostic and reject that declaration for v1 conformance.
 - A producer targeting v1 shall not emit non-v1 typed-throws metadata values.
-- If a future revision introduces typed throws, untyped and typed declarations are effect-signature-distinct across module boundaries unless that future revision explicitly defines a conversion rule.
+- Untyped and typed declarations are effect-signature-distinct across module boundaries unless a later version explicitly defines a conversion rule.
 
 ---
 
@@ -306,7 +306,7 @@ A `throw` statement is permitted only within a `throws` function or within a `ca
 
 In v1, `throws` is untyped. The thrown expression shall be convertible to `id<Error>`.
 
-Typed throws forms (for example, `throws(E)`) are reserved for a future revision; their v1 reservation and compatibility rules are defined in [§6.3.7](#part-6-3-7).
+Typed throws forms (for example, `throws(E)`) are reserved in v1; their diagnostic handling is defined in [§6.3.7](#part-6-3-7).
 
 ### 6.4.3 Dynamic semantics {#part-6-4-3}
 
@@ -545,8 +545,8 @@ Minimum diagnostics:
 
 ### 6.13.1 Typed throws {#part-6-13-1}
 
-A future revision may introduce typed throws syntax to restrict throwable error sets.
-ObjC 3.0 v1 intentionally ships only untyped `throws` and uses the reservation rules in [§6.3.7](#part-6-3-7) to preserve forward compatibility with that future work.
+Typed throws syntax may later restrict throwable error sets.
+ObjC 3.0 v1 intentionally ships only untyped `throws`; [§6.3.7](#part-6-3-7) defines the reserved typed-throws handling.
 
 ## M267 current implementation closeout note
 

@@ -1,0 +1,12 @@
+  bool ownership_insert_retain = false;
+  bool ownership_insert_release = false;
+  bool ownership_insert_autorelease = false;
+  bool ownership_is_weak_reference = false;
+  bool ownership_is_unowned_reference = false;
+  bool ownership_is_unowned_safe_reference = false;
+  bool ownership_arc_diagnostic_candidate = false;
+  bool ownership_arc_fixit_available = false;
+  std::string ownership_arc_diagnostic_profile;
+  std::string ownership_arc_fixit_hint;
+  std::string ownership_lifetime_profile;
+  std::string ownership_runtime_hook_profile;

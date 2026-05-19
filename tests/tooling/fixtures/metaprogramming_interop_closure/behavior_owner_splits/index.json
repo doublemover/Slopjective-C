@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-metaprogramming-interop-closure-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before metaprogramming expansion, synthesized artifact, module replay, interop call, FFI metadata, closure/error boundary, runtime acceptance report, generated artifact, package proof, source-owner contract, or public workflow",
+    "positive_rule": "metaprogramming and interop closure rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners over hand-authored fixtures; generated reports, artifacts, labels, and provenance rows are never positive support by themselves",
+    "provenance_rule": "runtime reports, runnable conformance/e2e summaries, package manifests, bridge JSON, runtime-import artifacts, module replay rows, FFI metadata rows, closure/error composition summaries, cache snapshots, generated bridge payloads, public command wrappers, and source-owner contracts are provenance-only until a phase owner claims the behavior",
+    "retired_surface_rule": "compatibility, gate, retired route, old-mode, migration-only, unsupported property behavior combination, unsupported foreign loader topology, public ABI widening, stale acceptance, evidence-log, generated-only, and generated-evidence-log claims are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "parser/sema/lowering/IR/runtime/e2e behavior, metaprogramming expansion, synthesized artifacts, module replay, interop calls, FFI metadata, closure/error boundaries, acceptance reports, package proof, public workflow routing, generated bridge payloads, runtime-import artifacts, and cache snapshots are distinct evidence classes; only the behavior owner may promote a row to positive support"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/canonical_rejection.json"
+    },
+    {
+      "owner_phase": "metaprogramming_interop_provenance",
+      "path": "tests/tooling/fixtures/metaprogramming_interop_closure/behavior_owner_splits/metaprogramming_interop_provenance.json"
+    }
+  ]
+}

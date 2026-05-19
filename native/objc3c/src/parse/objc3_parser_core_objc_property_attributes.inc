@@ -1,0 +1,6 @@
+#include "parse/objc3_parser_core_objc_property_attributes_diagnostics_recovery.inc"
+#include "parse/objc3_parser_core_objc_property_attributes_value_text.inc"
+#include "parse/objc3_parser_core_objc_property_attributes_attribute_loop_dispatch.inc"
+#include "parse/objc3_parser_core_objc_property_attributes_storage_ownership_attributes.inc"
+#include "parse/objc3_parser_core_objc_property_attributes_naming_behavior_attributes.inc"
+#include "parse/objc3_parser_core_objc_property_attributes_finalization_publication.inc"

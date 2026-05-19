@@ -5,14 +5,12 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import require_json_object as load_json
-from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +31,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    surface_result = run_capture([sys.executable, str(SHOWCASE_SURFACE_PY)])
+    surface_result = run_capture(python_script_command(SHOWCASE_SURFACE_PY))
     if surface_result.returncode != 0:
         raise RuntimeError("showcase surface validation failed")
 

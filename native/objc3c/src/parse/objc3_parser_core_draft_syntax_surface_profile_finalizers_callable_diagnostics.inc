@@ -1,0 +1,9 @@
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics_error_cleanup.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics_concurrency_task.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics_macro.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics_interop.inc"
+
+#include "parse/objc3_parser_core_draft_syntax_surface_profile_finalizers_callable_diagnostics_entrypoint.inc"

@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_property_synthesis_ivar_bindings_binding_collection.inc"
+#include "sema/objc3_semantic_passes_property_synthesis_ivar_bindings_readiness_replay.inc"
+#include "sema/objc3_semantic_passes_property_synthesis_ivar_bindings_synthesis_linking.inc"
+#include "sema/objc3_semantic_passes_property_synthesis_ivar_bindings_diagnostics.inc"

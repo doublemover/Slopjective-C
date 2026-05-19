@@ -1,0 +1,10 @@
+#pragma once
+
+#include "artifacts/objc3_frontend_artifact_semantic_concurrency_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_control_flow_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_ownership_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_block_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_error_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_module_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_interop_contract_records.h"
+#include "artifacts/objc3_frontend_artifact_semantic_metaprogramming_contract_records.h"

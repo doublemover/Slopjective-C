@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.full_envelope.claimability.release.blocker.rollout.policy.v1",
-  "summary_script": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+  "summary_implementation_anchor": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
   "required_reports": [
     {
       "name": "public-conformance",
@@ -71,7 +71,30 @@
       "current_rollout_class",
       "public_claim_class",
       "production_strength_claimable",
-      "triggered_release_blockers"
+      "triggered_release_blockers",
+      "dashboard_release_blocker_projection",
+      "acceptance_matrix",
+      "release_artifacts"
+    ],
+    "required_public_summary_fields": [
+      "current_rollout_class",
+      "public_claim_class",
+      "production_strength_claimable",
+      "dashboard_release_blocker",
+      "dashboard_blocks_production_strength_claim",
+      "report_markdown_path"
+    ],
+    "source_owned_decision_fields": [
+      "current_rollout_class",
+      "public_claim_class",
+      "production_strength_claimable",
+      "triggered_release_blockers",
+      "dashboard_release_blocker_projection",
+      "acceptance_matrix",
+      "release_artifacts",
+      "dashboard_release_blocker",
+      "dashboard_blocks_production_strength_claim",
+      "report_markdown_path"
     ]
   }
 }

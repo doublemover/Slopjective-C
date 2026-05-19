@@ -1,0 +1,4 @@
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency_async_await.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency_actor_sendability.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency_task_runtime.inc"
+#include "sema/objc3_semantic_passes_body_validation_core_concurrency_replay_race_guard.inc"

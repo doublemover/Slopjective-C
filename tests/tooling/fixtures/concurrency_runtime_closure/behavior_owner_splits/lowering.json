@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-concurrency-runtime-closure-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/task_continuation_lifecycle_contract.json",
+    "tests/tooling/fixtures/concurrency_runtime_closure/actor_isolation_sendability_hop_contract.json"
+  ],
+  "support_boundary": "lowering ownership covers async/task/actor lowering metadata, continuation/task/actor helper calls, executor hop lowering, mailbox lowering, compile-manifest/runtime-registration coupling, and generated artifact provenance before IR or runtime owners cite artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "compile_manifest_surface_keys:runtime_unified_concurrency_source_surface",
+    "compile_manifest_surface_keys:runtime_async_task_actor_normalization_completion_surface",
+    "compile_manifest_surface_keys:runtime_unified_concurrency_lowering_metadata_surface",
+    "compile_manifest_surface_keys:runtime_unified_concurrency_runtime_abi_surface",
+    "frontend_surface_fields:frontend.pipeline.semantic_surface.objc_concurrency_continuation_abi_and_async_lowering_contract",
+    "frontend_surface_fields:frontend.pipeline.semantic_surface.objc_concurrency_task_runtime_lowering_contract",
+    "frontend_surface_fields:frontend.pipeline.semantic_surface.objc_concurrency_actor_lowering_and_metadata_contract",
+    "authoritative_case_ids:cross-module-concurrency-actor-artifact-preservation"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "retired route runtime lowering, compatibility gate lowering, old-mode concurrency lowering, evidence-log lowering success, manifest-only lowering rows, descriptor-only runtime-registration rows, missing runtime-registration replay, and lowering-only parity narratives are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

@@ -1,0 +1,5 @@
+#pragma once
+
+#include "sema/objc3_sema_contract_bootstrap_compatibility_async_diagnostics.h"
+#include "sema/objc3_sema_contract_bootstrap_compatibility_bootstrap_surfaces.h"
+#include "sema/objc3_sema_contract_bootstrap_compatibility_strictness_claims.h"

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-bootstrap-readiness-runner-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/bootstrap_readiness_runner/zero_open",
+    "tests/tooling/fixtures/bootstrap_readiness_runner/blocked_issues"
+  ],
+  "support_boundary": "e2e/tooling ownership covers only canonical bootstrap-readiness runner scenario behavior: zero_open owns the all-empty runner input set, and blocked_issues owns the open issue input for issue 1149 as blocking evidence. Empty open_blockers reports are evidence fields, not proof that blocked_issues is release-ready.",
+  "phase_support_claim_authority": true,
+  "selectors": [
+    "scenario:zero_open",
+    "zero_open:catalog.tasks=[]",
+    "zero_open:issues=[]",
+    "zero_open:milestones=[]",
+    "zero_open:open_blocker_count=0",
+    "zero_open:open_blockers=[]",
+    "zero_open:source=fixture:bootstrap-readiness-runner-zero-open",
+    "scenario:blocked_issues",
+    "blocked_issues:catalog.tasks=[]",
+    "blocked_issues:issues[].number=1149",
+    "blocked_issues:issues[].title=Lane C1 runner implementation remains open",
+    "blocked_issues:milestones=[]",
+    "blocked_issues:open_blocker_count=0",
+    "blocked_issues:open_blockers=[]",
+    "blocked_issues:source=fixture:bootstrap-readiness-runner-blocked-issues",
+    "required_snapshot_file:catalog.json",
+    "required_snapshot_file:issues.json",
+    "required_snapshot_file:milestones.json",
+    "required_snapshot_file:open_blockers.json"
+  ],
+  "canonical_anchor": "tests/tooling/fixtures/bootstrap_readiness_runner",
+  "retired_surface_rule": "empty open_blockers reports used to erase open issue evidence, blocked_issues treated as zero-open readiness, runner-only success, workflow-label-only success, generated-evidence-log success, evidence-log e2e support, old-mode runner rows, gate runner rows, retired route runner rows, compatibility runner rows, migration-only runner rows, wrapper-only e2e rows, and directory-label-only e2e claims are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+}

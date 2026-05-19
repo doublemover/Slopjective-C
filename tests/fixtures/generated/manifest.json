@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "boundary": {
+    "kind": "generated-contract-artifacts",
+    "source_of_truth": "generator-output",
+    "canonical_behavior_source": false,
+    "allowed_path_roots": [
+      "tests/tooling/fixtures/objc3c"
+    ],
+    "hand_edit_policy": "generated fixtures are provenance artifacts, not canonical behavior expectations",
+    "positive_fixture_policy": "generated artifacts never define positive native behavior",
+    "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
+    "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "provenance_owner_split_index": "tests/fixtures/generated/behavior_owner_splits/index.json",
+    "provenance_owner_splits": [
+      "tests/fixtures/generated/behavior_owner_splits/generated_inventory.json",
+      "tests/fixtures/generated/behavior_owner_splits/canonical_fixture_truth.json",
+      "tests/fixtures/generated/behavior_owner_splits/strict_rejection.json",
+      "tests/fixtures/generated/behavior_owner_splits/evidence_log_generated_output.json",
+      "tests/fixtures/generated/behavior_owner_splits/fixture_generation_metadata.json",
+      "tests/fixtures/generated/behavior_owner_splits/migration_only_generated_output.json"
+    ],
+    "behavior_phase_split_indexes": [
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/parser.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/sema.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/lowering.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/ir.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/runtime.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/e2e.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/generated_replay_provenance.json"
+    ],
+    "phase_support_claim_authority": false
+  },
+  "fixtures": [
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
+      "origin": "generated",
+      "generator": "scripts/build_objc3c_native.ps1",
+      "provenance": "frontend contract artifact generation",
+      "boundary": "generated-contract-artifact",
+      "behavior_boundary": "generated-provenance-only",
+      "canonical_behavior_source": false,
+      "phase_support_claim_authority": false,
+      "owner": "generated-fixture-provenance"
+    },
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json",
+      "origin": "generated",
+      "generator": "scripts/build_objc3c_native.ps1",
+      "provenance": "frontend contract artifact generation",
+      "boundary": "generated-contract-artifact",
+      "behavior_boundary": "generated-provenance-only",
+      "canonical_behavior_source": false,
+      "phase_support_claim_authority": false,
+      "owner": "generated-fixture-provenance"
+    }
+  ]
+}

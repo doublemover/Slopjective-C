@@ -4,6 +4,13 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
   "contributor_surface": "CONTRIBUTING.md",
+  "owner_section": "stewardship",
+  "owner_contract": {
+    "owner": "stewardship_owner",
+    "artifact_section": "stewardship",
+    "publication_projection": "stewardship_publication.stewardship",
+    "blocker_projection": "claim_audit.blocker_metadata.stewardship"
+  },
   "depends_on": [
     "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
     "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
@@ -60,6 +67,15 @@
     "package publication claims must remain local/offline until hosted registry evidence exists",
     "adoption-facing package guidance must consume adoption-legibility evidence"
   ],
+  "metadata_publication": {
+    "stewardship_publication": "tmp/artifacts/governance-sustainability/stewardship-publication.json",
+    "extension_review_publication": "tmp/artifacts/governance-sustainability/extension-review-publication.json",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.stewardship",
+    "public_actions": [
+      "validate-governance-sustainability",
+      "publish-governance-sustainability"
+    ]
+  },
   "fail_closed_conditions": [
     "role has no checked-in entry surface",
     "required review check has no maintainer contract entry",

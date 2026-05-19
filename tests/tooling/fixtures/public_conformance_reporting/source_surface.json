@@ -4,9 +4,56 @@
   "runbook": "docs/runbooks/objc3c_public_conformance_reporting.md",
   "source_root": "tests/tooling/fixtures/public_conformance_reporting",
   "source_readme": "tests/tooling/fixtures/public_conformance_reporting/README.md",
+  "package_bridge": "objc3c",
+  "source_check_action": "check-public-conformance-reporting-surface",
+  "source_check_command": "npm run objc3c -- check-public-conformance-reporting-surface",
   "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
+  "source_check_implementation_anchor": "scripts/check_public_conformance_reporting_source_surface.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "lowering",
+    "ir",
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+    "public_conformance_provenance"
+  ],
   "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
   "schema_surface": "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
+  "owner_split": {
+    "source_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "schema_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "workflow_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "stability_policy_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
+    "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py"
+  },
+  "owner_policy": {
+    "source_owner": "public-conformance-source",
+    "gate_owner": "public-conformance-gate",
+    "blocker_owner": "public-conformance-blockers",
+    "evidence_log_allowed": false,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/public_conformance_provenance.json",
+    "owned_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report",
+      "validate-public-conformance-reporting",
+      "validate-public-conformance-reporting-integration",
+      "validate-public-conformance-reporting-end-to-end"
+    ]
+  },
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before public reporting source family, schema anchor, workflow action, generated report, tmp artifact, scorecard, badge, release-evidence bundle, dashboard status, or public claim language",
+    "support_authority": "public conformance reporting rows are source, schema, workflow, stability, report, dashboard, scorecard, badge, and claim-language evidence only until parser, sema, lowering, IR, runtime, or e2e owners in upstream checked-in evidence families claim behavior",
+    "provenance_rule": "schemas, release-evidence bundles, workflow actions, generated summaries, tmp reports, tmp artifacts, scorecards, badges, public summaries, public status labels, and claim-language rows cannot define canonical behavior support",
+    "retired_surface_rule": "evidence-log, generated-only, generated-evidence-log, dashboard-only, scorecard-only, badge-only, tmp-artifact-only, workflow-label-only, provisional-as-claim-ready, blocked/quarantined promotion, compatibility, gate, old-mode, retired route, unsupported, and missing-upstream rows are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  },
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",
@@ -18,6 +65,15 @@
   "source_families": [
     {
       "family_id": "upstream-conformance-evidence",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "coverage_goal": "public reporting must terminate in the live checked-in corpus and coverage-index contracts instead of a dashboard-only summary",
       "source_paths": [
         "docs/runbooks/objc3c_public_conformance_reporting.md",
@@ -33,6 +89,12 @@
     },
     {
       "family_id": "external-credibility-evidence",
+      "behavior_owner_phases": [
+        "sema",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "coverage_goal": "public credibility claims must terminate in accepted external-validation replay and publication surfaces rather than manual narrative claims",
       "source_paths": [
         "docs/runbooks/objc3c_external_validation.md",
@@ -49,12 +111,18 @@
     },
     {
       "family_id": "public-reporting-schema-anchors",
+      "behavior_owner_phases": [
+        "ir",
+        "e2e",
+        "canonical_rejection",
+        "public_conformance_provenance"
+      ],
       "coverage_goal": "public status and scorecard claims must remain anchored to checked-in dashboard and release-evidence schemas",
       "source_paths": [
         "schemas/objc3-conformance-dashboard-status-v1.schema.json",
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
         "scripts/check_release_evidence.py",
-        "scripts/generate_conformance_evidence_index.py",
+        "scripts/check_conformance_corpus_surface.py",
         "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
         "schemas/objc3c-public-conformance-summary-v1.schema.json"
       ]

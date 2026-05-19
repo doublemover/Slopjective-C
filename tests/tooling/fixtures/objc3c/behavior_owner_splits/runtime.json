@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-replay-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_root": "tests/tooling/fixtures/objc3c",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "runtime replay provenance covers live dispatch, runtime host linking, ARC retain/release, blocks, task runtime interop, concurrency replay, and runtime-backed contract artifacts; fixture generation metadata, generated module outputs, evidence-log rows, migration-only rows, and generated-output-only rows do not create runtime support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "validation_runtime_dispatch_host_link_contract/**",
+    "validation_task_runtime_interop_cancellation_contract/**",
+    "validation_concurrency_replay_contract/**",
+    "validation_retain_release_operation_contract/**",
+    "validation_block_copy_dispose_contract/**",
+    "validation_block_abi_invoke_trampoline_contract/**",
+    "validation_weak_unowned_semantics_contract/**",
+    "validation_super_dispatch_method_family_contract/**",
+    "validation_nil_receiver_semantics_foldability_contract/**"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime retired route, unresolved dispatch, host-link replay names, generated-only runtime rows, evidence-log runtime rows, migration-only runtime rows, replay-only runtime rows, and generated-output-only runtime rows are strict-error, canonical rejection, absent-support, or provenance-only evidence"
+}

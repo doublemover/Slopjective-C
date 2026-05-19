@@ -1,0 +1,9 @@
+#pragma once
+
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_source_surfaces.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_release_candidate.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_library.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registration_descriptor.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_block_arc.h"

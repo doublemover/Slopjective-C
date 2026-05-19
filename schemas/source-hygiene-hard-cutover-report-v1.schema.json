@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/source-hygiene-hard-cutover-report-v1.schema.json",
+  "title": "Source Hygiene Hard Cutover Report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "scan_roots",
+    "forbidden_patterns",
+    "findings",
+    "active_findings",
+    "tracked_generated_reports",
+    "stats",
+    "ok"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "source-hygiene-hard-cutover-report-v1"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    },
+    "scan_roots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "excluded_globs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "forbidden_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern_id", "description", "regex", "severity"]
+      }
+    },
+    "findings": {
+      "$ref": "#/$defs/findings"
+    },
+    "active_findings": {
+      "$ref": "#/$defs/findings"
+    },
+    "tracked_generated_reports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": [
+        "finding_count",
+        "active_finding_count",
+        "tracked_generated_report_count"
+      ],
+      "properties": {
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracked_generated_report_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ok": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern_id", "severity", "description", "path", "line", "excerpt"],
+        "properties": {
+          "pattern_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "excerpt": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

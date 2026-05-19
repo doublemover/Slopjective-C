@@ -1,0 +1,11 @@
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_function_publication.inc"
+
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_method_publication.inc"
+
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_profile_rebuild.inc"
+
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_normalization_status.inc"
+
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_function_finalization.inc"
+
+#include "parse/objc3_parser_core_callable_unsafe_pointer_finalizers_method_finalization.inc"

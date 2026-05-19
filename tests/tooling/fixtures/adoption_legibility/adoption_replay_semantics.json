@@ -1,0 +1,149 @@
+{
+  "contract_id": "objc3c.adoption_legibility.adoption_replay_semantics.v1",
+  "schema_version": 1,
+  "owner_section": "adoption_replay",
+  "owner_contract": {
+    "owner": "adoption_replay_owner",
+    "artifact_section": "adoption_replay",
+    "publication_projection": "evaluator_publication.adoption_replay_phases",
+    "blocker_projection": "claim_audit.blocker_metadata.adoption_replay"
+  },
+  "package_bridge": "objc3c",
+  "depends_on": [
+    "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+    "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
+  ],
+  "adoption_replay_phases": [
+    {
+      "phase_id": "orient",
+      "sequence": 1,
+      "description": "Start from evaluator-facing docs and public command discovery before choosing an adoption replay path.",
+      "required_paths": [
+        "README.md",
+        "site/index.md",
+        "docs/tutorials/getting_started.md",
+        "docs/runbooks/objc3c_public_command_surface.md"
+      ],
+      "required_actions": [
+        "build-public-command-surface",
+        "check-documentation-surface"
+      ]
+    },
+    {
+      "phase_id": "compile-showcase-anchors",
+      "sequence": 2,
+      "description": "Compile and validate ObjC2-shaped, Swift-facing, and C++-facing showcase anchors before publishing any adoption guidance.",
+      "required_paths": [
+        "showcase/auroraBoard/main.objc3",
+        "showcase/signalMesh/main.objc3",
+        "showcase/patchKit/main.objc3",
+        "showcase/portfolio.json"
+      ],
+      "required_actions": [
+        "compile-objc3c",
+        "check-showcase-surface",
+        "validate-showcase"
+      ]
+    },
+    {
+      "phase_id": "package-and-application-workspace",
+      "sequence": 3,
+      "description": "Move conversion examples into deterministic package and canonical application workflow state.",
+      "required_paths": [
+        "docs/runbooks/objc3c_package_ecosystem.md",
+        "docs/runbooks/objc3c_application_architecture_testing.md",
+        "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+        "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
+      ],
+      "required_actions": [
+        "build-package-lock",
+        "validate-package-ecosystem",
+        "validate-application-architecture"
+      ]
+    },
+    {
+      "phase_id": "support-and-revert-check",
+      "sequence": 4,
+      "description": "Check upgrade-support report boundaries, support-window status, revert-risk inventory, and long-horizon evidence before public adoption claims.",
+      "required_paths": [
+        "docs/runbooks/objc3c_release_operations.md",
+        "docs/runbooks/objc3c_long_horizon_operations.md",
+        "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
+      ],
+      "required_actions": [
+        "validate-release-operations",
+        "publish-release-operations",
+        "validate-long-horizon-operations"
+      ]
+    }
+  ],
+  "interop_guidance_axes": [
+    {
+      "axis_id": "objc2-object-model",
+      "showcase_anchor": "showcase/auroraBoard/main.objc3",
+      "runbook_anchor": "docs/runbooks/objc3c_object_model_closure.md",
+      "allowed_guidance": "convert recognizable interface, implementation, protocol, category, and property shapes only where runnable examples and conformance evidence cover them",
+      "deferred_behavior": [
+        "full Objective-C 2 runtime parity",
+        "implicit behavior not represented by checked-in examples"
+      ]
+    },
+    {
+      "axis_id": "swift-facing-async",
+      "showcase_anchor": "showcase/signalMesh/main.objc3",
+      "runbook_anchor": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+      "allowed_guidance": "treat async, executor, and message-send examples as explicit interop contracts, not Swift replacement claims",
+      "deferred_behavior": [
+        "complete actor parity",
+        "unsupported Swift module import behavior"
+      ]
+    },
+    {
+      "axis_id": "cpp-facing-systems-interop",
+      "showcase_anchor": "showcase/patchKit/main.objc3",
+      "runbook_anchor": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+      "allowed_guidance": "explain imported hooks, macro derives, property behavior, and C/C++ boundary expectations only through checked-in sources and runbooks",
+      "deferred_behavior": [
+        "ABI parity",
+        "zero-cost C++ interop claims"
+      ]
+    }
+  ],
+  "required_adoption_replay_fields": [
+    "source_version",
+    "target_version",
+    "source_channel",
+    "target_channel",
+    "package_lock",
+    "canonical_application_workspace",
+    "upgrade_support_report",
+    "revert_target"
+  ],
+  "hard_cutover_truthfulness": {
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
+    "upgrade_support_report_boundary": "upgrade_support_report is a replay field for risk inventory only, not a retired source acceptance guarantee",
+    "revert_target_boundary": "revert_target identifies evidence-linked release operations state, not alternate support for retired behavior",
+    "wrapper_only_publication_allowed": false
+  },
+  "publication_policy": {
+    "metadata_projection": "evaluator_publication.adoption_replay_phases",
+    "support_state": "evaluator-ready-with-same-major-porting-orientation-and-evidence-linked-comparison",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.adoption_replay",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
+  "fail_closed_conditions": [
+    "adoption replay phase sequence is missing or out of order",
+    "phase omits concrete paths or workflow actions",
+    "interop guidance axis omits a runnable showcase anchor",
+    "same-major support or revert evidence is not named",
+    "adoption replay fields drift from long-horizon support semantics",
+    "adoption replay wording implies retired source acceptance support"
+  ]
+}

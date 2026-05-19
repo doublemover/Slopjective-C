@@ -1,0 +1,13 @@
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_forward_declarations.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_body_traversal.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_expression_visits.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_branch_body_traversal.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_loop_for_traversal.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_switch_case_traversal.inc"
+
+#include "parse/objc3_parser_block_literal_capture_identifiers_statement_collection_dispatch.inc"

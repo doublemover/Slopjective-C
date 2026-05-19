@@ -22,7 +22,7 @@ PARSER = ROOT / "native/objc3c/src/parse/objc3_parser.cpp"
 SEMA = ROOT / "native/objc3c/src/sema/objc3_sema_contract.h"
 PIPELINE_TYPES = ROOT / "native/objc3c/src/pipeline/objc3_frontend_types.h"
 PIPELINE = ROOT / "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
-ARTIFACTS = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+ARTIFACTS = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 IMPORT_SURFACE = ROOT / "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
 
 REQUIRED_LAYOUT_FIELDS = [
@@ -114,9 +114,9 @@ def build_summary() -> dict:
         "positive_fixture": rel(POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "validation_commands": [
-            "npm run test:objc3c:fixture-matrix",
-            "npm run test:objc3c:negative-expectations",
-            "npm run test:objc3c:execution-replay-proof",
+            "npm run objc3c -- test-fixture-matrix",
+            "npm run objc3c -- test-negative-expectations",
+            "npm run objc3c -- test-execution-replay",
         ],
     }
 

@@ -1,6 +1,13 @@
 {
   "contract_id": "objc3c.adoption_legibility.capability_comparison_semantics.v1",
   "schema_version": 1,
+  "owner_section": "comparison_matrix",
+  "owner_contract": {
+    "owner": "adoption_comparison_owner",
+    "artifact_section": "comparison_matrix",
+    "publication_projection": "evaluator_publication.comparison_axes",
+    "blocker_projection": "claim_audit.blocker_metadata.capability_comparison"
+  },
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
@@ -11,9 +18,9 @@
   ],
   "comparison_axes": [
     {
-      "axis_id": "objc2-migration",
+      "axis_id": "objc2-conversion",
       "adjacent_ecosystem": "Objective-C 2",
-      "allowed_claim_shape": "migration-oriented comparison over runnable ObjC3 examples, package locks, support windows, and explicitly named deferred behavior",
+      "allowed_claim_shape": "conversion-oriented comparison over runnable ObjC3 examples, package locks, support windows, and explicitly named deferred behavior",
       "required_evidence": [
         "docs/tutorials/objc2_to_objc3_migration.md",
         "docs/tutorials/objc2_swift_cpp_comparison.md",
@@ -22,8 +29,8 @@
         "docs/runbooks/objc3c_long_horizon_operations.md"
       ],
       "forbidden_claim_shapes": [
-        "drop-in source compatibility",
-        "automatic cross-major migration",
+        "drop-in retired-source acceptance",
+        "automatic cross-major conversion",
         "full runtime parity without live runtime evidence"
       ]
     },
@@ -77,6 +84,15 @@
     "forbidden_claim_shapes",
     "deferred_behavior"
   ],
+  "publication_policy": {
+    "metadata_projection": "evaluator_publication.comparison_axes",
+    "claim_audit_projection": "claim_audit.demoted_or_out_of_scope_claims",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.capability_comparison",
+    "requires_public_actions": [
+      "validate-adoption-legibility",
+      "publish-adoption-legibility"
+    ]
+  },
   "fail_closed_conditions": [
     "comparison axis has no runnable source example",
     "comparison axis lacks conformance or performance evidence",

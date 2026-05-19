@@ -1,0 +1,13 @@
+  bool return_has_generic_suffix = false;
+  bool return_has_pointer_declarator = false;
+  bool return_has_nullability_suffix = false;
+  bool return_has_ownership_qualifier = false;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
+  bool return_object_pointer_type_spelling = false;
+  bool return_has_invalid_generic_suffix = false;
+  bool return_has_invalid_pointer_declarator = false;
+  bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_ownership_qualifier = false;
+  bool return_has_invalid_type_suffix = false;

@@ -20,7 +20,7 @@ This contract is normative for toolchains claiming ObjC 3.0 Core/Strict/Strict C
 
 ### S.1.1 Canonical module names {#s-1-1}
 
-A conforming implementation shall provide the following modules (or aliases mapped to these canonical capability IDs):
+A conforming implementation shall provide the following canonical modules and capability IDs:
 
 | Canonical module    | Capability ID           | Required for profile |
 | ------------------- | ----------------------- | -------------------- |
@@ -30,7 +30,7 @@ A conforming implementation shall provide the following modules (or aliases mapp
 | `objc3.keypath`     | `objc3.cap.keypath`     | Core and above       |
 | `objc3.system`      | `objc3.cap.system`      | Strict System        |
 
-If implementation-specific names are used, module metadata and conformance reports shall publish the canonical capability-ID mapping.
+When a compiler-visible module declaration cannot use dotted spelling, module metadata and conformance reports shall publish the canonical module name and capability-ID mapping. That mapping is an implementation naming boundary, not a second public import lane.
 
 ### S.1.2 Discovery and import requirements {#s-1-2}
 
@@ -135,7 +135,7 @@ Each required module shall expose semantic version metadata:
 - and supported capability IDs.
 
 Major-version changes indicate potentially incompatible API/ABI changes.
-Minor-version changes are additive and backward compatible.
+Minor-version changes are additive within the same major-version contract.
 
 ### S.4.2 ABI stability requirements {#s-4-2}
 

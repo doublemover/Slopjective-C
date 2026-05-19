@@ -225,7 +225,9 @@ An optional type is written `T?` in ObjC 3.0 mode. Optional types are a type-sys
 
 ### 0.4.15 IUO type {#part-0-4-15}
 
-An implicitly unwrapped optional type is written `T!`. In v1, IUO primarily supports migration and is discouraged in strict modes ([Part 3](#part-3)).
+An implicitly unwrapped optional type is written `T!`. In v1, IUO is a narrow
+interoperability spelling for object and block pointer surfaces and is
+discouraged in strict modes ([Part 3](#part-3)).
 
 ### 0.4.16 Carrier type {#part-0-4-16}
 

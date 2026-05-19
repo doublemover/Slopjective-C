@@ -15,7 +15,7 @@
   ],
   "blocking_conditions": [
     "package-channel-install-failure",
-    "rollback-proof-failure",
+    "revert-proof-failure",
     "release-operations-proof-failure",
     "missing-release-evidence-index",
     "runtime-hardening-regression",
@@ -34,9 +34,9 @@
       "required_action": "block security-positive publication until release, provenance, package, and update evidence agree again"
     },
     {
-      "incident_id": "rollback-or-install-regression",
+      "incident_id": "revert-or-install-regression",
       "severity": "high",
-      "required_action": "retain blocked status until the live packaged install and rollback drill passes"
+      "required_action": "retain blocked status until the live packaged install and revert drill passes"
     },
     {
       "incident_id": "metadata-or-provenance-drift",

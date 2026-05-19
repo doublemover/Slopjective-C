@@ -10,5 +10,11 @@
   "publication_summary": "tmp/reports/external-validation/publication-summary.json",
   "drill_summary": "tmp/reports/external-validation/drill-summary.json",
   "integration_summary": "tmp/reports/external-validation/integration-summary.json",
-  "end_to_end_summary": "tmp/reports/external-validation/end-to-end-summary.json"
+  "end_to_end_summary": "tmp/reports/external-validation/end-to-end-summary.json",
+  "artifact_owner_contracts": {
+    "source_surface_summary": "external-validation-source-surface",
+    "intake_replay_summary": "external-validation-intake",
+    "publication_summary": "external-validation-public-claims",
+    "integration_summary": "external-validation-workflow"
+  }
 }

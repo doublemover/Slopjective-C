@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "fixture": "removed_runtime_dispatch_retired_route_flag_rejected.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "lowering",
+  "behavior_family": "errors",
+  "fixture_kind": "strict-error",
+  "retired_surface_tags": [
+    "runtime-dispatch"
+  ],
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "canonical-strict-error",
+    "retired_positive_surface": true
+  },
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+    "required_tokens": [
+      "OBJC3-E-REMOVED-RUNTIME-RETIRED_ROUTE",
+      "runtime dispatch retired route ABI selection is removed"
+    ]
+  },
+  "execution": {
+    "native_compile_args": [
+      "-fobjc-version=3",
+      "-fobjc3-runtime-dispatch-retired-route=on",
+      "-emit-llvm"
+    ]
+  }
+}

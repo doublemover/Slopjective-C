@@ -1,0 +1,13 @@
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_runtime_helpers.h"
+
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_debug_instrumentation.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_helper_api_surface.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_lowering_helpers.h"
+#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc_arc_runtime_support.h"
+
+void EmitObjc3IRArcLoweringHelperRuntimeMetadataNodes(std::ostringstream &out) {
+  EmitObjc3IRArcLoweringSemanticsHelperMetadataNodes(out);
+  EmitObjc3IRArcHelperApiSurfaceMetadataNode(out);
+  EmitObjc3IRArcHelperRuntimeSupportMetadataNode(out);
+  EmitObjc3IRArcDebugInstrumentationMetadataNode(out);
+}

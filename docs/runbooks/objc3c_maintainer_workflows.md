@@ -2,25 +2,28 @@
 
 ## Generated Documentation Surface
 
-Use the generators directly for documentation surfaces that are supposed to be
+Use the package bridge for documentation surfaces that are supposed to be
 checked into the repo:
 
 - public site:
   - source: `site/src/index.body.md`
-  - build/check: `npm run build:site` / `npm run check:site`
+  - build/check: `npm run objc3c -- build-site` / `npm run objc3c -- check-site`
 - native implementation doc:
   - source: `docs/objc3c-native/src/*.md`
-  - build/check: `npm run build:docs:native` / `npm run check:docs:native`
+  - build/check: `npm run objc3c -- build-native-docs` / `npm run objc3c -- check-native-docs`
 - machine-facing operator appendix:
-  - source: `package.json` + `scripts/objc3c_public_workflow_runner.py` + `scripts/build_objc3c_public_command_contract.py`
-  - build/check: `npm run build:docs:commands` / `npm run check:docs:commands`
+  - source: `package.json` plus the action-catalog-owned public command contract
+    builder
+  - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
   - maintainer contract checks:
-    - `python scripts/objc3c_public_workflow_runner.py build-public-command-contract`
-    - `python scripts/objc3c_public_workflow_runner.py check-public-command-contract`
-    - `python scripts/objc3c_public_workflow_runner.py check-public-command-budget`
+    - `npm run objc3c -- build-public-command-contract`
+    - `npm run objc3c -- check-public-command-contract`
+    - `npm run objc3c -- check-public-command-budget`
 
-Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
-`tmp/artifacts/` as canonical documentation.
+Refresh generated checked-in outputs from their owner inputs. Do not treat
+`tmp/reports/` or `tmp/artifacts/` as documentation owner inputs.
+Helper paths behind these entries are implementation details for action-catalog
+actions, not an additional public command surface.
 
 ## Superclean Working Boundary
 
@@ -45,16 +48,16 @@ Use these roots directly when cleaning or renaming repo surfaces:
 - machine-owned outputs only:
   - `tmp/`
   - `artifacts/`
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` is the build-emitted source-of-truth artifact for the repo superclean surface
+  - the generated repo-superclean owner artifact is selected by the checked-in build contract
 
 Do not add milestone-specific wrappers, sidecar compatibility files, or
-parallel source-of-truth copies when changing these surfaces.
+parallel owner copies when changing these surfaces.
 
 Contributor-facing entrypoint:
 
 - `CONTRIBUTING.md` is the contributor instruction surface for normal repo
   changes
-- `docs/tutorials/README.md` is the learning-path and migration-guide root
+- `docs/tutorials/README.md` is the learning-path and conversion-guide root
 - `showcase/README.md` is the runnable example map and live showcase boundary
 - `README.md` stays focused on onboarding, setup, and repo navigation
 - this runbook is maintainer-only and should not accumulate contributor
@@ -65,9 +68,9 @@ Developer-tooling entrypoint:
 - `docs/runbooks/objc3c_developer_tooling.md` is the maintainer boundary for
   live inspection, debug, and explainability work
 - developer ergonomics changes must stay on the existing native tooling,
-  runtime ABI, and public workflow runner surfaces named there
-- use the direct commands in that runbook when you need compile summaries,
-  runtime debug-state inspection, or parity validation without inventing a
+  runtime ABI, and `npm run objc3c -- <action>` bridge surfaces named there
+- use the package-bridge actions in that runbook when you need compile
+  summaries, runtime debug-state inspection, or parity validation without inventing a
   sidecar workflow
 
 Bonus-experience entrypoint:
@@ -114,14 +117,10 @@ Governance-sustainability entrypoint:
   repo-superclean, documentation-surface, dependency-boundary, and public
   workflow-runner surfaces instead of inventing sidecar milestone wrappers,
   duplicate planning roots, or spreadsheet-only waiver tracking
-- use the replayable governance summaries before widening package scripts,
-  runbooks, schemas, checker surfaces, or publication workflows:
-  - `python scripts/build_governance_budget_inventory_summary.py`
-  - `python scripts/build_governance_policy_summary.py`
-  - `python scripts/build_governance_maintainer_review_summary.py`
-  - `python scripts/build_governance_stewardship_semantics_summary.py`
-  - `python scripts/check_governance_sustainability_budget_enforcement.py`
-  - `python scripts/build_governance_anti_regression_summary.py`
+- use `npm run objc3c -- validate-governance-sustainability` before widening
+  package scripts, runbooks, schemas, checker surfaces, or publication workflows
+- use `npm run objc3c -- publish-governance-sustainability` when publication
+  metadata must be refreshed
 
 Release-foundation entrypoint:
 
@@ -129,7 +128,7 @@ Release-foundation entrypoint:
   release artifact taxonomy, runnable payload selection, reproducible package
   assembly, SBOM publication, and attestation binding
 - release-foundation work must stay on the existing runnable package,
-  release-evidence, repo-superclean, and public workflow runner surfaces
+  release-evidence, repo-superclean, and `npm run objc3c -- <action>` bridge surfaces
   instead of inventing a second package layout, hand-maintained checksum
   spreadsheet, or installer-shaped sidecar bundle
 - use the public runner actions for source-surface checking, schema checking,
@@ -142,7 +141,7 @@ Packaging-channels entrypoint:
   portable archives, local installer images, offline bootstrap bundles, and
   install or rollback smoke
 - packaging-channel work must stay on the existing runnable package,
-  release-foundation, and public workflow runner surfaces instead of inventing
+  release-foundation, and `npm run objc3c -- <action>` bridge surfaces instead of inventing
   a second installer payload or manual archive assembly flow
 - use the public runner actions for packaging-channel source checks, schema
   checks, package generation, and install smoke before widening distribution
@@ -152,13 +151,13 @@ Release-operations entrypoint:
 
 - `docs/runbooks/objc3c_release_operations.md` is the maintainer boundary for
   semantic versioning claims, support windows, update-manifest publication,
-  compatibility warnings, rollback guidance, and release-operations metadata
+  support warnings, rollback guidance, and release-operations metadata
 - release-operations work must stay on the existing release-foundation,
-  packaging-channel, and public workflow runner surfaces instead of inventing a
+  packaging-channel, and `npm run objc3c -- <action>` bridge surfaces instead of inventing a
   hosted updater, second payload lineage, or package-manager-only upgrade flow
 - use the public runner actions for release-operations source checking, schema
   checking, update-manifest derivation, publication, and end-to-end validation
-  before widening compatibility or deprecation claims
+  before widening support-window or deprecation claims
 
 Runtime-performance entrypoint:
 
@@ -166,8 +165,8 @@ Runtime-performance entrypoint:
   startup/dispatch/reflection/ownership hot-path measurement, runtime counter
   snapshots, and runnable runtime-performance validation
 - runtime-performance work must stay on the existing runtime library, runtime
-  acceptance probes, public workflow runner, and runnable package surfaces
-  instead of inventing a benchmark-only runtime shim or sidecar report flow
+  acceptance probes, `npm run objc3c -- <action>` bridge, and runnable package surfaces
+  instead of inventing a benchmark-only runtime adapter or sidecar report flow
 - use that runbook before widening runtime hot-path claims, counter fields, or
   packaged runtime-performance validation
 
@@ -178,7 +177,7 @@ Compiler-throughput entrypoint:
   invalidation, macro-host cache publication, docs-generation cost, and
   heavyweight validation-tier ownership
 - compiler-throughput work must stay on the existing native compiler
-  executable, compile wrapper, public workflow runner, native docs generators,
+  executable, compile wrapper, `npm run objc3c -- <action>` bridge, native docs generators,
   and runnable package surfaces instead of inventing a second benchmark harness
   or spreadsheet-only workflow
 - use the public runner actions for compiler-throughput benchmarking and
@@ -221,11 +220,11 @@ Public-conformance-reporting entrypoint:
 Standard-library entrypoint:
 
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
-  the checked-in stdlib root, canonical module inventory, alias mapping, and
+  the checked-in stdlib root, canonical module inventory, module-name mapping, and
   machine-owned stdlib workspace materialization flow
 - `docs/runbooks/objc3c_stdlib_core.md` is the maintainer boundary for the
   core stdlib utility, text/data, collection, option, and result family split
-- `stdlib/semantic_policy.json` is the checked-in compatibility contract for
+- `stdlib/semantic_policy.json` is the checked-in semantic stability contract for
   stable helper meaning and module semver across the core stdlib surface
 - stdlib work must stay on `stdlib/`, `tmp/artifacts/stdlib/`, and
   `tmp/reports/stdlib/` instead of inventing a second library tree or sidecar
@@ -236,27 +235,27 @@ Standard-library entrypoint:
 ## Build
 
 ```powershell
-npm run build:objc3c-native
-npm run build:objc3c-native:contracts
+npm run objc3c -- build-native-binaries
+npm run objc3c -- build-native-contracts
 ```
 
 ## Test
 
 ```powershell
-npm run test:smoke
-npm run test:ci
-npm run test:docs
-npm run test:repo
+npm run objc3c -- test-smoke
+npm run objc3c -- test-ci
+npm run objc3c -- validate-documentation-surface
+npm run objc3c -- validate-repo-superclean
 ```
 
-`npm run test:ci` now includes the compact documentation integration surface:
+`npm run objc3c -- test-ci` now includes the compact documentation integration surface:
 
 - generated site drift,
 - generated native-doc drift,
 - generated public-command-surface drift,
 - and reader-facing documentation/readability boundary checks.
 
-`npm run test:docs` runs the full documentation build/check pass:
+`npm run objc3c -- validate-documentation-surface` runs the full documentation build/check pass:
 
 - rebuild the published site output,
 - rebuild the generated native implementation docs,
@@ -265,90 +264,90 @@ npm run test:repo
 
 ## Direct tools
 
-- command-surface contract build: `python scripts/objc3c_public_workflow_runner.py build-public-command-contract`
-- command-surface contract check: `python scripts/objc3c_public_workflow_runner.py check-public-command-contract`
-- command-surface budget check: `python scripts/objc3c_public_workflow_runner.py check-public-command-budget`
-- dependency boundaries: `npm run check:objc3c:boundaries`
-- task hygiene: `npm run check:task-hygiene`
-- repo superclean surface: `npm run check:repo:surface`
-- repo superclean integration: `npm run test:repo`
-- docs stitch/check: `npm run check:docs:native`
-- parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
+- command-surface contract build: `npm run objc3c -- build-public-command-contract`
+- command-surface contract check: `npm run objc3c -- check-public-command-contract`
+- command-surface budget check: `npm run objc3c -- check-public-command-budget`
+- dependency boundaries: `npm run objc3c -- check-dependency-boundaries`
+- task hygiene: `npm run objc3c -- check-task-hygiene`
+- repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`
+- repo superclean integration: `npm run objc3c -- validate-repo-superclean`
+- docs stitch/check: `npm run objc3c -- check-native-docs`
+- parity source check: `npm run objc3c -- test-capability-routed-source-parity`
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - performance governance boundary: `docs/runbooks/objc3c_performance_governance.md`
-- performance governance source-surface check: `npm run check:objc3c:performance-governance:surface`
-- performance governance schema check: `npm run check:objc3c:performance-governance:schemas`
-- performance governance dashboard build: `npm run inspect:objc3c:performance-dashboard`
-- performance governance publication: `npm run publish:objc3c:performance-report`
-- integrated performance governance workflow: `npm run test:objc3c:performance-governance`
-- performance governance integration proof: `npm run test:objc3c:performance-governance:integration`
-- performance governance end-to-end proof: `npm run test:objc3c:performance-governance:e2e`
+- performance governance source-surface check: `npm run objc3c -- check-performance-governance-surface`
+- performance governance schema check: `npm run objc3c -- check-performance-governance-schema-surface`
+- performance governance dashboard build: `npm run objc3c -- build-performance-dashboard`
+- performance governance publication: `npm run objc3c -- publish-performance-report`
+- integrated performance governance workflow: `npm run objc3c -- validate-performance-governance`
+- performance governance integration proof: `npm run objc3c -- validate-performance-governance-integration`
+- performance governance end-to-end proof: `npm run objc3c -- validate-performance-governance-end-to-end`
 - release foundation boundary: `docs/runbooks/objc3c_release_foundation.md`
-- release foundation source-surface check: `npm run check:objc3c:release-foundation:surface`
-- release foundation schema check: `npm run check:objc3c:release-foundation:schemas`
-- release manifest build: `npm run inspect:objc3c:release-manifest`
-- release provenance publication: `npm run publish:objc3c:release-provenance`
-- integrated release foundation workflow: `npm run test:objc3c:release-foundation`
+- release foundation source-surface check: `npm run objc3c -- check-release-foundation-surface`
+- release foundation schema check: `npm run objc3c -- check-release-foundation-schema-surface`
+- release manifest build: `npm run objc3c -- build-release-manifest`
+- release provenance publication: `npm run objc3c -- publish-release-provenance`
+- integrated release foundation workflow: `npm run objc3c -- validate-release-foundation`
 - packaging channels boundary: `docs/runbooks/objc3c_packaging_channels.md`
-- packaging channels source-surface check: `npm run check:objc3c:packaging-channels:surface`
-- packaging channels schema check: `npm run check:objc3c:packaging-channels:schemas`
-- packaging channels build: `npm run package:objc3c:channels`
-- integrated packaging channels workflow: `npm run test:objc3c:packaging-channels`
-- packaging channels end-to-end proof: `npm run test:objc3c:packaging-channels:e2e`
+- packaging channels source-surface check: `npm run objc3c -- check-packaging-channels-surface`
+- packaging channels schema check: `npm run objc3c -- check-packaging-channels-schema-surface`
+- packaging channels build: `npm run objc3c -- build-package-channels`
+- integrated packaging channels workflow: `npm run objc3c -- validate-packaging-channels`
+- packaging channels end-to-end proof: `npm run objc3c -- validate-packaging-channels-end-to-end`
 - release operations boundary: `docs/runbooks/objc3c_release_operations.md`
-- release operations source-surface check: `npm run check:objc3c:release-operations:surface`
-- release operations schema check: `npm run check:objc3c:release-operations:schemas`
-- update manifest build: `npm run inspect:objc3c:update-manifest`
-- release operations publication: `npm run publish:objc3c:release-operations`
-- integrated release operations workflow: `npm run test:objc3c:release-operations`
-- release operations end-to-end proof: `npm run test:objc3c:release-operations:e2e`
+- release operations source-surface check: `npm run objc3c -- check-release-operations-surface`
+- release operations schema check: `npm run objc3c -- check-release-operations-schema-surface`
+- update manifest build: `npm run objc3c -- build-update-manifest`
+- release operations publication: `npm run objc3c -- publish-release-operations`
+- integrated release operations workflow: `npm run objc3c -- validate-release-operations`
+- release operations end-to-end proof: `npm run objc3c -- validate-release-operations-end-to-end`
 - distribution credibility boundary: `docs/runbooks/objc3c_distribution_credibility.md`
-- distribution credibility source-surface check: `npm run check:objc3c:distribution-credibility:surface`
-- distribution credibility schema check: `npm run check:objc3c:distribution-credibility:schemas`
-- distribution credibility dashboard build: `npm run inspect:objc3c:distribution-credibility`
-- distribution credibility publication: `npm run publish:objc3c:distribution-credibility`
-- integrated distribution credibility workflow: `npm run test:objc3c:distribution-credibility`
-- distribution credibility end-to-end proof: `npm run test:objc3c:distribution-credibility:e2e`
+- distribution credibility source-surface check: `npm run objc3c -- check-distribution-credibility-surface`
+- distribution credibility schema check: `npm run objc3c -- check-distribution-credibility-schema-surface`
+- distribution credibility dashboard build: `npm run objc3c -- build-distribution-credibility-dashboard`
+- distribution credibility publication: `npm run objc3c -- publish-distribution-credibility`
+- integrated distribution credibility workflow: `npm run objc3c -- validate-distribution-credibility`
+- distribution credibility end-to-end proof: `npm run objc3c -- validate-distribution-credibility-end-to-end`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
-- runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
-- integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
-- runnable runtime performance validation: `npm run test:objc3c:runnable-runtime-performance`
+- runtime performance benchmark: `npm run objc3c -- benchmark-runtime-performance`
+- integrated runtime performance validation: `npm run objc3c -- validate-runtime-performance`
+- runnable runtime performance validation: `npm run objc3c -- validate-runnable-runtime-performance`
 - compiler throughput boundary: `docs/runbooks/objc3c_compiler_throughput.md`
-- compiler throughput benchmark: `npm run inspect:objc3c:compiler-throughput`
-- integrated compiler throughput validation: `npm run test:objc3c:compiler-throughput`
-- runnable compiler throughput validation: `npm run test:objc3c:runnable-compiler-throughput`
+- compiler throughput benchmark: `npm run objc3c -- benchmark-compiler-throughput`
+- integrated compiler throughput validation: `npm run objc3c -- validate-compiler-throughput`
+- runnable compiler throughput validation: `npm run objc3c -- validate-runnable-compiler-throughput`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
-- external validation source-surface check: `npm run check:external-validation:surface`
-- integrated external validation drill: `npm run test:objc3c:external-validation`
-- external validation replay drill: `npm run test:objc3c:external-validation:replay`
-- external repro publication: `npm run publish:objc3c:external-repro-corpus`
-- external validation integration proof: `npm run test:objc3c:external-validation:integration`
+- external validation source-surface check: `npm run objc3c -- check-external-validation-surface`
+- integrated external validation drill: `npm run objc3c -- validate-external-validation`
+- external validation replay drill: `npm run objc3c -- test-external-validation-replay`
+- external repro publication: `npm run objc3c -- publish-external-repro-corpus`
+- external validation integration proof: `npm run objc3c -- validate-external-validation-integration`
 - public conformance reporting boundary: `docs/runbooks/objc3c_public_conformance_reporting.md`
-- public conformance source-surface check: `npm run check:objc3c:public-conformance:surface`
-- public conformance schema check: `npm run check:objc3c:public-conformance:schemas`
-- public conformance scorecard build: `npm run inspect:objc3c:public-conformance:scorecard`
-- public conformance publication: `npm run publish:objc3c:public-conformance`
-- integrated public conformance workflow: `npm run test:objc3c:public-conformance`
-- public conformance integration proof: `npm run test:objc3c:public-conformance:integration`
-- public conformance end-to-end proof: `npm run test:objc3c:public-conformance:e2e`
-- stress source-surface check: `npm run check:stress:surface`
-- parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
-- lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`
-- mixed-module differential stress: `npm run test:objc3c:mixed-module-differential`
-- stress minimization: `npm run test:objc3c:stress-minimization`
-- stress crash triage: `npm run test:objc3c:stress-crash-triage`
-- integrated stress workflow: `npm run test:objc3c:stress`
-- stress integration proof: `npm run test:objc3c:stress:integration`
-- stress end-to-end proof: `npm run test:objc3c:stress:e2e`
+- public conformance source-surface check: `npm run objc3c -- check-public-conformance-reporting-surface`
+- public conformance schema check: `npm run objc3c -- check-public-conformance-schema-surface`
+- public conformance scorecard build: `npm run objc3c -- build-public-conformance-scorecard`
+- public conformance publication: `npm run objc3c -- publish-public-conformance-report`
+- integrated public conformance workflow: `npm run objc3c -- validate-public-conformance-reporting`
+- public conformance integration proof: `npm run objc3c -- validate-public-conformance-reporting-integration`
+- public conformance end-to-end proof: `npm run objc3c -- validate-public-conformance-reporting-end-to-end`
+- stress source-surface check: `npm run objc3c -- check-stress-surface`
+- parser/sema fuzz safety: `npm run objc3c -- test-fuzz-safety`
+- lowering/runtime stress: `npm run objc3c -- test-lowering-runtime-stress`
+- mixed-module differential stress: `npm run objc3c -- test-mixed-module-differential`
+- stress minimization: `npm run objc3c -- test-stress-minimization`
+- stress crash triage: `npm run objc3c -- test-stress-crash-triage`
+- integrated stress workflow: `npm run objc3c -- validate-stress`
+- stress integration proof: `npm run objc3c -- validate-stress-integration`
+- stress end-to-end proof: `npm run objc3c -- validate-stress-end-to-end`
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
 - stdlib core boundary: `docs/runbooks/objc3c_stdlib_core.md`
-- stdlib surface check: `npm run check:stdlib:surface`
-- stdlib workspace materialization: `npm run build:objc3c:stdlib`
-- stdlib integration: `npm run test:stdlib`
-- advanced stdlib integration: `npm run test:stdlib:advanced`
-- advanced stdlib runnable integration: `npm run test:stdlib:advanced:e2e`
+- stdlib surface check: `npm run objc3c -- check-stdlib-surface`
+- stdlib workspace materialization: `npm run objc3c -- materialize-stdlib-workspace`
+- stdlib integration: `npm run objc3c -- validate-stdlib-foundation`
+- advanced stdlib integration: `npm run objc3c -- validate-stdlib-advanced`
+- advanced stdlib runnable integration: `npm run objc3c -- validate-runnable-stdlib-advanced`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.
