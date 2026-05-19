@@ -7,17 +7,17 @@ and escalation windows for v0.13 governance operations.
 
 ## 0. Reseed metadata binding
 
-| Field                    | Value                                                                                                     |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `issue`                  | `#791`                                                                                                    |
-| `seed_id`                | `V013-GOV-03`                                                                                             |
-| `wave_id`                | `W1`                                                                                                      |
-| `batch_id`               | `BATCH-20260223-11S`                                                                                      |
-| `milestone_id`           | `#32`                                                                                                     |
-| `acceptance_gate_id`     | `AC-V013-GOV-03`                                                                                          |
-| `package_artifact`       | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`            |
-| `calendar_artifact`      | `reports/reviews/v013_review_board_calendar.md`                                                           |
-| `lane_evidence_artifact` | `docs/support/evidence_map.md`                                                                             |
+| Field                    | Value                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| `issue`                  | `#791`                                                                                         |
+| `seed_id`                | `V013-GOV-03`                                                                                  |
+| `wave_id`                | `W1`                                                                                           |
+| `batch_id`               | `BATCH-20260223-11S`                                                                           |
+| `milestone_id`           | `#32`                                                                                          |
+| `acceptance_gate_id`     | `AC-V013-GOV-03`                                                                               |
+| `package_artifact`       | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package` |
+| `calendar_artifact`      | `reports/reviews/v013_review_board_calendar.md`                                                |
+| `lane_evidence_artifact` | `docs/support/evidence_map.md`                                                                 |
 
 ## 1. Scope and authority
 
@@ -177,7 +177,7 @@ Every formal session must publish:
 | `RBOM-DEP-M07-03` | `Hard` | Publication deadlines (`Section 4`) remain fail-closed and tied to `T0` windows.                                                          | Deadline windows are removed/ambiguous or converted from required to optional behavior.                        | `Lane A M07 owner (#854)` | Reintroduce deterministic `T0`-relative deadlines and rerun verification commands.                                           | `AC-V014-M07-03`                   |
 | `RBOM-DEP-M07-04` | `Hard` | Escalation windows (`Section 5`) remain explicit with trigger, owner, response window, and closure evidence.                              | Any escalation row lacks required fields or response windows become undefined.                                 | `Lane A M07 owner (#854)` | Restore full escalation schema and revalidate matrix acceptance rows.                                                        | `AC-V014-M07-04`                   |
 | `RBOM-DEP-M07-05` | `Soft` | Baseline calendar window extension (`Section 6`) is advisory `HOLD` until synchronized with annual package and cadence package snapshots. | Calendar-window drift is untracked or used as a hard-go/no-go decision input without synchronization evidence. | `Lane A M07 owner (#854)` | Publish synchronized snapshot timestamp across all three baseline artifacts or escalate drift to hard-failure investigation. | `AC-V014-M07-04`                   |
-| `RBOM-DEP-M07-06` | `Hard` | Capability matrix, evidence map, and schema-registry ownership are blocking annualization release gates.                                  | `DEP/CMD/EVID/AC` mapping is incomplete or schema ownership bypasses the shared registry.                       | `Lane A M07 owner (#854)` | Repair schema ownership and evidence mapping; capture clean validation transcript through the public command surface.        | `AC-V014-M07-05`, `AC-V014-M07-06` |
+| `RBOM-DEP-M07-06` | `Hard` | Capability matrix, evidence map, and schema-registry ownership are blocking annualization release gates.                                  | `DEP/CMD/EVID/AC` mapping is incomplete or schema ownership bypasses the shared registry.                      | `Lane A M07 owner (#854)` | Repair schema ownership and evidence mapping; capture clean validation transcript through the public command surface.        | `AC-V014-M07-05`, `AC-V014-M07-06` |
 
 ### 9.3 Deterministic disposition rule
 

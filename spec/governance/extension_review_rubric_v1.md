@@ -164,10 +164,10 @@ Reference calculations:
 
 ## 11. Downstream Contract
 
-| Consumer                     | Required output from this rubric                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                           |
+| Consumer                     | Required output from this rubric                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                                                                 |
 | `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims, grounded in capability/evidence rows. |
-| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                         |
+| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                                                               |
 
 No downstream consumer may reinterpret `HF-*` or criterion floors as advisory.

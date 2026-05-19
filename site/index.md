@@ -17,14 +17,14 @@ Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more e
 Only the capability matrix states are support states. This overview points at
 those rows instead of inventing ad hoc status vocabulary.
 
-| Area                       | Matrix boundary | Notes                                                                                                                                       |
-| -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native compiler pipeline   | internal     | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split compiler/runtime/pipeline/artifact/IO owner modules. |
-| Runnable language subset   | implemented  | Parser, sema, lowering, IR, runtime strict-dispatch diagnostic, and e2e smoke rows carry executable evidence.                                |
-| Object-model declarations  | internal     | Parser/sema/metadata support exists, but executable object-model behavior is not widened beyond matrix rows.                                 |
-| Runtime metadata emission  | internal     | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.        |
-| Runtime dispatch result    | internal     | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                           |
-| Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until implemented matrix rows say otherwise. |
+| Area                       | Matrix boundary     | Notes                                                                                                                                                        |
+| -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Native compiler pipeline   | internal            | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split compiler/runtime/pipeline/artifact/IO owner modules. |
+| Runnable language subset   | implemented         | Parser, sema, lowering, IR, runtime strict-dispatch diagnostic, and e2e smoke rows carry executable evidence.                                                |
+| Object-model declarations  | internal            | Parser/sema/metadata support exists, but executable object-model behavior is not widened beyond matrix rows.                                                 |
+| Runtime metadata emission  | internal            | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.                       |
+| Runtime dispatch result    | internal            | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                                           |
+| Advanced language features | reserved            | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until implemented matrix rows say otherwise.      |
 | Retired/alternate surfaces | not a support state | Old modes, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion are negative evidence only. |
 
 ## How to Read This Draft <a id="toc-how-to-read-this-draft"></a>
@@ -37,29 +37,31 @@ Use this page in three passes:
 
 ## Quick Routes <a id="toc-quick-routes"></a>
 
-| If you want to...                                        | Start here                                                                                      |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| understand what already works                            | [At a Glance](#toc-status-scope-note)                                                           |
-| see the runnable subset                                  | [What Is Implemented and Runnable](#intro)                                                      |
-| understand what is still missing                         | [What Remains](#status-remaining)                                                               |
-| follow the reader-facing learning path                   | [docs/tutorials/README.md](../docs/tutorials/README.md)                                         |
-| start with the runnable getting-started tutorial         | [docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)                       |
-| pick a capability-backed showcase example first          | [showcase/README.md](../showcase/README.md)                                                     |
-| see the tutorial build run and verify flow               | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)                     |
-| follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
-| map ObjC2 patterns to canonical ObjC3 examples          | [ObjC2 pattern conversion notes](../docs/tutorials/objc2_to_objc3_migration.md)                 |
+| If you want to...                                | Start here                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| understand what already works                    | [At a Glance](#toc-status-scope-note)                                           |
+| see the runnable subset                          | [What Is Implemented and Runnable](#intro)                                      |
+| understand what is still missing                 | [What Remains](#status-remaining)                                               |
+| follow the reader-facing learning path           | [docs/tutorials/README.md](../docs/tutorials/README.md)                         |
+| start with the runnable getting-started tutorial | [docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)       |
+| pick a capability-backed showcase example first  | [showcase/README.md](../showcase/README.md)                                     |
+| see the tutorial build run and verify flow       | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)     |
+| follow the guided showcase walkthrough           | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md) |
+| map ObjC2 patterns to canonical ObjC3 examples   | [ObjC2 pattern conversion notes](../docs/tutorials/objc2_to_objc3_migration.md) |
+
 <!-- Documentation-surface anchor: [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md) -->
+
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
-| evaluate adoption, support, and claim boundaries         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
-| find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
-| build and validate the implementation                    | [README.md](../README.md)                                                                       |
-| inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
-| verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
-| inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
-| inspect hard-cutover support boundaries                  | [hard-cutover capability boundaries](../docs/support/hard_cutover_capability_truth.md)           |
-| inspect capability claim responsibility                   | [capability claim responsibility](../docs/support/capability_claim_responsibility.md)            |
-| inspect machine-readable capability boundaries           | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), [schema registry](../scripts/objc3c_shared/schema_registry.py), and [artifact schema records](../native/objc3c/src/artifacts/json/capability_support_schema_records.cpp) |
-| inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
+| evaluate adoption, support, and claim boundaries | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md) |
+| find the right draft section | [Specification Map](#toc-front-matter) |
+| build and validate the implementation | [README.md](../README.md) |
+| inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |
+| verify support status and evidence | [capability matrix](../docs/support/capability_matrix.md) |
+| inspect executable evidence for support claims | [evidence map](../docs/support/evidence_map.md) |
+| inspect hard-cutover support boundaries | [hard-cutover capability boundaries](../docs/support/hard_cutover_capability_truth.md) |
+| inspect capability claim responsibility | [capability claim responsibility](../docs/support/capability_claim_responsibility.md) |
+| inspect machine-readable capability boundaries | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), [schema registry](../scripts/objc3c_shared/schema_registry.py), and [artifact schema records](../native/objc3c/src/artifacts/json/capability_support_schema_records.cpp) |
+| inspect public command ownership | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
 ## Reader Promises <a id="toc-reader-promises"></a>
 

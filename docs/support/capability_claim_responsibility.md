@@ -7,14 +7,14 @@ spec prose.
 
 ## Owner Surfaces
 
-| Responsibility | Owner surface | What it may do |
-| --- | --- | --- |
-| Capability state and public behavior claim | `docs/support/capability_matrix.json` with `schemas/objc3c-capability-matrix-v1.schema.json` | Define whether a row is `implemented`, `rejected`, `reserved`, or `internal`; define the exact `objc3c.behavior.*` claim for implemented rows. |
-| Capability evidence projection | `docs/support/evidence_map.json` with `schemas/objc3c-capability-evidence-map-v1.schema.json` | Flatten matrix evidence into stable rows keyed by capability, claim, evidence kind, path, and command. |
-| Reader projections | `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, and `docs/support/hard_cutover_capability_truth.md` | Explain matrix and evidence-map data without creating new support claims. |
-| Issue closeout evidence | `docs/issues/hard_cutover_8132_8150_evidence.md` and `docs/issues/hard_cutover_8132_8150_closeout/*` | Preserve checked-in closeout evidence, implementation commit inventories, deferred-operation notes, and rejection or absence evidence. |
-| Schema registry descriptions | `schemas/README.md` and schema files under `schemas/` | Define schema IDs, data shapes, and registry-backed schema ownership. |
-| Site/spec summaries | `site/`, `spec/`, `README.md`, and `CONTRIBUTING.md` | Route readers to matrix and evidence-map owners; do not restate support as independent prose. |
+| Responsibility                             | Owner surface                                                                                                            | What it may do                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Capability state and public behavior claim | `docs/support/capability_matrix.json` with `schemas/objc3c-capability-matrix-v1.schema.json`                             | Define whether a row is `implemented`, `rejected`, `reserved`, or `internal`; define the exact `objc3c.behavior.*` claim for implemented rows. |
+| Capability evidence projection             | `docs/support/evidence_map.json` with `schemas/objc3c-capability-evidence-map-v1.schema.json`                            | Flatten matrix evidence into stable rows keyed by capability, claim, evidence kind, path, and command.                                         |
+| Reader projections                         | `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`, and `docs/support/hard_cutover_capability_truth.md` | Explain matrix and evidence-map data without creating new support claims.                                                                      |
+| Issue closeout evidence                    | `docs/issues/hard_cutover_8132_8150_evidence.md` and `docs/issues/hard_cutover_8132_8150_closeout/*`                     | Preserve checked-in closeout evidence, implementation commit inventories, deferred-operation notes, and rejection or absence evidence.         |
+| Schema registry descriptions               | `schemas/README.md` and schema files under `schemas/`                                                                    | Define schema IDs, data shapes, and registry-backed schema ownership.                                                                          |
+| Site/spec summaries                        | `site/`, `spec/`, `README.md`, and `CONTRIBUTING.md`                                                                     | Route readers to matrix and evidence-map owners; do not restate support as independent prose.                                                  |
 
 ## Claim Rules
 

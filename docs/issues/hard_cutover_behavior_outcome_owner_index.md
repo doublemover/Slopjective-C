@@ -11,19 +11,19 @@ strict error, generated provenance, residue-audit disposition, or issue
 closeout. This keeps support claims separate from evidence artifacts that only
 prove absence or traceability.
 
-| Outcome | Kind | Evidence Owner | Boundary |
-| --- | --- | --- | --- |
-| Canonical positive behavior | positive | `tests/fixtures/canonical/manifest.json` and native positive fixtures | supported behavior is canonical Objective-C 3 only |
-| Phase owner contracts | phase-owned behavior authority | `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json` | phase support claims resolve to hand-authored native fixture families, not generated artifacts |
-| Parser rejection | rejection | parser negative fixtures and retired-surface indexes | legacy literals and removed parser flags reject old-mode/retired-route surfaces |
-| Semantic rejection | rejection | sema errors and acceptance-area owner index | retired adapter and unsupported-feature claims are diagnostics |
-| Lowering or link strict error | strict-error | lowering/IR strict-error fixtures | runtime retired route lowering remains removed or unresolved, not supported |
-| Runtime strict error | strict-error | runtime dispatch/error fixtures | runtime dispatch retired route and unresolved symbols are strict errors |
-| Negative execution | negative-execution | e2e negative execution fixtures | retired rows remain rejected at runnable boundaries |
-| Generated provenance only | provenance-only | generated manifest and objc3c contract artifacts | generated artifacts do not define behavior support |
-| Positive residue false positive | audit-disposition | positive residue audit | lexical hits are identifiers or inventory labels, not support claims |
-| Issue closeout only | closeout-index | docs/issues evidence and payload indexes | issue docs summarize traceability; they do not create support |
-| Latest branch owner refresh | closeout-index | `docs/issues/hard_cutover_latest_local_commit_refresh.md` | post-outcome branch commits refresh owner traceability only; validation and remote closure remain deferred |
+| Outcome                         | Kind                           | Evidence Owner                                                        | Boundary                                                                                                   |
+| ------------------------------- | ------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Canonical positive behavior     | positive                       | `tests/fixtures/canonical/manifest.json` and native positive fixtures | supported behavior is canonical Objective-C 3 only                                                         |
+| Phase owner contracts           | phase-owned behavior authority | `tests/conformance/hard_cutover_behavior_phase_owner_contracts.json`  | phase support claims resolve to hand-authored native fixture families, not generated artifacts             |
+| Parser rejection                | rejection                      | parser negative fixtures and retired-surface indexes                  | legacy literals and removed parser flags reject old-mode/retired-route surfaces                            |
+| Semantic rejection              | rejection                      | sema errors and acceptance-area owner index                           | retired adapter and unsupported-feature claims are diagnostics                                             |
+| Lowering or link strict error   | strict-error                   | lowering/IR strict-error fixtures                                     | runtime retired route lowering remains removed or unresolved, not supported                                |
+| Runtime strict error            | strict-error                   | runtime dispatch/error fixtures                                       | runtime dispatch retired route and unresolved symbols are strict errors                                    |
+| Negative execution              | negative-execution             | e2e negative execution fixtures                                       | retired rows remain rejected at runnable boundaries                                                        |
+| Generated provenance only       | provenance-only                | generated manifest and objc3c contract artifacts                      | generated artifacts do not define behavior support                                                         |
+| Positive residue false positive | audit-disposition              | positive residue audit                                                | lexical hits are identifiers or inventory labels, not support claims                                       |
+| Issue closeout only             | closeout-index                 | docs/issues evidence and payload indexes                              | issue docs summarize traceability; they do not create support                                              |
+| Latest branch owner refresh     | closeout-index                 | `docs/issues/hard_cutover_latest_local_commit_refresh.md`             | post-outcome branch commits refresh owner traceability only; validation and remote closure remain deferred |
 
 Outcome ownership is deliberately stricter than file ownership. A fixture may
 live under a broad behavior family, but the expected result determines whether

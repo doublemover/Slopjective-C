@@ -163,11 +163,11 @@ Rejected examples:
 
 ## 10. Downstream Contract
 
-| Consumer                         | Required input from this policy                              |
-| -------------------------------- | ------------------------------------------------------------ |
-| `C-08` vendor conformance claims | Namespace class validity and lifecycle-state checks tied to capability/evidence rows. |
+| Consumer                         | Required input from this policy                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
+| `C-08` vendor conformance claims | Namespace class validity and lifecycle-state checks tied to capability/evidence rows.   |
 | `C-11` extension registry        | Canonical ID class, collision-free publication contract, and schema-registry ownership. |
-| `C-05` lifecycle policy          | State-dependent namespace restrictions.                      |
+| `C-05` lifecycle policy          | State-dependent namespace restrictions.                                                 |
 
 Schema-level permissiveness MUST NOT override this policy. If a schema accepts an
 identifier that violates Section 2 through Section 4, the shared schema registry,

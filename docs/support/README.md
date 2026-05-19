@@ -6,15 +6,15 @@ summarize support, but they must not widen it beyond these files.
 
 ## Canonical Files
 
-| File | Purpose |
-| ---- | ------- |
-| `capability_matrix.json` | Machine-readable capability states, support claims, evidence pointers, command-surface policy, and hard-cutover rules. |
-| `capability_matrix.md` | Human-readable projection of the capability matrix. |
-| `evidence_map.json` | Machine-readable flattened capability-to-evidence rows. |
-| `evidence_map.md` | Human-readable evidence table. |
-| `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
-| `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated-output rows. |
-| `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
+| File                                 | Purpose                                                                                                                |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `capability_matrix.json`             | Machine-readable capability states, support claims, evidence pointers, command-surface policy, and hard-cutover rules. |
+| `capability_matrix.md`               | Human-readable projection of the capability matrix.                                                                    |
+| `evidence_map.json`                  | Machine-readable flattened capability-to-evidence rows.                                                                |
+| `evidence_map.md`                    | Human-readable evidence table.                                                                                         |
+| `capability_schema_examples.md`      | Examples and anti-examples for matrix and evidence rows.                                                               |
+| `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated-output rows.   |
+| `hard_cutover_capability_truth.md`   | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose.                                |
 
 Issue closeout payloads are downstream evidence consumers, not support owners.
 They must point back to committed branch surfaces in the files above and must

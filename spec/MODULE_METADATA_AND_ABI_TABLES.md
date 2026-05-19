@@ -168,15 +168,15 @@ not by itself claim live runtime registration, realization, or reflection.
 The following major areas remain reserved or unclaimed as public support until
 the capability matrix links exact implemented rows to evidence:
 
-| Area | Matrix state | Current public wording |
-| --- | --- | --- |
-| Runtime bootstrap and multi-image registration beyond implemented rows | `reserved` | Unclaimed runtime closure. |
-| Emitted metadata bound to fully live class, protocol, and category realization | `reserved` | Owner/artifact evidence only until executable rows exist. |
-| Property, ivar, accessor, and reflection runtime behavior beyond implemented rows | `reserved` | Unclaimed runtime closure. |
-| Cross-module import and module runtime semantics beyond documented fail-closed contracts | `reserved` | Not a broad module-runtime support claim. |
-| Executable blocks, captures, and byref runtime support | `reserved` | Unavailable unless a narrower implemented row states otherwise. |
-| ARC automation beyond the current ownership baseline | `reserved` | Unavailable unless a narrower implemented row states otherwise. |
-| `throws`, richer error propagation, async/await, actors, tasks, macros, derives, and broader interop closure | `reserved` | Future-spec shape only, not current public runtime support. |
+| Area                                                                                                         | Matrix state | Current public wording                                          |
+| ------------------------------------------------------------------------------------------------------------ | ------------ | --------------------------------------------------------------- |
+| Runtime bootstrap and multi-image registration beyond implemented rows                                       | `reserved`   | Unclaimed runtime closure.                                      |
+| Emitted metadata bound to fully live class, protocol, and category realization                               | `reserved`   | Owner/artifact evidence only until executable rows exist.       |
+| Property, ivar, accessor, and reflection runtime behavior beyond implemented rows                            | `reserved`   | Unclaimed runtime closure.                                      |
+| Cross-module import and module runtime semantics beyond documented fail-closed contracts                     | `reserved`   | Not a broad module-runtime support claim.                       |
+| Executable blocks, captures, and byref runtime support                                                       | `reserved`   | Unavailable unless a narrower implemented row states otherwise. |
+| ARC automation beyond the current ownership baseline                                                         | `reserved`   | Unavailable unless a narrower implemented row states otherwise. |
+| `throws`, richer error propagation, async/await, actors, tasks, macros, derives, and broader interop closure | `reserved`   | Future-spec shape only, not current public runtime support.     |
 
 ## D.7 Current implementation priorities {#d-7}
 

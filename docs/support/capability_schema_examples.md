@@ -18,9 +18,7 @@ examples and support-directory files must not duplicate schema fragments.
   "title": "Canonical parser syntax",
   "state": "implemented",
   "summary": "The native parser accepts canonical modules, bindings, functions, control flow, and expression forms used by the runnable subset.",
-  "support_claims": [
-    "objc3c.behavior.parser.canonical-syntax"
-  ],
+  "support_claims": ["objc3c.behavior.parser.canonical-syntax"],
   "owner_modules": [
     "native/objc3c/src/parse/objc3_parser_core.cpp",
     "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp"
@@ -119,13 +117,7 @@ Projection contract:
 {
   "source": "docs/support/capability_matrix.json#/capabilities/*/evidence",
   "owner": "scripts/capability_docs_validator/evidence_map.py",
-  "row_key": [
-    "capability_id",
-    "support_claim",
-    "evidence_kind",
-    "path",
-    "command"
-  ],
+  "row_key": ["capability_id", "support_claim", "evidence_kind", "path", "command"],
   "drift_rule": "The evidence map is a flattened projection of capability matrix evidence rows. Validators fail on duplicate, missing, or extra row keys."
 }
 ```
@@ -142,9 +134,7 @@ Rules shown by this contract:
 ```json
 {
   "public_command_surface": "npm run objc3c -- <action>",
-  "command_required_for": [
-    "replayable implemented behavior evidence"
-  ],
+  "command_required_for": ["replayable implemented behavior evidence"],
   "command_forbidden_for": [
     "source ownership rows",
     "schema ownership rows",
@@ -168,14 +158,8 @@ Rules shown by this policy:
 
 ```json
 {
-  "support_claim_required_for_states": [
-    "implemented"
-  ],
-  "support_claim_forbidden_for_states": [
-    "rejected",
-    "reserved",
-    "internal"
-  ],
+  "support_claim_required_for_states": ["implemented"],
+  "support_claim_forbidden_for_states": ["rejected", "reserved", "internal"],
   "public_behavior_claim_namespace": "objc3c.behavior.*",
   "no_alias_or_retired_route_claim_sources": [
     "retired surface terms",
@@ -185,11 +169,7 @@ Rules shown by this policy:
     "generated-output rows without matching implemented rows",
     "compatibility or retired route wording"
   ],
-  "owner_only_states": [
-    "rejected",
-    "reserved",
-    "internal"
-  ],
+  "owner_only_states": ["rejected", "reserved", "internal"],
   "consumer_rule": "Only implemented rows with support_claims may produce public Objective-C 3.0 behavior claims. Rejected, reserved, and internal rows are negative, reserved, schema, workflow, owner-boundary, or evidence-boundary rows only."
 }
 ```

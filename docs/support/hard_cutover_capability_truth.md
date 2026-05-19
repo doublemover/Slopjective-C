@@ -42,22 +42,22 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 
 ## Support States
 
-| State | Meaning for public docs | What docs must not infer |
-| --- | --- | --- |
-| `implemented` | The named behavior has an evidence-backed support claim. | Broader language/runtime support outside the row. |
-| `rejected` | The source form or behavior is a diagnostic/strict-error case. | Alternate acceptance by flag, retired adapter, alternate path, or old source spelling. |
-| `reserved` | The syntax, feature family, or runtime closure remains unavailable. | A roadmap promise, preview mode, or partial runtime claim. |
-| `internal` | The row names implementation, schema, report, workflow, or owner boundaries. | Public Objective-C 3.0 language behavior. |
+| State         | Meaning for public docs                                                      | What docs must not infer                                                               |
+| ------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `implemented` | The named behavior has an evidence-backed support claim.                     | Broader language/runtime support outside the row.                                      |
+| `rejected`    | The source form or behavior is a diagnostic/strict-error case.               | Alternate acceptance by flag, retired adapter, alternate path, or old source spelling. |
+| `reserved`    | The syntax, feature family, or runtime closure remains unavailable.          | A roadmap promise, preview mode, or partial runtime claim.                             |
+| `internal`    | The row names implementation, schema, report, workflow, or owner boundaries. | Public Objective-C 3.0 language behavior.                                              |
 
 ## Current Claim Boundary
 
-| Area | Capability state | Public wording |
-| --- | --- | --- |
-| Parser, typed sema, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke | `implemented` where the matrix has behavior rows | Claim only the named support claim and its linked evidence. |
-| Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers | `internal` | Treat as owner/evidence surfaces, not language features. |
-| Full object-model runtime realization | `reserved` until a matrix row changes | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
-| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure | `reserved` unless separately implemented | Describe as unavailable or reserved spec surface, not runnable support. |
-| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
+| Area                                                                                                                                                  | Capability state                                 | Public wording                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Parser, typed sema, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke                             | `implemented` where the matrix has behavior rows | Claim only the named support claim and its linked evidence.                        |
+| Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers                                                     | `internal`                                       | Treat as owner/evidence surfaces, not language features.                           |
+| Full object-model runtime realization                                                                                                                 | `reserved` until a matrix row changes            | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
+| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure                                   | `reserved` unless separately implemented         | Describe as unavailable or reserved spec surface, not runnable support.            |
+| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.    |
 
 ## Documentation Rule
 

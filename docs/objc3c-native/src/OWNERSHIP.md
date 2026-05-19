@@ -28,15 +28,15 @@ This file defines source ownership for generated `docs/objc3c-native.md`.
 runtime-source claims inside these owner sections unless the stitcher contract
 is deliberately changed.
 
-| Section group                | Headings                                                                 | Primary owner        |
-| ---------------------------- | ------------------------------------------------------------------------ | -------------------- |
-| Pipeline and bootstrap       | working boundary, execution flow, state publication, bootstrap, startup   | runtime/compiler     |
-| Metaprogramming              | metaprogramming source, package/provenance, semantics, lowering, cache    | compiler/semantics   |
-| Concurrency                  | unified concurrency source, normalization, lowering, metadata             | runtime/concurrency  |
-| Error handling               | error source, catch/finalization, propagation, unwind diagnostics, ABI    | runtime/errors       |
-| Blocks and ARC               | block/ARC source, ownership transfer, lowering, helper ABI, preservation  | runtime/memory       |
-| Object model and reflection  | property/ivar/accessor, realization, dispatch tables, reflection, lookup  | runtime/classes      |
-| Installation and validation  | loader lifecycle, acceptance suite, shared harness, evidence, claim rules | compiler/qa          |
+| Section group               | Headings                                                                  | Primary owner       |
+| --------------------------- | ------------------------------------------------------------------------- | ------------------- |
+| Pipeline and bootstrap      | working boundary, execution flow, state publication, bootstrap, startup   | runtime/compiler    |
+| Metaprogramming             | metaprogramming source, package/provenance, semantics, lowering, cache    | compiler/semantics  |
+| Concurrency                 | unified concurrency source, normalization, lowering, metadata             | runtime/concurrency |
+| Error handling              | error source, catch/finalization, propagation, unwind diagnostics, ABI    | runtime/errors      |
+| Blocks and ARC              | block/ARC source, ownership transfer, lowering, helper ABI, preservation  | runtime/memory      |
+| Object model and reflection | property/ivar/accessor, realization, dispatch tables, reflection, lookup  | runtime/classes     |
+| Installation and validation | loader lifecycle, acceptance suite, shared harness, evidence, claim rules | compiler/qa         |
 
 ## Update Workflow
 
