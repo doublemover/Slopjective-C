@@ -7,9 +7,12 @@ import re
 import subprocess
 from pathlib import Path
 
+from objc3c_tooling.subprocesses import python_script_command
+
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'tests' / 'tooling' / 'fixtures' / 'source_hygiene' / 'stable_identifier_authenticity_policy.json'
 INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'residue-authenticity-inventory' / 'residue_authenticity_inventory.json'
+INVENTORY_BUILDER = ROOT / 'scripts' / 'build_residue_authenticity_inventory.py'
 OUT_DIR = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'product-decontamination'
 JSON_OUT = OUT_DIR / 'product_decontamination_report.json'
 MD_OUT = OUT_DIR / 'product_decontamination_report.md'
@@ -17,6 +20,12 @@ MD_OUT = OUT_DIR / 'product_decontamination_report.md'
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding='utf-8'))
+
+
+def ensure_inventory_report() -> None:
+    if INVENTORY_PATH.is_file():
+        return
+    subprocess.run(python_script_command(INVENTORY_BUILDER), cwd=ROOT, check=True)
 
 
 def tracked_files() -> set[str]:
@@ -40,6 +49,7 @@ def root_matches(root: str, paths: set[str]) -> list[str]:
 
 
 def main() -> int:
+    ensure_inventory_report()
     policy = read_json(POLICY_PATH)
     inventory = read_json(INVENTORY_PATH)
     tracked = tracked_files()

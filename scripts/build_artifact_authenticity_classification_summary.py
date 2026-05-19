@@ -8,10 +8,13 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.subprocesses import python_script_command
+
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json'
 CLASS_PATH = ROOT / 'tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json'
 INVENTORY_PATH = ROOT / 'tmp/reports/source-hygiene/residue-authenticity-inventory/residue_authenticity_inventory.json'
+INVENTORY_BUILDER = ROOT / 'scripts' / 'build_residue_authenticity_inventory.py'
 OUT_DIR = ROOT / 'tmp/reports/source-hygiene/artifact-authenticity-classification'
 JSON_OUT = OUT_DIR / 'artifact_authenticity_classification_summary.json'
 MD_OUT = OUT_DIR / 'artifact_authenticity_classification_summary.md'
@@ -19,6 +22,12 @@ MD_OUT = OUT_DIR / 'artifact_authenticity_classification_summary.md'
 
 def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding='utf-8'))
+
+
+def ensure_inventory_report() -> None:
+    if INVENTORY_PATH.is_file():
+        return
+    subprocess.run(python_script_command(INVENTORY_BUILDER), cwd=ROOT, check=True)
 
 
 def tracked_files() -> list[str]:
@@ -70,6 +79,7 @@ def count_json_envelopes(paths: list[str]) -> int:
 
 
 def main() -> int:
+    ensure_inventory_report()
     policy = read_json(POLICY_PATH)
     classification = read_json(CLASS_PATH)
     inventory = read_json(INVENTORY_PATH)
