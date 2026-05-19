@@ -27,6 +27,10 @@ from capability_docs_validator.constants import (
 )
 from capability_docs_validator.docs import _validate_docs_reference_rows
 from capability_docs_validator.errors import CapabilityDocsError
+from capability_docs_validator.evidence_map import (
+    _validate_evidence_map_projection,
+    build_evidence_map_projection,
+)
 from capability_docs_validator.manifest import _manifest_support_claims
 from capability_docs_validator.matrix import _require_matrix_shape, _validate_evidence_rows
 from capability_docs_validator.support_links import (

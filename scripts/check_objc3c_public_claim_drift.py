@@ -14,16 +14,20 @@ from objc3c_tooling.reports import write_report_outputs
 
 try:
     from public_claim_drift_contracts import (
+        PUBLIC_CLAIM_DRIFT_OWNER,
         PublicClaimDriftInputs,
         build_public_claim_drift_summary,
+        public_claim_drift_owner_contract,
         public_claim_scan_paths,
         render_markdown,
         status_line,
     )
 except ModuleNotFoundError:
     from scripts.public_claim_drift_contracts import (
+        PUBLIC_CLAIM_DRIFT_OWNER,
         PublicClaimDriftInputs,
         build_public_claim_drift_summary,
+        public_claim_drift_owner_contract,
         public_claim_scan_paths,
         render_markdown,
         status_line,

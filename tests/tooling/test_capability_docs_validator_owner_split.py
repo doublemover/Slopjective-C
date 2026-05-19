@@ -18,6 +18,10 @@ from capability_docs_validator.constants import (
 )
 from capability_docs_validator.docs import _validate_docs_reference_rows
 from capability_docs_validator.errors import CapabilityDocsError
+from capability_docs_validator.evidence_map import (
+    _validate_evidence_map_projection,
+    build_evidence_map_projection,
+)
 from capability_docs_validator.manifest import _manifest_support_claims
 from capability_docs_validator.matrix import _require_matrix_shape
 from capability_docs_validator.support_links import (
@@ -84,6 +88,8 @@ def test_legacy_entrypoint_reexports_validator_owner_modules() -> None:
     assert module.build_parser is build_parser
     assert module._manifest_support_claims is _manifest_support_claims
     assert module._validate_support_claim_links is _validate_support_claim_links
+    assert module._validate_evidence_map_projection is _validate_evidence_map_projection
+    assert module.build_evidence_map_projection is build_evidence_map_projection
     assert module._validate_docs_reference_rows is _validate_docs_reference_rows
 
 
@@ -111,6 +117,47 @@ def test_capability_truth_contract_declares_matrix_evidence_and_blocker_owners()
     assert owner_contract["blocker_metadata"]["blocker_contract"] == (
         "hard-cutover-capability-truth-fail-closed"
     )
+
+
+def test_evidence_map_projection_helper_builds_canonical_payload() -> None:
+    rows = _require_matrix_shape({"capabilities": [_row()]})
+
+    projection = build_evidence_map_projection(rows)
+
+    assert projection["schema_version"] == "objc3c-capability-evidence-map-v1"
+    assert projection["matrix_path"] == "docs/support/capability_matrix.json"
+    assert (
+        projection["projection_contract"]["owner"]
+        == "scripts/capability_docs_validator/evidence_map.py"
+    )
+    assert projection["projection_contract"]["row_key"] == [
+        "capability_id",
+        "support_claim",
+        "evidence_kind",
+        "path",
+        "command",
+    ]
+    assert projection["rows"] == [
+        {
+            "capability_id": "compiler.parser.core-declarations",
+            "support_claim": _claim()["claim_id"],
+            "evidence_kind": "test",
+            "path": _claim()["behavior_fixture"],
+            "command": _claim()["executable_command"],
+        }
+    ]
+
+
+def test_evidence_map_projection_rejects_manual_policy_drift() -> None:
+    rows = _require_matrix_shape({"capabilities": [_row()]})
+    projection = build_evidence_map_projection(rows)
+    projection["evidence_policy"] = {
+        **projection["evidence_policy"],
+        "row_role_rule": "manual duplicate policy",
+    }
+
+    with pytest.raises(CapabilityDocsError, match="canonical projection"):
+        _validate_evidence_map_projection(rows, projection)
 
 
 def test_public_claim_drift_contract_declares_surface_owner_and_blockers() -> None:

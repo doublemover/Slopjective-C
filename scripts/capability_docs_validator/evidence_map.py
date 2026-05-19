@@ -2,8 +2,58 @@ from __future__ import annotations
 
 from typing import Any, NamedTuple
 
+from objc3c_tooling.paths import repo_rel
+
+from capability_docs_validator.constants import (
+    CAPABILITY_EVIDENCE_MAP_SCHEMA_ID,
+    MATRIX_PATH,
+    SCHEMA_PATH,
+)
 from capability_docs_validator.errors import CapabilityDocsError
 from capability_docs_validator.support_links import _row_support_claims
+
+
+EVIDENCE_MAP_ROW_KEY = (
+    "capability_id",
+    "support_claim",
+    "evidence_kind",
+    "path",
+    "command",
+)
+
+
+def _projection_contract() -> dict[str, Any]:
+    return {
+        "source": "docs/support/capability_matrix.json#/capabilities/*/evidence",
+        "owner": "scripts/capability_docs_validator/evidence_map.py",
+        "row_key": list(EVIDENCE_MAP_ROW_KEY),
+        "drift_rule": (
+            "The evidence map is a flattened projection of capability matrix evidence rows. "
+            "Validators fail on duplicate, missing, or extra row keys."
+        ),
+    }
+
+
+def _evidence_policy() -> dict[str, Any]:
+    return {
+        "public_command_surface": "npm run objc3c -- <action>",
+        "command_required_for": [
+            "replayable implemented behavior evidence",
+        ],
+        "command_forbidden_for": [
+            "source ownership rows",
+            "schema ownership rows",
+            "doc boundary rows",
+            "diagnostic inventory rows that are not public replay commands",
+        ],
+        "row_role_rule": (
+            "Rows without command are ownership or boundary evidence; they do not define public "
+            "workflow surface or broaden capability state. Hard-cutover issue evidence and "
+            "payload rows identify checked-in branch evidence boundaries only; their "
+            "implementation commit lists do not prove validation, push state, GitHub issue "
+            "edits, remote closure, or compatibility support."
+        ),
+    }
 
 
 class EvidenceRowKey(NamedTuple):
@@ -101,6 +151,50 @@ def _duplicates(keys: list[EvidenceRowKey]) -> list[EvidenceRowKey]:
     return duplicates
 
 
+def _row_from_key(key: EvidenceRowKey) -> dict[str, str]:
+    row = {
+        "capability_id": key.capability_id,
+    }
+    if key.support_claim:
+        row["support_claim"] = key.support_claim
+    row.update(
+        {
+            "evidence_kind": key.evidence_kind,
+            "path": key.path,
+        }
+    )
+    if key.command:
+        row["command"] = key.command
+    return row
+
+
+def build_evidence_map_projection(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "schema_version": CAPABILITY_EVIDENCE_MAP_SCHEMA_ID,
+        "matrix_path": repo_rel(MATRIX_PATH),
+        "matrix_schema_path": repo_rel(SCHEMA_PATH),
+        "projection_contract": _projection_contract(),
+        "evidence_policy": _evidence_policy(),
+        "rows": [_row_from_key(key) for key in _matrix_evidence_row_keys(matrix_rows)],
+    }
+
+
+def _projection_drift_fields(expected: dict[str, Any], actual: dict[str, Any]) -> list[str]:
+    fields = (
+        "schema_version",
+        "matrix_path",
+        "matrix_schema_path",
+        "projection_contract",
+        "evidence_policy",
+        "rows",
+    )
+    return [
+        field
+        for field in fields
+        if actual.get(field) != expected.get(field)
+    ]
+
+
 def _validate_evidence_map_projection(
     matrix_rows: list[dict[str, Any]], evidence_map: dict[str, Any]
 ) -> None:
@@ -130,3 +224,12 @@ def _validate_evidence_map_projection(
         if extra:
             details.append("evidence-map rows not present in matrix: " + "; ".join(_key_text(key) for key in extra))
         raise CapabilityDocsError("evidence map drifted from capability matrix: " + " | ".join(details))
+
+    expected = build_evidence_map_projection(matrix_rows)
+    drift_fields = _projection_drift_fields(expected, evidence_map)
+    if drift_fields:
+        raise CapabilityDocsError(
+            "evidence map drifted from canonical projection owned by "
+            "scripts/capability_docs_validator/evidence_map.py: "
+            + ", ".join(drift_fields)
+        )
