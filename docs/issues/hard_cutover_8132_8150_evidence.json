@@ -80,6 +80,38 @@
     },
     "remote_closure": "deferred until current evidence is paired with the intended branch publication state"
   },
+  "full_profile_replay_fix_refresh": {
+    "date": "2026-05-19",
+    "validation_target_head": "82cacde3cc62da785ec4ba944ae37999b371e599",
+    "validation_target_head_short": "82cacde3c",
+    "validation_target_head_summary": "Fix focused execution replay summary",
+    "evidence_refresh_commit_role": "tracker-only commit following the validated source head",
+    "fixed_failure": "test-full focused execution replay selected by -Limit 1 passed the replay case but failed summary rendering because optional CaseId was an empty string",
+    "validation": [
+      {
+        "command": "python -m scripts.objc3c_workflow test-execution-replay-focused",
+        "status": "PASS",
+        "report": "tmp/artifacts/objc3c-native/execution-replay-proof/20260519_093013_336/summary.json"
+      },
+      {
+        "command": "python -m pytest tests/tooling/test_test_orchestration_profile_owner_split.py -q",
+        "status": "PASS",
+        "test_count": 6
+      },
+      {
+        "command": "git diff --check",
+        "status": "PASS"
+      },
+      {
+        "command": "python -m scripts.objc3c_workflow test-full",
+        "status": "PASS",
+        "report": "tmp/reports/objc3c-public-workflow/test-full.json",
+        "generated_at_utc": "2026-05-19T13:33:44.361672+00:00",
+        "duration_seconds": 107.503189
+      }
+    ],
+    "remote_closure": "deferred until remaining final validation and per-issue acceptance closure are complete"
+  },
   "branch_evidence_policy": {
     "closeout_evidence_basis": "committed hard-cutover branch surfaces only",
     "historic_local_commit_fields": "local_commits and branch owner refresh fields name committed branch refs in this checkout; they are not evidence-log or uncommitted evidence",
@@ -89,11 +121,11 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "ba5ce4969",
-    "current_head_summary": "Stabilize release foundation package gate",
-    "current_head_role": "validated source head for the 2026-05-19 clean-room and control-plane refresh; tracker-only evidence commit follows it",
-    "latest_source_head": "ba5ce4969",
-    "latest_source_head_summary": "Stabilize release foundation package gate",
+    "current_head": "82cacde3c",
+    "current_head_summary": "Fix focused execution replay summary",
+    "current_head_role": "validated source head for the 2026-05-19 full-profile replay fix refresh; tracker-only evidence commit follows it",
+    "latest_source_head": "82cacde3c",
+    "latest_source_head_summary": "Fix focused execution replay summary",
     "latest_source_head_role": "latest committed source and validation head folded into this current refresh"
   },
   "local_longest_file_scan": {

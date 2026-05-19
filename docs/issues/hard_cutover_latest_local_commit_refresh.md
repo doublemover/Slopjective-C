@@ -1,5 +1,22 @@
 # Hard-Cutover Branch Commit Refresh
 
+## Full Profile Replay Fix Refresh: 2026-05-19
+
+The current full-profile validation evidence was collected against source head
+`82cacde3c` (`Fix focused execution replay summary`). That commit fixes the
+focused replay summary contract so `test-full` can run `test-execution-replay-focused`
+by `-Limit 1` without passing a case id.
+
+- `python -m scripts.objc3c_workflow test-execution-replay-focused` passed.
+- `python -m pytest tests/tooling/test_test_orchestration_profile_owner_split.py -q`
+  passed with `6` tests.
+- `git diff --check` passed.
+- `python -m scripts.objc3c_workflow test-full` passed with report
+  `tmp/reports/objc3c-public-workflow/test-full.json`.
+
+The evidence refresh commit follows this validated source head and only updates
+tracker files.
+
 ## Current Validation Refresh: 2026-05-19
 
 The current validation evidence was collected against source head `ba5ce4969`

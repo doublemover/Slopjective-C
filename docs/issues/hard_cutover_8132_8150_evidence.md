@@ -1,5 +1,27 @@
 # Hard-Cutover Issue Evidence: #8132-#8150
 
+## Full Profile Replay Fix Refresh: 2026-05-19
+
+Source head `82cacde3c` (`Fix focused execution replay summary`) fixes the
+`test-full` closeout failure where the focused execution replay profile selected
+by `-Limit 1` passed its replay case but failed summary rendering because the
+optional `CaseId` selector was an empty string.
+
+Current post-fix evidence:
+
+- `python -m scripts.objc3c_workflow test-execution-replay-focused`: pass,
+  summary `tmp/artifacts/objc3c-native/execution-replay-proof/20260519_093013_336/summary.json`
+- `python -m pytest tests/tooling/test_test_orchestration_profile_owner_split.py -q`:
+  pass, `6` tests
+- `git diff --check`: pass
+- `python -m scripts.objc3c_workflow test-full`: pass,
+  `tmp/reports/objc3c-public-workflow/test-full.json`, generated at
+  `2026-05-19T13:33:44.361672+00:00`, total step duration `107.503189`
+  seconds
+
+The evidence refresh commit follows this validated source head and only updates
+tracker files.
+
 ## Current Validation Refresh: 2026-05-19
 
 This refresh records current local evidence collected against source head
