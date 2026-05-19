@@ -6,11 +6,12 @@ from objc3c_driver_cli_assertions import (
     assert_paths_exist,
 )
 from objc3c_driver_cli_sources import (
+    CLI_ENTRYPOINT_SOURCE,
     DRIVER_CLI_OPTION_SOURCES,
     DRIVER_CMAKE_FILE,
     DRIVER_HEADER,
     DRIVER_MAIN_SOURCE,
-    DRIVER_OBJC3_PATH_SOURCE,
+    DRIVER_OBJECT_BACKEND_SOURCE,
     DRIVER_RUNTIME_SOURCE,
     MAIN_CPP,
     SRC_CMAKE_FILE,
@@ -24,9 +25,17 @@ def assert_driver_cli_module_exists_and_main_calls_it() -> None:
     assert_paths_exist(required_driver_module_paths())
 
     driver_main_cpp = read_expanded_source(DRIVER_MAIN_SOURCE)
+    cli_entrypoint_cpp = read_expanded_source(CLI_ENTRYPOINT_SOURCE)
     main_cpp = read_expanded_source(MAIN_CPP)
     assert_contains_all(
         main_cpp,
+        [
+            '#include "cli/objc3c_native_entrypoint.h"',
+            "RunObjc3NativeCli(argc, argv)",
+        ],
+    )
+    assert_contains_all(
+        cli_entrypoint_cpp,
         [
             '#include "driver/objc3_driver_main.h"',
             "RunObjc3DriverMain(argc, argv)",
@@ -39,7 +48,7 @@ def assert_driver_cli_module_exists_and_main_calls_it() -> None:
             '#include "driver/objc3_compilation_driver.h"',
             '#include "driver/objc3_llvm_capability_routing.h"',
             "ParseObjc3CliOptions(argc, argv, cli_options, cli_error)",
-            "ApplyObjc3LLVMCabilityRouting(cli_options, cli_error)",
+            "ApplyObjc3LLVMCapabilityRouting(cli_options, cli_error)",
             "RunObjc3CompilationDriver(cli_options)",
         ],
     )
@@ -101,7 +110,7 @@ def assert_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     header = read_expanded_source(DRIVER_HEADER)
     source = "\n".join(read_expanded_source(path) for path in DRIVER_CLI_OPTION_SOURCES)
     runtime = read_expanded_source(DRIVER_RUNTIME_SOURCE)
-    objc3_path = read_expanded_source(DRIVER_OBJC3_PATH_SOURCE)
+    object_backend = read_expanded_source(DRIVER_OBJECT_BACKEND_SOURCE)
 
     assert_contains_all(
         header,
@@ -153,14 +162,15 @@ def assert_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     )
 
     assert_contains_all(
-        objc3_path,
+        object_backend,
         [
             "RunIRCompileLLVMDirect",
-            "RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error)",
+            "RunIRCompileLLVMDirect(",
+            "cli_options.llc_path",
             ".object-backend.txt",
         ],
     )
-    assert "RunObjc3LanguagePath(cli_options)" in runtime
+    assert "DispatchObjc3DriverCommand(cli_options, input_kind)" in runtime
 
 
 def assert_cli_default_out_dir_is_tmp_governed() -> None:

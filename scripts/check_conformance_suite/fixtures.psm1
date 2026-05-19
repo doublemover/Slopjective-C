@@ -39,6 +39,11 @@ function Test-ConformanceExecutableReplaySmokeCandidate {
   if (-not (Test-ConformanceExecutableFixture -Payload $Payload)) {
     return $false
   }
+  if ((Test-ConformancePayloadProperty -Object $Payload -Name "replay_smoke") -and
+      ($Payload.replay_smoke -is [bool]) -and
+      (-not $Payload.replay_smoke)) {
+    return $false
+  }
   return (Test-ConformancePayloadProperty -Object $Payload -Name "source") -and (-not [string]::IsNullOrWhiteSpace("$($Payload.source)"))
 }
 

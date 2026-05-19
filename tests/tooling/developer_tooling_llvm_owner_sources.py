@@ -40,10 +40,42 @@ def hosted_probe_without_object_emission() -> tuple[int, dict[str, object]]:
         1,
         {
             "mode": "objc3c-llvm-capabilities-v2",
-            "ok": True,
+            "ok": False,
+            "clang": {"found": True},
+            "llc": {
+                "found": False,
+                "diagnostic": "llc executable not found: llc",
+            },
+            "llc_features": {"supports_filetype_obj": False},
+            "failures": [
+                "llc executable not found: llc",
+                "sema/type-system parity capability unavailable: llc executable missing",
+                (
+                    "capability demo compatibility: capability demo compatibility "
+                    "requires sema/type-system parity to stay ready"
+                ),
+            ],
+            "capability_demo_compatibility": {
+                "failures": [
+                    "capability demo compatibility requires sema/type-system parity to stay ready"
+                ]
+            },
+        },
+    )
+
+
+def hosted_probe_with_capability_truth_drift() -> tuple[int, dict[str, object]]:
+    return (
+        1,
+        {
+            "mode": "objc3c-llvm-capabilities-v2",
+            "ok": False,
             "clang": {"found": True},
             "llc": {"found": True},
-            "llc_features": {"supports_filetype_obj": False},
+            "llc_features": {"supports_filetype_obj": True},
+            "capability_demo_compatibility": {
+                "failures": ["story capability drift detected for signalMesh"]
+            },
         },
     )
 

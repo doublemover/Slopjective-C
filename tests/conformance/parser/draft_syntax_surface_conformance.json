@@ -1,5 +1,6 @@
 {
   "contract_id": "objc3c.parser.draft-syntax-conformance.v1",
+  "fixture_id": "parser-draft-syntax-surface-conformance",
   "issue": "#8012",
   "positive_fixture": "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
   "manifest_count_field": "draft_syntax_surface_count",

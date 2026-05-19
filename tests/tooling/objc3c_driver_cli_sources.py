@@ -17,7 +17,9 @@ DRIVER_RUNTIME_SOURCE = DRIVER_ROOT / "objc3_compilation_driver.cpp"
 DRIVER_MAIN_HEADER = DRIVER_ROOT / "objc3_driver_main.h"
 DRIVER_MAIN_SOURCE = DRIVER_ROOT / "objc3_driver_main.cpp"
 DRIVER_CAPABILITY_ROUTING_SOURCE = DRIVER_ROOT / "objc3_llvm_capability_routing.cpp"
+DRIVER_OBJECT_BACKEND_SOURCE = DRIVER_ROOT / "objc3_driver_object_backend.cpp"
 DRIVER_OBJC3_PATH_SOURCE = DRIVER_ROOT / "objc3_objc3_path.cpp"
+CLI_ENTRYPOINT_SOURCE = ROOT / "native" / "objc3c" / "src" / "cli" / "objc3c_native_entrypoint.cpp"
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
 DRIVER_CMAKE_FILE = DRIVER_ROOT / "CMakeLists.txt"
 SRC_CMAKE_FILE = ROOT / "native" / "objc3c" / "src" / "CMakeLists.txt"
@@ -50,8 +52,10 @@ def read_expanded_source(path: Path) -> str:
 
 def required_driver_module_paths() -> list[Path]:
     return [
+        CLI_ENTRYPOINT_SOURCE,
         DRIVER_HEADER,
         *DRIVER_CLI_OPTION_SOURCES,
+        DRIVER_OBJECT_BACKEND_SOURCE,
         DRIVER_RUNTIME_SOURCE,
         DRIVER_MAIN_HEADER,
         DRIVER_MAIN_SOURCE,

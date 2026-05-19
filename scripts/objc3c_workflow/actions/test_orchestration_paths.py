@@ -16,9 +16,9 @@ BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
 
 LLVM_CAPABILITY_ROUTING_TESTS = (
     "tests/tooling/test_probe_objc3c_llvm_capabilities.py",
-    "tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled",
-    "tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable",
-    "tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary",
+    "tests/tooling/test_objc3c_library_cli_parity_source_mode.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled",
+    "tests/tooling/test_objc3c_library_cli_parity_source_mode.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable",
+    "tests/tooling/test_objc3c_library_cli_parity_source_mode.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary",
     "tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py",
     "tests/tooling/test_objc3c_driver_cli_extraction.py",
 )

@@ -71,7 +71,5 @@ def assert_package_wires_llvm_capability_probe_script(
 ) -> None:
     scripts = payload["scripts"]
 
-    assert "check:objc3c:llvm-capabilities" in scripts
-    command = scripts["check:objc3c:llvm-capabilities"]
-    assert "scripts/probe_objc3c_llvm_capabilities.py" in command
-    assert "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json" in command
+    assert list(scripts) == ["objc3c"]
+    assert scripts["objc3c"] == "python -m scripts.objc3c_workflow"

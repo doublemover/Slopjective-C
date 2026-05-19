@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,27 @@ def _prepare_source_mode_directories(
     library_dir.mkdir(parents=True, exist_ok=True)
     cli_dir.mkdir(parents=True, exist_ok=True)
     return library_dir, cli_dir
+
+
+def _clear_owned_source_mode_work_root(
+    args: argparse.Namespace,
+    *,
+    work_key: str,
+) -> None:
+    if args.allow_stale_source_mode_outputs:
+        return
+    if args.allow_non_tmp_work_dir:
+        return
+    if args.library_dir is not None or args.cli_dir is not None:
+        return
+
+    work_root = args.work_dir / work_key
+    ensure_under_tmp(work_root, label="work-key-dir")
+    if not work_root.exists():
+        return
+    if work_root.is_symlink() or not work_root.is_dir():
+        raise ValueError(f"work-key-dir must be a real directory: {work_root}")
+    shutil.rmtree(work_root)
 
 
 def _assert_source_mode_outputs_are_fresh(
@@ -75,6 +97,7 @@ def prepare_source_mode(
         if args.work_key is None
         else normalize_work_key(args.work_key)
     )
+    _clear_owned_source_mode_work_root(args, work_key=work_key)
     library_dir, cli_dir = _prepare_source_mode_directories(args, work_key=work_key)
     _assert_source_mode_outputs_are_fresh(args, library_dir=library_dir, cli_dir=cli_dir)
 

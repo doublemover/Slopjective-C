@@ -34,11 +34,11 @@
     {
       "artifact": "module.diagnostics.json",
       "dimension": "diagnostics",
-      "source_kind": "artifact-bytes",
+      "source_kind": "json-canonical",
       "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.diagnostics.json",
       "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.diagnostics.json",
-      "library_sha256": "96393d1b36e3e20ffb5f8623f2a0df4d43a48685502b140f0e02f5de1eccdb61",
-      "cli_sha256": "96393d1b36e3e20ffb5f8623f2a0df4d43a48685502b140f0e02f5de1eccdb61",
+      "library_sha256": "fc24a9252808ca5030534fe8b52cab6424d6e75e550e7300ea38aab7bfbbbfed",
+      "cli_sha256": "fc24a9252808ca5030534fe8b52cab6424d6e75e550e7300ea38aab7bfbbbfed",
       "matches": true
     },
     {
@@ -54,11 +54,11 @@
     {
       "artifact": "module.manifest.json",
       "dimension": "manifest",
-      "source_kind": "artifact-bytes",
+      "source_kind": "json-canonical",
       "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
       "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
-      "library_sha256": "dda517bd80e536762a7d9c71b14b2b088033a606f6b713a4eb227fb89652a4b9",
-      "cli_sha256": "dda517bd80e536762a7d9c71b14b2b088033a606f6b713a4eb227fb89652a4b9",
+      "library_sha256": "30750ba1c223d3f61f5d698b395ffb581d4c55ca2657f5da8cd54c8bb72f41c1",
+      "cli_sha256": "30750ba1c223d3f61f5d698b395ffb581d4c55ca2657f5da8cd54c8bb72f41c1",
       "matches": true
     },
     {

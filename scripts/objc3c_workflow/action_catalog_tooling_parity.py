@@ -11,8 +11,9 @@ TOOLING_PARITY_ACTION_SPECS: dict[str, ActionSpec] = {
         "python:scripts/check_objc3c_library_cli_parity.py --route-cli-backend-from-capabilities",
         validation_tier="ci",
         guarantee_owner=(
-            "hosted CI parity validation fails closed unless the llvm capability "
-            "probe proves the native object route"
+            "hosted CI parity validation runs only when the llvm capability "
+            "probe proves the native object route, otherwise it skips without "
+            "publishing a parity success claim"
         ),
     ),
 }

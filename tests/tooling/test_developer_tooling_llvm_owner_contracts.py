@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from developer_tooling_llvm_owner_behavior import (
-    assert_capability_routed_parity_fails_closed_when_hosted_route_is_missing,
-    assert_hosted_llvm_action_fails_closed_without_object_emission,
+    assert_capability_routed_parity_skips_when_hosted_route_is_missing,
+    assert_hosted_llvm_action_fails_closed_on_capability_truth_drift,
+    assert_hosted_llvm_action_publishes_unavailable_without_object_emission,
     assert_hosted_llvm_contract_forbids_clang_only_support_claim,
     assert_hosted_llvm_truth_payload_publishes_success_fields,
     assert_hosted_llvm_truth_payload_requires_object_emission,
@@ -35,16 +36,22 @@ def test_hosted_llvm_truth_payload_publishes_success_fields() -> None:
     assert_hosted_llvm_truth_payload_publishes_success_fields()
 
 
-def test_hosted_llvm_action_fails_closed_without_object_emission(monkeypatch) -> None:
-    assert_hosted_llvm_action_fails_closed_without_object_emission(monkeypatch)
-
-
-def test_capability_routed_parity_fails_closed_when_hosted_route_is_missing(
+def test_hosted_llvm_action_publishes_unavailable_without_object_emission(
     monkeypatch,
 ) -> None:
-    assert_capability_routed_parity_fails_closed_when_hosted_route_is_missing(
-        monkeypatch
-    )
+    assert_hosted_llvm_action_publishes_unavailable_without_object_emission(monkeypatch)
+
+
+def test_hosted_llvm_action_fails_closed_on_capability_truth_drift(
+    monkeypatch,
+) -> None:
+    assert_hosted_llvm_action_fails_closed_on_capability_truth_drift(monkeypatch)
+
+
+def test_capability_routed_parity_skips_when_hosted_route_is_missing(
+    monkeypatch,
+) -> None:
+    assert_capability_routed_parity_skips_when_hosted_route_is_missing(monkeypatch)
 
 
 def test_hosted_summary_truth_requires_mode_ok_clang_and_object_emission(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -70,6 +71,21 @@ def ensure_under_tmp(path: Path, *, label: str) -> None:
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def canonical_json_text(path: Path) -> str:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"invalid json artifact in {display_path(path)}: {exc.msg}"
+        ) from exc
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ) + "\n"
 
 
 def default_dimension_map_for_emit_prefix(*, emit_prefix: str, object_artifact: str) -> dict[str, str]:
@@ -167,12 +183,19 @@ def resolve_artifact_digest(
     *,
     base_dir: Path,
     artifact_name: str,
+    canonical_json: bool = False,
 ) -> ArtifactDigest:
     artifact_path = base_dir / artifact_name
     if artifact_path.exists():
         if not artifact_path.is_file():
             raise ValueError(
                 f"artifact path must be a file: {display_path(artifact_path)}"
+            )
+        if canonical_json:
+            return ArtifactDigest(
+                source_kind="json-canonical",
+                source_path=display_path(artifact_path),
+                sha256=sha256_text(canonical_json_text(artifact_path)),
             )
         return ArtifactDigest(
             source_kind="artifact-bytes",

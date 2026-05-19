@@ -15,7 +15,7 @@
       "unsupported_claims": [
         "hosted LLVM availability",
         "hosted source parity",
-        "language-server execution without owned implementation evidence"
+        "language-server execution retired route"
       ]
     },
     {
@@ -41,7 +41,7 @@
       "unsupported_claims": [
         "parity success when the hosted route was skipped",
         "local-only source parity as hosted capability proof",
-        "language-server parity without owned implementation evidence"
+        "retired route language-server parity"
       ]
     },
     {

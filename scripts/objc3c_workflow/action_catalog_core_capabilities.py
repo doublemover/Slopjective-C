@@ -16,7 +16,7 @@ CORE_CAPABILITY_ACTION_SPECS: dict[str, ActionSpec] = {
     ),
     "check-hosted-llvm-capabilities": ActionSpec(
         "check-hosted-llvm-capabilities",
-        "probe hosted-runner llvm capability availability and fail closed without object emission",
+        "probe hosted-runner llvm capability availability and publish unsupported truth without object emission",
         "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
         validation_tier="ci",
         guarantee_owner=(

@@ -19,6 +19,7 @@ from developer_tooling_llvm_owner_sources import (
     capable_llvm_summary,
     developer_tooling_llvm_hosted,
     developer_tooling_llvm_parity,
+    hosted_probe_with_capability_truth_drift,
     hosted_llvm_summary,
     hosted_probe_without_object_emission,
     hosted_summary_without_clang,
@@ -80,17 +81,31 @@ def assert_hosted_llvm_truth_payload_publishes_success_fields() -> None:
     )
 
 
-def assert_hosted_llvm_action_fails_closed_without_object_emission(monkeypatch) -> None:
+def assert_hosted_llvm_action_publishes_unavailable_without_object_emission(
+    monkeypatch,
+) -> None:
     monkeypatch.setattr(
         developer_tooling_llvm_hosted,
         "run_hosted_llvm_probe",
         hosted_probe_without_object_emission,
     )
 
+    assert developer_tooling_llvm_hosted.action_check_hosted_llvm_capabilities([]) == 0
+
+
+def assert_hosted_llvm_action_fails_closed_on_capability_truth_drift(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        developer_tooling_llvm_hosted,
+        "run_hosted_llvm_probe",
+        hosted_probe_with_capability_truth_drift,
+    )
+
     assert developer_tooling_llvm_hosted.action_check_hosted_llvm_capabilities([]) == 1
 
 
-def assert_capability_routed_parity_fails_closed_when_hosted_route_is_missing(
+def assert_capability_routed_parity_skips_when_hosted_route_is_missing(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(
@@ -101,7 +116,7 @@ def assert_capability_routed_parity_fails_closed_when_hosted_route_is_missing(
 
     assert (
         developer_tooling_llvm_parity.action_test_capability_routed_source_parity([])
-        == 1
+        == 0
     )
 
 

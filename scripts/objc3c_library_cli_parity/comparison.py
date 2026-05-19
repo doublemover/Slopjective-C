@@ -23,10 +23,16 @@ def evaluate_parity(
         for dimension, artifact in dimension_map.items()
     }
     for artifact_name in artifacts:
+        dimension = artifact_to_dimension.get(artifact_name)
+        canonical_json = (
+            dimension in {"diagnostics", "manifest"}
+            and artifact_name.endswith(".json")
+        )
         try:
             library_digest = resolve_artifact_digest(
                 base_dir=inputs.library_dir,
                 artifact_name=artifact_name,
+                canonical_json=canonical_json,
             )
         except ValueError as exc:
             failures.append(f"library {artifact_name}: {exc}")
@@ -35,6 +41,7 @@ def evaluate_parity(
             cli_digest = resolve_artifact_digest(
                 base_dir=inputs.cli_dir,
                 artifact_name=artifact_name,
+                canonical_json=canonical_json,
             )
         except ValueError as exc:
             failures.append(f"cli {artifact_name}: {exc}")
@@ -56,7 +63,6 @@ def evaluate_parity(
                 f"library={library_sha[:16]} cli={cli_sha[:16]}"
             )
 
-        dimension = artifact_to_dimension.get(artifact_name)
         comparisons.append(
             {
                 "artifact": artifact_name,

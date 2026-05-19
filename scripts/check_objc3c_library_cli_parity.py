@@ -18,7 +18,10 @@ from objc3c_library_cli_parity.cli import main
 from objc3c_library_cli_parity.cli import parse_args
 from objc3c_library_cli_parity.cli import run
 from objc3c_library_cli_parity.fixtures import synthetic_fixture_contract_payload
+from objc3c_library_cli_parity.fixtures import synthetic_fixture_manifest_envelope
 from objc3c_library_cli_parity.fixtures import synthetic_fixture_summary_envelope
+from objc3c_library_cli_parity.fixtures import SYNTHETIC_FIXTURE_FAMILY_ID
+from objc3c_library_cli_parity.fixtures import SYNTHETIC_FIXTURE_LABEL
 from objc3c_library_cli_parity.fixtures import validate_synthetic_fixture_contract
 from objc3c_library_cli_parity.source_mode import build_source_mode_artifacts
 from objc3c_library_cli_parity.source_mode import prepare_source_mode
@@ -42,7 +45,10 @@ __all__ = [
     "resolve_artifact_digest",
     "run",
     "sha256_text",
+    "SYNTHETIC_FIXTURE_FAMILY_ID",
+    "SYNTHETIC_FIXTURE_LABEL",
     "synthetic_fixture_contract_payload",
+    "synthetic_fixture_manifest_envelope",
     "synthetic_fixture_summary_envelope",
     "validate_synthetic_fixture_contract",
 ]
