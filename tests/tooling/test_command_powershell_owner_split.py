@@ -13,12 +13,14 @@ def test_powershell_file_command_uses_noninteractive_policy() -> None:
 
     assert POWERSHELL_NONINTERACTIVE_ARGS == (
         "-NoProfile",
+        "-NonInteractive",
         "-ExecutionPolicy",
         "Bypass",
     )
     assert command == [
         "pwsh",
         "-NoProfile",
+        "-NonInteractive",
         "-ExecutionPolicy",
         "Bypass",
         "-File",

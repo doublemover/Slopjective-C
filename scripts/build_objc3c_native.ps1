@@ -173,6 +173,11 @@ Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=
 Write-BuildStep ("execution_mode=" + $ExecutionMode)
 
 $frontendPacketDefinitions = @(Get-Objc3cNativeFrontendPacketDefinitions -ArtifactPaths $frontendArtifactPaths)
+$selectedFrontendPacketDefinitions = @(
+  Get-Objc3cNativeSelectedFrontendPacketDefinitions `
+    -Mode $ExecutionMode `
+    -PacketDefinitions $frontendPacketDefinitions
+)
 
 $buildFingerprint = Get-Objc3cNativeBuildFingerprint `
   -Clangxx $clangxx `
@@ -239,16 +244,18 @@ Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact `
   -RuntimeLibraryPath $outRuntimeLib `
   -FrontendDefinitions $frontendPacketDefinitions
 
-if (Test-Path -LiteralPath $outExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
+  if (Test-Path -LiteralPath $outExe -PathType Leaf) {
+    Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  }
+  if (Test-Path -LiteralPath $outCapiExe -PathType Leaf) {
+    Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  }
+  if (Test-Path -LiteralPath $outRuntimeLib -PathType Leaf) {
+    Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  }
 }
-if (Test-Path -LiteralPath $outCapiExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-}
-if (Test-Path -LiteralPath $outRuntimeLib -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
-}
-foreach ($packetDefinition in $frontendPacketDefinitions) {
+foreach ($packetDefinition in $selectedFrontendPacketDefinitions) {
   if (Test-Path -LiteralPath $packetDefinition.OutputPath -PathType Leaf) {
     Write-Output ($packetDefinition.Name + "=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
   }

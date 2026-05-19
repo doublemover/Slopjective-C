@@ -7,11 +7,11 @@ The current full-profile validation evidence was collected against source head
 focused replay summary contract so `test-full` can run `test-execution-replay-focused`
 by `-Limit 1` without passing a case id.
 
-- `python -m scripts.objc3c_workflow test-execution-replay-focused` passed.
+- `npm run objc3c -- test-execution-replay-focused` passed.
 - `python -m pytest tests/tooling/test_test_orchestration_profile_owner_split.py -q`
   passed with `6` tests.
 - `git diff --check` passed.
-- `python -m scripts.objc3c_workflow test-full` passed with report
+- `npm run objc3c -- test-full` passed with report
   `tmp/reports/objc3c-public-workflow/test-full.json`.
 
 The evidence refresh commit follows this validated source head and only updates
@@ -27,17 +27,17 @@ older commit-only sections below.
 
 - Clean-room repo-superclean proof deleted
   `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`, then
-  `python -m scripts.objc3c_workflow check-repo-superclean-surface` regenerated
+  `npm run objc3c -- check-repo-superclean-surface` regenerated
   and validated it.
 - Package clean-room proof deleted the same artifact again, then
-  `python -m scripts.objc3c_workflow package-runnable-toolchain` regenerated it
+  `npm run objc3c -- package-runnable-toolchain` regenerated it
   during package staging and produced
   `tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408`.
 - `git diff --check` passed.
-- `python -m scripts.objc3c_workflow lint` passed.
-- `python -m scripts.objc3c_workflow validate-repo-superclean` passed with
+- `npm run objc3c -- lint` passed.
+- `npm run objc3c -- validate-repo-superclean` passed with
   report `tmp/reports/objc3c-public-workflow/validate-repo-superclean.json`.
-- `python -m scripts.objc3c_workflow test-runtime-acceptance-fast` passed with
+- `npm run objc3c -- test-runtime-acceptance-fast` passed with
   report `tmp/reports/runtime/acceptance/summary.json`.
 - Live GitHub state at refresh time: `#8133` and `#8142` are closed; `#8132`,
   `#8134` through `#8141`, and `#8143` through `#8150` remain open.
@@ -287,12 +287,12 @@ through `6efdaf8f9`. It excludes uncommitted worktree edits.
 This branch-committed refresh also folds in committed owner work after `6efdaf8f9`
 through `a20f67559`. It excludes uncommitted worktree edits.
 
-| Owner Bucket                                   | Issues                                      | Branch Commits Folded In | Acceptance Ownership                                                                                                                                                                                                                    |
-| ---------------------------------------------- | ------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Developer tooling dump owners                  | `#8138`, `#8142`, `#8149`, `#8150`          | `f7d0edb3e`              | Compile-observability, runtime-inspector, and compile-stage-trace dump actions now route through explicit input policy and JSON capture runner owners under the existing public workflow boundary.                                      |
+| Owner Bucket                                   | Issues                                      | Branch Commits Folded In | Acceptance Ownership                                                                                                                                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Developer tooling dump owners                  | `#8138`, `#8142`, `#8149`, `#8150`          | `f7d0edb3e`              | Compile-observability, runtime-inspector, and compile-stage-trace dump actions now route through explicit input policy and JSON capture runner owners under the existing public workflow boundary.                                       |
 | Frontend conformance report artifact contracts | `#8138`, `#8140`, `#8145`, `#8148`, `#8150` | `0e5af63ab`              | Frontend canonical selection claim semantics, versioned conformance lowering, machine-readable report contracts, feature-aware report emission, and release-evidence packaging now live under report contract owners and CMake topology. |
-| IR emitter context records                     | `#8137`, `#8147`, `#8150`                   | `aab946e78`              | Function effects, lowered message sends, control labels, block bindings, keypath artifacts, cleanup frames, and function context records moved into a dedicated IR emitter context header.                                              |
-| Runtime method resolution helpers              | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `a20f67559`              | Runtime method-list resolution and protocol selector declaration probing now have dedicated helpers and CMake entries while preserving strict malformed-metadata and unsupported-dispatch failure handling.                             |
+| IR emitter context records                     | `#8137`, `#8147`, `#8150`                   | `aab946e78`              | Function effects, lowered message sends, control labels, block bindings, keypath artifacts, cleanup frames, and function context records moved into a dedicated IR emitter context header.                                               |
+| Runtime method resolution helpers              | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `a20f67559`              | Runtime method-list resolution and protocol selector declaration probing now have dedicated helpers and CMake entries while preserving strict malformed-metadata and unsupported-dispatch failure handling.                              |
 
 ## Post-`6efdaf8f9` Issue Ownership
 

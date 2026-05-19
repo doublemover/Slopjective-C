@@ -9,12 +9,12 @@ optional `CaseId` selector was an empty string.
 
 Current post-fix evidence:
 
-- `python -m scripts.objc3c_workflow test-execution-replay-focused`: pass,
+- `npm run objc3c -- test-execution-replay-focused`: pass,
   summary `tmp/artifacts/objc3c-native/execution-replay-proof/20260519_093013_336/summary.json`
 - `python -m pytest tests/tooling/test_test_orchestration_profile_owner_split.py -q`:
   pass, `6` tests
 - `git diff --check`: pass
-- `python -m scripts.objc3c_workflow test-full`: pass,
+- `npm run objc3c -- test-full`: pass,
   `tmp/reports/objc3c-public-workflow/test-full.json`, generated at
   `2026-05-19T13:33:44.361672+00:00`, total step duration `107.503189`
   seconds
@@ -45,10 +45,10 @@ Current branch state:
 Current clean-room repo-superclean evidence:
 
 - deleted `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`
-- `python -m scripts.objc3c_workflow check-repo-superclean-surface` regenerated
+- `npm run objc3c -- check-repo-superclean-surface` regenerated
   the deleted artifact and passed
 - deleted the artifact again
-- `python -m scripts.objc3c_workflow package-runnable-toolchain` regenerated the
+- `npm run objc3c -- package-runnable-toolchain` regenerated the
   artifact through package staging and passed
 - fresh package root:
   `tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408`
@@ -56,12 +56,12 @@ Current clean-room repo-superclean evidence:
 Current validation evidence:
 
 - `git diff --check`: pass
-- `python -m scripts.objc3c_workflow lint`: pass
-- `python -m scripts.objc3c_workflow validate-repo-superclean`: pass,
+- `npm run objc3c -- lint`: pass
+- `npm run objc3c -- validate-repo-superclean`: pass,
   `tmp/reports/objc3c-public-workflow/validate-repo-superclean.json`,
   generated at `2026-05-19T13:18:50.828399+00:00`, total step duration
   `35.307991` seconds
-- `python -m scripts.objc3c_workflow test-runtime-acceptance-fast`: pass,
+- `npm run objc3c -- test-runtime-acceptance-fast`: pass,
   `tmp/reports/runtime/acceptance/summary.json`, fast suite, `21` cases,
   elapsed `34.403597` seconds
 

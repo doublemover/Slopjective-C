@@ -21,9 +21,9 @@
     "worktree_after_validation": "clean before evidence refresh edits",
     "clean_room_repo_superclean": {
       "deleted_artifact": "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
-      "refresh_command": "python -m scripts.objc3c_workflow check-repo-superclean-surface",
+      "refresh_command": "npm run objc3c -- check-repo-superclean-surface",
       "refresh_status": "PASS",
-      "package_command": "python -m scripts.objc3c_workflow package-runnable-toolchain",
+      "package_command": "npm run objc3c -- package-runnable-toolchain",
       "package_status": "PASS",
       "fresh_package_root": "tmp/pkg/objc3c-native-runnable-toolchain/20260519_091203_812_3408"
     },
@@ -33,18 +33,18 @@
         "status": "PASS"
       },
       {
-        "command": "python -m scripts.objc3c_workflow lint",
+        "command": "npm run objc3c -- lint",
         "status": "PASS"
       },
       {
-        "command": "python -m scripts.objc3c_workflow validate-repo-superclean",
+        "command": "npm run objc3c -- validate-repo-superclean",
         "status": "PASS",
         "report": "tmp/reports/objc3c-public-workflow/validate-repo-superclean.json",
         "generated_at_utc": "2026-05-19T13:18:50.828399+00:00",
         "duration_seconds": 35.307991
       },
       {
-        "command": "python -m scripts.objc3c_workflow test-runtime-acceptance-fast",
+        "command": "npm run objc3c -- test-runtime-acceptance-fast",
         "status": "PASS",
         "report": "tmp/reports/runtime/acceptance/summary.json",
         "selected_suite": "fast",
@@ -89,7 +89,7 @@
     "fixed_failure": "test-full focused execution replay selected by -Limit 1 passed the replay case but failed summary rendering because optional CaseId was an empty string",
     "validation": [
       {
-        "command": "python -m scripts.objc3c_workflow test-execution-replay-focused",
+        "command": "npm run objc3c -- test-execution-replay-focused",
         "status": "PASS",
         "report": "tmp/artifacts/objc3c-native/execution-replay-proof/20260519_093013_336/summary.json"
       },
@@ -103,7 +103,7 @@
         "status": "PASS"
       },
       {
-        "command": "python -m scripts.objc3c_workflow test-full",
+        "command": "npm run objc3c -- test-full",
         "status": "PASS",
         "report": "tmp/reports/objc3c-public-workflow/test-full.json",
         "generated_at_utc": "2026-05-19T13:33:44.361672+00:00",
