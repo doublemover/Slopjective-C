@@ -11,6 +11,13 @@ inline AllocationMutationResults CaptureAllocationMutationResults(
     const AllocationFixture &fixture) {
   AllocationMutationResults results;
 
+  results.set_base_count_first = DispatchWidgetVoidStatus(
+      fixture.first_alloc, kBaseCountSetterSelector, kFirstBaseCountValue);
+  results.base_count_value_first =
+      DispatchWidgetMessage(fixture.first_alloc, kBaseCountGetterSelector);
+  results.base_count_value_second_before =
+      DispatchWidgetMessage(fixture.second_alloc, kBaseCountGetterSelector);
+
   results.set_count_first = DispatchWidgetVoidStatus(
       fixture.first_alloc, kCountSetterSelector, kFirstCountValue);
   results.count_value_first =
@@ -38,6 +45,13 @@ inline AllocationMutationResults CaptureAllocationMutationResults(
       DispatchWidgetMessage(fixture.first_alloc, kCountGetterSelector);
   results.count_value_second_after =
       DispatchWidgetMessage(fixture.second_alloc, kCountGetterSelector);
+
+  results.set_base_count_second = DispatchWidgetVoidStatus(
+      fixture.second_alloc, kBaseCountSetterSelector, kSecondBaseCountValue);
+  results.base_count_value_first_after_second =
+      DispatchWidgetMessage(fixture.first_alloc, kBaseCountGetterSelector);
+  results.base_count_value_second_after =
+      DispatchWidgetMessage(fixture.second_alloc, kBaseCountGetterSelector);
 
   results.set_value_second = DispatchWidgetVoidStatus(
       fixture.second_alloc, kValueSetterSelector, kSecondStoredValue);

@@ -31,7 +31,15 @@ class InstanceAllocationLayoutPayload:
     registration_state: Any
     selector_state: Any
     graph_state: Any
+    base_entry: Any
     widget_entry: Any
+    first_instance: Any
+    second_instance: Any
+    base_count_property: Any
+    count_property: Any
+    value_property: Any
+    base_count_entry: Any
+    set_base_count_entry: Any
     count_entry: Any
     set_count_entry: Any
     first_alloc: int
@@ -65,7 +73,15 @@ def capture_instance_allocation_layout_payload(
         registration_state=payload.get("registration_state", {}),
         selector_state=payload.get("selector_table_state", {}),
         graph_state=payload.get("graph_state", {}),
+        base_entry=payload.get("base_entry", {}),
         widget_entry=payload.get("widget_entry", {}),
+        first_instance=payload.get("first_instance", {}),
+        second_instance=payload.get("second_instance", {}),
+        base_count_property=payload.get("base_count_property", {}),
+        count_property=payload.get("count_property", {}),
+        value_property=payload.get("value_property", {}),
+        base_count_entry=payload.get("base_count_entry", {}),
+        set_base_count_entry=payload.get("set_base_count_entry", {}),
         count_entry=payload.get("count_entry", {}),
         set_count_entry=payload.get("set_count_entry", {}),
         first_alloc=int(payload.get("first_alloc", 0)),

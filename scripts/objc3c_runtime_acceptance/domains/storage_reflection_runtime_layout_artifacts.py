@@ -19,6 +19,9 @@ INSTANCE_ALLOCATION_LAYOUT_CASE_ID = "instance-allocation-layout-runtime"
 SYNTHESIZED_ACCESSOR_PROPERTY_FIXTURE = (
     "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
 )
+INHERITED_INSTANCE_ALLOCATION_LAYOUT_FIXTURE = (
+    "tests/tooling/fixtures/native/inherited_instance_allocation_layout_runtime_positive.objc3"
+)
 PROPERTY_LAYOUT_PROBE = "tests/tooling/runtime/property_layout_runtime_probe.cpp"
 INSTANCE_ALLOCATION_LAYOUT_PROBE = (
     "tests/tooling/runtime/instance_allocation_runtime_probe.cpp"
@@ -61,7 +64,7 @@ def run_instance_allocation_layout_probe(
     run_dir: Path,
 ) -> InstanceAllocationLayoutArtifacts:
     case_dir = run_dir / INSTANCE_ALLOCATION_LAYOUT_CASE_ID
-    fixture = ROOT / SYNTHESIZED_ACCESSOR_PROPERTY_FIXTURE
+    fixture = ROOT / INHERITED_INSTANCE_ALLOCATION_LAYOUT_FIXTURE
     obj_path, ll_path, manifest_path = compile_fixture_outputs(
         fixture,
         case_dir / "compile",
@@ -81,6 +84,7 @@ def run_instance_allocation_layout_probe(
 __all__ = [
     "INSTANCE_ALLOCATION_LAYOUT_CASE_ID",
     "INSTANCE_ALLOCATION_LAYOUT_PROBE",
+    "INHERITED_INSTANCE_ALLOCATION_LAYOUT_FIXTURE",
     "InstanceAllocationLayoutArtifacts",
     "PROPERTY_LAYOUT_CASE_ID",
     "PROPERTY_LAYOUT_PROBE",

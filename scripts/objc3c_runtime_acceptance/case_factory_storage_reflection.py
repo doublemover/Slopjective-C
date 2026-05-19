@@ -101,6 +101,13 @@ def build_storage_reflection_case_factories(
                 run_dir,
             ),
         ),
+        (
+            "property-ivar-invalid-layout-runtime",
+            lambda: domains.storage_reflection.check_property_invalid_layout_runtime_case(
+                clangxx,
+                run_dir,
+            ),
+        ),
     ]
     assert_storage_reflection_direct_factory_case_ids(
         tuple(case_id for case_id, _ in factories)

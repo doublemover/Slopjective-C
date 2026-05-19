@@ -14,6 +14,10 @@ def _profile_has(profile: object, *tokens: str) -> bool:
     return all(token in text for token in tokens)
 
 
+def _has_fields(prop: dict[str, object], **expected: int) -> bool:
+    return all(prop.get(field) == value for field, value in expected.items())
+
+
 def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None:
     expect(
         facts.widget_entry.get("found") == 1,
@@ -41,6 +45,21 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
         "expected token property reflection to preserve readonly and custom getter attributes",
     )
     expect(
+        _has_fields(
+            facts.token_property,
+            attribute_count=2,
+            is_readonly=1,
+            is_nonatomic=0,
+            is_strong=0,
+            is_assign=0,
+            is_weak=0,
+            is_copy=0,
+            has_custom_getter=1,
+            has_custom_setter=0,
+        ),
+        "expected token property reflection to expose structured readonly/custom-getter attributes",
+    )
+    expect(
         facts.value_property.get("found") == 1,
         "expected value property to be reflectable",
     )
@@ -65,6 +84,21 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
         "expected value property reflection to preserve nonatomic, strong, getter, and setter attributes",
     )
     expect(
+        _has_fields(
+            facts.value_property,
+            attribute_count=4,
+            is_readonly=0,
+            is_nonatomic=1,
+            is_strong=1,
+            is_assign=0,
+            is_weak=0,
+            is_copy=0,
+            has_custom_getter=1,
+            has_custom_setter=1,
+        ),
+        "expected value property reflection to expose structured nonatomic/strong/custom-accessor attributes",
+    )
+    expect(
         facts.count_property.get("found") == 1,
         "expected count property to be reflectable",
     )
@@ -81,6 +115,21 @@ def assert_property_reflection_payload(facts: PropertyReflectionPayload) -> None
             "attributes=assign,setter=setCount:",
         ),
         "expected count property reflection to preserve assign and custom setter attributes",
+    )
+    expect(
+        _has_fields(
+            facts.count_property,
+            attribute_count=2,
+            is_readonly=0,
+            is_nonatomic=0,
+            is_strong=0,
+            is_assign=1,
+            is_weak=0,
+            is_copy=0,
+            has_custom_getter=0,
+            has_custom_setter=1,
+        ),
+        "expected count property reflection to expose structured assign/custom-setter attributes",
     )
     expect(
         facts.registry_after_count.get("slot_backed_property_count", 0) >= 3,

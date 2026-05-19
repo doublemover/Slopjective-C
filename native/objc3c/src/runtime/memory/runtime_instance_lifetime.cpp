@@ -15,6 +15,29 @@
 
 namespace objc3c::runtime {
 
+namespace {
+
+std::size_t RuntimeInstanceStorageFloorForClassUnlocked(
+    const RuntimeState &state,
+    const RealizedClassNode &node) {
+  std::size_t storage_size_bytes = node.runtime_instance_size_bytes;
+  const RealizedClassNode *cursor = &node;
+  std::size_t visited_count = 0;
+  while (cursor->has_super_node &&
+         cursor->super_node_index < state.realized_class_nodes.size() &&
+         visited_count < state.realized_class_nodes.size()) {
+    const RealizedClassNode &super_node =
+        state.realized_class_nodes[cursor->super_node_index];
+    storage_size_bytes =
+        std::max(storage_size_bytes, super_node.runtime_instance_size_bytes);
+    cursor = &super_node;
+    ++visited_count;
+  }
+  return storage_size_bytes;
+}
+
+}  // namespace
+
 int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
                                     std::uint64_t base_identity) {
   const RealizedClassNode *node =
@@ -37,7 +60,8 @@ int AllocateRuntimeInstanceUnlocked(RuntimeState &state,
   instance.allocation_ordinal = state.next_runtime_instance_allocation_ordinal++;
   instance.class_name = node->class_name;
   instance.instance_size_bytes =
-      RuntimeInstanceStorageSize(node->runtime_instance_size_bytes);
+      RuntimeInstanceStorageSize(
+          RuntimeInstanceStorageFloorForClassUnlocked(state, *node));
   const std::uint64_t instance_size_bytes =
       static_cast<std::uint64_t>(instance.instance_size_bytes);
   instance.storage_bytes.assign(instance.instance_size_bytes, 0u);

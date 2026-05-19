@@ -16,6 +16,42 @@
 
 namespace objc3c::runtime {
 
+namespace {
+
+std::size_t RuntimeSuperclassStorageFloor(
+    const RuntimeState &state,
+    const RealizedClassNode &node) {
+  std::size_t inherited_size_bytes = 0;
+  const RealizedClassNode *cursor = &node;
+  std::size_t visited_count = 0;
+  while (cursor->has_super_node &&
+         cursor->super_node_index < state.realized_class_nodes.size() &&
+         visited_count < state.realized_class_nodes.size()) {
+    const RealizedClassNode &super_node =
+        state.realized_class_nodes[cursor->super_node_index];
+    inherited_size_bytes =
+        std::max(inherited_size_bytes,
+                 super_node.runtime_instance_size_bytes);
+    cursor = &super_node;
+    ++visited_count;
+  }
+  return inherited_size_bytes;
+}
+
+void PublishInheritedOnlyRuntimeLayoutIfNeeded(
+    RuntimeState &state,
+    RealizedClassNode &node,
+    std::size_t inherited_size_bytes) {
+  if (inherited_size_bytes == 0u) {
+    return;
+  }
+  node.runtime_instance_size_bytes = inherited_size_bytes;
+  node.runtime_layout_ready = true;
+  BumpRuntimeStorageSurfaceGenerationUnlocked(state);
+}
+
+}  // namespace
+
 bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
                                                  RealizedClassNode &node) {
   // instance-allocation-layout-runtime anchor: realized classes now
@@ -25,10 +61,14 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
   node.runtime_property_accessors.clear();
   node.runtime_layout_ready = false;
   node.runtime_instance_size_bytes = 0;
+  const std::size_t inherited_size_bytes =
+      RuntimeSuperclassStorageFloor(state, node);
   if (node.image == nullptr || node.image->property_descriptor_root == nullptr ||
       node.image->ivar_descriptor_root == nullptr ||
       node.bundle_owner_identity.empty()) {
-    return false;
+    PublishInheritedOnlyRuntimeLayoutIfNeeded(state, node,
+                                             inherited_size_bytes);
+    return node.runtime_layout_ready;
   }
   std::unordered_set<std::string> ivar_owner_identities;
   std::unordered_set<std::string> descriptor_owner_identities;
@@ -51,10 +91,13 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
   if (!BuildRuntimePropertyIvarLayoutIndexForOwners(*node.image,
                                                    ivar_owner_identities,
                                                    ivar_layout_index)) {
+    PublishInheritedOnlyRuntimeLayoutIfNeeded(state, node,
+                                             inherited_size_bytes);
     return false;
   }
   node.runtime_instance_size_bytes =
-      RuntimePropertyIvarLayoutInstanceSize(ivar_layout_index);
+      std::max(RuntimePropertyIvarLayoutInstanceSize(ivar_layout_index),
+               inherited_size_bytes);
 
   for (std::uint64_t index = 0; index < node.image->property_descriptor_count;
        ++index) {

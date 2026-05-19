@@ -43,6 +43,16 @@ PrintPropertyEntryFull(const objc3_runtime_property_entry_snapshot &snapshot) {
   PrintIntField("setter_available", snapshot.setter_available);
   PrintIntField("has_runtime_getter", snapshot.has_runtime_getter);
   PrintIntField("has_runtime_setter", snapshot.has_runtime_setter);
+  PrintUint64Field("attribute_count",
+                   static_cast<unsigned long long>(snapshot.attribute_count));
+  PrintIntField("is_readonly", snapshot.is_readonly);
+  PrintIntField("is_nonatomic", snapshot.is_nonatomic);
+  PrintIntField("is_strong", snapshot.is_strong);
+  PrintIntField("is_assign", snapshot.is_assign);
+  PrintIntField("is_weak", snapshot.is_weak);
+  PrintIntField("is_copy", snapshot.is_copy);
+  PrintIntField("has_custom_getter", snapshot.has_custom_getter);
+  PrintIntField("has_custom_setter", snapshot.has_custom_setter);
   PrintUint64Field("base_identity",
                    static_cast<unsigned long long>(snapshot.base_identity));
   PrintUint64Field("slot_index",

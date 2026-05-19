@@ -48,12 +48,38 @@ struct RealizedClassEntryObservation {
   std::string category_name;
 };
 
+struct InstanceEntryObservation {
+  objc3_runtime_instance_entry_snapshot entry{};
+  std::string class_name;
+};
+
+struct PropertyEntryObservation {
+  objc3_runtime_property_entry_snapshot entry{};
+  std::string queried_class;
+  std::string resolved_class;
+  std::string property_name;
+  std::string declaration_owner;
+  std::string export_owner;
+  std::string getter_selector;
+  std::string setter_selector;
+  std::string effective_getter_selector;
+  std::string effective_setter_selector;
+  std::string ivar_binding;
+  std::string synthesized_binding;
+  std::string layout_symbol;
+  std::string getter_owner;
+  std::string setter_owner;
+};
+
 struct AllocationFixture {
   int first_alloc = 0;
   int second_alloc = 0;
 };
 
 struct AllocationMutationResults {
+  int set_base_count_first = 0;
+  int base_count_value_first = 0;
+  int base_count_value_second_before = 0;
   int set_count_first = 0;
   int count_value_first = 0;
   int count_value_second_before = 0;
@@ -66,6 +92,9 @@ struct AllocationMutationResults {
   int set_count_second = 0;
   int count_value_first_after_second = 0;
   int count_value_second_after = 0;
+  int set_base_count_second = 0;
+  int base_count_value_first_after_second = 0;
+  int base_count_value_second_after = 0;
   int set_value_second = 0;
   int value_result_first_after_second = 0;
   int value_result_second_after = 0;
@@ -74,8 +103,16 @@ struct AllocationMutationResults {
 struct AllocationInvariantSnapshots {
   MethodCacheEntryObservation count_entry;
   MethodCacheEntryObservation set_count_entry;
+  MethodCacheEntryObservation base_count_entry;
+  MethodCacheEntryObservation set_base_count_entry;
   RealizedGraphStateObservation graph_state;
+  RealizedClassEntryObservation base_entry;
   RealizedClassEntryObservation widget_entry;
+  InstanceEntryObservation first_instance;
+  InstanceEntryObservation second_instance;
+  PropertyEntryObservation base_count_property;
+  PropertyEntryObservation count_property;
+  PropertyEntryObservation value_property;
 };
 
 struct ProbeRun {

@@ -34,8 +34,8 @@ def _assert_instance_allocation_ir_surface(
         "expected LLVM IR to preserve the property/layout consumption surface coupled to instance allocation",
     )
     expect(
-        "synthesized_accessor_entries=6" in facts.ll_text,
-        "expected instance allocation fixture to preserve six synthesized accessors",
+        "synthesized_accessor_entries=8" in facts.ll_text,
+        "expected inherited instance allocation fixture to preserve eight synthesized accessors",
     )
     expect(
         "property_descriptor_entries=" in facts.ll_text,
@@ -76,6 +76,9 @@ def _assert_instance_allocation_runtime_values(
     expect(facts.first_alloc == 1048576, "expected first runtime instance identity to start at 1048576")
     expect(facts.second_alloc == 1048577, "expected second runtime instance identity to increment deterministically")
     expect(facts.first_alloc != facts.second_alloc, "expected alloc to materialize distinct receiver identities")
+    expect(facts.payload.get("set_base_count_first") == 0, "expected inherited baseCount setter dispatch to return zero")
+    expect(facts.payload.get("base_count_value_first") == 21, "expected first inherited baseCount getter to read its written value")
+    expect(facts.payload.get("base_count_value_second_before") == 0, "expected second inherited baseCount getter to start from zero-filled storage")
     expect(facts.payload.get("set_count_first") == 0, "expected first count setter dispatch to return zero")
     expect(facts.payload.get("count_value_first") == 37, "expected first count getter to read its written value")
     expect(facts.payload.get("count_value_second_before") == 0, "expected second count getter to start from zero-filled storage")
@@ -88,6 +91,9 @@ def _assert_instance_allocation_runtime_values(
     expect(facts.payload.get("set_count_second") == 0, "expected second count setter dispatch to return zero")
     expect(facts.payload.get("count_value_first_after_second") == 37, "expected second count write not to affect the first instance")
     expect(facts.payload.get("count_value_second_after") == 9, "expected second count getter to read its own written value")
+    expect(facts.payload.get("set_base_count_second") == 0, "expected second inherited baseCount setter dispatch to return zero")
+    expect(facts.payload.get("base_count_value_first_after_second") == 21, "expected second inherited baseCount write not to affect the first instance")
+    expect(facts.payload.get("base_count_value_second_after") == 84, "expected second inherited baseCount getter to read its own written value")
     expect(facts.payload.get("set_value_second") == 0, "expected second strong value setter dispatch to return zero")
     expect(facts.payload.get("value_result_first_after_second") == 55, "expected second value write not to affect the first instance")
     expect(facts.payload.get("value_result_second_after") == 91, "expected second value getter to read its own written value")
@@ -105,11 +111,11 @@ def _assert_instance_allocation_runtime_tables(
         "expected registered descriptors for instance allocation probe",
     )
     expect(
-        facts.selector_state.get("selector_table_entry_count", 0) >= 6,
-        "expected synthesized accessor selectors in the selector table",
+        facts.selector_state.get("selector_table_entry_count", 0) >= 8,
+        "expected inherited plus Widget synthesized accessor selectors in the selector table",
     )
     expect(
-        facts.selector_state.get("metadata_backed_selector_count", 0) >= 6,
+        facts.selector_state.get("metadata_backed_selector_count", 0) >= 8,
         "expected selector table to distinguish metadata-backed selectors",
     )
 
@@ -117,41 +123,126 @@ def _assert_instance_allocation_runtime_tables(
 def _assert_instance_allocation_graph_state(
     facts: InstanceAllocationLayoutPayload,
 ) -> None:
-    expect(facts.graph_state.get("realized_class_count") == 1, "expected one realized Widget class")
-    expect(facts.graph_state.get("root_class_count") == 1, "expected Widget to be realized as a root class")
-    expect(facts.graph_state.get("receiver_class_binding_count") == 1, "expected one class receiver binding")
+    expect(facts.graph_state.get("realized_class_count") == 2, "expected realized Base and Widget classes")
+    expect(facts.graph_state.get("root_class_count") == 1, "expected only Base to be realized as the root class")
+    expect(facts.graph_state.get("receiver_class_binding_count") == 2, "expected Base and Widget receiver bindings")
     expect(facts.graph_state.get("live_instance_count") == 2, "expected two live runtime instances")
     expect(
         facts.graph_state.get("last_allocated_receiver_identity") == facts.second_alloc,
         "expected graph state to record the last allocated receiver",
     )
-    expect(facts.graph_state.get("last_allocated_base_identity") == 1024, "expected graph state to record the Widget class base identity")
-    expect(facts.graph_state.get("last_allocated_instance_size_bytes") == 16, "expected Widget instance storage size to remain 16 bytes")
+    expect(
+        facts.graph_state.get("last_allocated_base_identity") == facts.widget_entry.get("base_identity"),
+        "expected graph state to record the Widget class base identity",
+    )
+    expect(
+        facts.graph_state.get("last_allocated_instance_size_bytes") == facts.widget_entry.get("runtime_instance_size_bytes"),
+        "expected graph state to record the inherited Widget instance storage size",
+    )
     expect(facts.graph_state.get("last_allocated_class_name") == "Widget", "expected graph state to record the allocated class name")
+    expect(facts.base_entry.get("found") == 1, "expected Base realized class entry to be queryable")
+    expect(facts.base_entry.get("is_root_class") == 1, "expected Base fixture to be the root class")
+    expect(facts.base_entry.get("runtime_property_accessor_count") == 1, "expected Base to publish the inherited baseCount accessor pair")
+    expect(facts.base_entry.get("runtime_instance_size_bytes", 0) > 0, "expected Base entry to publish non-zero inherited storage floor")
     expect(facts.widget_entry.get("found") == 1, "expected Widget realized class entry to be queryable")
-    expect(facts.widget_entry.get("base_identity") == 1024, "expected Widget base identity to remain deterministic")
-    expect(facts.widget_entry.get("is_root_class") == 1, "expected Widget fixture to be a root class")
+    expect(facts.widget_entry.get("is_root_class") == 0, "expected Widget fixture to inherit from Base")
+    expect(facts.widget_entry.get("has_super_node") == 1, "expected Widget entry to publish a realized superclass edge")
+    expect(
+        facts.widget_entry.get("super_base_identity") == facts.base_entry.get("base_identity"),
+        "expected Widget superclass base identity to match Base",
+    )
     expect(facts.widget_entry.get("implementation_backed") == 1, "expected Widget entry to be implementation backed")
     expect(facts.widget_entry.get("runtime_property_accessor_count") == 3, "expected Widget to publish three runtime-backed property accessors")
-    expect(facts.widget_entry.get("runtime_instance_size_bytes") == 16, "expected Widget entry to publish 16 bytes of instance storage")
+    expect(
+        facts.widget_entry.get("runtime_instance_size_bytes", 0)
+        >= facts.base_entry.get("runtime_instance_size_bytes", 0),
+        "expected Widget instance storage to include at least Base storage",
+    )
     expect(facts.widget_entry.get("class_owner_identity") == "class:Widget", "expected Widget class owner identity")
     expect(facts.widget_entry.get("metaclass_owner_identity") == "metaclass:Widget", "expected Widget metaclass owner identity")
+    expect(facts.first_instance.get("found") == 1, "expected first instance snapshot to be queryable")
+    expect(facts.second_instance.get("found") == 1, "expected second instance snapshot to be queryable")
+    expect(facts.first_instance.get("class_name") == "Widget", "expected first instance to record Widget class")
+    expect(facts.second_instance.get("class_name") == "Widget", "expected second instance to record Widget class")
+    expect(
+        facts.first_instance.get("instance_size_bytes") == facts.widget_entry.get("runtime_instance_size_bytes"),
+        "expected first instance allocation size to match Widget runtime layout",
+    )
+    expect(
+        facts.second_instance.get("instance_size_bytes") == facts.widget_entry.get("runtime_instance_size_bytes"),
+        "expected second instance allocation size to match Widget runtime layout",
+    )
+    expect(
+        facts.first_instance.get("zero_initialized_storage_byte_count", 0)
+        < facts.first_instance.get("storage_size_bytes", 0),
+        "expected first instance storage snapshot to observe post-write non-zero bytes",
+    )
+    expect(
+        facts.second_instance.get("zero_initialized_storage_byte_count", 0)
+        < facts.second_instance.get("storage_size_bytes", 0),
+        "expected second instance storage snapshot to observe post-write non-zero bytes",
+    )
+    expect(
+        facts.base_count_property.get("found") == 1 and facts.base_count_property.get("inherited") == 1,
+        "expected Widget baseCount reflection to resolve inherited Base storage",
+    )
+    expect(
+        facts.count_property.get("found") == 1 and facts.count_property.get("inherited") == 0,
+        "expected Widget count reflection to resolve local Widget storage",
+    )
+    expect(
+        facts.count_property.get("inherited_size_bytes") == facts.base_count_property.get("owner_size_bytes"),
+        "expected Widget count inherited size to equal Base owner storage size",
+    )
+    expect(
+        facts.count_property.get("offset_bytes", 0) >= facts.count_property.get("inherited_size_bytes", 0),
+        "expected Widget count offset to start at or after inherited storage",
+    )
+    expect(
+        facts.value_property.get("owner_size_bytes", 0) == facts.widget_entry.get("runtime_instance_size_bytes"),
+        "expected reflected value owner size to match Widget instance size",
+    )
 
 
 def _assert_instance_allocation_cache_entries(
     facts: InstanceAllocationLayoutPayload,
 ) -> None:
     expect(
+        facts.base_count_entry.get("found") == 1 and facts.base_count_entry.get("resolved") == 1,
+        "expected inherited baseCount getter cache entry to resolve",
+    )
+    expect(facts.base_count_entry.get("parameter_count") == 0, "expected baseCount getter cache entry to preserve zero parameters")
+    expect(
+        facts.base_count_entry.get("resolved_owner_identity")
+        == facts.base_count_property.get("getter_owner_identity"),
+        "expected inherited baseCount getter cache owner to match reflected property owner",
+    )
+    expect(
+        facts.set_base_count_entry.get("found") == 1
+        and facts.set_base_count_entry.get("resolved") == 1,
+        "expected inherited setBaseCount setter cache entry to resolve",
+    )
+    expect(facts.set_base_count_entry.get("parameter_count") == 1, "expected baseCount setter cache entry to preserve one parameter")
+    expect(
+        facts.set_base_count_entry.get("resolved_owner_identity")
+        == facts.base_count_property.get("setter_owner_identity"),
+        "expected inherited baseCount setter cache owner to match reflected property owner",
+    )
+    expect(
         facts.count_entry.get("found") == 1 and facts.count_entry.get("resolved") == 1,
         "expected count getter cache entry to resolve",
     )
     expect(facts.count_entry.get("dispatch_family_is_class") == 0, "expected count getter dispatch to be instance-family")
-    expect(facts.count_entry.get("normalized_receiver_identity") == 1025, "expected instance dispatch to normalize to Widget instance identity")
+    expect(
+        facts.count_entry.get("normalized_receiver_identity")
+        == facts.widget_entry.get("base_identity", 0) + 1,
+        "expected count getter dispatch to normalize to Widget instance identity",
+    )
     expect(facts.count_entry.get("parameter_count") == 0, "expected count getter cache entry to preserve zero parameters")
     expect(
         facts.count_entry.get("resolved_owner_identity")
-        == "implementation:Widget::instance_method:count",
-        "expected count getter cache entry to preserve synthesized owner identity",
+        == facts.count_property.get("getter_owner_identity"),
+        "expected count getter cache entry to match reflected property owner",
     )
     expect(
         facts.set_count_entry.get("found") == 1
@@ -159,12 +250,16 @@ def _assert_instance_allocation_cache_entries(
         "expected setCount setter cache entry to resolve",
     )
     expect(facts.set_count_entry.get("dispatch_family_is_class") == 0, "expected setCount setter dispatch to be instance-family")
-    expect(facts.set_count_entry.get("normalized_receiver_identity") == 1025, "expected setter dispatch to normalize to Widget instance identity")
+    expect(
+        facts.set_count_entry.get("normalized_receiver_identity")
+        == facts.widget_entry.get("base_identity", 0) + 1,
+        "expected setter dispatch to normalize to Widget instance identity",
+    )
     expect(facts.set_count_entry.get("parameter_count") == 1, "expected setCount setter cache entry to preserve one parameter")
     expect(
         facts.set_count_entry.get("resolved_owner_identity")
-        == "implementation:Widget::instance_method:setCount:",
-        "expected setCount setter cache entry to preserve synthesized owner identity",
+        == facts.count_property.get("setter_owner_identity"),
+        "expected setCount setter cache entry to match reflected property owner",
     )
 
 

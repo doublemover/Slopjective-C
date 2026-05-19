@@ -154,8 +154,24 @@ def _assert_value_dispatch(facts: PropertyExecutionPayload) -> None:
 
 
 def _assert_token_dispatch(facts: PropertyExecutionPayload) -> None:
+    expect(facts.set_token_dispatch.get("last_selector") == "setToken:",
+           "expected readonly setter probe to dispatch the synthesized setToken: selector")
+    expect(facts.set_token_dispatch.get("last_dispatch_strict_error") == 1,
+           "expected readonly setToken: dispatch to fail closed as a strict dispatch error")
+    expect(facts.set_token_dispatch.get("last_dispatch_path") == "slow-path-error",
+           "expected readonly setToken: dispatch to stay on the unresolved slow-path error")
+    expect(facts.set_token_dispatch.get("last_implementation_kind") == "strict-dispatch-error",
+           "expected readonly setToken: dispatch not to resolve to a runtime property setter")
+    expect(facts.set_token_dispatch.get("last_used_builtin") == 0,
+           "expected readonly setToken: dispatch not to use a builtin property accessor")
+    expect(facts.set_token_dispatch.get("last_property_name") is None,
+           "expected readonly setToken: dispatch not to bind a runtime property name")
+    expect(facts.set_token_dispatch.get("last_resolved_owner_identity") is None,
+           "expected readonly setToken: dispatch not to resolve a property setter owner")
     expect(facts.token_dispatch.get("last_implementation_kind") == "builtin-property-getter",
            "expected tokenValue getter to execute through the runtime property-getter builtin")
+    expect(facts.token_dispatch.get("last_dispatch_strict_error") == 0,
+           "expected tokenValue getter to remain available after readonly setter failure")
     expect(facts.token_dispatch.get("last_property_name") == facts.token_property.get("property_name"),
            "expected tokenValue getter dispatch property name to match reflected property metadata")
     expect(facts.token_dispatch.get("last_property_base_identity") == facts.token_property.get("base_identity"),

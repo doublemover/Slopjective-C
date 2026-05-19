@@ -24,6 +24,7 @@ inline constexpr const char *kValueGetterSelector = "currentValue";
 inline constexpr const char *kValueSetterSelector = "setCurrentValue:";
 inline constexpr const char *kTokenPropertyName = "token";
 inline constexpr const char *kTokenGetterSelector = "tokenValue";
+inline constexpr const char *kTokenSetterSelector = "setToken:";
 
 struct DispatchObservation {
   objc3_runtime_dispatch_state_snapshot state{};
@@ -96,6 +97,7 @@ struct PropertyIvarExecutionCases {
   int enabled_value = 0;
   int set_value_result = 0;
   int value_result = 0;
+  int set_token_result = 0;
   int token_value = 0;
   DispatchObservation set_base_count_dispatch;
   DispatchObservation base_count_dispatch;
@@ -105,6 +107,7 @@ struct PropertyIvarExecutionCases {
   DispatchObservation enabled_dispatch;
   DispatchObservation set_value_dispatch;
   DispatchObservation value_dispatch;
+  DispatchObservation set_token_dispatch;
   DispatchObservation token_dispatch;
 };
 
@@ -119,6 +122,7 @@ struct PropertyIvarExecutionAssertions {
   MethodCacheEntryObservation count_method;
   MethodCacheEntryObservation enabled_method;
   MethodCacheEntryObservation value_method;
+  MethodCacheEntryObservation set_token_method;
   MethodCacheEntryObservation token_method;
 };
 

@@ -83,6 +83,10 @@ inline void ExecutePropertyIvarMatrixCases(
       DispatchObjectReference(widget_instance, kValueGetterSelector);
   CaptureLatestDispatchObservation(cases.value_dispatch);
 
+  cases.set_token_result =
+      DispatchVoidStatus(widget_instance, kTokenSetterSelector, 89);
+  CaptureLatestDispatchObservation(cases.set_token_dispatch);
+
   cases.token_value =
       DispatchObjectReference(widget_instance, kTokenGetterSelector);
   CaptureLatestDispatchObservation(cases.token_dispatch);

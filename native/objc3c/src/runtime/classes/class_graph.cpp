@@ -22,6 +22,41 @@
 
 namespace objc3c::runtime {
 
+namespace {
+
+bool AttachRealizedPropertyLayoutRecordsInSuperclassOrderUnlocked(
+    RuntimeState &state,
+    std::size_t node_index,
+    std::vector<unsigned char> &visiting,
+    std::vector<unsigned char> &attached) {
+  if (node_index >= state.realized_class_nodes.size()) {
+    return false;
+  }
+  if (attached[node_index] != 0u) {
+    return true;
+  }
+  if (visiting[node_index] != 0u) {
+    return false;
+  }
+
+  visiting[node_index] = 1u;
+  RealizedClassNode &node = state.realized_class_nodes[node_index];
+  if (node.has_super_node) {
+    if (!AttachRealizedPropertyLayoutRecordsInSuperclassOrderUnlocked(
+            state, node.super_node_index, visiting, attached)) {
+      visiting[node_index] = 0u;
+      return false;
+    }
+  }
+
+  (void)AttachRealizedPropertyLayoutRecordsUnlocked(state, node);
+  visiting[node_index] = 0u;
+  attached[node_index] = 1u;
+  return true;
+}
+
+}  // namespace
+
 void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   // metaclass-graph-root-class anchor: runtime now republishes a
   // realized class/metaclass graph keyed by stable receiver base identities,
@@ -163,7 +198,16 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       ++state.realized_root_class_count;
     }
     (void)AttachRealizedCategoryRecordsUnlocked(state, node);
-    (void)AttachRealizedPropertyLayoutRecordsUnlocked(state, node);
+  }
+
+  std::vector<unsigned char> property_layout_visiting(
+      state.realized_class_nodes.size(), 0u);
+  std::vector<unsigned char> property_layout_attached(
+      state.realized_class_nodes.size(), 0u);
+  for (std::size_t index = 0; index < state.realized_class_nodes.size();
+       ++index) {
+    (void)AttachRealizedPropertyLayoutRecordsInSuperclassOrderUnlocked(
+        state, index, property_layout_visiting, property_layout_attached);
   }
 
   if (!state.realized_class_nodes.empty()) {

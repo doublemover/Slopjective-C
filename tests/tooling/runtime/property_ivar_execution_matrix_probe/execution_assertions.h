@@ -77,6 +77,8 @@ inline void CaptureMethodCacheAssertions(
                        assertions.enabled_method);
   CopyMethodCacheEntry(widget_instance, kValueGetterSelector,
                        assertions.value_method);
+  CopyMethodCacheEntry(widget_instance, kTokenSetterSelector,
+                       assertions.set_token_method);
   CopyMethodCacheEntry(widget_instance, kTokenGetterSelector,
                        assertions.token_method);
 
@@ -84,6 +86,7 @@ inline void CaptureMethodCacheAssertions(
   StabilizeMethodCacheEntryObservation(assertions.count_method);
   StabilizeMethodCacheEntryObservation(assertions.enabled_method);
   StabilizeMethodCacheEntryObservation(assertions.value_method);
+  StabilizeMethodCacheEntryObservation(assertions.set_token_method);
   StabilizeMethodCacheEntryObservation(assertions.token_method);
 }
 

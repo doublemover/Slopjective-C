@@ -100,6 +100,15 @@ typedef struct objc3_runtime_property_entry_snapshot {
   int setter_available;
   int has_runtime_getter;
   int has_runtime_setter;
+  uint64_t attribute_count;
+  int is_readonly;
+  int is_nonatomic;
+  int is_strong;
+  int is_assign;
+  int is_weak;
+  int is_copy;
+  int has_custom_getter;
+  int has_custom_setter;
   uint64_t base_identity;
   uint64_t slot_index;
   uint64_t offset_bytes;

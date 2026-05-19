@@ -44,12 +44,39 @@ inline void StabilizeRealizedClassEntryObservation(
       observation.category_name);
 }
 
+inline void StabilizeInstanceEntryObservation(
+    InstanceEntryObservation &observation) {
+  ::objc3c::runtime::probe::StabilizeNullableCString(
+      observation.entry.class_name, observation.class_name,
+      observation.entry.class_name);
+}
+
+inline void StabilizePropertyEntryObservation(
+    PropertyEntryObservation &observation) {
+  ::objc3c::runtime::probe::StabilizePropertyEntry(
+      observation.entry, observation.queried_class, observation.resolved_class,
+      observation.property_name, observation.declaration_owner,
+      observation.export_owner, observation.getter_selector,
+      observation.setter_selector, observation.effective_getter_selector,
+      observation.effective_setter_selector, observation.ivar_binding,
+      observation.synthesized_binding, observation.layout_symbol,
+      observation.getter_owner, observation.setter_owner);
+}
+
 inline void StabilizeAllocationInvariantSnapshots(
     AllocationInvariantSnapshots &snapshots) {
   StabilizeMethodCacheEntryObservation(snapshots.count_entry);
   StabilizeMethodCacheEntryObservation(snapshots.set_count_entry);
+  StabilizeMethodCacheEntryObservation(snapshots.base_count_entry);
+  StabilizeMethodCacheEntryObservation(snapshots.set_base_count_entry);
   StabilizeRealizedGraphStateObservation(snapshots.graph_state);
+  StabilizeRealizedClassEntryObservation(snapshots.base_entry);
   StabilizeRealizedClassEntryObservation(snapshots.widget_entry);
+  StabilizeInstanceEntryObservation(snapshots.first_instance);
+  StabilizeInstanceEntryObservation(snapshots.second_instance);
+  StabilizePropertyEntryObservation(snapshots.base_count_property);
+  StabilizePropertyEntryObservation(snapshots.count_property);
+  StabilizePropertyEntryObservation(snapshots.value_property);
 }
 
 inline RegistrationStateObservation CaptureRegistrationState() {
@@ -80,16 +107,45 @@ inline RealizedGraphStateObservation CaptureRealizedGraphState() {
   return observation;
 }
 
-inline RealizedClassEntryObservation CaptureWidgetClassEntry() {
+inline RealizedClassEntryObservation CaptureRealizedClassEntry(
+    const char *class_name) {
   RealizedClassEntryObservation observation;
   (void)objc3_runtime_copy_realized_class_entry_for_testing(
-      kWidgetClassName, &observation.entry);
+      class_name, &observation.entry);
+  return observation;
+}
+
+inline RealizedClassEntryObservation CaptureWidgetClassEntry() {
+  return CaptureRealizedClassEntry(kWidgetClassName);
+}
+
+inline RealizedClassEntryObservation CaptureBaseClassEntry() {
+  return CaptureRealizedClassEntry(kBaseClassName);
+}
+
+inline InstanceEntryObservation CaptureInstanceEntry(int receiver) {
+  InstanceEntryObservation observation;
+  (void)objc3_runtime_copy_instance_entry_for_testing(receiver,
+                                                      &observation.entry);
+  return observation;
+}
+
+inline PropertyEntryObservation CapturePropertyEntry(const char *property_name) {
+  PropertyEntryObservation observation;
+  (void)objc3_runtime_copy_property_entry_for_testing(
+      kWidgetClassName, property_name, &observation.entry);
   return observation;
 }
 
 inline void CaptureAllocationInvariantSnapshots(
     const AllocationFixture &fixture,
     AllocationInvariantSnapshots &snapshots) {
+  snapshots.base_count_entry =
+      CaptureMethodCacheEntry(fixture.first_alloc, kBaseCountGetterSelector);
+  StabilizeMethodCacheEntryObservation(snapshots.base_count_entry);
+  snapshots.set_base_count_entry =
+      CaptureMethodCacheEntry(fixture.first_alloc, kBaseCountSetterSelector);
+  StabilizeMethodCacheEntryObservation(snapshots.set_base_count_entry);
   snapshots.count_entry =
       CaptureMethodCacheEntry(fixture.first_alloc, kCountGetterSelector);
   StabilizeMethodCacheEntryObservation(snapshots.count_entry);
@@ -98,8 +154,20 @@ inline void CaptureAllocationInvariantSnapshots(
   StabilizeMethodCacheEntryObservation(snapshots.set_count_entry);
   snapshots.graph_state = CaptureRealizedGraphState();
   StabilizeRealizedGraphStateObservation(snapshots.graph_state);
+  snapshots.base_entry = CaptureBaseClassEntry();
+  StabilizeRealizedClassEntryObservation(snapshots.base_entry);
   snapshots.widget_entry = CaptureWidgetClassEntry();
   StabilizeRealizedClassEntryObservation(snapshots.widget_entry);
+  snapshots.first_instance = CaptureInstanceEntry(fixture.first_alloc);
+  StabilizeInstanceEntryObservation(snapshots.first_instance);
+  snapshots.second_instance = CaptureInstanceEntry(fixture.second_alloc);
+  StabilizeInstanceEntryObservation(snapshots.second_instance);
+  snapshots.base_count_property = CapturePropertyEntry(kBaseCountPropertyName);
+  StabilizePropertyEntryObservation(snapshots.base_count_property);
+  snapshots.count_property = CapturePropertyEntry(kCountPropertyName);
+  StabilizePropertyEntryObservation(snapshots.count_property);
+  snapshots.value_property = CapturePropertyEntry(kValuePropertyName);
+  StabilizePropertyEntryObservation(snapshots.value_property);
 }
 
 }  // namespace objc3c::runtime::probe::instance_allocation_runtime

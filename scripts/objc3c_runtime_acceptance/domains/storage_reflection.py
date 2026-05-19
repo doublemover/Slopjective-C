@@ -21,6 +21,7 @@ from objc3c_runtime_acceptance.domains.storage_reflection_owner_contracts import
 from objc3c_runtime_acceptance.domains.storage_reflection_runtime_cases import (
     check_instance_allocation_layout_runtime_case,
     check_property_execution_case,
+    check_property_invalid_layout_runtime_case,
     check_property_layout_case,
     check_property_reflection_case,
     check_storage_ownership_reflection_case,
@@ -66,6 +67,7 @@ _EXPORTED_CASE_NAMES = [
     "check_instance_allocation_layout_runtime_case",
     "check_property_execution_case",
     "check_property_reflection_case",
+    "check_property_invalid_layout_runtime_case",
     "check_storage_ownership_reflection_case",
     "check_cross_module_storage_reflection_artifact_preservation_case",
 ]

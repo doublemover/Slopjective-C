@@ -23,6 +23,7 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf("\"enabled_value\":%d,", execution.enabled_value);
   std::printf("\"set_value_result\":%d,", execution.set_value_result);
   std::printf("\"value_result\":%d,", execution.value_result);
+  std::printf("\"set_token_result\":%d,", execution.set_token_result);
   std::printf("\"token_value\":%d,", execution.token_value);
   std::printf("\"widget_entry\":");
   ::objc3c::runtime::probe::PrintRealizedClassEntryPropertySummary(
@@ -57,6 +58,9 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf(",\"value_method\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       assertions.value_method.entry);
+  std::printf(",\"set_token_method\":");
+  ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
+      assertions.set_token_method.entry);
   std::printf(",\"token_method\":");
   ::objc3c::runtime::probe::PrintMethodCacheEntryBasic(
       assertions.token_method.entry);
@@ -84,6 +88,9 @@ inline void PrintProbeReport(const ProbeResult &result) {
   std::printf(",\"value_dispatch\":");
   ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
       execution.value_dispatch.state);
+  std::printf(",\"set_token_dispatch\":");
+  ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
+      execution.set_token_dispatch.state);
   std::printf(",\"token_dispatch\":");
   ::objc3c::runtime::probe::PrintDispatchStatePropertyExecution(
       execution.token_dispatch.state);

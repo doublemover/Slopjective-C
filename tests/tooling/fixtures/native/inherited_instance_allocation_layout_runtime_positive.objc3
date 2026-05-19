@@ -1,0 +1,21 @@
+module inheritedInstanceAllocationLayoutRuntime;
+
+@interface Base
+@property (assign) i32 baseCount;
+@end
+
+@implementation Base
+@property (assign) i32 baseCount;
+@end
+
+@interface Widget : Base
+@property (assign) i32 count;
+@property (assign) bool enabled;
+@property (strong) id value;
+@end
+
+@implementation Widget
+@property (assign) i32 count;
+@property (assign) bool enabled;
+@property (strong) id value;
+@end

@@ -27,12 +27,20 @@ inline int DispatchWidgetBoolValue(int receiver, const char *selector) {
   return ::objc3c::runtime::probe::DispatchTypedBoolValue(receiver, selector);
 }
 
+inline int WidgetClassReceiverIdentity() {
+  objc3_runtime_realized_class_entry_snapshot widget_entry{};
+  (void)objc3_runtime_copy_realized_class_entry_for_testing(kWidgetClassName,
+                                                            &widget_entry);
+  return static_cast<int>(widget_entry.class_receiver_identity);
+}
+
 inline AllocationFixture AllocateWidgetInstances() {
   AllocationFixture fixture;
+  const int widget_class_receiver = WidgetClassReceiverIdentity();
   fixture.first_alloc =
-      DispatchWidgetObjectReference(kWidgetClassReceiver, kAllocSelector);
+      DispatchWidgetObjectReference(widget_class_receiver, kAllocSelector);
   fixture.second_alloc =
-      DispatchWidgetObjectReference(kWidgetClassReceiver, kAllocSelector);
+      DispatchWidgetObjectReference(widget_class_receiver, kAllocSelector);
   return fixture;
 }
 

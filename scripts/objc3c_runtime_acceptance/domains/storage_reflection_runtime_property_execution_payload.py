@@ -20,6 +20,7 @@ class PropertyExecutionPayload:
     count_method: Any
     enabled_method: Any
     value_method: Any
+    set_token_method: Any
     token_method: Any
     set_base_count_dispatch: Any
     base_count_dispatch: Any
@@ -29,6 +30,7 @@ class PropertyExecutionPayload:
     enabled_dispatch: Any
     set_value_dispatch: Any
     value_dispatch: Any
+    set_token_dispatch: Any
     token_dispatch: Any
 
 
@@ -48,6 +50,7 @@ def capture_property_execution_payload(
         count_method=payload.get("count_method", {}),
         enabled_method=payload.get("enabled_method", {}),
         value_method=payload.get("value_method", {}),
+        set_token_method=payload.get("set_token_method", {}),
         token_method=payload.get("token_method", {}),
         set_base_count_dispatch=payload.get("set_base_count_dispatch", {}),
         base_count_dispatch=payload.get("base_count_dispatch", {}),
@@ -57,6 +60,7 @@ def capture_property_execution_payload(
         enabled_dispatch=payload.get("enabled_dispatch", {}),
         set_value_dispatch=payload.get("set_value_dispatch", {}),
         value_dispatch=payload.get("value_dispatch", {}),
+        set_token_dispatch=payload.get("set_token_dispatch", {}),
         token_dispatch=payload.get("token_dispatch", {}),
     )
 

@@ -64,6 +64,7 @@ inline void PrintRealizedClassEntryAllocation(
       "registration_order_ordinal",
       static_cast<unsigned long long>(snapshot.registration_order_ordinal));
   PrintIntField("is_root_class", snapshot.is_root_class);
+  PrintIntField("has_super_node", snapshot.has_super_node);
   PrintIntField("implementation_backed", snapshot.implementation_backed);
   PrintUint64Field(
       "attached_category_count",
@@ -80,6 +81,9 @@ inline void PrintRealizedClassEntryAllocation(
   PrintUint64Field(
       "runtime_instance_size_bytes",
       static_cast<unsigned long long>(snapshot.runtime_instance_size_bytes));
+  PrintUint64Field(
+      "super_base_identity",
+      static_cast<unsigned long long>(snapshot.super_base_identity));
   PrintStringField("class_name", snapshot.class_name);
   PrintStringField("class_owner_identity", snapshot.class_owner_identity);
   PrintStringField("metaclass_owner_identity",

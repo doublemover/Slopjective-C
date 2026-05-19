@@ -24,6 +24,10 @@ def _assert_materialized_widget_values(facts: PropertyExecutionPayload) -> None:
     expect(facts.payload.get("count_value") == 37, "expected synthesized count getter to return the stored value")
     expect(facts.payload.get("enabled_value") == 1, "expected synthesized enabled getter to return the stored value")
     expect(facts.payload.get("value_result") == 55, "expected synthesized strong property getter to return the stored value")
+    expect(facts.payload.get("set_token_result", 0) < 0,
+           "expected readonly token setter dispatch to fail closed with a strict non-OK status")
+    expect(facts.payload.get("token_value") == 0,
+           "expected readonly token getter to remain callable after failed setter dispatch")
     expect(facts.widget_entry.get("found") == 1, "expected Widget to be realized during property execution")
     expect(facts.widget_entry.get("runtime_property_accessor_count", 0) >= 4,
            "expected Widget to publish runtime-backed synthesized accessors")
@@ -119,6 +123,10 @@ def _assert_runtime_method_cache_resolution(facts: PropertyExecutionPayload) -> 
            "expected enabled getter dispatch to resolve live through the runtime cache")
     expect(facts.value_method.get("resolved") == 1 and facts.value_method.get("parameter_count") == 0,
            "expected currentValue getter dispatch to resolve live through the runtime cache")
+    expect(facts.set_token_method.get("found") == 1 and facts.set_token_method.get("resolved") == 0,
+           "expected readonly setToken: cache entry to remain unresolved after strict dispatch failure")
+    expect(facts.set_token_method.get("resolved_owner_identity") is None,
+           "did not expect readonly setToken: cache entry to resolve to a runtime property setter owner")
     expect(facts.token_method.get("resolved") == 1 and facts.token_method.get("parameter_count") == 0,
            "expected tokenValue getter dispatch to resolve live through the runtime cache")
     expect(facts.base_count_method.get("resolved_owner_identity") == facts.base_count_property.get("getter_owner_identity"),
