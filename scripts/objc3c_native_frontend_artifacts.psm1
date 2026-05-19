@@ -22,7 +22,9 @@ $frontendArtifactModules = @(
   "loading.psm1",
   "assertions.psm1",
   "payloads.psm1",
-  "orchestration.psm1"
+  "orchestration/status.psm1",
+  "orchestration/core_artifacts.psm1",
+  "orchestration/packet_generation.psm1"
 )
 
 foreach ($frontendArtifactModule in $frontendArtifactModules) {

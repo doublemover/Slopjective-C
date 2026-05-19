@@ -7,7 +7,11 @@ from collections.abc import Sequence
 
 from ..composite_validation import run_composite_validation
 from ..environment import PWSH
-from .hygiene_paths import SOURCE_HYGIENE_AUTHENTICITY_PY, TASK_HYGIENE_PY
+from .hygiene_paths import (
+    REPO_SUPERCLEAN_SURFACE_PY,
+    SOURCE_HYGIENE_AUTHENTICITY_PY,
+    TASK_HYGIENE_PY,
+)
 from .native_build_paths import BUILD_PS1
 
 
@@ -32,13 +36,18 @@ def action_validate_repo_superclean(_: list[str]) -> int:
                 [
                     PWSH,
                     "-NoProfile",
+                    "-NonInteractive",
                     "-ExecutionPolicy",
                     "Bypass",
                     "-File",
                     str(BUILD_PS1),
                     "-ExecutionMode",
-                    "contracts-binary",
+                    "full",
                 ],
+            ),
+            (
+                "repo-superclean-surface",
+                [sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)],
             ),
             ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
             ("source-hygiene", [sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)]),

@@ -25,7 +25,7 @@ TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-bonus-tool-integration": ActionSpec(
         "inspect-bonus-tool-integration",
         "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts",
-        "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+        "runner-internal + tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
         validation_tier="repo",
         guarantee_owner=(
             "bonus-tool integration stays rooted in the build-owned source-of-truth "

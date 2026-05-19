@@ -26,7 +26,7 @@ def developer_runbook_source_specs() -> tuple[RunbookSourceSpec, ...]:
                 "## Explainability And Introspection Surface",
                 "## Exact Live Artifact And Output Paths",
                 "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-                "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+                "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
                 "tmp/artifacts/compilation/objc3c-native/",
                 "tmp/reports/objc3c-public-workflow/compile-observability.json",
                 "tmp/reports/objc3c-public-workflow/runtime-inspector.json",

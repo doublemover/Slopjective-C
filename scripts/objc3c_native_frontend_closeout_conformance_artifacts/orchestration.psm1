@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot "assertions.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "constants.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "loading.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "payload_matrix.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "payload_corpus.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "payload_closeout.psm1") -Force -DisableNameChecking
+
 function Write-Objc3cNativeFrontendCloseoutConformancePayload {
   param(
     [Parameter(Mandatory = $true)]

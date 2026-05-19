@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_artifact_io.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_frontend_contracts\exports.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_frontend_closeout_edge_artifacts\orchestration.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_frontend_closeout_conformance_artifacts\orchestration.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "status.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "core_artifacts.psm1") -Force -DisableNameChecking
+
 function Invoke-Objc3cNativeFrontendPacketGeneration {
   param(
     [Parameter(Mandatory = $true)][string]$Mode,

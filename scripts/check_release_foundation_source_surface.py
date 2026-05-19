@@ -9,7 +9,6 @@ from pathlib import Path
 from objc3c_shared.json_io import load_json_object as load_json
 from objc3c_shared.json_io import write_report_json
 from objc3c_tooling.paths import repo_rel
-from scripts.check_repo_superclean_surface_model import write_surface_payload
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_foundation" / "source_surface.json"
@@ -53,10 +52,10 @@ EXPECTED_CHECKED_IN_SOURCES = (
 EXPECTED_UPSTREAM_SURFACES = (
     "spec/conformance/release_evidence_gate_maintenance.md",
     "docs/runbooks/objc3c_public_command_surface.md",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
 )
 GENERATED_UPSTREAM_SURFACES = frozenset(
-    {"tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"}
+    {"tmp/build-objc3c-native/repo_superclean_source_of_truth.json"}
 )
 
 EXPECTED_BUILD_SCRIPTS = (
@@ -112,11 +111,13 @@ def require_existing_path(path: str, label: str) -> bool:
 
 def ensure_generated_upstream_surface(path: str) -> bool:
     target = ROOT / path
-    if path not in GENERATED_UPSTREAM_SURFACES or target.exists():
+    if path not in GENERATED_UPSTREAM_SURFACES:
         return True
-    write_surface_payload(target)
     if not target.is_file():
-        fail(f"generated upstream surface writer did not produce {path}")
+        fail(
+            f"generated upstream surface is missing {path}; "
+            "run the native build contract surface before checking release foundation"
+        )
         return False
     return True
 

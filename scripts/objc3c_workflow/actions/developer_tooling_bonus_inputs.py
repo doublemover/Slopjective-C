@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from scripts.check_repo_superclean_surface_model import write_surface_payload
-
 from .developer_tooling_paths import (
     REPO_SUPERCLEAN_SOURCE_OF_TRUTH,
     SHOWCASE_PORTFOLIO_JSON,
@@ -23,7 +21,10 @@ class BonusSurfaceInputs:
 
 def ensure_bonus_source_of_truth() -> None:
     if not REPO_SUPERCLEAN_SOURCE_OF_TRUTH.is_file():
-        write_surface_payload(REPO_SUPERCLEAN_SOURCE_OF_TRUTH)
+        raise FileNotFoundError(
+            "missing build-owned repo-superclean source-of-truth artifact: "
+            f"{REPO_SUPERCLEAN_SOURCE_OF_TRUTH}"
+        )
 
 
 def load_bonus_surface_inputs() -> BonusSurfaceInputs:

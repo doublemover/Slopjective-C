@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from scripts.repo_superclean_surface.paths import REPO_SUPERCLEAN_SOURCE_OF_TRUTH
+
 from ..environment import ROOT
 
 DEVELOPER_TOOLING_INTEGRATION_PY = (
@@ -32,9 +34,6 @@ PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow
 PLAYGROUND_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "playground"
 PLAYGROUND_REPORT_ROOT = ROOT / "tmp" / "reports" / "playground"
 PLAYGROUND_WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
-REPO_SUPERCLEAN_SOURCE_OF_TRUTH = (
-    ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_source_of_truth.json"
-)
 SHOWCASE_PORTFOLIO_JSON = ROOT / "showcase" / "portfolio.json"
 SHOWCASE_TUTORIAL_WALKTHROUGH_JSON = ROOT / "showcase" / "tutorial_walkthrough.json"
 HOSTED_LLVM_CAPABILITIES_SUMMARY = (

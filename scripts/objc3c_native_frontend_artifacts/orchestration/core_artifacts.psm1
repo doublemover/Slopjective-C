@@ -1,5 +1,11 @@
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_artifact_io.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\assertions.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\constants.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\loading.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\payloads.psm1") -Force -DisableNameChecking
+
 function Write-Objc3cNativeFrontendModuleScaffoldArtifact {
   param(
     [Parameter(Mandatory = $true)]

@@ -93,7 +93,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `artifacts/lib/objc3_runtime.lib`
 - build-emitted owner artifact:
   - generated repo-superclean owner artifact selected by the checked-in build contract
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+  - `tmp/build-objc3c-native/repo_superclean_source_of_truth.json`
 - default compile/explain output root:
   - generated native compilation artifact root
   - `tmp/artifacts/compilation/objc3c-native/`

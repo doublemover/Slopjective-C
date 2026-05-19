@@ -15,7 +15,7 @@ function Get-ManifestProvenanceRuntimeArtifactFiles {
     "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
     "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
     "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json",
     "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   )

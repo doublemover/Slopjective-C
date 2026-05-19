@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force -DisableNameChecking -Global
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force
 $frontendContractModuleRoot = Join-Path $PSScriptRoot "objc3c_native_frontend_contracts"
 $frontendContractExportModule = Join-Path $frontendContractModuleRoot "exports.psm1"
@@ -22,7 +22,22 @@ foreach ($frontendContractModule in @(Get-Objc3cNativeFrontendContractModuleName
   }
   Import-Module $frontendContractModulePath -Force -DisableNameChecking -Global
 }
-Import-Module (Join-Path $PSScriptRoot "objc3c_native_frontend_artifacts.psm1") -Force
+$frontendArtifactModuleRoot = Join-Path $PSScriptRoot "objc3c_native_frontend_artifacts"
+foreach ($frontendArtifactModule in @(
+  "constants.psm1",
+  "loading.psm1",
+  "assertions.psm1",
+  "payloads.psm1",
+  "orchestration/status.psm1",
+  "orchestration/core_artifacts.psm1",
+  "orchestration/packet_generation.psm1"
+)) {
+  $frontendArtifactModulePath = Join-Path $frontendArtifactModuleRoot $frontendArtifactModule
+  if (!(Test-Path -LiteralPath $frontendArtifactModulePath -PathType Leaf)) {
+    throw "frontend artifact support module missing: $frontendArtifactModulePath"
+  }
+  Import-Module $frontendArtifactModulePath -Force -DisableNameChecking -Global
+}
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_superclean_surface.psm1") -Force
 
 $nativeToolchain = Resolve-Objc3cNativeToolchain -RepoRoot $repoRoot
@@ -94,10 +109,30 @@ function Write-BuildStep {
   Write-Host ("[build:objc3c-native] " + $Message)
 }
 
+function Get-Objc3cNativeBuildRepoRelativePath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RootPath,
+    [Parameter(Mandatory = $true)]
+    [string]$TargetPath
+  )
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path.TrimEnd('\', '/')
+  if (Test-Path -LiteralPath $TargetPath) {
+    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  } else {
+    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
+  }
+  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
+  $targetUri = [System.Uri]::new($resolvedTarget)
+  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
+  return $relative.Replace('\', '/')
+}
+
 function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
-  return $Mode -in @("full", "binaries-only")
+  return $Mode -in @("full", "binaries-only", "contracts-binary", "contracts-closeout", "contracts-all")
 }
 
 $frontendModules = @(Get-Objc3cNativeFrontendModules)
@@ -176,10 +211,10 @@ if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
   if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
   if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
 
-  Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-  Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-  Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
-  Write-BuildStep ("compile_commands=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
+  Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  Write-BuildStep ("compile_commands=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
 } else {
   Write-BuildStep "cmake_build_skip=native-binaries"
 }
@@ -205,17 +240,17 @@ Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact `
   -FrontendDefinitions $frontendPacketDefinitions
 
 if (Test-Path -LiteralPath $outExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 }
 if (Test-Path -LiteralPath $outCapiExe -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 }
 if (Test-Path -LiteralPath $outRuntimeLib -PathType Leaf) {
-  Write-Output ("built=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  Write-Output ("built=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
 }
 foreach ($packetDefinition in $frontendPacketDefinitions) {
   if (Test-Path -LiteralPath $packetDefinition.OutputPath -PathType Leaf) {
-    Write-Output ($packetDefinition.Name + "=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
+    Write-Output ($packetDefinition.Name + "=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
   }
 }
-Write-Output ("repo_superclean_surface=" + (Get-Objc3cNativeRepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))
+Write-Output ("repo_superclean_surface=" + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))

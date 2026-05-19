@@ -3,24 +3,22 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from check_repo_superclean_surface_model import (
     SurfaceReportWriter,
     load_surface_payload,
+    missing_surface_report,
     validate_surface_payload,
-    write_surface_payload,
 )
+from repo_superclean_surface.paths import REPO_SUPERCLEAN_SOURCE_OF_TRUTH
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SURFACE_PATH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_source_of_truth.json"
+SURFACE_PATH = REPO_SUPERCLEAN_SOURCE_OF_TRUTH
 
 
 def main() -> int:
     writer = SurfaceReportWriter()
     if not SURFACE_PATH.is_file():
-        write_surface_payload(SURFACE_PATH)
+        return writer.write(missing_surface_report(SURFACE_PATH))
 
     payload = load_surface_payload(SURFACE_PATH)
     return writer.write(validate_surface_payload(payload))

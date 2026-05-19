@@ -78,7 +78,7 @@ function New-Objc3cNativeRepoSupercleanReleaseSurfaces {
       runbook = "docs/runbooks/objc3c_release_operations.md"
       source_surface_contract = "tests/tooling/fixtures/release_operations/source_surface.json"
       versioning_model = "tests/tooling/fixtures/release_operations/versioning_model.json"
-      upgrade_support_claim_policy = "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json"
+      upgrade_claim_policy = "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json"
       update_channel_policy = "tests/tooling/fixtures/release_operations/update_channel_policy.json"
       fail_closed_diagnostics_policy = "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json"
       metadata_surface = "tests/tooling/fixtures/release_operations/metadata_surface.json"

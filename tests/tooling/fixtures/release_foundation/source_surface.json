@@ -41,7 +41,7 @@
   "upstream_surfaces": [
     "spec/conformance/release_evidence_gate_maintenance.md",
     "docs/runbooks/objc3c_public_command_surface.md",
-    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+    "tmp/build-objc3c-native/repo_superclean_source_of_truth.json"
   ],
   "build_scripts": [
     "scripts/check_release_foundation_source_surface.py",

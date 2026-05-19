@@ -1,5 +1,9 @@
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot "..\objc3c_native_artifact_io.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "assertions.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "constants.psm1") -Force -DisableNameChecking
+
 function Get-Objc3cNativeFrontendModuleEvidencePayload {
   param(
     [Parameter(Mandatory = $true)]

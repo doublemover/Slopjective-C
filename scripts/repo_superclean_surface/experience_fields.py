@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .model import SurfaceField
+from .paths import REPO_SUPERCLEAN_SOURCE_OF_TRUTH_RELATIVE
 
 
 EXPERIENCE_SURFACE_FIELDS = (
@@ -79,7 +80,7 @@ EXPERIENCE_SURFACE_FIELDS = (
     SurfaceField(
         "bonus_tool_integration_surface",
         {
-            "source_of_truth_artifact": "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+            "source_of_truth_artifact": REPO_SUPERCLEAN_SOURCE_OF_TRUTH_RELATIVE,
             "report_root": "tmp/reports/objc3c-public-workflow",
             "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
             "portfolio_contract": "showcase/portfolio.json",

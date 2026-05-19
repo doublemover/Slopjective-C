@@ -6,6 +6,7 @@ from pathlib import Path
 
 POWERSHELL_NONINTERACTIVE_ARGS: tuple[str, ...] = (
     "-NoProfile",
+    "-NonInteractive",
     "-ExecutionPolicy",
     "Bypass",
 )
