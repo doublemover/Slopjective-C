@@ -27,6 +27,30 @@ from scripts.objc3c_workflow.actions.package import category_owner_contracts
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = ROOT / "scripts" / "objc3c_workflow"
+PACKAGE_SCRIPT = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
+PACKAGE_STAGING_MODULE = (
+    ROOT / "scripts" / "package_objc3c_runnable_toolchain" / "staging_orchestration.psm1"
+)
+PACKAGE_CORE_TOOLCHAIN_MANIFEST = (
+    ROOT
+    / "scripts"
+    / "objc3c_runnable_toolchain_package_helpers"
+    / "manifest_provenance"
+    / "core_toolchain.psm1"
+)
+PACKAGE_NATIVE_EXECUTION_MANIFEST = (
+    ROOT
+    / "scripts"
+    / "objc3c_runnable_toolchain_package_helpers"
+    / "manifest_provenance"
+    / "native_execution.psm1"
+)
+PACKAGE_FILE_INVENTORY_MODULE = (
+    ROOT / "scripts" / "objc3c_runnable_toolchain_package_helpers" / "file_inventory.psm1"
+)
+PACKAGE_HELPER_EXPORTS_MODULE = (
+    ROOT / "scripts" / "objc3c_runnable_toolchain_package_helpers" / "exports.psm1"
+)
 
 CATALOG_OWNER_MODULES = (
     "action_catalog_native_package_toolchain",
@@ -67,3 +91,27 @@ def native_package_owner_handler_texts() -> tuple[str, str]:
         workflow_source_text("action_handlers_native_package_toolchain.py"),
         workflow_source_text("action_handlers_native_package_proof.py"),
     )
+
+
+def native_package_script_text() -> str:
+    return PACKAGE_SCRIPT.read_text(encoding="utf-8")
+
+
+def native_package_staging_module_text() -> str:
+    return PACKAGE_STAGING_MODULE.read_text(encoding="utf-8")
+
+
+def native_package_core_toolchain_manifest_text() -> str:
+    return PACKAGE_CORE_TOOLCHAIN_MANIFEST.read_text(encoding="utf-8")
+
+
+def native_package_native_execution_manifest_text() -> str:
+    return PACKAGE_NATIVE_EXECUTION_MANIFEST.read_text(encoding="utf-8")
+
+
+def native_package_file_inventory_text() -> str:
+    return PACKAGE_FILE_INVENTORY_MODULE.read_text(encoding="utf-8")
+
+
+def native_package_helper_exports_text() -> str:
+    return PACKAGE_HELPER_EXPORTS_MODULE.read_text(encoding="utf-8")

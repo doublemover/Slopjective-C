@@ -11,17 +11,17 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
     [ref]$CacheFixtureRel
   )
 
-  $cacheFixture = @($Fixtures | Where-Object { $_.Extension -eq ".objc3" } | Select-Object -First 1)[0]
-  if ($null -eq $cacheFixture) {
+  $selectedCacheFixture = $Fixtures | Where-Object { $_.Extension -eq ".objc3" } | Select-Object -First 1
+  if ($null -eq $selectedCacheFixture) {
     throw "perf-budget FAIL: cache-proof requires at least one .objc3 fixture so the live compile-wrapper contract can publish the runtime registration manifest"
   }
-  $cacheFixtureRel = Get-RepoRelativePath -Path $cacheFixture.FullName -Root $Config.repo_root
-  $cacheFixtureKind = if ($DispatchFixturePathSet.Contains($cacheFixture.FullName)) { "dispatch-positive" } else { "recovery-positive" }
+  $selectedCacheFixtureRel = Get-RepoRelativePath -Path $selectedCacheFixture.FullName -Root $Config.repo_root
+  $selectedCacheFixtureKind = if ($DispatchFixturePathSet.Contains($selectedCacheFixture.FullName)) { "dispatch-positive" } else { "recovery-positive" }
   $emitPrefix = "module"
   $cacheDir = Join-Path $Config.run_dir "cache-proof"
   $missDir = Join-Path $cacheDir "miss"
   $hitDir = Join-Path $cacheDir "hit"
-  $cacheFixtureSource = Copy-Objc3cNativePerfProofFixture -Fixture $cacheFixture -Directory $cacheDir
+  $cacheFixtureSource = Copy-Objc3cNativePerfProofFixture -Fixture $selectedCacheFixture -Directory $cacheDir
 
   $run1Log = Join-Path $cacheDir "run1.log"
   $run2Log = Join-Path $cacheDir "run2.log"
@@ -29,7 +29,7 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
     -CompileScript $CompileScript `
     -SourcePath $cacheFixtureSource `
     -OutputDirectory $missDir `
-    -Extension $cacheFixture.Extension `
+    -Extension $selectedCacheFixture.Extension `
     -LogPath $run1Log
   if ($run1.exit_code -ne 0) {
     throw "perf-budget FAIL: cache-proof run1 failed with exit code $($run1.exit_code)"
@@ -43,7 +43,7 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
     -CompileScript $CompileScript `
     -SourcePath $cacheFixtureSource `
     -OutputDirectory $hitDir `
-    -Extension $cacheFixture.Extension `
+    -Extension $selectedCacheFixture.Extension `
     -LogPath $run2Log
   if ($run2.exit_code -ne 0) {
     throw "perf-budget FAIL: cache-proof run2 failed with exit code $($run2.exit_code)"
@@ -53,7 +53,7 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
     throw "perf-budget FAIL: cache-proof run2 expected cache_hit=true, observed false"
   }
 
-  $artifactNames = Get-Objc3cNativePerfCacheArtifactNames -Extension $cacheFixture.Extension
+  $artifactNames = Get-Objc3cNativePerfCacheArtifactNames -Extension $selectedCacheFixture.Extension
   $missHashes = Get-Objc3cNativePerfInvocationArtifactHashSet -Directory $missDir -ArtifactNames $artifactNames
   $hitHashes = Get-Objc3cNativePerfInvocationArtifactHashSet -Directory $hitDir -ArtifactNames $artifactNames
   Assert-Objc3cNativePerfCacheArtifactsMatch -MissHashes $missHashes -HitHashes $hitHashes -ArtifactNames $artifactNames
@@ -63,8 +63,8 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
     executed = $true
     status = "PASS"
     detail = "run1_hit=false run2_hit=true artifact_hashes_match=true"
-    fixture = $cacheFixtureRel
-    fixture_kind = $cacheFixtureKind
+    fixture = $selectedCacheFixtureRel
+    fixture_kind = $selectedCacheFixtureKind
     emit_prefix = $emitPrefix
     run1 = [ordered]@{
       elapsed_ms = $run1.elapsed_ms
@@ -85,9 +85,9 @@ function Invoke-Objc3cNativePerfWrapperCacheProof {
       hit_sha256 = $hitHashes
     }
   }
-  Write-Objc3cNativePerfCacheProofLine -FixtureRel $cacheFixtureRel -FixtureKind $cacheFixtureKind -Run1Hit $run1Hit -Run2Hit $run2Hit
+  Write-Objc3cNativePerfCacheProofLine -FixtureRel $selectedCacheFixtureRel -FixtureKind $selectedCacheFixtureKind -Run1Hit $run1Hit -Run2Hit $run2Hit
 
   $CacheProof.Value = $proof
-  $CacheFixture.Value = $cacheFixture
-  $CacheFixtureRel.Value = $cacheFixtureRel
+  $CacheFixture.Value = $selectedCacheFixture
+  $CacheFixtureRel.Value = $selectedCacheFixtureRel
 }

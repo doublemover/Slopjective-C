@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+inline constexpr const char *kObjc3ReleaseEvidenceGatePublicCommand =
+    "npm run objc3c -- check-release-evidence";
+inline constexpr const char *kObjc3ReleaseEvidenceGateScriptPath =
+    "scripts/check_release_evidence.py";
+
 struct Objc3ConformanceReportPublicationArtifactInputs {
   std::string contract_id;
   std::string schema_id;

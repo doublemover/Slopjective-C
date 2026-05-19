@@ -91,6 +91,16 @@ function Get-RepoRelativeNativeDocsFiles {
     -MissingRootMessage "runnable toolchain package FAIL: missing native docs root $docsRoot")
 }
 
+function Get-RepoRelativeNativeRuntimeSourceFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $runtimeRoot = Join-Path $RepoRoot "native/objc3c/src/runtime"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "native/objc3c/src/runtime" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing native runtime source root $runtimeRoot")
+}
+
 function Get-RepoRelativePythonToolingFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -99,6 +109,28 @@ function Get-RepoRelativePythonToolingFiles {
     -RepoRoot $RepoRoot `
     -RelativeRoot "scripts/objc3c_tooling" `
     -MissingRootMessage "runnable toolchain package FAIL: missing Python tooling root $toolingRoot" `
+    -Filter "*.py")
+}
+
+function Get-RepoRelativePythonSharedFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $sharedRoot = Join-Path $RepoRoot "scripts/objc3c_shared"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "scripts/objc3c_shared" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing Python shared tooling root $sharedRoot" `
+    -Filter "*.py")
+}
+
+function Get-RepoRelativeWorkflowPythonFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $workflowRoot = Join-Path $RepoRoot "scripts/objc3c_workflow"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "scripts/objc3c_workflow" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing workflow Python root $workflowRoot" `
     -Filter "*.py")
 }
 
@@ -111,6 +143,66 @@ function Get-RepoRelativeRuntimeAcceptanceFiles {
     -RelativeRoot "scripts/objc3c_runtime_acceptance" `
     -MissingRootMessage "runnable toolchain package FAIL: missing runtime acceptance package root $acceptanceRoot" `
     -Filter "*.py")
+}
+
+function Get-RepoRelativeRuntimeProbeFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $runtimeProbeRoot = Join-Path $RepoRoot "tests/tooling/runtime"
+  return @(Get-RepoRelativeFilesUnderRoot `
+    -RepoRoot $RepoRoot `
+    -RelativeRoot "tests/tooling/runtime" `
+    -MissingRootMessage "runnable toolchain package FAIL: missing runtime probe root $runtimeProbeRoot")
+}
+
+function Get-RepoRelativeNativeCompileSupportFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $supportRoots = @(
+    "scripts/objc3c_native_compile_arguments",
+    "scripts/objc3c_native_compile_io",
+    "scripts/objc3c_native_compile_toolchain",
+    "scripts/objc3c_native_compile_frontend_guards",
+    "scripts/objc3c_native_compile_frontend_artifact_guards",
+    "scripts/objc3c_native_compile_frontend_feature_guards",
+    "scripts/objc3c_native_compile_frontend_hardening_guards",
+    "scripts/objc3c_native_compile_frontend_conformance_guards",
+    "scripts/objc3c_native_compile_provenance",
+    "scripts/objc3c_native_compile_wrapper"
+  )
+
+  return @(
+    foreach ($supportRoot in $supportRoots) {
+      $absoluteRoot = Join-Path $RepoRoot $supportRoot
+      Get-RepoRelativeFilesUnderRoot `
+        -RepoRoot $RepoRoot `
+        -RelativeRoot $supportRoot `
+        -MissingRootMessage "runnable toolchain package FAIL: missing native compile support root $absoluteRoot"
+    }
+  )
+}
+
+function Get-RepoRelativeNativeExecutionSupportFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $supportRoots = @(
+    "scripts/objc3c_native_execution_smoke_helpers",
+    "scripts/objc3c_native_execution_smoke_runner",
+    "scripts/objc3c_execution_replay_proof_helpers"
+  )
+
+  return @(
+    "scripts/objc3c_native_execution_smoke_helpers.psm1",
+    "scripts/objc3c_native_execution_smoke_runner.psm1",
+    "scripts/objc3c_execution_replay_proof_helpers.psm1"
+    foreach ($supportRoot in $supportRoots) {
+      $absoluteRoot = Join-Path $RepoRoot $supportRoot
+      Get-RepoRelativeFilesUnderRoot `
+        -RepoRoot $RepoRoot `
+        -RelativeRoot $supportRoot `
+        -MissingRootMessage "runnable toolchain package FAIL: missing native execution support root $absoluteRoot"
+    }
+  )
 }
 
 function Get-RepoRelativeRecoveryPositiveFiles {
@@ -127,9 +219,15 @@ Export-ModuleMember -Function @(
   "Copy-RepoRelativeFile",
   "Get-RepoRelativeConformanceFiles",
   "Get-RepoRelativeExecutionFixtureFiles",
+  "Get-RepoRelativeNativeCompileSupportFiles",
   "Get-RepoRelativeNativeDocsFiles",
+  "Get-RepoRelativeNativeExecutionSupportFiles",
+  "Get-RepoRelativeNativeRuntimeSourceFiles",
+  "Get-RepoRelativePythonSharedFiles",
   "Get-RepoRelativePythonToolingFiles",
   "Get-RepoRelativeRecoveryPositiveFiles",
   "Get-RepoRelativeRuntimeAcceptanceFiles",
-  "Get-RepoRelativeStdlibFiles"
+  "Get-RepoRelativeRuntimeProbeFiles",
+  "Get-RepoRelativeStdlibFiles",
+  "Get-RepoRelativeWorkflowPythonFiles"
 )

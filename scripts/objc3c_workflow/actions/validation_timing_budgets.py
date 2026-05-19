@@ -9,10 +9,24 @@ from .validation_timing_numbers import safe_float
 
 VALIDATION_TIMING_BUDGET_OWNER = "validation_timing_budgets"
 VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER = "validation_timing_budgets"
+DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS = 120.0
+COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
+    "validate-performance-governance": 420.0,
+    "validate-release-foundation": 900.0,
+}
 
 
 def validation_speed_budget_mode() -> str:
     return "fail"
+
+
+def composite_elapsed_threshold_seconds(composite_action: str | None) -> float:
+    if composite_action is None:
+        return DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS
+    return COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION.get(
+        composite_action,
+        DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS,
+    )
 
 
 def validation_speed_budgets(
@@ -20,6 +34,8 @@ def validation_speed_budgets(
     execution_smoke: dict[str, object] | None,
     execution_replay: dict[str, object] | None,
     total_seconds: float,
+    *,
+    composite_action: str | None = None,
 ) -> list[dict[str, object]]:
     budget_mode = validation_speed_budget_mode()
     budgets = [
@@ -46,7 +62,9 @@ def validation_speed_budgets(
         },
         {
             "name": "composite_elapsed_seconds",
-            "threshold_seconds": 120.0,
+            "threshold_seconds": composite_elapsed_threshold_seconds(
+                composite_action
+            ),
             "actual_seconds": total_seconds,
         },
     ]

@@ -48,7 +48,16 @@ function Get-Fixtures {
     throw "perf-budget FAIL: no $FixtureKind fixtures found in $Directory"
   }
 
-  return $fixtures
+  return @(
+    $fixtures |
+      ForEach-Object {
+        [pscustomobject]@{
+          FullName = [string]$_.FullName
+          Name = [string]$_.Name
+          Extension = [string]$_.Extension
+        }
+      }
+  )
 }
 
 function Get-PerfFixtureDirectories {

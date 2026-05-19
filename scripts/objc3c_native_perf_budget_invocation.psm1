@@ -41,15 +41,29 @@ function Invoke-Objc3cNativePerfDirectCompiles {
     [ref]$DispatchFixturePathSet
   )
 
+  $resolvedMaxElapsedMsValue = [int]$ResolvedMaxElapsedMs.Value
+  $fixtureSetsValue = @($FixtureSets.Value)
+  $dispatchFixtureCountValue = [int]$DispatchFixtureCount.Value
+  $resultsValue = @($Results.Value)
+  $fixturesValue = @($Fixtures.Value)
+  $dispatchFixturePathSetValue = $DispatchFixturePathSet.Value
+
   Invoke-Objc3cNativePerfDirectCompileSet `
     -Config $Config `
     -CompilerExe $CompilerExe `
-    -ResolvedMaxElapsedMs $ResolvedMaxElapsedMs `
-    -FixtureSets $FixtureSets `
-    -DispatchFixtureCount $DispatchFixtureCount `
-    -Results $Results `
-    -Fixtures $Fixtures `
-    -DispatchFixturePathSet $DispatchFixturePathSet
+    -ResolvedMaxElapsedMs ([ref]$resolvedMaxElapsedMsValue) `
+    -FixtureSets ([ref]$fixtureSetsValue) `
+    -DispatchFixtureCount ([ref]$dispatchFixtureCountValue) `
+    -Results ([ref]$resultsValue) `
+    -Fixtures ([ref]$fixturesValue) `
+    -DispatchFixturePathSet ([ref]$dispatchFixturePathSetValue)
+
+  $ResolvedMaxElapsedMs.Value = $resolvedMaxElapsedMsValue
+  $FixtureSets.Value = $fixtureSetsValue
+  $DispatchFixtureCount.Value = $dispatchFixtureCountValue
+  $Results.Value = $resultsValue
+  $Fixtures.Value = $fixturesValue
+  $DispatchFixturePathSet.Value = $dispatchFixturePathSetValue
 }
 
 function Invoke-Objc3cNativePerfCacheProof {
@@ -63,14 +77,22 @@ function Invoke-Objc3cNativePerfCacheProof {
     [ref]$CacheFixtureRel
   )
 
+  $cacheProofValue = $CacheProof.Value
+  $cacheFixtureValue = $CacheFixture.Value
+  $cacheFixtureRelValue = [string]$CacheFixtureRel.Value
+
   Invoke-Objc3cNativePerfWrapperCacheProof `
     -Config $Config `
     -Fixtures $Fixtures `
     -DispatchFixturePathSet $DispatchFixturePathSet `
     -CompileScript $CompileScript `
-    -CacheProof $CacheProof `
-    -CacheFixture $CacheFixture `
-    -CacheFixtureRel $CacheFixtureRel
+    -CacheProof ([ref]$cacheProofValue) `
+    -CacheFixture ([ref]$cacheFixtureValue) `
+    -CacheFixtureRel ([ref]$cacheFixtureRelValue)
+
+  $CacheProof.Value = $cacheProofValue
+  $CacheFixture.Value = $cacheFixtureValue
+  $CacheFixtureRel.Value = $cacheFixtureRelValue
 }
 
 function Invoke-Objc3cNativePerfCacheInvalidationProof {
@@ -82,12 +104,16 @@ function Invoke-Objc3cNativePerfCacheInvalidationProof {
     [ref]$CacheInvalidationProof
   )
 
+  $cacheInvalidationProofValue = $CacheInvalidationProof.Value
+
   Invoke-Objc3cNativePerfWrapperCacheInvalidationProof `
     -Config $Config `
     -CacheFixture $CacheFixture `
     -CacheFixtureRel $CacheFixtureRel `
     -CompileScript $CompileScript `
-    -CacheInvalidationProof $CacheInvalidationProof
+    -CacheInvalidationProof ([ref]$cacheInvalidationProofValue)
+
+  $CacheInvalidationProof.Value = $cacheInvalidationProofValue
 }
 
 function Invoke-Objc3cNativePerfMacroHostProof {
@@ -97,10 +123,14 @@ function Invoke-Objc3cNativePerfMacroHostProof {
     [ref]$MacroHostProof
   )
 
+  $macroHostProofValue = $MacroHostProof.Value
+
   Invoke-Objc3cNativePerfWrapperMacroHostProof `
     -Config $Config `
     -CompileScript $CompileScript `
-    -MacroHostProof $MacroHostProof
+    -MacroHostProof ([ref]$macroHostProofValue)
+
+  $MacroHostProof.Value = $macroHostProofValue
 }
 
 function Invoke-Objc3cNativePerfDocsGenerationProof {
@@ -109,9 +139,13 @@ function Invoke-Objc3cNativePerfDocsGenerationProof {
     [ref]$DocsGenerationProof
   )
 
+  $docsGenerationProofValue = $DocsGenerationProof.Value
+
   Invoke-Objc3cNativePerfDocsGeneratorProof `
     -Config $Config `
-    -DocsGenerationProof $DocsGenerationProof
+    -DocsGenerationProof ([ref]$docsGenerationProofValue)
+
+  $DocsGenerationProof.Value = $docsGenerationProofValue
 }
 
 Export-ModuleMember -Function @(

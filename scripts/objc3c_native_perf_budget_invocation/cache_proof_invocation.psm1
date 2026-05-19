@@ -8,10 +8,24 @@ Import-Module (Join-Path $PSScriptRoot "process_invocation.psm1") -Force -Disabl
 Import-Module (Join-Path $PSScriptRoot "report_rendering.psm1") -Force -DisableNameChecking
 
 $cacheProofInvocationModuleRoot = Join-Path $PSScriptRoot "cache_proof_invocation"
-. (Join-Path $cacheProofInvocationModuleRoot "exports.psm1")
+$cacheProofInvocationModules = @(
+  "fixture_copy.psm1",
+  "cache_run.psm1",
+  "cache_proof.psm1",
+  "cache_invalidation_proof.psm1",
+  "macro_host_proof.psm1"
+)
+$cacheProofInvocationExports = @(
+  "Invoke-Objc3cNativePerfWrapperCacheInvalidationProof",
+  "Invoke-Objc3cNativePerfWrapperCacheProof",
+  "Invoke-Objc3cNativePerfWrapperMacroHostProof"
+)
 
-foreach ($cacheProofInvocationModule in Get-Objc3cNativePerfCacheProofInvocationModuleNames) {
-  . (Join-Path $cacheProofInvocationModuleRoot $cacheProofInvocationModule)
+foreach ($cacheProofInvocationModule in $cacheProofInvocationModules) {
+  $cacheProofInvocationModulePath = Join-Path $cacheProofInvocationModuleRoot $cacheProofInvocationModule
+  # Dot-sourcing a .psm1 path can keep the functions in that module's scope. Load
+  # the checked-in leaf module text into this aggregate module scope instead.
+  . ([scriptblock]::Create((Get-Content -Raw -LiteralPath $cacheProofInvocationModulePath)))
 }
 
-Export-ModuleMember -Function (Get-Objc3cNativePerfCacheProofInvocationExportedFunctionNames)
+Export-ModuleMember -Function $cacheProofInvocationExports

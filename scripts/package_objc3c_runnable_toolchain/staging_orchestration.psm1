@@ -5,7 +5,7 @@ Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_hel
 function Invoke-RunnableToolchainPackageBuild {
   param([Parameter(Mandatory = $true)][string]$BuildScript)
 
-  & $BuildScript
+  & $BuildScript | ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }
@@ -16,10 +16,16 @@ function Get-RunnableToolchainPackageInputFiles {
 
   return @(
     @(Get-RequiredRunnableToolchainPackageFiles) +
+    @(Get-RepoRelativeNativeCompileSupportFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeNativeExecutionSupportFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeNativeDocsFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeNativeRuntimeSourceFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativePythonSharedFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativePythonToolingFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeWorkflowPythonFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeRuntimeAcceptanceFiles -RepoRoot $RepoRoot) +
+    @(Get-RepoRelativeRuntimeProbeFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeRecoveryPositiveFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeStdlibFiles -RepoRoot $RepoRoot) +
     @(Get-RepoRelativeConformanceFiles -RepoRoot $RepoRoot)
@@ -36,7 +42,7 @@ function Copy-RunnableToolchainPackageInputs {
   $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
   foreach ($relativePath in $RelativePaths) {
     Copy-RepoRelativeFile -RepoRoot $RepoRoot -PackageRoot $PackageRoot -RelativePath $relativePath | Out-Null
-    $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
+    $copiedRelativePaths.Add($relativePath.Replace('\', '/')) | Out-Null
   }
 
   return @($copiedRelativePaths)
@@ -90,7 +96,7 @@ function Invoke-RunnableToolchainPackageStaging {
     -ManifestPath $ManifestPath)
   Set-RunnableToolchainPackagedOutputTimestamps -PackageRoot $PackageRoot
 
-  return [ordered]@{
+  return [pscustomobject]@{
     CopiedRelativePaths = $copiedRelativePaths
     StagedRelativePaths = $stagedRelativePaths
   }

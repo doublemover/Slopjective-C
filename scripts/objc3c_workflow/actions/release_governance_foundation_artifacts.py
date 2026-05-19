@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sys
 
+from scripts.objc3c_workflow.action_execution_dispatch import execute_registered_action
+
 from ..commands import run
 from .release_governance_foundation_paths import (
     RELEASE_FOUNDATION_SOURCE_SURFACE_PY,
@@ -12,7 +14,17 @@ from .release_governance_foundation_paths import (
 )
 
 
+REPO_SUPERCLEAN_REFRESH_ACTION = "check-repo-superclean-surface"
+
+
+def refresh_release_foundation_generated_upstreams() -> int:
+    return execute_registered_action(REPO_SUPERCLEAN_REFRESH_ACTION, [])
+
+
 def action_check_release_foundation_surface(_: list[str]) -> int:
+    rc = refresh_release_foundation_generated_upstreams()
+    if rc != 0:
+        return rc
     return run([sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)])
 
 

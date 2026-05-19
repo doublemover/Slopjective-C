@@ -20,37 +20,52 @@ def validate_guided_walkthrough_contract(walkthrough_payload: dict[str, Any]) ->
     if walkthrough_steps != [
         {
             "id": "build-native",
-            "public_entrypoint": "build:objc3c-native",
+            "workflow_action": "build-native-binaries",
+            "public_command": "npm run objc3c -- build-native-binaries",
         },
         {
             "id": "compile-auroraBoard",
-            "public_entrypoint": "compile:objc3c",
+            "workflow_action": "compile-objc3c",
+            "public_command": (
+                "npm run objc3c -- compile-objc3c -- "
+                "showcase/auroraBoard/main.objc3"
+            ),
             "example_id": "auroraBoard",
             "source": "showcase/auroraBoard/main.objc3",
             "artifact_root": "tmp/artifacts/showcase/auroraBoard",
         },
         {
             "id": "compile-signalMesh",
-            "public_entrypoint": "compile:objc3c",
+            "workflow_action": "compile-objc3c",
+            "public_command": (
+                "npm run objc3c -- compile-objc3c -- "
+                "showcase/signalMesh/main.objc3"
+            ),
             "example_id": "signalMesh",
             "source": "showcase/signalMesh/main.objc3",
             "artifact_root": "tmp/artifacts/showcase/signalMesh",
         },
         {
             "id": "compile-patchKit",
-            "public_entrypoint": "compile:objc3c",
+            "workflow_action": "compile-objc3c",
+            "public_command": (
+                "npm run objc3c -- compile-objc3c -- "
+                "showcase/patchKit/main.objc3"
+            ),
             "example_id": "patchKit",
             "source": "showcase/patchKit/main.objc3",
             "artifact_root": "tmp/artifacts/showcase/patchKit",
         },
         {
             "id": "check-showcase-surface",
-            "public_entrypoint": "check:showcase:surface",
+            "workflow_action": "check-showcase-surface",
+            "public_command": "npm run objc3c -- check-showcase-surface",
             "report_root": "tmp/reports/showcase",
         },
         {
             "id": "validate-showcase",
-            "public_entrypoint": "test:showcase",
+            "workflow_action": "validate-showcase",
+            "public_command": "npm run objc3c -- validate-showcase",
             "report_root": "tmp/reports/showcase",
         },
     ]:

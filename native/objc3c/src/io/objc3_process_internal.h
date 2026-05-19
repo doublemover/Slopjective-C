@@ -98,7 +98,9 @@ inline constexpr const char *kObjc3AdvancedFeatureReportingContractId =
 inline constexpr const char *kObjc3AdvancedFeatureReleaseEvidenceContractId =
     "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1";
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceGateScriptPath =
-    "scripts/check_release_evidence.py";
+    kObjc3ReleaseEvidenceGateScriptPath;
+inline constexpr const char *kObjc3AdvancedFeatureEvidenceGateCommand =
+    kObjc3ReleaseEvidenceGatePublicCommand;
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
     "spec/conformance/release_evidence_gate_maintenance.md";
 inline constexpr const char *kObjc3AdvancedFeatureDashboardSchemaPath =

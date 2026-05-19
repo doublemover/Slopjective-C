@@ -44,7 +44,7 @@ function Invoke-Objc3cNativePerfWrapperCacheInvalidationProof {
     throw "perf-budget FAIL: cache-invalidation run2 expected cache_hit=false after source mutation"
   }
 
-  $cacheInvalidationProof = [ordered]@{
+  $proof = [ordered]@{
     executed = $true
     status = "PASS"
     detail = "source mutation invalidated wrapper cache key"
@@ -66,5 +66,5 @@ function Invoke-Objc3cNativePerfWrapperCacheInvalidationProof {
   }
   Write-Objc3cNativePerfCacheInvalidationLine -FixtureRel $CacheFixtureRel -Run1Hit $invalidationRun1Hit -Run2Hit $invalidationRun2Hit
 
-  $CacheInvalidationProof.Value = $cacheInvalidationProof
+  $CacheInvalidationProof.Value = $proof
 }

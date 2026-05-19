@@ -51,7 +51,7 @@ function Invoke-Objc3cNativePerfWrapperMacroHostProof {
     throw "perf-budget FAIL: macro-host cache compile did not publish a metaprogramming host-cache artifact"
   }
 
-  $macroHostProof = [ordered]@{
+  $proof = [ordered]@{
     executed = $true
     status = "PASS"
     detail = "macro-host cache artifact published through the live wrapper path"
@@ -72,7 +72,7 @@ function Invoke-Objc3cNativePerfWrapperMacroHostProof {
     }
     cache_artifact = (Get-RepoRelativePath -Path $macroHostArtifact -Root $Config.repo_root)
   }
-  Write-Objc3cNativePerfMacroHostLine -FixtureRel $macroHostProof.fixture -Run1Hit $macroHostRun1Hit -Run2Hit $macroHostRun2Hit
+  Write-Objc3cNativePerfMacroHostLine -FixtureRel $proof.fixture -Run1Hit $macroHostRun1Hit -Run2Hit $macroHostRun2Hit
 
-  $MacroHostProof.Value = $macroHostProof
+  $MacroHostProof.Value = $proof
 }

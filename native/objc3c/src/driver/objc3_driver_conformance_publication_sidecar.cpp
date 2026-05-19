@@ -29,7 +29,7 @@ int PublishObjc3DriverConformancePublicationSidecar(
                "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
            .publication_surface_kind = "native-cli",
            .fail_closed_diagnostic_model =
-               "known-profiles-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles",
+               "known-profiles-claimed-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles",
            .lowered_report_contract_id =
                "objc3c.versioned.conformance.report.lowering.v1",
            .runtime_capability_contract_id =

@@ -17,8 +17,8 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
     [Parameter(Mandatory = $true)][int]$FixtureIndex,
     [Parameter(Mandatory = $true)][int]$TotalSelectedFixtures,
     [Parameter(Mandatory = $true)][System.Diagnostics.Stopwatch]$SuiteStopwatch,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Results,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$CaseTimings,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Results,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$CaseTimings,
     [Parameter(Mandatory = $true)][ref]$LastCompletedFixture
   )
 

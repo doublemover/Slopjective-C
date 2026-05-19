@@ -82,7 +82,7 @@ bool PublishFrontendConformanceReportArtifacts(
            .advanced_feature_release_evidence_contract_id =
                "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1",
            .ci_release_evidence_gate_script_path =
-               "scripts/check_release_evidence.py",
+               kObjc3ReleaseEvidenceGatePublicCommand,
            .runbook_reference_path =
                "spec/conformance/release_evidence_gate_maintenance.md",
            .dashboard_schema_path =

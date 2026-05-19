@@ -33,7 +33,7 @@ function Get-RepoRelativePathCompat {
     $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
   }
 
-  return $relativePath.Replace('\\', '/')
+  return $relativePath.Replace('\', '/')
 }
 
 function Resolve-PackageRoot {

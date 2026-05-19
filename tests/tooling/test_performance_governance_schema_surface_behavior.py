@@ -55,8 +55,47 @@ def test_performance_governance_schema_surface_uses_registered_schemas() -> None
             "https://objc3c.dev/schemas/objc3c-performance-dashboard-summary-v1.schema.json",
             "https://objc3c.dev/schemas/objc3c-performance-public-report-v1.schema.json",
         ]
+        surface = load_json_object(checker.SCHEMA_SURFACE)
+        assert "schema_check_script" not in surface
+        assert surface["schema_check_action"] == "check-performance-governance-schema-surface"
+        assert surface["schema_check_command"] == (
+            "npm run objc3c -- check-performance-governance-schema-surface"
+        )
+        assert surface["schema_check_implementation_anchor"] == (
+            "scripts/check_performance_governance_schema_surface.py"
+        )
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)
+
+
+def test_performance_governance_schema_surface_rejects_retired_schema_check_script(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    surface = load_json_object(checker.SCHEMA_SURFACE)
+    surface["schema_check_script"] = "scripts/check_performance_governance_schema_surface.py"
+
+    checker.SCHEMA_SURFACE = tmp_path / "schema_surface.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_json_file(checker.SCHEMA_SURFACE, surface, sort_keys=True)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
+
+
+def test_performance_governance_schema_surface_rejects_action_command_anchor_drift(
+    tmp_path: Path,
+) -> None:
+    checker = _load_checker()
+    surface = load_json_object(checker.SCHEMA_SURFACE)
+    surface["schema_check_action"] = "scripts/check_performance_governance_schema_surface.py"
+
+    checker.SCHEMA_SURFACE = tmp_path / "schema_surface.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_json_file(checker.SCHEMA_SURFACE, surface, sort_keys=True)
+
+    assert checker.main() == 1
+    assert not checker.SUMMARY_PATH.exists()
 
 
 def test_performance_governance_schema_surface_rejects_unregistered_surface_path(tmp_path: Path) -> None:

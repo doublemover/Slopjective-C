@@ -18,6 +18,9 @@ SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "performance_governan
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "performance-governance" / "schema-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.performance.governance.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
+EXPECTED_SCHEMA_CHECK_ACTION = "check-performance-governance-schema-surface"
+EXPECTED_SCHEMA_CHECK_COMMAND = "npm run objc3c -- check-performance-governance-schema-surface"
+EXPECTED_SCHEMA_CHECK_IMPLEMENTATION_ANCHOR = "scripts/check_performance_governance_schema_surface.py"
 EXPECTED_SCHEMAS = (
     (
         "dashboard_summary_schema",
@@ -59,8 +62,14 @@ def main() -> int:
         return fail("contract_id drifted")
     if surface.get("schema_version") != 1:
         return fail("schema_version drifted")
-    if surface.get("schema_check_script") != "scripts/check_performance_governance_schema_surface.py":
-        return fail("schema_check_script drifted")
+    if "schema_check_script" in surface:
+        return fail("schema_check_script retired field present")
+    if surface.get("schema_check_action") != EXPECTED_SCHEMA_CHECK_ACTION:
+        return fail("schema_check_action drifted")
+    if surface.get("schema_check_command") != EXPECTED_SCHEMA_CHECK_COMMAND:
+        return fail("schema_check_command drifted")
+    if surface.get("schema_check_implementation_anchor") != EXPECTED_SCHEMA_CHECK_IMPLEMENTATION_ANCHOR:
+        return fail("schema_check_implementation_anchor drifted")
 
     checked_paths: list[str] = []
     schema_ids: list[str] = []

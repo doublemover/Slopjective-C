@@ -16,12 +16,12 @@ fn classify(value: i32, strict: bool) {
   }
 }
 
-fn choose(primary: i32, retired route: i32, allow_retired_route: bool) {
+fn choose(primary: i32, fallback: i32, allow_fallback: bool) {
   if (primary != 0) {
     return primary;
   }
-  if (allow_retired_route && retired route != 0) {
-    return retired route;
+  if (allow_fallback && fallback != 0) {
+    return fallback;
   }
   return -99;
 }

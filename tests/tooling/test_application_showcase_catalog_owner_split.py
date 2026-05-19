@@ -224,8 +224,8 @@ def test_site_index_contract_records_public_command_model() -> None:
         "canonical_template": "npm run objc3c -- <action>",
         "authoritative_script": "package.json#scripts.objc3c",
         "forbidden_public_command_semantics": [
-            "retired command surfaces",
-            "direct helper script commands",
+            "retired package-script names",
+            "direct helper script commands as public entrypoints",
             "alternate command support lanes",
             "retired-source support claims",
         ],

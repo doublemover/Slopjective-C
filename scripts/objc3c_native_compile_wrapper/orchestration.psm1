@@ -29,7 +29,7 @@ function Invoke-Objc3cNativeCompileWrapper {
     -CacheContext $compileCommand.cache_context `
     -InputPath $compileCommand.input_path `
     -CompilerBinaryPath $exe `
-    -WrapperScriptPath $WrapperScriptPath | Out-Null
+    -WrapperScriptPath $WrapperScriptPath
 
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments @($compileCommand.arguments)
   if ($compileExit -eq 0) {

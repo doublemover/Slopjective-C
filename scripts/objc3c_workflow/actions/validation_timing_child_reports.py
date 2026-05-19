@@ -15,6 +15,7 @@ from .validation_timing_report_summaries import (
 
 
 def collect_child_timing(
+    action: str,
     steps: Sequence[dict[str, object]]
 ) -> dict[str, object]:
     child_reports = load_child_reports(steps)
@@ -63,5 +64,6 @@ def collect_child_timing(
             execution_smoke,
             execution_replay,
             estimated_no_skip_seconds,
+            composite_action=action,
         ),
     }

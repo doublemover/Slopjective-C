@@ -8,8 +8,8 @@ function Write-ExecutionSmokeSummary {
   param(
     [Parameter(Mandatory = $true)][object]$Context,
     [Parameter(Mandatory = $true)][System.Diagnostics.Stopwatch]$SuiteStopwatch,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Results,
-    [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$CaseTimings,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Results,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$CaseTimings,
     [string]$FixtureList,
     [string]$FixtureGlob,
     [Parameter(Mandatory = $true)][int]$ShardIndex,

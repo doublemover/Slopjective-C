@@ -17,8 +17,14 @@ from native_package_action_owner_split_sources import (
     category_owner_contracts,
     handler_owner_modules,
     native_package_catalog_facade_text,
+    native_package_core_toolchain_manifest_text,
+    native_package_file_inventory_text,
     native_package_handler_facade_text,
+    native_package_helper_exports_text,
+    native_package_native_execution_manifest_text,
     native_package_owner_handler_texts,
+    native_package_script_text,
+    native_package_staging_module_text,
 )
 
 
@@ -107,6 +113,100 @@ def assert_package_inventory_facade_publishes_category_owner_contracts() -> None
             "wrapper_only_action_surface_allowed": False,
         },
     }
+
+
+def assert_runnable_toolchain_package_uses_strictmode_safe_staging_lookup() -> None:
+    script_text = native_package_script_text()
+    staging_text = native_package_staging_module_text()
+
+    assert_contains_all(script_text, ["$staging.StagedRelativePaths"])
+    assert_contains_all(
+        staging_text,
+        [
+            "& $BuildScript | ForEach-Object { Write-Host $_ }",
+            "return [pscustomobject]@{",
+        ],
+    )
+    assert_excludes_all(staging_text, ["return [ordered]@{"])
+
+
+def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() -> None:
+    core_toolchain_text = native_package_core_toolchain_manifest_text()
+    native_execution_text = native_package_native_execution_manifest_text()
+    file_inventory_text = native_package_file_inventory_text()
+    helper_exports_text = native_package_helper_exports_text()
+    staging_text = native_package_staging_module_text()
+
+    assert_contains_all(
+        core_toolchain_text,
+        [
+            "scripts/objc3c_native_compile_arguments.ps1",
+            "scripts/objc3c_shared/json_io.py",
+            "scripts/objc3c_shared/schema_registry.py",
+            "scripts/objc3c_native_compile_io.psm1",
+            "scripts/objc3c_native_compile_io/path_normalization.psm1",
+            "scripts/objc3c_native_compile_io/cache_io.psm1",
+            "scripts/objc3c_native_compile_io/artifact_io.psm1",
+            "scripts/objc3c_native_compile_toolchain.psm1",
+            "scripts/objc3c_native_compile_toolchain/artifact_resolution/definitions.psm1",
+            "scripts/objc3c_native_compile_toolchain/readiness/frontend_lock.psm1",
+            "scripts/objc3c_native_compile_toolchain/results/conversion.psm1",
+            "scripts/objc3c_native_compile_frontend_guards.psm1",
+            "scripts/objc3c_native_compile_command.psm1",
+            "scripts/objc3c_runtime_launch_contract.ps1",
+            "scripts/objc3c_native_compile_provenance.ps1",
+            "scripts/objc3c_native_compile_provenance/provenance_capture.psm1",
+            "scripts/objc3c_native_compile_wrapper.psm1",
+            "scripts/objc3c_native_compile_wrapper/orchestration.psm1",
+        ],
+    )
+    assert_contains_all(
+        native_execution_text,
+        [
+            "scripts/objc3c_native_execution_smoke_helpers.psm1",
+            "scripts/objc3c_native_execution_smoke_runner.psm1",
+            "scripts/objc3c_execution_replay_proof_helpers.psm1",
+        ],
+    )
+    assert_contains_all(
+        file_inventory_text,
+        [
+            "function Get-RepoRelativeNativeCompileSupportFiles",
+            "function Get-RepoRelativeNativeExecutionSupportFiles",
+            "function Get-RepoRelativeNativeRuntimeSourceFiles",
+            "function Get-RepoRelativePythonSharedFiles",
+            "function Get-RepoRelativeRuntimeProbeFiles",
+            "function Get-RepoRelativeWorkflowPythonFiles",
+            "scripts/objc3c_native_execution_smoke_helpers",
+            "scripts/objc3c_native_execution_smoke_runner",
+            "scripts/objc3c_execution_replay_proof_helpers",
+            "scripts/objc3c_native_compile_toolchain",
+            "scripts/objc3c_native_compile_frontend_feature_guards",
+            "scripts/objc3c_native_compile_frontend_conformance_guards",
+        ],
+    )
+    assert_contains_all(
+        staging_text,
+        [
+            "Get-RepoRelativeNativeCompileSupportFiles -RepoRoot $RepoRoot",
+            "Get-RepoRelativeNativeExecutionSupportFiles -RepoRoot $RepoRoot",
+            "Get-RepoRelativeNativeRuntimeSourceFiles -RepoRoot $RepoRoot",
+            "Get-RepoRelativePythonSharedFiles -RepoRoot $RepoRoot",
+            "Get-RepoRelativeRuntimeProbeFiles -RepoRoot $RepoRoot",
+            "Get-RepoRelativeWorkflowPythonFiles -RepoRoot $RepoRoot",
+        ],
+    )
+    assert_contains_all(
+        helper_exports_text,
+        [
+            '"Get-RepoRelativeNativeCompileSupportFiles"',
+            '"Get-RepoRelativeNativeExecutionSupportFiles"',
+            '"Get-RepoRelativeNativeRuntimeSourceFiles"',
+            '"Get-RepoRelativePythonSharedFiles"',
+            '"Get-RepoRelativeRuntimeProbeFiles"',
+            '"Get-RepoRelativeWorkflowPythonFiles"',
+        ],
+    )
 
 
 def assert_native_package_public_order_and_owner_membership() -> None:

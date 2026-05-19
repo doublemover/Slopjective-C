@@ -9,7 +9,10 @@ RELEASE_FOUNDATION_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
     ReleaseGovernanceActionContract(
         "check-release-foundation-surface",
         "validate the checked-in release-foundation source surface",
-        "python:scripts/check_release_foundation_source_surface.py",
+        (
+            "runner-internal + check-repo-superclean-surface + "
+            "python:scripts/check_release_foundation_source_surface.py"
+        ),
         "release-foundation",
         "repo",
         (

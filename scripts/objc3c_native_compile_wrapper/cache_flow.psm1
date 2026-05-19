@@ -29,7 +29,7 @@ function Invoke-Objc3cNativeCompileCacheRestore {
     exit ([int]$cacheRestore.exit_code)
   }
 
-  return $cacheRestore
+  return
 }
 
 function Save-Objc3cNativeCompileCacheIfEnabled {

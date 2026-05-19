@@ -36,7 +36,7 @@ function Invoke-Objc3cNativePerfDocsGeneratorProof {
     throw "perf-budget FAIL: public command surface generation failed with exit code $($commandSurfaceRun.exit_code)"
   }
 
-  $docsGenerationProof = [ordered]@{
+  $proof = [ordered]@{
     executed = $true
     status = "PASS"
     detail = "checked-in docs generators executed on the live repo surface"
@@ -53,7 +53,7 @@ function Invoke-Objc3cNativePerfDocsGeneratorProof {
   }
   Write-Objc3cNativePerfDocsGenerationLine -NativeDocsElapsedMs $nativeDocsRun.elapsed_ms -CommandSurfaceElapsedMs $commandSurfaceRun.elapsed_ms
 
-  $DocsGenerationProof.Value = $docsGenerationProof
+  $DocsGenerationProof.Value = $proof
 }
 
 Export-ModuleMember -Function @(

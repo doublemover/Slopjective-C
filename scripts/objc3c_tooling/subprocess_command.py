@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Mapping, Sequence
-
-from objc3c_tooling.paths import ROOT, display_path
 
 from .subprocess_environment import python_child_environment
 from .subprocess_models import (
@@ -16,6 +16,7 @@ from .subprocess_models import (
     CommandExecution,
 )
 from .subprocess_output import echo_output, normalize_output
+from .paths import ROOT, display_path
 
 
 def command_text(command: Sequence[object]) -> str:
@@ -32,6 +33,43 @@ def python_script_command_tuple(script_path: Path | str, *args: object) -> tuple
 
 def _completed_from_launch_error(command: Sequence[object], returncode: int, stderr: str) -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess([str(part) for part in command], returncode, stdout="", stderr=stderr)
+
+
+def _completed_from_public_workflow_action(
+    command_list: list[str],
+    *,
+    capture_output: bool,
+) -> subprocess.CompletedProcess[str] | None:
+    from scripts.objc3c_workflow.composite_step_nested import (
+        execute_nested_action,
+        npm_bridge_action_offset,
+    )
+
+    action_offset = npm_bridge_action_offset(command_list)
+    if action_offset is None:
+        return None
+
+    action = command_list[action_offset]
+    rest = command_list[action_offset + 1 :]
+    if not capture_output:
+        returncode = execute_nested_action(action, rest)
+        return subprocess.CompletedProcess(
+            command_list,
+            returncode,
+            stdout="",
+            stderr="",
+        )
+
+    stdout = StringIO()
+    stderr = StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        returncode = execute_nested_action(action, rest)
+    return subprocess.CompletedProcess(
+        command_list,
+        returncode,
+        stdout=stdout.getvalue(),
+        stderr=stderr.getvalue(),
+    )
 
 
 def run_completed(
@@ -55,20 +93,25 @@ def run_completed(
     if env:
         merged_overlay.update(env)
     try:
-        result = subprocess.run(
+        result = _completed_from_public_workflow_action(
             command_list,
-            cwd=cwd,
-            env=python_child_environment(
-                merged_overlay,
-                python_dont_write_bytecode=python_dont_write_bytecode,
-            ),
             capture_output=capture_output,
-            text=True,
-            encoding=encoding,
-            errors=errors,
-            check=False,
-            timeout=timeout,
         )
+        if result is None:
+            result = subprocess.run(
+                command_list,
+                cwd=cwd,
+                env=python_child_environment(
+                    merged_overlay,
+                    python_dont_write_bytecode=python_dont_write_bytecode,
+                ),
+                capture_output=capture_output,
+                text=True,
+                encoding=encoding,
+                errors=errors,
+                check=False,
+                timeout=timeout,
+            )
     except subprocess.TimeoutExpired as exc:
         stdout = normalize_output(exc.stdout)
         timeout_note = f"command timed out after {timeout} seconds: {command_text(command_list)}"

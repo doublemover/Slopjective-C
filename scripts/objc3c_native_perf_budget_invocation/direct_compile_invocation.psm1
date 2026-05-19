@@ -20,9 +20,30 @@ function Invoke-Objc3cNativePerfDirectCompileSet {
     [ref]$DispatchFixturePathSet
   )
 
-  $benchmarkCatalog = Resolve-Objc3cNativePerfBenchmarkCatalog -Config $Config -ResolvedMaxElapsedMs $ResolvedMaxElapsedMs
-  $fixtures = @($benchmarkCatalog.fixtures)
-  $dispatchFixturePathSet = $benchmarkCatalog.dispatch_fixture_path_set
+  $resolvedMaxElapsedMsValue = [int]$ResolvedMaxElapsedMs.Value
+  $benchmarkCatalog = Resolve-Objc3cNativePerfBenchmarkCatalog `
+    -Config $Config `
+    -ResolvedMaxElapsedMs ([ref]$resolvedMaxElapsedMsValue)
+  $ResolvedMaxElapsedMs.Value = $resolvedMaxElapsedMsValue
+  $catalogFixtures = @(
+    $benchmarkCatalog.fixtures |
+      ForEach-Object {
+        if ($null -eq $_) {
+          return
+        }
+        if ($_.PSObject.Properties.Name -contains "FullName") {
+          $_
+        } else {
+          $fixturePath = [string]$_
+          [pscustomobject]@{
+            FullName = $fixturePath
+            Name = [System.IO.Path]::GetFileName($fixturePath)
+            Extension = [System.IO.Path]::GetExtension($fixturePath)
+          }
+        }
+      }
+  )
+  $catalogDispatchFixturePathSet = $benchmarkCatalog.dispatch_fixture_path_set
   $FixtureSets.Value = @($benchmarkCatalog.fixture_sets)
   $DispatchFixtureCount.Value = [int]$benchmarkCatalog.dispatch_fixture_count
 
@@ -30,26 +51,50 @@ function Invoke-Objc3cNativePerfDirectCompileSet {
     Write-Objc3cNativePerfFixtureSetLine -FixtureSet $fixtureSet
   }
 
-  foreach ($fixture in $fixtures) {
-    $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $Config.repo_root
+  $processedFixtures = @()
+  foreach ($fixture in $catalogFixtures) {
+    if ($fixture.GetType().FullName -like "System.Management.Automation.PSReference*") {
+      continue
+    }
+    $fixturePath = if ($fixture.PSObject.Properties.Name -contains "FullName") {
+      [string]$fixture.PSObject.Properties["FullName"].Value
+    } else {
+      [string]$fixture
+    }
+    if ([string]::IsNullOrWhiteSpace($fixturePath) -or
+        !(Test-Path -LiteralPath $fixturePath -PathType Leaf)) {
+      continue
+    }
+    $fixtureExtension = if ($fixture.PSObject.Properties.Name -contains "Extension") {
+      [string]$fixture.PSObject.Properties["Extension"].Value
+    } else {
+      [System.IO.Path]::GetExtension($fixturePath)
+    }
+    $fixtureRecord = [pscustomobject]@{
+      FullName = $fixturePath
+      Name = [System.IO.Path]::GetFileName($fixturePath)
+      Extension = $fixtureExtension
+    }
+    $processedFixtures += $fixtureRecord
+    $fixtureRel = Get-RepoRelativePath -Path $fixturePath -Root $Config.repo_root
     $hash = Get-ShortHash -Value $fixtureRel
     $caseDir = Join-Path $Config.run_dir ("fixture_{0}" -f $hash)
     $compileLog = Join-Path $caseDir "compile.log"
     New-Item -ItemType Directory -Force -Path $caseDir | Out-Null
 
-    $compileArgs = New-Objc3cNativePerfDirectCompileArguments -Fixture $fixture -CaseDir $caseDir
+    $compileArgs = New-Objc3cNativePerfDirectCompileArguments -Fixture $fixtureRecord -CaseDir $caseDir
     $run = Invoke-Objc3cNativePerfNativeProcess `
       -Command $CompilerExe `
       -Arguments $compileArgs `
       -LogPath $compileLog
 
-    $compileResult = New-Objc3cNativePerfCompileResult -Config $Config -Fixture $fixture -CaseDir $caseDir -Run $run
+    $compileResult = New-Objc3cNativePerfCompileResult -Config $Config -Fixture $fixtureRecord -CaseDir $caseDir -Run $run
     $Results.Value += $compileResult.result
     Write-Objc3cNativePerfCompileResultLine -CompileResult $compileResult
   }
 
-  $Fixtures.Value = $fixtures
-  $DispatchFixturePathSet.Value = $dispatchFixturePathSet
+  $Fixtures.Value = $processedFixtures
+  $DispatchFixturePathSet.Value = $catalogDispatchFixturePathSet
 }
 
 Export-ModuleMember -Function @(

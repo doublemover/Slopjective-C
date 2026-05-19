@@ -20,18 +20,39 @@ def validate_portfolio_contract(payload: dict[str, Any]) -> str | None:
     if payload.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
         return "package_stage_root drifted"
 
-    entrypoints = payload.get("public_entrypoints")
-    if entrypoints != {
-        "build_native": "build:objc3c-native",
-        "compile_example": "compile:objc3c",
-        "check_surface": "check:showcase:surface",
-        "validate_showcase": "test:showcase",
-        "validate_runnable_showcase": "test:showcase:e2e",
-        "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain",
-        "execution_smoke": "test:objc3c:execution-smoke",
-        "execution_replay": "test:objc3c:execution-replay-proof",
+    if "public_entrypoints" in payload:
+        return "retired public_entrypoints present"
+    if payload.get("public_command_model") != {
+        "entrypoint_kind": "single-npm-bridge",
+        "canonical_template": "npm run objc3c -- <action>",
+        "authoritative_script": "package.json#scripts.objc3c",
+        "retired_public_semantics": [
+            "retired command surfaces",
+            "direct helper script commands",
+            "showcase-local wrappers",
+            "alternate compile or runtime support lanes",
+            "retired-source support claims",
+        ],
     }:
-        return "public_entrypoints drifted"
+        return "public_command_model drifted"
+
+    public_actions = {
+        "build_native": "build-native-binaries",
+        "compile_example": "compile-objc3c",
+        "check_surface": "check-showcase-surface",
+        "validate_showcase": "validate-showcase",
+        "validate_runnable_showcase": "validate-runnable-showcase",
+        "package_runnable_toolchain": "package-runnable-toolchain",
+        "execution_smoke": "test-execution-smoke",
+        "execution_replay": "test-execution-replay",
+    }
+    if payload.get("public_actions") != public_actions:
+        return "public_actions drifted"
+    if payload.get("command_surfaces") != {
+        name: f"npm run objc3c -- {action}"
+        for name, action in public_actions.items()
+    }:
+        return "command_surfaces drifted"
 
     build_run_package_surface = payload.get("build_run_package_surface")
     if build_run_package_surface != {
@@ -40,26 +61,26 @@ def validate_portfolio_contract(payload: dict[str, Any]) -> str | None:
         "artifact_root": "tmp/artifacts/showcase",
         "report_root": "tmp/reports/showcase",
         "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-        "build_native_entrypoint": "build:objc3c-native",
-        "compile_entrypoint": "compile:objc3c",
-        "surface_check_entrypoint": "check:showcase:surface",
-        "integrated_validation_entrypoint": "test:showcase",
-        "packaged_validation_entrypoint": "test:showcase:e2e",
-        "package_entrypoint": "package:objc3c-native:runnable-toolchain",
-        "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
-        "execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+        "build_native_action": "build-native-binaries",
+        "compile_action": "compile-objc3c",
+        "surface_check_action": "check-showcase-surface",
+        "integrated_validation_action": "validate-showcase",
+        "packaged_validation_action": "validate-runnable-showcase",
+        "package_action": "package-runnable-toolchain",
+        "execution_smoke_action": "test-execution-smoke",
+        "execution_replay_action": "test-execution-replay",
     }:
         return "build_run_package_surface drifted"
     tutorial_build_run_verify_surface = payload.get("tutorial_build_run_verify_surface")
     if tutorial_build_run_verify_surface != {
         "getting_started_readme": "docs/tutorials/getting_started.md",
         "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
-        "migration_readme": "docs/tutorials/objc2_to_objc3_migration.md",
-        "build_native_entrypoint": "build:objc3c-native",
-        "compile_entrypoint": "compile:objc3c",
-        "surface_check_entrypoint": "check:showcase:surface",
-        "integrated_validation_entrypoint": "test:showcase",
-        "packaged_validation_entrypoint": "test:showcase:e2e",
+        "objc2_conversion_readme": "docs/tutorials/objc2_to_objc3_migration.md",
+        "build_native_action": "build-native-binaries",
+        "compile_action": "compile-objc3c",
+        "surface_check_action": "check-showcase-surface",
+        "integrated_validation_action": "validate-showcase",
+        "packaged_validation_action": "validate-runnable-showcase",
         "artifact_root": "tmp/artifacts/showcase",
         "report_root": "tmp/reports/showcase",
         "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
@@ -72,10 +93,10 @@ def validate_portfolio_contract(payload: dict[str, Any]) -> str | None:
         "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
         "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
         "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
-        "integrated_validation_entrypoint": "test:showcase",
-        "packaged_validation_entrypoint": "test:showcase:e2e",
-        "shared_execution_smoke_entrypoint": "test:objc3c:execution-smoke",
-        "shared_execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+        "integrated_validation_action": "validate-showcase",
+        "packaged_validation_action": "validate-runnable-showcase",
+        "shared_execution_smoke_action": "test-execution-smoke",
+        "shared_execution_replay_action": "test-execution-replay",
         "presentation_readme": "showcase/README.md",
     }:
         return "runtime_presentation_surface drifted"

@@ -28,7 +28,7 @@ def write_composite_validation_report(
 ) -> Path:
     PUBLIC_WORKFLOW_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     report_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action}.json"
-    child_timing = collect_child_timing(steps)
+    child_timing = collect_child_timing(action, steps)
     budget_violations = composite_budget_violations(child_timing)
     effective_status = effective_composite_status(status, budget_violations)
     payload = {

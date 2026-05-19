@@ -178,8 +178,8 @@ bool TryResolveObjc3ConformanceClaimValidationInputs(
                              "ci_release_evidence_gate_script_path",
                              resolved.ci_release_evidence_gate_script_path) ||
       resolved.ci_release_evidence_gate_script_path !=
-          kObjc3AdvancedFeatureEvidenceGateScriptPath) {
-    error = "ci_release_evidence_gate_script_path drifted";
+          kObjc3AdvancedFeatureEvidenceGateCommand) {
+    error = "ci_release_evidence_gate_script_path drifted from public workflow command";
     return false;
   }
   if (!TryGetJsonStringField(publication_document, "runbook_reference_path",
