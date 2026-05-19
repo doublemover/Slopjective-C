@@ -6,7 +6,7 @@ if (!(Test-Path -LiteralPath $frontendContractExportModule -PathType Leaf)) {
   throw "frontend contract export module missing: $frontendContractExportModule"
 }
 
-Import-Module $frontendContractExportModule -Force -DisableNameChecking
+Import-Module $frontendContractExportModule -Force -DisableNameChecking -Global
 
 $frontendContractModules = @(Get-Objc3cNativeFrontendContractModuleNames)
 foreach ($frontendContractModule in $frontendContractModules) {
@@ -15,7 +15,7 @@ foreach ($frontendContractModule in $frontendContractModules) {
     throw "frontend contract support module missing: $frontendContractModulePath"
   }
 
-  Import-Module $frontendContractModulePath -Force -DisableNameChecking
+  Import-Module $frontendContractModulePath -Force -DisableNameChecking -Global
 }
 
 $frontendContractExportedFunctions = @(Get-Objc3cNativeFrontendContractExportedFunctionNames)

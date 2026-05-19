@@ -6,13 +6,13 @@ $frontendContractExportModule = Join-Path $frontendContractModuleRoot "exports.p
 if (!(Test-Path -LiteralPath $frontendContractExportModule -PathType Leaf)) {
   throw "frontend contract export module missing: $frontendContractExportModule"
 }
-Import-Module $frontendContractExportModule -Force -DisableNameChecking
+Import-Module $frontendContractExportModule -Force -DisableNameChecking -Global
 foreach ($frontendContractModule in @(Get-Objc3cNativeFrontendContractModuleNames)) {
   $frontendContractModulePath = Join-Path $frontendContractModuleRoot $frontendContractModule
   if (!(Test-Path -LiteralPath $frontendContractModulePath -PathType Leaf)) {
     throw "frontend contract support module missing: $frontendContractModulePath"
   }
-  Import-Module $frontendContractModulePath -Force -DisableNameChecking
+  Import-Module $frontendContractModulePath -Force -DisableNameChecking -Global
 }
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_frontend_closeout_artifacts.psm1") -Force
 
