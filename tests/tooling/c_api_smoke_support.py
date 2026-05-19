@@ -10,6 +10,14 @@ FRONTEND_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend.h"
 VERSION_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_version.h"
 OPTIONS_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_options.h"
 RESULT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result.h"
+RESULT_TYPES_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_types.h"
+RESULT_ARTIFACTS_H = (
+    SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_artifacts.h"
+)
+RESULT_ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_error.h"
+RESULT_LIFECYCLE_H = (
+    SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_lifecycle.h"
+)
 DIAGNOSTIC_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_diagnostic.h"
 CONTEXT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_context.h"
 ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_error.h"
@@ -22,6 +30,13 @@ C_API_VERSION_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_version.h"
 C_API_LIFECYCLE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_lifecycle.h"
 C_API_COMPILE_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_compile.h"
 C_API_RESULT_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_result.h"
+C_API_RESULT_ARTIFACTS_H = (
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_result_artifacts.h"
+)
+C_API_RESULT_ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_result_error.h"
+C_API_RESULT_LIFECYCLE_H = (
+    SRC_ROOT / "libobjc3c_frontend" / "c_api_result_lifecycle.h"
+)
 C_API_STRING_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_string.h"
 C_API_STAGE_SUMMARY_H = SRC_ROOT / "libobjc3c_frontend" / "c_api_stage_summary.h"
 C_API_OWNED_RESULT_H = (
@@ -35,6 +50,9 @@ C_API_HEADER_PATHS = [
     C_API_LIFECYCLE_H,
     C_API_COMPILE_H,
     C_API_RESULT_H,
+    C_API_RESULT_LIFECYCLE_H,
+    C_API_RESULT_ARTIFACTS_H,
+    C_API_RESULT_ERROR_H,
     C_API_STRING_H,
     C_API_STAGE_SUMMARY_H,
     C_API_OWNED_RESULT_H,
@@ -42,8 +60,17 @@ C_API_HEADER_PATHS = [
 RESULT_OWNERSHIP_CPP = (
     SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_ownership.cpp"
 )
+OWNED_STRING_STORAGE_CPP = (
+    SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_owned_string_storage.cpp"
+)
+RESULT_PAYLOAD_CPP = (
+    SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result_payload.cpp"
+)
 FRONTEND_COMPILE_CONTRACT_CPP = (
     SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_compile_contract.cpp"
+)
+FRONTEND_OPTION_BORROWING_CPP = (
+    SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_option_borrowing.cpp"
 )
 C_API_SOURCES = [
     SRC_ROOT / "libobjc3c_frontend" / "c_api_abi.cpp",

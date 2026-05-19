@@ -17,7 +17,7 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
 
 /*
  * Compile options consumed by objc3c_frontend_compile_file/source.
- * - Borrowed option values are caller-owned storage for the duration of the call.
+ * - Borrowed option values are caller-owned for the duration of the call.
  * - borrowed_path_t fields are interpreted as filesystem paths.
  * - borrowed_text_t fields are interpreted as literal source/symbol/prefix text.
  * - compile_file requires non-NULL, non-empty input_path.

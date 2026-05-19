@@ -9,7 +9,7 @@
   "support_boundary": "runtime ownership covers owned result handles, result lifecycle, standalone string lifecycle, borrowed views, runtime inspector fields, public ABI versioning, and public/private partition checks only as strict C API contract evidence",
   "phase_support_claim_authority": false,
   "selectors": [
-    "required_ownership_fields:result_storage_owner",
+    "required_ownership_fields:result_handle_owner",
     "required_ownership_fields:result_release_function",
     "required_ownership_fields:result_release_timing",
     "required_ownership_fields:standalone_string_release_function",

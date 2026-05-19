@@ -13,9 +13,13 @@ bool ExecuteFrontendCApiRunnerCompileContext(
   }
 
   const FrontendCApiRunnerCompileInvocation compile_invocation(options);
-  session.status = objc3c_frontend_c_compile_file(
+  session.status = objc3c_frontend_c_compile_file_owned(
       context.get(),
       compile_invocation.compile_options(),
       session.compile_result.out_param());
+  if (!session.compile_result.valid()) {
+    error = "failed to allocate frontend owned result handle";
+    return false;
+  }
   return true;
 }

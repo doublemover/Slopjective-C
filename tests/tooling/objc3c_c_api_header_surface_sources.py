@@ -13,6 +13,10 @@ from c_api_smoke_support import (
     FRONTEND_H,
     OPTIONS_H,
     RESULT_H,
+    RESULT_ARTIFACTS_H,
+    RESULT_ERROR_H,
+    RESULT_LIFECYCLE_H,
+    RESULT_TYPES_H,
     SRC_ROOT,
     STRING_H,
     VERSION_H,
@@ -37,7 +41,16 @@ def load_c_api_header_surface() -> CApiHeaderSurface:
         c_api_surface=c_api_surface_text(),
         frontend_header=read_text(FRONTEND_H),
         options_header=read_text(OPTIONS_H),
-        result_header=read_text(RESULT_H),
+        result_header="\n".join(
+            read_text(path)
+            for path in (
+                RESULT_H,
+                RESULT_TYPES_H,
+                RESULT_LIFECYCLE_H,
+                RESULT_ARTIFACTS_H,
+                RESULT_ERROR_H,
+            )
+        ),
         string_header=read_text(STRING_H),
     )
 
@@ -56,6 +69,10 @@ def public_frontend_header_paths() -> list[Path]:
         CONTEXT_H,
         OPTIONS_H,
         RESULT_H,
+        RESULT_TYPES_H,
+        RESULT_LIFECYCLE_H,
+        RESULT_ARTIFACTS_H,
+        RESULT_ERROR_H,
         DIAGNOSTIC_H,
         STRING_H,
         ARTIFACT_H,

@@ -43,12 +43,16 @@ populate public structs, but they do not define package-facing C ABI.
 
 The frontend result contract is:
 
-- callers own `objc3c_frontend_compile_result_t` storage and zero-initialize it
+- callers own `objc3c_frontend_compile_result_t` records and zero-initialize them
   before first use,
+- C-only callers may instead use opaque result handles returned by
+  `objc3c_frontend_c_compile_*_owned()`,
 - compile entrypoints populate result-owned strings,
 - `objc3c_frontend_result_destroy()` and
   `objc3c_frontend_c_result_destroy()` release result-owned strings and clear
-  result storage,
+  caller-provided compile results,
+- `objc3c_frontend_c_owned_result_destroy()` releases opaque result handles and
+  their payload strings,
 - borrowed result strings returned by accessors remain valid only until result
   destruction,
 - standalone owned strings are released only through the matching string
@@ -61,9 +65,9 @@ The frontend result contract is:
 The frontend C API runner treats those ownership rules as executable
 publication gates rather than presentation hints:
 
-- runner compile sessions keep caller-owned result storage on the stack and
-  release result-owned payload strings only through
-  `objc3c_frontend_c_result_destroy()` in the session guard,
+- runner compile sessions keep an opaque owned result handle and release
+  result-owned payload strings only through
+  `objc3c_frontend_c_owned_result_destroy()` in the session guard,
 - runner option strings and paths are borrowed only for the compile call; the
   runner snapshots result-owned strings before destroying the context/result,
 - result-owned error strings must be absent on successful compiles and present

@@ -17,7 +17,7 @@ std::string RenderFrontendCApiRunnerArtifactOwnershipJson(
   object.StringField("snapshot_owner", contract.snapshot_owner);
   object.StringField("presence_accessor", contract.presence_accessor);
   object.StringField("path_accessor", contract.path_accessor);
-  object.StringField("storage_owner", contract.storage_owner);
+  object.StringField("payload_owner", contract.payload_owner);
   object.StringField("accessor_view", contract.accessor_view);
   object.StringField("release_function", contract.release_function);
   object.StringField("null_contract", contract.null_contract);

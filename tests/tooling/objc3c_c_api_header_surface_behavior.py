@@ -21,11 +21,6 @@ from objc3c_c_api_header_surface_sources import (
 
 
 def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> None:
-    expected_default_language_version = (
-        "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT "
-        "OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3"
-    )
-
     assert_contains_all(
         surface.header,
         [
@@ -103,12 +98,11 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "objc3c_frontend_c_stage_summary_has_diagnostics(",
             "objc3c_frontend_c_stage_summary_has_errors(",
             "owned compile results are allocated by objc3c_frontend_c_compile_*_owned()",
-            "compile_result storage entrypoints remain storage adapters",
-            (
-                "result payload strings are released only by "
-                "objc3c_frontend_c_result_destroy()"
-            ),
+            "result payload strings are released only by",
+            "objc3c_frontend_c_result_destroy() for caller-provided results",
+            "caller-provided compile results are zero-initialized before first use",
             "undefined artifact kinds and NULL inputs fail closed as NULL/empty/0",
+            "owned-result accessors fail closed on NULL handles",
         ],
     )
     assert_contains_all(
@@ -119,7 +113,6 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
         surface.options_header,
         [
             "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u",
-            expected_default_language_version,
             "typedef const char *objc3c_frontend_borrowed_c_string_t;",
             (
                 "typedef objc3c_frontend_borrowed_c_string_t "
@@ -134,12 +127,12 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
             "objc3c_frontend_borrowed_path_t out_dir;",
             "objc3c_frontend_borrowed_path_t clang_path;",
             "objc3c_frontend_borrowed_path_t llc_path;",
+            "objc3c_frontend_borrowed_text_t runtime_dispatch_symbol;",
+            "uint32_t max_message_send_args;",
             "uint8_t allow_live_error_runtime_surface;",
             "uint8_t language_version;",
-            (
-                "Borrowed option values are caller-owned storage for the duration "
-                "of the call."
-            ),
+            "Borrowed option values are caller-owned for the duration of the call.",
+            "zero is not a default.",
         ],
     )
     assert_excludes_all(
@@ -159,7 +152,7 @@ def assert_c_api_header_exposes_public_surface(surface: CApiHeaderSurface) -> No
         [
             "objc3c_frontend_string_t *diagnostics_path;",
             "callers must not release them directly.",
-            "Returns a borrowed pointer to a result-owned artifact path string.",
+            "Result-owned artifact accessors.",
             "objc3c_frontend_result_destroy(",
             "objc3c_frontend_result_artifact_path(",
             "objc3c_frontend_result_error_message(",

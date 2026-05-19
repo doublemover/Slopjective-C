@@ -19,16 +19,19 @@
  * Result/string ownership is explicit on this surface:
  * - owned compile results are allocated by objc3c_frontend_c_compile_*_owned()
  *   and destroyed with objc3c_frontend_c_owned_result_destroy().
- * - compile_result storage entrypoints remain storage adapters over the same
- *   owned payload contract and must be zero-initialized before first use.
+ * - caller-provided compile results are zero-initialized before first use and
+ *   destroyed with objc3c_frontend_c_result_destroy().
  * - result payload strings are released only by
- *   objc3c_frontend_c_result_destroy() for storage adapters; opaque-handle
+ *   objc3c_frontend_c_result_destroy() for caller-provided results; opaque
  *   payload strings are released by objc3c_frontend_c_owned_result_destroy().
  * - standalone owned strings are released with
  *   objc3c_frontend_c_string_release().
  * - borrowed option strings/paths must remain valid for the duration of the
  *   call.
  * - compile entrypoints require non-NULL context/options/result pointers.
+ * - owned-result accessors fail closed on NULL handles: usage status,
+ *   process-exit 2, false booleans, empty stage summaries, NULL strings, empty
+ *   views, and no artifacts.
  *
  * Header ownership:
  * - c_api_types.h owns C-only type aliases over the stable frontend ABI.

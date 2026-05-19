@@ -14,10 +14,14 @@ typedef struct objc3c_frontend_c_result objc3c_frontend_c_result_t;
 /*
  * Owned result handle surface for C-only embedders. Successful calls allocate a
  * result handle and return it through out_result; failing compile calls still
- * return a handle when result storage could be allocated so callers can inspect
+ * return a handle when a result handle could be allocated so callers can inspect
  * deterministic error, diagnostic, stage, and artifact payloads. The handle and
  * every result-owned string visible through its accessors are released only by
  * objc3c_frontend_c_owned_result_destroy().
+ *
+ * Destroying a NULL handle is a no-op. Accessing a NULL handle fails closed:
+ * usage status, process-exit 2, false booleans, empty stage summaries, NULL
+ * strings, empty views, and no artifacts.
  */
 OBJC3C_FRONTEND_API objc3c_frontend_c_status_t
 objc3c_frontend_c_compile_file_owned(

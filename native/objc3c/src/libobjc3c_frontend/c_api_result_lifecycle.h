@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 /*
- * C-only compile-result storage lifetime owner. Destroys only result-owned
- * payload strings and then clears the supplied storage adapter. Passing NULL is
- * a no-op. Opaque result handles are destroyed with
+ * C-only compile-result lifetime owner. Destroys only result-owned payload
+ * strings and then clears the supplied compile result. Passing NULL is a
+ * no-op. Opaque result handles are destroyed with
  * objc3c_frontend_c_owned_result_destroy().
  */
 OBJC3C_FRONTEND_API void objc3c_frontend_c_result_destroy(

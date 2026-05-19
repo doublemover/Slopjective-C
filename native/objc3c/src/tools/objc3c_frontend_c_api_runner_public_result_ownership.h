@@ -10,10 +10,10 @@
 struct FrontendCApiRunnerCStringOwnershipContract {
   bool present = false;
   const char *snapshot_owner = "runner-public-result-snapshot";
-  const char *accessor_name = "objc3c_frontend_c_result_error_message";
-  const char *storage_owner = "result";
-  const char *accessor_view = "borrowed-until-result-destroy";
-  const char *release_function = "objc3c_frontend_c_result_destroy";
+  const char *accessor_name = "objc3c_frontend_c_owned_result_error_message";
+  const char *payload_owner = "owned-result-handle";
+  const char *accessor_view = "borrowed-until-owned-result-destroy";
+  const char *release_function = "objc3c_frontend_c_owned_result_destroy";
   const char *null_contract = "absent-payload";
 };
 
@@ -23,11 +23,11 @@ struct FrontendCApiRunnerCArtifactOwnershipContract {
   bool produced = false;
   bool path_snapshot_present = false;
   const char *snapshot_owner = "runner-public-result-snapshot";
-  const char *presence_accessor = "objc3c_frontend_c_result_has_artifact";
-  const char *path_accessor = "objc3c_frontend_c_result_artifact_path";
-  const char *storage_owner = "result";
-  const char *accessor_view = "borrowed-until-result-destroy";
-  const char *release_function = "objc3c_frontend_c_result_destroy";
+  const char *presence_accessor = "objc3c_frontend_c_owned_result_has_artifact";
+  const char *path_accessor = "objc3c_frontend_c_owned_result_artifact_path";
+  const char *payload_owner = "owned-result-handle";
+  const char *accessor_view = "borrowed-until-owned-result-destroy";
+  const char *release_function = "objc3c_frontend_c_owned_result_destroy";
   const char *null_contract = "absent-or-not-requested";
 };
 
@@ -39,8 +39,8 @@ struct FrontendCApiRunnerCArtifactRequirement {
 };
 
 struct FrontendCApiRunnerCOwnershipView {
-  const char *result_storage_owner = "runner-stack";
-  const char *result_release_function = "objc3c_frontend_c_result_destroy";
+  const char *result_handle_owner = "frontend-c-api-owned-result-handle";
+  const char *result_release_function = "objc3c_frontend_c_owned_result_destroy";
   const char *result_release_timing = "compile-session-guard-destructor";
   const char *publication_snapshot_owner = "runner-public-result-snapshot";
   const char *context_lifetime = "created-before-compile-destroyed-after-snapshot";

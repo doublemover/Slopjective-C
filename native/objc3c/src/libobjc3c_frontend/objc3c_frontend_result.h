@@ -7,7 +7,7 @@
 #include "objc3c_frontend_result_types.h"
 
 /*
- * Aggregate result surface. Result storage/types, lifetime, artifact selectors,
+ * Aggregate result surface. Result records/types, lifetime, artifact selectors,
  * and error payload accessors each have a narrow owner header; embedders may
  * include this header to use the whole result API.
  */

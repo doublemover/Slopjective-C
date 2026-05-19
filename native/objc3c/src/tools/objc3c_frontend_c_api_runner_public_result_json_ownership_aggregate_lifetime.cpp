@@ -3,7 +3,7 @@
 void WriteFrontendCApiRunnerCOwnershipAggregateLifetimeRows(
     objc3::io::json::JsonObjectWriter &object,
     const FrontendCApiRunnerCOwnershipView &ownership) {
-  object.StringField("result_storage_owner", ownership.result_storage_owner);
+  object.StringField("result_handle_owner", ownership.result_handle_owner);
   object.StringField("result_release_function",
                      ownership.result_release_function);
   object.StringField("result_release_timing", ownership.result_release_timing);

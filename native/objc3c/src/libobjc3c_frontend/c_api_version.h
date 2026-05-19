@@ -21,7 +21,7 @@ OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_is_exact_abi_version(
     uint32_t requested_abi_version);
 OBJC3C_FRONTEND_API uint32_t objc3c_frontend_c_abi_version(void);
 OBJC3C_FRONTEND_API objc3c_frontend_c_version_t objc3c_frontend_c_version(void);
-/* Returns static read-only version storage; callers must not release it. */
+/* Returns static read-only version data; callers must not release it. */
 OBJC3C_FRONTEND_API const char *objc3c_frontend_c_version_string(void);
 
 #ifdef __cplusplus

@@ -43,7 +43,7 @@ objc3c_frontend_c_status_t CompileOwnedFrontendResult(
       new (std::nothrow) objc3c_frontend_c_result_t();
   if (result == nullptr) {
     objc3c::frontend::SetFrontendContextError(
-        context, "owned C API compile could not allocate result storage.");
+        context, "owned C API compile could not allocate result handle.");
     return OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
   }
 

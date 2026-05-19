@@ -13,7 +13,7 @@ extern "C" {
  * Compile/error owner for C-only embedders. Entry points require non-NULL
  * context, options, and result pointers. The C API layer rejects NULL inputs
  * before crossing into the native compile pipeline, records deterministic
- * result-owned error messages when result storage exists, and never uses a
+ * result-owned error messages when result output is available, and never uses a
  * retired route compile path.
  */
 OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(

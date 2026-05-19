@@ -72,7 +72,7 @@ bool PopulateCompileResultFromFrontendContext(
     objc3c_frontend_compile_result_t *result,
     std::string &error) {
   if (context == nullptr || result == nullptr) {
-    error = "result path population requires context and result storage.";
+    error = "result path population requires context and result output.";
     return false;
   }
 

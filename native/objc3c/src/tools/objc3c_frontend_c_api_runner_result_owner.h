@@ -12,9 +12,13 @@ class FrontendCApiCompileResultOwner {
   FrontendCApiCompileResultOwner &operator=(
       const FrontendCApiCompileResultOwner &) = delete;
 
-  objc3c_frontend_c_compile_result_t *out_param();
+  objc3c_frontend_c_result_t **out_param();
+  bool valid() const;
   const objc3c_frontend_c_compile_result_t &view() const;
 
  private:
-  objc3c_frontend_c_compile_result_t result_ = {};
+  void RefreshSnapshot() const;
+
+  objc3c_frontend_c_result_t *result_ = nullptr;
+  mutable objc3c_frontend_c_compile_result_t snapshot_ = {};
 };

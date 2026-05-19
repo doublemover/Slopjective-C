@@ -9,7 +9,8 @@ extern "C" {
 
 /*
  * C-only result-owned error payload accessors. Returned strings/views are
- * borrowed from result storage and remain valid only until result destruction.
+ * borrowed from the compile result and remain valid only until result
+ * destruction.
  */
 OBJC3C_FRONTEND_API const objc3c_frontend_c_string_t *
 objc3c_frontend_c_result_error_message(

@@ -35,12 +35,12 @@ static_assert(OBJC3C_FRONTEND_C_API_OWNER_PUBLIC_PRIVATE_PARTITION == 8,
               "public/private partition owner id drift");
 static_assert(OBJC3C_FRONTEND_C_API_OWNER_OWNED_RESULT_HANDLE == 9,
               "owned result handle owner id drift");
-static_assert(OBJC3C_FRONTEND_C_API_POLICY_CALLER_OWNS_RESULT_STORAGE == 1,
-              "result storage policy id drift");
+static_assert(OBJC3C_FRONTEND_C_API_POLICY_CALLER_OWNS_COMPILE_RESULT == 1,
+              "caller-owned compile result policy id drift");
 static_assert(OBJC3C_FRONTEND_C_API_POLICY_C_NAMES_OWN_PACKAGE_SURFACE == 8,
               "public C package surface policy id drift");
-static_assert(OBJC3C_FRONTEND_C_API_POLICY_OWNED_RESULT_HANDLE_STORAGE == 9,
-              "owned result handle storage policy id drift");
+static_assert(OBJC3C_FRONTEND_C_API_POLICY_OWNED_RESULT_HANDLE == 9,
+              "owned result handle policy id drift");
 
 extern "C" OBJC3C_FRONTEND_API uint32_t
 objc3c_frontend_c_api_abi_version(void) {

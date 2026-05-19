@@ -20,15 +20,15 @@ typedef enum objc3c_frontend_status {
 } objc3c_frontend_status_t;
 
 /*
- * Caller-owned compile output storage populated by compile entrypoints. The
- * result storage must be zero-initialized before first use and must be released
- * with objc3c_frontend_result_destroy() before reuse.
+ * Caller-owned compile output record populated by compile entrypoints. The
+ * result must be zero-initialized before first use and must be released with
+ * objc3c_frontend_result_destroy() before reuse.
  *
  * Non-NULL string members are owned by this result and released only by
  * objc3c_frontend_result_destroy(); callers must not release them directly.
  * NULL string members mean the payload was not produced for that invocation.
  * Stage summaries are value snapshots; they do not borrow transient diagnostic
- * storage from the pipeline.
+ * data from the pipeline.
  */
 typedef struct objc3c_frontend_compile_result {
   objc3c_frontend_status_t status;

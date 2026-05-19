@@ -2158,7 +2158,7 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 - `objc3c_frontend_version.h`: export macros, version values, and ABI gates
 - `objc3c_frontend_context.h`: opaque context lifecycle
 - `objc3c_frontend_options.h`: borrowed compile inputs, paths, and emit options
-- `objc3c_frontend_result.h`: result storage, status values, and result-owned strings
+- `objc3c_frontend_result.h`: result records, status values, and result-owned strings
 - `objc3c_frontend_diagnostic.h`: stage summary and severity metadata
 - `objc3c_frontend_artifact.h`: artifact kind selectors
 - `objc3c_frontend_string.h`: owned string and borrowed view lifetime rules
@@ -2173,8 +2173,7 @@ or publish artifacts, but they are not package-facing C ABI headers.
 
 - owned C result handles are allocated by `objc3c_frontend_c_compile_*_owned()`
   and released by `objc3c_frontend_c_owned_result_destroy()`
-- compile result storage adapters remain caller-provided and zero-initialized
-  before first use
+- caller-provided compile result records are zero-initialized before first use
 - result-owned strings are released by result destruction, not by string release
 - accessor-returned result strings/views are borrowed until result destruction
 - standalone owned strings are released by the matching string release function
@@ -2193,4 +2192,4 @@ or publish artifacts, but they are not package-facing C ABI headers.
 - use `objc3c_frontend_is_exact_abi_version(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints
 - `objc3c_frontend_version().abi_version` must match `objc3c_frontend_abi_version()`
 - mismatched ABI versions are unsupported; callers must use the current header
-  and library pair rather than relying on adapter layers or retired aliases
+  and library pair rather than retired aliases
