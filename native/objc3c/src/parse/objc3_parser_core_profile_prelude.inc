@@ -59,6 +59,7 @@ namespace {
 // summary packets.
 
 using Token = Objc3LexToken;
+using TokenKind = Objc3LexTokenKind;
 
 using support::MakeDiag;
 using support::ParseIntegerLiteralValue;

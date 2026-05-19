@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "sema/objc3_sema_contract.h"
+#include "sema/model/semantic_symbol_advanced_source_contracts.h"
 
 struct Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary {
   std::string contract_id = kObjc3ConcurrencyTaskGroupCancellationSourceClosureContractId;

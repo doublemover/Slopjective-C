@@ -151,4 +151,3 @@
   Objc3VectorTypeLoweringSummary vector_type_lowering;
   bool deterministic_vector_type_lowering = false;
   bool ready = false;
-};
