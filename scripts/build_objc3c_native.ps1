@@ -105,7 +105,7 @@ $sharedSources = @(Get-Objc3cNativeFrontendSharedSources -Modules $frontendModul
 $runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
 $runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/public/objc3_runtime_api.h"
 $frontendArtifactPaths = Get-Objc3cNativeFrontendArtifactPaths -RepoRoot $repoRoot
-$repoSupercleanSurfacePath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+$repoSupercleanSurfacePath = Join-Path $tmpOutDir "repo_superclean_source_of_truth.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"

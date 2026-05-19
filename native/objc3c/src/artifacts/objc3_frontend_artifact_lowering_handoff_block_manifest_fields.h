@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-struct Objc3FrontendArtifactBlockLoweringPlan;
+#include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -3,6 +3,7 @@
 #include "ir/objc3_ir_emitter_block_value_services.h"
 #include "ir/objc3_ir_emitter_expression_services.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
 #include "ir/objc3_ir_statement_orchestration.h"
 

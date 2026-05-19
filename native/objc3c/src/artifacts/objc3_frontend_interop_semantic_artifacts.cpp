@@ -4,8 +4,11 @@
 
 #include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_runtime_import_surface.h"
+#include "sema/model/semantic_ownership.h"
+#include "sema/objc3_sema_contract_interop_diagnostics.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -2,8 +2,13 @@
 
 #include <algorithm>
 
-#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "lower/contracts/concurrency_actor_contracts.h"
+#include "lower/contracts/concurrency_continuation_runtime_contracts.h"
+#include "sema/model/semantic_symbol_core_source_closures.h"
+#include "sema/objc3_sema_contract_actor_concurrency_surfaces.h"
+#include "sema/objc3_sema_contract_async_error_surfaces.h"
+#include "sema/objc3_sema_contract_bootstrap_compatibility_async_diagnostics.h"
+#include "sema/objc3_sema_contract_effects_flow_async.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <string>
 
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
 #include "runtime/metadata/executable_metadata_debug_projection.h"
+#include "sema/model/semantic_type_executable_metadata_contracts.h"
 
 struct Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary {
   std::string contract_id =

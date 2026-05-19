@@ -33,6 +33,12 @@ bool WriteFrontendBinaryArtifactOrError(
     objc3c_frontend_context_t *context,
     objc3c_frontend_compile_result_t *result,
     const std::filesystem::path &path,
+    const std::string &contents);
+
+bool WriteFrontendBinaryArtifactOrError(
+    objc3c_frontend_context_t *context,
+    objc3c_frontend_compile_result_t *result,
+    const std::filesystem::path &path,
     const std::vector<uint8_t> &contents);
 
 }  // namespace objc3c::frontend

@@ -2,6 +2,7 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_concurrency_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_source_closure_artifacts.h"
 

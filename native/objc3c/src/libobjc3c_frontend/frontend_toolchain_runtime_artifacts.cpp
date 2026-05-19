@@ -1,11 +1,9 @@
 #include "libobjc3c_frontend/frontend_toolchain_runtime_artifacts.h"
 
-#include "ast/objc3_ast.h"
+#include "io/objc3_artifact_paths.h"
+#include "io/objc3_process_runtime_metadata_contracts.h"
 #include "libobjc3c_frontend/frontend_runtime_registration_artifact_inputs.h"
 #include "libobjc3c_frontend/frontend_toolchain_runtime_sidecars.h"
-#include "io/objc3_manifest_artifacts.h"
-#include "io/objc3_process.h"
-#include "runtime/metadata/selector_metadata.h"
 
 namespace objc3c::frontend {
 

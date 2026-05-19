@@ -1,5 +1,7 @@
 #include "tools/objc3c_frontend_c_api_runner_observability_json_artifacts.h"
 
+#include "tools/objc3c_frontend_c_api_runner_read_command.h"
+
 #include <ostream>
 
 void WriteFrontendCApiRunnerObservabilityArtifactPresenceJsonRows(

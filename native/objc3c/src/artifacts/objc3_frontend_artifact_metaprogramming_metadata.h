@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
 
 namespace objc3::artifacts::frontend {
 

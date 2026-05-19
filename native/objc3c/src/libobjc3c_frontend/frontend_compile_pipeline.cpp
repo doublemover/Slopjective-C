@@ -1,6 +1,7 @@
 #include "libobjc3c_frontend/frontend_compile_pipeline.h"
 
 #include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_process_conformance_contracts.h"
 #include "libobjc3c_frontend/frontend_lowering_boundary.h"
 #include "libobjc3c_frontend/objc3c_frontend_basic_artifacts.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"

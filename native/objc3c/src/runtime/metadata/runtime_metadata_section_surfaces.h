@@ -3,6 +3,9 @@
 #include <cstddef>
 #include <string>
 
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+
 struct Objc3RuntimeMetadataSectionAbiFreezeSummary {
   std::string contract_id = kObjc3RuntimeMetadataSectionAbiContractId;
   bool boundary_frozen = false;

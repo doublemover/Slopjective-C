@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-struct Objc3RuntimeStartupBootstrapInvariantSummary;
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -2,7 +2,9 @@
 
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "sema/objc3_sema_contract_runtime_readiness_keys.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace objc3::artifacts::frontend {
 

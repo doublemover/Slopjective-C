@@ -1,5 +1,9 @@
 #include "artifacts/objc3_frontend_artifact_ownership_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/ownership_system_extension_contracts.h"
+#include "sema/model/semantic_symbol_ownership_dispatch_summaries.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendOwnershipMetadata(

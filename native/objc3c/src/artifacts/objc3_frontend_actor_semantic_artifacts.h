@@ -2,7 +2,9 @@
 
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "lower/contracts/concurrency_actor_contracts.h"
+#include "sema/model/semantic_symbol_core_source_closures.h"
+#include "sema/objc3_sema_contract_actor_concurrency_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

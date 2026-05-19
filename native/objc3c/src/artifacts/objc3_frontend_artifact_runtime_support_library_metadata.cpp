@@ -1,5 +1,8 @@
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "runtime/metadata/runtime_support_library_metadata.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendRuntimeSupportLibraryMetadata(

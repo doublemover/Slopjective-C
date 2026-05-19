@@ -4,6 +4,8 @@
 
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "io/objc3_json.h"
+#include "runtime/metadata/executable_metadata_debug_projection.h"
+#include "runtime/metadata/executable_metadata_runtime_ingest.h"
 
 namespace objc3::artifacts::frontend {
 

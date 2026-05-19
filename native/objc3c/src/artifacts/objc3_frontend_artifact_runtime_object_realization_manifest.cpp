@@ -6,6 +6,8 @@
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 #include "runtime/metadata/selector_metadata.h"
 
 namespace objc3::artifacts::frontend {

@@ -6,11 +6,13 @@
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
 #include "artifacts/objc3_frontend_artifact_semantic_lowering_plan.h"
+#include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_concurrency_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_module_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 #include "artifacts/objc3_frontend_source_closure_artifacts.h"
 #include "pipeline/results/pipeline_result_model.h"
 

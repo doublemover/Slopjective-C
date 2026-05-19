@@ -3,7 +3,7 @@
 #include <ostream>
 
 #include "io/objc3_json.h"
-#include "runtime/metadata/selector_metadata.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

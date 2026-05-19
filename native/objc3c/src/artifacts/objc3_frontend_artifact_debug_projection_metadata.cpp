@@ -1,5 +1,9 @@
 #include "artifacts/objc3_frontend_artifact_debug_projection_metadata.h"
 
+#include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "runtime/metadata/executable_metadata_debug_projection.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendDebugProjectionMetadata(

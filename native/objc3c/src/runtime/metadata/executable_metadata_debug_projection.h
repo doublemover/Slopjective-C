@@ -4,6 +4,10 @@
 #include <cstddef>
 #include <string>
 
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+#include "sema/model/semantic_type_executable_metadata_contracts.h"
+
 struct Objc3ExecutableMetadataDebugProjectionMatrixRow {
   std::string row_key;
   std::string artifact_kind;

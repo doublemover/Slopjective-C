@@ -5,6 +5,8 @@
 
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_error_semantic_artifacts.h"
+#include "lower/contracts/error_handling_result_bridging_contracts.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactErrorLoweringPlan {

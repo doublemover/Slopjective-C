@@ -6,6 +6,7 @@
 
 #include "artifacts/objc3_frontend_feature_claim_artifacts.h"
 #include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 #include "token/objc3_token_contract.h"
 
 namespace objc3::artifacts::frontend {

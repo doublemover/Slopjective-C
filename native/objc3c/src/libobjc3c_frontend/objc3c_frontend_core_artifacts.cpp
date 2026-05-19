@@ -1,7 +1,7 @@
 #include "libobjc3c_frontend/objc3c_frontend_core_artifacts.h"
 
 #include "artifacts/objc3_frontend_artifacts.h"
-#include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_artifact_paths.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_publication.h"
 #include "libobjc3c_frontend/objc3c_frontend_context_state.h"
 #include "libobjc3c_frontend/objc3c_frontend_diagnostics.h"

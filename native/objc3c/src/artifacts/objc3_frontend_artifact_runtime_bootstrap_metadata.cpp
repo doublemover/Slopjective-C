@@ -1,5 +1,10 @@
 #include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
+
 namespace objc3::artifacts::frontend {
 namespace {
 

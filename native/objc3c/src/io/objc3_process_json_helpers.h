@@ -44,6 +44,7 @@ bool JsonStringFieldEquals(const objc3::io::json::JsonValue &root,
 
 std::string FinishJsonObject(objc3::io::json::JsonObjectWriter &object,
                              std::ostringstream &out);
+std::string ComputeFnv1a64Hex(const std::string &text);
 std::string ComputeSha256ShapedContentDigest(const std::string &text);
 
 bool TryExtractJsonStringField(const std::string &text,

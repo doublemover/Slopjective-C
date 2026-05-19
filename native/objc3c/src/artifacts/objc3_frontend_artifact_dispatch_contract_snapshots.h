@@ -4,6 +4,7 @@
 #include <string>
 
 #include "support/frontend_dispatch_contract_records.h"
+#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 
 namespace objc3::artifacts::frontend {
 

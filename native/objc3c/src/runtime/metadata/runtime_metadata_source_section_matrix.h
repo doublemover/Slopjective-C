@@ -4,6 +4,9 @@
 #include <cstddef>
 #include <string>
 
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+#include "sema/model/semantic_type_executable_metadata_contracts.h"
+
 struct Objc3RuntimeMetadataSourceToSectionMatrixRow {
   std::string row_key;
   std::string graph_node_kind;

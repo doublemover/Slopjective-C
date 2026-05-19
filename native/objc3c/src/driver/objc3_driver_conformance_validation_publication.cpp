@@ -4,6 +4,7 @@
 #include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_process_conformance_contracts.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 

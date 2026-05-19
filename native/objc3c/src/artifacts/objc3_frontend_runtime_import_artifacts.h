@@ -4,6 +4,7 @@
 #include <string>
 
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_runtime_import_surface.h"
 
 struct Objc3ActorLoweringMetadataContract;
 struct Objc3RuntimeBlockOwnershipArtifactPreservationSummary;

@@ -1,6 +1,7 @@
 #include "driver/objc3_driver_conformance_validation_paths.h"
 
 #include "io/objc3_manifest_artifacts.h"
+#include "lower/contracts/conformance_versioned_report_contracts.h"
 
 bool TryDeriveObjc3DriverConformanceEmitPrefix(
     const std::filesystem::path &report_path,

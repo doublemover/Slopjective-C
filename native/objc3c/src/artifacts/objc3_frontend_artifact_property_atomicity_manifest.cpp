@@ -5,6 +5,8 @@
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 namespace objc3::artifacts::frontend {
 

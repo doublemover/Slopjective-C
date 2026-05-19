@@ -2,6 +2,7 @@
 
 #include "artifacts/objc3_frontend_artifact_lowering_contracts.h"
 #include "artifacts/objc3_frontend_concurrency_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
 
 namespace {

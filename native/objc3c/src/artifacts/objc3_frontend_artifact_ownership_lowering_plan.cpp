@@ -2,6 +2,9 @@
 
 #include <utility>
 
+#include "lower/contracts/lowering_arc_contracts.h"
+#include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
+
 namespace {
 
 using objc3::artifacts::frontend::BuildArcDiagnosticsFixitLoweringContract;

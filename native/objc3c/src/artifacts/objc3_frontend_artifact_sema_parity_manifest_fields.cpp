@@ -2,7 +2,9 @@
 
 #include <ostream>
 
-#include "pipeline/objc3_frontend_types.h"
+#include "pipeline/results/pipeline_result_model.h"
+#include "sema/model/frontend_linkage_summaries.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace objc3::artifacts::frontend {
 

@@ -22,7 +22,8 @@ std::string BuildObjc3FrontendRuntimeImportArtifactPayloadJson(
     const std::string &type_system_optional_keypath_lowering_replay_key,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
-    const Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary
+    const objc3::artifacts::evidence::
+        ErrorHandlingResultAndBridgingArtifactReplayEvidence
         &error_handling_result_and_bridging_artifact_replay_summary,
     const Objc3ActorLoweringMetadataContract
         &concurrency_actor_lowering_metadata_contract,
@@ -39,9 +40,9 @@ std::string BuildObjc3FrontendRuntimeImportArtifactPayloadJson(
     const Objc3InteropFfiMetadataInterfacePreservationContract
         &interop_ffi_metadata_interface_preservation_contract,
     const std::string &interop_ffi_metadata_interface_preservation_replay_key,
-    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary
+    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary
         &metaprogramming_module_interface_replay_preservation_summary,
-    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary
+    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
         &metaprogramming_macro_host_process_cache_runtime_integration_summary,
     const Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
         &dispatch_dispatch_metadata_interface_preservation_summary,
@@ -129,7 +130,8 @@ void PopulateObjc3FrontendRuntimeImportArtifactOutputs(
     const std::string &type_system_optional_keypath_lowering_replay_key,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
-    const Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary
+    const objc3::artifacts::evidence::
+        ErrorHandlingResultAndBridgingArtifactReplayEvidence
         &error_handling_result_and_bridging_artifact_replay_summary,
     const Objc3ActorLoweringMetadataContract
         &concurrency_actor_lowering_metadata_contract,
@@ -146,9 +148,9 @@ void PopulateObjc3FrontendRuntimeImportArtifactOutputs(
     const Objc3InteropFfiMetadataInterfacePreservationContract
         &interop_ffi_metadata_interface_preservation_contract,
     const std::string &interop_ffi_metadata_interface_preservation_replay_key,
-    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary
+    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary
         &metaprogramming_module_interface_replay_preservation_summary,
-    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary
+    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
         &metaprogramming_macro_host_process_cache_runtime_integration_summary,
     const Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
         &dispatch_dispatch_metadata_interface_preservation_summary,
@@ -192,14 +194,14 @@ void PopulateObjc3FrontendRuntimeImportArtifactOutputs(
   if (interop_header_module_bridge_generation_summary.runtime_generation_ready &&
       interop_header_module_bridge_generation_summary.deterministic) {
     bundle.interop_bridge_header_artifact_text =
-        BuildInteropBridgeHeaderArtifactText(
+        interop::BuildInteropBridgeHeaderArtifactText(
             program, runtime_aware_import_module_frontend_closure,
             interop_header_module_bridge_generation_summary);
     bundle.interop_bridge_module_artifact_text =
-        BuildInteropBridgeModuleArtifactText(
+        interop::BuildInteropBridgeModuleArtifactText(
             runtime_aware_import_module_frontend_closure,
             interop_header_module_bridge_generation_summary);
-    bundle.interop_bridge_artifact_json = BuildInteropBridgeArtifactJson(
+    bundle.interop_bridge_artifact_json = interop::BuildInteropBridgeArtifactJson(
         program, runtime_aware_import_module_frontend_closure,
         interop_header_module_bridge_generation_summary);
   }

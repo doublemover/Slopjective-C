@@ -3,9 +3,9 @@
 #include <sstream>
 #include <string>
 
-#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "io/objc3_json.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "lower/contracts/control_flow_safety_lowering_contracts.h"
+#include "sema/objc3_sema_contract_effects_flow_control_flow.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

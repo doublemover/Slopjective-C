@@ -1,5 +1,6 @@
 #include "ir/objc3_ir_emitter_module_services_function.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_emitter_statement_services.h"
 #include "ir/objc3_ir_function_orchestration.h"

@@ -1,6 +1,11 @@
-#include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_field_modules.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_type_system_manifest_fields.h"
 
+#include <sstream>
 #include <string>
+
+#include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
+#include "artifacts/objc3_frontend_type_system_contract_records.h"
+#include "lower/contracts/type_system_generic_lowering_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

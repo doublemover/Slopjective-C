@@ -1,6 +1,19 @@
 #pragma once
 
+#include <cstddef>
+#include <sstream>
+#include <string>
+#include <unordered_set>
+
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_block_arc.h"
+#include "ast/objc3_ast_expr_block_contract_members.h"
+#include "lower/contracts/block_abi_lowering_contract_records.h"
+#include "lower/contracts/executable_property_layout_contracts.h"
+#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
 #include "pipeline/results/runtime_import_evidence_record.h"
+#include "runtime/metadata/runtime_metadata_model.h"
+#include "runtime/metadata/runtime_support_library_metadata.h"
+#include "sema/model/semantic_symbol_advanced_source_contracts.h"
 
 struct Objc3RuntimeStorageReflectionArtifactPreservationSummary {
   std::string contract_id =

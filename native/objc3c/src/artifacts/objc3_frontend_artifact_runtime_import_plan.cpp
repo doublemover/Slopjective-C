@@ -4,7 +4,23 @@
 #include <unordered_set>
 #include <utility>
 
+#include "artifacts/objc3_frontend_module_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "parse/objc3_parser_contract_types.h"
+#include "pipeline/results/compile_options.h"
+#include "pipeline/results/pipeline_result_model.h"
+#include "pipeline/results/runtime_import_evidence_record.h"
+#include "runtime/metadata/runtime_metadata_model.h"
 #include "pipeline/objc3_runtime_import_surface.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
+#include "sema/model/semantic_type_cross_module_build_orchestration.h"
+#include "sema/model/semantic_type_cross_module_runtime_preservation.h"
+#include "sema/model/semantic_type_imported_runtime_metadata_rules.h"
+#include "sema/model/semantic_type_serialized_runtime_metadata.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace {
 

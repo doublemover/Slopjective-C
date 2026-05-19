@@ -3,6 +3,10 @@
 #include <iosfwd>
 #include <string>
 
+#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
+#include "lower/contracts/dispatch_control_lowering_contracts.h"
+#include "sema/objc3_sema_contract_dispatch_intent.h"
+
 struct Objc3DispatchDispatchControlLoweringContract;
 struct Objc3DispatchDispatchIntentCompatibilitySummary;
 struct Objc3DispatchDispatchIntentLegalitySummary;

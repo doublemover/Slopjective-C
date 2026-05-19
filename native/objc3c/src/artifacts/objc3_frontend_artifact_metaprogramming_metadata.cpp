@@ -1,5 +1,12 @@
 #include "artifacts/objc3_frontend_artifact_metaprogramming_metadata.h"
 
+#include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_macro_artifact_model.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_property_behavior_model.h"
+#include "lower/contracts/metaprogramming_expansion_lowering_contracts.h"
+#include "runtime/metadata/runtime_metadata_typed_bundles.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendMetaprogrammingMetadata(

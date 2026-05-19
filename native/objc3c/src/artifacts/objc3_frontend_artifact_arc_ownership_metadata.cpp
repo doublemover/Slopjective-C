@@ -1,5 +1,8 @@
 #include "artifacts/objc3_frontend_artifact_arc_ownership_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/lowering_arc_contracts.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendArcOwnershipMetadata(

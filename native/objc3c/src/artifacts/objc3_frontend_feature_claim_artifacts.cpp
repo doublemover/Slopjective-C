@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "token/objc3_token_contract.h"
 

@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "sema/model/semantic_symbol_ownership_dispatch_summaries.h"
+
 Objc3DispatchDispatchIntentSemanticModelSummary
 BuildDispatchDispatchIntentSemanticModelSummary(
     const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary

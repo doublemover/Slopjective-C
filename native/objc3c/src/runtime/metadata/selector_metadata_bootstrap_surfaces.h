@@ -3,6 +3,14 @@
 #include <cstdint>
 #include <string>
 
+#include "ast/objc3_ast_contracts_cross_module_link_plan.h"
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registration_descriptor.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_library.h"
+#include "lower/contracts/runtime_bootstrap_entry_lowering_contracts.h"
+#include "lower/contracts/runtime_bootstrap_image_root_contracts.h"
+
 struct Objc3RuntimeStartupBootstrapInvariantSummary {
   std::string contract_id = kObjc3RuntimeStartupBootstrapInvariantContractId;
   std::string registration_manifest_contract_id =

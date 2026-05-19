@@ -4,6 +4,7 @@
 
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "io/objc3_json.h"
+#include "runtime/metadata/selector_metadata_bootstrap_legality_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

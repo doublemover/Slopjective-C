@@ -4,7 +4,21 @@
 #include <string>
 #include <vector>
 
+#include "parse/objc3_diagnostics_bus.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/results/compatibility_strictness_status.h"
+#include "pipeline/results/evidence_record.h"
+#include "pipeline/results/machine_readable_conformance_report_dto.h"
+#include "pipeline/results/phase_result.h"
+#include "pipeline/results/report_dto.h"
+#include "pipeline/results/runtime_import_evidence_record.h"
+#include "pipeline/results/versioned_conformance_report_dto.h"
+#include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_bootstrap_legality_surfaces.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
+#include "sema/model/semantic_ownership.h"
 
 struct Objc3FrontendArtifactBundle {
   Objc3FrontendDiagnosticsBus stage_diagnostics;

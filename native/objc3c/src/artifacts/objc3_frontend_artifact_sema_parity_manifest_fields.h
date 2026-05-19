@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-struct Objc3FrontendPipelineResult;
+#include "pipeline/results/pipeline_result_model.h"
 
 namespace objc3::artifacts::frontend {
 

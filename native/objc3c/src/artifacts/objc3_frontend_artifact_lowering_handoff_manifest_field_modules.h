@@ -1,6 +1,15 @@
 #pragma once
 
-#include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_fields.h"
+#include <iosfwd>
+
+#include "artifacts/objc3_frontend_artifact_core_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
+#include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
+#include "sema/model/frontend_concurrency_symbol_graph_summaries.h"
+#include "sema/model/frontend_linkage_summaries.h"
 
 namespace objc3::artifacts::frontend {
 

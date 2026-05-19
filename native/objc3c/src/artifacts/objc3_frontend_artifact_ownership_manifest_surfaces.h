@@ -3,6 +3,14 @@
 #include <iosfwd>
 #include <string>
 
+#include "lower/contracts/ownership_system_extension_contracts.h"
+#include "sema/model/semantic_symbol_ownership_dispatch_summaries.h"
+#include "sema/objc3_sema_contract_block_capture_legality.h"
+#include "sema/objc3_sema_contract_borrowed_escape.h"
+#include "sema/objc3_sema_contract_effects_flow_ownership.h"
+#include "sema/objc3_sema_contract_ownership_semantics.h"
+#include "sema/objc3_sema_contract_runtime_readiness_keys.h"
+
 struct Objc3CrossModuleSemanticContractsDiagnosticsSummary;
 struct Objc3EffectsOwnershipSemanticModelSummary;
 struct Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary;

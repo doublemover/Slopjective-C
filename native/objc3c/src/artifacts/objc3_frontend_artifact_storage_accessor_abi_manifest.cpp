@@ -3,7 +3,8 @@
 #include <ostream>
 
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
-#include "ast/objc3_ast_contracts.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 
 namespace objc3::artifacts::frontend {

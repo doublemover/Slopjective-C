@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "lower/contracts/control_flow_safety_lowering_contracts.h"
+
 namespace {
 
 using objc3::artifacts::frontend::BuildControlFlowControlFlowSafetyLoweringContract;

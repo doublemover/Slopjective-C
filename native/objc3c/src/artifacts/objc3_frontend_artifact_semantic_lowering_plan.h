@@ -6,6 +6,9 @@
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_derived_method_model.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_macro_artifact_model.h"
+#include "ir/objc3_ir_frontend_metadata_metaprogramming_property_behavior_model.h"
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactSemanticLoweringPlan {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sema/model/semantic_type_executable_metadata_contracts.h"
 #include "runtime/metadata/executable_metadata_source_graph.h"
 
 struct Objc3ExecutableMetadataSemanticConsistencyBoundary {

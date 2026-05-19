@@ -1,5 +1,9 @@
 #include "artifacts/objc3_frontend_artifact_block_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/block_abi_lowering_contract_records.h"
+#include "lower/contracts/block_source_closure_contracts.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendBlockMetadata(

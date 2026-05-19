@@ -40,6 +40,7 @@ target_sources(objc3c_pipeline_results INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/compile_options.h
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/compile_result.h
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/evidence_record.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/runtime_import_evidence_record.h
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_parse_contract_result.h
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_result.h
   ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_semantic_lowering_result.h

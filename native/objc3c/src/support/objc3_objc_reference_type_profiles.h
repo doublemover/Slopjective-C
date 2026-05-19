@@ -8,7 +8,7 @@
 namespace objc3c::support {
 
 inline bool IsObjCReferenceAliasValueType(ValueType type) {
-  return IsObjCReferenceValueType(type);
+  return objc3c::support::IsObjCReferenceValueType(type);
 }
 
 }  // namespace objc3c::support

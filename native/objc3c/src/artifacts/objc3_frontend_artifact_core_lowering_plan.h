@@ -8,7 +8,9 @@
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_dispatch_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
+#include "lower/contracts/control_flow_safety_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "sema/objc3_sema_contract_effects_flow_control_flow.h"
 
 struct Objc3FrontendArtifactCoreLoweringPlan {
   Objc3PropertySynthesisIvarBindingContract

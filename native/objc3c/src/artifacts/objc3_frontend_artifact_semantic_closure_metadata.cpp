@@ -1,5 +1,9 @@
 #include "artifacts/objc3_frontend_artifact_semantic_closure_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "sema/model/frontend_concurrency_symbol_graph_summaries.h"
+#include "sema/model/frontend_linkage_summaries.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendSemanticClosureMetadata(

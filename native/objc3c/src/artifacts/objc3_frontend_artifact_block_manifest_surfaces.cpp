@@ -2,7 +2,8 @@
 
 #include <ostream>
 
-#include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
+#include "lower/contracts/block_abi_lowering_contract_records.h"
+#include "lower/contracts/block_source_closure_contracts.h"
 
 namespace objc3::artifacts::frontend {
 

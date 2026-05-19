@@ -4,6 +4,9 @@
 
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "io/objc3_json.h"
+#include "runtime/metadata/runtime_support_library_metadata.h"
+#include "runtime/metadata/runtime_translation_unit_registration_metadata.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

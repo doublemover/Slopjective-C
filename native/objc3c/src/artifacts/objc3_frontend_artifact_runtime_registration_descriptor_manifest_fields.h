@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-struct Objc3FrontendArtifactRuntimeRegistrationPlan;
+#include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 
 namespace objc3::artifacts::frontend {
 

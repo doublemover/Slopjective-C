@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "sema/model/semantic_symbol_core_source_closures.h"
+
 Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
 BuildConcurrencyStructuredTaskCancellationSemanticSummary(
     const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary

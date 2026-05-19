@@ -1,6 +1,3 @@
-                                is_class_method);
-}
-
 static const Objc3PropertyInfo *ResolvePropertyInOwnerInterface(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &owner_name,

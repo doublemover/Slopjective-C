@@ -7,7 +7,10 @@
 #include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
 #include "ast/objc3_ast_core.h"
 #include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/block_runtime_lowering_contracts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace objc3::artifacts::frontend {
 Objc3OwnershipQualifierLoweringContract BuildOwnershipQualifierLoweringContract(

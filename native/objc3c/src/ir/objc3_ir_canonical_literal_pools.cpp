@@ -5,6 +5,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_frontend_metadata.h"
+#include "ir/objc3_ir_module_identity.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "support/objc3_string_predicates.h"
 

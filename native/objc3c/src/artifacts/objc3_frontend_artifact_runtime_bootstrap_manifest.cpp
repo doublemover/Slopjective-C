@@ -2,8 +2,15 @@
 
 #include <ostream>
 
-#include "ast/objc3_ast_contracts.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_source_surfaces.h"
+#include "lower/contracts/runtime_bootstrap_link_discovery_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_bootstrap_legality_surfaces.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 namespace objc3::artifacts::frontend {
 

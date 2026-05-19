@@ -2,8 +2,21 @@
 
 #include <utility>
 
+#include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
+
 namespace {
 
+using ::IsValidObjc3GenericMetadataAbiLoweringContract;
+using ::IsValidObjc3LightweightGenericsConstraintLoweringContract;
+using ::IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract;
+using ::IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract;
+using ::IsValidObjc3VarianceBridgeCastLoweringContract;
+using ::Objc3GenericMetadataAbiLoweringReplayKey;
+using ::Objc3LightweightGenericsConstraintLoweringReplayKey;
+using ::Objc3NullabilityFlowWarningPrecisionLoweringReplayKey;
+using ::Objc3ProtocolQualifiedObjectTypeLoweringReplayKey;
+using ::Objc3VarianceBridgeCastLoweringReplayKey;
 using objc3::artifacts::frontend::BuildGenericMetadataAbiLoweringContract;
 using objc3::artifacts::frontend::
     BuildLightweightGenericsConstraintLoweringContract;
@@ -12,26 +25,6 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildProtocolQualifiedObjectTypeLoweringContract;
 using objc3::artifacts::frontend::BuildVarianceBridgeCastLoweringContract;
-using objc3::artifacts::frontend::
-    FrontendGenericMetadataAbiLoweringReplayKey;
-using objc3::artifacts::frontend::
-    FrontendLightweightGenericsConstraintLoweringReplayKey;
-using objc3::artifacts::frontend::
-    FrontendNullabilityFlowWarningPrecisionLoweringReplayKey;
-using objc3::artifacts::frontend::
-    FrontendProtocolQualifiedObjectTypeLoweringReplayKey;
-using objc3::artifacts::frontend::
-    FrontendVarianceBridgeCastLoweringReplayKey;
-using objc3::artifacts::frontend::
-    IsValidFrontendGenericMetadataAbiLoweringContract;
-using objc3::artifacts::frontend::
-    IsValidFrontendLightweightGenericsConstraintLoweringContract;
-using objc3::artifacts::frontend::
-    IsValidFrontendNullabilityFlowWarningPrecisionLoweringContract;
-using objc3::artifacts::frontend::
-    IsValidFrontendProtocolQualifiedObjectTypeLoweringContract;
-using objc3::artifacts::frontend::
-    IsValidFrontendVarianceBridgeCastLoweringContract;
 using objc3::artifacts::frontend::Objc3FrontendArtifactPostPipelineFailure;
 
 void AddPostPipelineFailure(
@@ -54,7 +47,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
   plan.lightweight_generic_constraint_lowering_contract =
       BuildLightweightGenericsConstraintLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidFrontendLightweightGenericsConstraintLoweringContract(
+  if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
           plan.lightweight_generic_constraint_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -63,12 +56,12 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "lowering contract");
   }
   plan.lightweight_generic_constraint_lowering_replay_key =
-      FrontendLightweightGenericsConstraintLoweringReplayKey(
+      Objc3LightweightGenericsConstraintLoweringReplayKey(
           plan.lightweight_generic_constraint_lowering_contract);
   plan.nullability_flow_warning_precision_lowering_contract =
       BuildNullabilityFlowWarningPrecisionLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidFrontendNullabilityFlowWarningPrecisionLoweringContract(
+  if (!IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
           plan.nullability_flow_warning_precision_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -77,15 +70,15 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "lowering contract");
   }
   plan.nullability_flow_warning_precision_lowering_replay_key =
-      FrontendNullabilityFlowWarningPrecisionLoweringReplayKey(
+      Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
           plan.nullability_flow_warning_precision_lowering_contract);
   plan.protocol_qualified_object_type_lowering_contract =
       BuildProtocolQualifiedObjectTypeLoweringContract(
           pipeline_result.sema_parity_surface);
   plan.protocol_qualified_object_type_lowering_replay_key =
-      FrontendProtocolQualifiedObjectTypeLoweringReplayKey(
+      Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
           plan.protocol_qualified_object_type_lowering_contract);
-  if (!IsValidFrontendProtocolQualifiedObjectTypeLoweringContract(
+  if (!IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
           plan.protocol_qualified_object_type_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -97,7 +90,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
   plan.variance_bridge_cast_lowering_contract =
       BuildVarianceBridgeCastLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidFrontendVarianceBridgeCastLoweringContract(
+  if (!IsValidObjc3VarianceBridgeCastLoweringContract(
           plan.variance_bridge_cast_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -106,12 +99,12 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "contract");
   }
   plan.variance_bridge_cast_lowering_replay_key =
-      FrontendVarianceBridgeCastLoweringReplayKey(
+      Objc3VarianceBridgeCastLoweringReplayKey(
           plan.variance_bridge_cast_lowering_contract);
   plan.generic_metadata_abi_lowering_contract =
       BuildGenericMetadataAbiLoweringContract(
           pipeline_result.sema_parity_surface);
-  if (!IsValidFrontendGenericMetadataAbiLoweringContract(
+  if (!IsValidObjc3GenericMetadataAbiLoweringContract(
           plan.generic_metadata_abi_lowering_contract)) {
     AddPostPipelineFailure(
         plan.post_pipeline_failures,
@@ -120,7 +113,7 @@ BuildObjc3FrontendArtifactTypeSystemLoweringPlan(
         "contract");
   }
   plan.generic_metadata_abi_lowering_replay_key =
-      FrontendGenericMetadataAbiLoweringReplayKey(
+      Objc3GenericMetadataAbiLoweringReplayKey(
           plan.generic_metadata_abi_lowering_contract);
   return plan;
 }

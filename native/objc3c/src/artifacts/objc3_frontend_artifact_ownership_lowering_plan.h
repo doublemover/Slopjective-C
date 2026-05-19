@@ -5,6 +5,7 @@
 
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
 

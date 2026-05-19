@@ -1,7 +1,7 @@
 #include "artifacts/objc3_frontend_control_flow_semantic_artifacts.h"
 
-#include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "lower/contracts/control_flow_safety_lowering_contracts.h"
+#include "sema/objc3_sema_contract_effects_flow_control_flow.h"
 
 namespace objc3::artifacts::frontend {
 

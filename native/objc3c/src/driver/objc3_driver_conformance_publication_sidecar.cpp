@@ -5,6 +5,8 @@
 #include "driver/objc3_driver_public_workflow_commands.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_process_conformance_contracts.h"
+#include "lower/contracts/conformance_versioned_report_contracts.h"
 #include "lower/objc3_lowering_contract.h"
 
 int PublishObjc3DriverConformancePublicationSidecar(

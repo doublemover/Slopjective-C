@@ -3,6 +3,9 @@
 #include <iosfwd>
 #include <string>
 
+#include "lower/contracts/error_handling_result_bridging_contracts.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+
 struct Objc3NSErrorBridgingLoweringContract;
 struct Objc3ResultLikeLoweringContract;
 struct Objc3ThrowsPropagationLoweringContract;

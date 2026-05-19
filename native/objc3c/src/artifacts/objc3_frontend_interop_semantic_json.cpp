@@ -3,6 +3,10 @@
 #include <sstream>
 #include <string>
 
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
+#include "sema/model/semantic_ownership.h"
+#include "sema/objc3_sema_contract_interop_diagnostics.h"
 #include "artifacts/objc3_frontend_interop_semantic_json_contract_fields.h"
 #include "artifacts/objc3_frontend_interop_semantic_json_summary_fields.h"
 

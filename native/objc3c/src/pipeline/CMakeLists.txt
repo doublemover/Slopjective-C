@@ -171,6 +171,7 @@ add_library(objc3c_pipeline STATIC
   runtime_import_type_system_preservation_optional_keypath.cpp
   runtime_import_type_system_preservation_protocol.cpp
   frontend_control_flow_source_closure_helpers.h
+  frontend_concurrency_source_closure_helpers.h
   frontend_error_handling_source_closure_helpers.h
   frontend_interop_source_closure_helpers.h
   frontend_ownership_source_closure_helpers.h
@@ -212,9 +213,13 @@ add_library(objc3c_pipeline STATIC
   runtime_import_record_parsing.h
   runtime_import_record_parsing_source_record_owners.h
   runtime_import_type_system_preservation.h
+  objc3_frontend_long_tail_grammar_core_feature_surface.h
   objc3_final_readiness_gate_core_feature_implementation_surface.h
+  objc3_final_readiness_gate_surface_core_readiness_publication_tail.h
   objc3_final_readiness_gate_surface_owners.h
   objc3_final_readiness_gate_surface_readiness_helpers.h
+  readiness/objc3_final_readiness_gate_advanced_keys.h
+  readiness/objc3_final_readiness_gate_core_keys.h
   readiness/objc3_final_readiness_gate_failure_reasons.h
   objc3_frontend_pipeline.h
   objc3_ir_emission_core_feature_implementation_surface.h

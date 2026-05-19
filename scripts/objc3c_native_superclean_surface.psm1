@@ -16,6 +16,28 @@ function Add-Objc3cNativeRepoSupercleanSurfaceEntries {
   }
 }
 
+function Test-Objc3cNativeRepoSupercleanPathIsUnderRoot {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RootPath,
+    [Parameter(Mandatory = $true)]
+    [string]$TargetPath
+  )
+
+  $rootFullPath = [System.IO.Path]::GetFullPath($RootPath).TrimEnd([char[]]@(
+    [System.IO.Path]::DirectorySeparatorChar,
+    [System.IO.Path]::AltDirectorySeparatorChar
+  ))
+  $targetFullPath = [System.IO.Path]::GetFullPath($TargetPath)
+
+  return `
+    $targetFullPath.Equals($rootFullPath, [System.StringComparison]::OrdinalIgnoreCase) -or `
+    $targetFullPath.StartsWith(
+      $rootFullPath + [System.IO.Path]::DirectorySeparatorChar,
+      [System.StringComparison]::OrdinalIgnoreCase
+    )
+}
+
 function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
   param(
     [Parameter(Mandatory = $true)]
@@ -35,6 +57,11 @@ function Write-Objc3cNativeRepoSupercleanSourceOfTruthArtifact {
     [Parameter(Mandatory = $true)]
     [object[]]$FrontendDefinitions
   )
+
+  $tmpArtifactsRoot = Join-Path $RepoRoot "tmp/artifacts"
+  if (Test-Objc3cNativeRepoSupercleanPathIsUnderRoot -RootPath $tmpArtifactsRoot -TargetPath $OutputPath) {
+    throw "repo-superclean source-of-truth artifact must be generated from the active build state, not tmp/artifacts: $OutputPath"
+  }
 
   $payload = New-Objc3cNativeRepoSupercleanBaseSurface -ExecutionMode $ExecutionMode
 

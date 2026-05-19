@@ -1,6 +1,7 @@
 #include "runtime/storage/property_accessors.h"
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/reflection/property_entry_snapshot_fields.h"
 #include "runtime/reflection/property_entry_query.h"
 #include "runtime/reflection/property_registry_snapshot_fields.h"
 #include "runtime/state/runtime_state_records.h"

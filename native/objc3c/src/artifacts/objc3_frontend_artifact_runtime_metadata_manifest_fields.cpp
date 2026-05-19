@@ -2,7 +2,8 @@
 
 #include <ostream>
 
-#include "pipeline/objc3_frontend_types.h"
+#include "runtime/metadata/runtime_metadata_export_surfaces.h"
+#include "runtime/metadata/runtime_metadata_section_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

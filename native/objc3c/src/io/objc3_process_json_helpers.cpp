@@ -126,8 +126,6 @@ std::string FinishJsonObject(JsonObjectWriter &object, std::ostringstream &out) 
   return out.str();
 }
 
-namespace {
-
 std::string ComputeFnv1a64Hex(const std::string &text) {
   std::uint64_t hash = 14695981039346656037ull;
   for (unsigned char c : text) {
@@ -141,8 +139,6 @@ std::string ComputeFnv1a64Hex(const std::string &text) {
   out << hash;
   return out.str();
 }
-
-}  // namespace
 
 std::string ComputeSha256ShapedContentDigest(const std::string &text) {
   return ComputeFnv1a64Hex("objc3c-dashboard-digest-1:" + text) +

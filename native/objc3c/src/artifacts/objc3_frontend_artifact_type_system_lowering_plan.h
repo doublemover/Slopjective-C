@@ -4,7 +4,8 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
-#include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
+#include "lower/contracts/type_system_generic_lowering_contract_records.h"
+#include "artifacts/objc3_frontend_type_system_contract_records.h"
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactTypeSystemLoweringPlan {

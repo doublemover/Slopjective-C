@@ -5,6 +5,7 @@
 #include "artifacts/json/artifact_record_array_json.h"
 #include "artifacts/json/semantic_type_manifest_records.h"
 #include "io/json/json_writer.h"
+#include "sema/objc3_sema_contract_semantic_type_metadata_handoff.h"
 
 namespace objc3::artifacts::json {
 

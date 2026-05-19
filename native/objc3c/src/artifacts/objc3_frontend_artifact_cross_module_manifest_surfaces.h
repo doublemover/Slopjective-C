@@ -3,19 +3,14 @@
 #include <iosfwd>
 #include <string>
 
-struct Objc3CrossModuleBuildRuntimeOrchestrationSummary;
-struct Objc3CrossModuleConformanceLoweringContract;
-struct Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary;
-struct Objc3ImportedRuntimeMetadataSemanticRulesSummary;
-struct Objc3IncrementalModuleCacheInvalidationLoweringContract;
-struct Objc3ModuleImportGraphLoweringContract;
-struct Objc3NamespaceCollisionShadowingLoweringContract;
-struct Objc3ParserContractSnapshot;
-struct Objc3Program;
-struct Objc3PublicPrivateApiPartitionLoweringContract;
-struct Objc3RuntimeAwareImportModuleFrontendClosureSummary;
-struct Objc3SerializedRuntimeMetadataArtifactReuseSummary;
-struct Objc3SerializedRuntimeMetadataImportLoweringSummary;
+#include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "parse/objc3_parser_contract_types.h"
+#include "pipeline/results/runtime_import_evidence_record.h"
+#include "sema/model/semantic_type_cross_module_build_orchestration.h"
+#include "sema/model/semantic_type_cross_module_runtime_preservation.h"
+#include "sema/model/semantic_type_imported_runtime_metadata_rules.h"
+#include "sema/model/semantic_type_serialized_runtime_metadata.h"
 
 namespace objc3::artifacts::frontend {
 

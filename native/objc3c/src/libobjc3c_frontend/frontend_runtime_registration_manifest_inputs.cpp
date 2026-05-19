@@ -1,6 +1,11 @@
 #include "libobjc3c_frontend/frontend_runtime_registration_artifact_inputs.h"
 
-#include "runtime/metadata/selector_metadata.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
+#include "io/objc3_process_runtime_metadata_contracts.h"
+#include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 namespace objc3c::frontend {
 

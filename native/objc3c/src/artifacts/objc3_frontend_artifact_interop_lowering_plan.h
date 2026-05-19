@@ -6,8 +6,11 @@
 #include "artifacts/evidence/error_handling_replay_evidence.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_interop_semantic_artifacts.h"
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_runtime_import_surface.h"
+#include "sema/model/semantic_ownership.h"
 
 struct Objc3FrontendArtifactInteropLoweringPlan {
   objc3::artifacts::evidence::ErrorHandlingResultAndBridgingArtifactReplayEvidence

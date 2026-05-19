@@ -2,6 +2,9 @@
 
 #include <string>
 
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_library.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+
 struct Objc3RuntimeSupportLibraryContractSummary {
   std::string contract_id = kObjc3RuntimeSupportLibraryContractId;
   std::string metadata_publication_contract_id =

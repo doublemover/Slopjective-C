@@ -1,5 +1,10 @@
 #pragma once
 
+#include <string>
+
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_library.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
 #include "runtime/metadata/runtime_ownership_contracts.h"
 
 struct Objc3RuntimeBootstrapApiSummary {

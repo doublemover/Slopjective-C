@@ -9,7 +9,8 @@
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "sema/model/frontend_concurrency_symbol_graph_summaries.h"
+#include "sema/model/frontend_linkage_summaries.h"
 
 namespace objc3::artifacts::frontend {
 

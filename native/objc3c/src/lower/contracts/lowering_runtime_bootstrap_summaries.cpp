@@ -3,6 +3,9 @@
 #include <sstream>
 #include <string>
 
+#include "ast/objc3_ast_contracts.h"
+#include "sema/objc3_sema_contract_bootstrap_compatibility_bootstrap_surfaces.h"
+
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
   std::ostringstream out;
   // object-packaging/retention freeze anchor: lane-D now freezes the

@@ -7,10 +7,10 @@ namespace objc3_final_readiness_gate_surface {
 
 void PublishObjc3FinalReadinessGateAdvancedShard2Readiness(
     Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
-    const Objc3FrontendLongTailGrammarCoreFeatureSurface &lane_a_surface,
-    const Objc3SemanticStabilityCoreFeatureImplementationSurface &lane_b_surface,
-    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &lane_c_surface,
-    const Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface &lane_d_surface) {
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
   const bool lane_advanced_edge_compatibility_shard2_consistent =
       lane_a_surface.recovery_determinism_ready &&
       lane_b_surface.conformance_corpus_ready &&

@@ -5,6 +5,9 @@
 #include <sstream>
 #include <string>
 
+#include "sema/objc3_sema_contract_async_error_surfaces.h"
+#include "sema/objc3_sema_contract_effects_flow_error_handling.h"
+
 std::string Objc3ArcInteractionSemanticsSummary() {
   std::ostringstream out;
   // ARC interaction-semantics expansion anchor: explicit ARC mode

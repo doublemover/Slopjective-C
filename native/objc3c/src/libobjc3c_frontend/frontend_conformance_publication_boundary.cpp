@@ -1,6 +1,6 @@
 #include "libobjc3c_frontend/frontend_conformance_publication_boundary.h"
 
-#include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "pipeline/results/versioned_conformance_report_dto.h"
 
 namespace objc3c::frontend {
 

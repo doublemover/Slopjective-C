@@ -2,6 +2,9 @@
 
 #include <string>
 
+#include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+
 namespace objc3::artifacts::frontend {
 
 void AppendObjc3FrontendArtifactLoweringHandoffRuntimeImportManifestFields(

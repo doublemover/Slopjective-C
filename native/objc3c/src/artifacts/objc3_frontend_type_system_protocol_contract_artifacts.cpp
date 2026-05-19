@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string>
 
-#include "artifacts/objc3_frontend_type_system_contract_artifact_replay_fields.h"
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -66,41 +66,13 @@ BuildProtocolQualifiedObjectTypeLoweringContract(
 bool IsValidFrontendProtocolQualifiedObjectTypeLoweringContract(
     const Objc3FrontendProtocolQualifiedObjectTypeLoweringContractRecord
         &contract) {
-  if (contract.terminated_protocol_composition_sites >
-          contract.protocol_composition_sites ||
-      contract.normalized_protocol_composition_sites >
-          contract.protocol_qualified_object_type_sites ||
-      contract.contract_violation_sites >
-          contract.protocol_qualified_object_type_sites) {
-    return false;
-  }
-  return !((contract.contract_violation_sites > 0 ||
-            contract.normalized_protocol_composition_sites !=
-                contract.protocol_qualified_object_type_sites) &&
-           contract.deterministic);
+  return ::IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(contract);
 }
 
 std::string FrontendProtocolQualifiedObjectTypeLoweringReplayKey(
     const Objc3FrontendProtocolQualifiedObjectTypeLoweringContractRecord
         &contract) {
-  return std::string("protocol_qualified_object_type_sites=") +
-         std::to_string(contract.protocol_qualified_object_type_sites) +
-         ";protocol_composition_sites=" +
-         std::to_string(contract.protocol_composition_sites) +
-         ";object_pointer_type_sites=" +
-         std::to_string(contract.object_pointer_type_sites) +
-         ";terminated_protocol_composition_sites=" +
-         std::to_string(contract.terminated_protocol_composition_sites) +
-         ";pointer_declarator_sites=" +
-         std::to_string(contract.pointer_declarator_sites) +
-         ";normalized_protocol_composition_sites=" +
-         std::to_string(contract.normalized_protocol_composition_sites) +
-         ";contract_violation_sites=" +
-         std::to_string(contract.contract_violation_sites) +
-         ";deterministic=" +
-         type_system_contract_artifacts::BoolToken(contract.deterministic) +
-         ";lane_contract=" +
-         kObjc3FrontendProtocolQualifiedObjectTypeLoweringLaneContract;
+  return ::Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(contract);
 }
 
 }  // namespace objc3::artifacts::frontend

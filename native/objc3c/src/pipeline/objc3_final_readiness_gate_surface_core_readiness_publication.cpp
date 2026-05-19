@@ -8,10 +8,10 @@ namespace objc3_final_readiness_gate_surface {
 
 void PublishObjc3FinalReadinessGateCoreReadiness(
     Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
-    const Objc3FrontendLongTailGrammarCoreFeatureSurface &lane_a_surface,
-    const Objc3SemanticStabilityCoreFeatureImplementationSurface &lane_b_surface,
-    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &lane_c_surface,
-    const Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface &lane_d_surface) {
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
   const bool upstream_lanes_ready =
       surface.lane_a_core_feature_ready &&
       surface.lane_b_core_feature_ready &&
@@ -52,7 +52,8 @@ void PublishObjc3FinalReadinessGateCoreReadiness(
       "dependency-chain-ready=" +
       std::string(surface.dependency_chain_ready ? "true" : "false") +
       ";lane-a-expansion-ready=" +
-      std::string(lane_a_surface.expansion_ready ? "true" : "false") +
+      std::string(lane_a_surface.expansion_ready ? "true"
+                                                                   : "false") +
       ";lane-b-expansion-ready=" +
       std::string(lane_b_surface.expansion_ready ? "true" : "false") +
       ";lane-c-expansion-ready=" +

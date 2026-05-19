@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-struct Objc3FrontendArtifactRuntimeMetadataPlan;
+#include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 
 namespace objc3::artifacts::frontend {
 

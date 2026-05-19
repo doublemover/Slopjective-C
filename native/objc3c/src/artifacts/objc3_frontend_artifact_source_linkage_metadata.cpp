@@ -1,5 +1,11 @@
 #include "artifacts/objc3_frontend_artifact_source_linkage_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "pipeline/results/canonical_literal_rejection_counts.h"
+#include "pipeline/results/compile_options.h"
+#include "pipeline/results/versioned_conformance_report_dto.h"
+#include "sema/model/frontend_linkage_summaries.h"
+
 namespace {
 
 const char *ArtifactLanguageProfileName(Objc3FrontendLanguageProfile mode) {

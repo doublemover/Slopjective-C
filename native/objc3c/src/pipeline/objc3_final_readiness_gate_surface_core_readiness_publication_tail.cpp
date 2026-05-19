@@ -8,12 +8,12 @@ namespace objc3_final_readiness_gate_surface {
 
 void PublishObjc3FinalReadinessGateTailReadiness(
     Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
-    const Objc3FrontendLongTailGrammarCoreFeatureSurface &lane_a_surface,
-    const Objc3SemanticStabilityCoreFeatureImplementationSurface &lane_b_surface,
-    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &lane_c_surface,
-    const Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface &lane_d_surface) {
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
   const bool lane_conformance_corpus_consistent =
-      lane_a_surface.core_feature_expansion_ready &&
+      lane_a_surface.expansion_ready &&
       lane_b_surface.expansion_ready &&
       lane_c_surface.edge_case_compatibility_ready &&
       lane_d_surface.recovery_determinism_ready &&
@@ -34,7 +34,7 @@ void PublishObjc3FinalReadinessGateTailReadiness(
   surface.conformance_corpus_key =
       BuildObjc3FinalReadinessGateConformanceCorpusKey(
           surface,
-          lane_a_surface.core_feature_expansion_ready,
+          lane_a_surface.expansion_ready,
           lane_b_surface.expansion_ready,
           lane_c_surface.edge_case_compatibility_ready,
           lane_d_surface.recovery_determinism_ready,
@@ -43,7 +43,7 @@ void PublishObjc3FinalReadinessGateTailReadiness(
       surface.conformance_corpus_ready &&
       !surface.conformance_corpus_key.empty();
   const bool lane_performance_quality_guardrails_consistent =
-      lane_a_surface.core_feature_expansion_ready &&
+      lane_a_surface.expansion_ready &&
       lane_b_surface.edge_case_compatibility_ready &&
       lane_c_surface.edge_case_compatibility_ready &&
       lane_d_surface.conformance_matrix_ready &&
@@ -64,7 +64,7 @@ void PublishObjc3FinalReadinessGateTailReadiness(
   surface.performance_quality_guardrails_key =
       BuildObjc3FinalReadinessGatePerformanceQualityGuardrailsKey(
           surface,
-          lane_a_surface.core_feature_expansion_ready,
+          lane_a_surface.expansion_ready,
           lane_b_surface.edge_case_compatibility_ready,
           lane_c_surface.edge_case_compatibility_ready,
           lane_d_surface.conformance_matrix_ready,
@@ -73,7 +73,7 @@ void PublishObjc3FinalReadinessGateTailReadiness(
       surface.performance_quality_guardrails_ready &&
       !surface.performance_quality_guardrails_key.empty();
   const bool lane_cross_lane_integration_consistent =
-      lane_a_surface.core_feature_expansion_ready &&
+      lane_a_surface.expansion_ready &&
       lane_b_surface.edge_case_compatibility_ready &&
       lane_c_surface.edge_case_robustness_ready &&
       lane_d_surface.conformance_matrix_ready &&
@@ -94,7 +94,7 @@ void PublishObjc3FinalReadinessGateTailReadiness(
   surface.cross_lane_integration_key =
       BuildObjc3FinalReadinessGateCrossLaneIntegrationKey(
           surface,
-          lane_a_surface.core_feature_expansion_ready,
+          lane_a_surface.expansion_ready,
           lane_b_surface.edge_case_compatibility_ready,
           lane_c_surface.edge_case_robustness_ready,
           lane_d_surface.conformance_matrix_ready,

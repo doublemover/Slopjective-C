@@ -5,10 +5,10 @@ namespace objc3_final_readiness_gate_surface {
 void PopulateObjc3FinalReadinessGateSurfaceEvidence(
     Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
     const Objc3FinalReadinessGateCoreFeatureScaffold &scaffold,
-    const Objc3FrontendLongTailGrammarCoreFeatureSurface &lane_a_surface,
-    const Objc3SemanticStabilityCoreFeatureImplementationSurface &lane_b_surface,
-    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &lane_c_surface,
-    const Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface &lane_d_surface) {
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
   surface.governance_contract_ready = scaffold.governance_contract_ready;
   surface.modular_split_ready = scaffold.modular_split_ready;
   surface.lane_a_core_feature_ready = lane_a_surface.core_feature_ready;

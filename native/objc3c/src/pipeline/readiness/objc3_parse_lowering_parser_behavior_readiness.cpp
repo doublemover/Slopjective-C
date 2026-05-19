@@ -1,6 +1,6 @@
 #include <cstddef>
 
-#include "parse/objc3_diagnostic_grammar_hooks_edge_case_compatibility_surface.h"
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_consistency_surface.h"
 #include "pipeline/parse_lowering_artifact_keys.h"
 #include "pipeline/parse_lowering_diagnostic_keys.h"
 #include "pipeline/readiness/objc3_long_tail_grammar_readiness_keys.h"
@@ -93,9 +93,9 @@ void BuildObjc3ParseLoweringParserBehaviorReadiness(
       pipeline_result.canonical_literal_rejection_counts,
       pipeline_result.language_version_pragma_contract,
       surface.compatibility_handoff_consistent);
-  const Objc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface
-      parser_diagnostic_grammar_hooks_edge_case_compatibility =
-          BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
+  const Objc3DiagnosticGrammarHooksEdgeCaseConsistencySurface
+      parser_diagnostic_grammar_hooks_edge_case_consistency =
+          BuildObjc3DiagnosticGrammarHooksEdgeCaseConsistencySurface(
               diagnostic_grammar_hooks_readiness.core_feature_expansion,
               options,
               pipeline_result.language_version_pragma_contract,
@@ -104,13 +104,13 @@ void BuildObjc3ParseLoweringParserBehaviorReadiness(
               surface.parser_token_count,
               surface.compatibility_handoff_consistent);
   surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent =
-      parser_diagnostic_grammar_hooks_edge_case_compatibility
-          .edge_case_compatibility_consistent;
+      parser_diagnostic_grammar_hooks_edge_case_consistency
+          .edge_case_consistency_consistent;
   surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_key =
-      parser_diagnostic_grammar_hooks_edge_case_compatibility.compatibility_key;
+      parser_diagnostic_grammar_hooks_edge_case_consistency.consistency_key;
   surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready =
-      IsObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurfaceReady(
-          parser_diagnostic_grammar_hooks_edge_case_compatibility);
+      IsObjc3DiagnosticGrammarHooksEdgeCaseConsistencySurfaceReady(
+          parser_diagnostic_grammar_hooks_edge_case_consistency);
   surface.parse_artifact_replay_key_deterministic =
       surface.parse_artifact_handoff_deterministic &&
       surface.parse_artifact_fingerprint_consistent &&

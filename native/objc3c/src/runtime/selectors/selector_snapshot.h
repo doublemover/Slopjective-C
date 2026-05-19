@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/public/objc3_runtime_api.h"
+#include "runtime/selectors/runtime_selector_snapshot_contracts.h"
 
 namespace objc3c::runtime {
 

@@ -2,6 +2,8 @@
 
 #include "ast/objc3_ast.h"
 #include "io/objc3_process.h"
+#include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
+#include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata.h"
 

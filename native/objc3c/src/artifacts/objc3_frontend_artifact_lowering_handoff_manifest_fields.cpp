@@ -1,7 +1,12 @@
 #include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_fields.h"
 
 #include "artifacts/objc3_frontend_artifact_lowering_handoff_block_manifest_fields.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_core_manifest_fields.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_error_manifest_fields.h"
 #include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_field_modules.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_ownership_manifest_fields.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_semantic_summary_manifest_fields.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_type_system_manifest_fields.h"
 
 namespace objc3::artifacts::frontend {
 

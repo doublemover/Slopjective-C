@@ -6,5 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "ast/objc3_ast_contracts.h"
+
 #include "lower/contracts/type_system_lowering_contracts_optional_keypath.inc"
 #include "lower/contracts/type_system_lowering_contracts_generic_validation.inc"

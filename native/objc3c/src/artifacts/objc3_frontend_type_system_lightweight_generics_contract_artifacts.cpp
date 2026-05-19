@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string>
 
-#include "artifacts/objc3_frontend_type_system_contract_artifact_replay_fields.h"
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -61,41 +61,13 @@ BuildLightweightGenericsConstraintLoweringContract(
 bool IsValidFrontendLightweightGenericsConstraintLoweringContract(
     const Objc3FrontendLightweightGenericsConstraintLoweringContractRecord
         &contract) {
-  if (contract.generic_suffix_sites > contract.generic_constraint_sites ||
-      contract.object_pointer_type_sites > contract.generic_constraint_sites ||
-      contract.terminated_generic_suffix_sites > contract.generic_suffix_sites ||
-      contract.pointer_declarator_sites > contract.generic_constraint_sites ||
-      contract.normalized_constraint_sites > contract.generic_constraint_sites ||
-      contract.contract_violation_sites > contract.generic_constraint_sites) {
-    return false;
-  }
-  return !((contract.contract_violation_sites > 0 ||
-            contract.normalized_constraint_sites !=
-                contract.generic_constraint_sites) &&
-           contract.deterministic);
+  return ::IsValidObjc3LightweightGenericsConstraintLoweringContract(contract);
 }
 
 std::string FrontendLightweightGenericsConstraintLoweringReplayKey(
     const Objc3FrontendLightweightGenericsConstraintLoweringContractRecord
         &contract) {
-  return std::string("generic_constraint_sites=") +
-         std::to_string(contract.generic_constraint_sites) +
-         ";generic_suffix_sites=" +
-         std::to_string(contract.generic_suffix_sites) +
-         ";object_pointer_type_sites=" +
-         std::to_string(contract.object_pointer_type_sites) +
-         ";terminated_generic_suffix_sites=" +
-         std::to_string(contract.terminated_generic_suffix_sites) +
-         ";pointer_declarator_sites=" +
-         std::to_string(contract.pointer_declarator_sites) +
-         ";normalized_constraint_sites=" +
-         std::to_string(contract.normalized_constraint_sites) +
-         ";contract_violation_sites=" +
-         std::to_string(contract.contract_violation_sites) +
-         ";deterministic=" +
-         type_system_contract_artifacts::BoolToken(contract.deterministic) +
-         ";lane_contract=" +
-         kObjc3FrontendLightweightGenericsConstraintLoweringLaneContract;
+  return ::Objc3LightweightGenericsConstraintLoweringReplayKey(contract);
 }
 
 }  // namespace objc3::artifacts::frontend

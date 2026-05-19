@@ -1,5 +1,10 @@
 #include "artifacts/objc3_frontend_artifact_error_metadata.h"
 
+#include "artifacts/evidence/error_handling_replay_evidence.h"
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/error_handling_result_bridging_contracts.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendErrorMetadata(

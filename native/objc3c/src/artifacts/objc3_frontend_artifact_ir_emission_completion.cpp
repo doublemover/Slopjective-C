@@ -9,6 +9,10 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_typed_bundles.h"
 #include "artifacts/objc3_frontend_artifact_runtime_support_library_metadata.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
+#include "artifacts/objc3_frontend_artifacts.h"
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "pipeline/results/compile_options.h"
+#include "pipeline/results/pipeline_result_model.h"
 #include "diag/objc3_diag_format.h"
 #include "support/frontend_ir_text_emission.h"
 

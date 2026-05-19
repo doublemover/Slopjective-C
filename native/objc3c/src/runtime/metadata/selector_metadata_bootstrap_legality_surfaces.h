@@ -3,6 +3,13 @@
 #include <cstdint>
 #include <string>
 
+#include "ast/objc3_ast_contracts_cross_module_link_plan.h"
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registration_descriptor.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
+#include "sema/objc3_sema_contract_bootstrap_compatibility_bootstrap_surfaces.h"
+
 struct Objc3RuntimeBootstrapLegalityFailureContractSummary {
   std::string contract_id = kObjc3BootstrapLegalityFailureContractId;
   std::string registration_descriptor_frontend_closure_contract_id =

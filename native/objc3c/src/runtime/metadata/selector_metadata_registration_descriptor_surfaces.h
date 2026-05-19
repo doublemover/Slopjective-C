@@ -4,6 +4,11 @@
 #include <cstdint>
 #include <string>
 
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registration_descriptor.h"
+#include "token/objc3_token_contract.h"
+
 struct Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary {
   std::string contract_id =
       kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceContractId;

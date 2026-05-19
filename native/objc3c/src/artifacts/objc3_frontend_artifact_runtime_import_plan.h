@@ -4,9 +4,19 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
-#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
-#include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
-#include "pipeline/objc3_frontend_types.h"
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_declarations.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+#include "pipeline/results/compile_options.h"
+#include "pipeline/results/pipeline_result_model.h"
+#include "pipeline/results/runtime_import_evidence_record.h"
+#include "runtime/metadata/runtime_metadata_model.h"
+#include "pipeline/objc3_runtime_import_surface.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
+#include "sema/model/semantic_type_cross_module_build_orchestration.h"
+#include "sema/model/semantic_type_cross_module_runtime_preservation.h"
+#include "sema/model/semantic_type_imported_runtime_metadata_rules.h"
+#include "sema/model/semantic_type_serialized_runtime_metadata.h"
 
 struct Objc3FrontendArtifactRuntimeImportPlan {
   Objc3ModuleImportGraphLoweringContract module_import_graph_lowering_contract;

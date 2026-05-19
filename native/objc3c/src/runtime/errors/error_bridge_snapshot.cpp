@@ -1,6 +1,7 @@
 #include "runtime/errors/error_bridge_snapshot.h"
 
 #include "runtime/errors/error_bridge_state.h"
+#include "runtime/public/objc3_runtime_registration_status.h"
 
 namespace objc3c::runtime {
 

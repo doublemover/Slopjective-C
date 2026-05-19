@@ -1,5 +1,10 @@
 #include "artifacts/objc3_frontend_artifact_pipeline_readiness_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/model/lowered_module_pipeline_surfaces.h"
+#include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
+#include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendPipelineReadinessMetadata(

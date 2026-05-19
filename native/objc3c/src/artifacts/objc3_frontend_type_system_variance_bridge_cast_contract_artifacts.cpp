@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string>
 
-#include "artifacts/objc3_frontend_type_system_contract_artifact_replay_fields.h"
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
 
 namespace objc3::artifacts::frontend {
 
@@ -54,40 +54,12 @@ BuildVarianceBridgeCastLoweringContract(
 
 bool IsValidFrontendVarianceBridgeCastLoweringContract(
     const Objc3FrontendVarianceBridgeCastLoweringContractRecord &contract) {
-  if (contract.protocol_composition_sites >
-          contract.variance_bridge_cast_sites ||
-      contract.ownership_qualifier_sites >
-          contract.variance_bridge_cast_sites ||
-      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
-      contract.pointer_declarator_sites > contract.variance_bridge_cast_sites ||
-      contract.normalized_sites > contract.variance_bridge_cast_sites ||
-      contract.contract_violation_sites > contract.variance_bridge_cast_sites) {
-    return false;
-  }
-  return !((contract.contract_violation_sites > 0 ||
-            contract.normalized_sites != contract.variance_bridge_cast_sites) &&
-           contract.deterministic);
+  return ::IsValidObjc3VarianceBridgeCastLoweringContract(contract);
 }
 
 std::string FrontendVarianceBridgeCastLoweringReplayKey(
     const Objc3FrontendVarianceBridgeCastLoweringContractRecord &contract) {
-  return std::string("variance_bridge_cast_sites=") +
-         std::to_string(contract.variance_bridge_cast_sites) +
-         ";protocol_composition_sites=" +
-         std::to_string(contract.protocol_composition_sites) +
-         ";ownership_qualifier_sites=" +
-         std::to_string(contract.ownership_qualifier_sites) +
-         ";object_pointer_type_sites=" +
-         std::to_string(contract.object_pointer_type_sites) +
-         ";pointer_declarator_sites=" +
-         std::to_string(contract.pointer_declarator_sites) +
-         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
-         ";contract_violation_sites=" +
-         std::to_string(contract.contract_violation_sites) +
-         ";deterministic=" +
-         type_system_contract_artifacts::BoolToken(contract.deterministic) +
-         ";lane_contract=" +
-         kObjc3FrontendVarianceBridgeCastLoweringLaneContract;
+  return ::Objc3VarianceBridgeCastLoweringReplayKey(contract);
 }
 
 }  // namespace objc3::artifacts::frontend

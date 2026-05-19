@@ -2,6 +2,10 @@
 
 #include <utility>
 
+#include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
+#include "lower/contracts/block_abi_lowering_validation_contracts.h"
+#include "lower/contracts/block_source_closure_contracts.h"
+
 namespace {
 
 using objc3::artifacts::frontend::BuildBlockAbiInvokeTrampolineLoweringContract;

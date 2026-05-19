@@ -1,5 +1,12 @@
 #include "artifacts/objc3_frontend_artifact_interop_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
+#include "sema/model/semantic_ownership.h"
+#include "sema/model/semantic_symbol_metaprogramming_interop_summaries.h"
+#include "sema/objc3_sema_contract_interop_diagnostics.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendInteropMetadata(

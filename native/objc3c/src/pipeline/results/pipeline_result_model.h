@@ -3,7 +3,12 @@
 #include <array>
 #include <cstddef>
 
+#include "parse/objc3_diagnostics_bus.h"
+#include "pipeline/results/canonical_literal_rejection_counts.h"
 #include "pipeline/results/compile_result_payloads.h"
+#include "pipeline/results/compile_options.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
+#include "sema/objc3_sema_pass_flow_core_contract.h"
 
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;

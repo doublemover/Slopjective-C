@@ -2,6 +2,9 @@
 
 #include <utility>
 
+#include "lower/contracts/interop_ffi_metadata_contracts.h"
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
+
 namespace {
 
 using objc3::artifacts::evidence::

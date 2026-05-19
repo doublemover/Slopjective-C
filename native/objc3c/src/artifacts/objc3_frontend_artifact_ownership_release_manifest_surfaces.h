@@ -3,6 +3,8 @@
 #include <iosfwd>
 #include <string>
 
+#include "lower/contracts/lowering_arc_contracts.h"
+
 struct Objc3ArcDiagnosticsFixitLoweringContract;
 struct Objc3AutoreleasePoolScopeLoweringContract;
 struct Objc3OwnershipQualifierLoweringContract;

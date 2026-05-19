@@ -8,6 +8,7 @@
 #include "artifacts/objc3_frontend_runtime_capability_contracts.h"
 #include "artifacts/reports/report_dto.h"
 #include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 #include "token/objc3_token_contract.h"
 
 namespace objc3::artifacts::frontend {

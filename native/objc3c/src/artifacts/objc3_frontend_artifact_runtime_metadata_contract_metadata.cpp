@@ -3,6 +3,10 @@
 #include <cstddef>
 
 #include "artifacts/identity/artifact_identity.h"
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "runtime/metadata/executable_metadata_readiness_surfaces.h"
+#include "runtime/metadata/runtime_metadata_export_surfaces.h"
+#include "runtime/metadata/runtime_metadata_section_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

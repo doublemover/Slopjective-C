@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "artifacts/json/semantic_type_manifest_json.h"
+#include "sema/objc3_sema_contract_semantic_type_metadata_records.h"
 
 namespace objc3::artifacts::json {
 

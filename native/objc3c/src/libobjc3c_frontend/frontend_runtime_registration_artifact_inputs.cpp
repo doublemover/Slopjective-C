@@ -1,6 +1,7 @@
 #include "libobjc3c_frontend/frontend_runtime_registration_artifact_inputs.h"
 
-#include "runtime/metadata/selector_metadata.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 namespace objc3c::frontend {
 

@@ -2,6 +2,7 @@
 
 #include "runtime/blocks/block_capture_storage.h"
 #include "runtime/blocks/block_pointer_capture_storage.h"
+#include "runtime/blocks/block_record.h"
 
 #include <algorithm>
 #include <cstddef>

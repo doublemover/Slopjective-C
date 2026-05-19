@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_frontend_metadata_publication_runtime_support_library_core_feature_feature_rows.h"
 #include "ir/objc3_ir_frontend_metadata_publication_runtime_support_library_core_feature_library_rows.h"
 #include "ir/objc3_ir_frontend_metadata_publication_runtime_support_library_core_feature_link_rows.h"

@@ -2,10 +2,9 @@
 
 #include <iosfwd>
 
-struct Objc3RuntimeBootstrapApiSummary;
-struct Objc3RuntimeBootstrapFailureRestartSemanticsSummary;
-struct Objc3RuntimeBootstrapLoweringSummary;
-struct Objc3RuntimeBootstrapSemanticsSummary;
+#include "runtime/metadata/runtime_metadata_bootstrap.h"
+#include "runtime/metadata/selector_metadata_bootstrap_legality_surfaces.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

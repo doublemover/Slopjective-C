@@ -1,6 +1,7 @@
 #include "artifacts/objc3_frontend_artifact_dispatch_contract_snapshots.h"
 
 #include "artifacts/objc3_frontend_runtime_import_artifacts.h"
+#include "support/frontend_dispatch_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

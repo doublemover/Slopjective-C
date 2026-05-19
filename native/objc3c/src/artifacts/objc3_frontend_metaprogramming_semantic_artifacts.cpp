@@ -1,6 +1,8 @@
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
 
 #include "artifacts/objc3_frontend_artifact_semantic_contract_records.h"
+#include "sema/model/semantic_symbol_metaprogramming_interop_summaries.h"
+#include "sema/objc3_sema_contract_metaprogramming_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

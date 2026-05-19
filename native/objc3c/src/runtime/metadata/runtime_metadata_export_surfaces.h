@@ -3,6 +3,9 @@
 #include <cstddef>
 #include <string>
 
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+#include "runtime/metadata/runtime_metadata_model.h"
+
 struct Objc3RuntimeMetadataSourceOwnershipBoundary {
   std::string contract_id = kObjc3RuntimeMetadataSourceOwnershipContractId;
   std::string canonical_source_schema = kObjc3RuntimeMetadataCanonicalSourceSchema;

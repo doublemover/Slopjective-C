@@ -2,10 +2,12 @@
 
 #include <ostream>
 
-#include "ast/objc3_ast_contracts.h"
+#include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
 #include "io/objc3_json.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
-#include "runtime/metadata/selector_metadata.h"
+#include "runtime/metadata/selector_metadata_bootstrap_legality_surfaces.h"
+#include "runtime/metadata/selector_metadata_bootstrap_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

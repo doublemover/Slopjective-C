@@ -3,6 +3,11 @@
 #include <string>
 
 #include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "lower/contracts/error_handling_result_bridging_contracts.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
+#include "sema/objc3_sema_contract_async_error_surfaces.h"
+#include "sema/objc3_sema_contract_effects_flow_error_handling.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace objc3::artifacts::frontend {
 

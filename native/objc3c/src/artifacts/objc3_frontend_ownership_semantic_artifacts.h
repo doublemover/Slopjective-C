@@ -3,6 +3,15 @@
 #include <string>
 
 #include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "lower/contracts/block_runtime_lowering_contracts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
+#include "lower/contracts/ownership_system_extension_contracts.h"
+#include "sema/model/semantic_symbol_ownership_dispatch_summaries.h"
+#include "sema/objc3_sema_contract_block_capture_legality.h"
+#include "sema/objc3_sema_contract_borrowed_escape.h"
+#include "sema/objc3_sema_contract_effects_flow_ownership.h"
+#include "sema/objc3_sema_contract_ownership_semantics.h"
+#include "sema/objc3_sema_parity_contract_surface.h"
 
 namespace objc3::artifacts::frontend {
 

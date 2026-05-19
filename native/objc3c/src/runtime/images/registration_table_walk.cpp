@@ -1,5 +1,6 @@
 #include "runtime/images/registration_table_walk.h"
 
+#include "runtime/images/image_descriptor.h"
 #include "runtime/images/registration_table_record.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"

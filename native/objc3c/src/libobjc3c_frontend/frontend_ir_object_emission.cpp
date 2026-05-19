@@ -8,6 +8,7 @@
 #include "libobjc3c_frontend/frontend_toolchain_runtime_artifacts.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
 #include "libobjc3c_frontend/objc3c_frontend_context_state.h"
+#include "libobjc3c_frontend/objc3c_frontend_file_output.h"
 
 namespace objc3c::frontend {
 

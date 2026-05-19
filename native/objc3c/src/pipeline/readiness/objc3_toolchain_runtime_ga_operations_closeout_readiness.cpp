@@ -1,6 +1,7 @@
 #include <string>
 
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.h"
+#include "pipeline/readiness/objc3_long_tail_grammar_readiness_keys.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness_private.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.h"

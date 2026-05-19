@@ -4,6 +4,10 @@
 #include <cstddef>
 #include <string>
 
+#include "ast/objc3_ast_contracts_metadata_packaging.h"
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
+#include "contracts/objc3_runtime_metadata_emission_contract_ids.h"
+#include "lower/contracts/runtime_bootstrap_link_discovery_contracts.h"
 #include "runtime/metadata/executable_metadata_runtime_ingest.h"
 #include "runtime/metadata/runtime_support_library_metadata.h"
 
@@ -15,7 +19,7 @@ struct Objc3RuntimeTranslationUnitRegistrationContractSummary {
   std::string archive_static_link_contract_id =
       kObjc3RuntimeArchiveStaticLinkDiscoveryContractId;
   std::string object_emission_closeout_contract_id =
-      kObjc3RuntimeMetadataObjectEmissionCloseoutContractId;
+      objc3c::contracts::kObjc3RuntimeMetadataObjectEmissionCloseoutContractId;
   std::string runtime_support_library_link_wiring_contract_id =
       kObjc3RuntimeSupportLibraryLinkWiringContractId;
   std::string registration_surface_path =

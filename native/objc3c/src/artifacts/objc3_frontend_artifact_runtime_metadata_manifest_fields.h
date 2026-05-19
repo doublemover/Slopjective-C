@@ -2,12 +2,8 @@
 
 #include <iosfwd>
 
-struct Objc3RuntimeExportEnforcementSummary;
-struct Objc3RuntimeExportLegalityBoundary;
-struct Objc3RuntimeMetadataObjectInspectionHarnessSummary;
-struct Objc3RuntimeMetadataSectionAbiFreezeSummary;
-struct Objc3RuntimeMetadataSectionPublicationSummary;
-struct Objc3RuntimeMetadataSourceOwnershipBoundary;
+#include "runtime/metadata/runtime_metadata_export_surfaces.h"
+#include "runtime/metadata/runtime_metadata_section_surfaces.h"
 
 namespace objc3::artifacts::frontend {
 

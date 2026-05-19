@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/metadata/executable_metadata_graph_nodes.h"
+#include "sema/model/semantic_type_executable_metadata_contracts.h"
 
 struct Objc3ExecutableMetadataSourceGraph {
   std::string contract_id = kObjc3ExecutableMetadataSourceGraphContractId;

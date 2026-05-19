@@ -4,6 +4,10 @@
 #include <string>
 
 #include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest_contracts.h"
+#include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
+#include "ast/objc3_ast_contracts.h"
+#include "runtime/metadata/runtime_metadata_section_surfaces.h"
+#include "runtime/metadata/selector_metadata_registration_manifest.h"
 
 struct Objc3RuntimeMetadataSectionPublicationSummary;
 struct Objc3RuntimeTranslationUnitRegistrationManifestSummary;

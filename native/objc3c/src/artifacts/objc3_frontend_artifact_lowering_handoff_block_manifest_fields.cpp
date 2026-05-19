@@ -1,8 +1,11 @@
 #include "artifacts/objc3_frontend_artifact_lowering_handoff_block_manifest_fields.h"
 
 #include <sstream>
+#include <string>
 
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
+#include "lower/contracts/block_abi_lowering_contract_records.h"
+#include "lower/contracts/block_source_closure_contracts.h"
 
 namespace objc3::artifacts::frontend {
 

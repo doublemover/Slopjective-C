@@ -5,6 +5,8 @@
 
 #include "io/objc3_json.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "sema/objc3_sema_contract_async_error_surfaces.h"
+#include "sema/objc3_sema_contract_effects_flow_error_handling.h"
 
 namespace objc3::artifacts::frontend {
 namespace {

@@ -1,7 +1,7 @@
 #include "libobjc3c_frontend/frontend_conformance_artifacts.h"
 
-#include "io/objc3_manifest_artifacts.h"
-#include "io/objc3_process.h"
+#include "io/objc3_artifact_paths.h"
+#include "io/objc3_process_conformance_contracts.h"
 #include "libobjc3c_frontend/frontend_conformance_publication_boundary.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_publication.h"
 

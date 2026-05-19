@@ -24,7 +24,8 @@ void PopulateObjc3FrontendArtifactBundleOutputs(
     const std::string &type_system_optional_keypath_lowering_replay_key,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
-    const Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary
+    const objc3::artifacts::evidence::
+        ErrorHandlingResultAndBridgingArtifactReplayEvidence
         &error_handling_result_and_bridging_artifact_replay_summary,
     const Objc3ActorLoweringMetadataContract
         &concurrency_actor_lowering_metadata_contract,
@@ -41,9 +42,9 @@ void PopulateObjc3FrontendArtifactBundleOutputs(
     const Objc3InteropFfiMetadataInterfacePreservationContract
         &interop_ffi_metadata_interface_preservation_contract,
     const std::string &interop_ffi_metadata_interface_preservation_replay_key,
-    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary
+    const Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary
         &metaprogramming_module_interface_replay_preservation_summary,
-    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary
+    const Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
         &metaprogramming_macro_host_process_cache_runtime_integration_summary,
     const Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
         &dispatch_dispatch_metadata_interface_preservation_summary,

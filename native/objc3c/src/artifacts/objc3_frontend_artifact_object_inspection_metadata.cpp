@@ -1,5 +1,8 @@
 #include "artifacts/objc3_frontend_artifact_object_inspection_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "runtime/metadata/runtime_metadata_section_surfaces.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendObjectInspectionMetadata(

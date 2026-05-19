@@ -1,5 +1,8 @@
 #include "artifacts/objc3_frontend_artifact_module_metadata.h"
 
+#include "ir/objc3_ir_frontend_metadata.h"
+#include "lower/contracts/cross_module_lowering_contracts.h"
+
 namespace objc3::artifacts::frontend {
 
 void ApplyObjc3FrontendModuleMetadata(

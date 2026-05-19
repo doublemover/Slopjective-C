@@ -3,6 +3,7 @@
 #include <ostream>
 
 #include "artifacts/objc3_frontend_ownership_semantic_artifacts.h"
+#include "lower/contracts/lowering_arc_contracts.h"
 
 namespace objc3::artifacts::frontend {
 

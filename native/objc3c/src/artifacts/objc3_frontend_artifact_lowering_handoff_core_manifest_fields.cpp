@@ -1,6 +1,11 @@
-#include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_field_modules.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_core_manifest_fields.h"
 
+#include <sstream>
 #include <string>
+
+#include "artifacts/objc3_frontend_artifact_core_lowering_plan.h"
+#include "sema/objc3_sema_contract_runtime_semantic_records.h"
+#include "support/frontend_dispatch_contract_records.h"
 
 namespace objc3::artifacts::frontend {
 

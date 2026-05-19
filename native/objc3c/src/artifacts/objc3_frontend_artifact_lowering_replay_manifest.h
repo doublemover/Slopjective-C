@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <string>
 
+#include "artifacts/evidence/error_handling_replay_evidence.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {
@@ -84,7 +85,7 @@ void WriteObjc3FrontendOwnershipAndBlockReplayManifestEntries(
 void WriteObjc3FrontendTypeAndModuleReplayManifestEntries(
     std::ostream &manifest,
     const std::string &lightweight_generic_constraint_lowering_replay_key,
-    const Objc3LightweightGenericConstraintLoweringContract
+    const Objc3LightweightGenericsConstraintLoweringContract
         &lightweight_generic_constraint_lowering_contract,
     const std::string &nullability_flow_warning_precision_lowering_replay_key,
     const Objc3NullabilityFlowWarningPrecisionLoweringContract
@@ -128,7 +129,7 @@ void WriteObjc3FrontendErrorReplayManifestEntries(
     const Objc3UnwindCleanupLoweringContract &unwind_cleanup_lowering_contract,
     const std::string &error_handling_throws_abi_propagation_lowering_replay_key,
     bool deterministic_error_handling_throws_abi_propagation_lowering,
-    const Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary
+    const objc3::artifacts::evidence::ErrorHandlingResultAndBridgingArtifactReplayEvidence
         &error_handling_result_and_bridging_artifact_replay_summary);
 
 }  // namespace objc3::artifacts::frontend

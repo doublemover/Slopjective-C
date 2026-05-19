@@ -5,10 +5,10 @@ namespace objc3_final_readiness_gate_surface {
 
 void PublishObjc3FinalReadinessGateAdvancedShard3And4Readiness(
     Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
-    const Objc3FrontendLongTailGrammarCoreFeatureSurface &lane_a_surface,
-    const Objc3SemanticStabilityCoreFeatureImplementationSurface &lane_b_surface,
-    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &lane_c_surface,
-    const Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface &lane_d_surface) {
+    const Objc3FinalReadinessGateLaneSurface &lane_a_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_b_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_c_surface,
+    const Objc3FinalReadinessGateLaneSurface &lane_d_surface) {
 #include "pipeline/objc3_final_readiness_gate_surface_shard3_and_4_readiness_publication_core_shards.inc"
 
 #include "pipeline/objc3_final_readiness_gate_surface_shard3_and_4_readiness_publication_diagnostics_conformance.inc"

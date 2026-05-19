@@ -1,7 +1,9 @@
 #include "libobjc3c_frontend/objc3c_frontend_runtime_artifacts.h"
 
 #include "artifacts/objc3_frontend_artifacts.h"
+#include "io/objc3_artifact_paths.h"
 #include "libobjc3c_frontend/objc3c_frontend_artifact_publication.h"
+#include "pipeline/results/runtime_import_evidence_record.h"
 
 namespace objc3c::frontend {
 

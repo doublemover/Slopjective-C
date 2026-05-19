@@ -1,6 +1,10 @@
-#include "artifacts/objc3_frontend_artifact_lowering_handoff_manifest_field_modules.h"
+#include "artifacts/objc3_frontend_artifact_lowering_handoff_error_manifest_fields.h"
 
+#include <sstream>
 #include <string>
+
+#include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
+#include "lower/contracts/error_handling_throws_unwind_contracts.h"
 
 namespace objc3::artifacts::frontend {
 

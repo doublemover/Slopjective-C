@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cstddef>
+#include <string>
+#include <vector>
+
+#include "ast/objc3_ast_contracts_source_property_metadata.h"
 #include "runtime/metadata/runtime_ownership_contracts.h"
 
 struct Objc3RuntimeMetadataClassSourceRecord {
