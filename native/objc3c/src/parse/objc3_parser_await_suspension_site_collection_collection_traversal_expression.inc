@@ -16,6 +16,12 @@ void CollectAwaitSuspensionExprSites(
       CollectAwaitSuspensionExprSites(arg.get(), counts);
     }
     return;
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
+    for (const auto &arg : expr->args) {
+      CollectAwaitSuspensionExprSites(arg.get(), counts);
+    }
+    return;
   case Expr::Kind::MessageSend:
     CollectAwaitSuspensionSitesFromSymbol(expr->selector, counts);
     CollectAwaitSuspensionExprSites(expr->receiver.get(), counts);
@@ -35,6 +41,7 @@ void CollectAwaitSuspensionExprSites(
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::NilLiteral:
   case Expr::Kind::Number:
   default:

@@ -133,9 +133,13 @@ class Objc3IRCanonicalLiteralPoolCollector {
         CollectSelectorExpr(expr->third.get());
         return;
       case Expr::Kind::Call:
+      case Expr::Kind::Try:
+      case Expr::Kind::Throw:
         for (const auto &arg : expr->args) {
           CollectSelectorExpr(arg.get());
         }
+        return;
+      case Expr::Kind::KeyPathLiteral:
         return;
       default:
         return;

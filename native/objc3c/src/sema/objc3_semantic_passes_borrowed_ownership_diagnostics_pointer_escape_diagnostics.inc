@@ -110,7 +110,15 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
       DiagnoseOwnershipBorrowedEscapeExpr(expr->third.get(), scopes,
                                           callable_contracts, diagnostics);
       return;
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
+      for (const auto &arg : expr->args) {
+        DiagnoseOwnershipBorrowedEscapeExpr(arg.get(), scopes,
+                                            callable_contracts, diagnostics);
+      }
+      return;
     case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:

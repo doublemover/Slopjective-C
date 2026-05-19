@@ -16,7 +16,8 @@ static void CollectTypeSystemTypeSemanticExprSites(
   if (expr->kind == Expr::Kind::MessageSend && expr->optional_send_enabled) {
     ++summary.optional_send_sites;
   }
-  if (expr->kind == Expr::Kind::Identifier && expr->typed_keypath_literal_enabled) {
+  if (expr->kind == Expr::Kind::KeyPathLiteral &&
+      expr->typed_keypath_literal_enabled) {
     ++summary.typed_keypath_literal_sites;
     if (expr->typed_keypath_root_is_self) {
       ++summary.typed_keypath_self_root_sites;

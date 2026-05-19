@@ -56,7 +56,7 @@ static bool TryResolveTypedKeyPathValidatedOwner(
     bool &is_class_root) {
   owner_name.clear();
   is_class_root = false;
-  if (expr.kind != Expr::Kind::Identifier ||
+  if (expr.kind != Expr::Kind::KeyPathLiteral ||
       !expr.typed_keypath_literal_enabled) {
     return false;
   }

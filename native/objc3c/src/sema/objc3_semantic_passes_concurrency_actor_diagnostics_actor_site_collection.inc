@@ -67,6 +67,12 @@ static void CollectConcurrencyActorMethodBodyProfileExpr(
       CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
     }
     return;
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
+    for (const auto &arg : expr->args) {
+      CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
     if (expr->block_storage_escape_to_heap ||
         expr->block_escape_shape_promotes_to_heap_candidate) {

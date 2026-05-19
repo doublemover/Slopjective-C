@@ -20,6 +20,8 @@ void CollectBlockLiteralExprIdentifiers(
     CollectBlockLiteralExprIdentifiers(expr->third.get(), used_identifiers);
     return;
   case Expr::Kind::Call:
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
     for (const auto &arg : expr->args) {
       CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
     }
@@ -31,6 +33,7 @@ void CollectBlockLiteralExprIdentifiers(
     }
     return;
   case Expr::Kind::BlockLiteral:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::Number:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::NilLiteral:

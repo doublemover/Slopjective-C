@@ -10,6 +10,14 @@ std::size_t CountFailableCallSitesInExpr(const Expr *expr) {
     }
     return count;
   }
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw: {
+    std::size_t count = 0;
+    for (const auto &arg : expr->args) {
+      count += CountFailableCallSitesInExpr(arg.get());
+    }
+    return count;
+  }
   case Expr::Kind::MessageSend: {
     std::size_t count = IsFailableCallSymbol(expr->selector) ? 1u : 0u;
     count += CountFailableCallSitesInExpr(expr->receiver.get());
@@ -27,6 +35,7 @@ std::size_t CountFailableCallSitesInExpr(const Expr *expr) {
            CountFailableCallSitesInExpr(expr->third.get());
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::Number:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::NilLiteral:

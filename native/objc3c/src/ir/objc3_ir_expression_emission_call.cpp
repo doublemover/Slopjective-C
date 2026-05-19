@@ -12,7 +12,7 @@ std::string EmitObjc3IRCallExpression(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRExpressionEmissionCallbacks &callbacks,
     const Objc3IRExpressionChildEmitter &emit_child_expr) {
-  if (expr->ident == "__objc3_throw_stmt") {
+  if (expr->kind == Expr::Kind::Throw) {
     const std::string error_value =
         expr->args.empty()
             ? "1"
@@ -20,7 +20,7 @@ std::string EmitObjc3IRCallExpression(
     callbacks.emit_propagate_thrown_error(error_value, ctx);
     return "0";
   }
-  if (expr->ident == "__objc3_try_expr") {
+  if (expr->kind == Expr::Kind::Try) {
     const Expr *operand =
         !expr->args.empty() ? expr->args.front().get() : expr->left.get();
     if (operand == nullptr || operand->kind != Expr::Kind::Call) {

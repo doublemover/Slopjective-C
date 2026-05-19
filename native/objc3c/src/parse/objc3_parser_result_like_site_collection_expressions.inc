@@ -17,6 +17,8 @@ void CollectResultLikeExprProfile(const Expr *expr,
     CollectResultLikeExprProfile(expr->third.get(), profile);
     return;
   case Expr::Kind::Call:
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
     for (const auto &arg : expr->args) {
       CollectResultLikeExprProfile(arg.get(), profile);
     }
@@ -29,6 +31,7 @@ void CollectResultLikeExprProfile(const Expr *expr,
     return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::Number:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::NilLiteral:

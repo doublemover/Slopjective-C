@@ -130,6 +130,13 @@ static void DiagnoseOwnershipResourceMoveExpr(
         DiagnoseOwnershipResourceMoveExpr(arg.get(), scopes, diagnostics);
       }
       return;
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
+      for (const auto &arg : expr->args) {
+        DiagnoseOwnershipResourceMoveExpr(arg.get(), scopes, diagnostics);
+      }
+      return;
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:

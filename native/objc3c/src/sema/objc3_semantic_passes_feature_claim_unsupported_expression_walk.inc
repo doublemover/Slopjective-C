@@ -32,6 +32,8 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     }
     return;
   case Expr::Kind::Call:
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
     for (const auto &arg : expr->args) {
       DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
     }
@@ -59,6 +61,7 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     return;
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::NilLiteral:
   case Expr::Kind::Number:
   default:

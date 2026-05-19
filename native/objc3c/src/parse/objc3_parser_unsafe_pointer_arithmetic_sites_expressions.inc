@@ -17,6 +17,8 @@ void CollectPointerArithmeticExprSites(const Expr *expr, std::size_t &sites) {
     CollectPointerArithmeticExprSites(expr->third.get(), sites);
     return;
   case Expr::Kind::Call:
+  case Expr::Kind::Try:
+  case Expr::Kind::Throw:
     for (const auto &arg : expr->args) {
       CollectPointerArithmeticExprSites(arg.get(), sites);
     }
@@ -30,6 +32,7 @@ void CollectPointerArithmeticExprSites(const Expr *expr, std::size_t &sites) {
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
+  case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::NilLiteral:
   case Expr::Kind::Number:
   default:

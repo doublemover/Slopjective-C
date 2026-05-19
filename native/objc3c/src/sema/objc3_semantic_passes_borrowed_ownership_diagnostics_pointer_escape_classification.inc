@@ -40,6 +40,13 @@ static bool IsOwnershipBorrowedExpr(
     case Expr::Kind::Call:
       return IsOwnershipBorrowedCallableReturnBorrowed(callable_contracts,
                                                        expr->ident);
+    case Expr::Kind::Try:
+      return !expr->args.empty() &&
+             IsOwnershipBorrowedExpr(expr->args.front().get(), scopes,
+                                     callable_contracts);
+    case Expr::Kind::Throw:
+    case Expr::Kind::KeyPathLiteral:
+      return false;
     case Expr::Kind::Conditional:
       return IsOwnershipBorrowedExpr(expr->right.get(), scopes,
                                      callable_contracts) ||

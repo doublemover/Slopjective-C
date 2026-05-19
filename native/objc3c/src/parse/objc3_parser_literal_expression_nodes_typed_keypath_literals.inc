@@ -3,8 +3,7 @@ std::unique_ptr<Expr> BuildObjc3TypedKeyPathLiteralExpr(
     const Objc3LexToken &root_token,
     std::vector<std::string> components) {
   auto expr = std::make_unique<Expr>();
-  expr->kind = Expr::Kind::Identifier;
-  expr->ident = "__objc3_keypath_literal";
+  expr->kind = Expr::Kind::KeyPathLiteral;
   expr->line = keypath_token.line;
   expr->column = keypath_token.column;
   expr->typed_keypath_literal_enabled = true;

@@ -35,8 +35,7 @@
         return nullptr;
       }
       auto call = std::make_unique<Expr>();
-      call->kind = Expr::Kind::Call;
-      call->ident = "__objc3_throw_stmt";
+      call->kind = Expr::Kind::Throw;
       call->line = token.line;
       call->column = token.column;
       call->throw_statement_enabled = true;

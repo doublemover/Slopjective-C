@@ -1,4 +1,6 @@
-    case Expr::Kind::Call: {
+    case Expr::Kind::Call:
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw: {
       if (expr->try_expression_enabled) {
         SemanticTypeInfo operand_type = MakeScalarSemanticType(ValueType::Unknown);
         if (!expr->args.empty()) {

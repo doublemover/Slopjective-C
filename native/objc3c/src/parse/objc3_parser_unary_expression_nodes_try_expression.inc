@@ -4,8 +4,7 @@ std::unique_ptr<Expr> BuildObjc3TryExpression(
     bool requires_throwing_context,
     std::unique_ptr<Expr> rhs) {
   auto expr = std::make_unique<Expr>();
-  expr->kind = Expr::Kind::Call;
-  expr->ident = "__objc3_try_expr";
+  expr->kind = Expr::Kind::Try;
   expr->line = try_token.line;
   expr->column = try_token.column;
   expr->try_expression_enabled = true;

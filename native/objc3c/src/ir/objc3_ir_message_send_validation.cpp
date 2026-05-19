@@ -17,6 +17,7 @@ bool ValidateObjc3IRMessageSendArityExpr(const Expr *expr,
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
     case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
       return true;
     case Expr::Kind::Binary:
@@ -32,6 +33,8 @@ bool ValidateObjc3IRMessageSendArityExpr(const Expr *expr,
              ValidateObjc3IRMessageSendArityExpr(
                  expr->third.get(), runtime_dispatch_arg_slots, error);
     case Expr::Kind::Call:
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
       for (const auto &arg : expr->args) {
         if (!ValidateObjc3IRMessageSendArityExpr(
                 arg.get(), runtime_dispatch_arg_slots, error)) {

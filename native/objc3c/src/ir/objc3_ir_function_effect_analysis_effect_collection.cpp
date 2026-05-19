@@ -40,6 +40,7 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
     case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Binary:
@@ -53,6 +54,12 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
       return;
     case Expr::Kind::Call:
       info.called_functions.insert(expr->ident);
+      for (const auto &arg : expr->args) {
+        CollectFunctionEffectExpr(arg.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
       for (const auto &arg : expr->args) {
         CollectFunctionEffectExpr(arg.get(), scopes, info);
       }

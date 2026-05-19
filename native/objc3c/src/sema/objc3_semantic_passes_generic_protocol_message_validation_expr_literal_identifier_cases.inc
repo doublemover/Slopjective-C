@@ -9,6 +9,7 @@
       nil_type.has_nullability_suffix = true;
       return nil_type;
     }
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::Identifier: {
       if (expr->typed_keypath_literal_enabled) {
         if (!expr->typed_keypath_literal_is_normalized ||

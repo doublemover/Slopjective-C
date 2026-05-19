@@ -35,11 +35,10 @@ std::string EmitObjc3IRExprImpl(
       return callbacks.emit_unsupported_i32_value(
           "block literal values must be bound to a local name before use");
     case Expr::Kind::Identifier: {
-      if (expr->typed_keypath_literal_enabled) {
-        return callbacks.emit_typed_keypath_literal_value(*expr);
-      }
       return callbacks.emit_identifier_value(expr->ident, ctx);
     }
+    case Expr::Kind::KeyPathLiteral:
+      return callbacks.emit_typed_keypath_literal_value(*expr);
     case Expr::Kind::Binary: {
       if (expr->op == "&&" || expr->op == "||") {
         const std::string lhs = EmitObjc3IRExprImpl(expr->left.get(), ctx,
@@ -227,6 +226,10 @@ std::string EmitObjc3IRExprImpl(
       return EmitObjc3IRCallExpression(expr, ctx, callbacks,
                                        EmitObjc3IRExprImpl);
     }
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
+      return EmitObjc3IRCallExpression(expr, ctx, callbacks,
+                                       EmitObjc3IRExprImpl);
     case Expr::Kind::MessageSend: {
       return callbacks.emit_message_send_expr(expr, ctx);
     }

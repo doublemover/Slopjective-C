@@ -11,9 +11,12 @@
     BoolLiteral,
     NilLiteral,
     Identifier,
+    KeyPathLiteral,
     Binary,
     Conditional,
     Call,
+    Try,
+    Throw,
     MessageSend,
     BlockLiteral
   };

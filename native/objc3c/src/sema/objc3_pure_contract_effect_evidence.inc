@@ -226,6 +226,7 @@ static void CollectPureContractEffectExpr(
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
     case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Binary:
@@ -240,6 +241,12 @@ static void CollectPureContractEffectExpr(
     case Expr::Kind::Call:
       RecordPureContractSourceLoc(info.called_functions[expr->ident],
                                   expr->line, expr->column);
+      for (const auto &arg : expr->args) {
+        CollectPureContractEffectExpr(arg.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
       for (const auto &arg : expr->args) {
         CollectPureContractEffectExpr(arg.get(), scopes, info);
       }
