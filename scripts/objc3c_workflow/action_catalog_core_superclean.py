@@ -17,8 +17,8 @@ CORE_SUPERCLEAN_ACTION_SPECS: dict[str, ActionSpec] = {
     ),
     "check-repo-superclean-surface": ActionSpec(
         "check-repo-superclean-surface",
-        "check the build-emitted repo superclean source-of-truth artifact",
-        "python:scripts/check_repo_superclean_surface.py",
+        "refresh and check the build-emitted repo superclean source-of-truth artifact",
+        "runner-internal + native build source contracts + python:scripts/check_repo_superclean_surface.py",
         validation_tier="repo",
         guarantee_owner=(
             "native build emits the canonical repo-cleanup roots, outputs, and command "

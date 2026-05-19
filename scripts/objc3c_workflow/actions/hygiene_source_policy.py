@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-from ..commands import run
+from ..commands import pwsh_file, run
 from .hygiene_paths import (
     DEPENDENCY_BOUNDARIES_PY,
     RELEASE_EVIDENCE_PY,
@@ -14,6 +14,10 @@ from .hygiene_paths import (
     SPEC_LINT_PY,
     TASK_HYGIENE_PY,
 )
+from .native_build_paths import BUILD_PS1
+
+
+REPO_SUPERCLEAN_SOURCE_REFRESH_MODE = "contracts-source"
 
 
 def action_check_dependency_boundaries(_: list[str]) -> int:
@@ -37,6 +41,13 @@ def action_check_task_hygiene(_: list[str]) -> int:
 
 
 def action_check_repo_superclean_surface(_: list[str]) -> int:
+    rc = pwsh_file(
+        BUILD_PS1,
+        "-ExecutionMode",
+        REPO_SUPERCLEAN_SOURCE_REFRESH_MODE,
+    )
+    if rc != 0:
+        return rc
     return run([sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)])
 
 
