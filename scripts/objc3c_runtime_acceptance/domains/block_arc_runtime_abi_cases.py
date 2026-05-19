@@ -37,6 +37,11 @@ def check_block_arc_runtime_abi_case(clangxx: str, run_dir: Path) -> CaseResult:
         summary={
             "handle": handle,
             "invoke_result": payload.get("invoke_result"),
+            "stale_invoke_result": payload.get("stale_invoke_result"),
+            "last_descriptor_storage_size_bytes": payload.get(
+                "last_descriptor_storage_size_bytes"
+            ),
+            "last_descriptor_flags": payload.get("last_descriptor_flags"),
             "block_promote_call_count": payload.get("block_promote_call_count"),
             "block_invoke_call_count": payload.get("block_invoke_call_count"),
             "retain_call_count": payload.get("retain_call_count"),

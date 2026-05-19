@@ -17,6 +17,7 @@ set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
 add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp
   blocks/block_capture_storage.h
+  blocks/block_descriptor.h
   blocks/block_arc_snapshot.cpp
   blocks/block_invocation.cpp
   blocks/block_invocation_plan.cpp

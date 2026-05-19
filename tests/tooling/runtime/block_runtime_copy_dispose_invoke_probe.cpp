@@ -1,11 +1,12 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/blocks/block_descriptor.h"
 
 #include <cstdio>
 
 namespace {
 
 struct ProbeBlockStorage {
-  int (*invoke)(void *, int, int, int, int) = nullptr;
+  const objc3c::runtime::RuntimeBlockDescriptor *descriptor = nullptr;
   void (*copy)(void *) = nullptr;
   void (*dispose)(void *) = nullptr;
   int *captured_base = nullptr;
@@ -45,6 +46,19 @@ extern "C" void ProbeDispose(void *storage) {
   ++g_dispose_count;
 }
 
+const objc3c::runtime::RuntimeBlockDescriptor &ProbeDescriptor() {
+  static const objc3c::runtime::RuntimeBlockDescriptor descriptor{
+      sizeof(ProbeBlockStorage),
+      1,
+      4,
+      objc3c::runtime::kRuntimeBlockDescriptorPointerCaptureStorageFlag |
+          objc3c::runtime::kRuntimeBlockDescriptorCopyHelperFlag |
+          objc3c::runtime::kRuntimeBlockDescriptorDisposeHelperFlag,
+      0,
+      &ProbeInvoke};
+  return descriptor;
+}
+
 }  // namespace
 
 int main() {
@@ -55,7 +69,7 @@ int main() {
   g_allow_invoke_storage_access = true;
 
   int captured_base = 7;
-  ProbeBlockStorage block{&ProbeInvoke, &ProbeCopy, &ProbeDispose,
+  ProbeBlockStorage block{&ProbeDescriptor(), &ProbeCopy, &ProbeDispose,
                           &captured_base};
 
   const int handle =

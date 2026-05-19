@@ -34,6 +34,10 @@ inline RuntimeInvocationResult InvokeRuntimeHelpersForProbe() {
       result.handle > 0 ? ::objc3_runtime_release_i32(result.handle) : 0;
   result.final_release_result =
       result.handle > 0 ? ::objc3_runtime_release_i32(result.handle) : 0;
+  result.stale_invoke_result =
+      result.handle > 0
+          ? ::objc3_runtime_invoke_block_i32(result.handle, 1, 2, 3, 4)
+          : -1;
   ::objc3_runtime_pop_autoreleasepool_scope();
 
   result.capture = CaptureProbeCounters();

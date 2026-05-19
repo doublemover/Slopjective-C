@@ -56,14 +56,14 @@ void EmitObjc3IRModuleMetadataRuntimeSemanticsGatePublication(
       << Objc3ExecutableBlockRuntimeSemanticRulesSummary() << "\n";
   // block-lowering-ABI/artifact-boundary freeze anchor: lane-C
   // now publishes the truthful lowering boundary required for runnable block
-  // execution, while native emit still fails closed before any emitted block
-  // object records, invoke thunks, byref cells, or helper bodies land.
+  // execution, including emitted internal descriptors and invoke thunks for
+  // the supported slice while unsupported lanes remain fail closed.
   out << "; executable_block_lowering_abi_artifact_boundary = "
       << Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() << "\n";
   // executable-block-object/invoke-thunk anchor: native lowering
-  // now emits stack block objects plus internal invoke thunks for the narrow
-  // readonly-scalar capture slice, while byref/helper/ownership-sensitive
-  // cases remain explicitly deferred to C003.
+  // now emits stack block objects plus internal descriptors and invoke thunks
+  // for the supported scalar/capture slice while generalized public block ABI
+  // work remains out of scope.
   out << "; executable_block_object_invoke_thunk_lowering = "
       << Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() << "\n";
   // byref-cell/copy-helper/dispose-helper anchor: native lowering

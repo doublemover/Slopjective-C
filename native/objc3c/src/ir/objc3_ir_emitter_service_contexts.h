@@ -45,6 +45,7 @@ struct Objc3IREmitterServiceContextState {
   std::size_t vector_signature_function_count = 0;
   std::vector<std::string> &block_function_definitions;
   std::unordered_set<std::string> &emitted_block_invoke_symbols;
+  std::unordered_set<std::string> &emitted_block_descriptor_symbols;
   std::unordered_set<std::string> &emitted_block_copy_helper_symbols;
   std::unordered_set<std::string> &emitted_block_dispose_helper_symbols;
   Objc3IRRuntimeDispatchCallState &runtime_dispatch_call_state;

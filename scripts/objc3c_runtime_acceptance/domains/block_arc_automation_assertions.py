@@ -67,6 +67,18 @@ def _assert_owned_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> No
         in artifacts.owned_ll,
         "expected owned object capture fixture LLVM IR to publish the block allocation/copy/dispose/invoke support surface",
     )
+    expect(
+        "@__objc3_block_desc_" in artifacts.owned_ll
+        and " = internal constant { i64, i64, i32, i32, i32, ptr }"
+        in artifacts.owned_ll
+        and ", ptr @__objc3_block_invoke_" in artifacts.owned_ll,
+        "expected owned object capture fixture LLVM IR to emit concrete block descriptors that own invoke thunks",
+    )
+    expect(
+        "getelementptr inbounds { i64, i64, i32, i32, i32, ptr }"
+        in artifacts.owned_ll,
+        "expected owned object capture fixture LLVM IR to load invoke thunks through block descriptors",
+    )
 
 
 def _assert_nonowning_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> None:

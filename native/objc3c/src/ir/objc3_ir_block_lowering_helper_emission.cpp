@@ -11,6 +11,27 @@
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 
+void EmitObjc3IRBlockDescriptor(
+    const Expr &expr, const Objc3IRBlockLoweringContext &context) {
+  const std::string symbol = BuildBlockDescriptorSymbol(expr);
+  if (symbol.empty() ||
+      !context.state.emitted_block_descriptor_symbols->insert(symbol)
+           .second) {
+    return;
+  }
+
+  std::ostringstream out;
+  const std::string descriptor_type = BuildBlockDescriptorType();
+  out << "@" << symbol << " = internal constant " << descriptor_type << " { ";
+  out << "i64 " << BlockStorageStaticSizeBytes(expr) << ", ";
+  out << "i64 " << expr.block_capture_names_lexicographic.size() << ", ";
+  out << "i32 " << expr.block_parameter_count << ", ";
+  out << "i32 " << BuildBlockDescriptorFlags(expr) << ", ";
+  out << "i32 0, ";
+  out << "ptr @" << BuildBlockInvokeSymbol(expr) << " }, align 8\n";
+  context.state.block_function_definitions->push_back(out.str());
+}
+
 void EmitObjc3IRBlockCopyHelper(
     const Expr &expr, const Objc3IRBlockLoweringContext &context) {
   if (!BlockLiteralUsesPointerCaptureStorage(expr) ||

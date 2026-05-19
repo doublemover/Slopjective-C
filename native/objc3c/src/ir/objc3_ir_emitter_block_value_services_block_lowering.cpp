@@ -18,6 +18,7 @@ Objc3IRBlockLoweringContext BuildObjc3IREmitterBlockLoweringContext(
       Objc3IRBlockLoweringState{
           &state.block_function_definitions,
           &state.emitted_block_invoke_symbols,
+          &state.emitted_block_descriptor_symbols,
           &state.emitted_block_copy_helper_symbols,
           &state.emitted_block_dispose_helper_symbols},
       BuildObjc3IRStatementOrchestrationScopeCleanupCallbacks(

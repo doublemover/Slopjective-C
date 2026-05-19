@@ -13,7 +13,9 @@ from ..c_api import (
     BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
     BLOCK_ARC_RUNTIME_ARC_MODEL,
     BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+    BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL,
     BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
+    BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL,
     PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY,
     PUBLIC_RUNTIME_ABI_BOUNDARY,
     RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
@@ -50,6 +52,8 @@ def build_runtime_block_arc_runtime_abi_surface(
         ),
         "runtime_abi_boundary_model": BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
         "block_runtime_model": BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+        "block_descriptor_model": BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL,
+        "block_invoke_thunk_model": BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL,
         "arc_runtime_model": BLOCK_ARC_RUNTIME_ARC_MODEL,
         "fail_closed_model": BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
         "authoritative_case_ids": authoritative_case_ids(

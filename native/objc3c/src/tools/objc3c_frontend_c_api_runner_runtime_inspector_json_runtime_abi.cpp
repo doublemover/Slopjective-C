@@ -37,6 +37,12 @@ void WriteFrontendCApiRunnerRuntimeInspectorRuntimeAbiJsonRows(
   out << child_indent << "\"block_runtime_model\": \""
       << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiBlockModel)
       << "\",\n";
+  out << child_indent << "\"block_descriptor_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiDescriptorModel)
+      << "\",\n";
+  out << child_indent << "\"block_invoke_thunk_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiInvokeThunkModel)
+      << "\",\n";
   out << child_indent << "\"arc_runtime_model\": \""
       << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiArcModel) << "\",\n";
   out << child_indent << "\"fail_closed_model\": \""

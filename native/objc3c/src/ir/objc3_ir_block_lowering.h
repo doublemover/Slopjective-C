@@ -14,6 +14,7 @@ struct Stmt;
 struct Objc3IRBlockLoweringState {
   std::vector<std::string> *block_function_definitions = nullptr;
   std::unordered_set<std::string> *emitted_block_invoke_symbols = nullptr;
+  std::unordered_set<std::string> *emitted_block_descriptor_symbols = nullptr;
   std::unordered_set<std::string> *emitted_block_copy_helper_symbols = nullptr;
   std::unordered_set<std::string> *emitted_block_dispose_helper_symbols =
       nullptr;

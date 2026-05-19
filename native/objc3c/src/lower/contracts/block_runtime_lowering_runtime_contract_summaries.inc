@@ -10,7 +10,8 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
       << ";handle_type=i32"
       << ";promotion_abi=ptr-storage-plus-i64-size-plus-i32-pointer-capture-flag"
       << ";invoke_abi=i32-handle-plus-four-i32-arguments-returning-i32"
-      << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-invoke-pointer"
+      << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-internal-descriptor-with-invoke-thunk"
+      << ";descriptor_model=storage-slot-zero-points-to-internal-descriptor-with-size-capture-count-flags-arity-and-invoke-thunk"
       << ";object_layout_model=runtime-block-records-are-private-runtime-state-not-public-object-abi"
       << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-the-next-runtime-hardening-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-runtime-copy-dispose-allocation-surface";
@@ -28,8 +29,9 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
       << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
       << ";previous_contract=" << kObjc3RuntimeBlockApiObjectLayoutContractId
       << ";allocation_model=runtime-block-records-copy-promoted-storage-into-aligned-word-buffers"
+      << ";descriptor_model=promotion-validates-descriptor-storage-size-capture-count-flags-and-invoke-thunk-before-publishing-a-handle"
       << ";copy_dispose_model=pointer-capture-promotion-runs-copy-helper-and-final-release-runs-dispose-helper"
-      << ";invoke_model=runtime-invoke-supports-readonly-scalar-and-pointer-capture-block-records"
+      << ";invoke_model=runtime-invoke-loads-the-descriptor-owned-thunk-from-a-runnable-invocation-plan"
       << ";handle_lifetime_model=i32-block-handles-participate-in-runtime-retain-release"
       << ";fail_closed_model=byref-forwarding-runtime-reentrant-helper-bodies-and-owned-capture-escape-interop-remain-deferred-until-next-runtime-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-public-runtime-helper-surface";

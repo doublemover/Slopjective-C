@@ -48,7 +48,9 @@ def main() -> int:
     expect(runtime_abi_probe_payload.get("handle", 0) > 0, "expected packaged block ARC runtime ABI probe to publish a positive handle")
     expect(runtime_abi_probe_payload.get("invoke_result") == 17, "expected packaged block ARC runtime ABI probe to preserve invoke_result 17")
     expect(runtime_abi_probe_payload.get("block_promote_call_count") == 1, "expected packaged block ARC runtime ABI probe to preserve one promote call")
-    expect(runtime_abi_probe_payload.get("block_invoke_call_count") == 1, "expected packaged block ARC runtime ABI probe to preserve one invoke call")
+    expect(runtime_abi_probe_payload.get("block_invoke_call_count") == 2, "expected packaged block ARC runtime ABI probe to preserve successful plus fail-closed invoke calls")
+    expect(runtime_abi_probe_payload.get("stale_invoke_result") == 0, "expected packaged block ARC runtime ABI probe to reject invoke after final release")
+    expect(runtime_abi_probe_payload.get("last_descriptor_has_invoke") == 1, "expected packaged block ARC runtime ABI probe to preserve descriptor invoke proof")
     expect(runtime_abi_probe_payload.get("block_promote_symbol") == "objc3_runtime_promote_block_i32", "expected packaged block ARC runtime ABI probe to preserve the block promote symbol")
     expect(runtime_abi_probe_payload.get("block_invoke_symbol") == "objc3_runtime_invoke_block_i32", "expected packaged block ARC runtime ABI probe to preserve the block invoke symbol")
 

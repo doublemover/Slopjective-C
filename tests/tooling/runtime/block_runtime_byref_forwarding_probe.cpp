@@ -1,9 +1,10 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/blocks/block_descriptor.h"
 
 #include <iostream>
 
 struct ProbeBlockStorage {
-  int (*invoke)(void *, int, int, int, int);
+  const objc3c::runtime::RuntimeBlockDescriptor *descriptor;
   void (*copy)(void *);
   void (*dispose)(void *);
   int *seed;
@@ -40,6 +41,19 @@ extern "C" int ProbeInvoke(void *raw_block, int delta, int, int, int) {
   block->seed[0] += delta;
   return block->seed[0] + block->owned[0];
 }
+
+const objc3c::runtime::RuntimeBlockDescriptor &ProbeDescriptor() {
+  static const objc3c::runtime::RuntimeBlockDescriptor descriptor{
+      sizeof(ProbeBlockStorage),
+      2,
+      1,
+      objc3c::runtime::kRuntimeBlockDescriptorPointerCaptureStorageFlag |
+          objc3c::runtime::kRuntimeBlockDescriptorCopyHelperFlag |
+          objc3c::runtime::kRuntimeBlockDescriptorDisposeHelperFlag,
+      0,
+      &ProbeInvoke};
+  return descriptor;
+}
 }  // namespace
 
 int main() {
@@ -47,7 +61,7 @@ int main() {
 
   int seed = 7;
   int owned = 11;
-  ProbeBlockStorage storage{&ProbeInvoke, &ProbeCopy, &ProbeDispose, &seed,
+  ProbeBlockStorage storage{&ProbeDescriptor(), &ProbeCopy, &ProbeDispose, &seed,
                             &owned};
 
   const int handle =

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "runtime/blocks/block_descriptor.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 namespace objc3c {
@@ -14,7 +15,7 @@ struct ProbeCaptureState {
 };
 
 struct ProbeBlockStorage {
-  int (*invoke)(void *, int, int, int, int) = nullptr;
+  const ::objc3c::runtime::RuntimeBlockDescriptor *descriptor = nullptr;
   void (*copy)(void *) = nullptr;
   void (*dispose)(void *) = nullptr;
   int *captured_base = nullptr;
@@ -27,6 +28,7 @@ struct RuntimeInvocationResult {
   ProbeCaptureState capture;
   int handle = 0;
   int invoke_result = 0;
+  int stale_invoke_result = 0;
   int retain_handle_result = 0;
   int release_handle_result = 0;
   int final_release_result = 0;

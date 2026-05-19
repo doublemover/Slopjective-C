@@ -12,6 +12,7 @@ RuntimeBlockInvocationPlan BuildRuntimeBlockInvocationPlanUnlocked(
     return plan;
   }
 
+  plan.descriptor = block_it->second.descriptor;
   plan.invoke = block_it->second.invoke;
   plan.storage_words = block_it->second.storage_words;
   return plan;
@@ -19,7 +20,8 @@ RuntimeBlockInvocationPlan BuildRuntimeBlockInvocationPlanUnlocked(
 
 bool RuntimeBlockInvocationPlanIsRunnable(
     const RuntimeBlockInvocationPlan &plan) {
-  return plan.invoke != nullptr && !plan.storage_words.empty();
+  return plan.descriptor != nullptr && plan.invoke != nullptr &&
+         !plan.storage_words.empty();
 }
 
 int InvokeRuntimeBlockInvocationPlan(RuntimeBlockInvocationPlan &plan,

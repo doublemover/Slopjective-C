@@ -6,8 +6,11 @@
 #include "ast/objc3_ast.h"
 
 bool BlockLiteralUsesPointerCaptureStorage(const Expr &expr);
+std::string BuildBlockDescriptorType();
 std::string BuildBlockStorageType(const Expr &expr);
+std::string BuildBlockDescriptorSymbol(const Expr &expr);
 std::string BuildBlockInvokeSymbol(const Expr &expr);
+std::uint32_t BuildBlockDescriptorFlags(const Expr &expr);
 bool BlockLiteralRequiresEscapingRuntimeHooks(const Expr &expr);
 bool BlockLiteralSupportsScalarRuntimePromotion(const Expr &expr);
 bool BlockLiteralSupportsEscapingRuntimeHookLowering(const Expr &expr);

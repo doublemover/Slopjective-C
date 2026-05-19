@@ -100,7 +100,13 @@ BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
 BLOCK_ARC_RUNTIME_BLOCK_MODEL = (
-    "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints"
+    "descriptor-backed-promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+BLOCK_ARC_RUNTIME_DESCRIPTOR_MODEL = (
+    "storage-slot-zero-carries-an-internal-descriptor-pointer-whose-record-preserves-size-captures-flags-arity-and-invoke-thunk"
+)
+BLOCK_ARC_RUNTIME_INVOKE_THUNK_MODEL = (
+    "runtime-invocation-plans-call-the-descriptor-owned-i32-invoke-thunk-with-copied-runtime-owned-storage"
 )
 BLOCK_ARC_RUNTIME_ARC_MODEL = (
     "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints"
